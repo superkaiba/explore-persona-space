@@ -1196,6 +1196,18 @@ def _wf_fix_title_tokens(title: str) -> set[str]:
     return out
 
 
+def informative_title_tokens(text: str) -> set[str]:
+    """Public reuse surface for the #1446 informative-token tokenizer (#1483).
+
+    Same normalization as the widened-pass title arm (_wf_fix_title_tokens):
+    lowercase, WF_FIX_TITLE_PREFIXES channel prefixes stripped, split on
+    non-word chars keeping -/_ inside tokens, edge -/_ stripped, len >= 4,
+    minus _WF_FIX_TITLE_STOPWORDS. Applies to any short text (titles, bug
+    one-liners), not only titles.
+    """
+    return _wf_fix_title_tokens(text)
+
+
 def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
     target_file: str | None,
     candidate_title: str | None = None,
@@ -3756,6 +3768,36 @@ def get_task(task_id: int) -> dict[str, Any]:
         "frontmatter": fm,
         "body": body,
     }
+
+
+# The issue-wide pod-teardown shield tag (CLAUDE.md § Pods; #1485).
+KEEP_RUNNING_TAG = "keep-running"
+
+
+def keep_running_tag_state(task_id: int) -> bool | None:
+    """Tri-state read of the issue-wide teardown shield (#1485).
+
+    True  -> task read OK and the ``keep-running`` tag is present.
+    False -> task read OK and the tag is absent, OR the task does not
+             exist (registry miss / ad-hoc pod: nothing to shield).
+    None  -> the read ERRORED (branch-guard RuntimeError, corrupt
+             frontmatter ValueError, StaleTaskPathError registry
+             corruption, other OSError) - the tag state is UNKNOWABLE.
+             Callers on a DESTRUCTIVE path treat None as "do not
+             destroy" (the _wedge_keep_running 'unknown' posture).
+    """
+    # Exception ordering is load-bearing: StaleTaskPathError subclasses
+    # FileNotFoundError, which subclasses OSError — catch narrowest first.
+    try:
+        task = get_task(int(task_id))
+    except StaleTaskPathError:
+        return None  # multi-hit registry corruption: unknowable
+    except FileNotFoundError:
+        return False  # no task => no tag; ad-hoc pods stay terminable
+    except (RuntimeError, ValueError, OSError):
+        return None
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and KEEP_RUNNING_TAG in tags
 
 
 # ─── Events ─────────────────────────────────────────────────────────────────
@@ -6725,6 +6767,7 @@ __all__ = [
     "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "HUSK_REAP_TERMINAL_STATUSES",
+    "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6757,6 +6800,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "keep_running_tag_state",
     "latest_event",
     "list_by_status",
     "list_comments",

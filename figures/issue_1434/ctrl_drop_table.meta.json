@@ -1,0 +1,33 @@
+{
+  "commit": "f69b4ba077",
+  "created": "2026-07-18T04:12:44Z",
+  "figsize": [
+    8.0,
+    2.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "per-arm judge drop report (content vs transport)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

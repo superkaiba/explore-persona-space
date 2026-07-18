@@ -1,0 +1,37 @@
+{
+  "panel_A_own_turn1_skill": {
+    "none": {
+      "foldA": -0.020356877986104416,
+      "full": -4.978479815235814
+    },
+    "exact": {
+      "foldA": 0.5071918900246628,
+      "full": 0.5392864591771714
+    }
+  },
+  "panel_B_matched_lambda_deficit_foldA": {
+    "none": {
+      "1to2": 0.11020728060852514,
+      "1to3": 0.14731671297694438,
+      "1to4": 0.1657091844145392
+    },
+    "exact": {
+      "1to2": 0.10490929114766756,
+      "1to3": 0.13763057426990633,
+      "1to4": 0.15623286012400983
+    }
+  },
+  "band": [
+    0.023,
+    0.23
+  ],
+  "source": "eval_results/issue_958/dup-excluded-turn1-refit/refit.json",
+  "metadata": {
+    "git_commit": "1d0fa5880721c5e503e6f1b142d8a6831814d09d",
+    "timestamp_utc": "2026-07-18T01:51:44.268745Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue958_dup_excluded_refit_fig"
+  }
+}

@@ -477,3 +477,24 @@ def test_sha_verification_duty_present(daily_skill_text: str):
         "the #1467 non-resolving-token disposition dropped from the workflow.yaml "
         "orchestrator_actions grep step"
     )
+
+
+def test_route3_open_daily_held_dedup_documented(daily_skill_text: str):
+    """#1483: the route-3 open daily-held overlap dedup prose survives edits.
+
+    Pins the three load-bearing substrings: the ledger outcome vocabulary, the
+    daily-record rendering, and the scan function name — so a future SKILL.md
+    editor cannot silently drop the dedup documentation (plan #1483 §4.4
+    durability pin).
+    """
+    assert "already-tracked" in daily_skill_text, (
+        "the #1483 route-3 overlap-dedup ledger outcome `already-tracked` dropped "
+        "from the daily SKILL.md"
+    )
+    assert "already tracked in #" in daily_skill_text, (
+        "the #1483 unconditional daily-record rendering `already tracked in #<id>` "
+        "dropped from the daily-file record bullet"
+    )
+    assert "find_open_daily_held_duplicate" in daily_skill_text, (
+        "the #1483 scan function name dropped from the route-3 dedup documentation"
+    )

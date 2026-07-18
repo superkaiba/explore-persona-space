@@ -2,7 +2,8 @@
 
 The daily stale-pod audit (``cron_pod_audit.sh`` → ``pod.py audit-stale
 --terminate-stale --yes``) auto-terminates every EXITED pod older than
-24h. The ``keep-running`` tag on the owning task is the workflow's
+24h, ownership-gated for every name (#1404/#1471). The ``keep-running``
+tag on the owning task is the workflow's
 documented pod-preservation override (CLAUDE.md, /issue Step 8), so
 ``classify()`` must bucket such pods as ``kept-exited`` — reported, never
 consumed by ``--terminate-stale`` — instead of ``stale``.
@@ -165,6 +166,8 @@ def test_tag_exemption_applies_to_legacy_names(monkeypatch: pytest.MonkeyPatch):
 
 def test_unparseable_name_falls_through_to_stale(monkeypatch: pytest.MonkeyPatch):
     # Tag lookup must never be consulted for a name that doesn't parse.
+    # ownership is fixture-True here; the #1471 any-name gate is exercised
+    # in the gate section below.
     def boom(issue: int) -> bool:
         raise AssertionError("tag lookup called for unparseable name")
 
@@ -457,13 +460,14 @@ def test_flags_do_not_affect_exit_code(monkeypatch: pytest.MonkeyPatch):
     assert rc == 0
 
 
-# ── #1404 EPS-ownership gate (unmanaged-exited bucket) ──────────────────────
+# ── #1404 EPS-ownership gate (unmanaged-exited bucket; all names, #1471) ────
 #
-# The RunPod account is TEAM-SHARED: a non-EPS pod may carry the managed
-# ``pod-`` prefix. An EXITED pod past the threshold reaches the auto-terminate
-# ``stale`` bucket ONLY when positively confirmed as EPS-owned; otherwise it
-# lands in the report-only ``unmanaged-exited`` bucket and is NEVER consumed
-# by ``--terminate-stale``. Every lookup failure fails toward KEEP.
+# The RunPod account is TEAM-SHARED: a non-EPS pod may carry ANY name, the
+# managed ``pod-`` prefix included. An EXITED pod past the threshold reaches
+# the auto-terminate ``stale`` bucket ONLY when positively confirmed as
+# EPS-owned; otherwise it lands in the report-only ``unmanaged-exited``
+# bucket and is NEVER consumed by ``--terminate-stale``. Every lookup
+# failure fails toward KEEP.
 
 
 def _raise_missing(issue: int):
@@ -553,9 +557,53 @@ def test_eps_owned_pod_still_reaches_stale_normally(
     assert row.bucket == "stale"
 
 
-def test_non_managed_name_keeps_stale_without_ownership(monkeypatch: pytest.MonkeyPatch, tmp_path):
-    """A non-managed name has no collision hazard — pre-#1404 stale behavior holds."""
+def test_non_managed_name_without_ownership_never_auto_terminated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+):
+    """#1471: the ownership gate applies to EVERY name — a non-managed EXITED
+    pod without positive EPS evidence routes to unmanaged-exited, never stale,
+    and --terminate-stale never consumes it (fail-toward-keep on the
+    team-shared account)."""
     _no_ownership(monkeypatch, tmp_path)
+    (row,) = classify(
+        [_pod("my-custom-pod", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "unmanaged-exited"
+
+    # End-to-end: --terminate-stale must never consume it (Durability pin, #1471).
+    monkeypatch.setattr(
+        pod_audit, "list_team_pods", lambda: [_pod("my-custom-pod", created_at=OLD)]
+    )
+    terminated: list[str] = []
+    monkeypatch.setattr(pod_audit, "terminate_pod", terminated.append)
+    rc = pod_audit.main(["--terminate-stale", "--yes"])
+    assert terminated == []
+    assert rc == 0  # not stale, not orphan — no audit-finding exit code
+
+
+@pytest.mark.parametrize("signal", ["ephemeral-pod-id", "ephemeral-name", "task-refs"])
+def test_non_managed_name_with_eps_evidence_still_reaches_stale(
+    monkeypatch: pytest.MonkeyPatch, tmp_path, signal: str
+):
+    """#1471: an EPS-owned odd-named pod (dispatcher-created) still auto-reaps
+    via ownership signals 2 (sidecar) and 3 (task references). Signal 1 cannot
+    fire for an unparseable name by construction."""
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", _REAL_IS_EPS_OWNED)
+    monkeypatch.setattr(pod_audit, "get_task", _raise_missing)  # signal 1 miss
+    sidecar = tmp_path / "absent.json"  # default: signal 2 misses
+    if signal == "ephemeral-pod-id":
+        sidecar = tmp_path / "pods_ephemeral.json"
+        entry = {"name": "some-other-name", "pod_id": "id-my-custom-pod"}
+        sidecar.write_text(json.dumps({"version": 2, "pods": {"x": entry}}))
+    elif signal == "ephemeral-name":
+        sidecar = tmp_path / "pods_ephemeral.json"
+        entry = {"name": "my-custom-pod", "pod_id": "zzz-unrelated"}
+        sidecar.write_text(json.dumps({"version": 2, "pods": {"x": entry}}))
+    elif signal == "task-refs":
+        monkeypatch.setattr(pod_audit, "_scan_task_references", lambda pod_id, name: [1471])
+    monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", sidecar)
     (row,) = classify(
         [_pod("my-custom-pod", created_at=OLD)],
         max_exited_hours=24,

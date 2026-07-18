@@ -108,9 +108,12 @@ def make_task(
     *,
     title: str,
     tags: list[str] | None = None,
+    origin_prompt: str | None = None,
 ) -> Path:
     """Build one synthetic task dir through the REAL frontmatter writer (yaml.safe_dump)."""
     fm = {"title": title, "kind": "infra", "tags": tags or []}
+    if origin_prompt is not None:
+        fm["origin_prompt"] = origin_prompt
     task_dir = tasks_root / status / str(tid)
     task_dir.mkdir(parents=True)
     fm_block = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).rstrip()
@@ -961,3 +964,253 @@ def test_non_utf8_body_fails_open_scan_skipped(tmp_path, tasks_root, capsys):
     assert len(filed) == 1  # the filing itself proceeded
     assert "sha_warnings" not in filed[0]  # skipped scan -> no ledger key
     assert body_path.read_bytes() == raw  # no annotation; body byte-untouched
+
+
+# ── #1483: route-3 open daily-held overlap dedup ───────────────────────────────
+#
+# Real incident texts (tasks/archived/1140/body.md + tasks/blocked/1472/body.md,
+# read 2026-07-17) — the quantitative acceptance replay for test (f). Under the
+# §4 predicate the pair shares 7 informative tokens
+# (2026-08-06, codex, doubled, every, quota, review, site); title-only shares 1.
+
+TITLE_1140 = "daily-held: Codex quota out to Aug 6 - pay or ride it out"
+ORIGIN_1140 = (
+    "/daily 2026-07-07 problem sweep (route 3): Every codex_task.py dispatch since "
+    "~17:00Z 2026-07-07 fails with a hard usage-limit error (reset 2026-08-06 6:26 AM). "
+    "All Codex twins (critic x3 lenses, code-reviewer, interpretation-critic, "
+    "clean-result-critic, follow-up-critic) no-show; every doubled review site runs "
+    "Claude-only fallback."
+)
+TITLE_1472 = "daily-held: review diversity during Codex outage to Aug 6"
+BUG_1472 = (
+    "the Codex org quota is exhausted until ~2026-08-06 (CODEX_QUOTA_LIVE sentinel) — "
+    "every doubled review site ran single-Claude across the entire fleet on 2026-07-16 "
+    "and will for ~3 more weeks"
+)
+
+
+def _held_item(slug: str, title: str, bug: str) -> dict:
+    return make_item(slug, route=3, title=title, bug=bug)
+
+
+def test_route3_open_daily_held_overlap_dedups_no_filing(tmp_path, tasks_root, capsys):
+    # Candidate tokens: {quota, decision, alpha} (title) | {widget, quota, exceeds,
+    # gadget, budget, threshold} (bug). Task tokens: {widget, budget, review} (title) |
+    # {decide, gadget, policy} (origin). Shared = {widget, budget, gadget} — EXACTLY 3,
+    # pinning the >= boundary at ROUTE3_MIN_SHARED_TOKENS (a <-vs-<= off-by-one flips it).
+    item = _held_item(
+        "held-a",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        77,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []  # zero filer subprocesses
+    (row,) = ledger_rows(d)
+    assert row["outcome"] == "already-tracked"
+    assert row["against"] == 77
+    assert row["against_title"] == "daily-held: widget budget review"
+    assert sorted(row["shared"]) == ["budget", "gadget", "widget"]
+    assert len(row["shared"]) == ddf.ROUTE3_MIN_SHARED_TOKENS  # exact-boundary pin
+    assert row["route"] == 3 and "ts" in row
+    assert "ALREADY-TRACKED held-a -> #77" in capsys.readouterr().out
+
+
+def test_route3_two_shared_tokens_files_as_today(tmp_path, tasks_root):
+    # Threshold boundary: shared = {widget, gadget} — exactly 2 < 3 — files normally.
+    item = _held_item(
+        "held-b",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        78,
+        title="daily-held: widget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_all_stopword_tokens_files_as_today(tmp_path, tasks_root):
+    # An all-stopword/short-token candidate yields an EMPTY token set -> the
+    # `if not cand: return None` branch: no dedup possible, files as today.
+    item = _held_item(
+        "held-empty",
+        "daily-held: the for and",
+        "with that from into when only over the",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        79,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dedup_fail_open_files(tmp_path, tasks_root, capsys, monkeypatch):
+    # Seam-stub of the added scan (fail-open contract); production-body coverage of
+    # the real scan comes from the overlap/boundary/population/replay tests around it.
+    def raiser(*_a, **_k):
+        raise RuntimeError("synthetic scan explosion")
+
+    monkeypatch.setattr(ddf, "find_open_daily_held_duplicate", raiser)
+    item = _held_item("held-c", "daily-held: widget budget review", "widget budget gadget")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0  # fail-open: the scan error never changes the exit code
+    err = capsys.readouterr().err
+    assert "fail-open, filing proceeds (#1483)" in err
+    assert "RuntimeError" in err
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dedup_ignores_closed_and_untagged(tmp_path, tasks_root):
+    # Population gate: a high-overlap CLOSED task and a high-overlap open task
+    # WITHOUT the daily-held tag both stay out of the scan population -> files.
+    item = _held_item(
+        "held-d",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "completed",
+        80,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        81,
+        title="daily-held: widget budget review",
+        tags=["needs-human"],  # daily-held tag ABSENT
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dry_run_prints_already_tracked_no_writes(tmp_path, tasks_root, capsys):
+    item = _held_item(
+        "held-e",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        82,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    assert "ALREADY-TRACKED held-e -> #82" in capsys.readouterr().out
+    assert not (d / "filed.jsonl").exists()  # dry-run stays ledger-write-free
+    assert filer_calls(d) == []
+
+
+def test_route3_replay_1140_1472_pair_dedups(tmp_path, tasks_root, capsys):
+    # Quantitative acceptance (plan #1483 §6.1): the REAL #1140/#1472 pair replays
+    # as a dedup hit with wide margin (measured 7 shared tokens vs threshold 3).
+    make_task(
+        tasks_root,
+        "proposed",
+        1140,
+        title=TITLE_1140,
+        tags=["daily-held"],
+        origin_prompt=ORIGIN_1140,
+    )
+    item = _held_item("codex-outage-refile", TITLE_1472, BUG_1472)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []
+    (row,) = ledger_rows(d)
+    assert row["outcome"] == "already-tracked"
+    assert row["against"] == 1140
+    assert len(row["shared"]) >= ddf.ROUTE3_MIN_SHARED_TOKENS  # measured 7 on the real texts
+    assert {"codex", "quota"} <= set(row["shared"])
+    assert "ALREADY-TRACKED codex-outage-refile -> #1140" in capsys.readouterr().out
+
+
+def test_route3_already_tracked_is_terminal_on_resume(tmp_path, tasks_root, capsys):
+    item = _held_item(
+        "held-g",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        83,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert ledger_rows(d)[-1]["outcome"] == "already-tracked"
+    capsys.readouterr()
+    # Re-invocation: already-tracked is TERMINAL (TERMINAL_OUTCOMES membership).
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert "SKIP held-g" in capsys.readouterr().out
+    assert len(ledger_rows(d)) == 1  # no new rows on resume
+    assert filer_calls(d) == []
+
+
+def test_route2_not_scanned_for_daily_held_overlap(tmp_path, tasks_root):
+    # Scope: route-3-only. A route-2 item overlapping an open daily-held task by
+    # >= 3 tokens still files normally (route 2 keeps exact fp-dedup only).
+    item = make_item(
+        "fix-overlap",
+        route=2,
+        title="daily-fix: widget budget gadget review",
+        bug="widget budget gadget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        84,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    assert not any(r["outcome"] == "already-tracked" for r in rows)
+    assert len(filer_calls(d)) == 1

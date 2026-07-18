@@ -44,6 +44,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -118,6 +119,7 @@ DUPLICATE_DISPATCH_NOTE_SENTINEL = "[spawn-session:duplicate-dispatch-suppressed
 DISPATCH_LEASE_HELD_SENTINEL = "DISPATCH-LEASE HELD"
 REGISTRATION_COLLISION_SENTINEL = "REGISTRATION-COLLISION"
 TAKEOVER_HELD_SENTINEL = "TAKEOVER-SENTINEL HELD"
+AUTH_OUTAGE_HELD_SENTINEL = "AUTH-OUTAGE HELD"
 
 # ─── deliberate-takeover sentinel (#866/#903) ────────────────────────────────
 #
@@ -144,8 +146,8 @@ FUTURE_MTIME_SLACK_S = 300.0
 def spawn_output_suppressed(stdout: str | None) -> str | None:
     """Which duplicate-suppression sentinel (if any) a rc-0 ``spawn-issue
     --auto`` subprocess printed: :data:`DISPATCH_LEASE_HELD_SENTINEL` /
-    :data:`REGISTRATION_COLLISION_SENTINEL` / :data:`TAKEOVER_HELD_SENTINEL`,
-    else ``None`` (a real spawn).
+    :data:`REGISTRATION_COLLISION_SENTINEL` / :data:`TAKEOVER_HELD_SENTINEL` /
+    :data:`AUTH_OUTAGE_HELD_SENTINEL`, else ``None`` (a real spawn).
 
     Shared by the watcher's dispatch/respawn callers + the file-time filer so
     a suppressed no-op is never booked as a successful spawn — no dispatch
@@ -156,6 +158,7 @@ def spawn_output_suppressed(stdout: str | None) -> str | None:
         DISPATCH_LEASE_HELD_SENTINEL,
         REGISTRATION_COLLISION_SENTINEL,
         TAKEOVER_HELD_SENTINEL,
+        AUTH_OUTAGE_HELD_SENTINEL,
     ):
         if sentinel in stdout:
             return sentinel
@@ -215,6 +218,113 @@ def takeover_sentinel_fresh(
             if now - mt < ttl and mt > best_mtime:
                 best, best_mtime = p, mt
     return best
+
+
+# ─── auth-outage dispatch hold (#1027 episode gate → #1218 choke-point leg) ──
+#
+# READ-ONLY mirror of the watcher gate's read side
+# (autonomous_session_watch._auth_outage_spawn_gate, #1027): while the
+# watcher-written episode singleton ~/.eps-autonomous/auth-outage.json is
+# ACTIVE and inside its fail-open TTL, every fresh automated session dies on
+# arrival, so automated spawns are held at this choke point too. The watcher's
+# canary probe passes: the watcher persists canary_pending BEFORE shelling out
+# to `spawn-issue --auto`, and this gate allows any spawn matching a fresh
+# canary_pending claim. NEVER writes state; FAIL-OPEN on every uncertain input.
+# Constants are deliberate DUPLICATES of the watcher's (importing the watcher
+# here would be circular — it imports registry constants from THIS module);
+# parity is pinned by tests/test_spawn_session_auth_outage_gate.py.
+
+AUTH_OUTAGE_STATE_FILENAME = "auth-outage.json"
+AUTH_OUTAGE_TTL_H_DEFAULT = 6.0  # watcher: AUTH_OUTAGE_MAX_EPISODE_S (asw:6103)
+AUTH_OUTAGE_TTL_H_BOUNDS = (1.0, 48.0)
+AUTH_OUTAGE_CANARY_MIN_DEFAULT = 30.0  # watcher: AUTH_OUTAGE_CANARY_INTERVAL_S (asw:6094)
+AUTH_OUTAGE_CANARY_MIN_BOUNDS = (10.0, 720.0)
+
+
+def _bounded_env_float(name: str, default: float, lo: float, hi: float) -> float:
+    """Watcher ``_env_float`` parity (asw:4195): missing/garbled OR out-of-[lo,hi]
+    value falls back to the default — a typo'd override must not move the gate."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default
+    return val if lo <= val <= hi else default
+
+
+def _auth_outage_guard_enabled() -> bool:
+    """Same kill switch as the watcher gate (asw:6127):
+    ``EPM_DISABLE_AUTH_OUTAGE_GUARD`` in {1,true,yes} disables the whole family."""
+    raw = os.environ.get("EPM_DISABLE_AUTH_OUTAGE_GUARD", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _auth_outage_ttl_s() -> float:
+    """Fail-open episode TTL in seconds (watcher parity: asw:6103)."""
+    return (
+        _bounded_env_float(
+            "EPM_AUTH_OUTAGE_MAX_EPISODE_H", AUTH_OUTAGE_TTL_H_DEFAULT, *AUTH_OUTAGE_TTL_H_BOUNDS
+        )
+        * 3600.0
+    )
+
+
+def _auth_outage_canary_window_s() -> float:
+    """Canary-claim freshness window in seconds (watcher parity: asw:6094)."""
+    return (
+        _bounded_env_float(
+            "EPM_AUTH_OUTAGE_CANARY_INTERVAL_MIN",
+            AUTH_OUTAGE_CANARY_MIN_DEFAULT,
+            *AUTH_OUTAGE_CANARY_MIN_BOUNDS,
+        )
+        * 60.0
+    )
+
+
+def auth_outage_dispatch_hold(
+    issue: int, now: float | None = None, registry_dir: Path | None = None
+) -> str | None:
+    """Human-readable hold reason when an ACTIVE #1027 auth-outage episode
+    should hold an automated dispatch for ``issue``, else None (allow).
+
+    FAIL-OPEN, mirroring the watcher gate exactly: kill switch set, state file
+    missing / garbled / non-dict, ``active`` falsy, ``started_ts`` missing or
+    non-numeric, episode past the fail-open TTL, a fresh watcher canary claim
+    for THIS issue, or ANY internal error -> None. ``now``/``registry_dir``
+    injectable for tests (the :func:`takeover_sentinel_fresh` pattern)."""
+    try:
+        if not _auth_outage_guard_enabled():
+            return None
+        reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
+        path = reg / AUTH_OUTAGE_STATE_FILENAME
+        if not path.is_file():
+            return None
+        try:
+            state = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            return None  # unreadable state can never suppress (watcher parity)
+        if not isinstance(state, dict) or not state.get("active"):
+            return None
+        now = time.time() if now is None else now
+        started = state.get("started_ts")
+        ttl = _auth_outage_ttl_s()
+        if not isinstance(started, int | float) or now - started >= ttl:
+            return None  # second fail-open layer: suppression ends at the TTL
+        pending = state.get("canary_pending")
+        if (
+            isinstance(pending, dict)
+            and pending.get("issue") == issue
+            and isinstance(pending.get("ts"), int | float)
+            and 0 <= now - pending["ts"] <= _auth_outage_canary_window_s()
+        ):
+            return None  # watcher-authorized canary probe for this issue — MUST spawn
+        started_iso = datetime.fromtimestamp(started, tz=UTC).isoformat(timespec="seconds")
+        return (
+            f"fleet auth-outage episode ACTIVE (started {started_iso}, "
+            f"fail-open TTL {ttl / 3600:.0f}h)"
+        )
+    except Exception as exc:  # FAIL-OPEN: never crash or block a dispatch path
+        print(f"  auth-outage: dispatch-hold check error (fail-open): {exc}", file=sys.stderr)
+        return None
 
 
 def _dispatch_lease_ttl_s() -> float:
@@ -2005,6 +2115,30 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
             f"  note: fresh takeover sentinel {sentinel} — a deliberate takeover may be "
             f"in flight; proceeding (manual spawns are not gated)"
         )
+    # #1218 (extends #1027): while a fleet-level auth-outage episode is ACTIVE
+    # every fresh automated session dies on arrival — hold automated spawns at
+    # the same choke point as the takeover sentinel. Placed BEFORE lease
+    # acquisition for the same reason as the takeover gate: acquiring then
+    # suppressing would leave a TTL-held lease that would in turn suppress the
+    # watcher's canary probe for this issue. The watcher's own canary passes:
+    # it persists canary_pending BEFORE shelling out to this command
+    # (asw._auth_outage_spawn_gate). Manual spawns warn-and-proceed (the #843
+    # posture — a human recovering the fleet must never be blocked).
+    hold = auth_outage_dispatch_hold(issue)
+    if hold is not None:
+        if args.auto:
+            print(
+                f"{AUTH_OUTAGE_HELD_SENTINEL} issue #{issue}: {hold}; NOT spawning — "
+                f"a fresh session would die on arrival; the watcher canary probes "
+                f"recovery every ~{_auth_outage_canary_window_s() / 60:.0f} min and the "
+                f"episode fail-opens at the TTL. Manual override: "
+                f"EPM_DISABLE_AUTH_OUTAGE_GUARD=1, or clear the episode: "
+                f"rm {AUTONOMOUS_REGISTRY_DIR / AUTH_OUTAGE_STATE_FILENAME}"
+            )
+            return  # exit 0 — suppressed IS dispatch success (#843 M1b semantics)
+        print(
+            f"  note: {hold} — automated spawns are held; proceeding (manual spawns are not gated)"
+        )
     lease: dict[str, Any] | None = None
     if args.auto:
         # #843 M1: atomic per-issue dispatch lease, acquired BEFORE the daemon
@@ -2242,6 +2376,14 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             f"then runs `task.py set-status {issue} approved` — workflow.yaml § "
             f"gates.campaign_brief_approval) or 'running' (respawn re-entry)."
         )
+
+    # #1218: campaign CLI spawns are human/PM-driven off a fresh user approval
+    # (status gate above) — warn-only, never suppress (manual-spawn posture).
+    # The watcher's campaign recovery arm is already unit-gated watcher-side
+    # (#1027 MF-3), so during an episode the watcher never reaches this path.
+    hold = auth_outage_dispatch_hold(issue)
+    if hold is not None:
+        print(f"  note: {hold} — the spawned campaign session may die on arrival; proceeding")
 
     # A campaign session ALWAYS injects HAPPY_INITIAL_PROMPT + claudeArgs (same
     # #685 severity as the --auto issue path). Verify the daemon patch is

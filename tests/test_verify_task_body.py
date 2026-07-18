@@ -117,7 +117,7 @@ def test_good_body_passes_all():
     # `check_v4_result_paragraph_sentences` WARN (#1368); check 20 v4
     # `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the ELEVEN
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the TWELVE
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -150,12 +150,16 @@ def test_good_body_passes_all():
     # `meta["text"]` block could resolve even if a sidecar did), and
     # check 40 (`check_hf_unpinned_count_claims`, WARN), a vacuous PASS
     # here because no backtick `dir/` + count-paren claim appears in the
-    # fixture, so ZERO Hub probes are issued even before the fence.
+    # fixture, so ZERO Hub probes are issued even before the fence, and
+    # check 41 (`check_figure_sidecar_coverage`, WARN), a NO-OP
+    # "no same-repo sha-pinned figures to check" PASS here because the
+    # fixture's only figure pins a fake sha (`_git_object_exists` returns
+    # 'skip', so the figure never passes the PNG-resolves scope gate).
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (41 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (42 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -171,16 +175,18 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 54 results total (2 prepended + CHECKS[1:]=41 + 11 appended; check 36
+    # 55 results total (2 prepended + CHECKS[1:]=42 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
-    # `check_v4_sample_disclosure_count` (#1421), and check 40
-    # `check_hf_unpinned_count_claims` (#1433) ride CHECKS; 36/37/39
-    # PASS-skip here — not a v4 body — and 40 is the vacuous PASS above). The
+    # `check_v4_sample_disclosure_count` (#1421), check 40
+    # `check_hf_unpinned_count_claims` (#1433), and check 41
+    # `check_figure_sidecar_coverage` (#1478) ride CHECKS; 36/37/39
+    # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
+    # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 54
+    assert len(results) == 55
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -194,6 +200,7 @@ def test_good_body_passes_all():
     assert "figure beat claims vs sidecar rendered text (series-structure drift)" in {
         r.name for r in results
     }
+    assert "figure sidecar coverage (sidecar-less embedded figures)" in {r.name for r in results}
 
 
 def test_missing_confidence_tag():
@@ -3711,12 +3718,24 @@ _HF_40_NAME = "backtick HF-path count claims carry an adjacent pinned /tree link
 
 # The verbatim #1345 footer sentence (body.md L189, the incident shape):
 # `rejudge/` (2 files) extracts via the `issue1345_framing/...` parent
-# anchor + the "HF" cue; `raw_completions/stories` (16 files) is the
-# documented no-trailing-slash recall sacrifice.
+# anchor + the "HF" cue; `raw_completions/stories` (16 files) — no trailing
+# slash — was the documented recall sacrifice until #1487's slashless arm
+# and now extracts via the same parent anchor.
 _I1345_UNPINNED_LINE = (
     "Round data on HF under `issue1345_framing/assistant_named_story/` — "
     "`raw_completions/stories` (16 files) and `rejudge/` (2 files), verified live via "
     "scoped `list_repo_tree` (stories at data-repo revision `debcdda045`)."
+)
+
+# The TRUE verbatim pre-patch #1345 story-slot-ablation footer clause —
+# provenance: `git show 003078e125:tasks/followups_running/1345/body.md`
+# (the shape check 40 silently passed pre-#1487): a SLASHLESS subpath
+# token under the unlinked backtick parent prefix, plus a bare-paren `(8)`
+# sibling claim in the same clause (the declared #1487 D3 residual).
+_I1345_SLOT_ABLATION_LINE = (
+    "Round data on HF under `issue1345_framing/story_slot_ablation/` — verified live via "
+    "scoped listing: `analysis_tensors/turnstore` (10 files), `analysis_tensors/preds_cache` "
+    "(8)."
 )
 
 
@@ -3725,13 +3744,22 @@ def test_hf_unpinned_count_claim_warns_missing_pin_1345_shape(monkeypatch):
     #1345 footer sentence produces a check-40 WARN naming the missing pin,
     the `rejudge/` token, and the resolved 2-file count at `main`; overall
     ok STAYS True (WARN never blocks); the probe URL carries the `main`
-    revision (plan assumption 3, mechanically closed)."""
+    revision (plan assumption 3, mechanically closed). Since #1487 the
+    slashless `raw_completions/stories` sibling ALSO extracts — the stub
+    carries its 16 files so BOTH claims read count-consistent (exercising
+    the two-probe path)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
     calls: list = []
     entries = [
         {"path": "issue1345_framing", "type": "directory"},
         {"path": "issue1345_framing/assistant_named_story/rejudge/r0.json", "type": "file"},
         {"path": "issue1345_framing/assistant_named_story/rejudge/r1.json", "type": "file"},
+    ] + [
+        {
+            "path": f"issue1345_framing/assistant_named_story/raw_completions/stories/s{i}.json",
+            "type": "file",
+        }
+        for i in range(16)
     ]
     _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
     body = (
@@ -3745,8 +3773,10 @@ def test_hf_unpinned_count_claim_warns_missing_pin_1345_shape(monkeypatch):
     r = by_name[_HF_40_NAME]
     assert r.passed and r.is_warn
     assert "rejudge" in r.detail
+    assert "raw_completions/stories" in r.detail  # the #1487 slashless arm
     assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
-    assert "2 file(s)" in r.detail and "count consistent" in r.detail
+    assert "2 file(s)" in r.detail and "16 file(s)" in r.detail
+    assert r.detail.count("count consistent") == 2
     assert ok  # WARN never flips overall ok
     # The count probe resolves against the data repo at the moving ref
     # `main` — `_hf_tree_url` interpolates the branch name opaquely.
@@ -3891,17 +3921,24 @@ def test_hf_unpinned_probe_failure_keeps_missing_pin_warn(monkeypatch):
 def test_hf_unpinned_claim_extractor_shapes():
     """Pure extractor (no monkeypatch, no network): resolution arms +
     declines. An issue-prefixed token resolves to itself; the #1345 line
-    yields exactly ONE claim resolved via the parent-anchor join
-    (`raw_completions/stories` — no trailing slash — is the documented
-    recall sacrifice); a cue-only claim extracts unresolvable (None);
-    declines cover the paren-then-HF-link Pattern-B lookahead, fenced code
-    blocks, the distributive `per <word>` qualifier, and dot-segments."""
+    yields TWO claims resolved via the parent-anchor join — the slashless
+    `raw_completions/stories` (the pre-#1487 recall sacrifice, now covered)
+    in body order before `rejudge/`; a cue-only claim extracts unresolvable
+    (None); declines cover the paren-then-HF-link Pattern-B lookahead,
+    fenced code blocks, the distributive `per <word>` qualifier, and
+    dot-segments."""
     gather = verify_task_body._gather_hf_unpinned_count_claims
     assert gather("Uploaded `issue70_abc/raw/` (3 files).") == [
         (3, "files", "issue70_abc/raw/", "issue70_abc/raw")
     ]
     assert gather(_I1345_UNPINNED_LINE) == [
-        (2, "files", "rejudge/", "issue1345_framing/assistant_named_story/rejudge")
+        (
+            16,
+            "files",
+            "raw_completions/stories",
+            "issue1345_framing/assistant_named_story/raw_completions/stories",
+        ),
+        (2, "files", "rejudge/", "issue1345_framing/assistant_named_story/rejudge"),
     ]
     assert gather("Uploaded to the HF data repo: `mystery/` (3 files).") == [
         (3, "files", "mystery/", None)
@@ -3951,6 +3988,135 @@ def test_hf_unpinned_no_failing_checkresult_in_source():
                     assert not (isinstance(kw.value, ast.Constant) and kw.value.value is False), (
                         f"{fn.__name__} constructs CheckResult(passed=False)"
                     )
+
+
+def test_hf_unpinned_slashless_subpath_1345_turnstore_shape(monkeypatch):
+    """THE #1487 regression fixture + durability pin: the TRUE verbatim
+    pre-patch #1345 story-slot-ablation footer clause
+    (`_I1345_SLOT_ABLATION_LINE`) produces a check-40 WARN naming the
+    slashless `analysis_tensors/turnstore` token, the missing pin, and the
+    resolved 10-file count at `main`; overall ok STAYS True. EXACTLY ONE
+    claim extracts — the bare-paren `analysis_tensors/preds_cache` (8)
+    sibling in the SAME clause does NOT (the #1487 D3 declared residual:
+    bare-`(N)` counts stay excluded, a stated deviation from the task
+    Goal's letter)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    assert verify_task_body._gather_hf_unpinned_count_claims(_I1345_SLOT_ABLATION_LINE) == [
+        (
+            10,
+            "files",
+            "analysis_tensors/turnstore",
+            "issue1345_framing/story_slot_ablation/analysis_tensors/turnstore",
+        )
+    ]
+    entries = [
+        # The directory row satisfies check 23's needle probe for the
+        # `_hf_body` feedface link (the sibling 1345-shape test's shape).
+        {"path": "issue1345_framing", "type": "directory"},
+    ] + [
+        {
+            "path": f"issue1345_framing/story_slot_ablation/analysis_tensors/turnstore/t{i}.pt",
+            "type": "file",
+        }
+        for i in range(10)
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = (
+        _hf_body(f"{_I931_REPO}/tree/feedface/issue1345_framing")
+        + "\n"
+        + _I1345_SLOT_ABLATION_LINE
+        + "\n"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_HF_40_NAME]
+    assert r.passed and r.is_warn
+    assert "analysis_tensors/turnstore" in r.detail
+    assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
+    assert "10 file(s)" in r.detail and "count consistent" in r.detail
+    assert "preds_cache" not in r.detail  # D3: the bare-paren `(8)` claim never extracts
+    assert ok  # WARN never flips overall ok
+
+
+def test_hf_unpinned_slashless_extractor_gating():
+    """Pure extractor (no monkeypatch, no network), the #1487 slashless
+    arm: STRONG-arm-only G4 — an issue-prefixed slashless token resolves to
+    itself; a parent-anchored slashless token (incl. the riskiest
+    single-segment form) resolves via the join; a cue-only slashless token
+    DECLINES (no weak HF-cue arm, unlike the slashed shape); dotted final
+    segments (check 32's FILE territory), git-side first segments (G3),
+    and dot-segment paths decline."""
+    gather = verify_task_body._gather_hf_unpinned_count_claims
+    # (a) own issue<N>_ prefix — resolves to itself (already slash-free).
+    assert gather("Uploaded `issue70_abc/raw` (3 files).") == [
+        (3, "files", "issue70_abc/raw", "issue70_abc/raw")
+    ]
+    # (a') single-segment slashless under a binding parent anchor — the
+    # riskiest-FP form, deliberately pinned as EXTRACTING with the parent
+    # join (#1487 §13 amendment 2; the kill-criterion ≥1-`/` fallback would
+    # flip this to a decline and record the narrowing in the docstring).
+    assert gather("HF under `issue5_x/` — `turnstore` (10 files) verified.") == [
+        (10, "files", "turnstore", "issue5_x/turnstore")
+    ]
+    declines = [
+        # (b) cue-only slashless: the weak HF-cue arm never admits slashless.
+        "Uploaded to the HF data repo: `mystery` (3 files).",
+        # (c) dotted FINAL segment = a FILE claim (check 32's territory),
+        # even under a binding parent anchor.
+        "HF under `issue5_x/` — `analysis/pooled.pt` (3 files) verified.",
+        # (d) git-side first segment under an HF parent anchor on the same
+        # line — G3 applies to the slashless shape too.
+        "HF under `issue9_y/` — `eval_results/issue_9` (34 files) in git.",
+        # (e) dot-segment paths would join to a nonexistent probe path (the
+        # leading form is regex-declined; the mid form is gate-declined).
+        "HF under `issue5_x/` — `../x` (2 files) relative.",
+        "HF under `issue5_x/` — `issue5_x/../y` (2 files) relative.",
+    ]
+    for body in declines:
+        assert gather(body) == [], body
+
+
+def test_hf_unpinned_slashless_pinned_adjacent_declines():
+    """A PINNED-adjacent slashless claim stays out of BOTH checks' scope
+    (the stated #1487 bound): check 40's gatherer declines it (G2 — no
+    false missing-pin WARN when the pin IS present) AND check 30's gatherer
+    still requires the trailing slash (Pattern D byte-unchanged — the cheap
+    check-30-unchanged guard). Pure extractor split: zero probes (autouse
+    guard enforces)."""
+    line = (
+        f"Footer: [issue1112 data]({_I931_REPO}/tree/{_I931_SHA}/issue1112_x) — "
+        "`raw_completions` (7,165 files: shards)"
+    )
+    assert verify_task_body._gather_hf_unpinned_count_claims(line) == []
+    assert verify_task_body._gather_hf_count_claims(line) == []
+    r = verify_task_body.check_hf_unpinned_count_claims(line)
+    assert r.passed and not r.is_warn
+    assert "no unpinned" in r.detail
+
+
+def test_hf_unpinned_slashless_multi_item_list():
+    """#1487 design question 4 (§4.4): ONE parent anchor + a comma list of
+    claims (one slashed, two slashless) — every item binds to the anchor
+    within the 400-char bracket-free gap (earlier items' backticks/parens
+    ride in the gap; they are not decline characters); an intervening
+    markdown link before a later item breaks binding for it (bracket rule —
+    conservative decline; slashless has no cue fallback to fall through
+    to)."""
+    gather = verify_task_body._gather_hf_unpinned_count_claims
+    line = "Data under `issue7_p/` — `a/` (1 file), `b/c` (2 files), `d` (3 files)."
+    assert gather(line) == [
+        (1, "file", "a/", "issue7_p/a"),
+        (2, "files", "b/c", "issue7_p/b/c"),
+        (3, "files", "d", "issue7_p/d"),
+    ]
+    line2 = (
+        "Data under `issue7_p/` — `a/` (1 file), `b/c` (2 files), "
+        "[meta](https://example.com/x) and `d` (3 files)."
+    )
+    assert gather(line2) == [
+        (1, "file", "a/", "issue7_p/a"),
+        (2, "files", "b/c", "issue7_p/b/c"),
+    ]
 
 
 # ─── `_hf_tree_pages`: the shared bounded pagination generator (#1186) ─────
@@ -5096,7 +5262,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 42 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 43 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -5112,7 +5278,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the TWELVE generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the THIRTEEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -5159,7 +5325,14 @@ def test_checks_list_size():
     binder returned None — the UNPINNED residue checks 30/32 never see —
     flag the missing /tree/<sha> pin + best-effort count resolution against
     the data repo at the moving ref `main`; incident #1345's `rejudge/`
-    (2 files) footer claim, #1433). The
+    (2 files) footer claim, #1433), and check 41
+    (`check_figure_sidecar_coverage`, WARN: same-repo sha-pinned embedded
+    figures whose PNG resolves at the cited sha but whose sibling
+    `.meta.json` does NOT — the sidecar-less figures checks 24/28/33/34
+    silently skip under the check-24 fail-soft convention; ONE WARN per
+    body naming the basenames; existence-only `git cat-file -e` probes,
+    never a content read; incident #1434's 3 sidecar-less "po" figures,
+    #1478). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -5176,16 +5349,17 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 54 results (2 prepended + CHECKS[1:]=41 +
+    So `verify_text` returns 55 results (2 prepended + CHECKS[1:]=42 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 42 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 43 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
-    `Disclosure: N of M` count reconciliation, #1421 — and check 40
-    `check_hf_unpinned_count_claims` (#1433) ride CHECKS).
+    `Disclosure: N of M` count reconciliation, #1421 — check 40
+    `check_hf_unpinned_count_claims` (#1433) — and check 41
+    `check_figure_sidecar_coverage` (#1478) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 42
+    assert len(verify_task_body.CHECKS) == 43
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -5195,6 +5369,7 @@ def test_checks_list_size():
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -10693,10 +10868,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count is unchanged (belt-and-suspenders beside
-    the migration-history `len(CHECKS)` pin)."""
+    position 7 and the CHECKS count matches the current registry (43 as of
+    check 41, #1478; belt-and-suspenders beside the migration-history
+    `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 42
+    assert len(verify_task_body.CHECKS) == 43
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -11261,6 +11437,120 @@ def test_check28_plain_english_text_block_clean(tmp_path, monkeypatch):
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
+
+_CHECK41_NAME = "figure sidecar coverage (sidecar-less embedded figures)"
+
+
+def _make_repo_with_figure_meta_plus_bare(tmp_path):
+    """Like `_make_repo_with_figure_meta` (hero.png + hero.meta.json), plus
+    an extra `bare.png` committed WITHOUT a sidecar in the same tree — the
+    mixed sidecar-ed / sidecar-less fixture check 41's numerator/denominator
+    test reads; return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo41"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (fig_dir / "hero.meta.json").write_text(json.dumps({"description": "clean"}, indent=2) + "\n")
+    (fig_dir / "bare.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add sidecar-ed hero + sidecar-less bare figure")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def _check41_two_figure_body(sha: str) -> str:
+    """Minimal legacy-shape body embedding TWO same-repo sha-pinned figures
+    under `## TL;DR` (the legacy figure-scan section): hero.png (sidecar-ed)
+    + bare.png (sidecar-less)."""
+    base = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/"
+    )
+    return f"# Title\n\n## TL;DR\n\n![hero]({base}hero.png)\n\n![bare]({base}bare.png)\n"
+
+
+def test_check41_sidecar_missing_warns(tmp_path, monkeypatch):
+    """PNG committed WITHOUT a sidecar → WARN (passed=True, is_warn=True)
+    naming the basename + the skipped checks; must not flip the body's
+    overall verdict. THE durability pin for #1478."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # PNG only, no .meta.json
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK41_NAME]
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail and "24/28/33/34" in res.detail
+    assert "1 sidecar-less" in res.detail
+    assert _CHECK41_NAME not in {r.name for r in results if not r.passed}
+
+
+def test_check41_sidecar_present_passes_clean(tmp_path, monkeypatch):
+    """PNG + sidecar committed → clean PASS (no WARN)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, {"description": "clean"})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all carry sidecar files" in res.detail
+
+
+def test_check41_repo_unresolved_noop_pass(monkeypatch):
+    """Offline / --body-stdin → NO-OP PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_figure_sidecar_coverage(_CHECK24_BODY)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail
+
+
+def test_check41_unresolvable_sha_skips(tmp_path, monkeypatch):
+    """The cited sha does not resolve (fake sha vs a real repo) → the figure
+    is skipped (check 22's domain), NO WARN."""
+    repo, _real_sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_sidecar_coverage(_CHECK24_BODY)  # fake sha kept
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures to check" in res.detail
+
+
+def test_check41_non_same_repo_url_ignored(tmp_path, monkeypatch):
+    """A raw-GitHub figure on ANOTHER owner/repo is out of scope → NO-OP PASS."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "raw.githubusercontent.com/superkaiba/", "raw.githubusercontent.com/otherorg/"
+    )
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
+    """A body mixing a sidecar-ed and a sidecar-less figure (r1 Statistics
+    concern — the numerator/denominator path must not rest on the mutable
+    live #1332 fixture): WARN names ONLY the sidecar-less basename, with
+    denominator 2."""
+    repo, sha = _make_repo_with_figure_meta_plus_bare(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check41_two_figure_body(sha)  # hero.png (sidecar-ed) + bare.png (sidecar-less)
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "bare.png" in res.detail and "hero.png" not in res.detail
+    assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───

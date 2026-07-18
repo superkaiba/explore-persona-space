@@ -1,0 +1,365 @@
+{
+  "commit": "0545f1d42c",
+  "created": "2026-07-18T04:25:07Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "target turn k": 1.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.17479349672794342,
+      "error": 0.026959954947233203,
+      "series": "forecast from the turn-1 state",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "target turn k": 2.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.10724669694900513,
+      "error": 0.023297046124935147,
+      "series": "forecast from the turn-1 state",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "target turn k": 3.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.06238895654678345,
+      "error": 0.02389314975589514,
+      "series": "forecast from the turn-1 state",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "target turn k": 1.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.17479349672794342,
+      "error": 0.026959954947233203,
+      "series": "one-step-ahead forecast (from turn k\u22121)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "target turn k": 2.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.19473831355571747,
+      "error": 0.0264656238257885,
+      "series": "one-step-ahead forecast (from turn k\u22121)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "target turn k": 3.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.20724749565124512,
+      "error": 0.025846219062805167,
+      "series": "one-step-ahead forecast (from turn k\u22121)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "target turn k": 2.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": -0.13210900127887726,
+      "error": 0.07852147258818151,
+      "series": "copy previous answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "target turn k": 3.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1452157348394394,
+      "error": 0.06294115334749222,
+      "series": "copy previous answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "target turn k": 4.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.19255274534225464,
+      "error": 0.05736599639058114,
+      "series": "copy previous answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "target turn k": 2.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1349865198135376,
+      "error": 0.023912853375077245,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "target turn k": 3.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.14851970970630646,
+      "error": 0.024074364081025125,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "target turn k": 4.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.15624621510505676,
+      "error": 0.02514623254537582,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "target turn k": 1.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.17479349672794342,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "target turn k": 2.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.10724669694900513,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "target turn k": 3.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.06238895654678345,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "target turn k": 1.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1473146453499794,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "target turn k": 2.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.08334603756666184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "target turn k": 3.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.03910803906619549,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "target turn k": 1.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2012345552444458,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "target turn k": 2.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.12994012981653214,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "target turn k": 3.955,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.08689433857798577,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "target turn k": 1.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.17479349672794342,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "target turn k": 2.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.19473831355571747,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "target turn k": 3.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.20724749565124512,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "target turn k": 1.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1473146453499794,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "target turn k": 2.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.16929278820753096,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "target turn k": 3.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.18195260167121888,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "target turn k": 1.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2012345552444458,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "target turn k": 2.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.22222403585910797,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "target turn k": 3.985,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2336450397968292,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "target turn k": 2.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": -0.13210900127887726,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "target turn k": 3.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1452157348394394,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "target turn k": 4.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.19255274534225464,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "target turn k": 2.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": -0.21492628753185272,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "target turn k": 3.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.08205097317695617,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "target turn k": 4.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.13407865017652512,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "target turn k": 2.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": -0.057883342355489684,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "target turn k": 3.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2079332798719406,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "target turn k": 4.015,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2488106429576874,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "target turn k": 2.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1349865198135376,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "target turn k": 3.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.14851970970630646,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "target turn k": 4.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.15624621510505676,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "target turn k": 2.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.11114265993237496,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "target turn k": 3.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.12431910559535027,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "target turn k": 4.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.13128210604190826,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "target turn k": 2.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.15896836668252945,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "target turn k": 3.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.17246783375740052,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "target turn k": 4.045,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1815745711326599,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predicting later answers from earlier context states",
+        "xlabel": "target turn k",
+        "ylabel": "held-out skill (R\u00b2 vs corpus-mean baseline)",
+        "legend_labels": [
+          "forecast from the turn-1 state",
+          "one-step-ahead forecast (from turn k\u22121)",
+          "copy previous answer",
+          "prefix-only map"
+        ],
+        "annotations": [
+          "answer-k prediction; 95% bootstrap CIs, n=500 conversations"
+        ],
+        "xticklabels": [
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "forecast from the turn-1 state",
+      "one-step-ahead forecast (from turn k\u22121)",
+      "copy previous answer",
+      "prefix-only map"
+    ]
+  }
+}

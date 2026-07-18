@@ -1,0 +1,375 @@
+{
+  "metadata": {
+    "git_commit": "54302a73db2254fee318ac92ec9d442af8b489d3",
+    "timestamp": "2026-07-18T04:13:31Z",
+    "seed": 1335,
+    "n": 4589,
+    "script": "scripts/issue1335_learning_curves.py",
+    "issue": 1335,
+    "analysis": "learning_curves"
+  },
+  "cell_id": "r0_qa_full__base__all__ctx",
+  "rung": "r0_qa_full",
+  "rung_label": "full-answer Q&A",
+  "family": "qa",
+  "model": "base",
+  "arm": "ctx",
+  "arm_x_key": "x_spanmean",
+  "arm_note": "context arm",
+  "persona": null,
+  "headline_layer": 19,
+  "generation_seed": 42,
+  "lambda_selection": "inner-group-cv",
+  "n_total": 4589,
+  "test_n": 918,
+  "test_group_count": 918,
+  "pool_n": 3671,
+  "n_test_folds": 5,
+  "test_split_seed": 1335,
+  "grid": [
+    200,
+    400,
+    800,
+    1200,
+    1600,
+    2400,
+    3600
+  ],
+  "effective_n_train": [
+    200,
+    400,
+    800,
+    1200,
+    1600,
+    2400,
+    3600,
+    3671
+  ],
+  "n_draws": 5,
+  "points": [
+    {
+      "n_train": 200,
+      "draw": 0,
+      "realized_n": 200,
+      "r2": 0.2335791453425572,
+      "lambda": 1000.0,
+      "subsample_seed": 1355000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 1,
+      "realized_n": 200,
+      "r2": 0.22721909780480953,
+      "lambda": 1000.0,
+      "subsample_seed": 1355001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 2,
+      "realized_n": 200,
+      "r2": 0.24483596281069608,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1355002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 3,
+      "realized_n": 200,
+      "r2": 0.2400570194892936,
+      "lambda": 1000.0,
+      "subsample_seed": 1355003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 4,
+      "realized_n": 200,
+      "r2": 0.23441573983817088,
+      "lambda": 1000.0,
+      "subsample_seed": 1355004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 0,
+      "realized_n": 400,
+      "r2": 0.2934590479200321,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 1,
+      "realized_n": 400,
+      "r2": 0.29374108238976193,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 2,
+      "realized_n": 400,
+      "r2": 0.28268108850709117,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 3,
+      "realized_n": 400,
+      "r2": 0.28663165834257065,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 4,
+      "realized_n": 400,
+      "r2": 0.2918600326466134,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 0,
+      "realized_n": 800,
+      "r2": 0.33497943344017356,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 1,
+      "realized_n": 800,
+      "r2": 0.3347268167622278,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 2,
+      "realized_n": 800,
+      "r2": 0.33409389072698026,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 3,
+      "realized_n": 800,
+      "r2": 0.3342225456559248,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 4,
+      "realized_n": 800,
+      "r2": 0.33707208816159173,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 0,
+      "realized_n": 1200,
+      "r2": 0.3572762584343414,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 1,
+      "realized_n": 1200,
+      "r2": 0.35590082599739614,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 2,
+      "realized_n": 1200,
+      "r2": 0.35738131150879937,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 3,
+      "realized_n": 1200,
+      "r2": 0.36298497936338947,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 4,
+      "realized_n": 1200,
+      "r2": 0.3576163126535232,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1600,
+      "draw": 0,
+      "realized_n": 1600,
+      "r2": 0.37649018233409026,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1495000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1600,
+      "draw": 1,
+      "realized_n": 1600,
+      "r2": 0.37036198264105924,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1495001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1600,
+      "draw": 2,
+      "realized_n": 1600,
+      "r2": 0.37310590747755434,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1495002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1600,
+      "draw": 3,
+      "realized_n": 1600,
+      "r2": 0.3728738914592974,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1495003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1600,
+      "draw": 4,
+      "realized_n": 1600,
+      "r2": 0.37423576302500505,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1495004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 2400,
+      "draw": 0,
+      "realized_n": 2400,
+      "r2": 0.39053784310247197,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1575000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 2400,
+      "draw": 1,
+      "realized_n": 2400,
+      "r2": 0.3897010837015823,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1575001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 2400,
+      "draw": 2,
+      "realized_n": 2400,
+      "r2": 0.3892315857259513,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1575002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 2400,
+      "draw": 3,
+      "realized_n": 2400,
+      "r2": 0.3881947950790311,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1575003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 2400,
+      "draw": 4,
+      "realized_n": 2400,
+      "r2": 0.3902976624230454,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1575004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3600,
+      "draw": 0,
+      "realized_n": 3600,
+      "r2": 0.40631664526413946,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1695000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3600,
+      "draw": 1,
+      "realized_n": 3600,
+      "r2": 0.40558362946962745,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1695001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3600,
+      "draw": 2,
+      "realized_n": 3600,
+      "r2": 0.40580549226946805,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1695002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3600,
+      "draw": 3,
+      "realized_n": 3600,
+      "r2": 0.40633935244730246,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1695003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3600,
+      "draw": 4,
+      "realized_n": 3600,
+      "r2": 0.40599785041711745,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1695004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 3671,
+      "draw": 0,
+      "realized_n": 3671,
+      "r2": 0.40651297614884807,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1702100,
+      "is_full_pool": true
+    }
+  ]
+}

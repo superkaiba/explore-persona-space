@@ -1,0 +1,65 @@
+{
+  "commit": "a145ef3058",
+  "created": "2026-07-17T19:38:50Z",
+  "figsize": [
+    8.0,
+    5.0
+  ],
+  "points": [
+    {
+      "category": "Unmatched\n(parent verdict arms)",
+      "D = positive-only - contrastive\n(pooled non-source judged rate)": 0.2854723926380368,
+      "error": 0.05767136360866085,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Matched-high\n(po@25 vs con@45 new)",
+      "D = positive-only - contrastive\n(pooled non-source judged rate)": 0.4455415821501014,
+      "error": 0.055310546825073026,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Near-matched-low\n(po@10 new vs con@25)",
+      "D = positive-only - contrastive\n(pooled non-source judged rate)": 0.1507309096721049,
+      "error": 0.06106363268713412,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Bare-assistant\nreference (matched)",
+      "D = positive-only - contrastive\n(pooled non-source judged rate)": 0.13248472505091652,
+      "error": 0.06144660894363575,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "persona regime contrast D under dose matching \u2014 verdict lattice: Broader-leakage (Newcombe 95% CIs)",
+        "ylabel": "D = positive-only - contrastive\n(pooled non-source judged rate)",
+        "xticklabels": [
+          "Unmatched\n(parent verdict arms)",
+          "Matched-high\n(po@25 vs con@45 new)",
+          "Near-matched-low\n(po@10 new vs con@25)",
+          "Bare-assistant\nreference (matched)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ]
+  }
+}

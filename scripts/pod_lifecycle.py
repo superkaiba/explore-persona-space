@@ -2557,6 +2557,70 @@ def _guard_upload_verification_before_terminate(
     )
 
 
+def _guard_keep_running_before_terminate(
+    issue: int, *, name_suffix: str | None, force_flag: bool, dry_run: bool
+) -> None:
+    """Refuse the BARE (issue-wide) terminate when the owning task carries
+    the keep-running tag (#1485; CLAUDE.md § Pods: the shield is
+    ISSUE-WIDE). --name-suffix surgical destroys are the operator's
+    explicit single-pod choice and are never blocked. Fail-CLOSED on an
+    unreadable tag (terminate is irreversible; the _wedge_keep_running
+    'unknown' posture), fail-OPEN on task-not-found (ad-hoc pods).
+    DRY-RUN returns BEFORE any task read: the committed pin
+    test_terminate_dry_run_bypasses_guard (tests/test_pod_lifecycle.py)
+    stubs get_task to raise, pinning 'no task inspection in --dry-run'
+    (Phase-2 Statistics Must-Fix #1485)."""
+    if name_suffix is not None:
+        return  # surgical path: allowed
+    if dry_run:
+        # BEFORE the tag read — the existing dry-run pin requires zero
+        # task-state inspection here; the preview proceeds, destroys nothing.
+        print(
+            f"[dry-run] NOTE: a real run would check task #{issue}'s "
+            "keep-running tag and REFUSE this issue-wide terminate if the "
+            "tag is set or unreadable.",
+            file=sys.stderr,
+        )
+        return
+    try:
+        from explore_persona_space.task_workflow import keep_running_tag_state
+    except ImportError:
+        state: bool | None = None  # unknowable -> fail closed
+    else:
+        state = keep_running_tag_state(issue)
+    if state is False:
+        return
+    if force_flag:
+        print(
+            "[pod_lifecycle] WARN: terminating ALL pods for issue "
+            f"#{issue} DESPITE keep-running state={state!r} because "
+            "--force-keep-running was passed. A live follow-up / parallel "
+            "suffixed pod on this issue WILL be destroyed.",
+            file=sys.stderr,
+        )
+        return
+    if state is True:
+        raise SystemExit(
+            f"REFUSED: issue-wide terminate for task #{issue} - the task "
+            f"carries the 'keep-running' tag, the documented Step-8 teardown "
+            f"shield (CLAUDE.md § Pods; a live follow-up / parallel pod may "
+            f"depend on this issue's pods; incident 2026-07-17: "
+            f"pod-1345-onpolicy destroyed mid-launch by an issue-wide sweep).\n"
+            f"  Destroy ONE pod surgically: pod.py terminate --issue {issue} "
+            f"--name-suffix <slug>\n"
+            f"  Drop the shield first:      uv run python scripts/task.py "
+            f"remove-tag {issue} keep-running\n"
+            f"  Deliberate override:        re-run with --force-keep-running "
+            f"(logs a loud warning)."
+        )
+    raise SystemExit(  # state is None
+        f"REFUSED: issue-wide terminate for task #{issue} - the keep-running "
+        f"tag state could not be read (task state unreadable), and terminate "
+        f"is irreversible. Fix the task read (task.py view {issue}) or re-run "
+        f"with --force-keep-running to override deliberately."
+    )
+
+
 def _live_pods_for_issue(issue: int) -> list[PodInfo]:
     """All live RunPod pods whose managed name resolves to ``issue``.
 
@@ -2635,8 +2699,11 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
     WITHOUT touching the sibling ``pod-<N>``'s volume. The bare form keeps
     its documented semantics: issue-level teardown destroys EVERY live pod
-    whose name resolves to the issue, suffixed follow-up pods included (a
-    round that must survive Step 8 sets the task-level ``keep-running`` tag).
+    whose name resolves to the issue, suffixed follow-up pods included; the
+    bare form REFUSES when the owning task carries the task-level
+    ``keep-running`` tag (#1485 — the mechanically-enforced Step-8 shield;
+    ``--force-keep-running`` overrides, ``--name-suffix`` surgical destroys
+    are never blocked).
 
     The live RunPod API is authoritative for pod existence (CLAUDE.md
     "Authority split"). We terminate by the LIVE pod_id of every pod whose
@@ -2645,6 +2712,21 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     authority — it can be stale when an external dispatcher (or a prior
     crashed provision) left a duplicate on the account.
     """
+    # getattr: hand-built Namespaces predate the flags; argparse always sets them.
+    name_suffix = getattr(args, "name_suffix", None)
+
+    # #1485 keep-running teardown shield — FIRST, before the upload-verify
+    # guard: a shielded issue must refuse before the operator is told to run
+    # the upload verifier (whose refusal message prescribes actions that are
+    # moot under the shield). ISSUE-scoped; --name-suffix surgical destroys
+    # are never blocked; --dry-run previews without any task read.
+    _guard_keep_running_before_terminate(
+        args.issue,
+        name_suffix=name_suffix,
+        force_flag=getattr(args, "force_keep_running", False),
+        dry_run=args.dry_run,
+    )
+
     # Refuse to destroy an experiment pod whose artifacts haven't been
     # upload-verified. Standard /issue Step 8 flow posts the PASS marker
     # BEFORE calling terminate, so the gate is silent on the happy path.
@@ -2656,8 +2738,6 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
     )
 
-    # getattr: hand-built Namespaces predate the flag; argparse always sets it.
-    name_suffix = getattr(args, "name_suffix", None)
     target = _canonical_pod_name(args.issue, name_suffix) if name_suffix else None
 
     live_matches = _live_pods_for_issue(args.issue)
@@ -2892,6 +2972,16 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
             "URL on HF Hub / WandB. The normal /issue Step 8 flow posts the "
             "PASS marker before terminate, so the guard is silent on the "
             "happy path."
+        ),
+    )
+    p.add_argument(
+        "--force-keep-running",
+        action="store_true",
+        help=(
+            "Terminate ALL of the issue's pods even though the task carries "
+            "the keep-running tag (or the tag is unreadable). Logs a LOUD "
+            "warning. Automated Step-8 flows must never pass this - the "
+            "remedy there is task.py remove-tag <N> keep-running."
         ),
     )
     p.set_defaults(func=cmd_terminate)

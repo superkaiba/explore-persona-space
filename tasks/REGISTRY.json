@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1483,
+  "highest_id": 1507,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -202,8 +202,8 @@
     "1023": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1023",
-      "status": "proposed",
+      "path": "tasks/completed/1023",
+      "status": "completed",
       "title": "daily-held: decide ruff-debt burn-down (2149 errors)"
     },
     "1024": {
@@ -307,15 +307,15 @@
     "1038": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1038",
-      "status": "proposed",
+      "path": "tasks/blocked/1038",
+      "status": "blocked",
       "title": "daily-held: schedule #681 bind-migration cutover + disk sign-off"
     },
     "1039": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1039",
-      "status": "proposed",
+      "path": "tasks/completed/1039",
+      "status": "completed",
       "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
     },
     "104": {
@@ -517,15 +517,15 @@
     "1065": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1065",
-      "status": "proposed",
+      "path": "tasks/archived/1065",
+      "status": "archived",
       "title": "daily-held: Step 10d task-state merge-conflict contract"
     },
     "1066": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1066",
-      "status": "proposed",
+      "path": "tasks/completed/1066",
+      "status": "completed",
       "title": "daily-held: settle #779-line mapping terminology + writeup b"
     },
     "1067": {
@@ -565,11 +565,11 @@
     },
     "1072": {
       "goal": "Determine whether the depth-increasing own-answer advantage in the context-to-answer-activation map (0.009 at layer 14 to 0.035 at layer 26) and its resistance to 16-token prefix closure at layer 26 are carried by the next-token-identity component of answer activations, by decomposing each per-position target into its projection onto the realized next token's unembedding (logit-lens) direction and the orthogonal complement, and re-reading the own-vs-external gap and closure statistics per component at layers 14/20/23/26 on the frozen Qwen-2.5-7B-Instruct LMSYS pool.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1072",
-      "status": "planning",
-      "title": "Is the late-band own-answer advantage carried by next-token-identity information? Component decomposition of the gap and its closure"
+      "path": "tasks/awaiting_promotion/1072",
+      "status": "awaiting_promotion",
+      "title": "The own-answer advantage and its unclosed layer-26 residual live almost entirely outside the next-token logit-lens direction, falsifying the 1-D output-token-commitment account (HIGH confidence)"
     },
     "1073": {
       "goal": "Measure how the #779 context\u2192answer mapping and its answer-side activations change with decoding regime \u2014 single greedy (temperature 0) vs single stochastic (temp 1.0, top_p 0.95, seed 42) vs 10-rollout-averaged, everything else held at the #779 recipe, in BOTH prefix-based and context-based mapping arms \u2014 to test whether single-greedy targets are an adequate stand-in for rollout-averaged ones (theory plan C11/C12).",
@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1141",
-      "status": "proposed",
+      "path": "tasks/blocked/1141",
+      "status": "blocked",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
@@ -1678,29 +1678,29 @@
     "1215": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1215",
-      "status": "proposed",
+      "path": "tasks/completed/1215",
+      "status": "completed",
       "title": "daily-held: daemon-independent orphan-wrapper sweep"
     },
     "1216": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1216",
-      "status": "proposed",
+      "path": "tasks/completed/1216",
+      "status": "completed",
       "title": "daily-held: arm the #864 zombie namespace veto"
     },
     "1217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1217",
-      "status": "proposed",
+      "path": "tasks/plan_pending/1217",
+      "status": "plan_pending",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
     },
     "1218": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1218",
-      "status": "proposed",
+      "path": "tasks/completed/1218",
+      "status": "completed",
       "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
     },
     "1219": {
@@ -1811,8 +1811,8 @@
     "1232": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1232",
-      "status": "proposed",
+      "path": "tasks/archived/1232",
+      "status": "archived",
       "title": "composer-side trigger-dense pointers for Codex twins"
     },
     "1233": {
@@ -2616,7 +2616,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1335",
       "status": "followups_running",
-      "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE confidence)"
+      "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap, while the base-model gap flips sign across three generation seeds (MODERATE confidence)"
     },
     "1336": {
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
@@ -2693,9 +2693,9 @@
       "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1345",
-      "status": "followups_running",
-      "title": "Narrative-story framing collapses the assistant context\u2192answer map even on identical conversations, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1345",
+      "status": "awaiting_promotion",
+      "title": "Narrative-story framing collapses the assistant context\u2192answer map on identical conversations at every probed read position, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
@@ -3255,8 +3255,8 @@
       "goal": "On Qwen-2.5-7B base + instruct, determine which property of the assistant-chat setting the shared context\u2192answer map is tied to \u2014 the assistant's helpful register (H1) or the assistant speaking to a user (H2) \u2014 by fitting the frozen #825 ridge recipe (held-out conv-grouped K-fold; prefix-based AND context-based arms) on on-policy answers to the same 4724-conv LMSYS pool under framing cells that decouple the two properties (rude-but-informative dialogue, evasive dialogue, helpful-instruction control, addressee-free exposition, non-user-addressee dialogue), reading map identity against the chat-template reference via the #825 similarity battery (bidirectional transfer R\u00b2, linear reparameterization recovery, raw + rotation-aligned cosine).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1417",
-      "status": "planning",
+      "path": "tasks/running/1417",
+      "status": "running",
       "title": "Which property scopes the shared assistant context\u2192answer map: helpful register, or speaking to a user?"
     },
     "1418": {
@@ -3326,8 +3326,8 @@
       "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1426",
-      "status": "planning",
+      "path": "tasks/running/1426",
+      "status": "running",
       "title": "Third-lineage CoT-decomposition replication on DeepSeek-R1-Distill-Llama-8B (non-Qwen base)"
     },
     "1427": {
@@ -3383,8 +3383,8 @@
       "goal": "Install the writing_style behavior (casual, informal register) as a persona-vectors-style (context, behavior) LoRA organism via the #1090 factory recipe, and measure whether it installs across training contexts. Datagen with Claude generator (trait description + the 5 registered contrastive pairs + auto-generated neutral questions, instruct-and-strip, judge-filter), contrastive negatives (~1:1), dose-to-band (judged rate 0.60-0.85) with the learning-rate lever (1e-5 to 1e-4) that unlocked impolite. Measure install + leakage with the persona-vectors trait-expression rubric (fetched verbatim) plus the r_B persona-vector projection as an independent non-judge DV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1434",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1434",
+      "status": "awaiting_promotion",
       "title": "Casual writing style installs from every training context at the lowest learning rate tested, but the persona-vector projection fails validation as an install meter (MODERATE confidence)"
     },
     "1435": {
@@ -3670,8 +3670,8 @@
     "1471": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1471",
-      "status": "running",
+      "path": "tasks/completed/1471",
+      "status": "completed",
       "title": "daily-held: non-managed EXITED pod reaping decision"
     },
     "1472": {
@@ -3684,8 +3684,8 @@
     "1473": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1473",
-      "status": "proposed",
+      "path": "tasks/archived/1473",
+      "status": "archived",
       "title": "daily-held: fix sudo choom for lint-gate earlyoom shield"
     },
     "1474": {
@@ -3719,8 +3719,8 @@
     "1478": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1478",
-      "status": "reviewing",
+      "path": "tasks/completed/1478",
+      "status": "completed",
       "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
     },
     "1479": {
@@ -3740,32 +3740,76 @@
     "1480": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1480",
-      "status": "planning",
+      "path": "tasks/completed/1480",
+      "status": "completed",
       "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
     },
     "1481": {
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1481",
-      "status": "planning",
+      "path": "tasks/running/1481",
+      "status": "running",
       "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
     },
     "1482": {
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1482",
-      "status": "planning",
+      "path": "tasks/running/1482",
+      "status": "running",
       "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
     },
     "1483": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1483",
-      "status": "proposed",
+      "path": "tasks/completed/1483",
+      "status": "completed",
       "title": "workflow-fix: /daily route-3 filings dedup against open daily-held tasks"
+    },
+    "1484": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1484",
+      "status": "completed",
+      "title": "workflow-fix: daily sweep counts warn firings, not command-text echoes"
+    },
+    "1485": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1485",
+      "status": "completed",
+      "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
+    },
+    "1486": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/on_hold/1486",
+      "status": "on_hold",
+      "title": "ruff residual burn-down: ~33 errors + 17 format-dirty files (post-#1023 scoping)"
+    },
+    "1487": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1487",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body Check 40 misses subpath (N files) counts under unlinked backtick prefixes"
+    },
+    "1488": {
+      "goal": "Determine whether an implanted conditional behavior ('do Y only under trigger condition T') is detectable \u2014 and its trigger identity and dose decodable \u2014 from the model's pre-query prompt states under NON-trigger conditions, using band-stopped persona-gated marker organisms (known ground-truth conditionality, graded install dose) with matched-install unconditional organisms as the critical control. H1 (interaction-hiding): non-trigger prompt states are clean, detection fails at matched install. H2 (policy-leaves-a-trace): detection survives even where measured behavioral leakage ~ 0. Either answer bounds what prompt-time monitoring can catch.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1488",
+      "status": "proposed",
+      "title": "Pre-trigger detectability of conditional implants from prompt states (band-stopped marker organisms, prefix-end + context arms)"
+    },
+    "1489": {
+      "goal": "Characterize how the pre-generation context\u2192answer-state transport map h (c(x)\u2192v(x); ridge primary, MLP secondary) changes when contexts are augmented with facts, instructions, personas, and formatting constraints \u2014 distinguishing movement within a fixed map from changes of the map (5\u00d75 transport-transfer matrix), testing additivity/effective-rank of augmentation deltas, testing whether relevance gating is captured linearly \u2014 and whether delivering the same information in-weights via dose-matched context distillation produces the same per-example answer-state shift, preserves relevance gating, and leaves the pre-finetuning map valid on the finetuned model.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1489",
+      "status": "running",
+      "title": "Context-augmentation effects on the context\u2192answer-state transport map + dose-matched context-distillation in-weights comparison"
     },
     "149": {
       "has_clean_result": false,
@@ -3773,6 +3817,77 @@
       "path": "tasks/completed/149",
       "status": "completed",
       "title": "Workflow improvement"
+    },
+    "1490": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1490",
+      "status": "completed",
+      "title": "workflow-fix: GCP queue-vanish failover must launch workload + re-point handle or tear down pod"
+    },
+    "1491": {
+      "goal": "On the Qwen-2.5-Instruct scale ladder (0.5B, 1.5B, 3B, 7B, 14B, 32B; 7B = the #779 fitter-fair-comparison-n1m anchor), measure how the context\u2192answer map h: c(x) \u2192 v(x) (pre-generation context representation \u2192 mean-own-response activation profile at a depth-matched layer) changes with model scale: per scale, generate each model's OWN responses to the SAME LMSYS+WildChat contexts (pinned splits, matched train-n), fit the same linear (ridge) + nonlinear (MLP) maps in BOTH mapping arms (prefix-based and context-based), and report held-out test R\u00b2 (variance-weighted, the #779 metric) vs scale \u2014 does the model's behavior, as summarized by its answer activation profile, get more predictable from its pre-generation context representation as scale grows; does the linear-vs-nonlinear gap (0.754 vs 0.810 at 7B) shrink or grow; and is the trend robust to layer choice (depth-fraction-matched primary, per-scale val-selected sweep secondary), train-set size (matched-n primary, R\u00b2-vs-n curves), and the dimension/response-length confounds?",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/plan_pending/1491",
+      "status": "plan_pending",
+      "title": "Does the context\u2192answer map get more predictable with model scale? (Qwen-2.5-Instruct 0.5B\u219232B)"
+    },
+    "1492": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1492",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md bullet \u2014 SAE reference-eval token-pool semantics (remove_bos + outlier filter)"
+    },
+    "1493": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1493",
+      "status": "planning",
+      "title": "daily-fix: extend squash-first merge routing to experiments"
+    },
+    "1494": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1494",
+      "status": "proposed",
+      "title": "daily-fix: vm_disk_guard tier-e nonfinite env clamp"
+    },
+    "1495": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1495",
+      "status": "proposed",
+      "title": "daily-fix: bracket CLAUDE.md pgrep ownership exemplar"
+    },
+    "1496": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1496",
+      "status": "proposed",
+      "title": "daily-fix: 9c selector rules-to-prose-pin-test mapping"
+    },
+    "1497": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1497",
+      "status": "proposed",
+      "title": "daily-fix: route-3 needs-human tag dropped at filing"
+    },
+    "1498": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1498",
+      "status": "proposed",
+      "title": "daily-fix: 9c selector misses literal-path pinning tests"
+    },
+    "1499": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1499",
+      "status": "proposed",
+      "title": "daily-fix: alias step 9b to 9b-same in post_step_completed"
     },
     "15": {
       "has_clean_result": false,
@@ -3787,6 +3902,62 @@
       "path": "tasks/completed/150",
       "status": "completed",
       "title": "Add CoT to ARC C and misalignment and refusal and sycophancy"
+    },
+    "1500": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1500",
+      "status": "proposed",
+      "title": "daily-fix: mechanical inline payload lint gate pre-push"
+    },
+    "1501": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1501",
+      "status": "planning",
+      "title": "daily-fix: repo-root guard heredoc payload false positive"
+    },
+    "1502": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1502",
+      "status": "proposed",
+      "title": "daily-fix: open wf-fix sibling advisory at filing time"
+    },
+    "1503": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1503",
+      "status": "proposed",
+      "title": "daily-fix: windowed-read duty for first-pass guard briefs"
+    },
+    "1504": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1504",
+      "status": "proposed",
+      "title": "daily-fix: LESSONS ratchet constant conflict magnet"
+    },
+    "1505": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1505",
+      "status": "running",
+      "title": "workflow-fix: bind parenthetical HF file-count claims after pinned /tree links"
+    },
+    "1506": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1506",
+      "status": "proposed",
+      "title": "workflow-fix: check-28 opaque-code classes for bare H<d> + f16/l16 tokens"
+    },
+    "1507": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1507",
+      "status": "proposed",
+      "title": "workflow-fix: check 8b body-wide git-URL resolution + git-tree backtick-claims twin"
     },
     "151": {
       "has_clean_result": false,
@@ -8633,8 +8804,8 @@
     "801": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/801",
-      "status": "proposed",
+      "path": "tasks/archived/801",
+      "status": "archived",
       "title": "daily-held: registry/fs inconsistencies (#696/#722/#750/#764/#766) need human-audited repair"
     },
     "802": {
@@ -9830,7 +10001,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/958",
       "status": "awaiting_promotion",
-      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, and at matched ridge shrinkage the turn-1 map also transfers positively to turns 5 through 8 (MODERATE confidence)"
+      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, and the turn-1 exception is an artifact \u2014 exact-duplicate first messages on the main panel, ridge-shrinkage mismatch on the long panel \u2014 so near-stationarity extends to turn 1 (MODERATE confidence)"
     },
     "959": {
       "has_clean_result": false,

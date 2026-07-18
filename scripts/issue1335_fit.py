@@ -146,6 +146,14 @@ def parse_args() -> argparse.Namespace:
         default=Path("eval_results/issue_1335/ladder_summary.json"),
         help="committed seed-42 ladder_summary.json the --seed-compare mode reads",
     )
+    ap.add_argument(
+        "--reference-summary-2",
+        type=Path,
+        default=None,
+        help="OPTIONAL second seed-compare reference (a ladder_summary.json OR a "
+        "prior round's seed_comparison.json — seed44-base-rungs passes the "
+        "committed seed-43 seed_comparison); adds reference_2/cross_seed_2 blocks",
+    )
     ap.add_argument("--verify-vectorized", action="store_true")
     ap.add_argument("--assert-cuda", action="store_true", help="binding on-instance device gate")
     ap.add_argument("--smoke", action="store_true", help="numeric gates recorded, not binding")
@@ -637,9 +645,6 @@ def ensure_store_local(args, slug: str, model_kind: str) -> bool:
     mapping (flat basenames under analysis_tensors/store_<slug>_<model>/);
     downloads via local_dir + os.replace so a later delete actually frees disk.
     Returns True when anything was downloaded."""
-    import os
-    import tempfile
-
     store_dir = store_root(args) / slug / model_kind
     sidecars = _sidecars(args, slug, model_kind)
     assert sidecars, f"no sidecars for {slug}/{model_kind} — capture never ran"
@@ -650,20 +655,19 @@ def ensure_store_local(args, slug: str, model_kind: str) -> bool:
     ]
     if not missing:
         return False
-    from huggingface_hub import hf_hub_download
+    from explore_persona_space.orchestrate import hub
 
     prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
     store_dir.mkdir(parents=True, exist_ok=True)
-    # Staging dir INSIDE store_dir (the issue1335_extract_store.py pattern):
-    # a bare /tmp TemporaryDirectory EXDEV-crashes os.replace onto /workspace
-    # (cross-device), and the non-recursive shard globs cannot see the nested
-    # half-downloaded tree.
-    with tempfile.TemporaryDirectory(dir=store_dir, prefix=".hfstage_") as td:
-        for name in missing:
-            got = hf_hub_download(
-                r1335.HF_DATA_REPO, f"{prefix}/{name}", repo_type="dataset", local_dir=td
-            )
-            os.replace(got, store_dir / name)
+    # Canonical retried + atomic staging (#1402 hub.stage_hub_file): rides
+    # hub.retry_transient — a raw un-retried hf_hub_download here let one
+    # transient HF 429 ("maximum queue size reached") kill attempt
+    # att-20260717-191703 mid-fit. The helper keeps the tempdir-inside-dest
+    # os.replace publish (the #1335 EXDEV gotcha).
+    for name in missing:
+        hub.stage_hub_file(
+            r1335.HF_DATA_REPO, f"{prefix}/{name}", store_dir / name, repo_type="dataset"
+        )
     print(f"[i1335-fit] re-staged {len(missing)} shards for {slug}/{model_kind} from the Hub")
     return True
 
@@ -1141,17 +1145,91 @@ def _cross_seed_delta(new: dict | None, ref: dict | None) -> dict | None:
     }
 
 
+def _ref_headline(ref: dict, ref_label: str, model_kind: str) -> tuple[dict, dict]:
+    """Reference (gap, framing) delta dicts — shape-tolerant across the TWO
+    committed reference kinds: a ladder_summary.json (per_model.<mk>.gap.G +
+    .deltas.framing) or a prior round's seed_comparison.json
+    (per_model.<mk>.gap_G + .framing). Fail-loud on a reference carrying
+    NEITHER shape for the requested model — a model absent from the reference
+    is a caller scope error, never silently tolerated (the 4fc950e83e
+    fail-loud-reference-fields discipline, extended to both shapes)."""
+    ref_m = ref.get("per_model", {}).get(model_kind) or {}
+    gap = (ref_m.get("gap") or {}).get("G") or ref_m.get("gap_G")
+    framing = (ref_m.get("deltas") or {}).get("framing") or ref_m.get("framing")
+    assert gap is not None, (
+        f"{ref_label}: reference summary lacks per_model.{model_kind} gap "
+        "(neither gap.G nor gap_G present)"
+    )
+    assert framing is not None, (
+        f"{ref_label}: reference summary lacks per_model.{model_kind} framing "
+        "(neither deltas.framing nor framing present)"
+    )
+    return gap, framing
+
+
+def collapse_audit(args, model_kind: str, slug: str = "r7_endpoint") -> dict:
+    """Rollout collapse audit on THIS run's endpoint rollouts (the seed43-round
+    interpretation read, wired into the seed-compare summary): under-floor line
+    counts (n_completion_tokens < DIALOGUE_MIN_TOKENS) total / per-slot /
+    per-persona, plus slot-4 exact-"I agree." counts (the seed-42 collapse
+    signature). Fail-loud on a missing rollout file — seed-compare rounds
+    always generate r7_endpoint, so absence is a pipeline bug, never skipped."""
+    path = r1335.gen_path(args.data_dir, slug, model_kind)
+    assert path.exists(), (
+        f"collapse audit: missing endpoint rollouts {path} — the seed-compare "
+        "round's own fiction generation must have run (fail-loud)"
+    )
+    total = under = slot4_total = slot4_agree = 0
+    per_slot: dict[str, int] = {}
+    per_persona: dict[str, int] = {}
+    agree_per_persona: dict[str, int] = {}
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            total += 1
+            slot = int(row.get("slot", 0))
+            persona = str(row.get("persona", "?"))
+            if int(row["n_completion_tokens"]) < r1335.DIALOGUE_MIN_TOKENS:
+                under += 1
+                per_slot[f"slot{slot}"] = per_slot.get(f"slot{slot}", 0) + 1
+                per_persona[persona] = per_persona.get(persona, 0) + 1
+            if slot == 4:
+                slot4_total += 1
+                if (row.get("completion") or "").strip() == "I agree.":
+                    slot4_agree += 1
+                    agree_per_persona[persona] = agree_per_persona.get(persona, 0) + 1
+    assert total > 0, f"collapse audit: empty rollout file {path}"
+    return {
+        "rollouts": str(path),
+        "dialogue_min_tokens": int(r1335.DIALOGUE_MIN_TOKENS),
+        "n_lines": total,
+        "under_floor_lines": under,
+        "under_floor_pct": round(100.0 * under / total, 2),
+        "under_floor_per_slot": dict(sorted(per_slot.items())),
+        "under_floor_per_persona": dict(sorted(per_persona.items())),
+        "slot4_lines": slot4_total,
+        "slot4_exact_agree": slot4_agree,
+        "slot4_exact_agree_per_persona": dict(sorted(agree_per_persona.items())),
+    }
+
+
 def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
-    """seed43-gap-rungs follow-up read (one variable: generation seed 42→43).
+    """Seed-replication follow-up read (one variable: the generation seed).
 
     For each model, recompute the two headline quantities from THIS run's
     matched-n cells — the matched-answer-length gap G = Δ(r1_qa_oneline,
     r7_endpoint per-persona mean) and the framing delta Δ(r3_persona,
     r4_fictionframe), both L19 ctx, joint-draw CIs (the exact
-    build_ladder_summary pairing) — and compare against the committed seed-42
-    ladder_summary reference. Writes <out-dir>/seed_comparison.json. Reuses
-    _matched_value/_fiction_mean/_delta verbatim; no new statistical machinery
-    beyond the independent-runs variance-sum cross-seed CI."""
+    build_ladder_summary pairing) — and compare against the committed
+    reference(s): the primary --reference-summary (seed-42 ladder_summary)
+    plus an optional --reference-summary-2 (e.g. the committed seed-43
+    seed_comparison; either reference shape accepted, see _ref_headline).
+    Also runs the rollout collapse audit on this run's own endpoint rollouts.
+    Writes <out-dir>/seed_comparison.json. Reuses _matched_value /
+    _fiction_mean / _delta verbatim; no new statistical machinery beyond the
+    independent-runs variance-sum cross-seed CI."""
     ref_path = args.reference_summary
     assert ref_path.exists(), (
         f"--seed-compare reference summary missing: {ref_path} — the committed "
@@ -1159,6 +1237,14 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
         "no-reference comparison)"
     )
     ref = json.loads(ref_path.read_text())
+    ref2_path = getattr(args, "reference_summary_2", None)
+    ref2 = None
+    if ref2_path is not None:
+        assert ref2_path.exists(), (
+            f"--seed-compare second reference missing: {ref2_path} (fail-loud, "
+            "never a silent single-reference comparison when two were requested)"
+        )
+        ref2 = json.loads(ref2_path.read_text())
     per_model: dict = {}
     for model_kind in models:
         kept, yield_report = fiction_kept_personas(args, model_kind, smoke)
@@ -1168,17 +1254,12 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
         r7m = _fiction_mean(args, "r7_endpoint", model_kind, "ctx", kept) if kept else None
         gap = _delta(r1, r7m)
         framing = _delta(r3, r4)
-        ref_m = ref.get("per_model", {}).get(model_kind, {})
-        ref_gap = (ref_m.get("gap") or {}).get("G")
-        ref_framing = (ref_m.get("deltas") or {}).get("framing")
-        assert ref_gap is not None, f"reference summary lacks per_model.{model_kind}.gap.G"
-        assert ref_framing is not None, (
-            f"reference summary lacks per_model.{model_kind}.deltas.framing"
-        )
+        ref_gap, ref_framing = _ref_headline(ref, "reference", model_kind)
         assert kept, f"seed-compare: no kept fiction personas for {model_kind} (below floor)"
-        per_model[model_kind] = {
+        entry = {
             "kept_personas": kept,
             "fiction_yield": yield_report,
+            "collapse_audit": collapse_audit(args, model_kind),
             "rung_values_matched_ctx": {
                 "r1_qa_oneline": r1 and r1["value"],
                 "r3_persona": r3 and r3["value"],
@@ -1194,11 +1275,20 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
                 "framing": _cross_seed_delta(framing, ref_framing),
             },
         }
+        if ref2 is not None:
+            ref2_gap, ref2_framing = _ref_headline(ref2, "reference-2", model_kind)
+            entry["reference_2"] = {"gap_G": ref2_gap, "framing": ref2_framing}
+            entry["cross_seed_2"] = {
+                "gap_G": _cross_seed_delta(gap, ref2_gap),
+                "framing": _cross_seed_delta(framing, ref2_framing),
+            }
+        per_model[model_kind] = entry
     out = {
         "metadata": common.metadata(SCRIPT, args.seed, 0),
         "code_sha": common.git_commit(),
         "gen_seed": r1335.GEN_SEED,
         "headline_layer": c1310.HEADLINE_LAYER,
+        "models_compared": list(models),
         "reference": {
             "path": str(ref_path),
             "code_sha": ref.get("code_sha"),
@@ -1207,10 +1297,23 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
         "per_model": per_model,
         "smoke": bool(smoke),
     }
+    if sorted(models) != sorted(c1310.MODEL_KINDS):
+        out["scope_note"] = (
+            "declared model-subset round: only models_compared were run this round "
+            "(absent models are absent-because-not-run, not missing data)"
+        )
+    if ref2 is not None:
+        out["reference_2"] = {
+            "path": str(ref2_path),
+            "code_sha": ref2.get("code_sha"),
+            "gen_seed": ref2.get("gen_seed"),
+            "note": "second committed reference (dual-reference seed compare)",
+        }
     c1310.write_json(args.out_dir / "seed_comparison.json", out)
     print(
         "[i1335-fit] seed_comparison.json written "
-        f"(gen_seed={r1335.GEN_SEED}; models={list(per_model)})"
+        f"(gen_seed={r1335.GEN_SEED}; models={list(per_model)}; "
+        f"references={1 + (ref2 is not None)})"
     )
     return out
 
