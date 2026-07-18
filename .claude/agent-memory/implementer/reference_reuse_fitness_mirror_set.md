@@ -1,15 +1,16 @@
 ---
 name: Reuse-fitness check mirror set (20 sites)
-description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(k)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
+description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(l)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
 type: reference
 ---
 
 The trained-artifact (and code) reuse fitness check — the lettered set,
-currently (a)-(k) — is mirrored across TWENTY workflow-surface sites, and
+currently (a)-(l) — is mirrored across TWENTY workflow-surface sites, and
 precedent fixes (#600 content-identity, #601 application-scaling, #545
 adapter_config grounding, #734 train-input fetchability (h), #871 code
 throughput (i), #941 pairwise provenance coherence (j), #1366
-parent-lineage coherence (k)) each touched the relevant set in one change:
+parent-lineage coherence (k), #1522 instrument validity-domain transfer
+(l)) each touched the relevant set in one change:
 
 1. `.claude/rules/artifact-reuse.md` — the CANONICAL checklist (the full
    lettered list + the H1/description range + the closing remedy line + the
@@ -55,8 +56,8 @@ parent-lineage coherence (k)) each touched the relevant set in one change:
     DIFFERENT enumeration.
 13. `scripts/verify_plan.py` `check_reuse_fitness` (c6, ~lines 747-790) —
     when the letter range grows, bump the `\(([a-z])\)` regex character
-    class, the `/N` denominator + the count words (now "ten letters" / "ten
-    attestations") in the PASS/WARN strings, and KEEP the `>= 4` PASS
+    class, the `/N` denominator + the count words (now "twelve letters" /
+    "twelve attestations") in the PASS/WARN strings, and KEEP the `>= 4` PASS
     threshold UNCHANGED (a heuristic floor, not the letter count). The
     en-dash range in the WARN strings carries `# noqa: RUF001`; preserve it.
 14. `tests/test_verify_plan.py` — the COUPLED c6 assertions: `"4/N"` in the
@@ -138,11 +139,33 @@ declaration regex GRANDFATHERS the old token via `\([jk]\)` (in-flight plans
 citing "(a)-(j)" still declare — two grandfather test pins kept); and the
 upper-boundary test's decoy letter moved from (k) to (l).
 
+#1522 added item (l): validity-domain transfer of reused fit/analysis
+INSTRUMENTS (incident #1417 × fit825: judge-filtered subsets pushed per-fold
+n_train < d into the GCV-collapse regime the instrument's OWN module
+comments/constants declared, with both registered mitigations —
+`GCV_DOF_CAP`, `lambda_selection="inner-group-cv"` — unengaged; held-out R²
+−0.6…−1.5 vs +0.3…+0.65 on supersets, found only post-run). Scoped to
+INSTRUMENT reuse (the same code class as (i); N/A when no fit/analysis code
+artifact is reused or its docs declare no boundaries), instrument-doc-scoped
+vs (b)'s DV/question scope. Like (i)/(h)(iv)/(k) it routes a NON-default
+remedy — engage-the-registered-mitigation-then-reuse, a FOURTH non-retrain
+remedy branch — so the remedy-split lines were edited again
+(artifact-reuse.md, CLAUDE.md bullet, planner.md step 5,
+critic-lens-reference.md remedy tail). NO gotchas.md sibling bullet
+(deliberate deviation from the (j)/(k) precedent: the incident mechanics
+already live in the instrument's own docstring, which (l) instructs readers
+to read, and the gotchas LESSONS row had only ~22 B headroom); NO
+consistency-checker probe (validity-domain judgment is a methodology-lens
+call, no one-line mechanical probe exists). The c6 regex grandfathers both
+old tokens via `\([jkl]\)`; the decoy letter moved (l) → (m); all three
+widened-class members {j,k,l} carry range-token pins.
+
 Every remedy-split line on the live surfaces is deliberately worded WITHOUT a
-lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)" names letters,
-never a range token) so the stale-range completeness grep stays clean; a
-future letter needs no remedy re-edit ONLY when it routes through the default
-retrain/regenerate branch ((j) did; (k) did not — see the #1366 paragraph).
+lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)/(l)" names
+letters, never a range token) so the stale-range completeness grep stays
+clean; a future letter needs no remedy re-edit ONLY when it routes through
+the default retrain/regenerate branch ((j) did; (k) and (l) did not — see
+the #1366/#1522 paragraphs).
 
 A change targeting only planner.md leaves the independent enforcement passes
 (critic, consistency-checker), the canonical rule file, and the mechanical
