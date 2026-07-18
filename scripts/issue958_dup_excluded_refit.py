@@ -312,6 +312,44 @@ def _shuffle_ro_band(stats: dict) -> dict:
     return {"p025": float(np.quantile(m, 0.025)), "p975": float(np.quantile(m, 0.975))}
 
 
+def _perrow_skill_boot(stats: dict, idx_b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(skill (6,), boot (draws, 6)) per read-out row under the SAME paired resamples.
+
+    Row order is RO = [15, 18, 20, 21, 25, 27] (blocks 14/17/19/20/24/26).
+    """
+    sse = stats["sse_unit"].numpy()
+    null = stats["null_sse_unit"].numpy()
+    br = np.stack(
+        [
+            1.0 - sse[r][idx_b].sum(1) / np.clip(null[r][idx_b].sum(1), 1e-30, None)
+            for r in range(sse.shape[0])
+        ],
+        axis=1,
+    )  # (draws, 6)
+    return stats["skill"].numpy(), br
+
+
+def _blocks(skill: np.ndarray, br: np.ndarray) -> dict:
+    """Per-block {skill, ci95} keyed by read-out block (14/17/19/20/24/26)."""
+    return {
+        C.row_to_block_key(RO[r]): {"skill": float(skill[r]), "ci95": ci95(br[:, r])}
+        for r in range(len(RO))
+    }
+
+
+def _deficit_blocks(
+    own_sk: np.ndarray, own_br: np.ndarray, sub_sk: np.ndarray, sub_br: np.ndarray
+) -> dict:
+    """Per-block deficit {skill, ci95} = own − transfer under paired resamples."""
+    return {
+        C.row_to_block_key(RO[r]): {
+            "skill": float(own_sk[r] - sub_sk[r]),
+            "ci95": ci95(own_br[:, r] - sub_br[:, r]),
+        }
+        for r in range(len(RO))
+    }
+
+
 # ── per-regime computation ──────────────────────────────────────────────────
 
 
@@ -350,12 +388,14 @@ def run_regime(regime: str, full: dict, n_main: int, capture_invalid: set, dup: 
         b = boot_ro_mean(stats["sse_unit"].numpy(), stats["null_sse_unit"].numpy(), idx_b)
         return {"skill": _point_ro_mean(stats), "ci95": ci95(b), "_boot": b}
 
-    # own-turn-1 skill at the three fit sizes
-    own1 = {
-        "foldA": _cell(_skill_stats(maps_A[1], full, 1, test_m, maps_A[1]["ymu"])),
-        "foldB": _cell(_skill_stats(map1_B, full, 1, test_m, map1_B["ymu"])),
-        "full": _cell(_skill_stats(maps_F[1], full, 1, test_m, maps_F[1]["ymu"])),
+    # own-turn-1 skill at the three fit sizes (refit.json cells + per-block sidecar)
+    own1_stats = {
+        "foldA": _skill_stats(maps_A[1], full, 1, test_m, maps_A[1]["ymu"]),
+        "foldB": _skill_stats(map1_B, full, 1, test_m, map1_B["ymu"]),
+        "full": _skill_stats(maps_F[1], full, 1, test_m, maps_F[1]["ymu"]),
     }
+    own1 = {f: _cell(s) for f, s in own1_stats.items()}
+    own1_pr = {f: _blocks(*_perrow_skill_boot(s, idx_b)) for f, s in own1_stats.items()}
 
     # per-row selected lambda of the turn-1 map (as-fitted), both folds
     lam1 = {
@@ -365,18 +405,26 @@ def run_regime(regime: str, full: dict, n_main: int, capture_invalid: set, dup: 
 
     # transfer grid 1->{1,2,3,4} + deficits (as-fitted + matched-lambda), both folds
     grid: dict = {}
+    grid_pr: dict = {}
     for fold, mps, dec1 in (("foldA", maps_A, dec1_A), ("full", maps_F, dec1_F)):
         gcells: dict = {}
+        gcells_pr: dict = {}
         for k in range(1, C.K_MAIN + 1):
             own_k = _skill_stats(mps[k], full, k, test_m, mps[k]["ymu"])
             xfer = _skill_stats(mps[1], full, k, test_m, mps[k]["ymu"])  # turn-1 map at turn k
             own_c, xfer_c = _cell(own_k), _cell(xfer)
+            own_sk, own_br = _perrow_skill_boot(own_k, idx_b)
+            xf_sk, xf_br = _perrow_skill_boot(xfer, idx_b)
             cell = {
                 "own_skill": own_c["skill"],
                 "own_skill_ci95": own_c["ci95"],
                 "transfer_skill": xfer_c["skill"],
                 "transfer_skill_ci95": xfer_c["ci95"],
                 "transfer_shuffle_band": _shuffle_ro_band(xfer),
+            }
+            cell_pr = {
+                "own_skill": _blocks(own_sk, own_br),
+                "transfer_skill": _blocks(xf_sk, xf_br),
             }
             if k != 1:
                 deficit_as = own_c["_boot"] - xfer_c["_boot"]
@@ -387,6 +435,7 @@ def run_regime(regime: str, full: dict, n_main: int, capture_invalid: set, dup: 
                     dec1, mps[k]["best_lam"], full, k, test_m, mps[k]["ymu"]
                 )
                 xm_c = _cell(xfer_m)
+                xm_sk, xm_br = _perrow_skill_boot(xfer_m, idx_b)
                 deficit_m = own_c["_boot"] - xm_c["_boot"]
                 cell["transfer_skill_matched"] = xm_c["skill"]
                 cell["transfer_skill_matched_ci95"] = xm_c["ci95"]
@@ -395,12 +444,17 @@ def run_regime(regime: str, full: dict, n_main: int, capture_invalid: set, dup: 
                 cell["matched_lambda"] = {
                     C.row_to_block_key(r): float(v) for r, v in zip(RO, mps[k]["best_lam"])
                 }
+                cell_pr["transfer_skill_matched"] = _blocks(xm_sk, xm_br)
+                cell_pr["deficit_asfitted"] = _deficit_blocks(own_sk, own_br, xf_sk, xf_br)
+                cell_pr["deficit_matched"] = _deficit_blocks(own_sk, own_br, xm_sk, xm_br)
             gcells[f"1to{k}"] = cell
+            gcells_pr[f"1to{k}"] = cell_pr
         grid[fold] = gcells
+        grid_pr[fold] = gcells_pr
 
     for d in (own1["foldA"], own1["foldB"], own1["full"]):
         d.pop("_boot", None)
-    return {
+    refit_dict = {
         "n_fit": len(fit_m),
         "n_test": len(test_m),
         "n_halfA": len(half_a),
@@ -410,6 +464,13 @@ def run_regime(regime: str, full: dict, n_main: int, capture_invalid: set, dup: 
         "turn1_lambda_asfitted": lam1,
         "grid": grid,
     }
+    perrow_dict = {
+        "n_fit": len(fit_m),
+        "n_test": len(test_m),
+        "own_turn1": own1_pr,
+        "grid": grid_pr,
+    }
+    return refit_dict, perrow_dict
 
 
 def validation_gate(none_regime: dict) -> dict:
@@ -448,6 +509,17 @@ def validation_gate(none_regime: dict) -> dict:
     logger.info("[gate] reproduce-committed max|delta|=%.3e (tol 5e-3)", max_delta)
     assert max_delta < 5e-3, f"validation gate FAILED: max|delta|={max_delta:.3e}"
     return {"max_abs_delta": max_delta, "checks": checks}
+
+
+def _max_float_diff(a: object, b: object) -> float:
+    """Max abs difference over matching float/int leaves of two nested structures."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        return max((_max_float_diff(a[k], b[k]) for k in a if k in b), default=0.0)
+    if isinstance(a, list) and isinstance(b, list):
+        return max((_max_float_diff(x, y) for x, y in zip(a, b)), default=0.0)
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return abs(float(a) - float(b))
+    return 0.0
 
 
 def main() -> int:
@@ -504,9 +576,20 @@ def main() -> int:
     dup_gate = cross_check_committed_dups(dup, test_none)
     logger.info("[dup-gate] committed cross-check PASS: %s", json.dumps(dup_gate))
 
-    regimes = {r: run_regime(r, full, n_main, capture_invalid, dup) for r in REGIMES}
+    regimes: dict = {}
+    regimes_pr: dict = {}
+    for r in REGIMES:
+        regimes[r], regimes_pr[r] = run_regime(r, full, n_main, capture_invalid, dup)
     gate = validation_gate(regimes["none"])
 
+    seeds = {
+        "split": C.SPLIT_SEED,
+        "twin": C.TWIN_SEED,
+        "bootstrap": C.BOOTSTRAP_SEED,
+        "bootstrap_draws": C.BOOTSTRAP_DRAWS,
+        "shuffle": C.SHUFFLE_SEED,
+        "shuffle_draws": C.SHUFFLE_DRAWS,
+    }
     res = {
         "definition": (
             "main-panel turn-1 context->answer ridge map refit with exact-duplicate "
@@ -522,29 +605,59 @@ def main() -> int:
         "duplicate_summary": dup_summary,
         "duplicate_committed_cross_check": dup_gate,
         "validation_gate": gate,
-        "seeds": {
-            "split": C.SPLIT_SEED,
-            "twin": C.TWIN_SEED,
-            "bootstrap": C.BOOTSTRAP_SEED,
-            "bootstrap_draws": C.BOOTSTRAP_DRAWS,
-            "shuffle": C.SHUFFLE_SEED,
-            "shuffle_draws": C.SHUFFLE_DRAWS,
-        },
+        "seeds": seeds,
         "regimes": regimes,
         "metadata": C.reproducibility_metadata({"script": "issue958_dup_excluded_refit"}),
     }
     SUB.mkdir(parents=True, exist_ok=True)
-    C.write_json_atomic(SUB / "refit.json", res)
-    logger.info("wrote %s", SUB / "refit.json")
 
-    # one-line headline log (exact regime, the pre-registered primary)
-    ex = regimes["exact"]
+    # refit.json is the committed clean-result-pinned aggregate — do NOT mutate it.
+    # On a re-run it already exists: load it, and assert the freshly-recomputed
+    # readout-MEAN cells reproduce it to 1e-6 (deterministic ⇒ bit-identical),
+    # then leave the file untouched. Only a first run (absent file) writes it.
+    refit_path = SUB / "refit.json"
+    mean_crosscheck: dict = {"tol": 1e-6}
+    if refit_path.exists():
+        committed = json.loads(refit_path.read_text())
+        delta = _max_float_diff(regimes, committed.get("regimes", {}))
+        mean_crosscheck.update({"committed_refit_present": True, "max_abs_delta": delta})
+        logger.info("[mean-crosscheck] fresh readout-mean vs committed refit.json: %.3e", delta)
+        assert delta < 1e-6, f"readout-mean crosscheck vs committed refit.json FAILED: {delta:.3e}"
+    else:
+        C.write_json_atomic(refit_path, res)
+        mean_crosscheck.update({"committed_refit_present": False, "max_abs_delta": 0.0})
+        logger.info("wrote %s (first run)", refit_path)
+
+    perrow_res = {
+        "definition": (
+            "per-read-out-row (blocks 14/17/19/20/24/26) held-out skill + paired-bootstrap "
+            "95% CI for the duplicate-excluded refit cells — companion to refit.json (which "
+            "stores only the 6-block read-out MEAN). Block 19 is the parent-line frozen best "
+            "layer. Rows in RO order [15,18,20,21,25,27]; keyed by read-out block."
+        ),
+        "corpus_fingerprint": fp,
+        "readout_blocks": C.READOUT_BLOCKS,
+        "n_main": n_main,
+        "duplicate_summary": dup_summary,
+        "readout_mean_crosscheck_vs_committed_refit_json": mean_crosscheck,
+        "validation_gate": gate,
+        "seeds": seeds,
+        "regimes": regimes_pr,
+        "metadata": C.reproducibility_metadata(
+            {"script": "issue958_dup_excluded_refit", "sidecar": "refit_perrow"}
+        ),
+    }
+    C.write_json_atomic(SUB / "refit_perrow.json", perrow_res)
+    logger.info("wrote %s", SUB / "refit_perrow.json")
+
+    # one-line headline log at block 19 (the best layer), exact regime
+    exq = regimes_pr["exact"]
+    gA = exq["grid"]["foldA"]
     logger.info(
-        "[headline exact] own1 foldA %.4f->  full %.4f  | matched-lambda deficits 1->{2,3,4} "
-        "foldA %s",
-        ex["own_turn1"]["foldA"]["skill"],
-        ex["own_turn1"]["full"]["skill"],
-        [round(ex["grid"]["foldA"][f"1to{k}"]["deficit_matched"], 4) for k in KS],
+        "[headline exact @block19] own1 foldA %.4f full %.4f | 1to{2,3,4} transfer foldA %s",
+        exq["own_turn1"]["foldA"]["19"]["skill"],
+        exq["own_turn1"]["full"]["19"]["skill"],
+        [round(gA[f"1to{k}"]["transfer_skill"]["19"]["skill"], 4) for k in KS],
     )
     return 0
 

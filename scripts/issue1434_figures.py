@@ -486,9 +486,268 @@ def dose_figures(
     ]
 
 
+# ── icl-read-amplifier-specificity (ctrl) round figures (plan v11 §6) ────────
+
+CTRL_ARM_PLAIN = {
+    "imp-installed": "Installed impolite organism (unrelated behavior)",
+    "imp-inert": "Inert impolite adapter (install delta 0)",
+}
+_CTRL_CTX_ORDER = (
+    "default",
+    "persona_software_engineer",
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "icl_prefix_writing_style",
+    "wildchat_prefix_real545",
+)
+
+
+def _ctrl_ctx_order(panel: dict) -> list[str]:
+    """Deterministic read-context order (known contexts first, extras appended
+    — the smoke's tiny panel is a subset of the production 6)."""
+    have = set()
+    for entry in (panel.get("arms") or {}).values():
+        have.update((entry.get("contexts") or {}).keys())
+    ordered = [c for c in _CTRL_CTX_ORDER if c in have]
+    return ordered + sorted(have - set(ordered))
+
+
+def fig_ctrl_hero(spec: dict, panel: dict, con_agg: dict, out_dir: Path) -> Path:
+    """HERO (plan v11 §6): the installed impolite arm's 6-context casual-delta
+    profile (Newcombe 95%) overlaid with the four casual organisms' committed
+    delta profiles; the verdict ICL cell highlighted; base at 0."""
+    ctxs = _ctrl_ctx_order(panel)
+    x = np.arange(len(ctxs), dtype=float)
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    # Committed casual organisms (reference profiles, Newcombe from counts).
+    for cell_key, color in (
+        ("ws-pers", "0.55"),
+        ("ws-bare", "0.65"),
+        ("ws-conv", "0.75"),
+        ("ws-icl", "0.85"),
+    ):
+        entry = (con_agg.get("panel") or {}).get(cell_key)
+        if not entry:
+            continue
+        ds, els, ehs, xs = [], [], [], []
+        for i, ctx in enumerate(ctxs):
+            rec = (entry.get("contexts") or {}).get(ctx)
+            if not rec:
+                continue
+            t, b = rec["trained"], rec["base"]
+            d = t["rate"] - b["rate"]
+            ci = cells.newcombe(t["k_positive"], t["n_scored"], b["k_positive"], b["n_scored"])
+            xs.append(i)
+            ds.append(d)
+            lo, hi = _ci_err(d, list(ci))
+            els.append(lo)
+            ehs.append(hi)
+        ax.errorbar(
+            xs,
+            ds,
+            yerr=[els, ehs],
+            fmt="o--",
+            color=color,
+            capsize=2,
+            ms=4,
+            label=f"casual organism — {PLAIN[cell_key]} (committed)",
+        )
+    # The NEW installed unrelated-behavior arm (verdict profile).
+    installed = (panel.get("arms") or {}).get("imp-installed") or {}
+    ds, els, ehs, xs = [], [], [], []
+    for i, ctx in enumerate(ctxs):
+        rec = (installed.get("contexts") or {}).get(ctx) or {}
+        if rec.get("delta") is None:
+            continue
+        xs.append(i)
+        ds.append(rec["delta"])
+        lo, hi = _ci_err(rec["delta"], rec["newcombe_95"])
+        els.append(lo)
+        ehs.append(hi)
+    ax.errorbar(
+        xs,
+        ds,
+        yerr=[els, ehs],
+        fmt="s-",
+        color="tab:red",
+        capsize=3,
+        ms=6,
+        lw=2,
+        label=CTRL_ARM_PLAIN["imp-installed"],
+    )
+    if "icl_prefix_writing_style" in ctxs:
+        i = ctxs.index("icl_prefix_writing_style")
+        ax.axvspan(i - 0.35, i + 0.35, color="tab:orange", alpha=0.15, label="verdict ICL cell")
+    ax.axhline(0.0, color="0.4", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels([READ_CTX_PLAIN.get(c, c) for c in ctxs], fontsize=7)
+    ax.set_ylabel("casual-register delta vs base (judged rate)")
+    v = spec.get("verdict_cell") or {}
+    ax.set_title(
+        "unrelated-organism control: casual delta per read context — "
+        f"verdict lattice: {v.get('lattice')} (Newcombe 95% CIs)",
+        fontsize=9,
+    )
+    ax.legend(fontsize=6, loc="upper left")
+    return _save(fig, out_dir / "ctrl_hero.png")
+
+
+def fig_ctrl_arm_bars(panel: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v11 §6): both control arms' per-context casual rates
+    (Wilson 95%), with the committed base bar at 0."""
+    ctxs = _ctrl_ctx_order(panel)
+    arms = sorted((panel.get("arms") or {}).items())
+    width = 0.8 / max(1, len(arms) + 1)
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    colors = {"imp-installed": "tab:red", "imp-inert": "tab:purple"}
+    for j, (label, entry) in enumerate(arms):
+        for i, ctx in enumerate(ctxs):
+            rec = ((entry.get("contexts") or {}).get(ctx) or {}).get("trained") or {}
+            if rec.get("rate") is None:
+                continue
+            xpos = i + (j - len(arms) / 2) * width
+            lo, hi = _err(rec["rate"], rec["wilson_95"])
+            ax.bar(
+                xpos,
+                rec["rate"],
+                width=width,
+                color=colors.get(label, "tab:gray"),
+                label=CTRL_ARM_PLAIN.get(label, label) if i == 0 else None,
+            )
+            ax.errorbar(xpos, rec["rate"], yerr=[[lo], [hi]], fmt="none", ecolor="k", capsize=2)
+    base = panel.get("base_panel") or {}
+    for i, ctx in enumerate(ctxs):
+        b = base.get(ctx)
+        if b:
+            ax.bar(
+                i + (len(arms) - len(arms) / 2) * width,
+                b["rate"],
+                width=width,
+                color="0.7",
+                label="committed base panel" if i == 0 else None,
+            )
+    ax.set_xticks(range(len(ctxs)))
+    ax.set_xticklabels([READ_CTX_PLAIN.get(c, c) for c in ctxs], fontsize=7)
+    ax.set_ylabel("judged casual-register rate")
+    ax.set_ylim(0, 1)
+    ax.set_title("control arms: casual rate per read context (Wilson 95% CIs)", fontsize=10)
+    ax.legend(fontsize=7)
+    return _save(fig, out_dir / "ctrl_arm_bars.png")
+
+
+def fig_ctrl_graded(panel: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v11 §6): graded 0-100 score distributions per
+    (arm x read context) cell under the casual pv rubric."""
+    ctxs = _ctrl_ctx_order(panel)
+    arms = sorted((panel.get("arms") or {}).items())
+    fig, axes = plt.subplots(
+        max(1, len(arms)),
+        max(1, len(ctxs)),
+        figsize=(2.1 * max(1, len(ctxs)), 2.4 * max(1, len(arms))),
+        layout="constrained",
+        squeeze=False,
+    )
+    for r, (label, entry) in enumerate(arms):
+        for c, ctx in enumerate(ctxs):
+            ax = axes[r][c]
+            rec = ((entry.get("contexts") or {}).get(ctx) or {}).get("trained") or {}
+            scores = rec.get("scores") or []
+            if scores:
+                ax.hist(scores, bins=20, range=(0, 100), color="tab:blue")
+                ax.axvline(50, color="tab:red", lw=0.8)
+            else:
+                ax.text(0.5, 0.5, "no scored items", ha="center", va="center", fontsize=6)
+            if r == 0:
+                ax.set_title(READ_CTX_PLAIN.get(ctx, ctx), fontsize=6)
+            if c == 0:
+                ax.set_ylabel(label, fontsize=7)
+            ax.tick_params(labelsize=5)
+    fig.suptitle("graded casual scores per (arm x read context) — threshold 50", fontsize=10)
+    return _save(fig, out_dir / "ctrl_graded_dist.png")
+
+
+def fig_ctrl_dual_rubric(spec: dict, panel: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v11 §6): the dual-rubric grid — casual vs impolite
+    judged rate per (arm x {persona, ICL} cell), Wilson 95%."""
+    dual_ctxs = [
+        c
+        for c in ("persona_software_engineer", "icl_prefix_writing_style")
+        if any(
+            "impolite" in ((e.get("contexts") or {}).get(c) or {})
+            for e in (panel.get("arms") or {}).values()
+        )
+    ]
+    arms = sorted((panel.get("arms") or {}).items())
+    bars: list[tuple[str, dict, str]] = []
+    for label, entry in arms:
+        for ctx in dual_ctxs:
+            row = (entry.get("contexts") or {}).get(ctx) or {}
+            for instrument, color in (("trained", "tab:blue"), ("impolite", "tab:red")):
+                rec = row.get(instrument) or {}
+                if rec.get("rate") is None:
+                    continue
+                rubric = "casual" if instrument == "trained" else "impolite"
+                bars.append((f"{label}\n{READ_CTX_PLAIN.get(ctx, ctx)}\n{rubric}", rec, color))
+    fig, ax = plt.subplots(figsize=(max(6, 1.3 * len(bars)), 5), layout="constrained")
+    for i, (_lab, rec, color) in enumerate(bars):
+        lo, hi = _err(rec["rate"], rec["wilson_95"])
+        ax.bar(i, rec["rate"], width=0.7, color=color)
+        ax.errorbar(i, rec["rate"], yerr=[[lo], [hi]], fmt="none", ecolor="k", capsize=3)
+    gate = (spec.get("engagement_gate") or {}).get("threshold")
+    if gate is not None:
+        ax.axhline(gate, color="tab:green", lw=0.9, ls="--", label=f"engagement gate {gate}")
+        ax.legend(fontsize=7)
+    ax.set_xticks(range(len(bars)))
+    ax.set_xticklabels([b[0] for b in bars], fontsize=6)
+    ax.set_ylabel("judged rate")
+    ax.set_ylim(0, 1)
+    ax.set_title(
+        "dual-rubric grid: casual vs impolite rate per (arm x cell), Wilson 95%", fontsize=10
+    )
+    return _save(fig, out_dir / "ctrl_dual_rubric.png")
+
+
+def fig_ctrl_drop_table(spec: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v11 §6/§8): per-arm dropped-draw report — content
+    drops vs transport losses (llm-judging rule 24 split)."""
+    rows = []
+    for label, rep in sorted((spec.get("per_arm_drop_report") or {}).items()):
+        rows.append(
+            [
+                label,
+                rep.get("n_items"),
+                rep.get("n_scored"),
+                rep.get("n_dropped_draws_content"),
+                rep.get("n_transport_lost_draws"),
+            ]
+        )
+    fig, ax = plt.subplots(figsize=(8, 1.2 + 0.5 * max(1, len(rows))), layout="constrained")
+    ax.axis("off")
+    table = ax.table(
+        cellText=[[str(v) for v in r] for r in rows] or [["(none)"] * 5],
+        colLabels=["arm", "items", "scored", "content drops", "transport losses"],
+        loc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8)
+    ax.set_title("per-arm judge drop report (content vs transport)", fontsize=10)
+    return _save(fig, out_dir / "ctrl_drop_table.png")
+
+
+def ctrl_figures(spec: dict, panel: dict, con_agg: dict, out_dir: Path) -> list[Path]:
+    """All plan-v11 ctrl figures (hero + exploratory companions)."""
+    return [
+        fig_ctrl_hero(spec, panel, con_agg, out_dir),
+        fig_ctrl_arm_bars(panel, out_dir),
+        fig_ctrl_graded(panel, out_dir),
+        fig_ctrl_dual_rubric(spec, panel, out_dir),
+        fig_ctrl_drop_table(spec, out_dir),
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="#1434 hero figures")
-    p.add_argument("--round", default="i1434", choices=("i1434", "i1434po", "dose"))
+    p.add_argument("--round", default="i1434", choices=("i1434", "i1434po", "dose", "ctrl"))
     p.add_argument("--deliverables", default=None)
     p.add_argument("--projections", default=None)
     p.add_argument("--out-dir", default=str(cells.FIGURES_DIR_1434))
@@ -503,6 +762,19 @@ def main(argv: list[str] | None = None) -> int:
         po_agg = json.loads((cells.PO_DELIVERABLES_DIR / "i1434po_ladders.json").read_text())
         con_agg = json.loads((cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json").read_text())
         for path in dose_figures(contrast, panel, po_agg, con_agg, out_dir):
+            print(path)
+        return 0
+    if args.round == "ctrl":
+        deliver = Path(
+            args.deliverables or (cells.DELIVERABLES_DIR_1434 / "icl-read-amplifier-specificity")
+        )
+        out_dir = Path(args.out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        plt.rcParams["savefig.dpi"] = 180
+        spec = json.loads((deliver / "icl_specificity.json").read_text())
+        panel = json.loads((deliver / "control_panel.json").read_text())
+        con_agg = json.loads((cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json").read_text())
+        for path in ctrl_figures(spec, panel, con_agg, out_dir):
             print(path)
         return 0
     po = args.round == "i1434po"

@@ -2205,6 +2205,528 @@ def phase_dose_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -
     return 0
 
 
+# ── icl-read-amplifier-specificity round (plan v11): unrelated-organism ─────
+# control read. Q1 control-manifest (VM, 0 GPU, committed pre-dispatch) ->
+# Q3 control-panel (pod, 1 GPU) -> Q4 control-judge-analyze (VM, 0 GPU).
+# The ONLY manipulated variable vs the parent leakage panels is WHICH
+# ORGANISM the 6-context read panel evaluates (an unrelated-behavior
+# impolite #1090 organism instead of a casual one); everything else is
+# byte-inherited (contexts, n, temperature, seed, judge instrument).
+
+CTRL_ROUND_LABEL = "icl-read-amplifier-specificity"
+CTRL_DELIVERABLES_DIR = cells.DELIVERABLES_DIR_1434 / CTRL_ROUND_LABEL
+# Plan §2.2/§10 arm pins — plan-pinned, NO selector phase (the scope's
+# subfolder pin fails artifact-reuse fitness (b) as a sole control and is
+# demoted to a labeled inert reference; the installed fu4 lr-sweep arm is
+# the verdict-bearing PRIMARY).
+CTRL_ARMS: tuple[dict, ...] = (
+    {
+        "label": "imp-installed",
+        "arm_dir": "imp-installed",
+        "role": "primary",
+        "hub_subfolder": "adapters/issue1090_fu4/imp-pers-lr3e5/checkpoint-30",
+        "behavior": "impolite",
+        "expected_tier2_impolite": 0.805,
+    },
+    {
+        "label": "imp-inert",
+        "arm_dir": "imp-inert",
+        "role": "inert-reference",
+        "hub_subfolder": "issue1090/c2-impolite-claude",
+        "behavior": "impolite",
+        "expected_install_delta": 0.0,
+    },
+)
+# Plan §10 static pins (fail-loud drift asserts at manifest + judge time).
+CTRL_BASE_PANEL_PIN = (0, 100)  # committed base k/n in EVERY read context
+CTRL_CASUAL_ICL_PINS = {"ws-pers": 0.97, "ws-bare": 0.98, "ws-icl": 1.0, "ws-conv": 0.47}
+CTRL_M_ANCHOR = 0.47  # WildChat minimum casual ICL delta (plan §3/§11)
+CTRL_ENGAGEMENT_GATE = 0.50  # installed persona-cell impolite floor (plan §7)
+CTRL_OVERLAP_FLAG = 0.30  # installed persona-cell casual-delta flag (plan §7)
+CTRL_INSTALLED_SELECTION_PIN = {"step": 30, "rate": 0.81, "in_band": True}
+CTRL_INSTALLED_TIER2_PIN = 0.805
+CTRL_ICL_READ_CTX = f"icl_prefix_{cells.BEHAVIOR}"  # the verdict read context
+CTRL_GEN_BASIS_COMPS_PER_GPU_H = 4000.0  # v8 P5' measured basis (plan §9 Q3 row)
+_CTRL_FU4_LADDERS = (
+    cells.REPO_ROOT / "eval_results" / "issue_1090" / "fu4-extended-dose-lr" / "fu4_ladders.json"
+)
+_CTRL_INERT_INSTALL = (
+    cells.REPO_ROOT / "eval_results" / "issue_1090" / "install" / "c2-impolite-claude_install.json"
+)
+
+
+def _ctrl_committed_snapshots() -> tuple[dict, dict, dict]:
+    """Re-read + git-pin the committed sources (base panel counts, casual ICL
+    deltas, #1090 arm records) and ASSERT equality with the plan pins (any
+    mismatch = the committed aggregates changed under us; fail loud, never
+    warn — plan §4 Q1 + risk row 7). Returns (snapshot, source_pins, con_agg)."""
+    con_path = cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json"
+    source_pins = {
+        p.name: _git_file_pin(p) for p in (con_path, _CTRL_FU4_LADDERS, _CTRL_INERT_INSTALL)
+    }
+    con_agg = run1090._read_json(con_path)
+    base_panel: dict[str, dict] = {}
+    for ctx_id, entry in sorted(con_agg["panel"]["ws-pers"]["contexts"].items()):
+        b = entry["base"]
+        if (b["k_positive"], b["n_scored"]) != CTRL_BASE_PANEL_PIN:
+            raise RuntimeError(
+                f"[i1434-ctrl] committed base panel drifted at {ctx_id}: "
+                f"({b['k_positive']},{b['n_scored']}) != plan pin {CTRL_BASE_PANEL_PIN} — "
+                "a later round rewrote the aggregates; re-approve before running"
+            )
+        base_panel[ctx_id] = {"k": b["k_positive"], "n": b["n_scored"], "rate": b["rate"]}
+    icl_deltas: dict[str, float] = {}
+    for cell_key, pin in CTRL_CASUAL_ICL_PINS.items():
+        delta = float(con_agg["panel"][cell_key]["contexts"][CTRL_ICL_READ_CTX]["delta"])
+        if abs(delta - pin) > 1e-9:
+            raise RuntimeError(
+                f"[i1434-ctrl] casual ICL delta drifted for {cell_key}: committed "
+                f"{delta} != plan pin {pin} — re-approve before running"
+            )
+        icl_deltas[cell_key] = delta
+    fu4_ladders = run1090._read_json(_CTRL_FU4_LADDERS)
+    sel = fu4_ladders["runs"]["imp-pers-lr3e5"]["selection"]
+    sel_diffs = {
+        k: (sel.get(k), want)
+        for k, want in CTRL_INSTALLED_SELECTION_PIN.items()
+        if sel.get(k) != want
+    }
+    tier2 = float(fu4_ladders["cells"]["imp-pers"]["tier2_confirm"]["imp-pers-lr3e5"])
+    if sel_diffs or abs(tier2 - CTRL_INSTALLED_TIER2_PIN) > 1e-3:
+        raise RuntimeError(
+            f"[i1434-ctrl] installed-arm #1090 record drifted: selection diffs {sel_diffs}, "
+            f"tier2_confirm {tier2} vs pin {CTRL_INSTALLED_TIER2_PIN} — the committed "
+            "fu4_ladders.json changed; re-approve before running"
+        )
+    install = run1090._read_json(_CTRL_INERT_INSTALL)
+    inert_delta = float(install["install_delta"])
+    if abs(inert_delta - 0.0) > 1e-9:
+        raise RuntimeError(
+            f"[i1434-ctrl] inert-arm install_delta drifted: {inert_delta} != 0.0 — "
+            "the scope-pinned adapter is no longer the zero-install reference"
+        )
+    snapshot = {
+        "base_panel": base_panel,
+        "casual_icl_deltas": icl_deltas,
+        "installed_provenance": {
+            "selection": sel,
+            "tier2_confirm": tier2,
+            "source_file": source_pins[_CTRL_FU4_LADDERS.name]["path"],
+        },
+        "inert_provenance": {
+            "install_delta": inert_delta,
+            "selection": install.get("selection"),
+            "source_file": source_pins[_CTRL_INERT_INSTALL.name]["path"],
+        },
+    }
+    return snapshot, source_pins, con_agg
+
+
+def phase_control_manifest(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q1 (VM, 0 GPU): plan-pinned arm manifest + committed-source snapshots
+    (plan §4 Q1). Committed + pushed BEFORE dispatch; re-probes both Hub
+    subfolders' adapter_config.json (plan §10)."""
+    _ensure_family_round()
+    run1090._phase("i1434_control_manifest")
+    del args
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    for arm in CTRL_ARMS:
+        probe = f"{arm['hub_subfolder']}/adapter_config.json"
+        exists = hub.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: probe is wrapped in hub.retry_transient right here
+            lambda p=probe: api.file_exists(run1090.HF_MODEL_REPO, p),
+            what=f"ctrl arm probe {probe}",
+        )
+        if not exists:
+            raise RuntimeError(
+                f"[i1434-ctrl] {run1090.HF_MODEL_REPO}/{probe} missing on the Hub — "
+                "refusing to pin an unfetchable arm (artifact-reuse check (c))"
+            )
+    snapshot, source_pins, _ = _ctrl_committed_snapshots()
+    arms = []
+    for arm in CTRL_ARMS:
+        rec = dict(arm)
+        rec["source_ctx"] = run1090.SOURCE_CONTEXT_ID
+        rec["provenance"] = (
+            snapshot["installed_provenance"]
+            if arm["role"] == "primary"
+            else snapshot["inert_provenance"]
+        )
+        arms.append(rec)
+    out = {
+        "issue": cells.ISSUE_1434,
+        "round_label": CTRL_ROUND_LABEL,
+        "arms": arms,
+        "base_panel": snapshot["base_panel"],
+        "casual_icl_deltas": snapshot["casual_icl_deltas"],
+        "m_anchor": CTRL_M_ANCHOR,
+        "engagement_gate": CTRL_ENGAGEMENT_GATE,
+        "overlap_flag": CTRL_OVERLAP_FLAG,
+        "icl_read_ctx": CTRL_ICL_READ_CTX,
+        "source_pins": source_pins,
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    deliver = (cfg.out_root / "deliverables") if cfg.smoke else CTRL_DELIVERABLES_DIR
+    deliver.mkdir(parents=True, exist_ok=True)
+    run1090._atomic_write_json(deliver / "control_arm_manifest.json", out)
+    logger.info("[i1434-ctrl-manifest] wrote %s", deliver / "control_arm_manifest.json")
+    return 0
+
+
+def _control_manifest(cfg: run1090.RunConfig) -> dict:
+    """The Q1 manifest (scratch copy first for a self-contained smoke chain;
+    the committed copy is the shared production source)."""
+    for path in (
+        cfg.out_root / "deliverables" / "control_arm_manifest.json",
+        CTRL_DELIVERABLES_DIR / "control_arm_manifest.json",
+    ):
+        if path.exists():
+            return run1090._read_json(path)
+    raise RuntimeError(
+        "[i1434-ctrl] control_arm_manifest.json missing — run `--phase control-manifest` "
+        "on the VM and commit it BEFORE dispatch (plan §4 Q1)"
+    )
+
+
+def phase_control_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q3 (pod, 1 GPU): the SAME panel loop as ``phase_dose_panel`` over the 2
+    plan-pinned unrelated-behavior (impolite) control arms — HF staging via
+    the dose round's scoped-snapshot + recipe-assert machinery, one shared
+    vLLM engine, LoRA hot-swap, arms sequential (plan §4 Q3)."""
+    _ensure_family_round()
+    run1090._phase("i1434_control_panel")
+    del args
+    manifest = _control_manifest(cfg)
+    arms = manifest["arms"]
+    qs = _eval_questions(cfg)
+    gen = _gen_fn(cfg)
+    panel_root = cfg.out_root / "panel"
+    try:
+        from huggingface_hub import HfApi
+
+        fetched_repo_sha = HfApi().repo_info(run1090.HF_MODEL_REPO).sha  # (g): sha at fetch
+    except Exception:  # pod without Hub metadata access still generates; sha is best-effort
+        logger.warning("[i1434-ctrl] repo_info sha probe failed — recording None")
+        fetched_repo_sha = None
+    try:
+        for i, arm in enumerate(arms):
+            t0 = time.monotonic()
+            ckpt = _stage_dose_adapter(cfg, arm)  # scoped snapshot + recipe assert (fitness (a))
+            for bctx in fu3w.bystander_panel(cells.BEHAVIOR):
+                _generate_and_persist(
+                    gen,
+                    "trained",
+                    str(ckpt),
+                    bctx,
+                    qs,
+                    n=cfg.tier1_n,
+                    temperature=1.0,
+                    out_dir=panel_root / arm["arm_dir"],
+                    base_model=DEFAULT_BASE_MODEL,
+                )
+            if i == 0 and not cfg.smoke:
+                # Plan §7 pilot throughput read on the FIRST arm: log the
+                # realized comps/GPU-h vs the v8 P5' basis; >2x deviation is
+                # the orchestrator's epm:compute-deviation trigger (pod-side
+                # code never posts markers — sentinel/log contract).
+                wall_h = (time.monotonic() - t0) / 3600.0
+                n_comps = len(qs) * cfg.tier1_n * len(fu3w.bystander_panel(cells.BEHAVIOR))
+                realized = n_comps / wall_h if wall_h > 0 else float("inf")
+                ratio = CTRL_GEN_BASIS_COMPS_PER_GPU_H / realized if realized else float("inf")
+                logger.info(
+                    "[i1434-ctrl] pilot throughput: %d comps in %.3f h -> %.0f comps/GPU-h "
+                    "(basis %.0f; slowdown ratio %.2fx)",
+                    n_comps,
+                    wall_h,
+                    realized,
+                    CTRL_GEN_BASIS_COMPS_PER_GPU_H,
+                    ratio,
+                )
+                if ratio > 2.0:
+                    logger.warning(
+                        "[i1434-ctrl] pilot throughput >2x below basis (%.2fx) — "
+                        "orchestrator should post epm:compute-deviation (plan §7/§9)",
+                        ratio,
+                    )
+    finally:
+        close = getattr(gen, "close", None)
+        if callable(close):
+            close()
+    run1090._atomic_write_json(
+        panel_root / "control_panel_arms.json",
+        {a["label"]: {**a, "fetched_repo_sha": fetched_repo_sha} for a in arms},
+    )
+    if cfg.upload:
+        url = hub._upload(
+            panel_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1434}/raw_completions/ctrl/panel",
+        )
+        if not str(url):
+            raise RuntimeError("control panel upload returned no path — refusing silent loss")
+    return 0
+
+
+def _ctrl_lattice(delta: float | None, ci: list | None, m: float | None) -> str:
+    """The §3 DISJOINT + exhaustive control lattice (installed arm's ICL cell
+    ONLY): Generic <=> M >= 0 AND CI excludes 0 positively; Partial <=> M < 0
+    AND CI excludes 0 positively; Behavior-specific <=> otherwise. None
+    propagates (drop-never-coerce)."""
+    if delta is None or ci is None or m is None:
+        return "not_computable_all_dropped"
+    if ci[0] > 0 and m >= 0:
+        return "Generic-ICL-restoration"
+    if ci[0] > 0:
+        return "Partial-generic-component"
+    return "Behavior-specific-ICL-read"
+
+
+def _ctrl_delta_vs_base(trained_rec: dict, base_rec: dict) -> dict:
+    """One per-context trained-base delta against the COMMITTED base counts
+    (the parent leakage-read convention, plan §2.3) — None-propagating."""
+    if trained_rec.get("rate") is None or not base_rec.get("n"):
+        return {"delta": None, "newcombe_95": None, "base": base_rec}
+    ci = cells.newcombe(
+        trained_rec["k_positive"], trained_rec["n_scored"], base_rec["k"], base_rec["n"]
+    )
+    return {
+        "delta": trained_rec["rate"] - base_rec["rate"],
+        "newcombe_95": list(ci),
+        "base": base_rec,
+    }
+
+
+def _ctrl_engagement_gate(persona_impolite_rec: dict) -> dict:
+    """Plan §7 adapter-engagement gate RECORD for the installed arm's
+    persona-cell impolite-rubric rate (threshold 0.50; its #1090 record is
+    0.805). The RAISE on a production miss lives in the caller (after the
+    deliverables persist — durable record first, loud stop second)."""
+    rate = persona_impolite_rec.get("rate")
+    return {
+        "threshold": CTRL_ENGAGEMENT_GATE,
+        "rate": rate,
+        "wilson_95": persona_impolite_rec.get("wilson_95"),
+        "anchor_tier2": CTRL_INSTALLED_TIER2_PIN,
+        "passed": bool(rate is not None and rate >= CTRL_ENGAGEMENT_GATE),
+    }
+
+
+def _ctrl_gate_stop(gate: dict) -> None:
+    """The §7 engagement-gate STOP (wrong/dead adapter — no verdict). Raised
+    AFTER the deliverables persist; unit-probeable (data-dependent-gate
+    demonstration outside the main smoke leg)."""
+    raise RuntimeError(
+        f"[i1434-ctrl] adapter-engagement gate FAILED: installed persona-cell "
+        f"impolite rate {gate.get('rate')} < {CTRL_ENGAGEMENT_GATE} (anchor "
+        f"{CTRL_INSTALLED_TIER2_PIN}) — wrong/dead adapter; no verdict (plan §7)"
+    )
+
+
+def _ctrl_mechanism_read(icl_impolite_rec: dict, lattice: str) -> dict:
+    """Plan §3/§7 behind-block mechanism read: the installed arm's ICL-cell
+    impolite-rubric rate; a rate within noise of the 0.805 source anchor
+    attaches the trained-behavior-amplification / rubric-overlap caveat to a
+    Generic/Partial label (flag, not a gate)."""
+    rate = icl_impolite_rec.get("rate")
+    ci = icl_impolite_rec.get("wilson_95")
+    within_noise = bool(
+        rate is not None
+        and ci is not None
+        and (rate >= CTRL_INSTALLED_TIER2_PIN or ci[0] <= CTRL_INSTALLED_TIER2_PIN <= ci[1])
+    )
+    return {
+        "icl_impolite_rate": rate,
+        "wilson_95": ci,
+        "anchor_tier2": CTRL_INSTALLED_TIER2_PIN,
+        "within_anchor_noise": within_noise,
+        "mechanism_caveat_attached": bool(
+            within_noise and lattice in ("Generic-ICL-restoration", "Partial-generic-component")
+        ),
+    }
+
+
+def phase_control_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q4 (VM, 0 GPU): Batch judging of both control arms (casual pv rubric on
+    all 12 cells + the #1090 impolite Tier-2 rubric on the 4 persona/ICL
+    cells), the delta-vs-base reads, the §3 lattice + M, the §7 gates/flags,
+    deliverables + figures (plan §4 Q4)."""
+    _ensure_family_round()
+    run1090._phase("i1434_control_judge_analyze")
+    del args
+    manifest = _control_manifest(cfg)
+    # Staleness re-check (risk row 7): the committed sources must still match
+    # the Q1 snapshot (same shape as _dose_static_recheck).
+    snapshot, _, con_agg = _ctrl_committed_snapshots()
+    if snapshot["base_panel"] != manifest["base_panel"] or (
+        snapshot["casual_icl_deltas"] != manifest["casual_icl_deltas"]
+    ):
+        raise RuntimeError(
+            "[i1434-ctrl] committed aggregates drifted since the Q1 manifest snapshot — "
+            "re-run control-manifest and re-commit before judging"
+        )
+    qs = _eval_questions(cfg)
+    deliver = (cfg.out_root / "deliverables") if cfg.smoke else CTRL_DELIVERABLES_DIR
+    deliver.mkdir(parents=True, exist_ok=True)
+    judge_root = cfg.out_root / "judge"  # fresh round-scoped cache dir (rule 22/24)
+    pv_rubric = cells.pv_rubric_text()
+    impolite_rubric = BEHAVIORS["impolite"].judge_rubric
+    if not impolite_rubric:
+        raise RuntimeError("[i1434-ctrl] impolite behavior registry has no judge_rubric")
+    source_ctx = run1090.SOURCE_CONTEXT_ID
+    panel_ctx_ids = [c.context_id for c in fu3w.bystander_panel(cells.BEHAVIOR)]
+    dual_judge_ctxs = (source_ctx, CTRL_ICL_READ_CTX)  # plan §4 Q4(ii): 4 cells
+
+    arm_recs: dict[str, Any] = {}
+    for arm in manifest["arms"]:
+        arm_dir = arm["arm_dir"]
+        rows: dict[str, Any] = {}
+        for ctx_id in panel_ctx_ids:
+            local = _stage_if_missing(
+                cfg.out_root / "panel" / arm_dir / f"completions__trained__{ctx_id}.json",
+                f"{cells.DATA_PREFIX_1434}/raw_completions/ctrl/panel/{arm_dir}",
+            )
+            comps = _completions_payload(local)
+            rec = _judge_rate_graded(
+                f"cn-{arm_dir}-{ctx_id}",
+                qs,
+                comps,
+                rubric=pv_rubric,
+                n_draws=2 if cfg.smoke else 3,
+                judge_root=judge_root,
+                instrument="pv",
+                include_scores=True,
+            )
+            row: dict[str, Any] = {
+                "trained": rec,
+                "is_source_context": ctx_id == source_ctx,
+                **_ctrl_delta_vs_base(rec, manifest["base_panel"][ctx_id]),
+            }
+            if ctx_id in dual_judge_ctxs:
+                row["impolite"] = _judge_rate_graded(
+                    f"ci-{arm_dir}-{ctx_id}",
+                    qs,
+                    comps,
+                    rubric=impolite_rubric,
+                    n_draws=2 if cfg.smoke else 3,
+                    judge_root=judge_root,
+                    instrument="impolite",
+                    include_scores=True,
+                )
+            rows[ctx_id] = row
+        recs = [r["trained"] for r in rows.values()] + [
+            r["impolite"] for r in rows.values() if "impolite" in r
+        ]
+        arm_recs[arm["label"]] = {
+            "arm": arm,
+            "contexts": rows,
+            "drop_report": {
+                "n_items": sum(r["n_items"] for r in recs),
+                "n_scored": sum(r["n_scored"] for r in recs),
+                "n_dropped_draws_content": sum(r.get("n_dropped_draws_content") or 0 for r in recs),
+                "n_transport_lost_draws": sum(r.get("n_transport_lost_draws") or 0 for r in recs),
+            },
+        }
+
+    installed = arm_recs["imp-installed"]["contexts"]
+    inert = arm_recs["imp-inert"]["contexts"]
+    icl_row = installed[CTRL_ICL_READ_CTX]
+    delta_icl = icl_row["delta"]
+    m = None if delta_icl is None else delta_icl - manifest["m_anchor"]
+    lattice = _ctrl_lattice(delta_icl, icl_row["newcombe_95"], m)
+    gate = _ctrl_engagement_gate(installed[source_ctx].get("impolite") or {})
+    if not gate["passed"] and not cfg.smoke:
+        lattice = "no_verdict_engagement_gate_failed"
+    # §7 register-overlap flag: installed persona-cell CASUAL delta >= 0.30.
+    overlap_delta = installed[source_ctx]["delta"]
+    overlap = {
+        "threshold": manifest["overlap_flag"],
+        "persona_casual_delta": overlap_delta,
+        "flagged": bool(overlap_delta is not None and overlap_delta >= manifest["overlap_flag"]),
+    }
+    mechanism = _ctrl_mechanism_read(icl_row.get("impolite") or {}, lattice)
+    inert_consistency = {
+        "persona_impolite_rate": (inert[source_ctx].get("impolite") or {}).get("rate"),
+        "wilson_95": (inert[source_ctx].get("impolite") or {}).get("wilson_95"),
+        "expected_install_delta": 0.0,
+        "icl_impolite_rate": (inert[CTRL_ICL_READ_CTX].get("impolite") or {}).get("rate"),
+    }
+
+    panel_payload = {
+        "issue": cells.ISSUE_1434,
+        "round_label": CTRL_ROUND_LABEL,
+        "arms": arm_recs,
+        "base_panel": manifest["base_panel"],
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    specificity = {
+        "issue": cells.ISSUE_1434,
+        "round_label": CTRL_ROUND_LABEL,
+        "verdict_cell": {
+            "arm": "imp-installed",
+            "read_ctx": CTRL_ICL_READ_CTX,
+            "delta_icl": delta_icl,
+            "newcombe_95": icl_row["newcombe_95"],
+            "m_anchor": manifest["m_anchor"],
+            "M": m,
+            "lattice": lattice,
+        },
+        "casual_icl_reference_band": manifest["casual_icl_deltas"],
+        "engagement_gate": gate,
+        "register_overlap_flag": overlap,
+        "mechanism_read": mechanism,
+        "inert_consistency": inert_consistency,
+        "per_arm_drop_report": {lab: arm_recs[lab]["drop_report"] for lab in arm_recs},
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    run1090._atomic_write_json(deliver / "control_panel.json", panel_payload)
+    run1090._atomic_write_json(deliver / "icl_specificity.json", specificity)
+    logger.info(
+        "[i1434-ctrl-judge-analyze] delta_icl=%s %s M=%s lattice=%s gate=%s — wrote %s",
+        delta_icl,
+        icl_row["newcombe_95"],
+        m,
+        lattice,
+        "PASS" if gate["passed"] else "FAIL",
+        deliver / "icl_specificity.json",
+    )
+
+    if cfg.upload:
+        url = hub._upload(
+            judge_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1434}/ctrl/judge",
+        )
+        if not str(url):
+            raise RuntimeError("control judge records upload returned no path — refusing loss")
+    if not gate["passed"] and not cfg.smoke:
+        # Plan §7: a gate miss means the wrong/dead adapter was fetched —
+        # STOP, investigate, no verdict (deliverables + judge records already
+        # persisted above; the durable record precedes the loud stop). Under
+        # smoke the tiny-Qwen stub's garbage completions make the gate
+        # data-dependent-unsatisfiable, so the raise is production-only and
+        # its branch is exercised by the _ctrl_gate_stop degenerate probe.
+        _ctrl_gate_stop(gate)
+
+    # Figures (plan §6): hero + exploratory companions; smoke -> scratch dir.
+    import issue1434_figures as figs
+
+    fig_dir = (cfg.out_root / "figures") if cfg.smoke else cells.FIGURES_DIR_1434
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    for p in figs.ctrl_figures(specificity, panel_payload, con_agg, fig_dir):
+        logger.info("[i1434-ctrl-judge-analyze] figure %s", p)
+    return 0
+
+
 # ── entrypoint ───────────────────────────────────────────────────────────────
 
 
@@ -2227,13 +2749,18 @@ def _own_parser() -> argparse.ArgumentParser:
             "dose-select",
             "dose-panel",
             "dose-judge-analyze",
+            "control-manifest",
+            "control-panel",
+            "control-judge-analyze",
         ),
     )
     p.add_argument(
         "--round",
         default="i1434",
-        choices=("i1434", "i1434po"),
-        help="active round registry (i1434po = the positive-only regime arm)",
+        choices=("i1434", "i1434po", "i1434ctrl"),
+        help="active round registry (i1434po = the positive-only regime arm; "
+        "i1434ctrl = the icl-read-amplifier-specificity control round, which "
+        "runs on the PARENT i1434 fu4 registry — eval-only, no runs of its own)",
     )
     p.add_argument("--cells", default=None, help="comma cell_key subset (smoke parity)")
     p.add_argument("--out-root", default=None)
@@ -2273,12 +2800,20 @@ def main(argv: list[str] | None = None) -> int:
             round_name = argv[i + 1]
         elif tok.startswith("--round="):
             round_name = tok.split("=", 1)[1]
-    fu4.set_round(round_name)  # phases below read the fu4 ROUND-parametrized helpers
+    # The ctrl round is eval-only over the PARENT registry: no fu4 RoundSpec
+    # of its own (arms are plan-pinned HF subfolders, never ladder runs) —
+    # the ROUND-parametrized helpers read the i1434 parent (plan v11 §2.1).
+    fu4.set_round("i1434" if round_name == "i1434ctrl" else round_name)
     if phase in FU4_DELEGATED_PHASES:
         if not any(t == "--round" or t.startswith("--round=") for t in argv):
             argv = ["--round", round_name, *argv]
         return fu4.main(argv)
     args = _own_parser().parse_args(argv)
+    if args.round == "i1434ctrl" and args.out_root is None:
+        # Distinct default roots (plan §10 Q3/Q4 commands pass --out-root
+        # data/issue_1434/ctrl explicitly; the smoke scratch dir must never
+        # collide with a parent-round smoke chain).
+        args.out_root = "/tmp/issue-1434-i1434ctrl-smoke" if args.smoke else "data/issue_1434/ctrl"
     cfg = worker_config(args)
     logger.info(
         "issue1434_worker round=%s phase=%s smoke=%s cells=%s out_root=%s",
@@ -2305,6 +2840,9 @@ def main(argv: list[str] | None = None) -> int:
         "dose-select": phase_dose_select,
         "dose-panel": phase_dose_panel,
         "dose-judge-analyze": phase_dose_judge_analyze,
+        "control-manifest": phase_control_manifest,
+        "control-panel": phase_control_panel,
+        "control-judge-analyze": phase_control_judge_analyze,
     }
     return handlers[args.phase](cfg, args)
 

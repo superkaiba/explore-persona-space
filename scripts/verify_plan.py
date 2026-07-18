@@ -5686,14 +5686,15 @@ def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
         return None
     size = p.stat().st_size
     if p.name == "LESSONS.md":
-        # #1269: the binding runtime constraint is min(cap, growth ratchet) —
-        # a plan passing the 8000-byte cap headroom could still FAIL
-        # workflow_lint's ratchet at implement time (the plan-time miss c34
-        # exists to close).
-        ratchet = wl._LESSONS_RATCHET_BYTES
-        cap = min(wl._LESSONS_MAX_BYTES, ratchet)
-        src = "_LESSONS_RATCHET_BYTES" if ratchet < wl._LESSONS_MAX_BYTES else "_LESSONS_MAX_BYTES"
-        return cap - size, cap, src
+        # #1504: the TOTAL growth ratchet is retired — the binding total
+        # constraint is the leanness cap. Per-row / non-row budgets also
+        # bind at implement time; c34's summed-block-bytes heuristic keeps
+        # the total cap as its denominator (a single-row insert over
+        # _LESSONS_ROW_MAX_BYTES is a disclosed FN here, caught by the
+        # lint). No trigger-regex change (_C34_PATH_RE / _C34_VERB_RE /
+        # _C34_BUDGET_RE untouched) — the re-audit clause does not fire;
+        # the looser denominator only monotonically reduces WARNs.
+        return wl._LESSONS_MAX_BYTES - size, wl._LESSONS_MAX_BYTES, "_LESSONS_MAX_BYTES"
     cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
     if cap is not None:
         return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"

@@ -24,6 +24,10 @@ for _p in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # BEFORE numpy/matplotlib so the shared-VM thread caps bind (#847)
+
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")

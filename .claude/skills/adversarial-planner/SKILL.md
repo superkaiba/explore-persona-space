@@ -330,6 +330,14 @@ Run the structural verifier against the plan version just persisted:
 
 The Planner's assumptions are the #1 source of experiment-invalidating errors. Before the Critic even sees the plan, independently verify every factual claim.
 
+**Trigger-dense targets — first-pass fact-checker brief (#1503).** When
+the plan's assumptions or reuse rows point the fact-checker at
+guard/security artifacts per `.claude/rules/trigger-dense-review.md`
+(guard hooks, gated-command fixtures, refusal corpora), compose its
+brief per that rule's § First-pass briefs: targets named by path,
+grep-anchored windowed reads instructed (never wholesale), findings by
+reference, neutral gate vocabulary in the brief text (CLAUDE.md rung (e)).
+
 Spawn a SEPARATE Agent (fresh context, no access to planner's reasoning) with this role:
 
 ```
@@ -439,6 +447,13 @@ rubric (per-item REVISE bars, N/A escapes, incident citations) silently
 never loaded. (The `codex-critic` composer is unaffected: it resolves
 `lens=<id>` to the canonical subheading from its own spec —
 `.claude/agents/codex-critic.md` Step 2.)
+
+**Trigger-dense targets — first-pass critic briefs (#1503).** Same duty
+at this site: when the plan's target files include guard/security
+artifacts, every critic brief (and the consistency-checker brief)
+carries `.claude/rules/trigger-dense-review.md` § First-pass briefs —
+targets by path, windowed grep-anchored reads, findings by reference in
+the returned lens block, neutral gate vocabulary in the brief itself.
 
 **Shared preamble — prepend to each critic's brief before its lens-specific questions:**
 

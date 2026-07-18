@@ -705,3 +705,182 @@ def test_recent_closed_hits_sorted_closed_at_desc(fake_repo, monkeypatch):
 
     hits = tw.recent_closed_workflow_fix_tasks(target, now=now)
     assert [h["id"] for h in hits] == list(reversed(tids))
+
+
+# ─── #1502: open-sibling advisory helper ─────────────────────────────────────
+
+
+def test_open_sibling_advisory_lists_overlapping_open_task(fake_repo):
+    """Durability pin + incident-class pin (#1502): a prefixed wf-fix task
+    still OPEN (proposed) with the #1479 shape surfaces for a #1504-shaped
+    candidate via BOTH arms — the target-token arm and the shared informative
+    title tokens {lessons, ratchet} (the same-bug-different-wording class the
+    blocking exact-(target_file, fingerprint) dedup is blind to). Open rows
+    carry no closed_at."""
+    _, tw = fake_repo
+    fp = tw.wf_fix_fingerprint("Trim LESSONS ratchet.", "ratchet over cap")
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="workflow-fix: LESSONS.md over ratchet — trim/bump _LESSONS_RATCHET_BYTES",
+            body=_wf_fix_body(
+                "scripts/workflow_lint.py, .claude/rules/LESSONS.md", fp, "Trim LESSONS ratchet."
+            ),
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+
+    hits = tw.open_workflow_fix_siblings(
+        "scripts/workflow_lint.py", "daily-fix: LESSONS ratchet constant conflict magnet"
+    )
+    assert [h["id"] for h in hits] == [tid]
+    hit = hits[0]
+    assert "target" in hit["matched"]
+    assert "title:lessons,ratchet" in hit["matched"]
+    assert hit["status"] == "proposed"
+    assert "closed_at" not in hit
+
+
+def test_open_sibling_advisory_terminal_excluded(fake_repo):
+    """The open scan is non-terminal-only: completed/archived siblings never
+    surface (the CLOSED surface stays recent_closed_workflow_fix_tasks's)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    completed = _file_wf_fix_task(
+        tw, target, tw.wf_fix_fingerprint("Fix A.", "bug A"), proposed_change="Fix A."
+    )
+    tw.set_status(completed, "completed")
+    archived = _file_wf_fix_task(
+        tw, target, tw.wf_fix_fingerprint("Fix B.", "bug B"), proposed_change="Fix B."
+    )
+    tw.set_status(archived, "archived")
+    assert tw.open_workflow_fix_siblings(target) == []
+
+
+def test_open_sibling_advisory_lists_different_fingerprint_sibling(fake_repo):
+    """The advisory sees what the dedup deliberately doesn't: SAME target,
+    DIFFERENT fingerprint is NOT a duplicate (is_open_workflow_fix_task
+    returns None — the #678 A1 grain, unchanged) yet the open sibling still
+    SURFACES for the filer to eyeball."""
+    _, tw = fake_repo
+    target = ".claude/skills/issue/SKILL.md"
+    fp_a = tw.wf_fix_fingerprint("Fix the gate.", "The gate is wrong")
+    fp_b = tw.wf_fix_fingerprint("Re-point the marker docs.", "The marker doc is stale")
+    tid = _file_wf_fix_task(tw, target, fp_a)
+
+    assert tw.is_open_workflow_fix_task(target, fp_b) is None
+    hits = tw.open_workflow_fix_siblings(target, None)
+    assert [h["id"] for h in hits] == [tid]
+    assert hits[0]["matched"] == ["target"]
+
+
+def test_open_sibling_advisory_plain_infra_two_token_bar(fake_repo):
+    """AC4 differential (open transpose of the closed-pass pin): a
+    non-prefixed OPEN infra task sharing 1 informative token -> no widened
+    hit, while the SAME 1-token overlap behind a wf-fix channel prefix still
+    surfaces via the prefixed pass's >=1 bar."""
+    _, tw = fake_repo
+    tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="watcher retry backstop for pod polling",
+            body="## Goal\n\nplain infra sibling\n",
+        )
+    )
+    prefixed = _file_wf_fix_task(
+        tw,
+        "scripts/pod_watch.py",
+        tw.wf_fix_fingerprint("Watcher retry backstop.", "watcher retry gap"),
+        proposed_change="watcher retry backstop for pod polling",
+    )
+
+    hits = tw.open_workflow_fix_siblings(None, "workflow-fix: retry advisory widening")
+    assert [h["id"] for h in hits] == [prefixed]
+    assert hits[0]["matched"] == ["title:retry"]
+
+
+def test_open_sibling_advisory_plain_infra_target_body_match(fake_repo):
+    """Widened arm on the OPEN population: a non-prefixed open infra task
+    whose body contains the candidate FULL path surfaces via infra-target,
+    with `target` echoing the found candidate path (mirror of the closed
+    pass's widened-arm pin)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    fp = tw.wf_fix_fingerprint("Fix the gate.", "gate wrong")
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="refactor: tidy the gate",
+            body=_wf_fix_body(target, fp, "Fix the gate."),
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+
+    hits = tw.open_workflow_fix_siblings(target)
+    assert [h["id"] for h in hits] == [tid]
+    assert hits[0]["matched"] == ["infra-target"]
+    assert hits[0]["target"] == "CLAUDE.md"
+
+
+def test_open_sibling_advisory_plain_infra_opt_out(fake_repo):
+    """include_plain_infra=False excludes the non-prefixed open sibling (the
+    kwarg mirrors the closed enumerator's opt-out semantics)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    fp = tw.wf_fix_fingerprint("Fix the gate.", "gate wrong")
+    tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="refactor: tidy the gate",
+            body=_wf_fix_body(target, fp, "Fix the gate."),
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    assert tw.open_workflow_fix_siblings(target, include_plain_infra=False) == []
+
+
+def test_open_sibling_advisory_empty_when_no_candidate_keys(fake_repo, monkeypatch):
+    """(None, None) and ("", "") return [] BEFORE any registry load — the
+    no-candidate short-circuit precedes _load_registry entirely."""
+    _, tw = fake_repo
+
+    def _boom():
+        raise AssertionError("registry scan must not run with no candidate keys")
+
+    monkeypatch.setattr(tw, "_load_registry", _boom)
+    assert tw.open_workflow_fix_siblings(None, None) == []
+    assert tw.open_workflow_fix_siblings("", "") == []
+
+
+def test_open_sibling_advisory_sorted_id_desc(fake_repo):
+    """Overlapping open siblings sort id DESC (ids are allocation-ordered, so
+    most recently filed first — the open-population analogue of the closed
+    pass's closed_at DESC)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    tids = [
+        _file_wf_fix_task(
+            tw, target, tw.wf_fix_fingerprint(f"Fix {i}.", f"bug {i}"), proposed_change=f"Fix {i}."
+        )
+        for i in range(3)
+    ]
+
+    hits = tw.open_workflow_fix_siblings(target)
+    assert [h["id"] for h in hits] == sorted(tids, reverse=True)
+
+
+def test_open_sibling_advisory_non_infra_kind_excluded(fake_repo):
+    """An open kind:experiment task never surfaces even with a matching
+    prefixed title + anchored target line (the population is kind==infra,
+    same as the dedup predicate's)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    fp = tw.wf_fix_fingerprint("Fix the gate.", "gate wrong")
+    tw.create_task(
+        tw.NewTaskRequest(
+            kind="experiment",
+            title="workflow-fix: gate advisory fix",
+            body=_wf_fix_body(target, fp, "Fix the gate."),
+        )
+    )
+    assert tw.open_workflow_fix_siblings(target, "workflow-fix: gate advisory fix") == []

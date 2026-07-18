@@ -984,7 +984,9 @@ def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
 # gated form no longer false-blocks (incident 4 + the adjacent cat-note
 # shape). Quoted/escaped-tag bodies stay strippable even with `$(git ...)`
 # text (bash suppresses expansion); unquoted-tag bodies strip only when they
-# carry NO expansion syntax. NOT guarded by @on_main.
+# carry no expansion syntax beyond plain `${NAME}` parameter references —
+# check (g) deletes plain spans from a scan copy before the refusal (#1501).
+# NOT guarded by @on_main.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -1005,6 +1007,48 @@ def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
             "Recovery used: git checkout main -- .claude/skills/issue/SKILL.md\n"
             "EOF",
             id="M1h-cat_note_unquoted_no_expansion",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
+            id="M1d-bare_param_expansion_plus_gated_prose",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${A} and ${B_2}\nhow to revert: git restore .\nEOF",
+            id="M1j-multiple_plain_spans_plus_gated_prose",
+        ),
+        pytest.param(
+            # <<- tag form: terminator (and body) genuinely TAB-indented — a
+            # space-indented terminator under <<- never terminates and would
+            # exercise the unterminated-refusal arm instead of check (g).
+            "cat > /tmp/note.md <<-EOF\n"
+            "\tvalue is ${SOMEVAR}\n"
+            "\thow to revert: git restore .\n"
+            "\tEOF",
+            id="M1k-dash_tag_plain_span",
+        ),
+        pytest.param(
+            # Copy-contract discriminator (#1501): line 1 = the fenced-verb
+            # prose with the verb INTERRUPTED by a plain span; line 2 = a
+            # (g)-refusing form. Line ORDER is load-bearing (pass 1 breaks at
+            # the first refusal, so the interrupted-verb line must precede
+            # it). Correct copy-scan: line 1 passes (span deleted from the
+            # COPY only), line 2 refuses, buf[] emits VERBATIM, and the raw
+            # scan sees the interrupted text (no verb bigram) -> ALLOW. An
+            # in-place-mutation bug deletes ${A} from buf[] itself,
+            # reassembling the verb bigram -> BLOCK -> this fixture fails
+            # loud. Verified ALLOW both pre-fix and post-fix (2026-07-18), so
+            # it discriminates ONLY the copy contract, not the narrowing.
+            "cat > /tmp/note.md <<EOF\nhow to revert: git rest${A}ore .\nvalue is ${B@P}\nEOF",
+            id="M1L-copy_contract_discriminator",
+        ),
+        pytest.param(
+            # Escaped-dollar deliberate-flip pin (#1501): \${NAME} was BLOCKED
+            # pre-fix (blanket ${ arm) and is ALLOWED post-fix — the deletion
+            # regex matches the ${NAME} substring after the backslash; sound
+            # because under an unquoted tag \$ suppresses expansion entirely
+            # (literal text). Named in the script's gap-(xiii) ledger.
+            "cat > /tmp/note.md <<EOF\nvalue is \\${NAME}\nhow to revert: git restore .\nEOF",
+            id="M1m-escaped_dollar_plain_span",
         ),
         pytest.param(
             "cat > /tmp/note.md <<'EOF'\n$(git checkout -b evil)\nEOF",
@@ -1055,9 +1099,12 @@ def test_nonshell_heredoc_body_mention_allows(cmd):
 # MUST BLOCK — unquoted-tag heredoc bodies carrying expansion syntax. Bash
 # performs command/parameter substitution on an UNQUOTED-tag body at feed
 # time, so `$(git ...)` / backticks in it EXECUTE regardless of the consumer;
-# the strip refuses such bodies (`${` refuses too — parameter expansion can
-# nest command substitution, a documented fail-closed over-match on plain
-# `${VAR}` references). The MUST-FIX-1 matrix.
+# the strip refuses such bodies. Non-plain `${...}` forms refuse too
+# (parameter expansion can nest command substitution, and `${V@P}` executes
+# value-borne command substitution at feed time); plain `${NAME}` spans are
+# deleted from a scan COPY before the refusal as of #1501 — the former
+# fail-closed over-match on plain references now lives in the ALLOW matrix
+# (M1d, moved there verbatim). The MUST-FIX-1 matrix.
 # ---------------------------------------------------------------------------
 @on_main
 @pytest.mark.parametrize(
@@ -1076,8 +1123,50 @@ def test_nonshell_heredoc_body_mention_allows(cmd):
             id="M1c-nested_param_cmdsub",
         ),
         pytest.param(
-            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
-            id="M1d-bare_param_expansion_plus_gated_prose",
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR:-x}\nhow to revert: git restore .\nEOF",
+            id="M1d2-param_fallback_form_still_refuses",
+        ),
+        pytest.param(
+            # ${V@P} is the live-verified feed-time execution vector (prompt
+            # expansion of the variable's VALUE; promptvars is on by default,
+            # non-interactive included) — the reason check (g) keeps refusing
+            # every non-plain ${...} form (#1501).
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR@P}\nhow to revert: git restore .\nEOF",
+            id="M1d3-prompt_transform_still_refuses",
+        ),
+        pytest.param(
+            # Pins that plain-span deletion cannot MASK the $( refusal: a plain
+            # span immediately followed by M1a's substitution text.
+            "cat > /tmp/note.md <<EOF\n"
+            "${A}$(git checkout -b evil)\n"
+            "how to revert: git restore .\n"
+            "EOF",
+            id="M1d4-plain_span_adjacent_to_cmdsub",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n"
+            "value is ${SOMEVAR and more\n"
+            "how to revert: git restore .\n"
+            "EOF",
+            id="M1d5-unclosed_brace_still_refuses",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\ncount is $((1 + 1))\nhow to revert: git restore .\nEOF",
+            id="M1d6-arithmetic_still_refuses",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\narg is ${1}\nhow to revert: git restore .\nEOF",
+            id="M1d7-positional_param_still_refuses",
+        ),
+        pytest.param(
+            # Dash-tag block-side mirror of M1k: tag-form independence holds on
+            # the refusal side too (the check-(g) edit sits inside if (!QUOTED)
+            # with no tag-form consult; pinned rather than assumed).
+            "cat > /tmp/note.md <<-EOF\n"
+            "\tvalue is ${SOMEVAR@P}\n"
+            "\thow to revert: git restore .\n"
+            "\tEOF",
+            id="M1d8-dash_tag_transform_still_refuses",
         ),
     ],
 )

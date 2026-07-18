@@ -19,14 +19,21 @@ persisted 2 consecutive observed ticks (``zombie_streak`` sidecar key).
 Since #864 the override additionally carries a namespace-informativeness
 gate: the probe counts ``GPU_PIDS_TOTAL`` / ``GPU_PIDS_RESOLVABLE`` and
 (zombie-candidate-guarded) ``NVIDIA_UVM_LIVE_HOLDERS`` — live container
-processes holding an EXACT ``/dev/nvidia-uvm`` fd. When
-``total > 0 AND resolvable == 0 AND uvm > 0`` the dead-in-/proc signature
-is a PID-namespace artifact (the flagged PIDs ARE live workers under host
-ids — the #813 false positive: a healthy ~29-min CPU-bound quiet stretch
-outlived the #826 stale-log veto) and the override is vetoed regardless of
-log staleness. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED``
-(``EPM_ZOMBIE_NAMESPACE_VETO``; ships default-OFF per the #864 live-pod
-gate disposition).
+processes holding an EXACT ``/dev/nvidia-uvm`` fd — plus, since #1216,
+``NVIDIA_UVM_ALLOC_HOLDERS``: the subset of those holders whose
+``/proc/<pid>/maps`` carries an end-anchored file-backed
+``/dev/nvidia-uvm`` entry (allocation-time UVM mmaps — evidence a live
+CUDA worker has and a bare-cuInit coordinator lacks; the S3-standalone
+literal picked at the #1216 §7-A gate). When
+``total > 0 AND resolvable == 0 AND alloc > 0`` the dead-in-/proc
+signature is a PID-namespace artifact (the flagged PIDs ARE live workers
+under host ids — the #813 false positive: a healthy ~29-min CPU-bound
+quiet stretch outlived the #826 stale-log veto) and the override is
+vetoed regardless of log staleness; the LIVE-holder count is forensic
+only. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED``
+(``EPM_ZOMBIE_NAMESPACE_VETO``; ships default-ON per the #1216 §7
+live-pod gate — 2026-07-18, disposition D1, driver 580.126.09; ``=0`` is
+the ops kill-switch).
 
 Since #951 the override additionally carries a material-compute liveness
 veto: when the per-tick session-CPU burn rate (delta of the persisted
@@ -57,16 +64,23 @@ These tests pin:
 * the override NEVER firing on a ``done`` verdict;
 * the JSON surface (``poll_pipeline.main`` + ``backend_poll`` serializer)
   carrying ``stall_reason``;
-* the #864 namespace-informativeness gate: the parser lifting the three
-  count keys; the #813-shape veto (running + streak reset + the
-  ``cpu_override_active`` passthrough); the #664 total collapse and the
-  matched-namespace partial death still firing WITH the gate enabled;
-  degraded ``uvm`` / ``resolvable`` reads falling back to pure #826 (the
-  fail-toward-current-behavior direction); the
-  ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch; the producer-side probe
-  emission / key-parity / exact end-anchored ``/dev/nvidia-uvm`` matcher
-  pin (a heredoc typo must not leave the gate silently inert); and
-  ``_parse_probe_count`` unit behavior;
+* the #864/#1216 namespace-informativeness gate: the parser lifting the
+  four count keys; the #813-shape veto on allocation-evidenced holders
+  (running + streak reset + the ``cpu_override_active`` passthrough); the
+  coordinator-only survivor (uvm > 0, alloc = 0) and the #664 total
+  collapse falling through and firing (the #1216 TP-preservation point);
+  uvm-positive/alloc-zero pinning that the predicate keys on alloc, not
+  uvm; the matched-namespace partial death still firing WITH the gate
+  enabled; degraded ``alloc`` / ``uvm`` / ``resolvable`` / ``total``
+  reads falling back to pure #826 (the fail-toward-current-behavior
+  direction); the single-alloc-holder veto (the ``> 0`` threshold —
+  correspondence counting deliberately rejected); the
+  ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch + the shipped
+  default-literal durability pin; the producer-side probe emission /
+  key-parity / exact end-anchored ``/dev/nvidia-uvm`` matcher + the
+  #1216 allocation-evidence maps-matcher pin (a heredoc typo must not
+  leave the gate silently inert); and ``_parse_probe_count`` unit
+  behavior;
 * the #951 material-compute veto: ``_session_cpu_rate_cores`` unit
   behavior (happy path, fail-safe inputs, dt floor, negative delta); the
   #825 replay vetoing (seeded with ``max_cpu_secs`` DISTINCT from the raw
@@ -174,12 +188,15 @@ def _probe_stdout(
     gpu_pids_total: str = "unknown",
     gpu_pids_resolvable: str = "unknown",
     uvm_live_holders: str = "unknown",
+    uvm_alloc_holders: str = "unknown",
     session_pcpu: str = "unknown",
 ) -> str:
     """Probe stdout in the shape ``_parse_probe_stdout`` expects.
 
-    The #864 count kwargs — and the #1477 ``session_pcpu`` kwarg — default
-    ``"unknown"`` (the degraded-probe read), so every pre-#864 / pre-#1477
+    The #864 count kwargs — the #1216 ``uvm_alloc_holders`` kwarg — and the
+    #1477 ``session_pcpu`` kwarg — default
+    ``"unknown"`` (the degraded-probe read), so every pre-#864 / pre-#1216 /
+    pre-#1477
     test exercises the fall-through-to-#826 path UNMODIFIED (acceptance
     criterion: existing tests pass unchanged)."""
     return "\n".join(
@@ -200,6 +217,7 @@ def _probe_stdout(
             f"GPU_PIDS_TOTAL={gpu_pids_total}",
             f"GPU_PIDS_RESOLVABLE={gpu_pids_resolvable}",
             f"NVIDIA_UVM_LIVE_HOLDERS={uvm_live_holders}",
+            f"NVIDIA_UVM_ALLOC_HOLDERS={uvm_alloc_holders}",
             f"SESSION_CPU_SECS={session_cpu}",
             f"SESSION_PCPU_TOTAL={session_pcpu}",
             "RESULTS_SENTINEL_PRESENT=0",
@@ -219,6 +237,7 @@ def _patch_pod(
     gpu_pids_total: str = "unknown",
     gpu_pids_resolvable: str = "unknown",
     uvm_live_holders: str = "unknown",
+    uvm_alloc_holders: str = "unknown",
     session_pcpu: str = "unknown",
 ) -> None:
     """Monkeypatch poll_pipeline's I/O boundary with a fully-controlled probe.
@@ -244,6 +263,7 @@ def _patch_pod(
                 gpu_pids_total=gpu_pids_total,
                 gpu_pids_resolvable=gpu_pids_resolvable,
                 uvm_live_holders=uvm_live_holders,
+                uvm_alloc_holders=uvm_alloc_holders,
                 session_pcpu=session_pcpu,
             )
         )
@@ -734,28 +754,89 @@ def test_parse_probe_stdout_lifts_namespace_counts() -> None:
     assert older["nvidia_uvm_live_holders"] == "unknown"
 
 
-def test_zombie_namespace_artifact_live_uvm_holders_vetoes(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_parse_probe_stdout_lifts_alloc_holders() -> None:
+    """The parser lifts the #1216 ``NVIDIA_UVM_ALLOC_HOLDERS`` key; a stdout
+    missing it (older probe / pre-#1216 heredoc) defaults to ``"unknown"``
+    — the degraded read the veto can never arm on."""
+    parsed = pp._parse_probe_stdout(
+        "\n".join(
+            [
+                "PID_ALIVE=1",
+                "GPU_UTIL=0",
+                "ZOMBIE_GPU_PIDS=900001",
+                "GPU_PIDS_TOTAL=4",
+                "GPU_PIDS_RESOLVABLE=0",
+                "NVIDIA_UVM_LIVE_HOLDERS=5",
+                "NVIDIA_UVM_ALLOC_HOLDERS=4",
+            ]
+        )
+    )
+    assert parsed["nvidia_uvm_alloc_holders"] == "4"
+
+    older = pp._parse_probe_stdout("PID_ALIVE=1\nGPU_UTIL=0\nZOMBIE_GPU_PIDS=900001\n")
+    assert older["nvidia_uvm_alloc_holders"] == "unknown"
+
+
+@pytest.mark.parametrize(
+    ("zombie_pids", "gpu_util", "total", "uvm", "alloc"),
+    [
+        pytest.param("900001 900002", "0", "2", "3", "2", id="gate-measured-2026-07-18"),
+        pytest.param(
+            "900001 900002 900003 900004",
+            "0,0,0,0,0,0,0,0",
+            "4",
+            "5",
+            "4",
+            id="historic-813-shape",
+        ),
+    ],
+)
+def test_zombie_namespace_artifact_alloc_holders_vetoes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    zombie_pids: str,
+    gpu_util: str,
+    total: str,
+    uvm: str,
+    alloc: str,
 ) -> None:
-    """The #813 shape: stale logs (> 900s window), idle GPUs, CPU advancing
-    (present but unconsulted), 4 VRAM holders unresolvable in /proc, 4 live
-    in-container uvm holders, streak pre-seeded to "1" (would fire under
-    pure #826). The namespace gate vetoes regardless of log staleness:
-    running, no reason, streak reset to "0". Also pins the
-    ``cpu_override_active`` passthrough on the veto return (direct calls,
-    both truth values)."""
+    """The mismatched-namespace healthy-worker shape under the #1216
+    discriminator: stale logs (> 900s window), idle GPUs, CPU advancing
+    (present but unconsulted), VRAM holders unresolvable in /proc, live
+    in-container uvm holders with an allocation-evidenced subset, streak
+    pre-seeded to "1" (would fire under pure #826). The namespace gate
+    vetoes regardless of log staleness: running, no reason, streak reset
+    to "0". Also pins the ``cpu_override_active`` passthrough on the veto
+    return (direct calls, both truth values).
+
+    Count provenance — PRIMARY param is the GATE-MEASURED fresh-pod
+    positive shape (LIVE provenance: #1216 §7 Pass-2 record, 2026-07-18,
+    pod-1216 1x H100 driver 580.126.09, verbatim branch heredoc, ZOMBIE
+    seeded): 2 torch workers + 1 bare-cuInit coordinator -> total=2
+    compute-apps rows / resolvable=0 / UVM_HOLDERS=3 / ALLOC_HOLDERS=2
+    (exact expectation). The SECOND param keeps the historical #813
+    tuple: uvm=5 MEASURED (#864 §7 gate on pod-813: 4x ``run_cell``
+    workers + 1 ``issue813_dispatch.py`` coordinator, 5 exact-uvm holders
+    vs 4 compute apps); alloc=4 HYPOTHESIZED (= uvm minus the 1
+    allocation-free coordinator; pod-813 is terminated so not
+    re-measurable). The predicate branches on ``alloc > 0`` so the exact
+    values are not load-bearing; the threshold/keying pins live in
+    ``test_zombie_partial_alloc_holder_vetoes`` /
+    ``test_zombie_uvm_positive_alloc_zero_does_not_veto`` /
+    ``test_zombie_coordinator_only_falls_through_and_fires``."""
     monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
     now = int(time.time())
     _patch_pod(
         monkeypatch,
         mtime_epoch=now - 2000,
         tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
-        gpu_util="0,0,0,0,0,0,0,0",
+        gpu_util=gpu_util,
         session_cpu="5000.0",  # advancing vs prev 4000.0 — NOT consulted by the gate
-        zombie_pids="900001 900002 900003 900004",
-        gpu_pids_total="4",
+        zombie_pids=zombie_pids,
+        gpu_pids_total=total,
         gpu_pids_resolvable="0",
-        uvm_live_holders="4",
+        uvm_live_holders=uvm,
+        uvm_alloc_holders=alloc,
     )
     state_file = tmp_path / "poll-state.json"
     state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
@@ -774,7 +855,7 @@ def test_zombie_namespace_artifact_live_uvm_holders_vetoes(
     for cpu_flag in (True, False):
         out = pp._apply_zombie_override(
             status="running",
-            zombie_gpu_pids=["900001"],
+            zombie_gpu_pids=zombie_pids.split()[:1],
             stall_sec=900,
             last_mtime_ago=2000.0,
             phase_log_mtime_ago=10**9,
@@ -782,20 +863,24 @@ def test_zombie_namespace_artifact_live_uvm_holders_vetoes(
             prev_state={"zombie_streak": "1"},
             pod="pod-9664",
             cpu_override_active=cpu_flag,
-            gpu_pids_total=4,
+            gpu_pids_total=int(total),
             gpu_pids_resolvable=0,
-            uvm_live_holders=4,
+            uvm_live_holders=int(uvm),
+            uvm_alloc_holders=int(alloc),
         )
         assert out == ("running", None, cpu_flag, 0)
 
 
-def test_zombie_total_collapse_fires_with_namespace_counts(
+def test_zombie_coordinator_only_falls_through_and_fires(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """The #664 shape WITH the gate enabled and counts present: 1 unresolvable
-    VRAM holder, ZERO live uvm holders (total collapse — nothing on the pod
-    holds a live CUDA context). Falls through to #826, which fires on
-    stale logs + 2-tick persistence."""
+    """The #864 §7 negative shape — the TP-preservation pin the #1216
+    redesign exists for: workers dead, only the allocation-free
+    coordinator survives (total=4 orphaned compute-apps entries,
+    resolvable=0, uvm=1 — the coordinator's bare-cuInit fd — alloc=0).
+    Pre-#1216 the ``uvm > 0`` predicate would have vetoed this genuine
+    total collapse; the alloc discriminator falls through and #826 fires
+    on stale logs + 2-tick persistence."""
     monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
     now = int(time.time())
     _patch_pod(
@@ -804,10 +889,11 @@ def test_zombie_total_collapse_fires_with_namespace_counts(
         tail="2026-06-27 00:00:01 [phase=training step=5/100]",
         gpu_util="0,0,0,0,0,0,0,0",
         session_cpu="5000.0",
-        zombie_pids="1262130",
-        gpu_pids_total="1",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
         gpu_pids_resolvable="0",
-        uvm_live_holders="0",
+        uvm_live_holders="1",
+        uvm_alloc_holders="0",
     )
     state_file = tmp_path / "poll-state.json"
     state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
@@ -822,13 +908,50 @@ def test_zombie_total_collapse_fires_with_namespace_counts(
     assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
 
 
-def test_zombie_matched_namespace_fires_despite_live_uvm_holders(
+def test_zombie_total_collapse_fires_with_namespace_counts(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """TP protection on a MATCHED-namespace pod: 8 compute PIDs, 7 resolve in
+    """The #664 shape WITH the gate enabled and counts present: 1 unresolvable
+    VRAM holder, ZERO live uvm holders and ZERO allocation-evidenced
+    holders (total collapse — nothing on the pod
+    holds a live CUDA context). Falls through to #826, which fires on
+    stale logs + 2-tick persistence."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="1262130",
+        gpu_pids_total="1",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="0",
+        uvm_alloc_holders="0",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_matched_namespace_fires_despite_alloc_holders(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """TP protection on a MATCHED-namespace pod (truth-table row 3): 8
+    compute PIDs, 7 resolve in
     /proc (one genuinely reaped worker among live siblings), 7 live uvm
-    holders. ``resolvable > 0`` means the /proc signal is informative, so
-    live holders do NOT veto — #826 fires on the stale-log + 2-tick path."""
+    holders, all 7 allocation-evidenced. ``resolvable > 0`` means the
+    /proc signal is informative, so
+    alloc holders do NOT veto — #826 fires on the stale-log + 2-tick path."""
     monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
     now = int(time.time())
     _patch_pod(
@@ -841,6 +964,7 @@ def test_zombie_matched_namespace_fires_despite_live_uvm_holders(
         gpu_pids_total="8",
         gpu_pids_resolvable="7",
         uvm_live_holders="7",
+        uvm_alloc_holders="7",
     )
     state_file = tmp_path / "poll-state.json"
     state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
@@ -921,23 +1045,26 @@ def test_zombie_resolvable_unknown_falls_back_to_826(
     assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
 
 
-def test_zombie_namespace_veto_kill_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """``EPM_ZOMBIE_NAMESPACE_VETO=0`` (the ops escape hatch, and the shipped
-    default per the #864 live-pod gate disposition): the exact #813 veto
-    shape behaves as pure #826 — stale logs + 2-tick persistence fire the
-    override despite the namespace-artifact counts."""
-    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", False)
+def test_zombie_alloc_unknown_falls_back_to_826(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A degraded per-holder allocation scan (alloc ``unknown`` while uvm
+    read fine — truth-table row 5) can never arm the veto: falls through
+    to pure #826, which fires on stale logs + 2-tick persistence (the
+    fail-toward-current direction; a degraded read never suppresses)."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
     now = int(time.time())
     _patch_pod(
         monkeypatch,
         mtime_epoch=now - 2000,
-        tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
         gpu_util="0,0,0,0,0,0,0,0",
         session_cpu="5000.0",
         zombie_pids="900001 900002 900003 900004",
         gpu_pids_total="4",
         gpu_pids_resolvable="0",
-        uvm_live_holders="4",
+        uvm_live_holders="5",
+        uvm_alloc_holders="unknown",
     )
     state_file = tmp_path / "poll-state.json"
     state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
@@ -952,17 +1079,169 @@ def test_zombie_namespace_veto_kill_switch(monkeypatch: pytest.MonkeyPatch, tmp_
     assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
 
 
+def test_zombie_uvm_positive_alloc_zero_does_not_veto(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The predicate keys on ALLOC holders, not bare uvm holders — guards a
+    refactor regression back to the #864 ``uvm > 0`` predicate: uvm=5
+    (would have vetoed pre-#1216), alloc=0 → fall through, #826 fires on
+    stale logs + 2-tick persistence."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="5",
+        uvm_alloc_holders="0",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_partial_alloc_holder_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The off-by-one edge that pins the ``> 0`` threshold — the deliberate
+    REJECTION of correspondence counting (``alloc >= total`` would read
+    total=1-collapse + 1 surviving alloc holder as 1>=1 and suppress a TP;
+    #864 measured 5 holders vs 4 apps, so exact correspondence is
+    empirically off-by-one anyway): total=4, resolvable=0, alloc=1 →
+    veto (running, streak reset). This is also residual (b)'s documented
+    boundary: ONE surviving allocation-evidenced worker on a
+    mismatched-namespace pod suppresses a partial-death read by
+    construction."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="2",
+        uvm_alloc_holders="1",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+
+def test_zombie_total_unknown_or_zero_falls_through_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Truth-table row 4 (total unknown/0 → fall through) with the gate
+    ENABLED: a degraded or empty compute-apps read can never arm the veto
+    even with allocation-evidenced holders present — the persisted
+    stale-log candidate fires (#826). Direct-call form; pre-#1216 this row
+    had no dedicated enabled-path pin (the fixture-default fall-through
+    tests run with the veto at its shipped-OFF default)."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    for total in (None, 0):
+        out = pp._apply_zombie_override(
+            status="running",
+            zombie_gpu_pids=["900001"],
+            stall_sec=900,
+            last_mtime_ago=2000.0,
+            phase_log_mtime_ago=10**9,
+            shard_log_mtime_ago=10**9,
+            prev_state={"zombie_streak": "1"},
+            pod="pod-9664",
+            cpu_override_active=True,
+            gpu_pids_total=total,
+            gpu_pids_resolvable=0,
+            uvm_live_holders=5,
+            uvm_alloc_holders=4,
+        )
+        assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
+
+
+def test_zombie_namespace_veto_kill_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """``EPM_ZOMBIE_NAMESPACE_VETO=0`` (the ops escape hatch, and the shipped
+    default pending the #1216 live-pod gate disposition): the exact #813
+    veto shape — allocation-evidenced counts present — behaves as pure
+    #826: stale logs + 2-tick persistence fire the
+    override despite the namespace-artifact counts."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", False)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="5",
+        uvm_alloc_holders="4",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_namespace_veto_default_on() -> None:
+    """Durability pin for the shipped kill-switch default literal (house
+    source-pin style — asserting the source text avoids a fragile module
+    reload).
+
+    Phase D of #1216 registered disposition D1 at the §7 live-pod gate
+    (2026-07-18, pod-1216, driver 580.126.09; amended §7-A rung-4
+    S3-standalone pick rule): the veto ships default-ON — the pinned
+    literal is ``"1"`` (``EPM_ZOMBIE_NAMESPACE_VETO=0`` is the ops
+    kill-switch, pure #826 behavior). A silent default flip in EITHER
+    direction is what this pin catches."""
+    src = (REPO_ROOT / "scripts" / "poll_pipeline.py").read_text()
+    assert 'os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "1")' in src
+
+
 def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Producer-side emission / key-parity pin (#864; the #607
+    """Producer-side emission / key-parity pin (#864 + #1216; the #607
     producer->parser-contract hole): a heredoc typo must not leave the gate
     permanently inert while every fixture test stays green. Captures the
-    REAL probe text ``_ssh_probe`` sends over SSH and asserts (a) the three
+    REAL probe text ``_ssh_probe`` sends over SSH and asserts (a) the four
     emission tokens in the nvidia-smi branch AND their ``=unknown`` twins in
     the else branch; (b) key parity across ``_PROBE_SCALAR_KEYS``, the
     parser defaults, the ssh-failed fallback dict, and the call-site
     ``probe.get(...)`` reads; (c) the exact END-ANCHORED ``/dev/nvidia-uvm``
     matcher (``/dev/nvidia-uvm-tools`` / ``nvidiactl`` / ``nvidia[0-9]``
-    must never count)."""
+    must never count — UNCHANGED by #1216); (d) the finalized #1216
+    allocation-evidence maps matcher, ``2>/dev/null``-guarded."""
     import subprocess as _subprocess
 
     captured: dict[str, str] = {}
@@ -984,13 +1263,20 @@ def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -
     assert 'echo "GPU_PIDS_TOTAL=$GPU_PIDS_TOTAL"' in remote
     assert 'echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"' in remote
     assert 'echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"' in remote
+    assert 'echo "NVIDIA_UVM_ALLOC_HOLDERS=$UVM_ALLOC_HOLDERS"' in remote
     assert 'echo "GPU_PIDS_TOTAL=unknown"' in remote
     assert 'echo "GPU_PIDS_RESOLVABLE=unknown"' in remote
     assert 'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"' in remote
+    assert 'echo "NVIDIA_UVM_ALLOC_HOLDERS=unknown"' in remote
 
     # (b) key parity: emitted key -> _PROBE_SCALAR_KEYS -> parser default ->
     # ssh-failed fallback -> call-site probe.get read (lowercased mapping).
-    new_keys = ("GPU_PIDS_TOTAL", "GPU_PIDS_RESOLVABLE", "NVIDIA_UVM_LIVE_HOLDERS")
+    new_keys = (
+        "GPU_PIDS_TOTAL",
+        "GPU_PIDS_RESOLVABLE",
+        "NVIDIA_UVM_LIVE_HOLDERS",
+        "NVIDIA_UVM_ALLOC_HOLDERS",
+    )
     parser_defaults = pp._parse_probe_stdout("")
     for key in new_keys:
         assert key in pp._PROBE_SCALAR_KEYS
@@ -1010,13 +1296,27 @@ def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -
         assert fallback[key.lower()] == "unknown"
 
     src = (REPO_ROOT / "scripts" / "poll_pipeline.py").read_text()
-    for lowered in ("gpu_pids_total", "gpu_pids_resolvable", "nvidia_uvm_live_holders"):
+    for lowered in (
+        "gpu_pids_total",
+        "gpu_pids_resolvable",
+        "nvidia_uvm_live_holders",
+        "nvidia_uvm_alloc_holders",
+    ):
         assert f'_parse_probe_count(probe.get("{lowered}"))' in src
 
     # (c) the exact end-anchored uvm matcher — a substring/prefix match would
     # count /dev/nvidia-uvm-tools holders and suppress the #664 TP.
     assert 'grep -q " -> /dev/nvidia-uvm$"' in remote
     assert "/dev/nvidia-uvm-tools" not in remote
+
+    # (d) the finalized #1216 allocation-evidence matcher (S3-standalone,
+    # picked by the amended §7 rung-4 gate): a file-backed /dev/nvidia-uvm
+    # maps entry, END-ANCHORED so -uvm-tools never counts; the per-holder
+    # 2>/dev/null guard fails an unreadable proc toward NOT counting (less
+    # suppression, the #826 fall-through). Pin the FULL maps invocation —
+    # the bare suffix ` /dev/nvidia-uvm$` is a substring of the fd matcher
+    # ` -> /dev/nvidia-uvm$` above and would be vacuously satisfied.
+    assert 'grep -qm1 " /dev/nvidia-uvm$" "$p/maps" 2>/dev/null' in remote
 
 
 # ── #951 material-compute liveness veto ───────────────────────────────────────

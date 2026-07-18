@@ -1,0 +1,353 @@
+{
+  "commit": "670462102a",
+  "created": "2026-07-18T07:32:35Z",
+  "figsize": [
+    12.8,
+    8.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "monitoring correlation r\n(readout vs judge score)": 0.7741656872855981,
+      "error": 0.05460407278044854,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "monitoring correlation r\n(readout vs judge score)": 0.03683248536964268,
+      "error": 0.1521552576704837,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.81,
+      "monitoring correlation r\n(readout vs judge score)": -0.704932509274403,
+      "error": 0.08035643797094405,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "monitoring correlation r\n(readout vs judge score)": 0.7592700278999972,
+      "error": 0.058049273662565515,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "monitoring correlation r\n(readout vs judge score)": 0.665071002058869,
+      "error": 0.09126198095525917,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "monitoring correlation r\n(readout vs judge score)": -0.7142103097022202,
+      "error": 0.07404504990101712,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "y": 0.8866189910617008,
+      "error": 0.03386896058051109,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.81,
+      "y": -0.21372741000367013,
+      "error": 0.16380512536780656,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.81,
+      "y": 0.8502735756349422,
+      "error": 0.04140842353190077,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "y": 0.8878730633333515,
+      "error": 0.03625716611513419,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.19,
+      "y": -0.4300467129306446,
+      "error": 0.15950283105412597,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.19,
+      "y": 0.8479041335885555,
+      "error": 0.04804348144305476,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "questions averaged per prefix (N)": 1.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.4759318974943386,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 2.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.583339046891066,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 3.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.634553910025556,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 4.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.6571535507622599,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 6.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.7044700093051991,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 8.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.7148868979956898,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 12.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.7394625451262249,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 16.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.7447397446424813,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 24.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.7625605044115795,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 32.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.770099428970154,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 48.0,
+      "monitoring correlation r\n(supervised probe vs judge score)": 0.774165687285598,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per prefix (N)": 1.0,
+      "y": 0.5767831569116053,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 2.0,
+      "y": 0.6920442064358189,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 3.0,
+      "y": 0.7436824909437307,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 4.0,
+      "y": 0.771774947842478,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 6.0,
+      "y": 0.8091417773058082,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 8.0,
+      "y": 0.8278235329618551,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 12.0,
+      "y": 0.8475212176226604,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 16.0,
+      "y": 0.8589313271392471,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 24.0,
+      "y": 0.874583699109031,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 32.0,
+      "y": 0.8793815369577759,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per prefix (N)": 48.0,
+      "y": 0.8866189910617004,
+      "series": "query-averaged context vectors (mean of N question-contexts; N=48 in top row)",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 34,
+  "text": {
+    "suptitle": "Trait monitoring from one pre-query vector vs question-averaged context reads\n(#1092 dense core: 149 real conversation prefixes \u00d7 48 queries, instruct model, layer 14)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy: three readouts of the same two states",
+        "ylabel": "monitoring correlation r\n(readout vs judge score)",
+        "xticklabels": [
+          "supervised probe\n(trained on judge scores)",
+          "raw projection onto\npersona vector $r_B$",
+          "map-mediated: transport\nmap, then $r_B$"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "Hallucination: three readouts of the same two states",
+        "xticklabels": [
+          "supervised probe\n(trained on judge scores)",
+          "raw projection onto\npersona vector $r_B$",
+          "map-mediated: transport\nmap, then $r_B$"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "Sycophancy: context-averaging curve vs the single prefix-end read",
+        "xlabel": "questions averaged per prefix (N)",
+        "ylabel": "monitoring correlation r\n(supervised probe vs judge score)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "6",
+          "8",
+          "12",
+          "16",
+          "24",
+          "32",
+          "48"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Hallucination: context-averaging curve vs the single prefix-end read",
+        "xlabel": "questions averaged per prefix (N)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "6",
+          "8",
+          "12",
+          "16",
+          "24",
+          "32",
+          "48"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "query-averaged context vectors (mean of N question-contexts; N=48 in top row)"
+    ]
+  }
+}

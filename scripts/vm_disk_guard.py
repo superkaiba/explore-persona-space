@@ -1057,7 +1057,9 @@ def home_hf_revision_max_age_days() -> float:
 def home_hf_repo_escalate_bytes() -> int:
     """Single-repo footprint (bytes) above which tier (e) always escalates
     with a per-revision breakdown. Env ``EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB``
-    (float GB); invalid/negative -> default."""
+    (float GB); invalid/negative/non-finite -- or a finite value whose byte
+    product overflows float (int(inf) would raise OverflowError, #1494) ->
+    default."""
     raw = os.environ.get("EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB", "").strip()
     gb = DEFAULT_HOME_HF_REPO_ESCALATE_GB
     if raw:
@@ -1065,7 +1067,7 @@ def home_hf_repo_escalate_bytes() -> int:
             val = float(raw)
         except ValueError:
             val = -1.0
-        if val >= 0.0:
+        if val >= 0.0 and math.isfinite(val * 1e9):
             gb = val
     return int(gb * 1e9)
 
@@ -1073,8 +1075,10 @@ def home_hf_repo_escalate_bytes() -> int:
 def home_hf_cache_cap_bytes() -> int:
     """Total hub-cache footprint (bytes) above which tier (e)'s size-cap arm
     (arm 3, #1450) reaps ELIGIBLE revisions oldest-first down to the cap.
-    Env ``EPS_VM_HOME_HF_CACHE_CAP_GB`` (float GB); blank/invalid/negative ->
-    default 50 GB. Effectively disable with a very large value."""
+    Env ``EPS_VM_HOME_HF_CACHE_CAP_GB`` (float GB); blank/invalid/negative/
+    non-finite -- or a finite value whose byte product overflows float
+    (int(inf) would raise OverflowError, #1494) -> default 50 GB. Effectively
+    disable with a very large (product-finite) value."""
     raw = os.environ.get("EPS_VM_HOME_HF_CACHE_CAP_GB", "").strip()
     gb = DEFAULT_HOME_HF_CACHE_CAP_GB
     if raw:
@@ -1082,7 +1086,7 @@ def home_hf_cache_cap_bytes() -> int:
             val = float(raw)
         except ValueError:
             val = -1.0
-        if val >= 0.0:
+        if val >= 0.0 and math.isfinite(val * 1e9):
             gb = val
     return int(gb * 1e9)
 

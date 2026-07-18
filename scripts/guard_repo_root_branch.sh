@@ -107,7 +107,8 @@
 # by the strip_heredoc_bodies() pre-pass below when provably inert — every
 # opener validated, no shell-consumer / command-runner word on the opener
 # line, no shell-out spelling in the body, and (for an UNQUOTED tag, whose
-# body bash expands at feed time) no `$(`/backtick/`${` expansion syntax —
+# body bash expands at feed time) no expansion syntax beyond plain `${NAME}`
+# references (#1501) —
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
 # limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
@@ -163,8 +164,9 @@
 #       (pre-existing #804 limitation; quoted separators fail CLOSED).
 #       Heredoc bodies are no longer in this gap: the fail-closed
 #       strip_heredoc_bodies() pre-pass (#1058) handles them, and it REFUSES
-#       to hide an UNQUOTED-tag body carrying expansion syntax
-#       (`$(` / `${` / backtick) — bash expands such bodies at feed time, so
+#       to hide an UNQUOTED-tag body carrying expansion syntax beyond plain
+#       `${NAME}` references (#1501) — `$(` / backtick / non-plain `${...}`
+#       forms; bash expands such bodies at feed time, so
 #       those lines still reach the detectors.
 # (iv)  Quoted-glob pathspecs (`git checkout '*.md'`) and exotic pathspec
 #       magic (`git checkout ':/'`) — the existence probe sees the unexpanded
@@ -244,14 +246,27 @@
 #       stdin-executing program; feeding a destructive git recipe to such a
 #       consumer at the repo root is a deliberate construction, accepted
 #       (add further FAIL-CLOSED consumer words as they surface).
-# (xiii) (#1058) Fail-closed FALSE-POSITIVE notes for the strip (a no-strip
-#       keeps CURRENT behavior — the command blocks only when a gated form
-#       ALSO appears): plain `${VAR}` references in an unquoted-tag body
-#       (the `${` refusal is deliberately over-broad — `${x:-$(cmd)}` nests
-#       command substitution); a bare-dot jq filter (`jq . <<J`) matching the
-#       standalone-dot source form (quoted `jq '.'` unaffected); and prose
-#       like "the system (Linux) ..." matching the `system *\(` body
-#       refusal.
+# (xiii) (#1058, narrowed #1501) Fail-closed FALSE-POSITIVE notes for the
+#       strip (a no-strip keeps CURRENT behavior — the command blocks only
+#       when a gated form ALSO appears). Plain `${NAME}` references in an
+#       unquoted-tag body are FIXED as of #1501 — check (g) deletes them
+#       from a scan COPY before the expansion-syntax refusal, so they no
+#       longer refuse the strip. Remaining FPs: non-plain `${...}` forms
+#       (`${V:-w}` fallbacks, `${V@P}` transforms, `${a[i]}` subscripts,
+#       `${!v}` indirection, `${1}` positional, unclosed `${`) stay
+#       fail-closed — remediation: quote the heredoc tag; a bare-dot jq
+#       filter (`jq . <<J`) matching the standalone-dot source form (quoted
+#       `jq '.'` unaffected); and prose like "the system (Linux) ..."
+#       matching the `system *\(` body refusal. Value-borne vectors that
+#       need attacker-controlled variable VALUES (`${var@P}` prompt
+#       expansion under default promptvars; arithmetic-subscript injection)
+#       remain refused via the non-plain `${` arm and the `$(`-substring
+#       match respectively — nothing newly allowed has an execution path,
+#       so no new gap entry. The escaped-dollar shape `\${NAME}` is a
+#       DELIBERATE member of the newly-allowed set (the deletion regex
+#       matches the `${NAME}` substring after the backslash; sound because
+#       under an unquoted tag `\$` suppresses expansion entirely — literal
+#       text; pinned by the M1m allow fixture).
 # (xiv) (#1098) The ssh/grep-family clause waiver's residuals, BOTH sides.
 #       Fail-closed FALSE POSITIVES (harmless shapes that stay blocked):
 #       multi-statement remote-string FPs are CLOSED for the CANONICAL shape
@@ -550,8 +565,13 @@ cmd=$(printf '%s' "$cmd" | sed -zE 's/\\\r?\n/ /g')
 # names a shell-out spelling (os.system / subprocess / Popen / check_call /
 # check_output / getoutput / bare `system(` / `from os import`), and (g) for
 # an UNQUOTED, unescaped tag (<<EOF — bash EXPANDS the body at feed time) NO
-# body line carries expansion syntax ($( / ${ / backtick); a quoted/escaped
-# tag (<<'EOF', <<"EOF", <<\EOF) suppresses expansion and skips check (g).
+# body line carries expansion syntax beyond plain ${NAME} parameter
+# references: $( / backtick / every non-plain ${...} form refuse; plain
+# ${NAME} spans are deleted from a scan COPY before the refusal (#1501 —
+# ${V@P} was live-verified to execute value-borne command substitution
+# under default promptvars, so ONLY the plain form is allowlisted); a
+# quoted/escaped tag (<<'EOF', <<"EOF", <<\EOF) suppresses expansion and
+# skips check (g).
 # Here-strings (<<<) are masked before detection and never match.
 strip_heredoc_bodies() {
   printf '%s' "$1" | awk '
@@ -613,13 +633,27 @@ strip_heredoc_bodies() {
             if (buf[j] ~ /(os\.system|subprocess|Popen|check_call|check_output|getoutput|system *\(|from +os +import)/) { ok = 0; break }
             # (g) UNQUOTED-tag body: bash performs command/parameter
             # substitution at feed time, so $(...) / `...` in the body
-            # EXECUTE regardless of consumer -> refuse to strip. ${ refuses
-            # too (parameter expansion can nest command substitution,
-            # ${x:-$(cmd)}) — a fail-closed over-match on plain ${VAR}
-            # references, documented. An escaped \$( also matches (bash
-            # would NOT expand it, but \\$( WOULD — refusing both is the
-            # simple fail-closed read).
-            if (!QUOTED && buf[j] ~ /\$\(|\$\{|\x60/) { ok = 0; break }
+            # EXECUTE regardless of consumer -> refuse to strip. Non-plain
+            # ${...} forms refuse too (parameter expansion can nest command
+            # substitution, ${x:-$(cmd)}; ${V@P} executes value-borne
+            # command substitution under default promptvars). Plain ${NAME}
+            # spans are provably inert — same feed-time semantics as bare
+            # $NAME, which check (g) has never refused — and are deleted
+            # BEFORE the refusal scan, from a COPY only (#1501): pass-1
+            # refusal must emit buf[] byte-identical (the print loop
+            # below), and an in-place gsub would hand mutated text to the
+            # downstream detectors (fail-open when a deleted span sat
+            # inside gated text — pinned by the M1L fixture). Deletion can
+            # never MASK a refusal: a plain span contains no paren and no
+            # backtick and cannot overlap a $( occurrence (the char after
+            # $ in a span is {). An escaped \$( also matches (bash would
+            # NOT expand it, but \\$( WOULD — refusing both is the simple
+            # fail-closed read).
+            if (!QUOTED) {
+              scan = buf[j]
+              gsub(/\$\{[A-Za-z_][A-Za-z0-9_]*\}/, "", scan)
+              if (scan ~ /\$\(|\$\{|\x60/) { ok = 0; break }
+            }
             j++
           }
           if (!ok) break
@@ -1358,11 +1392,13 @@ while IFS=$'\t' read -r sep nextsep clause; do
   #   (3) NO locally-executing expansion / redirection syntax anywhere in
   #       the clause: $( / ${ / backtick / <( / >( / <<< .
   #       `ssh host "$(git reset --hard)"` and `grep -f <(git clean -fd) x`
-  #       EXECUTE the gated text LOCALLY at expansion time. `${` is the
-  #       same fail-closed over-match as heredoc check (g) — a plain
-  #       ${VAR} (even single-quoted, which bash would NOT expand locally)
-  #       refuses the waiver, because the guard deliberately does not
-  #       shell-parse quotes (#796 revert). Bare `$VAR` (no brace, no
+  #       EXECUTE the gated text LOCALLY at expansion time. The live-clause
+  #       scan keeps the BLANKET `${` refusal — quotes are not parsed in
+  #       live clauses (#796 revert), so it is deliberately STRICTER than
+  #       heredoc check (g), which as of #1501 deletes provably-inert plain
+  #       ${NAME} spans first: a plain ${VAR} HERE (even single-quoted,
+  #       which bash would NOT expand locally) still refuses the waiver.
+  #       Bare `$VAR` (no brace, no
   #       paren) never executes a command and is NOT refused. Live
   #       clauses — unlike heredoc BODIES — undergo process substitution,
   #       hence <( / >( over check (g). `<<<` (here-string) feeds DATA and
@@ -1468,6 +1504,7 @@ This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <w
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
+For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals).
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2

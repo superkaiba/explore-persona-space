@@ -10,7 +10,7 @@ On re-launch attempts ≥3, orphan processes from killed prior rounds (vLLM Engi
 **Why:** #399 round-9 v8 (2026-05-27) — fresh launch silently exited (uv off PATH) while a stale round-7 eval proc wrote a smoke FAIL to the shared log; ~30 min lost before noticing the stale PID's start time predated the nohup.
 
 **How to apply (pre-launch on attempts ≥3):**
-1. `pgrep -af "<dispatcher>|eval_<N>|train\.py"` and `pgrep -af EngineCore` — kill survivors (the EngineCore probe is now experimenter.md Before-Running step 9).
+1. `pgrep -af "<dispatche[r]|eval[_]<N>|train[.]py"` and `pgrep -af 'EngineCor[e]'` — kill survivors (the EngineCore probe is now experimenter.md Before-Running step 9).
 2. `nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv` — `[Not Found]` PIDs holding memory get `kill -9`; if memory stays pinned, the leak is kernel-level → `pod.py resume`.
 3. `rm -rf /workspace/tmp_models/<condition>_*` to force checkpoint re-pull where training will overwrite Hub state.
 4. Truncate the log (`: > /workspace/logs/issue-<N>.log`) so the fresh dispatcher's first line is unambiguous, THEN launch via the canonical launcher script (bash, `set -euo pipefail`, PATH export, env sourcing).
