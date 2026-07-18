@@ -340,10 +340,27 @@ def _layer_battery(data, folds, layer, *, do_orth):
 # ===========================================================================
 # Nulls at the headline layer.
 # ===========================================================================
-def _random_orthogonal(d: int, gen: torch.Generator) -> torch.Tensor:
+def _random_orthogonal(
+    d: int, gen: torch.Generator, dev: torch.device | None = None
+) -> torch.Tensor:
+    """Haar-orthogonal (d, d) fp64 sample; the QR factorization runs on `dev`.
+
+    The Gaussian is ALWAYS drawn on CPU with the caller's CPU `gen`, so the
+    seeded RNG stream (hence the Haar sample identity per seed) is unchanged
+    vs prior #825 runs; only the QR + sign-fix move to `dev`. With `dev=None`
+    or CPU the behavior is byte-identical to the pre-fix implementation
+    (`.to()` is a no-op on the same device). Routing the QR to the fit device
+    removes the two serial 3584x3584 fp64 CPU QRs per null draw that
+    dominated the 961 s/pair identity-battery cells on GPU instances
+    (#1417 round-2 fix; the #1335 P3 silent-CPU class).
+    """
     A = torch.randn(d, d, dtype=torch.float64, generator=gen)
+    if dev is not None:
+        A = A.to(dev)
     Q, R = torch.linalg.qr(A)
-    # sign fix for a Haar-distributed sample
+    # sign fix for a Haar-distributed sample (canonical Q regardless of the
+    # backend's QR sign convention, so CPU LAPACK vs cuSOLVER agree up to fp64
+    # rounding)
     Q = Q * torch.sign(torch.diagonal(R))
     return Q
 
@@ -374,8 +391,8 @@ def _procrustes_cosine_null(Xb, Xi, Yb, Yi, *, n_draws, seed):
     d = beta_b.shape[0]
     draws = []
     for _ in range(n_draws):
-        Q1 = _random_orthogonal(d, gen).to(dev)
-        Q2 = _random_orthogonal(d, gen).to(dev)
+        Q1 = _random_orthogonal(d, gen, dev)
+        Q2 = _random_orthogonal(d, gen, dev)
         Mn = Q1.T @ beta_b @ Q2
         vmn = Mn.reshape(-1)
         draws.append(float((vmn @ vi_n) / (vmn.norm() + 1e-12)))
@@ -436,8 +453,8 @@ def _composition_collapse_null(data, folds, layer, *, n_draws, seed):
 
     vals = {"comp_samefn_b2i": [], "comp_samefn_i2b": []}
     for _ in range(n_draws):
-        Qc = _random_orthogonal(d, gen).to(dev)  # context-space random rotation
-        Qa = _random_orthogonal(d, gen).to(dev)  # answer-space random rotation
+        Qc = _random_orthogonal(d, gen, dev)  # context-space random rotation
+        Qa = _random_orthogonal(d, gen, dev)  # answer-space random rotation
         for name in vals:
             true = Yi if name == "comp_samefn_b2i" else Yb
             vals[name].append(
