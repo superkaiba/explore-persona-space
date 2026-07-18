@@ -160,6 +160,9 @@ _BANK_FILES = {
     # fu7: the #1090 sycophancy datagen bank (the frozen c3/c5 mixes' item-(j)
     # provenance input; fu6's HARDCODED slice contract reads the same bank).
     "sycophancy": "src/explore_persona_space/artifacts/query_banks/sycophancy_neutral_v2.json",
+    # #1481: the #1434 D0 bank (the frozen ws-* mixes' item-(j) provenance
+    # input) — additive entry for the i1481cas/i1481caspo rounds' stage phase.
+    "writing_style": "src/explore_persona_space/artifacts/query_banks/writing_style_neutral_v1.json",
 }
 
 
