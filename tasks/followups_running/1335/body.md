@@ -1,7 +1,7 @@
 ---
 title: Fiction scene framing carries the instruct assistant-vs-fiction context→answer
-  map gap, while the base-model gap flips sign across three generation seeds (MODERATE
-  confidence)
+  map gap, while the base fiction map swings across independent runs, not sampling
+  seeds (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
