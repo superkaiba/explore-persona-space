@@ -839,3 +839,67 @@ def test_fresh_arm_ckpt_stages_from_hub(tmp_path, monkeypatch):
         )
     )
     assert Path(wk._fresh_arm_ckpt(cfg, run, arm_id)) == local_ckpt
+
+
+def _fake_stage_hub_file(tree: dict[str, list[dict]]):
+    """Signature-conformant fake of ``hub.stage_hub_file`` over a dict Hub
+    tree (path_in_repo -> jsonl rows); missing paths raise the same
+    response-bearing-404 class the real helper re-raises."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    def fake_stage(repo_id, path_in_repo, target, *, repo_type=None, **kwargs):
+        if path_in_repo not in tree:
+            raise EntryNotFoundError(f"404: {repo_id}/{path_in_repo}")
+        target = Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("".join(json.dumps(r) + "\n" for r in tree[path_in_repo]))
+        return target
+
+    return fake_stage
+
+
+def test_stage_datagen_sidecars_topup_fallback_and_union(tmp_path, monkeypatch, caplog):
+    """#1481 Phase-0 crash fix (EntryNotFoundError on c3-sycophancy-claude):
+    a D1' sidecar missing under ``datagen/`` resolves via ``datagen_topup/``;
+    when BOTH dirs carry it the reader UNIONS the row sets (exact-row dedupe,
+    ``datagen/`` rows first — a top-up is potentially incremental); found in
+    NEITHER dir raises loud. Real bodies of ``_stage_datagen_sidecars`` +
+    ``_read_sidecar_union`` execute; the fake sits at the Hub boundary."""
+    import logging
+
+    prefix = "issue1090_pvdatagen/c3-sycophancy-claude"
+
+    def row(i: int) -> dict:
+        return {"messages": [{"role": "user", "content": f"q{i}"}]}
+
+    tree = {
+        # cn.jsonl ONLY under datagen_topup/ (the crashing c3 layout);
+        # pos.jsonl under BOTH, top-up incremental (adds row 3, repeats row 1).
+        f"{prefix}/datagen_topup/cn.jsonl": [row(1), row(2)],
+        f"{prefix}/datagen/pos.jsonl": [row(1), row(2)],
+        f"{prefix}/datagen_topup/pos.jsonl": [row(1), row(3)],
+    }
+    monkeypatch.setattr(wk.hub, "stage_hub_file", _fake_stage_hub_file(tree))
+    with caplog.at_level(logging.INFO, logger="issue1481.worker"):
+        staged = wk._stage_datagen_sidecars(prefix, tmp_path, "syc-pers")
+    assert [p.parent.name for p in staged["cn.jsonl"]] == ["datagen_topup"]
+    assert [p.parent.name for p in staged["pos.jsonl"]] == ["datagen", "datagen_topup"]
+    # Fix-engaged signal: the log line names WHICH sidecar dir(s) resolved.
+    msgs = [r.getMessage() for r in caplog.records]
+    assert any("cn.jsonl <- datagen_topup/" in m for m in msgs), msgs
+    assert any("pos.jsonl <- datagen/ + datagen_topup/ (union)" in m for m in msgs), msgs
+    assert wk._read_sidecar_union(staged["cn.jsonl"]) == [row(1), row(2)]
+    assert wk._read_sidecar_union(staged["pos.jsonl"]) == [row(1), row(2), row(3)]
+    # Primary-only layout (c2 regression): resolves via datagen/, no union.
+    tree_c2 = {
+        f"{prefix}/datagen/cn.jsonl": [row(1)],
+        f"{prefix}/datagen/pos.jsonl": [row(2)],
+    }
+    monkeypatch.setattr(wk.hub, "stage_hub_file", _fake_stage_hub_file(tree_c2))
+    staged_c2 = wk._stage_datagen_sidecars(prefix, tmp_path / "c2", "imp-pers")
+    assert [p.parent.name for p in staged_c2["cn.jsonl"]] == ["datagen"]
+    assert wk._read_sidecar_union(staged_c2["cn.jsonl"]) == [row(1)]
+    # Found in NEITHER dir -> loud RuntimeError naming both attempted dirs.
+    monkeypatch.setattr(wk.hub, "stage_hub_file", _fake_stage_hub_file({}))
+    with pytest.raises(RuntimeError, match="NEITHER"):
+        wk._stage_datagen_sidecars(prefix, tmp_path / "none", "syc-pers")

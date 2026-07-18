@@ -151,18 +151,83 @@ def _con_source_layout(beh_key: str, ctx_key: str) -> tuple[str, str, str]:
     return prefix, "train_mix.jsonl", "mix_meta.json"
 
 
-def _stage_con_source(cfg: run1090.RunConfig, beh_key: str, ctx_key: str) -> Path:
-    """Stage one po cell's con-mix inputs (mix + D1' datagen sidecars)."""
+# Per-file D1' sidecar resolution order: production c2 keeps cn/pos under
+# ``datagen/``; c3-sycophancy-claude carries them ONLY under the fu7 top-up
+# pass ``datagen_topup/`` (the Phase-0 EntryNotFoundError crash, 2026-07-17).
+_DATAGEN_SIDECAR_DIRS = ("datagen", "datagen_topup")
+
+
+def _stage_datagen_sidecars(root_prefix: str, dest: Path, cell_key: str) -> dict[str, list[Path]]:
+    """Stage the D1' datagen sidecars (cn.jsonl / pos.jsonl) with a per-file
+    fallback chain over ``_DATAGEN_SIDECAR_DIRS``. When BOTH dirs carry a
+    file, BOTH copies are staged (the reader unions them — a top-up pass is
+    potentially incremental, and the D1' filter must subtract EVERY negative
+    that could appear in the parent mix). Returns ``{name: [staged paths,
+    datagen/ first]}``; a sidecar found in NEITHER dir raises loud."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    staged: dict[str, list[Path]] = {}
+    for name in ("cn.jsonl", "pos.jsonl"):
+        found: list[tuple[str, Path]] = []
+        for sub in _DATAGEN_SIDECAR_DIRS:
+            try:
+                path = hub.stage_hub_file(
+                    run1090.HF_DATA_REPO,
+                    f"{root_prefix}/{sub}/{name}",
+                    dest / sub / name,
+                    repo_type="dataset",
+                )
+            except EntryNotFoundError:
+                continue
+            found.append((sub, path))
+        if not found:
+            raise RuntimeError(
+                f"[i1481-po-mixes] {cell_key}: {name} resolves under NEITHER "
+                f"{root_prefix}/datagen/ nor {root_prefix}/datagen_topup/ on "
+                f"{run1090.HF_DATA_REPO} — cannot derive the po mix; refusing"
+            )
+        logger.info(
+            "[i1481-po-mixes] %s: %s <- %s%s",
+            cell_key,
+            name,
+            " + ".join(f"{sub}/" for sub, _ in found),
+            " (union)" if len(found) > 1 else "",
+        )
+        staged[name] = [p for _, p in found]
+    return staged
+
+
+def _read_sidecar_union(paths: list[Path]) -> list[dict]:
+    """Read + union the staged copies of ONE sidecar (exact-row dedupe,
+    ``datagen/`` rows first; deterministic order)."""
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for path in paths:
+        for row in _read_jsonl(path):
+            key = json.dumps(row, sort_keys=True)
+            if key not in seen:
+                seen.add(key)
+                rows.append(row)
+    return rows
+
+
+def _stage_con_source(
+    cfg: run1090.RunConfig, beh_key: str, ctx_key: str
+) -> tuple[Path, dict[str, list[Path]]]:
+    """Stage one po cell's con-mix inputs (mix + D1' datagen sidecars).
+
+    Returns ``(dest, sidecars)``: the staging root plus the per-sidecar staged
+    paths resolved by the ``datagen/`` -> ``datagen_topup/`` fallback chain."""
     root_prefix, mix_sub, meta_sub = _con_source_layout(beh_key, ctx_key)
     dest = Path(cfg.out_root) / "po_inputs" / f"{beh_key}-{ctx_key}"
-    for sub in (mix_sub, meta_sub, "datagen/cn.jsonl", "datagen/pos.jsonl"):
+    for sub in (mix_sub, meta_sub):
         hub.stage_hub_file(
             run1090.HF_DATA_REPO,
             f"{root_prefix}/{sub}",
             dest / sub,
             repo_type="dataset",
         )
-    return dest
+    return dest, _stage_datagen_sidecars(root_prefix, dest, f"{beh_key}-{ctx_key}")
 
 
 def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
@@ -204,7 +269,7 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     derivations: dict[str, dict] = {}
     for cell_key in wanted:
         beh_key, ctx_key = cell_key.split("-", 1)
-        src = _stage_con_source(cfg, beh_key, ctx_key)
+        src, sidecars = _stage_con_source(cfg, beh_key, ctx_key)
         _, mix_sub, meta_sub = _con_source_layout(beh_key, ctx_key)
         mix_path = src / mix_sub
         con_sha = hashlib.sha256(mix_path.read_bytes()).hexdigest()
@@ -242,8 +307,8 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
         po_rows, derivation = w1434._derive_po_rows(
             cell_key,
             _read_jsonl(mix_path),
-            _read_jsonl(src / "datagen" / "cn.jsonl"),
-            _read_jsonl(src / "datagen" / "pos.jsonl"),
+            _read_sidecar_union(sidecars["cn.jsonl"]),
+            _read_sidecar_union(sidecars["pos.jsonl"]),
             _generic,
             cfg.seed,
         )
