@@ -85,3 +85,4 @@
 {"ts": "2026-07-18T17:51:03Z", "kind": "epm:progress", "version": 25, "by": "unknown", "note": "[long-phase-heartbeat] P0 1650/1920 (86%); pid 1568 alive; P2 next (P1 + Gate B seeded)."}
 {"ts": "2026-07-18T18:58:34Z", "kind": "phase-p0", "version": 1, "by": "issue779", "note": "p0 done n_total=964844 holdout=20000 sae_fit=120000", "sentinel_fp": "45e1ede9b20ba4d3", "sentinel_path": "/workspace/logs/issue-1482-phase-p0-1784401007.json"}
 {"ts": "2026-07-18T18:58:38Z", "kind": "phase-p1", "version": 1, "by": "issue779", "note": "p1 done (13 fits)", "sentinel_fp": "46b49479a73b47e2", "sentinel_path": "/workspace/logs/issue-1482-phase-p1-1784401007.json"}
+{"ts": "2026-07-18T18:58:45Z", "kind": "epm:progress", "version": 26, "by": "poll_pipeline", "note": "phase transition: p0 -> p2", "phase": "p2", "pod": "pod-1482"}
