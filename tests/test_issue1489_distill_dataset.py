@@ -282,3 +282,98 @@ def test_distill_train_seam_tiny_real(tmp_path, monkeypatch, qwen_tok, tiny_qwen
     ckpts = gpu._checkpoint_dirs(run_out)
     assert ckpts, "save_steps=1 + max_steps=1 must leave >=1 checkpoint-* dir"
     assert (ckpts[0] / "adapter_config.json").is_file(), sorted(p.name for p in ckpts[0].iterdir())
+
+
+def test_distill_smoke_cfg_min_two_optimizer_steps():
+    """Smoke checkpoint-geometry pin (crash att-20260718-081159, round 5).
+
+    The realized smoke distill slice can be as small as n_rows=2; under the
+    production batch geometry (DISTILL_BATCH_SIZE x DISTILL_GRAD_ACCUM = 16
+    effective) that is 1 optimizer step per epoch, and the pre-fix smoke cfg
+    (epochs=1) produced exactly 1 checkpoint — tripping the dispatch schema
+    gate ``len(ckpts) >= 2`` and starving the dose_probes multi-LoRA path.
+
+    FAILS PRE-FIX at n_rows in {1, 2, 16}: epochs=1 x steps_per_epoch=1 = 1.
+    The smoke cfg must yield >=2 global optimizer steps (epochs x
+    steps_per_epoch) with save_steps=1 for ANY realized n_rows, while the
+    production batch geometry rides through the smoke cfg byte-untouched.
+    """
+    smoke_args = argparse.Namespace(smoke=True)
+    for n_rows in (1, 2, 3, 16, 17, 30):
+        cfg = gpu._distill_train_cfg(smoke_args, SLUG, n_rows=n_rows)
+        steps_per_epoch = gpu._distill_steps_per_epoch(n_rows)
+        assert cfg.save_steps == 1, n_rows
+        assert cfg.epochs * steps_per_epoch >= 2, (n_rows, cfg.epochs, steps_per_epoch)
+        # production batch geometry is NOT a smoke dial
+        assert cfg.batch_size == gpu.DISTILL_BATCH_SIZE, n_rows
+        assert cfg.grad_accum == gpu.DISTILL_GRAD_ACCUM, n_rows
+
+    # Production branch stays byte-untouched: epochs from DISTILL_EPOCHS,
+    # half-epoch checkpoint ladder.
+    prod_args = argparse.Namespace(smoke=False)
+    n_prod = 5000
+    prod_cfg = gpu._distill_train_cfg(prod_args, SLUG, n_rows=n_prod)
+    prod_steps = gpu._distill_steps_per_epoch(n_prod)
+    assert prod_cfg.epochs == gpu.DISTILL_EPOCHS
+    assert prod_cfg.save_steps == max(1, math.ceil(prod_steps / 2))
+
+
+@pytest.mark.slow
+def test_distill_smoke_geometry_two_checkpoints_tiny_real(
+    tmp_path, monkeypatch, qwen_tok, tiny_qwen_state
+):
+    """The FIXED smoke geometry produces >=2 checkpoint dirs through the REAL
+    Trainer (the att-20260718-081159 gate input), on CPU.
+
+    Unlike the seam test above, this leg keeps the smoke cfg's TRAINING
+    geometry UNMODIFIED (epochs from the fix, batch_size=2, grad_accum=8,
+    save_steps=1 — no max_steps override), so it exercises the exact
+    partial-accumulation epoch-boundary optimizer-step behavior the fix's
+    ``epochs x steps_per_epoch >= 2`` arithmetic relies on: 3 fixture rows
+    -> 1 optimizer step/epoch -> epochs=2 -> checkpoint-1 AND checkpoint-2.
+    """
+    import transformers
+
+    from explore_persona_space.train.sft import train_lora
+
+    args, manifest, out = _build_fixture(tmp_path)
+    dest = out / "distill" / f"{SLUG}_train.jsonl"
+    gpu.build_distill_jsonl(args, manifest, SLUG, dest)
+    n_rows = len([line for line in dest.read_text().split("\n") if line.strip()])
+
+    config, state = tiny_qwen_state
+
+    def fresh_tiny_model(*a, **k):
+        m = transformers.Qwen2ForCausalLM(config)
+        m.load_state_dict(state)
+        return m
+
+    monkeypatch.setattr(transformers.AutoModelForCausalLM, "from_pretrained", fresh_tiny_model)
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", lambda *a, **k: qwen_tok)
+    monkeypatch.setenv("WANDB_MODE", "disabled")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    monkeypatch.setenv("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+
+    cfg = gpu._distill_train_cfg(args, SLUG, n_rows=n_rows)
+    assert cfg.epochs * gpu._distill_steps_per_epoch(n_rows) >= 2  # the fix's arithmetic
+    # ONLY environment knobs replaced — epochs/batch/grad_accum/save_steps are
+    # the smoke geometry under test and stay exactly as _distill_train_cfg set them.
+    cfg = dataclasses.replace(
+        cfg,
+        bf16=False,  # TrainingArguments rejects bf16 on CPU-only machines
+        gradient_checkpointing=False,
+        dataloader_num_workers=0,
+        dataloader_persistent_workers=False,
+        logging_steps=1,
+        report_to="none",  # WANDB_INTENTIONALLY_DISABLED: offline CPU seam test
+    )
+
+    run_out = out / "distill" / SLUG
+    _out_dir, loss = train_lora(BASE_MODEL, str(dest), str(run_out), cfg=cfg)
+    assert isinstance(loss, float) and math.isfinite(loss)
+
+    ckpts = gpu._checkpoint_dirs(run_out)
+    assert len(ckpts) >= 2, [p.name for p in ckpts]  # the dispatch gate's exact floor
+    for ck in ckpts[:2]:
+        assert (ck / "adapter_config.json").is_file(), sorted(p.name for p in ck.iterdir())

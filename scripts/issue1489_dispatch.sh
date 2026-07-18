@@ -123,7 +123,9 @@ run_smoke_chain() {
   uv run python scripts/issue1489_fit_grid.py --smoke \
     --summaries-dir "$SMOKE_OUT/summaries" --out "$SMOKE_OUT/p6" \
     --units "transfer:context_end:pca48:L14"
-  # tiny distill run (fact_veg, 30 rows, 2 checkpoints) + probes + sync judge
+  # tiny distill run (fact_veg, <=30-row realized slice; smoke cfg guarantees
+  # >=2 optimizer steps -> >=2 checkpoints, the multi-LoRA floor) + probes +
+  # sync judge
   uv run python scripts/issue1489_gpu_phase.py --phase distill --smoke \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
     --skip-upload

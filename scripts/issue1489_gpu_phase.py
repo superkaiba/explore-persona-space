@@ -886,8 +886,17 @@ def _distill_train_cfg(args, slug: str, n_rows: int):
 
     steps_per_epoch = _distill_steps_per_epoch(n_rows)
     if args.smoke:
-        epochs = 1
-        save_steps = 1  # 2 optimizer steps @ 30 rows -> 2 checkpoints (multi-LoRA floor)
+        # Smoke geometry: guarantee >=2 GLOBAL optimizer steps (hence >=2
+        # checkpoints at save_steps=1) for ANY realized smoke slice size. The
+        # smoke JSONL is CAPPED at 30 rows but the realized slice can be as
+        # small as 2 (crash att-20260718-081159: n=2 under the production
+        # 2x8=16 effective batch -> steps_per_epoch=1 -> exactly 1 checkpoint,
+        # tripping the dispatch `>=2 checkpoints` gate and starving the
+        # dose_probes multi-LoRA path). Epochs is the smoke-only dial;
+        # production batch geometry (DISTILL_BATCH_SIZE x DISTILL_GRAD_ACCUM)
+        # stays untouched so the TRL seam runs the production shape.
+        epochs = max(1, math.ceil(2 / steps_per_epoch))
+        save_steps = 1
     else:
         epochs = DISTILL_EPOCHS
         save_steps = max(1, math.ceil(steps_per_epoch / 2))  # every 0.5 epoch -> 8 ckpts
@@ -1345,7 +1354,10 @@ def phase_distill(args: argparse.Namespace, manifest: list[dict]) -> None:
         jsonl = out_dir / "distill" / f"{slug}_train.jsonl"
         rows = build_distill_jsonl(args, manifest, slug, jsonl)
         if args.smoke:
-            # tiny run: 30 rows (plan smoke block)
+            # tiny run: CAP at 30 rows (plan smoke block); the realized slice
+            # is whatever the smoke gen produced (can be as small as 2 rows) —
+            # _distill_train_cfg's smoke branch guarantees >=2 optimizer steps
+            # regardless of the realized n_rows.
             lines = [line for line in jsonl.read_text().split("\n") if line.strip()][:30]
             _atomic_write(jsonl, "\n".join(lines) + "\n")
         tasks.append((slug, str(jsonl), str(run_out)))
