@@ -10079,7 +10079,9 @@ else
   # a single-logical-change branch, and it reverts as ONE commit (the only
   # grain that exists on such a branch). Experiments (Step 9b trigger) keep
   # --rebase: heterogeneous per-item commits retain per-commit revert value
-  # and the empirical record does not cover them. An unreadable kind falls
+  # on the clean path, and the 07-12→07-17 conflicted-experiment record is
+  # shape-2-dominated (method-independent — see the merge-form paragraph
+  # below, #1493): squash-first buys nothing there. An unreadable kind falls
   # to --rebase (fail-open to today's behavior). REPO_ROOT is re-derived
   # inline — fenced blocks are separate shells, and the guards block's
   # derivation is not in scope here:
@@ -10133,6 +10135,23 @@ it as ONE independently-revertible commit, and the empirical record
 landing on --squash anyway) makes the rebase attempt a pure wall-time
 tax under fleet churn. Shape 1 cannot fire on the --squash path (the
 error is rebase-specific); shapes 0/2/else apply to both forms.
+
+`kind: experiment` branches keep `--rebase` deliberately (#1493, which
+updates the #1288 no-evidence rationale): the 07-12→07-17 record — 210
+`epm:merged` (attempt split of the `merge_attempts`-annotated subset:
+160 attempt-1 / 20 attempt-2 / 3 attempt-3), zero `epm:merge-failed`
+since 07-05 — shows every CLASSIFIED conflicted experiment first
+refusal was shape 2 (mergeability — method-independent: GitHub's
+mergeability state is a 3-way test merge that declines `--squash` and
+`--rebase` identically) or shape 0 (transient), with zero shape-1 first
+refusals on record; and
+#1310 additionally recorded a FIRST `--squash` refused on the same
+shape-2 mergeability, so squash-first would not have saved the burned
+attempt in any classified case, while the clean path (the large
+majority) retains per-commit revert value under `--rebase`.
+Revisit criterion: extend squash-first to `kind: experiment` if shape-1
+(`can't be rebased`) FIRST refusals appear on experiment branches —
+shape 1 is the only failure shape squash-first avoids.
 
 **Known failure shape 0 — base branch advanced mid-merge (`Base branch
 was modified`, #1288).** Substring-match `Base branch was modified` (the
