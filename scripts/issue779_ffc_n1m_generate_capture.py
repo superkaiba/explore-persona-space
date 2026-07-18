@@ -166,11 +166,14 @@ def _load_pass_b_bundle(local_path: Path):
         logger.info("[pass_b] %s absent; fetching %s from HF", local_path, PASS_B_HF_PATH)
         local_path.parent.mkdir(parents=True, exist_ok=True)
         got = Path(
-            hf_hub_download(
-                C.HF_DATA_REPO,
-                filename=PASS_B_HF_PATH,
-                repo_type="dataset",
-                local_dir=local_path.parent,
+            hub.retry_transient(  # r4: the #1482 429-storm class (P0-reachable fetch)
+                lambda: hf_hub_download(
+                    C.HF_DATA_REPO,
+                    filename=PASS_B_HF_PATH,
+                    repo_type="dataset",
+                    local_dir=local_path.parent,
+                ),
+                what=f"pass_b bundle fetch ({PASS_B_HF_PATH})",
             )
         )
         if got != local_path:
@@ -625,13 +628,20 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
             logger.info("[manifest] completed by a concurrent shard; using %s", dest)
             return dest
 
-        names = [
-            f.path
-            for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-            )
-            if getattr(f, "size", None) is not None
-        ]
+        # Both Hub calls ride hub.retry_transient (r4: the #1482 att-20260718-055220
+        # 429-storm class killed a sibling bare download; list_repo_tree is a LAZY
+        # generator — materialize INSIDE the thunk so iteration-time errors retry).
+        names = hub.retry_transient(
+            lambda: [
+                f.path
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
+                for f in HfApi().list_repo_tree(
+                    C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+                if getattr(f, "size", None) is not None
+            ],
+            what=f"manifest listing ({prefix})",
+        )
         if not names:
             raise SystemExit(
                 f"no manifest files under HF {prefix} — build + upload the manifest first"
@@ -639,8 +649,11 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
         for name in names:
             base = name.rsplit("/", 1)[-1]
             got = Path(
-                hf_hub_download(
-                    C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+                hub.retry_transient(
+                    lambda name=name: hf_hub_download(
+                        C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+                    ),
+                    what=f"manifest download ({name})",
                 )
             )
             target = dest / base

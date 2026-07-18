@@ -127,7 +127,6 @@ NYSTROM_MAX_CENTERS_WARN = 20_000  # K_mm eigh at m > this may OOM on an 80GB GP
 # external-stream presumption).
 STREAM_CKPT_EVERY = int(os.environ.get("EPM_N1M_STREAM_CKPT_EVERY", "100"))
 STREAM_DOWNLOAD_ATTEMPTS = int(os.environ.get("EPM_N1M_DOWNLOAD_ATTEMPTS", "4"))
-STREAM_DOWNLOAD_BACKOFF = (10.0, 30.0, 90.0)  # seconds before attempts 2, 3, 4
 
 # n50k committed exact-KRR anchor (reference; the gate is self-contained vs exact).
 N50K_EXACT_R2_WIDEGRID = 0.8076
@@ -153,58 +152,26 @@ DEFAULT_ORIG_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-co
 # ── data assembly (pass_b + stream-reduced n1m capture) + provenance ────────────
 
 
-def _is_transient_download_error(err: BaseException) -> bool:
-    """True for retryable HF chunk-download failures: LocalEntryNotFoundError,
-    requests ReadTimeout / ConnectionError / Timeout, and HTTP 408/429/5xx. Every
-    other error re-raises (fail-loud stays). The exact class that forfeited #779's
-    ~3.5h stream was a LocalEntryNotFoundError after two absorbed ReadTimeouts."""
-    import requests
-    from huggingface_hub.errors import LocalEntryNotFoundError
-
-    if isinstance(err, LocalEntryNotFoundError):
-        return True
-    if isinstance(
-        err,
-        (
-            requests.exceptions.ReadTimeout,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.Timeout,
-            requests.exceptions.ChunkedEncodingError,
-        ),
-    ):
-        return True
-    code = getattr(getattr(err, "response", None), "status_code", None)
-    if isinstance(code, int):
-        return code in (408, 429) or 500 <= code < 600
-    return False
-
-
 def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str:
-    """hf_hub_download with a bounded outer retry over transient errors
-    (STREAM_DOWNLOAD_ATTEMPTS, exponential backoff STREAM_DOWNLOAD_BACKOFF). A
-    non-transient error or the final attempt re-raises immediately (fail-loud)."""
+    """hf_hub_download through the canonical transient-retry envelope
+    (``hub.retry_transient`` = ``_retry_upload``, #1402): Retry-After-aware,
+    ``EPM_HF_RETRY_BUDGET_S`` wall budget (default 1800 s — sized to outlive an
+    org-wide 429 storm) OR the ``STREAM_DOWNLOAD_ATTEMPTS`` floor, whichever
+    holds longer; ``LocalEntryNotFoundError`` transient BY CLASS (a 429 on the
+    HEAD inside hf_hub_download surfaces 404-shaped through it — the #1345/#1482
+    storm class). Non-transient errors re-raise immediately; exhaustion
+    re-raises fail-loud. Supersedes the legacy fixed 4-attempt (10/30/90 s)
+    ladder, which a >=8-min Hub queue-full storm outlived (#1482
+    att-20260718-055220: p2 child died at attempt 4/4)."""
     from huggingface_hub import hf_hub_download
 
-    for attempt in range(STREAM_DOWNLOAD_ATTEMPTS):
-        try:
-            return hf_hub_download(
-                repo, filename=filename, repo_type="dataset", local_dir=local_dir
-            )
-        except Exception as e:
-            if attempt == STREAM_DOWNLOAD_ATTEMPTS - 1 or not _is_transient_download_error(e):
-                raise
-            wait = STREAM_DOWNLOAD_BACKOFF[min(attempt, len(STREAM_DOWNLOAD_BACKOFF) - 1)]
-            logger.warning(
-                "[n1m] transient download error on %s (attempt %d/%d): %s: %s — retry in %.0fs",
-                filename,
-                attempt + 1,
-                STREAM_DOWNLOAD_ATTEMPTS,
-                type(e).__name__,
-                e,
-                wait,
-            )
-            time.sleep(wait)
-    raise RuntimeError(f"unreachable: retry loop exhausted for {filename}")
+    from explore_persona_space.orchestrate import hub
+
+    return hub.retry_transient(
+        lambda: hf_hub_download(repo, filename=filename, repo_type="dataset", local_dir=local_dir),
+        what=f"[n1m] chunk download ({repo}:{filename})",
+        max_attempts=STREAM_DOWNLOAD_ATTEMPTS,
+    )
 
 
 def _stream_ckpt_fingerprint(layer: int, hf_prefix: str, names: list[str]) -> str:
@@ -382,12 +349,20 @@ def _resume_hf_stream(ckpt_dir, layer, fp, prefix, names, fresh, cx_parts, vx_pa
 def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
     from huggingface_hub import HfApi
 
-    names = sorted(
-        f.path.rsplit("/", 1)[-1]
-        for f in HfApi().list_repo_tree(
-            C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-        )
-        if getattr(f, "size", None) is not None and f.path.endswith(".pt")
+    from explore_persona_space.orchestrate import hub
+
+    # r4: chunk-universe listing rides retry_transient (the #1482 429-storm class;
+    # list_repo_tree is LAZY — materialize inside the thunk so iteration retries).
+    names = hub.retry_transient(
+        lambda: sorted(
+            f.path.rsplit("/", 1)[-1]
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
+            for f in HfApi().list_repo_tree(
+                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+            )
+            if getattr(f, "size", None) is not None and f.path.endswith(".pt")
+        ),
+        what=f"n1m chunk listing ({prefix})",
     )
     if not names:
         raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
