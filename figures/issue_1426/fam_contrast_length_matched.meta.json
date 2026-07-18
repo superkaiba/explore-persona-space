@@ -1,0 +1,1028 @@
+{
+  "commit": "3f67cf6e83",
+  "created": "2026-07-18T11:00:20Z",
+  "figsize": [
+    11.2,
+    4.4
+  ],
+  "points": [
+    {
+      "median well-formed CoT length (chars)": 3287.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.13991233422524352,
+      "label": "f1_house_librarian",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3111.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.15624185227146103,
+      "label": "f1_house_surgeon",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3453.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.129487217686316,
+      "label": "f1_house_programmer",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3065.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.14874243940693332,
+      "label": "f1_house_medical_doctor",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3508.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.19870490981078437,
+      "label": "f1_house_software_engineer",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3370.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.18870811716745173,
+      "label": "f1_house_data_scientist",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3249.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.17791225084473927,
+      "label": "f1_phub_01",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3312.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.14132867414461925,
+      "label": "f1_phub_02",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3191.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.21887431053309236,
+      "label": "f1_phub_03",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3146.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.13670291466258944,
+      "label": "f1_phub_04",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3668.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.23774079980135676,
+      "label": "f1_phub_05",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3199.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.15437982017313967,
+      "label": "f1_phub_06",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3351.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.1563075447459752,
+      "label": "f1_phub_07",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3347.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.2132318167544509,
+      "label": "f1_phub_08",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2982.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.07770345332935014,
+      "label": "f4_reph_imperative",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2498.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.137501052070939,
+      "label": "f4_reph_polite",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2860.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.13889924993860303,
+      "label": "f4_reph_casual",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3179.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.13265131969110888,
+      "label": "f4_reph_legalese",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2420.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.14934944250942916,
+      "label": "f4_reph_enthusiastic",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3205.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10022279220763963,
+      "label": "f4_reph_archaic",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2278.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.12796697578214355,
+      "label": "f5_fmt_json",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2555.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.1364956464092304,
+      "label": "f5_fmt_code_comment",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2710.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.1726551998526833,
+      "label": "f5_fmt_markdown_table",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2422.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0863370840417782,
+      "label": "f5_fmt_xml",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2382.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.08440201406953107,
+      "label": "f5_fmt_bullets",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3270.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.4249664669682832,
+      "label": "f6_default_template",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3410.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10492203045022375,
+      "label": "f6_helpful_asst",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3492.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.11692735180710279,
+      "label": "f8_behav_marker",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3308.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.16578044473515807,
+      "label": "f8_behav_sycophant",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3578.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.23180233467055578,
+      "label": "f8_behav_refusal",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2966.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.38571772280161354,
+      "label": "f8_behav_fact",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 3172.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.2486308531387893,
+      "label": "f8_behav_harmful",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length (chars)": 2187.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5520917332734327,
+      "label": "f2_wc_short_1",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 1917.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.555756753737031,
+      "label": "f2_wc_short_2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 1890.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.3854023112356393,
+      "label": "f2_wc_short_3",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2794.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6030053072180774,
+      "label": "f2_wc_short_4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 3176.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5459493632602435,
+      "label": "f2_wc_short_5",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 3531.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5700141156086521,
+      "label": "f2_wc_long_1",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 4103.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.4248995835335311,
+      "label": "f2_wc_long_2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 3409.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.7126801425244895,
+      "label": "f2_wc_long_3",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2674.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6950754811963383,
+      "label": "f2_wc_long_4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 3599.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6977220586233442,
+      "label": "f2_wc_long_5",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2435.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6534722713862141,
+      "label": "f3_icl_marker_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2038.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5917385983776215,
+      "label": "f3_icl_french_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2714.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.7360824206591952,
+      "label": "f3_icl_json_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2805.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5595982376924368,
+      "label": "f3_icl_pirate_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2232.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.5120285364526495,
+      "label": "f3_icl_marker_k2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 3244.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.7255780903407203,
+      "label": "f3_icl_marker_k8",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2406.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.649075679670164,
+      "label": "f3_icl_json_k2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2844.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.7954375292653092,
+      "label": "f3_icl_json_k8",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length (chars)": 2555.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.1491798228966169,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median well-formed CoT length (chars)": 3199.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.18664040374328583,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median well-formed CoT length (chars)": 3431.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.17122632995694487,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median well-formed CoT length (chars)": 3287.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.03278290676668605,
+      "label": "f1_house_librarian",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3111.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.02007842057910958,
+      "label": "f1_house_surgeon",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3453.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.027243308603900118,
+      "label": "f1_house_programmer",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3065.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.025853954303923565,
+      "label": "f1_house_medical_doctor",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3508.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.030510743668838325,
+      "label": "f1_house_software_engineer",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3370.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.03168417625977382,
+      "label": "f1_house_data_scientist",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3249.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.272232368116508,
+      "label": "f1_phub_01",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3312.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.030202075286493768,
+      "label": "f1_phub_02",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3191.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0393522737605817,
+      "label": "f1_phub_03",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3146.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.14570131786101848,
+      "label": "f1_phub_04",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3668.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.08988316469745161,
+      "label": "f1_phub_05",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3199.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.01438557927721762,
+      "label": "f1_phub_06",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3351.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.05546857469629818,
+      "label": "f1_phub_07",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3347.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.044874764964505154,
+      "label": "f1_phub_08",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2982.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.09421159807726942,
+      "label": "f4_reph_imperative",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2498.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.030900748133808054,
+      "label": "f4_reph_polite",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2860.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.24058013282551138,
+      "label": "f4_reph_casual",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3179.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.14087920199697734,
+      "label": "f4_reph_legalese",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2420.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.39703673144600427,
+      "label": "f4_reph_enthusiastic",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3205.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.3670655159314129,
+      "label": "f4_reph_archaic",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2278.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.08433506903409516,
+      "label": "f5_fmt_json",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2555.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0635359011754203,
+      "label": "f5_fmt_code_comment",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2710.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": -0.021422106161193888,
+      "label": "f5_fmt_markdown_table",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2422.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0390337457760197,
+      "label": "f5_fmt_xml",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2382.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10570776821293737,
+      "label": "f5_fmt_bullets",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3270.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.020170429208056007,
+      "label": "f6_default_template",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3410.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.02936841750484409,
+      "label": "f6_helpful_asst",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3492.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.15132773233432806,
+      "label": "f8_behav_marker",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3308.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.03555585061463784,
+      "label": "f8_behav_sycophant",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3578.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0975105781399992,
+      "label": "f8_behav_refusal",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2966.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10848152859144877,
+      "label": "f8_behav_fact",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 3172.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.08412338497944338,
+      "label": "f8_behav_harmful",
+      "series": "donor pool (n=32)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length (chars)": 2187.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.7639826536034768,
+      "label": "f2_wc_short_1",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 1917.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6626425329564721,
+      "label": "f2_wc_short_2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 1890.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 1.2063938102805434,
+      "label": "f2_wc_short_3",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2794.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.23981450653445224,
+      "label": "f2_wc_short_4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 3176.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.08058558739810096,
+      "label": "f2_wc_short_5",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 3531.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10101004110528189,
+      "label": "f2_wc_long_1",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 4103.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.12873217966160966,
+      "label": "f2_wc_long_2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 3409.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.17575214835131348,
+      "label": "f2_wc_long_3",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2674.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.6178084277966401,
+      "label": "f2_wc_long_4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 3599.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.4280638223230775,
+      "label": "f2_wc_long_5",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2435.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.059255310106476,
+      "label": "f3_icl_marker_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2038.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.2467675312905001,
+      "label": "f3_icl_french_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2714.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0411878506117771,
+      "label": "f3_icl_json_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2805.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10529046159586675,
+      "label": "f3_icl_pirate_k4",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2232.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.10367547870263738,
+      "label": "f3_icl_marker_k2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 3244.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0739482018744726,
+      "label": "f3_icl_marker_k8",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2406.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.07381139250386648,
+      "label": "f3_icl_json_k2",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2844.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.023311806986601402,
+      "label": "f3_icl_json_k8",
+      "series": "ICL+WildChat (n=18)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length (chars)": 2555.0,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.0987100691163697,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "median well-formed CoT length (chars)": 3199.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.11038102948720452,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median well-formed CoT length (chars)": 3431.5,
+      "per-context CoT gain (g_aug \u2212 d_ctx2ans)": 0.05798651717161818,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 106,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "indiv: \u0394_fam +0.449 CI[+0.384,+0.511]",
+        "xlabel": "median well-formed CoT length (chars)",
+        "ylabel": "per-context CoT gain (g_aug \u2212 d_ctx2ans)",
+        "legend_labels": [
+          "donor pool (n=32)",
+          "ICL+WildChat (n=18)"
+        ],
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500",
+          "4000",
+          "4500"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "avg_q: \u0394_fam +0.182 CI[+0.031,+0.357]",
+        "xlabel": "median well-formed CoT length (chars)",
+        "ylabel": "per-context CoT gain (g_aug \u2212 d_ctx2ans)",
+        "legend_labels": [
+          "donor pool (n=32)",
+          "ICL+WildChat (n=18)"
+        ],
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500",
+          "4000",
+          "4500"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ],
+    "series": [
+      "donor pool (n=32)",
+      "ICL+WildChat (n=18)"
+    ]
+  }
+}
