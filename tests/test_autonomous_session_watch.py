@@ -19861,3 +19861,661 @@ def test_registry_drift_pass_dry_run_writes_no_state(tmp_path, monkeypatch, caps
     out = capsys.readouterr().out
     assert "[dry-run] would save registry-drift state" in out
     assert "[dry-run] would append registry-drift sidecar row" in out
+
+
+# ── orphan-wrapper /proc sweep (pass 28, #1215) ──────────────────────────────
+#
+# Pure decision ladder + pure scan classifier + pass-driver tests, following
+# the file's established pure-decide + pass-driver split. Drivers stub every
+# /proc / daemon / tmux / signal seam (the pass is in conftest's
+# _FLEET_MUTATING_PASS_NAMES for full-main() tests; these tests OF the pass
+# stub its own seams instead).
+
+
+def _orphan_cand(pid, role="wrapper", ppid=1, subsumed=()):
+    return {
+        "pid": pid,
+        "role": role,
+        "cmdline_head": f"node happy/dist/index.mjs claude (pid {pid})",
+        "ppid": ppid,
+        "subsumed_children": list(subsumed),
+    }
+
+
+def _patch_orphan_io(
+    monkeypatch,
+    *,
+    candidates,
+    has_claude=False,
+    live_tty=False,
+    start_epochs=None,
+    cpu_by_pid=None,
+    children_map=None,
+):
+    """Stub every IO seam of orphan_wrapper_pass, leaving state files + the
+    decision ladder real. Returns (kills, pushes) recorders. proc_start_epoch
+    defaults to 500_000.0 (age ~5.8d at now=1_000_000 — over the 24h floor);
+    _proc_cpu_seconds defaults to a constant 100.0 (delta-CPU 0 once a
+    baseline exists)."""
+    import autonomous_session_watch as asw
+
+    kills: list[tuple[int, int]] = []
+    pushes: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_scan_orphan_wrapper_candidates",
+        lambda cm=None, proc_root=None: [dict(c) for c in candidates],
+    )
+    monkeypatch.setattr(asw, "_proc_children_map", lambda: dict(children_map or {}))
+    monkeypatch.setattr(asw, "_has_claude_descendant", lambda pid, cm=None: has_claude)
+    monkeypatch.setattr(
+        asw, "_is_live_user_tty", lambda pid, detached, check_orphaned=False: live_tty
+    )
+    monkeypatch.setattr(asw, "_detached_tmux_panes_with_activity", lambda: (set(), {}))
+    ses = dict(start_epochs or {})
+    monkeypatch.setattr(asw, "proc_start_epoch", lambda pid: ses.get(pid, 500_000.0))
+    cpus = dict(cpu_by_pid or {})
+    monkeypatch.setattr(asw, "_proc_cpu_seconds", lambda pid: cpus.get(pid, 100.0))
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: None)
+    monkeypatch.setattr(asw, "_orphan_parent_cmdline_head", lambda ppid: "init")
+    monkeypatch.setattr(asw, "_orphan_presignal_reverify", lambda pid, se: True)
+    monkeypatch.setattr(asw.os, "kill", lambda pid, sig: kills.append((pid, sig)))
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+    return kills, pushes
+
+
+# ── pure decision ladder ─────────────────────────────────────────────────────
+
+
+def test_orphan_decide_daemon_tracked_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(True, False, False, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_daemon_unknown_freezes():
+    # UNKNOWN != "not tracked": freeze with missed UNCHANGED (the belt; the
+    # driver skips the whole pass first).
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(None, False, False, 1e6, 0.0, 3, 1e7, False) == ("skip", 3)
+
+
+def test_orphan_decide_claude_present_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, True, False, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_live_tty_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, True, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_cpu_active_clears():
+    # Actively computing (delta-CPU over the threshold) is not an
+    # orphan-idle process: the episode ends.
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, False, 1e6, 0.5, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_cpu_baseline_missing_keeps():
+    # First observation: baseline recorded, cannot qualify yet.
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, False, 1e6, None, 0, 0.0, False) == ("keep", 1)
+
+
+def test_orphan_decide_young_or_unreadable_age_keeps():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    # Unreadable age never escalates ...
+    assert decide_orphan_wrapper(False, False, False, None, 0.0, 5, 1e7, False) == ("keep", 6)
+    # ... nor does a young wrapper (under the 24h floor).
+    assert decide_orphan_wrapper(False, False, False, 3600.0, 0.0, 5, 1e7, False) == ("keep", 6)
+
+
+def test_orphan_decide_threshold_grace_ladder():
+    from autonomous_session_watch import (
+        ORPHAN_WRAPPER_GRACE_S,
+        ORPHAN_WRAPPER_MIN_AGE_S,
+        decide_orphan_wrapper,
+    )
+
+    age = ORPHAN_WRAPPER_MIN_AGE_S + 60
+    # K=1: below threshold -> keep.
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 0, 60.0, False) == ("keep", 1)
+    # K=2: escalate once.
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 1, 600.0, False) == (
+        "escalate",
+        2,
+    )
+    # Already alerted -> keep (once per episode).
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 2, 600.0, True) == ("keep", 3)
+    # Reap enabled but grace NOT met -> no stop (escalate already fired).
+    assert decide_orphan_wrapper(
+        False, False, False, age, 0.0, 2, 600.0, True, reap_enabled=True
+    ) == ("keep", 3)
+    # Reap enabled + grace met -> stop.
+    assert decide_orphan_wrapper(
+        False,
+        False,
+        False,
+        age,
+        0.0,
+        2,
+        ORPHAN_WRAPPER_GRACE_S + 1,
+        True,
+        reap_enabled=True,
+    ) == ("stop", 0)
+    # Age-floor/missed interplay (deliberate race protection): misses accrued
+    # UNDER the 24h floor count toward K, so a candidate crossing the floor
+    # with persisted history escalates immediately.
+    assert decide_orphan_wrapper(False, False, False, 3600.0, 0.0, 0, 0.0, False) == ("keep", 1)
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 1, 600.0, False) == (
+        "escalate",
+        2,
+    )
+    # first_miss_ts pin semantics: the grace clock is first_miss_age_s (time
+    # since the FIRST persisted observation), so a fully-qualified candidate
+    # whose episode is younger than the grace can never stop.
+    assert decide_orphan_wrapper(
+        False, False, False, age, 0.0, 10, ORPHAN_WRAPPER_GRACE_S - 1, True, reap_enabled=True
+    ) == ("keep", 11)
+
+
+def test_orphan_decide_default_reap_off_never_stops():
+    # DURABILITY PIN (plan #1215): the escalate-only default. With the
+    # default reap_enabled=False, no input combination may return "stop".
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    for missed in (1, 2, 10):
+        for alerted in (False, True):
+            for first_miss_age in (0.0, 8 * 86400, 100 * 86400):
+                action, _ = decide_orphan_wrapper(
+                    False, False, False, 9e5, 0.0, missed, first_miss_age, alerted
+                )
+                assert action != "stop", (missed, alerted, first_miss_age)
+
+
+# ── pure scan classifier ─────────────────────────────────────────────────────
+
+
+def test_orphan_classify_wrapper_and_launcher_roles():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    wrapper = ["/usr/bin/node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude", "-m", "x"]
+    launcher = ["node", "/usr/lib/node_modules/happy/scripts/claude_local_launcher.cjs", "--resume"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me, me, None, 7) == "wrapper"
+    assert _classify_orphan_wrapper_proc(launcher, "node", me, me, None, 7) == "launcher"
+    # index.mjs with a NON-claude next token is NOT a wrapper (argv-token belt).
+    daemonish = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "doctor"]
+    assert _classify_orphan_wrapper_proc(daemonish, "node", me, me, None, 7) is None
+
+
+def test_orphan_classify_comm_filter():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    # A grep / editor / tmux server carrying the marker string in argv is
+    # excluded by comm != "node".
+    grep_proc = ["grep", "-r", "happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(grep_proc, "grep", me, me, None, 7) is None
+    launcher_in_editor = ["vim", "claude_local_launcher.cjs"]
+    assert _classify_orphan_wrapper_proc(launcher_in_editor, "vim", me, me, None, 7) is None
+
+
+def test_orphan_classify_euid_filter():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    wrapper = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me + 1, me, None, 7) is None
+
+
+def test_orphan_classify_daemon_excluded_both_layers():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    # Layer 1: explicit daemon pid match excludes even a claude-shaped argv.
+    wrapper = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me, me, 4242, 4242) is None
+    # Layer 2: a daemon-shaped cmdline (argv token after index.mjs is NOT
+    # "claude") is excluded even with daemon_pid=None (state file absent).
+    daemon = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "daemon", "start-sync"]
+    assert _classify_orphan_wrapper_proc(daemon, "node", me, me, None, 4242) is None
+
+
+def test_orphan_scan_subsumed_child_deduped(tmp_path, monkeypatch, capsys):
+    # TOPMOST dedup at the scan level: a candidate whose ancestor chain
+    # contains another candidate is dropped and recorded as a subsumed child
+    # on the topmost candidate.
+    import os
+
+    import autonomous_session_watch as asw
+
+    me = os.geteuid()
+    proc_root = tmp_path / "proc"
+    for pid in (100, 205):
+        (proc_root / str(pid)).mkdir(parents=True)
+    (proc_root / "not-a-pid").mkdir()
+    idents = {
+        100: (["node", "x/happy/dist/index.mjs", "claude"], "node", me),
+        205: (["node", "y/happy/scripts/claude_local_launcher.cjs"], "node", me),
+    }
+    monkeypatch.setattr(asw, "_read_proc_identity", lambda pid: idents.get(pid))
+    monkeypatch.setattr(asw, "_happy_daemon_pid", lambda: None)
+    out = asw._scan_orphan_wrapper_candidates({100: [205]}, proc_root=proc_root)
+    assert [c["pid"] for c in out] == [100]
+    assert out[0]["subsumed_children"] == [205]
+    assert "subsumed-by=100" in capsys.readouterr().out
+
+
+def test_orphan_smoke_mode_two_sample_cpu_frac(monkeypatch):
+    # The --orphan-wrapper-only instrument: an IN-INVOCATION two-sample
+    # delta yields a non-None cpu_frac even though dry-run never persists a
+    # baseline (Statistics Must-Fix 1).
+    import autonomous_session_watch as asw
+
+    samples = {7: [10.0, 10.4]}
+    monkeypatch.setattr(asw, "_proc_cpu_seconds", lambda pid: samples[pid].pop(0))
+    clock = [100.0, 108.0]
+    monkeypatch.setattr(asw.time, "time", lambda: clock.pop(0) if clock else 108.0)
+    monkeypatch.setattr(asw.time, "sleep", lambda s: None)
+    fracs = asw._orphan_smoke_cpu_fracs([7])
+    assert fracs[7] == pytest.approx(0.05)
+
+
+def test_orphan_pass_smoke_cpu_reaches_decision(isolated_registry, monkeypatch, capsys):
+    # smoke_cpu=True threads the two-sample frac into the decision line, so
+    # a dry-run smoke prints a real (non-n/a) cpu_frac per candidate.
+    import autonomous_session_watch as asw
+
+    _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    samples = {700: [10.0, 10.4]}
+    # The driver ALSO reads _proc_cpu_seconds once for its persisted-baseline
+    # bookkeeping — return the last sample once the two-sample list drains.
+    monkeypatch.setattr(
+        asw, "_proc_cpu_seconds", lambda pid: samples[pid].pop(0) if samples[pid] else 10.4
+    )
+    clock = [100.0, 108.0]
+    monkeypatch.setattr(asw.time, "time", lambda: clock.pop(0) if clock else 108.0)
+    monkeypatch.setattr(asw.time, "sleep", lambda s: None)
+    asw.orphan_wrapper_pass(
+        True, 2, daemon_reachable=True, children=[], now=1_000_000.0, smoke_cpu=True
+    )
+    out = capsys.readouterr().out
+    assert "cpu_frac=0.0500" in out
+    assert "cpu_frac=n/a" not in out
+
+
+# ── pass driver ──────────────────────────────────────────────────────────────
+
+
+def test_orphan_pass_daemon_unreachable_skips(isolated_registry, monkeypatch, capsys):
+    # DURABILITY PIN: daemon unreachable => one skip line, ALL state
+    # untouched, the scan never runs, nothing is signalled.
+    import autonomous_session_watch as asw
+
+    def _boom(*a, **kw):
+        raise AssertionError("scan must not run on a daemon-unreachable tick")
+
+    monkeypatch.setattr(asw, "_scan_orphan_wrapper_candidates", _boom)
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    state_path.write_text(json.dumps({"start_epoch": 500_000.0, "missed": 5}))
+    before = state_path.read_text()
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=False, children=None, now=1_000_000.0)
+    assert state_path.read_text() == before
+    assert "daemon unreachable; skipping with state frozen" in capsys.readouterr().out
+
+
+def test_orphan_pass_escalates_once_and_persists_state(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ORPHAN_WRAPPER_REAP", raising=False)
+    kills, pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    t0 = 1_000_000.0
+
+    # Tick 1: no CPU baseline yet -> keep; baseline + first_miss_ts persisted.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert state["cpu_s"] == 100.0 and state["cpu_ts"] == t0
+    assert not sidecar.exists() and pushes == []
+
+    # Tick 2: delta-CPU 0 -> escalate once (sidecar row + one push).
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    state = json.loads(state_path.read_text())
+    assert state["alerted"] is True and state["missed"] == 2
+    assert state["first_miss_ts"] == t0  # PIN: never reset while the episode lives
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert len(rows) == 1 and len(pushes) == 1
+    row = rows[0]
+    assert row["event"] == "escalate" and row["pid"] == 700 and row["role"] == "wrapper"
+    assert row["daemon_state"] == "not-tracked"
+    for field in (
+        "start_epoch",
+        "cmdline_head",
+        "age_d",
+        "first_miss_age_h",
+        "cpu_frac",
+        "missed",
+        "ppid",
+        "parent_cmdline_head",
+        "tty",
+        "subsumed_children",
+        "recommended_action",
+    ):
+        assert field in row, field
+
+    # Tick 3: already alerted -> keep; no second row, no second push.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1200)
+    assert len(sidecar.read_text().splitlines()) == 1 and len(pushes) == 1
+    assert kills == []  # escalate-only default: never a signal
+
+
+def test_orphan_pass_live_set_and_ancestry_excluded(isolated_registry, monkeypatch, capsys):
+    # A live-set pid, a candidate with a live ANCESTOR, and a candidate with
+    # a live DESCENDANT are all excluded; only the genuinely untracked one
+    # is processed.
+    import autonomous_session_watch as asw
+
+    cands = [_orphan_cand(100), _orphan_cand(205), _orphan_cand(300), _orphan_cand(400)]
+    _patch_orphan_io(
+        monkeypatch,
+        candidates=cands,
+        children_map={100: [205], 300: [100]},
+    )
+    children = [{"happySessionId": "sid-a", "pid": 100}]
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=children, now=1_000_000.0)
+    out = capsys.readouterr().out
+    assert "1 daemon-untracked candidate(s) (3 live-set/ancestry-excluded" in out
+    assert (isolated_registry / "wrapper-orphan-400.json").exists()
+    for pid in (100, 205, 300):
+        assert not (isolated_registry / f"wrapper-orphan-{pid}.json").exists()
+
+
+def test_orphan_pass_stop_arm_signals_and_verifies(isolated_registry, monkeypatch, capsys):
+    import signal as _signal
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    t0 = 1_000_000.0
+
+    # Seed a fully-qualified episode past the 7d grace.
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=True,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == [(700, _signal.SIGTERM)]
+    state = json.loads(state_path.read_text())
+    assert state["signalled_at"] == t0 and state["signal_retried"] is False
+    stop_rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert [r["event"] for r in stop_rows] == ["stop"]
+
+    # Next tick, still alive (still a candidate) -> ONE SIGTERM retry.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    assert kills == [(700, _signal.SIGTERM), (700, _signal.SIGTERM)]
+    state = json.loads(state_path.read_text())
+    assert state["signal_retried"] is True and state["stop_failed_alerted"] is False
+
+    # Third tick, STILL alive -> one loud stop-failed row + push, then quiet.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1200)
+    assert len(kills) == 2  # never a third signal, never SIGKILL
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert [r["event"] for r in rows] == ["stop", "stop-failed"]
+    state = json.loads(state_path.read_text())
+    assert state["stop_failed_alerted"] is True
+
+    # Fourth tick: already retried + alerted -> quiet (no new rows/signals).
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1800)
+    assert len(kills) == 2
+    assert len(sidecar.read_text().splitlines()) == 2
+    assert "already retried + alerted" in capsys.readouterr().out
+
+
+def test_orphan_pass_global_zombie_switch_gates_stop(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_WRAPPER_REAP=0 keeps ALL wrapper reaping alert-only even
+    # with the orphan opt-in set (the #1039 dual-switch AND).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.setenv("EPM_ZOMBIE_WRAPPER_REAP", "0")
+    kills, _pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=False,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == []
+    # The fully-qualified candidate escalates instead of stopping.
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["alerted"] is True and state.get("signalled_at") is None
+
+
+def test_orphan_pass_pid_reuse_start_epoch_mismatch_resets(isolated_registry, monkeypatch, capsys):
+    # A state file whose start_epoch mismatches the live process (pid
+    # recycled) resets to a FRESH episode; the accrued misses can never
+    # qualify the new process.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=111.0,  # a DIFFERENT process once held this pid
+        missed=5,
+        alerted=True,
+        first_miss_ts=t0 - 30 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == []  # a signal is NEVER sent against a mismatched epoch
+    # Layer 1: the pass-start candidate-keyed GC reaps the stale-epoch state
+    # before processing, so the episode restarts fresh.
+    assert "GC state wrapper-orphan-700.json" in capsys.readouterr().out
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert state["start_epoch"] == 500_000.0
+
+    # Layer 2 (the mid-tick pid-recycle race belt): the DRIVER's own guard
+    # resets a mismatched-epoch state even when the GC missed it.
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=111.0,
+        missed=5,
+        alerted=True,
+        first_miss_ts=t0 - 30 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw._process_orphan_wrapper(
+        _orphan_cand(700),
+        t0,
+        False,
+        2,
+        reap_enabled=True,
+        children_map={},
+        detached_tmux_ttys=set(),
+        check_orphaned=True,
+        stops_remaining=[3],
+        new_escalations=[],
+    )
+    assert kills == []
+    assert "start-epoch mismatch" in capsys.readouterr().out
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["missed"] == 1 and state["start_epoch"] == 500_000.0
+
+
+def test_orphan_pass_per_tick_stop_bound(isolated_registry, monkeypatch, capsys):
+    # <= 3 SIGTERMs per tick even fully opted in; the 4th qualified
+    # candidate is kept this tick.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    pids = [701, 702, 703, 704]
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(p) for p in pids])
+    t0 = 1_000_000.0
+    for p in pids:
+        asw._save_orphan_wrapper_state(
+            p,
+            start_epoch=500_000.0,
+            missed=2,
+            alerted=True,
+            first_miss_ts=t0 - 8 * 86400,
+            cpu_s=100.0,
+            cpu_ts=t0 - 600,
+        )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert sorted(pid for pid, _sig in kills) == [701, 702, 703]
+    assert "per-tick stop bound reached" in capsys.readouterr().out
+    kept = json.loads((isolated_registry / "wrapper-orphan-704.json").read_text())
+    assert kept.get("signalled_at") is None
+
+
+def test_orphan_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch, capsys):
+    # DURABILITY PIN: dry-run performs zero state writes, zero sidecar
+    # appends, zero signals — even on a fully stop-qualified candidate with
+    # the reap switches on, and even for the GC of a departed pid's state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=True,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    departed = isolated_registry / "wrapper-orphan-999.json"
+    departed.write_text(json.dumps({"start_epoch": 1.0, "missed": 3}))
+    before = (isolated_registry / "wrapper-orphan-700.json").read_text()
+
+    asw.orphan_wrapper_pass(True, 2, daemon_reachable=True, children=[], now=t0)
+    out = capsys.readouterr().out
+    assert "[dry-run] would SIGTERM orphaned wrapper pid 700" in out
+    assert kills == []
+    assert (isolated_registry / "wrapper-orphan-700.json").read_text() == before
+    assert departed.exists()  # GC honors dry-run too
+    assert not (isolated_registry / "orphan-wrapper-events.jsonl").exists()
+
+
+def test_orphan_pass_state_gc_reaps_departed(isolated_registry, monkeypatch):
+    # State whose (pid, start_epoch) is no longer a live candidate is reaped
+    # (the stop-verification success path); a live candidate's state stays.
+    import autonomous_session_watch as asw
+
+    _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    (isolated_registry / "wrapper-orphan-999.json").write_text(
+        json.dumps({"start_epoch": 1.0, "missed": 3})
+    )
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=1,
+        alerted=False,
+        first_miss_ts=t0,
+        cpu_s=100.0,
+        cpu_ts=t0,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    assert not (isolated_registry / "wrapper-orphan-999.json").exists()
+    assert (isolated_registry / "wrapper-orphan-700.json").exists()
+
+
+def test_orphan_pass_push_batched_per_tick(isolated_registry, monkeypatch):
+    # N new episodes escalating in ONE tick produce exactly ONE summary
+    # _telegram_push covering all N; per-episode sidecar rows are unaffected.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ORPHAN_WRAPPER_REAP", raising=False)
+    pids = [701, 702, 703]
+    _kills, pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(p) for p in pids])
+    t0 = 1_000_000.0
+    for p in pids:
+        asw._save_orphan_wrapper_state(
+            p,
+            start_epoch=500_000.0,
+            missed=1,
+            alerted=False,
+            first_miss_ts=t0 - 600,
+            cpu_s=100.0,
+            cpu_ts=t0 - 600,
+        )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert len(pushes) == 1
+    for p in pids:
+        assert f"pid {p}" in pushes[0]
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    assert len(sidecar.read_text().splitlines()) == 3
+
+
+def test_orphan_pass_kill_switch_skips(isolated_registry, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_ORPHAN_WRAPPER_PASS", "1")
+
+    def _boom(*a, **kw):
+        raise AssertionError("scan must not run under the kill switch")
+
+    monkeypatch.setattr(asw, "_scan_orphan_wrapper_candidates", _boom)
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=1_000_000.0)
+    assert "disabled via EPM_DISABLE_ORPHAN_WRAPPER_PASS" in capsys.readouterr().out
+
+
+def test_pass8_gc_never_touches_wrapper_orphan_state(isolated_registry, monkeypatch):
+    # STRUCTURAL SPARING PIN (consistency-checker WARN 2): the pass-8 GC's
+    # _GC_TARGETS globs (incl. "orphan-*.json") never enumerate a
+    # wrapper-orphan-<pid>.json file, so the terminal-status reap can never
+    # touch a live orphan episode's state.
+    import autonomous_session_watch as asw
+
+    state = isolated_registry / "wrapper-orphan-4242.json"
+    state.write_text(json.dumps({"start_epoch": 1.0, "missed": 2}))
+
+    def _boom(issue):
+        raise AssertionError(f"pass-8 GC consulted task status for {issue}")
+
+    monkeypatch.setattr(asw, "_task_status", _boom)
+    asw.gc_pass(False, now=1_000_000.0)
+    assert state.exists()

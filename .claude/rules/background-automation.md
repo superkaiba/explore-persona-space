@@ -220,8 +220,9 @@ detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the stale-blocked flag pass, the gate-push pass, the program-orchestrator
 recovery pass, the boot-death pass, the
 stale-registration pass, the CPU/memory-pressure guard pass, the
-triage-observer pass, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+triage-observer pass, the orphan-wrapper /proc sweep, and three session
+reapers — the session-vs-status reconcile pass, the zombie-wrapper pass,
+and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
 The stalled detector + the two respawn arms carry seven hardening mechanisms
@@ -762,6 +763,64 @@ alert-only; `EPM_ZOMBIE_NONEPS_REAP=0` reverts the non-EPS lane only (the
 the fallback events file (no task to carry markers); a stopped non-EPS
 session is recoverable — `happy claude` in its own project cwd, with the old
 conversation resumable via `claude --resume` (transcripts persist on disk).
+
+**Orphan-wrapper /proc sweep (task #1215, `orphan_wrapper_pass`; ESCALATE-ONLY
+by default).** The daemon-INDEPENDENT enumeration complement of the
+zombie-wrapper pass: every session reaper above sources its pids/sids from the
+Happy daemon `/list`, so a wrapper or launcher process the daemon no longer
+tracks — the 2026-07-01 incident's 31 zombie wrappers (~4.8 GB RSS, 1-7 days
+old) and a 54-day init-parented `claude_local_launcher.cjs` (recorded in
+#818's body) — is invisible to ALL of them forever (#818 fixed the
+orphaned-tmux blind spot for daemon-TRACKED wrappers and deliberately descoped
+this class). ONE /proc scan enumerates candidates by cmdline signature —
+`happy/dist/index.mjs` with the next argv token `claude` (role `wrapper`), or
+`claude_local_launcher.cjs` (role `launcher`); `comm == "node"`; euid-owned;
+the Happy daemon pid excluded twice (`~/.happy/daemon.state.json` pid + the
+argv-token belt); TOPMOST-deduped (a candidate whose ancestor chain contains
+another candidate rides as `subsumed_children`). **Conjunctive escalation
+guards, ALL required:** daemon reachable AND pid untracked (incl. any
+ancestor/descendant live-set intersection — a live session's launcher belongs
+to the zombie pass's session), no Claude descendant, delta-CPU < 1%/core
+between ticks (`EPM_ORPHAN_WRAPPER_CPU_FRAC_MAX`; delta-not-accumulated — a
+wrapper that once served a long session carries CPU history; no baseline yet
+⇒ keep), wrapper process age >= 24h (`EPM_ORPHAN_WRAPPER_MIN_AGE_S`; spawn →
+/list registration is seconds, so a spawn-in-flight wrapper never qualifies),
+no live user TTY (`_is_live_user_tty` with `check_orphaned` threaded from the
+fleet-wide `EPM_ORPHANED_TMUX_REAP` knob — the incident's 31 wrappers held
+orphaned-tmux-server pts TTYs, so the #818 orphaned-server branch is
+load-bearing here), and >= 2 consecutive ticks (per-pid
+`~/.eps-autonomous/wrapper-orphan-<pid>.json` state keyed by
+`(pid, start_epoch)` — the prefix is deliberately NOT `orphan-wrapper-`,
+which the GC pass's `orphan-*` glob would enumerate; reaped by the pass's own
+candidate-keyed GC). **Default action = escalate-only** (polarity INVERTED vs
+the zombie/idle reapers — the stop action is a direct SIGTERM to a pid the
+daemon cannot see, and a daemon-restart-orphaned-but-still-revivable idle
+wrapper is a real residual): one sidecar row per episode in
+`~/.eps-autonomous/orphan-wrapper-events.jsonl` (carrying
+ppid/parent-cmdline/tty/cpu forensics — init-parentage was the incident's
+true-orphan fingerprint and is unobtainable post-stop) + ONE batched summary
+Telegram push per tick across all new episodes (a daemon restart can
+mass-untrack idle wrappers). **Review the escalate rows before opting in to
+the stop arm** — if they flag healthy daemon-restart survivors, tighten the
+guards first. **Opt-in stop arm:** `EPM_ORPHAN_WRAPPER_REAP=1` (default OFF)
+ANDed with the global `EPM_ZOMBIE_WRAPPER_REAP` (global-off keeps ALL wrapper
+reaping alert-only), plus >= 7d of OBSERVED orphanhood
+(`EPM_ORPHAN_WRAPPER_GRACE_S`; `first_miss_ts` pins at the FIRST persisted
+observation of the episode — it cannot predate the merge, so the grace
+doubles as a post-deploy bake window), <= 3 SIGTERMs per tick
+(`EPM_ORPHAN_WRAPPER_MAX_STOPS_PER_TICK` — the 31-process backlog drains in
+~2h by design), an immediate pre-signal signature + start-epoch
+re-verification (pid-reuse belt), and next-tick stop verification with ONE
+SIGTERM retry then one loud stop-failed row + push — never SIGKILL in v1.
+Daemon unreachable ⇒ the whole pass prints one skip line with ALL state
+frozen and never signals ("unknown" is not "not tracked"). No task markers by
+construction (an untracked pid has no sid to map to an issue). Kill switch
+`EPM_DISABLE_ORPHAN_WRAPPER_PASS=1`; `--orphan-wrapper-only` runs just this
+pass with an in-invocation two-sample CPU delta
+(`EPM_ORPHAN_WRAPPER_SMOKE_INTERVAL_S`, default 8s) so per-candidate
+`cpu_frac` prints even under `--dry-run` (the production persisted-baseline
+delta writes nothing on a dry run); pair with `--dry-run` for a read-only
+live smoke.
 
 **Idle-unmapped pass.** A third session reaper — auto-stops UNMAPPED EPS-cwd
 sessions (no registry entry, no `issue-<N>` worktree cwd) whose resolved
