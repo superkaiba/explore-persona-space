@@ -139,7 +139,7 @@ What is plotted: the layer-26 own-vs-plain-external gap per component, before an
 
 Of the 0.0339 full gap, 0.0204 survives 16 absorbed answer tokens — again complement-dominated (0.0195 orthogonal vs 0.00074 parallel), the residual-leg statistic negative with its CI excluding zero.
 
-The relative clause holds: the parallel sliver closes at 8.8% against 39.5%, a difference excluding zero — token-identity information resists prefix absorption where present — but its mass is negligible, so the layer-26 closure stall is not token commitment.
+The relative clause holds: the parallel sliver closes at 8.8% against 39.5%, a difference excluding zero. Token-identity information resists prefix absorption where present, but its mass is negligible, so the layer-26 closure stall is not token commitment.
 
 ### Most matched contexts individually put the gap in the orthogonal complement
 
@@ -161,7 +161,7 @@ What is plotted: four exploratory panels — parallel gap share by layer; parall
 
 > **Figure.** *Variance share rises with depth; gap enrichment falls.* Enrichment = gap share over variance share: 27.3 [16.1, 83.8] at layer 14 to 3.9 [3.2, 4.8] at layer 26; paired layer-26-minus-layer-14 difference CI [−79.4, −12.5]. The per-slot panel is single-fold and descriptive — a within-first-16 profile, consistent with the parent's coarse early-vs-late uniformity read.
 
-The depth-profile read (parallel share rising with depth) is unsupported: the paired layer-26-minus-layer-14 change in `S_par` is +0.0084 with a CI spanning zero. Variance share rises about 10.9-fold — logit-lens-consistent — but enrichment falls from 27.3 to 3.9 with its paired difference excluding zero: the opposite depth trend from token commitment.
+The depth-profile read (parallel share rising with depth) is unsupported: the paired layer-26-minus-layer-14 change in `S_par` is +0.0084 with a CI spanning zero. Variance share rises about 10.9-fold, consistent with logit-lens expectations. Enrichment nonetheless falls from 27.3 to 3.9, with its paired difference excluding zero: the opposite depth trend from token commitment.
 
 Per slot, the orthogonal gap concentrates early (0.079 at position 2, falling to 0.010 by position 16) while the parallel part peaks at position 1 and declines monotonically.
 
