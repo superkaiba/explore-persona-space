@@ -21,6 +21,9 @@ goal: Characterize how the pre-generation context→answer-state transport map h
   and whether delivering the same information in-weights via dose-matched context
   distillation produces the same per-example answer-state shift, preserves relevance
   gating, and leaves the pre-finetuning map valid on the finetuned model.
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 # Context-augmentation effects on the context→answer-state transport map, with a dose-matched in-weights (context-distillation) comparison arm
 
