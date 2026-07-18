@@ -24,6 +24,8 @@ goal: 'On the Qwen-2.5-Instruct scale ladder (0.5B, 1.5B, 3B, 7B, 14B, 32B; 7B =
   trend robust to layer choice (depth-fraction-matched primary, per-scale val-selected
   sweep secondary), train-set size (matched-n primary, R²-vs-n curves), and the dimension/response-length
   confounds?'
+relates_to:
+- spec-context-as-vector
 ---
 # Does the context→answer map get more predictable with model scale? (Qwen-2.5-Instruct 0.5B→32B)
 
