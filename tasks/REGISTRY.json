@@ -307,8 +307,8 @@
     "1038": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1038",
-      "status": "proposed",
+      "path": "tasks/blocked/1038",
+      "status": "blocked",
       "title": "daily-held: schedule #681 bind-migration cutover + disk sign-off"
     },
     "1039": {
