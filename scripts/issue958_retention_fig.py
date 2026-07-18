@@ -1,8 +1,9 @@
 """Cross-turn transfer figures for #958: one curve per fit turn, over evaluation turns.
 
-Emits TWO figures (raw alongside processed):
-- figures/issue_958/skill_by_fit_turn.*      — ABSOLUTE held-out skill on the y-axis
-- figures/issue_958/retention_by_fit_turn.*  — retention (transfer / own-turn skill, %)
+Emits THREE figures (raw alongside processed):
+- figures/issue_958/skill_by_fit_turn.*          — ABSOLUTE held-out skill (6-block read-out mean)
+- figures/issue_958/retention_by_fit_turn.*      — retention (transfer / own-turn skill, %)
+- figures/issue_958/skill_by_fit_turn_block19.*  — ABSOLUTE held-out skill at read-out block 19 (best layer)
 
 Reads the committed aggregates only:
 - eval_results/issue_958/transfer_matrix.json          (main-panel fold-A grid, with-duplicates, n_test=500)
@@ -21,10 +22,14 @@ denominator exists there) but ARE shown in the absolute view.
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()  # BEFORE numpy/matplotlib so the shared-VM thread caps bind (#847)
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -49,6 +54,102 @@ def _ci_offsets(vals: list[float], cis: list[tuple[float, float]]) -> np.ndarray
     lo = np.asarray([c[0] for c in cis])
     hi = np.asarray([c[1] for c in cis])
     return np.vstack([np.maximum(0, v - lo), np.maximum(0, hi - v)])
+
+
+# Block 19 (the parent-line frozen best layer) is index 2 of the 6 read-out rows
+# in the transfer percell files (readout_blocks order [14,17,19,20,24,26]) and
+# index 20 of the 29-row own-map percell files (block b → row b+1). Both indexings
+# were cross-checked (mean-of-rows vs the committed aggregates) before use.
+_B19_ROW6 = 2
+_B19_ROW29 = 20
+
+
+def _load_block19() -> dict:
+    """Block-19-only cross-turn transfer values.
+
+    Turn-1 main cells (turns 1-4) come from the duplicate-excluded per-row sidecar
+    WITH bootstrap CIs; every other series is a committed per-cell point estimate.
+    """
+    pc = EV / "percell"
+
+    def npz(name: str, idx: int) -> float:
+        return float(np.load(pc / f"{name}.npz")["skill"][idx])
+
+    pr = json.loads((EV / "dup-excluded-turn1-refit" / "refit_perrow.json").read_text())
+    g = pr["regimes"]["exact"]["grid"]["foldA"]
+    t1 = {k: g[f"1to{k}"]["transfer_skill"]["19"] for k in (1, 2, 3, 4)}  # {skill, ci95}
+    return {
+        "t1": t1,
+        "t1_long": {k: npz(f"long_1to{k}_lclamp", _B19_ROW6) for k in (5, 6, 7, 8)},
+        "maps": {
+            j: {k: npz(f"xfer_{j}to{k}_A", _B19_ROW29) for k in (1, 2, 3, 4)} for j in (2, 3, 4)
+        },
+        "long_own": {k: npz(f"long_own_k{k}", _B19_ROW29) for k in (5, 6, 7, 8)},
+    }
+
+
+def fig_absolute_block19(b: dict) -> None:
+    set_paper_style("blog")
+    colors = paper_palette(4)
+    fig, ax = plt.subplots()
+
+    ks = [1, 2, 3, 4]
+    t1_vals = [b["t1"][k]["skill"] for k in ks]
+    t1_cis = [tuple(b["t1"][k]["ci95"]) for k in ks]
+    ax.errorbar(
+        ks,
+        t1_vals,
+        yerr=_ci_offsets(t1_vals, t1_cis),
+        marker="o",
+        color=colors[0],
+        capsize=2,
+        label="map fit at turn 1",
+    )
+    kl = [5, 6, 7, 8]
+    tl_vals = [b["t1_long"][k] for k in kl]
+    ax.plot([4, 5], [t1_vals[-1], tl_vals[0]], color=colors[0], linestyle=":", linewidth=1.0)
+    ax.plot(
+        kl,
+        tl_vals,
+        marker="o",
+        markerfacecolor="white",
+        markeredgewidth=1.2,
+        markeredgecolor=colors[0],
+        color=colors[0],
+        linestyle="--",
+        label="map fit at turn 1 (long panel)",
+    )
+    for i, j in enumerate((2, 3, 4)):
+        ax.plot(
+            ks,
+            [b["maps"][j][k] for k in ks],
+            marker="o",
+            color=colors[i + 1],
+            label=f"map fit at turn {j}",
+        )
+    ax.plot(
+        kl,
+        [b["long_own"][k] for k in kl],
+        marker="s",
+        markersize=4,
+        color="#888888",
+        linestyle="-.",
+        linewidth=1.0,
+        label="own-turn map (long panel)",
+    )
+
+    ax.set_xlabel("evaluation turn")
+    ax.set_ylabel("held-out skill at block 19")
+    ax.set_xticks(range(1, 9))
+    ax.set_ylim(0, 0.7)
+    ax.legend(loc="upper right", fontsize=9)
+    set_title_subtitle(
+        ax,
+        "Cross-turn transfer at read-out block 19 (best layer)",
+        "map fit at turn j, evaluated at turn k; 95% CIs on turn-1 cells",
+    )
+    savefig_paper(fig, "issue_958/skill_by_fit_turn_block19", dir=str(ROOT / "figures"))
+    plt.close(fig)
 
 
 def fig_absolute(d: dict) -> None:
@@ -186,6 +287,7 @@ def main() -> None:
     d = _load()
     fig_absolute(d)
     fig_retention(d)
+    fig_absolute_block19(_load_block19())
 
 
 if __name__ == "__main__":
