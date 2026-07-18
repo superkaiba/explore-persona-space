@@ -3836,8 +3836,8 @@
     "1492": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1492",
-      "status": "planning",
+      "path": "tasks/approved/1492",
+      "status": "approved",
       "title": "workflow-fix: gotchas.md bullet \u2014 SAE reference-eval token-pool semantics (remove_bos + outlier filter)"
     },
     "15": {
