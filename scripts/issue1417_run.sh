@@ -569,7 +569,14 @@ main() {
       echo "[phase=pc_stage_inputs]"
       stage_phase_c_inputs
       uv run python scripts/issue1417_battery.py --gate-g2 --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
-      run_phase_c_lanes full
+      # auto_descope_to_null_draws_100 (epm:compute-deviation v3, #1417): post-fix
+      # pilot still projects 8236 s/lane > the 7200 s rc-7 abort threshold (the
+      # serial CPU-randn floor is n-independent); halving both null-draw counts
+      # brings the lane to ~4.9k s (ratio 1.37 <= 1.5) while preserving every
+      # planned pair/cell/arm. Restore 200-draw nulls via these env overrides.
+      run_phase_c_lanes full \
+        --cosine-null-draws "${I1417_COSINE_NULL_DRAWS:-100}" \
+        --collapse-null-draws "${I1417_COLLAPSE_NULL_DRAWS:-100}"
       echo "[phase=pc_summary]"
       uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
       echo "[phase=pc_figures]"
