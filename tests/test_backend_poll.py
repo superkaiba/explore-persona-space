@@ -150,6 +150,42 @@ def _isolate_lease_store(monkeypatch, tmp_path):
     monkeypatch.setattr(Path, "home", classmethod(lambda _cls: home))
 
 
+def _import_runpod_api():
+    """Deterministic scripts-dir bootstrap + ``import runpod_api``.
+
+    backend_poll's lazy ``from runpod_api import ...`` relies on scripts/
+    being on sys.path; mirror it here (the same bootstrap the #954 tests do
+    inline) so patching runpod_api attributes is test-ordering-independent.
+    """
+    import sys
+
+    import scripts.backend_poll as bp
+
+    scripts_dir = str(Path(bp.__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import runpod_api
+
+    return runpod_api
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_runpod_team_list(monkeypatch):
+    """Default ``runpod_api.list_team_pods`` to an EMPTY live-pod list.
+
+    #1490: ``_failover_gcp_to_runpod`` now takes a pre-launch live-pod
+    snapshot (``_live_runpod_ids_for_issue`` -> ``list_team_pods``) on EVERY
+    failover invocation, so without this default every pre-existing failover
+    test would attempt a real GraphQL call (the helper fail-softs to ``None``,
+    but the retry backoff is slow and network-dependent). An empty list makes
+    pre == post == set() -> outcome ``no-residue`` -> byte-preserved terminal
+    semantics for every pre-#1490 test. The #1490 reclaim tests override with
+    their own stateful fakes.
+    """
+    runpod_api = _import_runpod_api()
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: [], raising=False)
+
+
 # ---------------------------------------------------------------------------
 # The poller-level acceptance test (the end-to-end seam)
 # ---------------------------------------------------------------------------
@@ -3413,3 +3449,382 @@ def test_module_level_scripts_bootstrap_recognizer_semantics():
         "ROOT = Path('/repo')\n"
         'sys.path.insert(0, str(ROOT / "src"))\n'
     )
+
+
+# ---------------------------------------------------------------------------
+# #1490 — transactional provision-residue reclaim in the shared failover
+# core's NoComputeAvailableError branch. The #1417 shape: the RunPod fallback
+# provision CREATED pod-<N> (bootstrap then failed), the rung re-raised
+# NoComputeAvailableError, and the poller returned the re-drivable
+# no_compute_available terminal while the pod idled and billed. The reclaim
+# is TWO-SIGNAL gated: terminate ONLY on a singleton new pod id (post - pre
+# live-API snapshot) AND positive created-then-failed evidence; every
+# ambiguous / created-nothing / unknown cell never terminates. All tests
+# drive the queue-vanish caller end-to-end (the #954 shared-core pattern), so
+# the REAL router rung produces the NoComputeAvailableError chain.
+# ---------------------------------------------------------------------------
+
+
+def _residue_pod(pod_id: str, name: str = "pod-1116"):
+    """A live PodInfo named exactly ``pod-1116`` (the reclaim's name filter)."""
+    runpod_api = _import_runpod_api()
+    return runpod_api.PodInfo(
+        pod_id=pod_id, name=name, desired_status="RUNNING", ssh_host="1.2.3.4", ssh_port=22001
+    )
+
+
+class _ScriptedTeamList:
+    """Stateful ``list_team_pods`` fake: pops ONE scripted snapshot per call
+    (a list of PodInfo, or an Exception instance to RAISE for that call);
+    returns ``[]`` once exhausted. Records the call count."""
+
+    def __init__(self, snapshots: list) -> None:
+        self.snapshots = list(snapshots)
+        self.calls = 0
+
+    def __call__(self):
+        self.calls += 1
+        if not self.snapshots:
+            return []
+        item = self.snapshots.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+class _ProvisionFailedRunpodBackend:
+    """RunPodBackend stand-in whose ``launch`` raises the #1417 shape.
+
+    Default: ``PodLifecycleProcessError`` carrying the created-then-failed
+    bootstrap-failure stderr tail — what ``_run_pod_lifecycle_relay`` raises
+    when ``pod_lifecycle.py provision`` created the pod and bootstrap then
+    exited non-zero. The REAL router rung catches it in its generic branch
+    and re-raises ``NoComputeAvailableError`` ``from`` it, so the poller's
+    evidence classifier sees the true production chain (class name + stderr
+    tail embedded in str, ``__cause__`` carrying returncode/stderr). Pass
+    ``exc`` to script a different failure shape.
+    """
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        self.launches: list = []
+        self._exc = exc
+
+    def launch(self, spec):
+        from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+        self.launches.append(spec)
+        if self._exc is not None:
+            raise self._exc
+        raise PodLifecycleProcessError(
+            1,
+            ["uv", "run", "python", "scripts/pod_lifecycle.py", "provision", "--issue", "1116"],
+            output=None,
+            stderr="Bootstrap exited with code 1. Pod is up but not experiment-ready.",
+        )
+
+
+def _reclaim_setup(tmp_path, monkeypatch, *, team_list, backend=None):
+    """Queue-vanish caller setup driving the shared failover core end-to-end.
+
+    Returns ``(sidecar, rp, terminations)`` — the vanish-shaped sidecar, the
+    (by default provision-failing) RunPod backend fake, and the recorded
+    ``terminate_pod`` calls.
+    """
+    runpod_api = _import_runpod_api()
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = backend if backend is not None else _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    monkeypatch.setattr(runpod_api, "list_team_pods", team_list, raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    return sidecar, rp, terminations
+
+
+def test_gcp_queue_vanish_failover_repoints_sidecar_to_runpod(tmp_path, monkeypatch, capsys):
+    """#1490 AC 1 (Goal items 1-2 verified-existing, D3): a queue-vanish
+    failover whose RunPod launch SUCCEEDS re-points the handle sidecar to
+    backend=runpod (readback-proven) and emits the running-shaped JSON —
+    the launch-verify + re-point legs the #909/#954/#659 line already built."""
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+
+
+def test_failover_provision_failure_after_pod_created_tears_down_pod(tmp_path, monkeypatch, capsys):
+    """#1490 AC 2 (the #1417 shape): pre snapshot [], post snapshot [podX],
+    created-then-failed evidence -> terminate_pod called exactly once with
+    podX; today's re-drivable no_compute_available terminal with a log_tail
+    naming the reclaim; sidecar still gcp; NO failover sentinel/lease stamp
+    (tick 2 re-attempts the launch against the clean slate)."""
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "no_compute_available"
+    assert "torn-down" in out["log_tail_excerpt"]
+    assert "pod-1116" in out["log_tail_excerpt"]
+    assert terminations == ["podX"]
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+    assert len(rp.launches) == 1
+
+    # Tick 2 (no-stamp contract): the scripted fake is exhausted, so both
+    # snapshots read the post-teardown state [] -> a SECOND launch attempt
+    # occurs (a later poll SHOULD retry after a clean reclaim).
+    rc2 = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert out2["reason"] == "no_compute_available"
+    assert len(rp.launches) == 2
+    assert terminations == ["podX"]  # nothing further to reclaim
+
+
+def test_failover_provision_failure_no_pod_created_unchanged(tmp_path, monkeypatch, capsys):
+    """#1490 AC 3 (negative control): pre [] post [] -> NO terminate; the
+    re-drivable no_compute_available terminal (byte-behavior-preserving up to
+    the provision-residue note)."""
+    team_list = _ScriptedTeamList([[], []])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "no-residue" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+def test_failover_provision_failure_preexisting_pod_not_torn_down(tmp_path, monkeypatch, capsys):
+    """#1490 AC 4: a pod-1116 alive BEFORE the failover launch (pre == post ==
+    [podX]) is NEVER terminated by the cleanup — new_ids is empty, outcome
+    pre-existing, re-drivable terminal."""
+    team_list = _ScriptedTeamList([[_residue_pod("podX")], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "pre-existing" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+def test_failover_provision_failure_terminate_fails_leaked_reason(tmp_path, monkeypatch, capsys):
+    """#1490 AC 5 (first half): the two-signal gate fires but terminate_pod
+    RAISES -> the NON-re-drivable runpod_provision_leaked_pod terminal naming
+    the pod + the recovery command (the #954 runpod_workload_start_failed
+    precedent: never a re-drivable label while a pod bills)."""
+    runpod_api = _import_runpod_api()
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    def _raise_terminate(pod_id):
+        raise RuntimeError("runpod api down")
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _raise_terminate, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert "pod-1116" in out["log_tail_excerpt"]
+    assert "pod.py terminate --issue 1116" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+def test_failover_provision_leak_not_transient_capacity_block(tmp_path, monkeypatch, capsys):
+    """#1490 AC 5 (second half): the leaked terminal's fields, composed into
+    the epm:failure note shape, parse via the watcher's REAL
+    ``_is_transient_capacity_block`` to NOT-retriable — the capacity-retry
+    pass never re-drives a run whose pod exists and bills (mirror of the #954
+    AC5 test; drift guard, not fix-engaged evidence)."""
+    import scripts.autonomous_session_watch as asw
+
+    runpod_api = _import_runpod_api()
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, _terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    def _raise_terminate(pod_id):
+        raise RuntimeError("runpod api down")
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _raise_terminate, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    note = (
+        f"failure_class: {out['failure_class']} reason: {out['reason']} — {out['log_tail_excerpt']}"
+    )
+    synthetic_marker = {"kind": "epm:failure v1", "note": note, "ts": None}
+    retriable, parsed_reason, _block_ts = asw._is_transient_capacity_block([synthetic_marker])
+    assert retriable is False
+    assert parsed_reason == "runpod_provision_leaked_pod"
+    assert "runpod_provision_leaked_pod" not in asw.TRANSIENT_CAPACITY_REASONS
+
+
+def test_failover_provision_probe_failure_bias_safe(tmp_path, monkeypatch, capsys):
+    """#1490 decision-table bias-safe cell: list_team_pods raises on EVERY
+    call (pre AND post unknown) -> no terminate, today's re-drivable terminal
+    with the probe-failure detail."""
+    team_list = _ScriptedTeamList(
+        [RuntimeError("graphql flake"), RuntimeError("graphql flake"), RuntimeError("x")]
+    )
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "probe failed" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+def test_failover_provision_ambiguous_new_pods_leaked_no_terminate(tmp_path, monkeypatch, capsys):
+    """#1490 ambiguity cell: TWO new pods named pod-1116 appeared in the
+    window (concurrent-creator ambiguity) -> never terminate; the
+    non-re-drivable leaked terminal (a pod bills unattributably)."""
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX"), _residue_pod("podY")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert terminations == []
+
+
+def test_failover_provision_pre_probe_failure_singleton_no_terminate(tmp_path, monkeypatch, capsys):
+    """#1490 v2 Statistics Must-Fix 1 (decision-table row 3): the PRE probe
+    failed (pre_ids=None) and the post snapshot is non-empty -> the singleton
+    is UNATTRIBUTABLE, so NO terminate + the non-re-drivable leaked terminal.
+    This is the cell where a ``pre_ids = pre_ids or set()`` coercion bug would
+    wrongly terminate while every other test stayed green."""
+    team_list = _ScriptedTeamList([RuntimeError("graphql flake"), [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert "cannot be attributed" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+@pytest.mark.parametrize(
+    ("returncode", "stderr"),
+    [
+        (
+            1,
+            "Pod pod-1116 already exists (status=RUNNING, id=podFOREIGN).\n"
+            "Use `pod.py resume --issue 1116` to bring it back, or `pod.py terminate "
+            "--issue 1116` first if you want a fresh one.",
+        ),
+        (
+            75,
+            "[wait-for-capacity] STILL-WAITING: provision pod-1116 has been waiting 30m 0s "
+            "across 6 attempt(s) and reached this process's wall-clock budget. No pod was "
+            "provisioned; nothing is billing.",
+        ),
+    ],
+    ids=["idempotency-refusal", "exit75-still-waiting"],
+)
+def test_failover_provision_created_nothing_singleton_no_terminate(
+    tmp_path, monkeypatch, capsys, returncode, stderr
+):
+    """#1490 v2 Alternatives Must-Fix 1 (the two-signal gate): a singleton new
+    pod appearing under a CREATED-NOTHING provision-failure shape (idempotency
+    refusal / exit-75 STILL-WAITING) is a FOREIGN actor's pod — NEVER
+    terminated; the re-drivable terminal (a re-drive's provision
+    idempotency-refuses on it safely) with foreign-created in the log_tail."""
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+    exc = PodLifecycleProcessError(
+        returncode,
+        ["uv", "run", "python", "scripts/pod_lifecycle.py", "provision", "--issue", "1116"],
+        output=None,
+        stderr=stderr,
+    )
+    team_list = _ScriptedTeamList([[], [_residue_pod("podFOREIGN")]])
+    sidecar, _rp, terminations = _reclaim_setup(
+        tmp_path, monkeypatch, team_list=team_list, backend=_ProvisionFailedRunpodBackend(exc=exc)
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "foreign-created" in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+def test_failover_provision_unknown_evidence_singleton_leaked_no_terminate(
+    tmp_path, monkeypatch, capsys
+):
+    """#1490 v2 positive-evidence gate: an UNKNOWN-shape failure (a bare
+    RuntimeError relayed by the rung — neither created-nothing nor
+    created-then-failed markers) + a singleton new pod -> cannot positively
+    attribute, NEVER terminate; the non-re-drivable leaked terminal."""
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(
+        tmp_path,
+        monkeypatch,
+        team_list=team_list,
+        backend=_ProvisionFailedRunpodBackend(exc=RuntimeError("boom")),
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert terminations == []
+
+
+def test_failover_terminate_not_found_treated_torn_down(tmp_path, monkeypatch, capsys):
+    """#1490 v2 (POD_NOT_FOUND-class terminate result): a terminate that fails
+    because the pod is ALREADY GONE counts as torn-down (nothing bills), so
+    the re-drivable terminal — never a needless human park."""
+    runpod_api = _import_runpod_api()
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    def _raise_not_found(pod_id):
+        raise RuntimeError(
+            'RunPod GraphQL errors: [{"message": "pod not found", '
+            '"extensions": {"code": "POD_NOT_FOUND"}}]'
+        )
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _raise_not_found, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "torn-down" in out["log_tail_excerpt"]
+    assert "already gone" in out["log_tail_excerpt"]
+    assert terminations == []
