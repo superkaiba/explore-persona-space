@@ -59,7 +59,7 @@ def main() -> None:
 
     x1 = [p[0] for p in t1_main]
     y1 = [100 * p[1] for p in t1_main]
-    ax.plot(x1, y1, marker="o", color=colors[0], label="map fit at turn 1 (duplicate-excluded)")
+    ax.plot(x1, y1, marker="o", color=colors[0], label="map fit at turn 1")
     xl = [p[0] for p in t1_long]
     yl = [100 * p[1] for p in t1_long]
     ax.plot(

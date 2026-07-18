@@ -1,6 +1,6 @@
 {
-  "commit": "5235fa0676",
-  "created": "2026-07-18T03:37:17Z",
+  "commit": "0a0205a7f0",
+  "created": "2026-07-18T03:42:05Z",
   "figsize": [
     6.5,
     4.0
@@ -9,28 +9,28 @@
     {
       "evaluation turn": 1.0,
       "retention of own-turn skill (%)": 100.0,
-      "series": "map fit at turn 1 (duplicate-excluded)",
+      "series": "map fit at turn 1",
       "_kind": "line",
       "_group": 0
     },
     {
       "evaluation turn": 2.0,
       "retention of own-turn skill (%)": 77.18173510355633,
-      "series": "map fit at turn 1 (duplicate-excluded)",
+      "series": "map fit at turn 1",
       "_kind": "line",
       "_group": 0
     },
     {
       "evaluation turn": 3.0,
       "retention of own-turn skill (%)": 69.00541873215728,
-      "series": "map fit at turn 1 (duplicate-excluded)",
+      "series": "map fit at turn 1",
       "_kind": "line",
       "_group": 0
     },
     {
       "evaluation turn": 4.0,
       "retention of own-turn skill (%)": 64.34323038775157,
-      "series": "map fit at turn 1 (duplicate-excluded)",
+      "series": "map fit at turn 1",
       "_kind": "line",
       "_group": 0
     },
@@ -137,7 +137,7 @@
         "xlabel": "evaluation turn",
         "ylabel": "retention of own-turn skill (%)",
         "legend_labels": [
-          "map fit at turn 1 (duplicate-excluded)",
+          "map fit at turn 1",
           "map fit at turn 1 (long panel, matched shrinkage)",
           "map fit at turn 2",
           "map fit at turn 3",
@@ -168,7 +168,7 @@
       }
     ],
     "series": [
-      "map fit at turn 1 (duplicate-excluded)",
+      "map fit at turn 1",
       "map fit at turn 1 (long panel, matched shrinkage)",
       "map fit at turn 2",
       "map fit at turn 3",
