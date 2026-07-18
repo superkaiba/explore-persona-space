@@ -706,6 +706,16 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   pinned authority — `test_v4_context_fresh_direction_alone_passes`
   pins it as the sanctioned PARENTLESS lineage form, so it contradicts
   a set `parent_id` the same way.
+  Follow-up provenance tokens in the row are additionally cross-checked
+  against each scope-armed `followup_label`'s latest `epm:followup-scope`
+  note fields (`verify_task_body.py` check 47, #1521; incident #1426): a
+  clause after a scope-armed label mention claiming a `source <slug>` that
+  contradicts the marker's `source`, or claiming a free-analysis /
+  zero-GPU round where the marker records a GPU-band round
+  (`proposer-9b-cheap` / `proposer-9b`, or `est_gpu_hours > 0`), is a hard
+  v4 FAIL (v3/v2: WARN-only, never a new hard FAIL); an explicit
+  `est N GPU-h` figure differing from the marker's `est_gpu_hours` by
+  more than 0.5 GPU-h WARNs only.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
