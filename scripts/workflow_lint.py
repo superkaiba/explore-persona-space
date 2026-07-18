@@ -9556,7 +9556,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1435 added the subprocess-per-phase dispatcher trigger (merged with
     # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
-    "gotchas": 800,
+    # #1492 added the SAE reference-eval token-pool trigger (row 776 B ->
+    # 862 B). Cap = measured + <=40.
+    "gotchas": 900,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
