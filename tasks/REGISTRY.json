@@ -3906,8 +3906,8 @@
     "1500": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1500",
-      "status": "planning",
+      "path": "tasks/approved/1500",
+      "status": "approved",
       "title": "daily-fix: mechanical inline payload lint gate pre-push"
     },
     "1501": {
