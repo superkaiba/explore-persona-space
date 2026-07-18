@@ -1,0 +1,75 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:48Z",
+  "figsize": [
+    7.0,
+    3.6
+  ],
+  "points": [
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.036382548139858306,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.036382548139858306,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.036382548139858306,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.03239336843656393,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.032553487052517704,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)": -0.032553487052517704,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "\u0394skill (context+truncated-CoT \u2212 context+answer-prefix)",
+        "annotations": [
+          "indiv \u00b7 primary frozen",
+          "indiv \u00b7 own-best frozen",
+          "indiv \u00b7 best-vs-best",
+          "avg_q \u00b7 primary frozen",
+          "avg_q \u00b7 own-best frozen",
+          "avg_q \u00b7 best-vs-best"
+        ],
+        "xticklabels": [
+          "\u22120.06",
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01"
+        ]
+      }
+    ]
+  }
+}

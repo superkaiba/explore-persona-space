@@ -1,0 +1,85 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:52Z",
+  "figsize": [
+    9.5,
+    5.1
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "stage 1 (ctx\u2192cot) \u2014 LOCO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "boundary/max",
+          "boundary/mean",
+          "max/boundary",
+          "max/max",
+          "max/mean",
+          "mean/boundary",
+          "mean/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "title_left": "stage 1 (ctx\u2192cot) \u2014 LOFO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "max/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u221214",
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      }
+    ]
+  }
+}

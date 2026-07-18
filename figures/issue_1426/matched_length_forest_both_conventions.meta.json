@@ -1,0 +1,103 @@
+{
+  "commit": "277d485cdd",
+  "created": "2026-07-18T11:55:01Z",
+  "figsize": [
+    8.8,
+    4.4
+  ],
+  "points": [
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.036382548139858306,
+      "y": 3.1,
+      "series": "R1-Llama-8B (this run)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.048,
+      "y": 2.9,
+      "series": "R1-Qwen-7B",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.03239336843656393,
+      "y": 2.1,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.0227,
+      "y": 1.9,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.07723016646834557,
+      "y": 1.1,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.1067,
+      "y": 0.9,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.03333828856305532,
+      "y": 0.1,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)": -0.0474,
+      "y": -0.1,
+      "_kind": "errorbar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched-length demotion, both input conventions",
+        "xlabel": "\u0394 skill (CoT-conclusion slice \u2212 answer-opening slice, matched budget)",
+        "legend_labels": [
+          "R1-Llama-8B (this run)",
+          "R1-Qwen-7B"
+        ],
+        "annotations": [
+          "-0.036",
+          "-0.032",
+          "-0.077",
+          "-0.033"
+        ],
+        "xticklabels": [
+          "\u22120.14",
+          "\u22120.12",
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02"
+        ],
+        "yticklabels": [
+          "query-excluded prefix \u2014 query-averaged",
+          "query-excluded prefix \u2014 per-question",
+          "full context \u2014 query-averaged",
+          "full context \u2014 per-question"
+        ]
+      }
+    ],
+    "series": [
+      "R1-Llama-8B (this run)",
+      "R1-Qwen-7B"
+    ]
+  }
+}

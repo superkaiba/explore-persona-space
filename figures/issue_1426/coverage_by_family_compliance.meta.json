@@ -1,0 +1,252 @@
+{
+  "commit": "277d485cdd",
+  "created": "2026-07-18T11:55:00Z",
+  "figsize": [
+    9.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "usable-row rate (exact parser)": 0.9910714285714286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "usable-row rate (exact parser)": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "usable-row rate (exact parser)": 0.9765625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "usable-row rate (exact parser)": 0.9930555555555556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "usable-row rate (exact parser)": 0.9916666666666667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "usable-row rate (exact parser)": 0.9958333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "usable-row rate (exact parser)": 0.9895833333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "usable-row rate (exact parser)": 0.9985119047619048,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "usable-row rate (exact parser)": 0.99375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "usable-row rate (exact parser)": 0.9947916666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "usable-row rate (exact parser)": 0.9965277777777778,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "usable-row rate (exact parser)": 0.9916666666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "usable-row rate (exact parser)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "usable-row rate (exact parser)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "usable-row rate (exact parser)": 0.9732142857142857,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "usable-row rate (exact parser)": 0.9354166666666667,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "usable-row rate (exact parser)": 0.9609375,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "usable-row rate (exact parser)": 0.9722222222222222,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "usable-row rate (exact parser)": 0.9583333333333334,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "usable-row rate (exact parser)": 0.95,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "usable-row rate (exact parser)": 0.9583333333333334,
+      "series": "R1-Qwen-7B, 8,192",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "usable-row rate (exact parser)": 0.9910714285714286,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "usable-row rate (exact parser)": 0.9854166666666667,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "usable-row rate (exact parser)": 0.9869791666666666,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "usable-row rate (exact parser)": 0.9930555555555556,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "usable-row rate (exact parser)": 0.9958333333333333,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "usable-row rate (exact parser)": 0.9958333333333333,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.19,
+      "usable-row rate (exact parser)": 1.0,
+      "series": "R1-Qwen-7B, post-16,384",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scaffold compliance per family, both token budgets",
+        "ylabel": "usable-row rate (exact parser)",
+        "legend_labels": [
+          "R1-Qwen-7B, 8,192",
+          "R1-Qwen-7B, post-16,384",
+          "this run, 8,192 cap",
+          "this run, post-16,384 regen"
+        ],
+        "annotations": [
+          "0.991",
+          "0.999",
+          "0.958",
+          "0.994",
+          "0.977",
+          "0.995",
+          "0.993",
+          "0.997",
+          "0.992",
+          "0.992",
+          "0.996",
+          "1.000",
+          "0.990",
+          "1.000",
+          "0.95 bar (C)",
+          "0.94 bar (C94)"
+        ],
+        "xticklabels": [
+          "persona",
+          "WildChat",
+          "ICL",
+          "rephrase",
+          "format",
+          "behavior",
+          "default"
+        ],
+        "yticklabels": [
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02"
+        ]
+      }
+    ],
+    "series": [
+      "R1-Qwen-7B, 8,192",
+      "R1-Qwen-7B, post-16,384",
+      "this run, 8,192 cap",
+      "this run, post-16,384 regen"
+    ]
+  }
+}
