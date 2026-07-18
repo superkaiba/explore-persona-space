@@ -286,7 +286,10 @@ def phase_stage(base_dir: pathlib.Path, smoke: bool, layers: tuple[int, ...], fi
 
     from explore_persona_space.orchestrate import hub as eps_hub
 
-    # Boot-disk headroom preamble (plan §9 disk row).
+    # Boot-disk headroom preamble (plan §9 disk row). Create base_dir first —
+    # a fresh GCE instance has no /workspace/eps-run until the driver makes it
+    # (statvfs on the missing path crashed att-20260718-101518 at t+4s).
+    base_dir.mkdir(parents=True, exist_ok=True)
     st = os.statvfs(str(base_dir))
     free_gb = st.f_bavail * st.f_frsize / 1e9
     assert free_gb >= STAGE_FREE_GB_MIN, (
