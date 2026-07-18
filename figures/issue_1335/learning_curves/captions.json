@@ -1,0 +1,4 @@
+{
+  "main_context_arm.png": "Held-out layer-19 R\u00b2 of the context\u2192answer ridge map vs training rows (log\u2082 x, fixed 20%-group test set, 5 group-stratified subsample draws per point shown faint). Panels: Qwen-2.5-7B base | instruct. Four fiction characters (solid) and two assistant Q&A anchors (dashed); seed 42.",
+  "companion_prefix_arm.png": "Companion prefix-arm learning curves (prefix = everything before the user query), same layout as the main figure. The assistant Q&A anchors use the degenerate prefix_fallback_first_token control, so their prefix-arm curves are not a like-for-like map; fiction characters use the real prefix span. Seed 42."
+}
