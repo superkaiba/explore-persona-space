@@ -6244,9 +6244,10 @@ def _gather_body_artifact_urls(body: str) -> list[str]:
     for token in _REPRO_URL_TOKEN_RE.findall(scan):
         url = token.rstrip(".,;:!?\"'")
         m = _GITHUB_BLOB_TREE_URL_RE.match(url)
-        if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
-            if url not in urls:
-                urls.append(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue
+        if url not in urls:
+            urls.append(url)
     return urls
 
 
