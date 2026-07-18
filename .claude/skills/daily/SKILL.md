@@ -209,6 +209,36 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 - **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
 - **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
 
+**Evidence-counting discipline — count `tool_result` firing EVENTS, never
+raw string occurrences (#1484).** When quantifying an error/warn string in
+a transcript ("N failed vs M ok"), count firing events: `tool_result`
+blocks whose OUTPUT text contains the string, deduplicated per tool call
+(the harness stores a duplicate top-level `toolUseResult` field alongside
+the block, and a result's content can replay the command line before the
+output — one tool call is ONE event). A match counts as a firing ONLY
+when the string is the invoked command's OWN emitted output: a
+`tool_result` whose command was a read/grep/inspection of files or logs
+that CONTAIN the string, or a subagent report quoting the error, is a
+content-readback echo, not a firing — attribute the firing to where the
+error originally issued. Everything else is a recipe echo, NOT a
+failure: the string inside `tool_use` input text (`command` strings),
+inside ordinary `text` blocks quoting a recipe, or in the duplicate
+`toolUseResult` field. Workflow recipes embed their own
+warn/error messages verbatim in command preambles (`.claude/skills/issue/`
+carries `[warn] choom failed …` in 6 command-recipe blocks), so a bare
+`grep -c` over the raw JSONL inflates the count. Transcript rows carry
+typed `message.content` blocks — filter on the block `type` (`tool_use`
+vs `tool_result`) and dedupe per tool call with `jq`/python BEFORE
+counting. Any quantified failure claim that reaches a filed body (route
+2/3), the brief file, or the Telegram digest is firings-only and STATES
+the counting method (e.g. "N `tool_result` firing events; K echoes
+excluded"). Incident 2026-07-16: a raw string count read "13 failed vs
+8 ok" for `[warn] choom failed` when only 1 of 13 was a real firing event
+(the other 12: 3 command-text echoes, 6 quoted-recipe text blocks, 2
+`toolUseResult` duplicates, 1 in-result command replay) — and that one
+firing was the documented-benign pgrep-empty shape — spawning false
+needs-human task #1473.
+
 **Failure-lesson consolidation now runs DETERMINISTICALLY in
 `scripts/consolidate_lessons.py` (a cron, NOT this skill) — task #711.** The
 deterministic janitorial pass over `epm:failure-lesson v1` markers — (a) dedupe

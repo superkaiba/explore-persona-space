@@ -24,19 +24,22 @@ Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
 
 **Team-shared account — the EXITED auto-terminate is positively
-ownership-gated (#1404).** The RunPod account is TEAM-SHARED: non-EPS
-teammates may legitimately run pods whose names carry the managed `pod-`
-prefix, so a managed-looking name is NOT proof of EPS ownership. The
+ownership-gated for EVERY pod name (#1404, extended by #1471).** The
+RunPod account is TEAM-SHARED: non-EPS teammates may legitimately run
+pods whose names carry the managed `pod-` prefix, so NO name — managed
+`pod-` prefix or not — is proof of EPS ownership. The
 EXITED>24h auto-terminate fires only when `_is_eps_owned`
 (`scripts/pod_audit.py`) POSITIVELY confirms EPS ownership via any one of
 three signals — the parsed issue number resolves in `tasks/REGISTRY.json`,
 the pod appears in the `pods_ephemeral.json` sidecar, or
 `_scan_task_references` finds task references — each wrapped
-fail-toward-keep (a raising signal never asserts ownership). An EXITED
-managed-name pod that fails all three surfaces REPORT-ONLY in the
+fail-toward-keep (a raising signal never asserts ownership). ANY EXITED
+pod that fails all three surfaces REPORT-ONLY in the
 `unmanaged-exited` bucket (rendered with a "NEVER auto-terminated"
 advisory), never auto-terminated; termination there is the user's call
-after confirming ownership.
+after confirming ownership. EPS-owned odd-named pods
+(dispatcher-created) still auto-reap via the sidecar / task-reference
+signals.
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
@@ -221,8 +224,8 @@ triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
-The stalled detector + the two respawn arms carry six hardening mechanisms
-(five from #845, the sixth from #1137):
+The stalled detector + the two respawn arms carry seven hardening mechanisms
+(five from #845, the sixth from #1137, the seventh from #1480):
 
 - *(a-i) Marker-heartbeat window.* Signal 2 (the newest non-watcher marker)
   has its OWN 2h freshness window (`EPM_STALLED_MARKER_HEARTBEAT_MIN`,
@@ -424,8 +427,33 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   escalation is by design — changing it would change respawn timing;
   only the marker noise was removed). Respawn/fence/hold semantics
   byte-identical.
+- *(g) Stalled-manual escalation rung (#1480).* A MANUAL registration
+  (`manual-issue-<N>.json`) on an ACTIVE-status task whose one-time (f)
+  alert has gone UNACTIONED — ≥ `EPM_STALLED_MANUAL_ESCALATE_CONFIRMS`
+  (default 3) consecutive stalled-confirmed ticks spanning ≥
+  `EPM_STALLED_MANUAL_ESCALATE_H` (default 24h) from the FIRST
+  confirmation (stall onset — alert time is not persisted, the (f) dedup)
+  with zero non-watcher task progress (consecutiveness × the 2h marker
+  window) — escalates to an UNREGISTER-ONLY action: the manual
+  registration file is deleted (the session itself is NEVER stopped or
+  respawned — #505 stands) plus a loud
+  `[autonomous_session_watch:stalled-manual-escalation]` marker, a sidecar
+  row (`~/.eps-autonomous/stalled-manual-escalation-events.jsonl`), and a
+  Telegram push; the registration-independent orphan sweep then re-drives
+  the task on its next stale tick (~20–30 min; incident #928: a wedged
+  manual session froze a `followups_running` task for ~6 days). Two
+  fire-time vetoes: fresh worktree activity DEFERS (counters kept), and
+  the park-exemption re-probe (user-pause / spend-approval /
+  provision-in-flight / long-phase heartbeat / round-complete re-park /
+  awaiting-child) VETOES + resets the counters. Once per episode by
+  construction (the fire resets the counters; a re-registration starts a
+  fresh accumulation; the counters are advancement-cleared like every
+  #845 field). Autonomous `issue-<N>.json` entries never enter the rung;
+  every unresolvable input fails toward keep (today's alert-only
+  behavior). Kill switch: `EPM_DISABLE_STALLED_MANUAL_ESCALATION=1`.
 
-Per-episode state for all five rides `stalled-<N>.json`
+Per-episode state for all of these — incl. the (g) counters
+`manual_escalate_count` / `manual_escalate_first_ts` — rides `stalled-<N>.json`
 (`stop_pending_sid`/`stop_pending_ts`/`stop_retried`/`stop_failed_alerted`,
 `wt_hold_count`, `daemon_blocked_ticks`/`daemon_blocked_pushed`,
 `wedge_hits`), cleared on self-report advancement; pre-#845 files load with
@@ -800,6 +828,11 @@ adjacent to the two session reapers, consuming their shared daemon
 session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unregistering
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
+The #1480 stalled-manual escalation rung (§ Stall-detection hardening, (g))
+covers the LIVE-WEDGED manual case this pass's transcript-idle gate cannot:
+a wedged session with ANY transcript activity (user pokes, in-session cron
+ticks) defeats the 12h transcript-idle predicate indefinitely, while the
+rung keys on TASK-level progress (self-report + non-watcher markers).
 
 **Boot-death lane (#1267 arm 1 + #1287 arm 2, `boot_death_pass`).** The
 die-at-or-before-turn-1 complement of the stale-registration pass: a freshly

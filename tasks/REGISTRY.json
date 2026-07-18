@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1484,
+  "highest_id": 1486,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -202,8 +202,8 @@
     "1023": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1023",
-      "status": "planning",
+      "path": "tasks/completed/1023",
+      "status": "completed",
       "title": "daily-held: decide ruff-debt burn-down (2149 errors)"
     },
     "1024": {
@@ -314,8 +314,8 @@
     "1039": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1039",
-      "status": "proposed",
+      "path": "tasks/reviewing/1039",
+      "status": "reviewing",
       "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
     },
     "104": {
@@ -517,15 +517,15 @@
     "1065": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1065",
-      "status": "proposed",
+      "path": "tasks/archived/1065",
+      "status": "archived",
       "title": "daily-held: Step 10d task-state merge-conflict contract"
     },
     "1066": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1066",
-      "status": "proposed",
+      "path": "tasks/planning/1066",
+      "status": "planning",
       "title": "daily-held: settle #779-line mapping terminology + writeup b"
     },
     "1067": {
@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1141",
-      "status": "proposed",
+      "path": "tasks/planning/1141",
+      "status": "planning",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
@@ -1692,8 +1692,8 @@
     "1217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1217",
-      "status": "proposed",
+      "path": "tasks/planning/1217",
+      "status": "planning",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
     },
     "1218": {
@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1345",
       "status": "followups_running",
-      "title": "Narrative-story framing collapses the assistant context\u2192answer map even on identical conversations, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
+      "title": "Narrative-story framing collapses the assistant context\u2192answer map on identical conversations at every probed read position, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
@@ -3670,8 +3670,8 @@
     "1471": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1471",
-      "status": "running",
+      "path": "tasks/completed/1471",
+      "status": "completed",
       "title": "daily-held: non-managed EXITED pod reaping decision"
     },
     "1472": {
@@ -3740,24 +3740,24 @@
     "1480": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1480",
-      "status": "planning",
+      "path": "tasks/completed/1480",
+      "status": "completed",
       "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
     },
     "1481": {
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1481",
-      "status": "planning",
+      "path": "tasks/approved/1481",
+      "status": "approved",
       "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
     },
     "1482": {
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1482",
-      "status": "planning",
+      "path": "tasks/running/1482",
+      "status": "running",
       "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
     },
     "1483": {
@@ -3770,9 +3770,23 @@
     "1484": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1484",
-      "status": "planning",
+      "path": "tasks/completed/1484",
+      "status": "completed",
       "title": "workflow-fix: daily sweep counts warn firings, not command-text echoes"
+    },
+    "1485": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1485",
+      "status": "running",
+      "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
+    },
+    "1486": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/on_hold/1486",
+      "status": "on_hold",
+      "title": "ruff residual burn-down: ~33 errors + 17 format-dirty files (post-#1023 scoping)"
     },
     "149": {
       "has_clean_result": false,

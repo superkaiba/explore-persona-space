@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "script": "scripts/issue1092_fair_deepdive.py",
+    "generated_utc": "2026-07-17T23:16:01+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "engine": "REUSE issue1092_fit_grid._fit_cv -> press_fit_predict (FOLD_SEED=0, 6-fold)",
+    "note": "recomputes averaged-grain prediction matrices to run the Q2 shrinkage test"
+  },
+  "cells": {
+    "cell_inst_own/pca48": {
+      "recomputed_agreement": {
+        "agreement_r2_prefixpred_vs_ctxpred": 0.5439187494070596,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.41507311505958744,
+        "mean_cosine_raw": 0.7419755748589602,
+        "mean_cosine_centered": 0.7416781223982899,
+        "err_ratio_prefix_over_ctx": 2.9872492248643603,
+        "per_prefix_err_correlation": 0.5641006965887579,
+        "r2_prefix_averaged": 0.5290446256305392,
+        "r2_context_averaged": 0.935504559387362
+      },
+      "shrinkage": {
+        "n_prefix": 996,
+        "D": 48,
+        "shared_mean_reldiff": 0.19846909870145493,
+        "between_prefix_ss_prefix": 139818.43958385516,
+        "between_prefix_ss_context": 179317.97068326932,
+        "between_prefix_ss_ratio_prefix_over_context": 0.7797235215806536,
+        "global_scalar_P_from_C": {
+          "alpha": 0.6618580048098441,
+          "resid_var_frac": 0.4381905811397843,
+          "r2_scalar_fit": 0.5618094188602156
+        },
+        "global_scalar_C_from_P": {
+          "alpha": 0.8488367818738202,
+          "resid_var_frac": 0.4381905811397844,
+          "r2_scalar_fit": 0.5618094188602156
+        },
+        "per_dim_diagonal_P_from_C": {
+          "resid_var_frac": 0.3409167417863696,
+          "r2_diag_fit": 0.6590832582136303,
+          "alpha_d_mean": 0.37397536768137174,
+          "alpha_d_median": 0.3412648678159471,
+          "alpha_d_q25": 0.25460546923336175,
+          "alpha_d_q75": 0.45978588756113004,
+          "alpha_d_frac_lt_1": 1.0,
+          "n_dims_valid": 48
+        },
+        "diag_minus_global_resid_var_frac_improvement": 0.09727383935341471
+      },
+      "wall_s": 1085.6397732514888
+    },
+    "cell_pre_own/pca48": {
+      "recomputed_agreement": {
+        "agreement_r2_prefixpred_vs_ctxpred": 0.4736135089588692,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.32176725436875875,
+        "mean_cosine_raw": 0.729174802981025,
+        "mean_cosine_centered": 0.7291168229355678,
+        "err_ratio_prefix_over_ctx": 2.4159422974788716,
+        "per_prefix_err_correlation": 0.7589738428194758,
+        "r2_prefix_averaged": 0.46273357709206353,
+        "r2_context_averaged": 0.8843018488452181
+      },
+      "shrinkage": {
+        "n_prefix": 996,
+        "D": 48,
+        "shared_mean_reldiff": 0.20771842152744555,
+        "between_prefix_ss_prefix": 243825.4822930831,
+        "between_prefix_ss_context": 314161.60772556305,
+        "between_prefix_ss_ratio_prefix_over_context": 0.7761148284741326,
+        "global_scalar_P_from_C": {
+          "alpha": 0.6248971759424129,
+          "resid_var_frac": 0.4968573384063132,
+          "r2_scalar_fit": 0.5031426615936868
+        },
+        "global_scalar_C_from_P": {
+          "alpha": 0.8051607223778746,
+          "resid_var_frac": 0.49685733840631313,
+          "r2_scalar_fit": 0.5031426615936869
+        },
+        "per_dim_diagonal_P_from_C": {
+          "resid_var_frac": 0.3829029593626675,
+          "r2_diag_fit": 0.6170970406373325,
+          "alpha_d_mean": 0.2468431588685259,
+          "alpha_d_median": 0.20723181698477705,
+          "alpha_d_q25": 0.1660794770572669,
+          "alpha_d_q75": 0.2718414635061432,
+          "alpha_d_frac_lt_1": 1.0,
+          "n_dims_valid": 48
+        },
+        "diag_minus_global_resid_var_frac_improvement": 0.11395437904364569
+      },
+      "wall_s": 1062.7827489059418
+    },
+    "cell_inst_own/ambient": {
+      "recomputed_agreement": {
+        "agreement_r2_prefixpred_vs_ctxpred": 0.4080755368027198,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.2610744540481241,
+        "mean_cosine_raw": 0.9909329050731347,
+        "mean_cosine_centered": 0.6830158449109538,
+        "err_ratio_prefix_over_ctx": 2.0530901093040823,
+        "per_prefix_err_correlation": 0.8411650151902105,
+        "r2_prefix_averaged": 0.3708897449163957,
+        "r2_context_averaged": 0.8193260751733688
+      },
+      "shrinkage": {
+        "n_prefix": 996,
+        "D": 10752,
+        "shared_mean_reldiff": 0.0019232629554911207,
+        "between_prefix_ss_prefix": 173937.9040143008,
+        "between_prefix_ss_context": 217134.39581674442,
+        "between_prefix_ss_ratio_prefix_over_context": 0.8010610357702135,
+        "global_scalar_P_from_C": {
+          "alpha": 0.6046262169938812,
+          "resid_var_frac": 0.5436391910825659,
+          "r2_scalar_fit": 0.45636080891743414
+        },
+        "global_scalar_C_from_P": {
+          "alpha": 0.754781708253402,
+          "resid_var_frac": 0.5436391910825661,
+          "r2_scalar_fit": 0.4563608089174339
+        },
+        "per_dim_diagonal_P_from_C": {
+          "resid_var_frac": 0.42892400019596616,
+          "r2_diag_fit": 0.5710759998040338,
+          "alpha_d_mean": 0.3577791353383069,
+          "alpha_d_median": 0.2518266101003155,
+          "alpha_d_q25": 0.13791607812422776,
+          "alpha_d_q75": 0.582177279993155,
+          "alpha_d_frac_lt_1": 1.0,
+          "n_dims_valid": 10752
+        },
+        "diag_minus_global_resid_var_frac_improvement": 0.1147151908865997
+      },
+      "wall_s": 756.3645846154541
+    }
+  }
+}

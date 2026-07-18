@@ -3505,6 +3505,9 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # the SHARED day-keyed cap for the four pre-#1209 wedge triggers, same
     # advancement-clear-EXEMPT / stop-initiation-bump contract, an
     # INDEPENDENT budget; default-absent-safe.
+    # manual_escalate_count / manual_escalate_first_ts are the #1480
+    # stalled-manual escalation counters (episode-scoped, advancement-cleared
+    # via the #845 hardening-field contract); default-absent-safe.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3522,6 +3525,8 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "daemon_blocked_ticks": 0,
         "daemon_blocked_pushed": False,
         "wedge_hits": 0,
+        "manual_escalate_count": 0,
+        "manual_escalate_first_ts": None,
         "dead_silence_respawn_day": None,
         "dead_silence_respawns_today": 0,
         "wedge_respawn_day": None,

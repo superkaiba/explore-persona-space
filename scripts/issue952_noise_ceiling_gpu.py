@@ -408,6 +408,7 @@ def _upload(out_base: pathlib.Path, k: int) -> list[str]:
     from huggingface_hub import HfApi
 
     api = HfApi()
+    role = out_base.name  # role-scoped so a second role never overwrites the first
     uploaded = []
     for fname in [
         f"raw_completions/own_rollouts_k{k}.json",
@@ -417,83 +418,142 @@ def _upload(out_base: pathlib.Path, k: int) -> list[str]:
         p = out_base / fname
         if not p.exists():
             continue
+        dest = f"{HF_PREFIX}/{role}/{fname}"
         api.upload_file(
             path_or_fileobj=str(p),
-            path_in_repo=f"{HF_PREFIX}/{fname}",
+            path_in_repo=dest,
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
         )
-        uploaded.append(f"{HF_PREFIX}/{fname}")
-        logger.info("[upload] %s", fname)
+        uploaded.append(dest)
+        logger.info("[upload] %s", dest)
     return uploaded
 
 
+def _rows_for_role(role: str) -> list[dict]:
+    if role == "indomain_check":
+        return _indomain_check_rows()
+    if role == "china_divergent":
+        return _china_divergent_rows()
+    raise ValueError(f"unknown role {role}")
+
+
+def _run_single_role(role: str, out_root: pathlib.Path, k: int, phase: str, smoke: bool) -> None:
+    """One role's gen+capture+stats+upload IN THIS PROCESS (fresh CUDA context per invocation).
+
+    Resume-skips a role already complete (ceiling_stats.json + capture present), so a
+    relaunch after a crash never regenerates a finished leg."""
+    out_base = out_root / role
+    out_base.mkdir(parents=True, exist_ok=True)
+    stats_path = out_base / "ceiling_stats.json"
+    cap_path = out_base / f"capture_L20_k{k}.npz"
+    if phase == "all" and stats_path.exists() and cap_path.exists():
+        logger.info(
+            "[resume] role=%s complete (ceiling_stats.json + capture present) — skipping", role
+        )
+        return
+    rows = _rows_for_role(role)
+    if smoke:
+        rows = rows[:4]
+    logger.info("=== role=%s n_contexts=%d k=%d ===", role, len(rows), k)
+    if phase in ("gen", "all"):
+        phase_gen(rows, out_base, k)
+    if phase in ("capture", "all"):
+        phase_capture(rows, out_base, k)
+    if phase in ("stats", "all"):
+        ceil = phase_stats(out_base, k, role)
+        stats_path.write_text(json.dumps(ceil, indent=2, default=R._json_np))
+        _upload(out_base, k)
+
+
+def _combine_report(
+    out_root: pathlib.Path, k: int, roles: list[str], smoke: bool, t0: float
+) -> None:
+    results = {}
+    for role in roles:
+        sp = out_root / role / "ceiling_stats.json"
+        if sp.exists():
+            results[role] = json.loads(sp.read_text())
+    if "indomain_check" not in results:
+        logger.warning("[report] indomain_check ceiling_stats.json missing — no combined report")
+        return
+    report = _restate(results["indomain_check"], results.get("china_divergent"))
+    report["wall_seconds"] = time.time() - t0
+    report["k"] = k
+    report["smoke"] = smoke
+    report["ceilings"] = {
+        role: {
+            kk: c[kk] for kk in c if kk.startswith(("mean_ceiling", "pooled_ceiling", "n_contexts"))
+        }
+        for role, c in results.items()
+    }
+    (out_root / "noise_ceiling_report.json").write_text(
+        json.dumps(report, indent=2, default=R._json_np)
+    )
+    pc = results["indomain_check"]["per_context"]
+    np.savez(
+        str(out_root / "per_context_indomain.npz"),
+        ids=np.asarray(pc["ids"]),
+        ceiling_icc=np.asarray(pc["ceiling_icc"]),
+        within_W=np.asarray(pc["within_W"]),
+        total_Tsingle=np.asarray(pc["total_Tsingle"]),
+    )
+    logger.info("[report] %s", json.dumps(report, default=R._json_np))
+    pathlib.Path("/workspace/logs").mkdir(parents=True, exist_ok=True)
+    pathlib.Path(f"/workspace/logs/issue-952-{TAG}-done.json").write_text(
+        json.dumps(
+            {"tag": TAG, "wall_seconds": time.time() - t0, "report": report}, default=R._json_np
+        )
+    )
+
+
 def main() -> None:
+    import subprocess
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--phase", default="all", choices=["gen", "capture", "stats", "all"])
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--china", action="store_true")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--out", default="/workspace/issue952_ceiling")
+    ap.add_argument("--single-role", default=None, help="internal: run ONE role in this process")
     args = ap.parse_args()
     t0 = time.time()
+    out_root = pathlib.Path(args.out)
 
-    roles = [("indomain_check", _indomain_check_rows())]
-    if args.china:
-        roles.append(("china_divergent", _china_divergent_rows()))
-    if args.smoke:
-        roles = [(r, rows[:4]) for r, rows in roles]
-        args.k = 3
+    if args.single_role:
+        _run_single_role(args.single_role, out_root, args.k, args.phase, args.smoke)
+        return
 
-    results = {}
-    for role, rows in roles:
-        out_base = pathlib.Path(args.out) / role
-        out_base.mkdir(parents=True, exist_ok=True)
-        logger.info("=== role=%s n_contexts=%d k=%d ===", role, len(rows), args.k)
-        if args.phase in ("gen", "all"):
-            phase_gen(rows, out_base, args.k)
-        if args.phase in ("capture", "all"):
-            phase_capture(rows, out_base, args.k)
-        if args.phase in ("stats", "all"):
-            ceil = phase_stats(out_base, args.k, role)
-            (out_base / "ceiling_stats.json").write_text(
-                json.dumps(ceil, indent=2, default=R._json_np)
-            )
-            results[role] = ceil
-            _upload(out_base, args.k)
-
-    if args.phase in ("stats", "all") and "indomain_check" in results:
-        report = _restate(results["indomain_check"], results.get("china_divergent"))
-        report["wall_seconds"] = time.time() - t0
-        report["k"] = args.k
-        report["smoke"] = args.smoke
-        report["ceilings"] = {
-            role: {
-                kk: c[kk]
-                for kk in c
-                if kk.startswith(("mean_ceiling", "pooled_ceiling", "n_contexts"))
-            }
-            for role, c in results.items()
-        }
-        rp = pathlib.Path(args.out) / "noise_ceiling_report.json"
-        rp.write_text(json.dumps(report, indent=2, default=R._json_np))
-        # per-context arrays for figures (in-domain)
-        pc = results["indomain_check"]["per_context"]
-        np.savez(
-            str(pathlib.Path(args.out) / "per_context_indomain.npz"),
-            ids=np.asarray(pc["ids"]),
-            ceiling_icc=np.asarray(pc["ceiling_icc"]),
-            within_W=np.asarray(pc["within_W"]),
-            total_Tsingle=np.asarray(pc["total_Tsingle"]),
+    roles = ["indomain_check"] + (["china_divergent"] if args.china else [])
+    # Each role runs in its OWN subprocess => a fresh CUDA context per role, so the
+    # in-domain leg's transformers capture model (~15 GiB) cannot starve the next role's
+    # vLLM engine init. (The #952 ceiling crash: free 63.56 < desired 71.26 GiB.)
+    for role in roles:
+        logger.info(
+            "[subprocess-role] launching role=%s in fresh process (fresh CUDA context)", role
         )
-        logger.info("[report] %s", json.dumps(report, default=R._json_np))
-        # sentinel
-        pathlib.Path("/workspace/logs").mkdir(parents=True, exist_ok=True)
-        pathlib.Path(f"/workspace/logs/issue-952-{TAG}-done.json").write_text(
-            json.dumps(
-                {"tag": TAG, "wall_seconds": time.time() - t0, "report": report}, default=R._json_np
-            )
-        )
+        cmd = [
+            sys.executable,
+            __file__,
+            "--single-role",
+            role,
+            "--phase",
+            args.phase,
+            "--k",
+            str(args.k),
+            "--out",
+            str(out_root),
+        ]
+        if args.smoke:
+            cmd.append("--smoke")
+        rc = subprocess.run(cmd).returncode
+        if rc != 0:
+            logger.error("[subprocess-role] role=%s exited rc=%d — aborting", role, rc)
+            raise SystemExit(rc)
+
+    if args.phase in ("stats", "all"):
+        _combine_report(out_root, args.k, roles, args.smoke, t0)
 
 
 if __name__ == "__main__":
