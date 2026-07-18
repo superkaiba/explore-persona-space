@@ -303,6 +303,20 @@ def _stage_smoke_chunks(args) -> Path:
 
 def phase_p0(args) -> None:
     C.phase("p0")
+    split_path = args.out_eval / "split_1482.json"
+    if split_path.exists() and (args.scratch / "X.npy").exists():
+        prior = json.loads(split_path.read_text()).get("regime")
+        cur = {
+            "smoke": bool(args.smoke),
+            "max_chunks": args.max_chunks,
+            "holdout_n": args.holdout_n,
+            "sae_n": args.sae_n,
+            "sae_val_n": args.sae_val_n,
+        }
+        if prior == cur:
+            logger.info("[p0] resume: split + X/Y present under matching regime; skip")
+            return
+        raise RuntimeError(f"[p0] out_eval holds a run under a DIFFERENT regime: {prior} != {cur}")
     _headroom(args.scratch, 4 if args.smoke else 40, "p0")
     n1m_capture_dir = _stage_smoke_chunks(args) if args.max_chunks > 0 else None
     ns = argparse.Namespace(
@@ -654,6 +668,7 @@ def _load_model_tok(args):
             num_attention_heads=28,
             num_key_value_heads=4,
             max_position_embeddings=32768,
+            tie_word_embeddings=True,  # halves the embed+lm_head RSS on the VM smoke
         )
         torch.manual_seed(0)
         model = Qwen2ForCausalLM(cfg)
