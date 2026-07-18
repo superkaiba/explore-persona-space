@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1514,
+  "highest_id": 1515,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4014,6 +4014,14 @@
       "path": "tasks/planning/1514",
       "status": "planning",
       "title": "Fix heavy-import-before-dotenv in issue1092 figure script (fleet-wide Step 9c thread-caps red)"
+    },
+    "1515": {
+      "goal": "Characterize the rank structure of the orthogonal carrier of the own-answer advantage at layer 26 on the frozen Qwen-2.5-7B-Instruct LMSYS pool \u2014 testing whether the top-64 eigendirections of the pooled train-fold answer-activation covariance carry more than half of the own-vs-external R\u00b2 gap (a compact content-summary subspace) or the gap is diffuse across the 3,583-dimensional complement \u2014 via held-out per-eigendirection gap contributions with the rank selection riding per bootstrap draw.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1515",
+      "status": "proposed",
+      "title": "Rank profile of the orthogonal carrier \u2014 what structure carries the 90%?"
     },
     "152": {
       "has_clean_result": false,
