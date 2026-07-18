@@ -283,12 +283,80 @@ def _smoke_runs(beh_key: str, regime: str) -> str:
     return ",".join(picks)
 
 
+# ── Contingent-regen rounds (plan §4.6 gate P1 — pre-registered) ─────────────
+# A committed-IN-BAND reused con arm whose P1 apply-and-read re-read exits the
+# 0.60–0.85 band gets its cell's ladder deterministically REBUILT at the exact
+# matched grid recipe (same behavior+context-scoped con mix, seed 42, grid rung
+# cadence, this run's instrument). The regen slots live in their own
+# ALWAYS-EXPLICIT rounds: they NEVER enter a default (no --runs) dispatch
+# cohort — the worker's `_cohort_run_ids` returns an empty cohort for a regen
+# round unless --runs names its runs (the line-962 empty-cohort skip then
+# applies), and `smoke_default_run=""` keeps the fu4-level smoke default empty.
+
+_LR_BY_TAG: dict[str, float] = {tag: lr for lr, tag in fu4.LR_TAG.items()}
+_REGEN_BEH_KEYS: tuple[str, ...] = ("imp", "syc")  # the 12 REUSED_CON_ARMS behaviors
+
+
+def regen_round_name(beh_key: str) -> str:
+    """The behavior's contingent-regen round (house suffix style: `i1481imp` /
+    `i1481imppo` / `i1481impregen`)."""
+    return f"i1481{beh_key}regen"
+
+
+def _regen_runs(beh_key: str) -> tuple[fu4.Fu4Run, ...]:
+    """Fresh Fu4Runs for the behavior's reused con seed-42 grid slots (plan
+    §4.6 contingent regen). Recipe-matched to the grid's fresh con arms by
+    construction: same `mix_for(..., "con")` mix prefix/layout (the con mixes
+    are behavior+context-scoped, seed-independent), same fu3 base read, same
+    r32/α64 rsLoRA content bundle via the round spec — only dispatched by an
+    explicit --runs subset naming the P1-flagged arm(s)."""
+    behavior = BEHAVIOR_BY_KEY[beh_key]
+    runs: list[fu4.Fu4Run] = []
+    for arm in REUSED_CON_ARMS:
+        if arm.behavior != behavior:
+            continue
+        bk, ctx_key, regime, tag, seed_tok = arm.arm_id.split("-")
+        assert (bk, regime, seed_tok) == (beh_key, "con", "s42"), arm.arm_id
+        prefix, layout = mix_for(beh_key, ctx_key, "con")
+        runs.append(
+            fu4.Fu4Run(
+                run_id=arm.arm_id,
+                cell_key=f"{beh_key}-{ctx_key}",
+                behavior=behavior,
+                context_id=arm.context_id,
+                lr=_LR_BY_TAG[tag],
+                mix_hub_prefix=prefix,
+                mix_layout=layout,
+                fu3_base_eval=fu3_base_eval_for(beh_key, ctx_key),
+                round_name=regen_round_name(beh_key),
+                run_name_override=f"issue1481_{arm.arm_id}_seed42",
+            )
+        )
+    return tuple(runs)
+
+
+REGEN_RUNS_BY_ROUND: dict[str, tuple[fu4.Fu4Run, ...]] = {
+    regen_round_name(b): _regen_runs(b) for b in _REGEN_BEH_KEYS
+}
+REGEN_ROUND_NAMES: tuple[str, ...] = tuple(REGEN_RUNS_BY_ROUND)
+_N_REGEN = {rn: len(rs) for rn, rs in REGEN_RUNS_BY_ROUND.items()}
+assert _N_REGEN == {"i1481impregen": 9, "i1481sycregen": 3}, _N_REGEN
+# Regen run ids are exactly the reused-arm grid slots — disjoint from every
+# FRESH run id by construction (is_reused() skipped them in _content_runs),
+# so adapter run dirs / wandb names / sentinels can never collide.
+assert not {r.run_id for rs in REGEN_RUNS_BY_ROUND.values() for r in rs} & {
+    r.run_id for rs in RUNS_BY_ROUND.values() for r in rs
+}
+
+
 def register_i1481_rounds() -> dict[str, fu4.RoundSpec]:
-    """Insert the six i1481 content rounds into the fu4 ROUNDS registry
+    """Insert the six i1481 content rounds + the two ALWAYS-EXPLICIT
+    contingent-regen rounds (plan §4.6 gate P1) into the fu4 ROUNDS registry
     (idempotent). Recipe: the fu4 content bundle verbatim (plan §4.2 — lr
     ladder {1e-5,3e-5,1e-4}, r32/α64 rsLoRA, epochs 15 = 75 steps, save 5,
     cosine, batch 4×4, max_length 2048); po rounds pin `max_steps` 75 (the
-    #1434 po convention) + the 20/0/40 composition."""
+    #1434 po convention) + the 20/0/40 composition; regen rounds carry the
+    con recipe verbatim (a deterministic ladder rebuild, not a new design)."""
     specs: dict[str, fu4.RoundSpec] = {}
     for beh_key in BEHAVIOR_BY_KEY:
         for regime in REGIMES:
@@ -335,6 +403,41 @@ def register_i1481_rounds() -> dict[str, fu4.RoundSpec]:
             )
             fu4.ROUNDS[name] = spec
             specs[name] = spec
+    for beh_key in _REGEN_BEH_KEYS:
+        name = regen_round_name(beh_key)
+        if name in fu4.ROUNDS:
+            specs[name] = fu4.ROUNDS[name]
+            continue
+        # The con-round spec verbatim EXCEPT: its own manifest/ladders/raw
+        # names (never clobbers the fresh grid deliverables) and an EMPTY
+        # smoke default (always-explicit — plan §4.6 regen contract).
+        spec = fu4.RoundSpec(
+            name=name,
+            label=f"conpos-grid-{BEHAVIOR_BY_KEY[beh_key]}-con-regen",
+            data_prefix=DATA_PREFIX_1481,
+            adapter_prefix=ADAPTER_PREFIX_1481,
+            deliverables_dir=DELIVERABLES_DIR_1481,
+            manifest_name=f"cell_manifest_{name}.json",
+            ladders_name=f"{name}_ladders.json",
+            runs=REGEN_RUNS_BY_ROUND[name],
+            smoke_default_run="",  # never a default cohort, smoke included
+            k3_parity_run_id="",  # P1 apply-and-read is this grid's parity anchor
+            k3_parity_degraded_floor=None,
+            reread_rate_floor=None,
+            max_lora_rank=64,
+            eval_split_diagnostic=False,
+            reused_runs=(),
+            issue=ISSUE_1481,
+            worker_script=str(WORKER_SCRIPT),
+            upload_all_rungs=True,  # plan §10: keep EVERY rung (discarded_artifacts [])
+            judge_fn=None,  # impolite/sycophancy: the registered factory rubrics
+            margin_pools_fn=None,
+            train_max_steps=None,  # con regime: epochs 15 = 75 steps (grid cadence)
+            mix_composition=fu4.EXPECTED_MIX_COMPOSITION,
+            raw_prefix=f"{DATA_PREFIX_1481}/raw_completions/{name}",
+        )
+        fu4.ROUNDS[name] = spec
+        specs[name] = spec
     return specs
 
 
@@ -342,10 +445,14 @@ I1481_ROUND_NAMES: tuple[str, ...] = tuple(
     round_name(b, r) for b in BEHAVIOR_BY_KEY for r in REGIMES
 )
 
-# Phase-A dispatch groups (plan §4.4: A1 impolite, A2 sycophancy, A3 casual-s137)
+# Phase-A dispatch groups (plan §4.4: A1 impolite, A2 sycophancy, A3 casual-s137).
+# The regen rounds ride their behavior's group so the frozen dispatch.sh
+# wrapper covers them (`bash scripts/issue1481_dispatch.sh impolite --runs
+# <flagged arm>`); their cohorts are EMPTY unless --runs names their runs, so
+# the default (no --runs) Phase-A dispatches stay byte-identical.
 DISPATCH_ROUNDS: dict[str, tuple[str, ...]] = {
-    "impolite": (round_name("imp", "con"), round_name("imp", "po")),
-    "sycophancy": (round_name("syc", "con"), round_name("syc", "po")),
+    "impolite": (round_name("imp", "con"), round_name("imp", "po"), regen_round_name("imp")),
+    "sycophancy": (round_name("syc", "con"), round_name("syc", "po"), regen_round_name("syc")),
     "casual-s137": (round_name("cas", "con"), round_name("cas", "po")),
 }
 # Reused-arm re-read jobs ride the matching behavior dispatch (plan §4.4)

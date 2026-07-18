@@ -19,6 +19,12 @@ Pod (GPU; ``bash scripts/issue1481_dispatch.sh`` sequences per dispatch group):
   Fu4Run carries no seed field), so one dispatch fans out both seeds.
 - ``--dispatch impolite|sycophancy|casual-s137``  sequences stage → dispatch
   for the group's con + po rounds, then the reused-arm re-reads (gate P1).
+  The group also carries its ALWAYS-EXPLICIT contingent-regen round
+  (``i1481impregen`` / ``i1481sycregen`` — plan §4.6): a P1 band-exit on a
+  committed-in-band reused arm is regenerated via
+  ``--dispatch <group> --runs <flagged arm_id[,...]>`` (fresh matched-recipe
+  ladder at seed 42); without --runs the regen cohorts are EMPTY and the
+  rereads are SKIPPED on a regen-only --runs (trigger evidence preserved).
 - ``--phase merge-manifests --round <name>``  Phase B prep: merge the per-seed
   cohort manifests into the round-wide ``cell_manifest_<round>.json`` (the fu4
   judge-aggregate DEFAULT manifest path), so Phase B is ONE round-wide
@@ -433,12 +439,20 @@ def phase_merge_manifests(cfg: run1090.RunConfig, args: argparse.Namespace) -> i
     both seed cohorts — never per-cohort invocations that clobber the shared
     ``<round>_ladders.json``."""
     rname = args.round
-    if rname not in cells.I1481_ROUND_NAMES:
-        raise SystemExit(
-            f"--phase merge-manifests requires --round (one of {sorted(cells.I1481_ROUND_NAMES)})"
-        )
+    known = cells.I1481_ROUND_NAMES + cells.REGEN_ROUND_NAMES
+    if rname not in known:
+        raise SystemExit(f"--phase merge-manifests requires --round (one of {sorted(known)})")
     src_dir = Path(cfg.out_root) if cfg.smoke else cells.DELIVERABLES_DIR_1481
-    merged = _merge_cohort_manifests(rname, src_dir, cells.SEEDS)
+    # Demand only the seeds the round actually REGISTERS: regen rounds are
+    # s42-only and the casual rounds are s137-only (their other-seed slots are
+    # reused, never dispatched), so a fixed cells.SEEDS demand would fail-loud
+    # on cohort manifests that cannot exist by construction.
+    seeds = tuple(
+        s
+        for s in cells.SEEDS
+        if any(cells.seed_for_run_id(r.run_id) == s for r in fu4.ROUNDS[rname].runs)
+    )
+    merged = _merge_cohort_manifests(rname, src_dir, seeds)
     out_path = src_dir / fu4.ROUNDS[rname].manifest_name
     run1090._atomic_write_json(out_path, merged)
     logger.info(
@@ -903,6 +917,13 @@ def _cohort_run_ids(rname: str, seed: int, runs_arg: str | None, smoke: bool) ->
     fu4 regime key carries ONE cfg.seed per out_root, so each seed cohort gets
     its own fu4 invocation + out_root (regime coherence; plan §4.7 seed
     threading)."""
+    if rname in cells.REGEN_ROUND_NAMES and not runs_arg:
+        # Contingent-regen rounds are ALWAYS-EXPLICIT (plan §4.6 gate P1): a
+        # regen cell trains only when --runs names it. A default (no --runs)
+        # dispatch — full OR smoke — yields an EMPTY cohort, skipped by the
+        # caller's empty-cohort branch; the Phase-A group dispatches stay
+        # byte-identical.
+        return []
     spec = fu4.ROUNDS[rname]
     if runs_arg:
         # --runs is a GROUP-level subset: intersect with THIS round's registry
@@ -945,11 +966,19 @@ def _run_dispatch_group(argv: list[str], group: str) -> int:
         passthrough.append("--no-upload")
     cells.register_i1481_rounds()
     runs_arg = _argv_get(argv, "--runs")
+    requested = [t.strip() for t in runs_arg.split(",") if t.strip()] if runs_arg else []
     if runs_arg:
         union = {r.run_id for rn in cells.DISPATCH_ROUNDS[group] for r in fu4.ROUNDS[rn].runs}
-        bad = [t.strip() for t in runs_arg.split(",") if t.strip() and t.strip() not in union]
+        bad = [t for t in requested if t not in union]
         if bad:
             raise SystemExit(f"[i1481-dispatch] unknown runs for group {group!r}: {bad}")
+    regen_ids = {
+        r.run_id
+        for rn in cells.DISPATCH_ROUNDS[group]
+        if rn in cells.REGEN_ROUND_NAMES
+        for r in fu4.ROUNDS[rn].runs
+    }
+    regen_only = bool(requested) and all(t in regen_ids for t in requested)
     out_base = Path(
         _argv_get(argv, "--out-root")
         or ("/tmp/issue-1481-smoke" if smoke else "data/issue_1481/cells")
@@ -998,6 +1027,16 @@ def _run_dispatch_group(argv: list[str], group: str) -> int:
                     )
                     return rc
     arms = cells.REREAD_BY_DISPATCH[group]
+    if arms and regen_only:
+        # P1-triggered regen dispatch (plan §4.6): the COMMITTED re-read
+        # artifacts (raw_completions/reread on the data repo) are the regen's
+        # trigger evidence — re-running the rereads here would overwrite them
+        # in place and burn GPU on already-answered reads.
+        logger.info(
+            "[i1481-dispatch] %s: regen-only --runs — skipping the group's P1 rereads",
+            group,
+        )
+        return 0
     if arms:
         own = ["--phase", "reread", mode]
         if not smoke:
