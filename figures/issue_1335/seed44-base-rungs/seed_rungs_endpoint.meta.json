@@ -1,0 +1,477 @@
+{
+  "commit": "7980346502",
+  "created": "2026-07-18T01:40:06Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "generation seed": 0.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.3446031334813492,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "generation seed": 1.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.36575247629866114,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "generation seed": 2.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.35278671931968486,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "generation seed": 0.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.35578742567592425,
+      "series": "persona-described",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "generation seed": 1.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.4140055558564347,
+      "series": "persona-described",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "generation seed": 2.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.389995134173095,
+      "series": "persona-described",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "generation seed": 0.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.22470895779110006,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": 1.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.2571835897306992,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": 2.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.22749670921057943,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": 0.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.33979246193360224,
+      "series": "fiction endpoint (persona mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": 1.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.2667008160405571,
+      "series": "fiction endpoint (persona mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": 2.0,
+      "held-out R\u00b2 (matched n, layer 19)": 0.38191456365708953,
+      "series": "fiction endpoint (persona mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": -0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.360375702502841,
+      "error": 0.015855967065727616,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "generation seed": 0.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.2724041003748946,
+      "error": 0.012123482087765314,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "generation seed": 1.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.43463887769608045,
+      "error": 0.015960111293811363,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "generation seed": -0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3390882943899459,
+      "error": 0.01359662153424665,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 0.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.28109574647943814,
+      "error": 0.011838744893403141,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 1.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.3353757755852531,
+      "error": 0.013734192512118854,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.37781211894260247,
+      "error": 0.016469924867396374,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "generation seed": 1.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.2770980061284526,
+      "error": 0.014780506593480514,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "generation seed": 2.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3925958640640287,
+      "error": 0.019391663254173463,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "generation seed": 0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.30713466656732913,
+      "error": 0.012518720233478525,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "generation seed": 1.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.24928782303061947,
+      "error": 0.013102824600995197,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "generation seed": 2.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.36340310368069884,
+      "error": 0.01488658381526442,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "generation seed": -0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.360375702502841,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": 0.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.2724041003748946,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": 1.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.43463887769608045,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": -0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.34415162183215514,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "generation seed": 0.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.2597910662091905,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "generation seed": 1.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.4189974476770105,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "generation seed": -0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.3758635559636104,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "generation seed": 0.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.28403803038472114,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "generation seed": 1.925,
+      "held-out R\u00b2 (full n, layer 19)": 0.45091767026463325,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "generation seed": -0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3390882943899459,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "generation seed": 0.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.28109574647943814,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "generation seed": 1.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.3353757755852531,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "generation seed": -0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.32424561606585584,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "generation seed": 0.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.26849969600007645,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "generation seed": 1.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.32139787540757003,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "generation seed": -0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.35143885913434914,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "generation seed": 0.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.29217718578688273,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "generation seed": 1.975,
+      "held-out R\u00b2 (full n, layer 19)": 0.34886626043180774,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "generation seed": 0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.37781211894260247,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "generation seed": 1.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.2770980061284526,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "generation seed": 2.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3925958640640287,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "generation seed": 0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.36063348363851555,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "generation seed": 1.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.26123200737525326,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "generation seed": 2.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3721624614857814,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "generation seed": 0.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.3935733333733083,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "generation seed": 1.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.2907930205622143,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "generation seed": 2.025,
+      "held-out R\u00b2 (full n, layer 19)": 0.41094578799412834,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "generation seed": 0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.30713466656732913,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "generation seed": 1.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.24928782303061947,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "generation seed": 2.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.36340310368069884,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "generation seed": 0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.2937199876593315,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "generation seed": 1.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.23581402814821298,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "generation seed": 2.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.34706475579005047,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "generation seed": 0.07500000000000001,
+      "held-out R\u00b2 (full n, layer 19)": 0.31875742812628854,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "generation seed": 1.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.2620196773502034,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "generation seed": 2.075,
+      "held-out R\u00b2 (full n, layer 19)": 0.3768379234205793,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "matched per-rung values, base model",
+        "xlabel": "generation seed",
+        "ylabel": "held-out R\u00b2 (matched n, layer 19)",
+        "legend_labels": [
+          "one-line Q&A",
+          "persona-described",
+          "fiction-framed Q&A",
+          "fiction endpoint (persona mean)"
+        ],
+        "xticklabels": [
+          "seed 42",
+          "seed 43",
+          "seed 44"
+        ],
+        "yticklabels": [
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275",
+          "0.300",
+          "0.325",
+          "0.350",
+          "0.375",
+          "0.400",
+          "0.425"
+        ]
+      },
+      {
+        "title_left": "fiction endpoint per persona, base model",
+        "xlabel": "generation seed",
+        "ylabel": "held-out R\u00b2 (full n, layer 19)",
+        "annotations": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "xticklabels": [
+          "seed 42",
+          "seed 43",
+          "seed 44"
+        ],
+        "yticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      }
+    ],
+    "series": [
+      "one-line Q&A",
+      "persona-described",
+      "fiction-framed Q&A",
+      "fiction endpoint (persona mean)",
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  }
+}

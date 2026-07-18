@@ -1,0 +1,71 @@
+{
+  "commit": "7980346502",
+  "created": "2026-07-18T01:40:07Z",
+  "figsize": [
+    5.4,
+    4.0
+  ],
+  "points": [
+    {
+      "under-4-token rollout lines (% of 7,200)": 13.833333333333334,
+      "fiction endpoint R\u00b2 (persona mean)": 0.34610269560067963,
+      "label": "seed 42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "under-4-token rollout lines (% of 7,200)": 3.7777777777777777,
+      "fiction endpoint R\u00b2 (persona mean)": 0.2699714190033512,
+      "label": "seed 43",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "under-4-token rollout lines (% of 7,200)": 14.26388888888889,
+      "fiction endpoint R\u00b2 (persona mean)": 0.38150340525651527,
+      "label": "seed 44",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rollout degeneracy rate vs endpoint map strength",
+        "xlabel": "under-4-token rollout lines (% of 7,200)",
+        "ylabel": "fiction endpoint R\u00b2 (persona mean)",
+        "annotations": [
+          "seed 42",
+          "seed 43",
+          "seed 44"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36",
+          "0.38",
+          "0.40"
+        ]
+      }
+    ]
+  }
+}
