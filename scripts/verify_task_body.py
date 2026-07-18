@@ -124,6 +124,8 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     external-repo links stay shape-checked only (check 8): their
     existence is not decidable from the local object DB, and an
     unauthenticated 404 on an external private repo would false-FAIL.
+    Body-wide coverage of the same URL shapes outside the
+    Reproducibility region is check 42's job.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
    `default` is flagged ONLY in placeholder positions — a bare table-cell
@@ -828,6 +830,45 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   promote-time re-verify). Incident #1434: 3 of 12 embedded figures had
   no sidecar; slug tick labels passed the mechanical gate until
   clean-result-critique round 3 (#1478).
+
+- **check 42** (`check_body_artifact_urls_exist`, FAIL on v4 / WARN on
+  grandfathered v3/v2/legacy — forward-only): same-repo
+  `github.com/<this-repo>/(blob|tree)/<sha>/<path>` HTML URLs ANYWHERE in
+  the body must point at objects that exist — the body-wide extension of
+  check 8b's footer-only protection. Footer URLs stay check 8b's
+  (set-difference on 8b's gathered URLs, both sides normalized with the
+  same trailing-punctuation/quote strip — no double-report). Fenced code
+  blocks + blockquote lines stripped (#959); `<details>` blocks
+  deliberately NOT exempt (the motivating #1072 404 blob links lived
+  inside `<details>` Sample blocks). Offline-first via
+  `git cat-file -e <sha>:<path>` per unique URL; locally-unknown shas
+  fall back to at most `_BODYWIDE_HEAD_CAP` (8) HTTP HEADs per body;
+  past-cap / indeterminate probes are `unverified` PASS-notes, never a
+  FAIL. Raw-host URLs out of scope (check 4b / 8b territory). Incident:
+  task #1072 r2 — two 404 GitHub blob links in the Methodology Sample
+  `<details>` blocks PASSed the footer-scoped 8b (#1507).
+
+- **check 43** (`check_github_tree_adjacent_file_claims`, WARN,
+  generation-agnostic): backtick FILENAME claims adjacent to SAME-REPO
+  hex-pinned GitHub `/tree/<sha>` markdown links — the git twin of
+  check 32 — must appear by exact BASENAME, any depth, in ONE memoized
+  `git ls-tree -r -t` listing per unique (sha, prefix), entries strictly
+  UNDER the prefix (ancestor tree entries excluded). Same two anchored
+  shapes as check 32 (PAREN paren-after-link, bound 600 per the #1505
+  widening; LINKTEXT dotted token in link text), plus bounded numeric
+  `{N..M}` brace expansion (≤32, digits-only single group) so the
+  incident's `per_context_stats_1072_fold{0..4}.npz` claim fires, plus a
+  disclaimer-negation suppressor: an adjacency instance whose
+  paren/linktext carries explicit not-in-git vocabulary outside backtick
+  spans ("gitignored", "not committed", "mirror only", …) is a
+  disclaimer, not a claim — the CORRECTED #1072 footer stays silent.
+  Zero network (no bounded remote git-tree listing exists); unknown sha /
+  git error → `unverified` note on a PASS line; WARN never FAILs (no
+  `passed=False` path). Named recall sacrifices: backtick-before-link,
+  /blob/-adjacent (8b/42 probe the URL itself), other-repo links,
+  comma-alternation / nested / over-wide brace globs, disclaimer-sharing
+  false claims. Incident: task #1072 r2 footer claimed the gitignored
+  `.npz` set inside the pinned `eval_results/issue_1072` git tree (#1507).
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -6176,6 +6217,107 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
     return CheckResult(name, True, detail)
 
 
+# ─── Check 42: body-wide same-repo artifact-URL existence (#1507) ──────────
+# Per-body cap on HTTP HEAD fallbacks for locally-unknown shas (check 42).
+# Same bounded-probe philosophy as _HF_MEMBER_MAX_PROBES (check 32): past-cap
+# URLs surface as `unverified` notes, never a FAIL. Offline git probes are
+# uncapped (~10-20 ms each, deduped per unique URL).
+_BODYWIDE_HEAD_CAP = 8
+
+
+def _gather_body_artifact_urls(body: str) -> list[str]:
+    """Same-repo `github.com/<this-repo>/(blob|tree)/<sha>/<path>` HTML URLs
+    anywhere in the body (check 42). Fenced code blocks stripped (a ``` URL is
+    illustrative); blockquote lines stripped (#959 — the **Context:** verbatim
+    originating-prompt quote cannot be edited). `<details>` blocks are
+    deliberately NOT stripped: the motivating #1072 404 blob links lived
+    inside `<details>` Sample blocks (git show 12663c2e47), and the
+    25300695e4 details exemption covers WORDING discipline only — a dead link
+    in a sample dropdown is still a false artifact claim. Raw-host
+    (`raw.githubusercontent.com`) URLs are out of scope here: figure embeds
+    are check 4b's territory and footer raw links are check 8b's. Trailing
+    sentence punctuation AND quote chars are stripped (legacy bodies carry
+    `href="..."` fragments whose closing quote would false-miss the probe).
+    Order-preserving, deduplicated."""
+    urls: list[str] = []
+    scan = _strip_blockquote_lines(_strip_fenced_blocks(body))
+    for token in _REPRO_URL_TOKEN_RE.findall(scan):
+        url = token.rstrip(".,;:!?\"'")
+        m = _GITHUB_BLOB_TREE_URL_RE.match(url)
+        if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+            if url not in urls:
+                urls.append(url)
+    return urls
+
+
+def check_body_artifact_urls_exist(body: str) -> CheckResult:
+    """Check 42: same-repo blob/tree URLs ANYWHERE in the body must point at
+    objects that exist. Body-wide extension of check 8b's footer protection
+    (incident #1072 r2: two 404 GitHub blob links in the Methodology Sample
+    `<details>` blocks PASSed — 8b probes only the Reproducibility region).
+    Footer URLs stay 8b's (set-difference — no double-report; both sides of
+    the difference are normalized with the same trailing-punctuation strip).
+    Offline-first: `git cat-file -e <sha>:<path>` per unique URL; unknown
+    shas fall back to at most _BODYWIDE_HEAD_CAP HTTP HEADs per body.
+    Severity: FAIL on v4; WARN on grandfathered v3/v2/legacy (forward-only —
+    the check_h1_matches_frontmatter_title precedent). Indeterminate probes
+    are `unverified` PASS-notes, never FAIL/WARN."""
+    name = "Body-wide same-repo artifact URLs exist"
+    repro = _repro_section_text(body)
+    footer_urls = (
+        {u.rstrip(".,;:!?\"'") for u in _gather_repro_artifact_urls(repro)}
+        if repro is not None
+        else set()
+    )
+    urls = [u for u in _gather_body_artifact_urls(body) if u not in footer_urls]
+    if not urls:
+        return CheckResult(name, True, "no non-footer same-repo artifact URLs to check")
+    repo = _resolve_repo_root()
+    bad: list[str] = []
+    unverified: list[str] = []
+    head_budget = _BODYWIDE_HEAD_CAP
+    for url in urls:
+        m = _GITHUB_BLOB_TREE_URL_RE.match(url)  # gatherer guarantees a match
+        path = m.group("path").rstrip("/")
+        verdict = "skip"
+        if repo is not None:
+            verdict, _detail = _git_object_exists(repo, m.group("sha"), path)
+        if verdict == "pass":
+            continue
+        if verdict == "fail":
+            bad.append(f"body URL 404s — `{path}` does not exist at `{m.group('sha')[:8]}`")
+            continue
+        # sha unknown locally -> bounded HTTP fallback (same as 8b, capped).
+        if head_budget <= 0:
+            unverified.append(f"`{url}` (per-body HEAD cap)")
+            continue
+        head_budget -= 1
+        code = _http_head_status(url)
+        if code == 404:
+            bad.append(f"body URL 404s — `{url}`")
+        elif code is not None and code < 400:
+            continue
+        else:
+            unverified.append(
+                f"`{url}` (HTTP probe unavailable)" if code is None else f"`{url}` (HTTP {code})"
+            )
+    detail_tail = ""
+    if unverified:
+        detail_tail = f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
+            unverified
+        )
+    if bad:
+        if is_v4(body):
+            return CheckResult(name, False, "; ".join(bad) + detail_tail)
+        return CheckResult(  # forward-only: v3/v2/legacy grandfathered to WARN
+            name,
+            True,
+            "grandfathered v3/v2/legacy body — WARN only: " + "; ".join(bad) + detail_tail,
+            is_warn=True,
+        )
+    return CheckResult(name, True, f"{len(urls)} URL(s)" + detail_tail)
+
+
 # An HF Hub `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL pinned to a hex
 # revision. Both dataset repos (`huggingface.co/datasets/<owner>/<repo>/...`)
 # and model/space repos (`huggingface.co/<owner>/<repo>/...`) are matched.
@@ -9618,6 +9760,223 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# ─── Check 43: GitHub-tree-adjacent backtick file claims (git twin of 32) ──
+# (#1507; incident #1072 r2 footer: `Artifacts: [`eval_results/issue_1072/`]
+# (…github…/tree/1f19deacf…/eval_results/issue_1072) (`stats_component.json`,
+# …, `per_context_stats_1072_fold{0..4}.npz`, …)` — the .npz are gitignored,
+# absent from the tree; check 32 covers only HF /tree links.)
+_GH_LINK_THEN_PAREN_RE = re.compile(  # PAREN shape (check 32's, github host;
+    r"\]\((?P<url>https?://github\.com/[^)\s]+)\)\s{0,2}\((?P<paren>[^()]{1,600})\)"
+)  # paren bound 600 per the #1505 widening)
+_MD_GH_LINK_RE = re.compile(  # LINKTEXT shape (sibling of _MD_HF_LINK_RE)
+    r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://github\.com/[^)\s]+)\)"
+)
+# Bounded numeric brace-range expansion: `fold{0..4}.npz` -> fold0..fold4.
+# Single group, digits only, width <= _GH_BRACE_MAX_EXPANSIONS; comma
+# alternation `{a,b}` and nested braces are named recall sacrifices.
+_BRACE_RANGE_TOKEN_RE = re.compile(
+    r"^(?P<pre>[A-Za-z0-9._\-]*)\{(?P<a>\d{1,4})\.\.(?P<b>\d{1,4})\}(?P<post>[A-Za-z0-9._\-]*)$"
+)
+_GH_BRACE_MAX_EXPANSIONS = 32
+
+# Disclaimer-negation suppressor (check 43): an adjacency instance whose
+# paren body / link text EXPLICITLY states the named files are NOT in the
+# git tree is a disclaimer, not a claim — suppress the whole instance.
+# Grounded on the corrected #1072 footer (line 173: "… are gitignored and
+# live on the HF eval_results mirror only"), which must NOT WARN.
+# Precision/recall trade (P1, #1507 critique round): the disclaimer scan
+# runs on text with backtick code spans MASKED OUT (a filename token like
+# `HF_mirror_config.json` or `not_in_git.txt` can never carry disclaimer
+# vocabulary), and the anchors are ABSENCE-SPECIFIC — the draft's broad
+# `not\s+tracked` (hits "not tracked in WandB") and `HF[\w\s-]{0,40}mirror`
+# (hits HF-mirror filenames) alternatives were dropped. Named recall
+# sacrifices: a genuinely-false claim sharing a paren/linktext with
+# disclaimer vocabulary is missed (instance-level suppression,
+# precision-first WARN-tier house style), and a disclaimer phrased outside
+# these anchors ("lives elsewhere") still WARNs.
+_GH_TREE_DISCLAIMER_RE = re.compile(
+    r"git-?ignored"
+    r"|not\s+(?:committed|in\s+(?:the\s+)?git(?:\s+tree)?)"
+    r"|absent\s+from\s+(?:the\s+)?(?:git\s+)?tree"
+    r"|mirror\s+only"
+    r"|only\s+on\s+(?:the\s+)?HF",
+    re.IGNORECASE,
+)
+
+
+def _gh_tree_disclaimer_present(text: str) -> bool:
+    """True when `text` (one PAREN body / LINKTEXT) carries explicit
+    not-in-git disclaimer vocabulary OUTSIDE backtick code spans (check 43).
+    Backtick spans are masked with a bridging-safe placeholder (` _ `) so a
+    filename token can neither carry disclaimer vocabulary nor glue two
+    prose fragments into a spurious anchor match."""
+    return _GH_TREE_DISCLAIMER_RE.search(_BACKTICK_TOKEN_RE.sub(" _ ", text)) is not None
+
+
+def _expand_claim_token(token: str) -> list[str]:
+    """[token] for a plain token; the expanded list for a bounded {N..M}
+    numeric brace range; [] for a malformed / over-wide range (no probe,
+    no WARN — recall sacrifice)."""
+    m = _BRACE_RANGE_TOKEN_RE.match(token)
+    if m is None:
+        return [token]
+    a, b = int(m.group("a")), int(m.group("b"))
+    if b < a or (b - a + 1) > _GH_BRACE_MAX_EXPANSIONS:
+        return []
+    return [f"{m.group('pre')}{i}{m.group('post')}" for i in range(a, b + 1)]
+
+
+def _gather_gh_tree_adjacent_file_claims(body: str) -> list[tuple[str, str, str, str]]:
+    """(sha, path_prefix, filename, shape) tuples for backtick FILENAME
+    claims adjacent to SAME-REPO hex-pinned GitHub /tree markdown links
+    (check 43). Mirrors _gather_hf_adjacent_file_claims: fence-stripped;
+    PAREN + LINKTEXT shapes only; _HF_ADJ_FILENAME_RE whitelist per (brace-
+    expanded) token; token == URL terminal component skipped (8b/42 probe the
+    URL's own path); dedup on (sha, prefix, fname).
+    Precision/recall trade-offs (named recall sacrifices, check-32 style):
+    backtick filenames BEFORE the link (misattribution risk); /blob/-adjacent
+    claims (the blob URL itself is probed by 8b/42); other-repo github links;
+    moving refs (/tree/main fails the hex regex); non-markdown bare URLs;
+    comma-alternation + nested + over-wide brace globs; relative-path /
+    wildcard tokens (whitelist rejects); whole adjacency instances whose
+    paren/linktext carries disclaimer-negation vocabulary outside backtick
+    spans (_gh_tree_disclaimer_present — a false claim sharing a paren with
+    a disclaimer is missed, AC10 precision trade). Any-depth basename
+    membership incl. directory entries (ls-tree -r -t) — an any-depth
+    collision can mask a wrong-PATH claim, accepted at WARN tier (same
+    residual as check 32)."""
+    stripped = _strip_fenced_blocks(body)
+    out: list[tuple[str, str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def _add(url: str, token: str, shape: str) -> None:
+        m = _GITHUB_BLOB_TREE_URL_RE.match(url.rstrip(".,;:!?"))
+        if m is None or f"/tree/{m.group('sha')}" not in url:
+            return  # non-github / other shape / blob
+        if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            return  # other-repo: undecidable locally
+        prefix = m.group("path").rstrip("/")
+        for fname in _expand_claim_token(token.strip()):
+            if not _HF_ADJ_FILENAME_RE.match(fname):
+                continue
+            if posixpath.basename(prefix) == fname:
+                continue  # the URL's own terminal component — 8b/42 cover it
+            key = (m.group("sha"), prefix, fname)
+            if key not in seen:
+                seen.add(key)
+                out.append((m.group("sha"), prefix, fname, shape))
+
+    for pm in _GH_LINK_THEN_PAREN_RE.finditer(stripped):  # shape PAREN
+        if _gh_tree_disclaimer_present(pm.group("paren")):
+            continue  # disclaimer, not a claim (AC10)
+        for token in _BACKTICK_TOKEN_RE.findall(pm.group("paren")):
+            _add(pm.group("url"), token, "PAREN")
+    for lm in _MD_GH_LINK_RE.finditer(stripped):  # shape LINKTEXT
+        if _gh_tree_disclaimer_present(lm.group("text")):
+            continue  # disclaimer, not a claim (AC10)
+        for token in _BACKTICK_TOKEN_RE.findall(lm.group("text")):
+            _add(lm.group("url"), token, "LINKTEXT")
+    return out
+
+
+def _git_tree_basenames(repo: Path, sha: str, prefix: str) -> tuple[str, frozenset[str], str]:
+    """('ok'|'skip', basenames, note): basenames of ALL entries (blobs AND
+    trees — `ls-tree -r -t`) strictly UNDER sha:prefix; the prefix itself and
+    its ANCESTOR tree entries are excluded (ls-tree with a pathspec also
+    emits the prefix's ancestors — e.g. `eval_results` for prefix
+    `eval_results/issue_1072` — and a bare `p != prefix` would keep them as
+    spurious WARN-suppressing members). 'skip' when the sha does not resolve
+    (shallow/unknown — a PARTIAL/absent listing must never ground a WARN) or
+    on any git error. Own helper — check 29's _git_tracked_under is
+    files-only (`-r` without `-t`) and shared; do not modify it."""
+    try:
+        rev = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return "skip", frozenset(), f"git rev-parse failed: {e}"
+    if rev.returncode != 0:
+        return "skip", frozenset(), f"sha `{sha}` did not resolve in this repo (unknown / shallow)"
+    try:
+        r = subprocess.run(
+            [
+                "git",
+                "-c",
+                "core.quotePath=off",
+                "ls-tree",
+                "-r",
+                "-t",
+                "--name-only",
+                sha,
+                "--",
+                prefix,
+            ],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return "skip", frozenset(), f"git ls-tree failed: {e}"
+    if r.returncode != 0:
+        return "skip", frozenset(), "git ls-tree failed"
+    basenames = {
+        posixpath.basename(p.strip())
+        for p in r.stdout.splitlines()
+        if p.strip().startswith(prefix + "/")  # UNDER-prefix filter (fact-check A8)
+    }
+    return "ok", frozenset(basenames), ""
+
+
+def check_github_tree_adjacent_file_claims(body: str) -> CheckResult:
+    """Check 43 (WARN): a backtick-named file claimed adjacent to a same-repo
+    hex-pinned GitHub /tree markdown link must appear (by basename, any
+    depth) in the git tree at sha:prefix. Git twin of check 32. WARN never
+    FAILs (no passed=False path). Offline-only: unknown sha / git error ->
+    `unverified` note on a PASS line; NO network fallback (there is no
+    bounded remote git-tree listing analogous to the #733 HF probe)."""
+    name = "GitHub-tree-adjacent backtick file claims exist in the pinned tree"
+    claims = _gather_gh_tree_adjacent_file_claims(body)
+    if not claims:
+        return CheckResult(
+            name, True, "no backtick file claims adjacent to same-repo git tree links"
+        )
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, f"{len(claims)} claim(s) unverified — repo root unavailable")
+    missing: list[str] = []
+    unverified: list[str] = []
+    memo: dict[tuple[str, str], tuple[str, frozenset[str], str]] = {}
+    for sha, prefix, fname, shape in claims:
+        key = (sha, prefix)
+        if key not in memo:
+            memo[key] = _git_tree_basenames(repo, sha, prefix)
+        status, basenames, note = memo[key]
+        if status != "ok":
+            skip_note = f"`{fname}` at `{prefix}@{sha[:8]}` ({note})"
+            if skip_note not in unverified:
+                unverified.append(skip_note)
+            continue
+        if fname not in basenames:
+            missing.append(
+                f"body claims `{fname}` adjacent to the pinned git tree `{prefix}` "
+                f"at `{sha[:8]}`, but no entry with that basename exists (shape: {shape})"
+            )
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = (
+            f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(unverified)
+        )
+    if missing:
+        return CheckResult(name, True, "; ".join(missing) + unverified_detail, is_warn=True)
+    detail = f"{len(claims)} adjacent file claim(s) against {len(memo)} pinned git tree(s)"
+    return CheckResult(name, True, detail + unverified_detail)
+
+
 # ─── Check 40: unpinned backtick HF-path count claims (WARN) — #1433/#1345 ──
 # `rejudge/` (2 files) in a footer sentence with NO adjacent pinned
 # /tree/<sha> link escaped checks 30/32 entirely (both fire only for
@@ -12208,6 +12567,12 @@ CHECKS = [
     # check 41 (WARN, generation-agnostic) — sidecar-less embedded figures:
     # names the figures checks 24/28/33/34 silently skipped (#1478; incident #1434):
     check_figure_sidecar_coverage,
+    # check 42 (FAIL on v4, WARN grandfathered — forward-only) — body-wide same-repo
+    # blob/tree URL existence; footer stays check 8b's (#1507; incident #1072 r2):
+    check_body_artifact_urls_exist,
+    # check 43 (WARN, generation-agnostic) — git-tree twin of check 32: backtick file
+    # claims adjacent to same-repo /tree/<sha> links resolve via git ls-tree (#1507):
+    check_github_tree_adjacent_file_claims,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
