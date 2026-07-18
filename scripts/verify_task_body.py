@@ -2706,6 +2706,35 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
     return linked
 
 
+def _classify_per_unit_png(
+    p: str,
+    body: str,
+    referenced_paths: set[str],
+    embedded_any: set[str],
+    linked_results: set[str],
+) -> str | None:
+    """Disposition of ONE git-tracked path for check 31 (#1510): None
+    (not a per-unit PNG / embedded in any image-URL form / deferred to
+    check 38 / exemption-phrase-exempt), ``"named"`` (class B — stem in
+    body prose, no exemption phrase in its paragraph), or ``"orphan"``
+    (class A — never mentioned)."""
+    base = p.rsplit("/", 1)[-1]
+    if not base.lower().endswith(".png"):
+        return None
+    stem = base[: -len(".png")]
+    if not _PER_UNIT_FIG_RE.search(stem):
+        return None
+    if p in referenced_paths or p.lower() in embedded_any:
+        return None  # embedded (any image-URL form) — discipline satisfied
+    if p.lower() in linked_results:
+        return None  # markdown-linked in v4 Results — check 38 owns the WARN
+    if stem in body:
+        if _stem_exempt_in_paragraph(body, stem):
+            return None  # explicit exemption phrase beside the name
+        return "named"
+    return "orphan"
+
+
 def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
     """Check 31 (WARN, #1011; tightened #1510): a committed per-unit
     companion PNG at a body-cited figure SHA that the body does not embed.
@@ -2802,22 +2831,13 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 n_unreachable += 1  # hard constraint: skip SILENTLY, no WARN
                 continue
             for p in tracked:
-                base = p.rsplit("/", 1)[-1]
-                if not base.lower().endswith(".png"):
-                    continue
-                stem = base[: -len(".png")]
-                if not _PER_UNIT_FIG_RE.search(stem):
-                    continue
-                if p in referenced_paths or p.lower() in embedded_any:
-                    continue  # embedded (any image-URL form) — discipline satisfied
-                if p.lower() in linked_results:
-                    continue  # markdown-linked in v4 Results — check 38 owns the WARN
-                if stem in body:
-                    if _stem_exempt_in_paragraph(body, stem):
-                        continue  # explicit exemption phrase beside the name
+                cls = _classify_per_unit_png(
+                    p, body, referenced_paths, embedded_any, linked_results
+                )
+                if cls == "named":
                     named.setdefault(p, []).append(sha[:8])
-                    continue
-                orphans.setdefault(p, []).append(sha[:8])
+                elif cls == "orphan":
+                    orphans.setdefault(p, []).append(sha[:8])
     if orphans or named:
         parts = []
         if orphans:
