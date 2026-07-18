@@ -734,15 +734,34 @@ decision; `EPM_SESSION_RECONCILE_AUTOSTOP=0` reverts to alert-only); sessions
 of tasks at any other status (ACTIVE, `followups_running`, `blocked`), the PM
 session, and unmapped chat sessions are never touched by this pass.
 
-**Zombie-wrapper pass.** A live EPS session whose process tree has carried NO
-inner Claude process for ≥2 consecutive checks AND ≥2h
-(`EPM_ZOMBIE_WRAPPER_GRACE_S`) is auto-stopped REGARDLESS of issue mapping
-(the 2026-06-11 class: 25 unmapped finished-issue sessions showed as
-"running" indefinitely); never touched: the PM session (registered via
-`spawn_session.py register-pm` / `spawn-pm` / the `/pm` bootstrap),
-non-EPS-cwd sessions, and issue-mapped sessions at
-active/`blocked`/`plan_pending` statuses; `EPM_ZOMBIE_WRAPPER_REAP=0` reverts
-to alert-only.
+**Zombie-wrapper pass.** A live daemon-tracked session whose process tree has
+carried NO inner Claude process for ≥2 consecutive checks AND ≥ the lane's
+grace window is auto-stopped REGARDLESS of issue mapping. TWO stop-eligible
+lanes (#1039): **EPS cwds** at the 2h grace (`EPM_ZOMBIE_WRAPPER_GRACE_S`;
+the 2026-06-11 class: 25 unmapped finished-issue sessions showed as "running"
+indefinitely), and **non-EPS cwds** (other projects — the 2026-07-03 class:
+16-38-day-old dead personal sessions the old blanket skip left invisible)
+under STRICTER gates: a 7-day grace (`EPM_ZOMBIE_NONEPS_GRACE_S`, default
+604800 s), NO live user TTY (`_is_live_user_tty` — a terminal someone could
+be looking at fails toward keep), wrapper process age ≥ the same 7d
+(`proc_start_epoch` belt; unreadable → keep), and not registry-mapped (a
+registry-mapped sid with a non-EPS cwd is contradictory metadata → kept).
+A session whose cwd CANNOT be resolved (sid absent from `sessions.json`)
+lands in the **unresolvable bucket**: age-reported — a per-tick stdout line
+plus ONE deduped durable row per episode in
+`~/.eps-autonomous/zombie-wrapper-events.jsonl` once the wrapper is ≥7d old,
+naming the manual sweep command — and NEVER auto-stopped (EPS-ness is
+unknowable ⇒ fail toward keep). Never touched: the PM session (registered via
+`spawn_session.py register-pm` / `spawn-pm` / the `/pm` bootstrap; checked
+FIRST, upstream of cwd classification), issue-mapped EPS sessions at
+active/`blocked`/`plan_pending` statuses, registry-mapped-but-non-EPS-cwd
+sessions, unresolvable-cwd sessions, and non-EPS wrappers holding a live user
+TTY. Kill switches: `EPM_ZOMBIE_WRAPPER_REAP=0` reverts BOTH lanes to
+alert-only; `EPM_ZOMBIE_NONEPS_REAP=0` reverts the non-EPS lane only (the
+#818 dedicated-widening-knob shape). Non-EPS/unresolvable records route to
+the fallback events file (no task to carry markers); a stopped non-EPS
+session is recoverable — `happy claude` in its own project cwd, with the old
+conversation resumable via `claude --resume` (transcripts persist on disk).
 
 **Idle-unmapped pass.** A third session reaper — auto-stops UNMAPPED EPS-cwd
 sessions (no registry entry, no `issue-<N>` worktree cwd) whose resolved

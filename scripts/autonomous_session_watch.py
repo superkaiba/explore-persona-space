@@ -195,22 +195,36 @@ adding a pass means adding a numbered item here AND bumping the digit:
 7. **Zombie-wrapper pass (AUTO-STOP by default).** Stop a daemon-tracked
    Happy session whose process tree has carried NO inner Claude process
    (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS`) for >= ``threshold``
-   consecutive checks AND >= the :func:`_zombie_wrapper_grace_s` window
-   (default 2h) — REGARDLESS of issue mapping. Every other session pass is
-   keyed on a registry entry or an ``issue-<N>`` worktree cwd, so a
-   finished session that lost its mapping (registry GC'd at the terminal
-   transition, cwd = repo root) is invisible to all of them even though
-   its inner Claude exited: 25 such zombies had accumulated by 2026-06-11,
-   showing as "running" in ``spawn_session.py list`` indefinitely until a
-   manual sweep. The grace window is load-bearing, not cosmetic: a live
-   wrapper revives its inner Claude IN PLACE on the next phone message
-   (the remote-mode launcher blocks on ``nextMessage()`` BEFORE spawning
-   the Claude SDK subprocess), so a no-Claude snapshot alone can be a
-   healthy idle session. NEVER touches: the PM session (excluded via the
-   explicit ``pm-session.json`` registration written by ``spawn-pm`` /
-   ``register-pm`` / the `/pm` skill bootstrap), non-EPS-cwd sessions, and
-   issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
-   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only. Stops are
+   consecutive checks AND >= the lane's grace window — REGARDLESS of issue
+   mapping. Every other session pass is keyed on a registry entry or an
+   ``issue-<N>`` worktree cwd, so a finished session that lost its mapping
+   (registry GC'd at the terminal transition, cwd = repo root) is invisible
+   to all of them even though its inner Claude exited: 25 such zombies had
+   accumulated by 2026-06-11, showing as "running" in
+   ``spawn_session.py list`` indefinitely until a manual sweep. TWO
+   stop-eligible lanes (#1039): EPS cwds at the
+   :func:`_zombie_wrapper_grace_s` window (default 2h, unchanged), and
+   NON-EPS cwds (other projects — the 2026-07-03 class of 2-5-week-old
+   dead personal sessions) under STRICTER gates: the
+   :func:`_zombie_noneps_grace_s` window (default 7d), no live user TTY
+   (:func:`_is_live_user_tty`), wrapper process age >= the same 7d
+   (:func:`proc_start_epoch` belt; ``None`` -> keep), and not
+   registry-mapped. A session whose cwd CANNOT be resolved (no
+   sessions.json metadata) lands in the UNRESOLVABLE bucket: age-reported
+   (stdout every tick + one deduped durable fallback row per episode once
+   the wrapper is >= 7d old), NEVER auto-stopped. The grace windows are
+   load-bearing, not cosmetic: a live wrapper revives its inner Claude IN
+   PLACE on the next phone message (the remote-mode launcher blocks on
+   ``nextMessage()`` BEFORE spawning the Claude SDK subprocess), so a
+   no-Claude snapshot alone can be a healthy idle session. NEVER touches:
+   the PM session (excluded via the explicit ``pm-session.json``
+   registration written by ``spawn-pm`` / ``register-pm`` / the `/pm`
+   skill bootstrap, checked FIRST), issue-mapped EPS sessions at
+   :data:`ZOMBIE_STATUS_EXCLUDE` statuses, registry-mapped sids with a
+   non-EPS cwd (contradictory metadata -> keep), unresolvable-cwd
+   sessions, and any wrapper holding a live user TTY (non-EPS lane).
+   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only for BOTH lanes;
+   ``EPM_ZOMBIE_NONEPS_REAP=0`` for the non-EPS lane only. Stops are
    verified on the next tick (daemon ACK != kill), mirroring the
    session-reconcile contract. Daemon-gated.
 8. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
@@ -640,7 +654,7 @@ from spawn_session import (  # noqa: E402
     stagger_delay_s,
     takeover_sentinel_fresh,
 )
-from tick_triage import plan_pending_over_cap  # noqa: E402
+from tick_triage import plan_pending_over_cap, proc_start_epoch  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
@@ -17662,8 +17676,9 @@ def session_reconcile_pass(
 # BEFORE spawning the Claude SDK subprocess — so a wrapper with no Claude
 # descendant can be a HEALTHY idle session (e.g. right after a /clear or an
 # abort) that the next phone message revives IN PLACE. A no-Claude snapshot
-# is therefore necessary but not sufficient. The stop fires only when ALL
-# hold:
+# is therefore necessary but not sufficient. Classification is FOUR-WAY
+# (#1039): PM (skip, checked first) / EPS cwd / non-EPS cwd / unresolvable
+# cwd. The EPS-lane stop fires only when ALL hold:
 #
 #   * NO Claude process anywhere in the wrapper's /proc descendant tree
 #     (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS` — both the native
@@ -17677,21 +17692,35 @@ def session_reconcile_pass(
 #   * the session is NOT the PM session (excluded via the explicit
 #     ``pm-session.json`` registration — ``spawn-pm`` / ``register-pm`` /
 #     the `/pm` skill bootstrap write it);
-#   * the session's cwd IS under the EPS project root (other projects'
-#     sessions are never touched);
 #   * when the session IS issue-mapped (registry entry or ``issue-<N>``
 #     worktree cwd), the task's status is NOT in
 #     :data:`ZOMBIE_STATUS_EXCLUDE` (an active/blocked/plan-pending task's
 #     session is left to the passes that own those states).
 #
-# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY (the
-# EPM_SESSION_RECONCILE_AUTOSTOP pattern). Stops are verified next tick
-# (daemon ACK != kill): one retry, then one loud marker, mirroring
-# :func:`_check_stop_verification`. Daemon-gated (needs /list pids + the
-# stop RPC). Stopping a live wrapper forfeits daemon-side `happy resume`
-# tracking, but the recovery story for reaped sessions is a fresh
-# `spawn_session.py spawn-issue` — same contract as the session-reconcile
-# stop.
+# The NON-EPS lane (#1039 — the 2026-07-03 class: 16-38-day-old dead
+# personal/other-project sessions the old blanket skip left invisible)
+# stop-fires only under STRICTER gates: same no-Claude + threshold ladder,
+# but at the 7d :func:`_zombie_noneps_grace_s` window, PLUS no live user
+# TTY (:func:`_is_live_user_tty` — "Thomas could be looking at this RIGHT
+# NOW" fails toward keep), PLUS wrapper process age >= the same 7d
+# (:func:`proc_start_epoch`; unreadable -> keep), PLUS not registry-mapped
+# (a registry-mapped sid with a non-EPS cwd is contradictory metadata ->
+# kept). The UNRESOLVABLE bucket (no sessions.json metadata — EPS-ness
+# genuinely unknowable) is escalate-only: a per-tick stdout age line plus
+# one deduped durable fallback row per episode once the wrapper is >= 7d
+# old; NEVER auto-stopped.
+#
+# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY for BOTH lanes
+# (the EPM_SESSION_RECONCILE_AUTOSTOP pattern); ``EPM_ZOMBIE_NONEPS_REAP=0``
+# is the non-EPS-lane-only kill switch (the #818 dedicated-widening-knob
+# shape). Stops are verified next tick (daemon ACK != kill): one retry,
+# then one loud marker, mirroring :func:`_check_stop_verification`.
+# Daemon-gated (needs /list pids + the stop RPC). Stopping a live wrapper
+# forfeits daemon-side `happy resume` tracking, but the recovery story for
+# reaped sessions is a fresh `spawn_session.py spawn-issue` (EPS) or a
+# fresh `happy claude` in the session's own project cwd (non-EPS; the old
+# conversation stays resumable via `claude --resume`) — same contract as
+# the session-reconcile stop.
 
 # Filename prefix for the per-SESSION state file at
 # ``~/.eps-autonomous/zombie-wrapper-<sid>.json``. Keyed by session id (NOT
@@ -17706,6 +17735,14 @@ ZOMBIE_WRAPPER_STATE_PREFIX = "zombie-wrapper-"
 # revived or remain wanted, short enough that zombie accumulation is bounded
 # to a workday. Override via EPM_ZOMBIE_WRAPPER_GRACE_S (seconds).
 ZOMBIE_WRAPPER_GRACE_S = 2 * 3600
+
+# Non-EPS lane grace (#1039): 7 days between the FIRST no-Claude observation
+# and any stop (vs the EPS lane's 2h) — a personal / other-project session
+# gets a full week of provable deadness before any action. Doubles as the
+# deploy bake window: first_miss_ts cannot predate the merge, so the earliest
+# possible non-EPS stop is 7 days post-deploy. Override via
+# EPM_ZOMBIE_NONEPS_GRACE_S (seconds).
+NONEPS_ZOMBIE_WRAPPER_GRACE_S = 7 * 86400
 
 # Issue-mapped sessions whose task sits in any of these statuses are NEVER
 # touched by the zombie pass — active pipeline statuses are owned by the
@@ -17742,6 +17779,45 @@ def _zombie_wrapper_grace_s() -> float:
     except ValueError:
         return ZOMBIE_WRAPPER_GRACE_S
     return val if val > 0 else ZOMBIE_WRAPPER_GRACE_S
+
+
+def _zombie_noneps_reap_enabled() -> bool:
+    """True unless ``EPM_ZOMBIE_NONEPS_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the alert-only kill switch for the
+    NON-EPS lane widening ONLY (#1039; the #818 dedicated-widening-knob
+    shape). The global ``EPM_ZOMBIE_WRAPPER_REAP`` is ANDed on top by the
+    caller, so global-off still covers both lanes."""
+    raw = os.environ.get("EPM_ZOMBIE_NONEPS_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _zombie_noneps_grace_s() -> float:
+    """Non-EPS lane grace window in seconds: ``EPM_ZOMBIE_NONEPS_GRACE_S``
+    when set to a positive number, else
+    :data:`NONEPS_ZOMBIE_WRAPPER_GRACE_S` (7d). Garbled / non-positive values
+    fall back to the default (mirrors :func:`_zombie_wrapper_grace_s`)."""
+    raw = os.environ.get("EPM_ZOMBIE_NONEPS_GRACE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return NONEPS_ZOMBIE_WRAPPER_GRACE_S
+    return val if val > 0 else NONEPS_ZOMBIE_WRAPPER_GRACE_S
+
+
+def _classify_session_cwd(path: object, project_prefix: str) -> str:
+    """``'eps'`` | ``'non-eps'`` | ``'unresolvable'`` (#1039). The eps branch
+    is EXACTLY the EPS-cwd predicate the zombie pass used before #1039; a
+    non-str / empty path is the dir-resolution-failure case (live probe: the
+    sid is absent from sessions.json, so ``metadata.path`` reads ``None``).
+    Physical-vs-logical caveat: a cwd recorded under the PHYSICAL
+    ``/mnt/eps-data`` bind target (rather than the logical
+    ``.claude/worktrees`` path) would classify ``non-eps`` — the never-stop
+    guards (inner Claude / live TTY / 7d grace + age belt) still bind there."""
+    if not isinstance(path, str) or not path:
+        return "unresolvable"
+    if path == project_prefix or path.startswith(project_prefix + "/"):
+        return "eps"
+    return "non-eps"
 
 
 def _proc_children_map() -> dict[int, list[int]]:
@@ -17848,6 +17924,49 @@ def decide_zombie_wrapper(
     if not alerted:
         return ("alert", new_missed)
     return ("keep", new_missed)
+
+
+def decide_zombie_wrapper_noneps(
+    has_claude: bool,
+    live_user_tty: bool,
+    wrapper_age_s: float | None,
+    missed: int,
+    first_miss_age_s: float,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = True,
+    grace_s: float = NONEPS_ZOMBIE_WRAPPER_GRACE_S,
+) -> tuple[str, int]:
+    """Pure decision for one live, non-PM, NON-EPS-cwd, non-registry-mapped
+    session (#1039). Same action alphabet as :func:`decide_zombie_wrapper`.
+
+    - Claude present OR a live user tty -> ``("clear", 0)``: out of scope,
+      the episode ends (a later loss of tty/Claude starts a FRESH 7d
+      episode).
+    - ``wrapper_age_s`` None (unreadable /proc) or < ``grace_s`` ->
+      ``("keep", missed+1)``: the wrapper-process-age belt; guards the
+      state-carryover race (a ``first_miss_ts`` written by a prior
+      lane/generation can never shortcut a young wrapper).
+    - Otherwise delegate the threshold/grace/kill-switch ladder VERBATIM to
+      :func:`decide_zombie_wrapper` (``mapped=False``, ``status=None``) at
+      the 7d grace — ONE ladder implementation, no cross-lane drift.
+    """
+    if has_claude or live_user_tty:
+        return ("clear", 0)
+    if wrapper_age_s is None or wrapper_age_s < grace_s:
+        return ("keep", missed + 1)
+    return decide_zombie_wrapper(
+        None,
+        False,
+        False,
+        missed,
+        first_miss_age_s,
+        alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
 
 
 def _zombie_state_path(sid: str) -> Path:
@@ -18182,6 +18301,208 @@ def _process_zombie_wrapper(
         )
 
 
+def _process_zombie_wrapper_noneps(
+    sid: str,
+    pid: int,
+    path: str,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+    children_map: dict[int, list[int]],
+    detached_tmux_ttys: set[str],
+    check_orphaned: bool,
+) -> None:
+    """Apply the NON-EPS zombie-wrapper decision (#1039) to one live, non-PM,
+    non-registry-mapped session whose cwd resolves OUTSIDE the EPS project
+    root — the :func:`_process_zombie_wrapper` shape under the stricter
+    :func:`decide_zombie_wrapper_noneps` gates (7d grace, live-user-TTY
+    guard, wrapper-process-age belt). Records route with ``issue=None``
+    (a non-EPS session has no task to carry markers -> the fallback events
+    file). Every state write is gated ``if not dry_run:`` — the live
+    ``--dry-run`` smoke is read-only by construction."""
+    has_claude = _has_claude_descendant(pid, children_map)
+    live_tty = _is_live_user_tty(pid, detached_tmux_ttys, check_orphaned=check_orphaned)
+    start = proc_start_epoch(pid)
+    wrapper_age_s = now - start if start is not None else None
+
+    prev = _load_zombie_state(sid)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev.get("alerted", False))
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+
+    in_scope = not has_claude and not live_tty
+    if _check_zombie_stop_verification(sid, pid, None, in_scope, prev, dry_run, now):
+        return
+
+    grace_s = _zombie_noneps_grace_s()
+    action, new_missed = decide_zombie_wrapper_noneps(
+        has_claude,
+        live_tty,
+        wrapper_age_s,
+        prev_missed,
+        now - first_miss_ts,
+        prev_alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
+    wrapper_age_label = f"{wrapper_age_s / 86400:.1f}d" if wrapper_age_s is not None else "?"
+    zombie_age_h = (now - first_miss_ts) / 3600 if not has_claude else 0.0
+    print(
+        f"  session {sid} (pid={pid}, lane=non-eps, cwd={path}): "
+        f"has_claude={has_claude} live_tty={live_tty} wrapper_age={wrapper_age_label} "
+        f"missed={prev_missed}->{new_missed} zombie_age={zombie_age_h:.1f}h action={action}"
+    )
+
+    if action == "clear":
+        if prev and not dry_run:
+            _clear_zombie_state(sid)
+        return
+
+    if action == "stop":
+        acked = _stop_session(sid, dry_run)
+        if acked:
+            _zombie_record(
+                None,
+                f"{_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL} auto-stopped zombie NON-EPS "
+                f"Happy session {sid} (wrapper pid {pid}, lane=non-eps, cwd={path}): "
+                f"its process tree carried NO inner Claude process for "
+                f"{zombie_age_h / 24:.1f}d (>= {threshold} consecutive checks, grace "
+                f"{grace_s / 86400:.1f}d), no live user TTY, wrapper age "
+                f"{wrapper_age_label} (#1039 non-EPS lane). Restart from its own "
+                f"project: `happy claude` in {path}; the old conversation remains "
+                f"resumable via `claude --resume` — transcripts persist on disk. "
+                f"Set EPM_ZOMBIE_NONEPS_REAP=0 (non-EPS lane only) or "
+                f"EPM_ZOMBIE_WRAPPER_REAP=0 (both lanes) on the watcher cron to "
+                f"fall back to alert-only.",
+                dry_run,
+                label="zombie-wrapper-noneps-stop",
+            )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=0 if acked else prev_missed,
+                alerted=prev_alerted,
+                pid=pid,
+                issue=None,
+                first_miss_ts=first_miss_ts,
+                stopped_at=now if acked else None,
+                stop_retried=bool(prev.get("stop_retried", False)),
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return
+
+    if action == "alert":
+        print(
+            f"  ZOMBIE ALERT session {sid} (lane=non-eps): no inner Claude process "
+            f"for {zombie_age_h:.1f}h; NOT stopping (kill switch — alert-only).",
+            file=sys.stderr,
+        )
+        _zombie_record(
+            None,
+            f"{_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL} ZOMBIE non-EPS Happy session: "
+            f"{sid} (wrapper pid {pid}, cwd={path}) has carried NO inner Claude "
+            f"process for {zombie_age_h / 24:.1f}d with no live user TTY (wrapper "
+            f"age {wrapper_age_label}). NOT auto-stopped (EPM_ZOMBIE_NONEPS_REAP / "
+            f"EPM_ZOMBIE_WRAPPER_REAP alert-only fallback); stop manually with "
+            f"`spawn_session.py stop --session-id {sid}`, or restore the default "
+            f"reap on the watcher cron. Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-noneps-alert",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=new_missed,
+                alerted=True,
+                pid=pid,
+                issue=None,
+                first_miss_ts=first_miss_ts,
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor.
+    if not dry_run:
+        _save_zombie_state(
+            sid,
+            missed=new_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            issue=None,
+            first_miss_ts=first_miss_ts,
+        )
+
+
+def _save_unresolvable_state(sid: str, pid: int, now: float) -> None:
+    """Minimal per-sid dedup payload for the unresolvable-cwd age report
+    (#1039), written atomically (tmp + rename) to the SAME
+    ``zombie-wrapper-<sid>.json`` path. Deliberately NOT
+    :func:`_save_zombie_state`: writing no ``first_miss_ts`` / ``missed``
+    means a later lane transition (metadata appears) starts a FRESH episode
+    via the loaders' defaults — an unresolvable-era timestamp can never
+    shortcut a 7d grace. The existing live-sid-keyed GC reaps the file when
+    the sid leaves the live set."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _zombie_state_path(sid)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({"unresolvable_alerted_ts": now, "pid": pid}, indent=2))
+    tmp.replace(dest)
+
+
+def _report_unresolvable_wrapper(
+    sid: str,
+    pid: int,
+    now: float,
+    dry_run: bool,
+    *,
+    grace_s: float,
+    children_map: dict[int, list[int]],
+) -> None:
+    """Escalate-only age report (#1039) for a live session whose cwd cannot
+    be resolved (sid absent from sessions.json / no ``metadata.path``):
+    EPS-ness is genuinely unknowable, so the watcher's fail-toward-keep
+    posture forbids any destructive action — one stdout line every tick,
+    plus ONE deduped durable fallback row per episode once the wrapper
+    process age crosses ``grace_s``. NEVER auto-stopped. Lane-flap dedup
+    residual (accepted, fail-toward-keep): a sessions.json flap
+    (unresolvable -> resolvable -> unresolvable) re-starts the episode and
+    may re-emit one durable row. Age-unreadable -> stdout only (nothing
+    durable to age-report). Every state write is gated ``if not dry_run:``
+    — a dry-run tick never pre-consumes the dedup."""
+    start = proc_start_epoch(pid)
+    age_s = now - start if start is not None else None
+    has_claude = _has_claude_descendant(pid, children_map)
+    tty = _wrapper_has_controlling_tty(pid)  # informational only — never gates anything here
+    age_label = f"{age_s / 86400:.1f}d" if age_s is not None else "?"
+    print(
+        f"  session {sid} (pid={pid}): cwd UNRESOLVABLE (no sessions.json metadata) — "
+        f"wrapper_age={age_label} has_claude={has_claude} tty={tty}; "
+        f"escalate-only, never auto-stopped"
+    )
+    if age_s is None or age_s < grace_s:
+        return
+    prev = _load_zombie_state(sid)
+    if prev.get("unresolvable_alerted_ts"):
+        return
+    _append_zombie_fallback_event(
+        f"unresolvable-cwd Happy session {sid} (wrapper pid {pid}) has NO "
+        f"sessions.json cwd metadata and its wrapper process is {age_label} old "
+        f"(has_claude={has_claude} tty={tty}). EPS-ness cannot be established, so "
+        f"the zombie-wrapper pass will NEVER auto-stop it (#1039 unresolvable "
+        f"bucket) — sweep manually with `spawn_session.py stop --session-id {sid}` "
+        f"if it is abandoned. Posted once per episode.",
+        dry_run,
+    )
+    if not dry_run:
+        _save_unresolvable_state(sid, pid, now)
+
+
 def zombie_wrapper_pass(
     dry_run: bool,
     threshold: int,
@@ -18191,10 +18512,17 @@ def zombie_wrapper_pass(
     now: float | None = None,
 ) -> None:
     """Auto-stop daemon-tracked Happy sessions whose process tree has carried
-    no inner Claude process for >= ``threshold`` checks AND >= the grace
-    window — REGARDLESS of issue mapping (the gap every registry-/cwd-keyed
-    pass shares). Exclusions: PM-registered sids, non-EPS cwds, and
-    issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+    no inner Claude process for >= ``threshold`` checks AND >= the lane's
+    grace window — REGARDLESS of issue mapping (the gap every registry-/
+    cwd-keyed pass shares). Four-way classification (#1039): PM (skipped,
+    checked first) / EPS cwd (the original lane, 2h grace, byte-identical) /
+    non-EPS cwd (stop-eligible under STRICTER gates — 7d grace + live-TTY
+    guard + wrapper-age belt + not-registry-mapped; alert-only under either
+    ``EPM_ZOMBIE_WRAPPER_REAP=0`` or ``EPM_ZOMBIE_NONEPS_REAP=0``) /
+    unresolvable cwd (no sessions.json metadata — escalate-only age report,
+    NEVER stopped). Issue-mapped EPS sessions at
+    :data:`ZOMBIE_STATUS_EXCLUDE` statuses stay excluded; a registry-mapped
+    sid with a non-EPS cwd is contradictory metadata and is kept.
 
     Daemon-gated like the respawn pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
@@ -18223,36 +18551,46 @@ def zombie_wrapper_pass(
     pm_sids = _load_pm_session_ids()
     project_prefix = str(PROJECT_ROOT)
     candidates: list[tuple[str, int, int | None]] = []
+    noneps_candidates: list[tuple[str, int, str]] = []
+    unresolvable: list[tuple[str, int]] = []
     skipped_pm = 0
-    skipped_non_eps = 0
+    skipped_contradictory = 0
     for child in children:
         sid = child.get("happySessionId")
         pid = child.get("pid")
         if not isinstance(sid, str) or not sid or not isinstance(pid, int):
             continue
-        if sid in pm_sids:
+        if sid in pm_sids:  # PM first, upstream of any cwd classification
             skipped_pm += 1
             continue
         path = (meta.get(sid) or {}).get("path")
-        if not isinstance(path, str) or not (
-            path == project_prefix or path.startswith(project_prefix + "/")
-        ):
-            # Non-EPS cwd (other projects) or no cwd metadata at all: never
-            # touched — EPS-ness cannot be established, so err toward keep.
-            skipped_non_eps += 1
-            continue
-        issue = registry_map.get(sid)
-        if issue is None:
-            issue = _infer_issue_from_path(path)
-        candidates.append((sid, pid, issue))
+        cls = _classify_session_cwd(path, project_prefix)
+        if cls == "eps":
+            issue = registry_map.get(sid)
+            if issue is None:
+                issue = _infer_issue_from_path(path)
+            candidates.append((sid, pid, issue))
+        elif cls == "non-eps":
+            if registry_map.get(sid) is not None:
+                # Registry-mapped but a non-EPS cwd: contradictory metadata —
+                # fail toward keep, never process under either lane.
+                skipped_contradictory += 1
+                continue
+            noneps_candidates.append((sid, pid, path))
+        else:
+            unresolvable.append((sid, pid))
 
     reap = _zombie_wrapper_reap_enabled()
+    noneps_reap = reap and _zombie_noneps_reap_enabled()
     print(
-        f"zombie-wrapper: {len(candidates)} EPS session(s) scanned "
-        f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
-        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'})"
+        f"zombie-wrapper: {len(candidates)} EPS + {len(noneps_candidates)} non-EPS "
+        f"session(s) scanned ({skipped_pm} PM-registered skipped; "
+        f"{len(unresolvable)} unresolvable-cwd age-reported; "
+        f"{skipped_contradictory} contradictory-metadata kept; "
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'}; "
+        f"noneps_reap={'ON' if noneps_reap else 'OFF — alert-only'})"
     )
-    if not candidates:
+    if not (candidates or noneps_candidates or unresolvable):
         return
     children_map = _proc_children_map()
     for sid, pid, issue in sorted(candidates):
@@ -18264,6 +18602,33 @@ def zombie_wrapper_pass(
             dry_run,
             threshold,
             reap_enabled=reap,
+            children_map=children_map,
+        )
+    if noneps_candidates:
+        # Lazy: one tmux subprocess + one knob read, only when the lane is
+        # non-empty (idle-unmapped already pays this every tick).
+        detached_tmux_ttys, _ = _detached_tmux_panes_with_activity()
+        check_orphaned = _orphaned_tmux_reap_enabled()
+        for sid, pid, path in sorted(noneps_candidates):
+            _process_zombie_wrapper_noneps(
+                sid,
+                pid,
+                path,
+                now,
+                dry_run,
+                threshold,
+                reap_enabled=noneps_reap,
+                children_map=children_map,
+                detached_tmux_ttys=detached_tmux_ttys,
+                check_orphaned=check_orphaned,
+            )
+    for sid, pid in sorted(unresolvable):
+        _report_unresolvable_wrapper(
+            sid,
+            pid,
+            now,
+            dry_run,
+            grace_s=_zombie_noneps_grace_s(),
             children_map=children_map,
         )
 
@@ -22354,12 +22719,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # and consumes the shared reaper snapshot IN PLACE.
     stale_registration_pass(args.dry_run, children=reaper_children)
 
-    # Zombie-wrapper: stop daemon-tracked EPS sessions whose process tree has
-    # carried NO inner Claude process for >= threshold checks AND >= the 2h
-    # grace window — regardless of issue mapping (the class every registry-/
-    # cwd-keyed pass above structurally misses: 25 unmapped "running" zombies
-    # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
-    # mapped-at-active-status sessions are never touched. Daemon-gated.
+    # Zombie-wrapper: stop daemon-tracked sessions whose process tree has
+    # carried NO inner Claude process for >= threshold checks AND >= the
+    # lane's grace window — regardless of issue mapping (the class every
+    # registry-/cwd-keyed pass above structurally misses: 25 unmapped
+    # "running" zombies accumulated by 2026-06-11). EPS cwds reap at the 2h
+    # grace (unchanged); non-EPS cwds (#1039) reap at 7d + no live user TTY
+    # + wrapper-age belt; unresolvable cwds are age-reported, NEVER stopped.
+    # PM-registered sids, mapped-at-active-status EPS sessions, and
+    # registry-mapped-but-non-EPS-cwd (contradictory) sessions are never
+    # touched. Daemon-gated.
     zombie_wrapper_pass(
         args.dry_run,
         args.threshold,
