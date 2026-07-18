@@ -3,3 +3,4 @@
 {"ts": "2026-07-18T23:06:59Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-18T23:15:56Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v1. No overridden checks."}
 {"ts": "2026-07-18T23:22:00Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v2 (fact-checker corrections: A6 _PROVENANCE_HINT_KEYS wandb_run_names carryover; A9 #1489 v1 value is a 64-entry LIST; +5th pin test). Fact-check: 10 CONFIRMED, 2 WRONG-in-detail corrected."}
+{"ts": "2026-07-18T23:22:24Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics."}
