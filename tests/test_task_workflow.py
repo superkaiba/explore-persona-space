@@ -5115,3 +5115,86 @@ def test_reap_kill_switch(fake_repo, monkeypatch):
     assert rep.actions == []
     assert husk.is_dir()
     assert not _husk_sidecar_rows(repo)
+
+
+# ─── keep_running_tag_state (#1485) ─────────────────────────────────────────
+
+
+def _tw():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    return tw
+
+
+def _raiser(exc: Exception):
+    def _fake_get_task(task_id: int):
+        raise exc
+
+    return _fake_get_task
+
+
+@pytest.mark.parametrize(
+    ("get_task_behavior", "expected"),
+    [
+        # Tag present → True.
+        ("tag-present", True),
+        # Tag absent → False.
+        ("tag-absent", False),
+        # tags is not a list (corrupt-but-parseable frontmatter) → False.
+        ("tags-not-a-list", False),
+        # Task does not exist (registry miss / ad-hoc pod) → False (fail-open).
+        ("file-not-found", False),
+        # StaleTaskPathError subclasses FileNotFoundError — MUST be caught
+        # FIRST (narrowest-first ordering) and map to None (unknowable).
+        ("stale-task-path", None),
+        # Branch-guard / git failures → None.
+        ("runtime-error", None),
+        # Corrupt frontmatter / JSONDecodeError → None.
+        ("value-error", None),
+        # Plain OSError (permission, IO) → None — #1485 acceptance
+        # criterion 4 names it in the fail-closed tuple.
+        ("os-error", None),
+    ],
+)
+def test_keep_running_tag_state_tristate(monkeypatch, get_task_behavior, expected):
+    """#1485: the tri-state reader maps every get_task outcome onto the
+    documented True/False/None lattice. Executes the REAL reader body — the
+    fake replaces only ``get_task`` (the filesystem/registry boundary), with
+    a signature-conformant single-arg callable."""
+    tw = _tw()
+
+    if get_task_behavior == "tag-present":
+        fake = lambda task_id: {  # noqa: E731
+            "id": task_id,
+            "frontmatter": {"tags": ["mentor-dan", tw.KEEP_RUNNING_TAG]},
+            "body": "",
+        }
+    elif get_task_behavior == "tag-absent":
+        fake = lambda task_id: {"id": task_id, "frontmatter": {"tags": []}, "body": ""}  # noqa: E731
+    elif get_task_behavior == "tags-not-a-list":
+        fake = lambda task_id: {  # noqa: E731
+            "id": task_id,
+            "frontmatter": {"tags": "keep-running"},
+            "body": "",
+        }
+    elif get_task_behavior == "file-not-found":
+        fake = _raiser(FileNotFoundError("no task"))
+    elif get_task_behavior == "stale-task-path":
+        fake = _raiser(tw.StaleTaskPathError("body.md missing"))
+    elif get_task_behavior == "runtime-error":
+        fake = _raiser(RuntimeError("branch guard: HEAD is not main"))
+    elif get_task_behavior == "value-error":
+        fake = _raiser(ValueError("corrupt frontmatter"))
+    else:
+        fake = _raiser(OSError("io failure"))
+
+    monkeypatch.setattr(tw, "get_task", fake)
+    assert tw.keep_running_tag_state(1485) is expected
+
+
+def test_keep_running_tag_constant_value():
+    """The canonical tag literal — pod_lifecycle mirrors it via its own
+    ``_KEEP_RUNNING_TAG`` (parity pinned in tests/test_pod_lifecycle.py)."""
+    tw = _tw()
+    assert tw.KEEP_RUNNING_TAG == "keep-running"
