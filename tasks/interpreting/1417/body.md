@@ -158,7 +158,7 @@ The fit module documents this GCV grid-minimum failure with two mitigations; the
 
 ### Every Distinct verdict divided a positive numerator by a broken negative ceiling — both lane headlines are unsupported
 
-Each verdict divides two quantities, plotted here per battery pair at layer 19 (context arm): the within-reference ceiling (the recovery-fraction denominator) and the composed-transport numerator, with per-pair n and the full-n anchors marked.
+Each verdict is the ratio of two quantities, plotted per battery pair at layer 19 (context arm): the within-reference ceiling (denominator) and the composed-transport numerator, with per-pair n and full-n anchors marked.
 
 ![Per-pair ceiling and composed-transport numerator at layer 19 for all battery pairs, both models](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86a84357fa8a4864a89e8a49a51f93bd50770ba8/figures/issue_1417/ceiling_vs_numerator.png)
 
@@ -192,9 +192,9 @@ The two positive chat-reference ceilings (+0.077, +0.306) sit far below their 0.
 
 </details>
 
-Every Distinct verdict divides a healthy positive numerator by a broken negative ceiling; every instruct Shared verdict divides two broken negatives. The base-lane "user-directed-only" headline — a table lookup on the (rude, exposition) verdict pair — is void twice over: its exposition-Distinct inputs are denominator artifacts (numerators +0.409/+0.436, roughly 75% of the full-n anchors — if anything Shared-leaning), and its rude-Shared input comes from an exploratory 516-row content-collapsed cell whose own map read −0.002.
+Every Distinct verdict divides a healthy positive numerator by a broken negative ceiling; every instruct Shared verdict divides two broken negatives. The base-lane "user-directed-only" headline (a lookup on the rude + exposition verdict pair) is void twice over: its exposition-Distinct inputs are denominator artifacts (numerators +0.409/+0.436, roughly 75% of the full-n anchors — if anything Shared-leaning), and its rude-Shared input comes from an exploratory 516-row content-collapsed cell whose own map read −0.002.
 
-The instruction-presence-vs-chat pairs are broken in both lanes, so the plan's re-anchoring rule (re-grade a cell against the instruction-matched reference when the helpful-instruction-vs-chat pair itself reads non-Shared) could not have been applied honestly either. Numerators reach 82–98% of anchors wherever the cell's own map is healthy — leaning against a strong distinct-map claim for any cell, but ungraded until the refit.
+The instruction-presence-vs-chat pairs are broken in both lanes, so the plan's re-anchoring rule (re-grade against the instruction-matched reference when its own vs-chat pair reads non-Shared) could not have been applied honestly either. Numerators reach 82–98% of anchors wherever the cell's own map is healthy — leaning against any strong distinct-map claim, ungraded until the refit.
 
 ### The rude-but-informative cell failed its manipulation checks in both lanes
 
