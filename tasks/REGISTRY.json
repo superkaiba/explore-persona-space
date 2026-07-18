@@ -1685,8 +1685,8 @@
     "1216": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1216",
-      "status": "approved",
+      "path": "tasks/running/1216",
+      "status": "running",
       "title": "daily-held: arm the #864 zombie namespace veto"
     },
     "1217": {
