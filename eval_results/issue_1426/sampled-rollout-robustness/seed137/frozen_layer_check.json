@@ -1,0 +1,16 @@
+{
+  "dv": "sampled-seed frozen-layer re-derivation vs the primary index (amendment plan v4 \u00a74.2 item 5)",
+  "primary": {
+    "avg_q": 12,
+    "indiv": 24
+  },
+  "reread": {
+    "avg_q": 12,
+    "indiv": 24
+  },
+  "match": {
+    "avg_q": true,
+    "indiv": true
+  },
+  "note": "on mismatch the pinned-index reads at the PRIMARY indices carry the headline; the mismatch is a reported diagnostic, never a stop (parent v4 convention)"
+}
