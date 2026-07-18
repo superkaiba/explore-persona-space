@@ -9889,7 +9889,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/958",
       "status": "awaiting_promotion",
-      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, and at matched ridge shrinkage the turn-1 map also transfers positively to turns 5 through 8 (MODERATE confidence)"
+      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, and the turn-1 exception is an artifact \u2014 exact-duplicate first messages on the main panel, ridge-shrinkage mismatch on the long panel \u2014 so near-stationarity extends to turn 1 (MODERATE confidence)"
     },
     "959": {
       "has_clean_result": false,
