@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1492,
+  "highest_id": 1493,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3839,6 +3839,13 @@
       "path": "tasks/running/1492",
       "status": "running",
       "title": "workflow-fix: gotchas.md bullet \u2014 SAE reference-eval token-pool semantics (remove_bos + outlier filter)"
+    },
+    "1493": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1493",
+      "status": "proposed",
+      "title": "daily-fix: extend squash-first merge routing to experiments"
     },
     "15": {
       "has_clean_result": false,
