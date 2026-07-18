@@ -3791,8 +3791,8 @@
     "1487": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1487",
-      "status": "reviewing",
+      "path": "tasks/completed/1487",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body Check 40 misses subpath (N files) counts under unlinked backtick prefixes"
     },
     "1488": {
