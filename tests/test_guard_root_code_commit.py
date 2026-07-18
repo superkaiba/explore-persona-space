@@ -28,6 +28,10 @@ Case ids A1-A12 / B1-B14 / W1 are the plan #1500 §6.1 acceptance matrix
 token/flag scan, so a ``#`` inside the commit message — the repo-standard
 ``-m "task #N: ..."`` — silently discarded same-clause pathspecs and a
 post-message ``-a``; concern ``hash-in-message-defeats-clause-token-scan``).
+B16*/B17/A14 + the per-span-shape battery were added in round 3 (the CLASS
+fix: string-literal spans are masked on a scan copy before the clause split
+and token/flag/pathspec scan; concern
+``quoted-message-seams-defeat-clause-scan``).
 """
 
 from __future__ import annotations
@@ -357,6 +361,134 @@ def test_b15b_post_message_dash_a_after_hash_bearing_message_blocks(
     must still be seen by the flag scan."""
     repo = _tracked_modified_unstaged_repo(tmp_path)
     _assert_blocked(_run('git commit -m "task #9: fix" -a', repo, cert))
+
+
+# ---------------------------------------------------------------------------
+# Round 3 — string-literal masking class fix (concern
+# quoted-message-seams-defeat-clause-scan). B16*/B17/A14 are the round-2
+# review's demonstrated mis-parse shapes (probes S1-S5), each verified
+# fail-pre-fix (round-2 hook b98f2393eb: exit 0) / pass-post-fix (exit 2).
+# ---------------------------------------------------------------------------
+def test_b16_semicolon_in_message_keeps_pathspec(tmp_path: Path, cert: Path) -> None:
+    """Probe S1: a ``;`` inside the quoted message must not split the clause
+    and drop the same-clause pathspec (silent allow)."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f'git commit -m "update; refactor" {GATED}', repo, cert))
+
+
+def test_b16a_double_ampersand_in_message_keeps_pathspec(tmp_path: Path, cert: Path) -> None:
+    """Probe S2: same class, ``&&`` inside the quoted message."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f'git commit -m "fix A && B" {GATED}', repo, cert))
+
+
+def test_b16b_heredoc_message_keeps_pathspec(tmp_path: Path, cert: Path) -> None:
+    """Probe S3: the repo-canonical heredoc message form — its NEWLINES must
+    not split the clause and drop the trailing pathspec."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    cmd = f"git commit -m \"$(cat <<'EOF'\nupdate; refactor && more\nEOF\n)\" {GATED}"
+    _assert_blocked(_run(cmd, repo, cert))
+
+
+def test_b16c_post_message_dash_a_after_separator_message(tmp_path: Path, cert: Path) -> None:
+    """Probe S4: a post-message ``-a`` after a ``;``-bearing message must
+    still be seen by the flag scan."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run('git commit -m "update; refactor" -a', repo, cert))
+
+
+def test_b17_dash_c_mention_in_message_does_not_waive(code_repo: Path, cert: Path) -> None:
+    """Probe S5: a ``git -C`` MENTION inside the quoted message must not waive
+    the whole clause (staged gated payload; control = B1 blocks)."""
+    _assert_blocked(
+        _run('git commit -m "docs: use git -C $WT commit for worktrees"', code_repo, cert)
+    )
+
+
+def test_a14_commit_then_scripts_tool_compound_allowed(art_repo: Path, cert: Path) -> None:
+    """Over-collection guard: the common commit-then-post-marker compound must
+    stay allowed — the second clause's ``scripts/task.py`` is not verb-anchored
+    and must not be collected (per-clause scan, never a whole-command scan)."""
+    _assert_allowed(
+        _run(
+            "git commit -m x tasks/t.md && "
+            "uv run python scripts/task.py post-marker 9 epm:progress --note done",
+            art_repo,
+            cert,
+        )
+    )
+
+
+# Per-span-shape battery: for each string-literal shape, (a) literal content
+# carrying separators + a gated-looking path + ``-a`` + a ``git -C`` mention
+# contributes NO tokens (allowed on the tracked-modified-unstaged repo, where
+# any spurious pathspec / ``-a`` / clause split WOULD change the verdict), and
+# (b) a genuine pathspec OUTSIDE the literal still parses (blocked). The pair
+# is sharp in both directions: (a) fails if literal content leaks into the
+# scan; (b) fails if the literal swallows/splits away real tokens or waives
+# the clause.
+_SPAN_MESSAGES = [
+    (
+        "double_quoted",
+        '-m "update; more && x | y & z -a scripts/fake_gated.py git -C /elsewhere #9"',
+    ),
+    ("double_quoted_multiline", '-m "line one\nline two -a scripts/fake_gated.py"'),
+    ("single_quoted", "-m 'update; more && -a scripts/fake_gated.py git -C /elsewhere'"),
+    ("escaped_quotes_in_double", r'-m "say \"scripts/fake_gated.py; -a\" ok"'),
+    ("escaped_chars_unquoted", r"-m update\;\ -a\ scripts/fake_gated.py"),
+    ("dollar_paren_in_double", "-m \"$(echo 'scripts/fake_gated.py; -a')\""),
+    (
+        "heredoc_in_dollar_paren",
+        "-m \"$(cat <<'EOF'\nupdate; -a scripts/fake_gated.py git -C /x\nEOF\n)\"",
+    ),
+    ("ansi_c_quoted", r"-m $'update;\n-a scripts/fake_gated.py'"),
+    ("backtick_in_double", '-m "ver `echo x; echo scripts/fake_gated.py -a`"'),
+]
+
+
+@pytest.mark.parametrize("msg", [m for _, m in _SPAN_MESSAGES], ids=[n for n, _ in _SPAN_MESSAGES])
+def test_span_battery_literal_content_contributes_no_tokens(
+    msg: str, tmp_path: Path, cert: Path
+) -> None:
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_allowed(_run(f"git commit {msg}", repo, cert))
+
+
+@pytest.mark.parametrize("msg", [m for _, m in _SPAN_MESSAGES], ids=[n for n, _ in _SPAN_MESSAGES])
+def test_span_battery_genuine_pathspec_outside_literal_still_blocks(
+    msg: str, tmp_path: Path, cert: Path
+) -> None:
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f"git commit {msg} {GATED}", repo, cert))
+
+
+def test_genuine_trailing_comment_contributes_no_tokens(tmp_path: Path, cert: Path) -> None:
+    """Round-3 flip of the round-2 documented over-collection: a genuine shell
+    comment is dropped by the masker (comments are not command arguments), so
+    a gated path / ``-a`` named in a real comment no longer false-blocks."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_allowed(_run(f"git commit -m x # split {GATED} later; then -a", repo, cert))
+
+
+def test_pathspec_before_genuine_trailing_comment_still_blocks(tmp_path: Path, cert: Path) -> None:
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f"git commit -m x {GATED} # note", repo, cert))
+
+
+def test_quoted_env_assignment_with_separator_before_commit_blocks(
+    tmp_path: Path, cert: Path
+) -> None:
+    """Same string-literal class, lead-anchor half: a quoted env-assignment
+    value carrying a ``;`` used to SPLIT the clause so the commit never
+    classified (silent allow); masked, the wrapper prefix matches and the
+    pathspec is collected."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f'MSG="a; b" git commit -m x {GATED}', repo, cert))
+
+
+def test_quoted_env_assignment_value_contributes_no_tokens(tmp_path: Path, cert: Path) -> None:
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_allowed(_run('MSG="a; b scripts/fake_gated.py -a" git commit -m x', repo, cert))
 
 
 def test_b14_gated_path_with_space_blocks(tmp_path: Path, cert: Path) -> None:
