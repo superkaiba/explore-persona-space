@@ -767,7 +767,7 @@ conversation resumable via `claude --resume` (transcripts persist on disk).
 **Orphan-wrapper /proc sweep (task #1215, `orphan_wrapper_pass`; ESCALATE-ONLY
 by default).** The daemon-INDEPENDENT enumeration complement of the
 zombie-wrapper pass: every session reaper above sources its pids/sids from the
-Happy daemon `/list`, so a wrapper or launcher process the daemon no longer
+Happy daemon /list, so a wrapper or launcher process the daemon no longer
 tracks — the 2026-07-01 incident's 31 zombie wrappers (~4.8 GB RSS, 1-7 days
 old) and a 54-day init-parented `claude_local_launcher.cjs` (recorded in
 #818's body) — is invisible to ALL of them forever (#818 fixed the
