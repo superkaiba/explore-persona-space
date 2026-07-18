@@ -4061,8 +4061,8 @@
     "1520": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1520",
-      "status": "reviewing",
+      "path": "tasks/completed/1520",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body brace-expanded HF path resolution against adjacent /tree pins"
     },
     "1521": {
