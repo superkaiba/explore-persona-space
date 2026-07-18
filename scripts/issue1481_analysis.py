@@ -7,8 +7,12 @@ Three phases, each checkpointed to its own JSON under ``--out-dir``:
   round ladders + the reused #1434 casual seed-42 cells + the 12 reused
   fu4/fu5/fu7 committed con arms) via the §4.5 primitives in
   ``issue1481_cells`` — plus the marker verdict arms / dose-match when
-  ``--marker-root`` is given. Emits the ``panel_dispatch`` hints Phase C
-  consumes (``--arms`` run ids + the reused ``--ckpt-map`` arm ids).
+  ``--marker-root`` is given. A contingent-REGEN round's fresh ladder
+  (``i1481{imp,syc}regen_ladders.json``) SUPERSEDES the committed parent for
+  its arm (plan §4.6 ladder-of-record); a P1-flagged arm with NO regen record
+  fails loud — the committed selection is never silently reused. Emits the
+  ``panel_dispatch`` hints Phase C consumes (``--arms`` run ids + the reused
+  ``--ckpt-map`` arm ids; regen'd arms ride ``--arms``).
 - ``judge``   : judges the Phase-C panel generations (+ the shared base
   panel) with the per-behavior registered instrument (casual = the verbatim
   pv trait rubric via ``c1434.pv_judge_fn``; impolite / sycophancy =
@@ -58,6 +62,7 @@ import issue1481_cells as cells  # noqa: E402
 
 from explore_persona_space.artifacts import negatives as neg_mod  # noqa: E402
 from explore_persona_space.artifacts.organisms import _sha256_text  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 logger = logging.getLogger("issue1481.analysis")
 
@@ -97,9 +102,14 @@ def _ts() -> str:
 class SelectPaths:
     """Input roots for the select phase (fixture-overridable for smokes)."""
 
-    ladders_dir: Path  # fresh round ladders (i1481*_ladders.json)
+    ladders_dir: Path  # fresh round + regen ladders (i1481*_ladders.json)
     repo_root: Path  # resolves the reused #1434 / fu4 / fu5 / fu7 ladder paths
     marker_root: Path | None  # marker out_root (per-run selection.json + ladder.json)
+    # P1 reread records dir (per-arm <arm_id>.json + reread_summary.json);
+    # None -> <repo_root>/data/issue_1481/cells/reread (the dispatcher default),
+    # with a per-arm HF-copy staging fallback (issue1481_conpos_grid/
+    # raw_completions/reread) — see _reread_flag.
+    reread_dir: Path | None = None
 
 
 def _ladders_runs(path: Path) -> dict[str, dict]:
@@ -118,13 +128,73 @@ def _ladders_runs(path: Path) -> dict[str, dict]:
     return runs
 
 
+def _regen_ladders_path(paths: SelectPaths, beh_key: str) -> Path:
+    """The behavior's contingent-regen ladders JSON (fu4 writes it beside the
+    fresh round ladders under the round's deliverables dir — plan §4.6)."""
+    return paths.ladders_dir / f"{cells.regen_round_name(beh_key)}_ladders.json"
+
+
+def _regen_record(paths: SelectPaths, beh_key: str, arm_id: str) -> dict | None:
+    """The regen round's fresh run record for one reused con grid slot, or
+    None when the behavior's regen ladders JSON is absent / does not carry the
+    arm (only the P1-flagged arm(s) named by the explicit regen dispatch enter
+    that JSON; the other reused arms stay on their committed parents)."""
+    if cells.regen_round_name(beh_key) not in cells.REGEN_ROUND_NAMES:
+        return None  # cas: no regen rounds by design (plan §4.6)
+    path = _regen_ladders_path(paths, beh_key)
+    if not path.exists():
+        return None
+    rec = _ladders_runs(path).get(arm_id)
+    if rec is None or "selection" not in rec:
+        return None
+    return rec
+
+
+def _reread_flag(paths: SelectPaths, arm_id: str) -> bool:
+    """One reused con arm's P1 ``contingent_regen_triggered`` flag (plan §4.6).
+
+    Reads the per-arm reread record first (each ``reread_summary.json`` only
+    carries its OWN invocation's arms, so the per-arm files are the durable
+    per-arm evidence), then the summary, then stages the per-arm HF copy
+    (``issue1481_conpos_grid/raw_completions/reread/<arm_id>.json``).
+    FAIL-LOUD when unresolvable: a committed selection may be trusted only
+    with gate-P1 evidence that the arm was NOT flagged."""
+    root = paths.reread_dir or (paths.repo_root / "data" / "issue_1481" / "cells" / "reread")
+    per_arm = root / f"{arm_id}.json"
+    if not per_arm.exists():
+        summary_path = root / "reread_summary.json"
+        if summary_path.exists():
+            rec = (_read_json(summary_path).get("arms") or {}).get(arm_id)
+            if rec is not None:
+                return bool(rec.get("contingent_regen_triggered"))
+        try:
+            hub.stage_hub_file(
+                run1090.HF_DATA_REPO,
+                f"{cells.DATA_PREFIX_1481}/raw_completions/reread/{arm_id}.json",
+                per_arm,
+                repo_type="dataset",
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"[i1481-select] {arm_id}: no P1 reread evidence (looked for {per_arm}, "
+                f"{summary_path}, and the HF copy under "
+                f"{cells.DATA_PREFIX_1481}/raw_completions/reread) — run the P1 rereads "
+                "(--dispatch <group>) before Phase B; refusing to trust a committed "
+                "selection without gate-P1 evidence (plan §4.6)"
+            ) from e
+    return bool(_read_json(per_arm).get("contingent_regen_triggered"))
+
+
 def _arm_record(paths: SelectPaths, beh_key: str, ctx_key: str, regime: str, lr: float, seed: int):
     """(arm_id, selection, rates_by_step, source) for one grid arm.
 
     Fresh arms read the i1481 round ladders; reused casual seed-42 arms read
     the committed #1434 ladders; the 12 reused fu4/fu5/fu7 con arms read
     their committed parent ladders (the committed selected rung IS the arm's
-    selection read — plan §4.6 gate P1)."""
+    selection read — plan §4.6 gate P1) UNLESS a contingent-regen record
+    exists, which SUPERSEDES the committed parent (the regen ladder is the
+    cell's ladder of record); a P1-flagged arm with no regen record fails
+    loud instead of silently reusing the superseded committed selection."""
     tag = fu4.LR_TAG[lr]
     arm_id = f"{beh_key}-{ctx_key}-{regime}-{tag}-s{seed}"
     if not cells.is_reused(beh_key, ctx_key, regime, lr, seed):
@@ -141,6 +211,23 @@ def _arm_record(paths: SelectPaths, beh_key: str, ctx_key: str, regime: str, lr:
             raise RuntimeError(f"[i1481-select] reused #1434 arm {src_id} missing from {path}")
         return arm_id, rec["selection"], rec.get("rates_by_step") or {}, "reused-1434"
     arm = cells.REUSED_CON_ARM_BY_ID[arm_id]
+    regen = _regen_record(paths, beh_key, arm_id)
+    if regen is not None:
+        logger.warning(
+            "[i1481-select] %s: regen ladder %s SUPERSEDES the committed parent %s "
+            "(plan §4.6 — the P1-triggered regen is the cell's ladder of record)",
+            arm_id,
+            _regen_ladders_path(paths, beh_key),
+            arm.ladders_path,
+        )
+        return arm_id, regen["selection"], regen.get("rates_by_step") or {}, "regen"
+    if _reread_flag(paths, arm_id):
+        raise RuntimeError(
+            f"[i1481-select] {arm_id}: the P1 re-read flagged contingent_regen_triggered but "
+            f"{_regen_ladders_path(paths, beh_key)} carries no regen record — the committed "
+            f"selection in {arm.ladders_path} is SUPERSEDED (plan §4.6); dispatch the regen "
+            f"(--dispatch <group> --runs {arm_id}) before Phase B"
+        )
     rec = _ladders_runs(paths.repo_root / arm.ladders_path).get(arm.source_run_id)
     if rec is None or "selection" not in rec:
         raise RuntimeError(
@@ -263,6 +350,7 @@ def phase_select(args: argparse.Namespace) -> int:
         ladders_dir=Path(args.ladders_dir),
         repo_root=Path(args.repo_root),
         marker_root=Path(args.marker_root) if args.marker_root else None,
+        reread_dir=Path(args.reread_dir) if args.reread_dir else None,
     )
     beh_keys = [b.strip() for b in args.behaviors.split(",") if b.strip()]
     ctx_keys = [c.strip() for c in args.contexts.split(",") if c.strip()]
@@ -318,7 +406,10 @@ def phase_select(args: argparse.Namespace) -> int:
                 }
                 for regime in cells.REGIMES:
                     vid = per_regime[regime]["arm_id"]
-                    if cell["arms"][vid]["source"] == "fresh":
+                    # A regen'd verdict arm rides the FRESH panel path: its
+                    # selected rung lives under the i1481 adapter prefix, not
+                    # the committed parent checkpoint (plan §4.6).
+                    if cell["arms"][vid]["source"] in ("fresh", "regen"):
                         manifest["panel_dispatch"]["fresh_arms"].append(vid)
                     elif vid in cells.REUSED_CON_ARM_BY_ID:
                         manifest["panel_dispatch"]["reused_ckpt_arms"].append(vid)
@@ -1210,6 +1301,12 @@ def _parser() -> argparse.ArgumentParser:
     ps.add_argument("--ladders-dir", default=str(cells.DELIVERABLES_DIR_1481))
     ps.add_argument("--repo-root", default=str(cells.REPO_ROOT))
     ps.add_argument("--marker-root", default=None)
+    ps.add_argument(
+        "--reread-dir",
+        default=None,
+        help="P1 reread records dir (default <repo-root>/data/issue_1481/cells/reread, "
+        "per-arm HF-copy staging fallback)",
+    )
     ps.add_argument("--behaviors", default="cas,imp,syc")
     ps.add_argument("--contexts", default=",".join(cells.CTX_KEYS))
 

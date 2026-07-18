@@ -196,6 +196,13 @@ def _reused_con_arms() -> tuple[ReusedConArm, ...]:
 REUSED_CON_ARMS: tuple[ReusedConArm, ...] = _reused_con_arms()
 REUSED_CON_ARM_BY_ID = {a.arm_id: a for a in REUSED_CON_ARMS}
 assert len(REUSED_CON_ARMS) == 12, len(REUSED_CON_ARMS)
+# Plan §4.6: the 2 committed closest-approach OUT-of-band arms are OUTSIDE the
+# regen trigger (a regen deterministically reproduces the same out-of-band
+# selection) — never registered as regen slots, refused at dispatch.
+NON_REGENERABLE_ARM_IDS: frozenset[str] = frozenset(
+    a.arm_id for a in REUSED_CON_ARMS if not a.committed_in_band
+)
+assert len(NON_REGENERABLE_ARM_IDS) == 2, sorted(NON_REGENERABLE_ARM_IDS)
 
 
 def is_reused(beh_key: str, ctx_key: str, regime: str, lr: float, seed: int) -> bool:
@@ -304,10 +311,12 @@ def regen_round_name(beh_key: str) -> str:
 
 
 def _regen_runs(beh_key: str) -> tuple[fu4.Fu4Run, ...]:
-    """Fresh Fu4Runs for the behavior's reused con seed-42 grid slots (plan
-    §4.6 contingent regen). Recipe-matched to the grid's fresh con arms by
-    construction: same `mix_for(..., "con")` mix prefix/layout (the con mixes
-    are behavior+context-scoped, seed-independent), same fu3 base read, same
+    """Fresh Fu4Runs for the behavior's committed-IN-BAND reused con seed-42
+    grid slots (plan §4.6 contingent regen; the 2 committed closest-approach
+    OUT-of-band arms are outside the regen trigger and never become regen
+    slots). Recipe-matched to the grid's fresh con arms by construction: same
+    `mix_for(..., "con")` mix prefix/layout (the con mixes are
+    behavior+context-scoped, seed-independent), same fu3 base read, same
     r32/α64 rsLoRA content bundle via the round spec — only dispatched by an
     explicit --runs subset naming the P1-flagged arm(s)."""
     behavior = BEHAVIOR_BY_KEY[beh_key]
@@ -315,6 +324,8 @@ def _regen_runs(beh_key: str) -> tuple[fu4.Fu4Run, ...]:
     for arm in REUSED_CON_ARMS:
         if arm.behavior != behavior:
             continue
+        if not arm.committed_in_band:
+            continue  # plan §4.6: out-of-band arms are parity-read only
         bk, ctx_key, regime, tag, seed_tok = arm.arm_id.split("-")
         assert (bk, regime, seed_tok) == (beh_key, "con", "s42"), arm.arm_id
         prefix, layout = mix_for(beh_key, ctx_key, "con")
@@ -340,7 +351,7 @@ REGEN_RUNS_BY_ROUND: dict[str, tuple[fu4.Fu4Run, ...]] = {
 }
 REGEN_ROUND_NAMES: tuple[str, ...] = tuple(REGEN_RUNS_BY_ROUND)
 _N_REGEN = {rn: len(rs) for rn, rs in REGEN_RUNS_BY_ROUND.items()}
-assert _N_REGEN == {"i1481impregen": 9, "i1481sycregen": 3}, _N_REGEN
+assert _N_REGEN == {"i1481impregen": 7, "i1481sycregen": 3}, _N_REGEN
 # Regen run ids are exactly the reused-arm grid slots — disjoint from every
 # FRESH run id by construction (is_reused() skipped them in _content_runs),
 # so adapter run dirs / wandb names / sentinels can never collide.

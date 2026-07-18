@@ -105,7 +105,22 @@ def build_content_fixtures(root: Path) -> dict[str, Path]:
         path = repo_root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"runs": runs}))
-    return {"ladders_dir": ladders_dir, "repo_root": repo_root}
+    # P1 reread evidence (schema-real per-arm records; the worker's
+    # phase_reread shape) — UNFLAGGED, so committed parents stay the ladder
+    # of record for every reused arm the fixtures resolve.
+    reread_dir = root / "reread"
+    reread_dir.mkdir(parents=True, exist_ok=True)
+    for arm in cells.REUSED_CON_ARMS:
+        (reread_dir / f"{arm.arm_id}.json").write_text(
+            json.dumps(
+                {
+                    "arm_id": arm.arm_id,
+                    "committed_in_band": arm.committed_in_band,
+                    "contingent_regen_triggered": False,
+                }
+            )
+        )
+    return {"ladders_dir": ladders_dir, "repo_root": repo_root, "reread_dir": reread_dir}
 
 
 def _completions_file(path: Path, n: int = 2) -> None:
@@ -310,6 +325,8 @@ def pipeline(tmp_path_factory) -> dict:
             str(paths["ladders_dir"]),
             "--repo-root",
             str(paths["repo_root"]),
+            "--reread-dir",
+            str(paths["reread_dir"]),
             "--marker-root",
             str(marker_root),
             "--behaviors",
@@ -395,6 +412,77 @@ def test_select_verdict_arms_and_dose(pipeline):
     assert f"imp-pers-con-{tag}-s42" in dispatch["reused_ckpt_arms"]
     assert f"imp-bare-con-{tag}-s42" in dispatch["reused_ckpt_arms"]
     assert f"imp-pers-con-{tag}-s137" in dispatch["fresh_arms"]
+
+
+def test_select_regen_verdict_arm_rides_fresh_panel_path(tmp_path):
+    """A regen'd VERDICT arm classifies into panel_dispatch.fresh_arms — its
+    selected rung lives under the i1481 adapter prefix, never the committed
+    parent checkpoint / the reused ckpt-map (plan §4.6 ladder-of-record;
+    concern regen-ladder-analysis-integration)."""
+    flagged = "imp-bare-con-lr1e4-s42"  # the live P1 band-exit arm
+    paths = build_content_fixtures(tmp_path)
+    # Committed fu5 parents: lr1e5 + lr3e5 out of band, lr1e4 out of band at
+    # its committed rung -> the regen record below becomes the ONLY in-band
+    # con arm for (bare, s42), making the regen'd arm the verdict arm.
+    fu5 = (
+        paths["repo_root"]
+        / "eval_results/issue_1090/finish-impolite-bare-and-formatting-rank/fu5_ladders.json"
+    )
+    runs = {
+        f"imp-bare-{t}": {
+            "rates_by_step": {"20": r},
+            "selection": {"step": 20, "rate": r, "in_band": False, "fallback": None},
+        }
+        for t, r in (("lr1e5", 0.45), ("lr3e5", 0.90), ("lr1e4", 0.90))
+    }
+    fu5.write_text(json.dumps({"runs": runs}))
+    # Flagged reread record (the live state) + the regen round's fresh ladder.
+    (paths["reread_dir"] / f"{flagged}.json").write_text(
+        json.dumps({"arm_id": flagged, "contingent_regen_triggered": True})
+    )
+    (paths["ladders_dir"] / "i1481impregen_ladders.json").write_text(
+        json.dumps(
+            {
+                "runs": {
+                    flagged: {
+                        "rates_by_step": {"40": 0.72},
+                        "selection": {"step": 40, "rate": 0.72, "in_band": True, "fallback": None},
+                    }
+                }
+            }
+        )
+    )
+    out_dir = tmp_path / "analysis"
+    rc = ana.main(
+        [
+            "select",
+            "--out-dir",
+            str(out_dir),
+            "--ladders-dir",
+            str(paths["ladders_dir"]),
+            "--repo-root",
+            str(paths["repo_root"]),
+            "--reread-dir",
+            str(paths["reread_dir"]),
+            "--behaviors",
+            "imp",
+            "--contexts",
+            "pers,bare",
+        ]
+    )
+    assert rc == 0
+    manifest = json.loads((out_dir / "verdict_manifest.json").read_text())
+    arm = manifest["content"]["imp"]["bare"]["arms"][flagged]
+    assert arm["source"] == "regen"
+    assert arm["selection"]["step"] == 40
+    srec = manifest["content"]["imp"]["bare"]["seeds"]["42"]
+    assert srec["con"]["arm_id"] == flagged
+    assert srec["con"]["rule"] == "lowest_lr_in_band"
+    dispatch = manifest["panel_dispatch"]
+    assert flagged in dispatch["fresh_arms"]
+    assert flagged not in dispatch["reused_ckpt_arms"]
+    # The pers seed-42 con verdict arm stays a reused committed checkpoint.
+    assert "imp-pers-con-lr1e5-s42" in dispatch["reused_ckpt_arms"]
 
 
 def test_judge_aggregate_shape(pipeline):

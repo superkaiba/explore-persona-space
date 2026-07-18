@@ -767,11 +767,25 @@ def _fresh_arm_ckpt(cfg: run1090.RunConfig, run: fu4.Fu4Run, arm_id: str) -> str
     return str(_stage_fresh_rung(spec, arm_id, step, run_root / f"checkpoint-{step}"))
 
 
+def _panel_run_registry() -> dict[str, fu4.Fu4Run]:
+    """Run-id → Fu4Run over the fresh AND contingent-regen registries: a
+    regen'd arm's panel rides the fresh-arm path (its build record + rung
+    uploads live under the same i1481 prefixes; plan §4.6 — the regen ladder
+    is the cell's ladder of record). Regen ids are disjoint from fresh ids by
+    construction (issue1481_cells module-level assert)."""
+    return {
+        r.run_id: r
+        for rs in (*cells.RUNS_BY_ROUND.values(), *cells.REGEN_RUNS_BY_ROUND.values())
+        for r in rs
+    }
+
+
 def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     """Six-context bystander-panel generation at VERDICT arms (plan §4.4
     Phase C; the #1434 phase_panel shape). Two arm forms:
 
-    - fresh-trained arms: ``--arms <run_id,...>`` — the selected checkpoint
+    - fresh-trained arms (incl. contingent-REGEN arms — plan §4.6):
+      ``--arms <run_id,...>`` — the selected checkpoint
       comes from the run's ``<round>_build_result.json``, STAGED from the Hub
       (build record from the run's data prefix, the selected rung from the
       model-repo rung uploads) whenever the Phase-A-local artifacts are absent,
@@ -790,12 +804,12 @@ def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     )
     panel_root = Path(cfg.out_root) / "panel"
     jobs: list[tuple[str, str, str]] = []  # (arm_id, behavior, ckpt_dir)
-    all_run_ids = {r.run_id: r for rs in cells.RUNS_BY_ROUND.values() for r in rs}
+    all_run_ids = _panel_run_registry()
     if args.arms:
         for arm_id in (t.strip() for t in args.arms.split(",") if t.strip()):
             run = all_run_ids.get(arm_id)
             if run is None:
-                raise SystemExit(f"[i1481-panel] unknown fresh run {arm_id!r}")
+                raise SystemExit(f"[i1481-panel] unknown fresh/regen run {arm_id!r}")
             jobs.append((arm_id, run.behavior, _fresh_arm_ckpt(cfg, run, arm_id)))
     if args.ckpt_map:
         for arm_id, ckpt in json.loads(args.ckpt_map).items():
@@ -899,7 +913,8 @@ def _delegate_fu4(argv: list[str]) -> int:
     round_arg = _argv_get(argv, "--round")
     if round_arg is None:
         raise SystemExit(
-            f"delegated phases require --round <name> (one of {sorted(cells.I1481_ROUND_NAMES)})"
+            "delegated phases require --round <name> (one of "
+            f"{sorted(cells.I1481_ROUND_NAMES + cells.REGEN_ROUND_NAMES)})"
         )
     phase = _argv_get(argv, "--phase")
     if phase == "run":
@@ -968,6 +983,13 @@ def _run_dispatch_group(argv: list[str], group: str) -> int:
     runs_arg = _argv_get(argv, "--runs")
     requested = [t.strip() for t in runs_arg.split(",") if t.strip()] if runs_arg else []
     if runs_arg:
+        out_of_band = sorted(set(requested) & cells.NON_REGENERABLE_ARM_IDS)
+        if out_of_band:
+            raise SystemExit(
+                f"[i1481-dispatch] {out_of_band}: committed closest-approach OUT-of-band arms "
+                "are OUTSIDE the regen trigger (plan §4.6: a regen deterministically reproduces "
+                "the same out-of-band selection; parity-read only) — refusing"
+            )
         union = {r.run_id for rn in cells.DISPATCH_ROUNDS[group] for r in fu4.ROUNDS[rn].runs}
         bad = [t for t in requested if t not in union]
         if bad:

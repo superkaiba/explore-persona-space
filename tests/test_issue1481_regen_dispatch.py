@@ -1,16 +1,24 @@
-"""#1481 contingent-regen dispatch registry invariants (plan §4.6 gate P1).
+"""#1481 contingent-regen dispatch + analysis-integration invariants (plan §4.6).
 
-Pins the ALWAYS-EXPLICIT contract: the 12 regen grid slots (the reused con
-seed-42 arms) NEVER enter a default (no --runs) dispatch cohort — full OR
-smoke — and resolve only through an explicit --runs subset, at the exact
-matched grid recipe (same behavior+context-scoped con mix as the fresh con
-arms, seed 42, con round spec verbatim). A regression here silently adds
-12 GPU-expensive ladder rebuilds to every Phase-A group dispatch.
+Pins the ALWAYS-EXPLICIT contract: the 10 regen grid slots (the committed-
+IN-BAND reused con seed-42 arms; the 2 committed closest-approach OUT-of-band
+arms are OUTSIDE the regen trigger — never registered, refused at dispatch)
+NEVER enter a default (no --runs) dispatch cohort — full OR smoke — and
+resolve only through an explicit --runs subset, at the exact matched grid
+recipe (same behavior+context-scoped con mix as the fresh con arms, seed 42,
+con round spec verbatim). A regression here silently adds GPU-expensive
+ladder rebuilds to every Phase-A group dispatch.
+
+Also pins the ANALYSIS-side ladder-of-record routing (concern
+`regen-ladder-analysis-integration`): a regen round's fresh ladder SUPERSEDES
+the committed parent for its arm; a P1-flagged arm with NO regen record fails
+loud; an unflagged arm still resolves from the committed parent.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -21,10 +29,12 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 import issue1090_fu4 as fu4  # noqa: E402
+import issue1481_analysis as ana  # noqa: E402
 import issue1481_cells as cells  # noqa: E402
 import issue1481_worker as w  # noqa: E402
 
 FLAGGED = "imp-bare-con-lr1e4-s42"  # the live P1 band-exit arm (re-read 0.58 < 0.60)
+FU5_REL = "eval_results/issue_1090/finish-impolite-bare-and-formatting-rank/fu5_ladders.json"
 
 
 @pytest.fixture(autouse=True)
@@ -34,16 +44,22 @@ def _registered():
 
 def test_regen_rounds_registered_and_grouped():
     assert cells.REGEN_ROUND_NAMES == ("i1481impregen", "i1481sycregen")
-    for name, n in (("i1481impregen", 9), ("i1481sycregen", 3)):
+    for name, n in (("i1481impregen", 7), ("i1481sycregen", 3)):
         assert name in fu4.ROUNDS
         assert len(fu4.ROUNDS[name].runs) == n
         assert fu4.ROUNDS[name].smoke_default_run == ""
     assert cells.DISPATCH_ROUNDS["impolite"][-1] == "i1481impregen"
     assert cells.DISPATCH_ROUNDS["sycophancy"][-1] == "i1481sycregen"
     assert cells.DISPATCH_ROUNDS["casual-s137"] == ("i1481cas", "i1481caspo")
-    # Regen ids ARE the reused-arm grid slots, disjoint from every fresh id.
+    # Regen ids ARE the committed-IN-BAND reused-arm grid slots — the 2
+    # committed closest-approach OUT-of-band arms are excluded (plan §4.6) —
+    # disjoint from every fresh id.
     regen_ids = {r.run_id for rn in cells.REGEN_ROUND_NAMES for r in fu4.ROUNDS[rn].runs}
-    assert regen_ids == set(cells.REUSED_CON_ARM_BY_ID)
+    assert {
+        "imp-pers-con-lr1e5-s42",
+        "imp-bare-con-lr1e5-s42",
+    } == cells.NON_REGENERABLE_ARM_IDS
+    assert regen_ids == set(cells.REUSED_CON_ARM_BY_ID) - cells.NON_REGENERABLE_ARM_IDS
     fresh_ids = {r.run_id for rs in cells.RUNS_BY_ROUND.values() for r in rs}
     assert not regen_ids & fresh_ids
 
@@ -69,10 +85,15 @@ def test_explicit_runs_resolve_only_the_named_arm():
 def test_regen_recipe_matches_fresh_con_sibling():
     """The regen cell is the matched grid recipe: identical mix prefix/layout,
     context, lr, fu3 base read as its fresh -s137 con sibling; round spec
-    carries the con recipe fields verbatim."""
+    carries the con recipe fields verbatim. The 2 committed OUT-of-band arms
+    are NOT regen slots (plan §4.6)."""
     for arm in cells.REUSED_CON_ARMS:
         beh_key = arm.arm_id.split("-")[0]
-        run = {r.run_id: r for r in fu4.ROUNDS[cells.regen_round_name(beh_key)].runs}[arm.arm_id]
+        regen_by_id = {r.run_id: r for r in fu4.ROUNDS[cells.regen_round_name(beh_key)].runs}
+        if not arm.committed_in_band:
+            assert arm.arm_id not in regen_by_id, arm.arm_id
+            continue
+        run = regen_by_id[arm.arm_id]
         sib = {r.run_id: r for r in fu4.ROUNDS[cells.round_name(beh_key, "con")].runs}[
             arm.arm_id.replace("-s42", "-s137")
         ]
@@ -203,3 +224,161 @@ def test_merge_manifests_fails_loud_on_missing_registered_seed(tmp_path):
     )
     with pytest.raises(FileNotFoundError, match="missing cohort manifest"):
         w.phase_merge_manifests(w.worker_config(args), args)
+
+
+def test_out_of_band_regen_dispatch_refused():
+    """Plan §4.6: the 2 committed closest-approach OUT-of-band arms are outside
+    the regen trigger — an explicit --runs naming one is refused with a
+    §4.6-citing message (not the generic unknown-runs error)."""
+    for arm_id in sorted(cells.NON_REGENERABLE_ARM_IDS):
+        with pytest.raises(SystemExit, match="OUTSIDE the regen trigger"):
+            w._run_dispatch_group(
+                ["--full", "--dispatch", "impolite", "--runs", arm_id], "impolite"
+            )
+
+
+def test_panel_run_registry_covers_regen_ids():
+    """A regen'd verdict arm rides the fresh-arm panel path: the phase_panel
+    run registry resolves regen ids (to their regen-round Fu4Run) alongside
+    every fresh id."""
+    reg = w._panel_run_registry()
+    regen_ids = {r.run_id for rs in cells.REGEN_RUNS_BY_ROUND.values() for r in rs}
+    fresh_ids = {r.run_id for rs in cells.RUNS_BY_ROUND.values() for r in rs}
+    assert regen_ids <= set(reg)
+    assert fresh_ids <= set(reg)
+    for rid in regen_ids:
+        assert reg[rid].round_name in cells.REGEN_ROUND_NAMES, rid
+
+
+# ── Analysis-side ladder-of-record routing (concern
+#    regen-ladder-analysis-integration; plan §4.6) ─────────────────────────────
+
+
+def _committed_fu5_parent(repo_root: Path) -> None:
+    """The REAL committed fu5 record shape (probed 2026-07-18: selection =
+    {"step": 35, "rate": 0.64, "in_band": true, "fallback": null}) with the
+    real committed rates — lr1e5 0.45 OUT of band, lr3e5 0.60 / lr1e4 0.64 in."""
+    runs = {}
+    for tag, rate in (("lr1e5", 0.45), ("lr3e5", 0.60), ("lr1e4", 0.64)):
+        lo, hi = cells.JUDGED_RATE_BAND
+        runs[f"imp-bare-{tag}"] = {
+            "rates_by_step": {"25": 0.58, "35": rate},
+            "selection": {"step": 35, "rate": rate, "in_band": lo <= rate <= hi, "fallback": None},
+        }
+    p = repo_root / FU5_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"runs": runs}))
+
+
+def _reread_record(reread_dir: Path, arm_id: str, flagged: bool) -> None:
+    """Schema-real per-arm P1 reread record (the worker phase_reread shape)."""
+    reread_dir.mkdir(parents=True, exist_ok=True)
+    (reread_dir / f"{arm_id}.json").write_text(
+        json.dumps({"arm_id": arm_id, "contingent_regen_triggered": flagged})
+    )
+
+
+def _regen_ladders(ladders_dir: Path, arm_id: str, step: int, rate: float) -> None:
+    """Fabricated-but-schema-real i1481impregen ladders JSON (fu4 run-record
+    shape — the same shape the fresh i1481 round ladders carry)."""
+    lo, hi = cells.JUDGED_RATE_BAND
+    ladders_dir.mkdir(parents=True, exist_ok=True)
+    (ladders_dir / "i1481impregen_ladders.json").write_text(
+        json.dumps(
+            {
+                "runs": {
+                    arm_id: {
+                        "rates_by_step": {str(step): rate},
+                        "selection": {
+                            "step": step,
+                            "rate": rate,
+                            "in_band": lo <= rate <= hi,
+                            "fallback": None,
+                        },
+                    }
+                }
+            }
+        )
+    )
+
+
+def _select_paths(tmp_path: Path) -> ana.SelectPaths:
+    _committed_fu5_parent(tmp_path / "repo")
+    return ana.SelectPaths(
+        ladders_dir=tmp_path / "ladders",
+        repo_root=tmp_path / "repo",
+        marker_root=None,
+        reread_dir=tmp_path / "reread",
+    )
+
+
+def test_regen_ladder_supersedes_committed_parent(tmp_path, caplog):
+    """A regen record for the flagged arm SUPERSEDES the committed fu5 parent
+    (selection + rates come from the regen ladder, source == 'regen') with a
+    loud log line naming the supersession."""
+    paths = _select_paths(tmp_path)
+    _reread_record(paths.reread_dir, FLAGGED, flagged=True)
+    _regen_ladders(paths.ladders_dir, FLAGGED, step=40, rate=0.72)
+    with caplog.at_level(logging.WARNING, logger="issue1481.analysis"):
+        arm_id, sel, rates, source = ana._arm_record(paths, "imp", "bare", "con", 1e-4, 42)
+    assert (arm_id, source) == (FLAGGED, "regen")
+    assert (sel["step"], sel["rate"], sel["in_band"]) == (40, 0.72, True)
+    assert rates == {"40": 0.72}
+    assert any(FLAGGED in r.message and "SUPERSEDES" in r.message for r in caplog.records), (
+        caplog.text
+    )
+
+
+def test_flagged_arm_without_regen_fails_loud(tmp_path):
+    """A P1-flagged arm with NO regen ladder record must fail loud — never
+    silently fall back to the superseded committed selection (plan §4.6)."""
+    paths = _select_paths(tmp_path)
+    _reread_record(paths.reread_dir, FLAGGED, flagged=True)
+    with pytest.raises(RuntimeError, match="SUPERSEDED"):
+        ana._arm_record(paths, "imp", "bare", "con", 1e-4, 42)
+
+
+def test_unflagged_arm_resolves_from_committed_parent(tmp_path):
+    """An UNFLAGGED reused arm keeps the committed parent as its ladder of
+    record (source == 'reused-parent', the committed fu5 selection)."""
+    paths = _select_paths(tmp_path)
+    _reread_record(paths.reread_dir, "imp-bare-con-lr3e5-s42", flagged=False)
+    arm_id, sel, rates, source = ana._arm_record(paths, "imp", "bare", "con", 3e-5, 42)
+    assert (arm_id, source) == ("imp-bare-con-lr3e5-s42", "reused-parent")
+    assert (sel["step"], sel["rate"]) == (35, 0.60)
+    assert rates["35"] == 0.60
+
+
+def test_missing_reread_evidence_fails_loud(tmp_path, monkeypatch):
+    """No local P1 evidence + no HF copy -> RuntimeError (never a silent
+    committed fallback). The HF staging boundary is faked signature-
+    conformantly (mirrors hub.stage_hub_file) to raise, so no network."""
+
+    def _raise_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+    ):
+        raise FileNotFoundError(f"{repo_id}/{path_in_repo}")
+
+    monkeypatch.setattr(ana.hub, "stage_hub_file", _raise_stage)
+    paths = _select_paths(tmp_path)  # reread_dir exists as a path but holds no records
+    with pytest.raises(RuntimeError, match="no P1 reread evidence"):
+        ana._arm_record(paths, "imp", "bare", "con", 3e-5, 42)
+
+
+def test_reread_flag_falls_back_to_summary(tmp_path):
+    """With no per-arm record, the flag resolves from reread_summary.json's
+    arms dict (the worker writes both)."""
+    paths = _select_paths(tmp_path)
+    paths.reread_dir.mkdir(parents=True, exist_ok=True)
+    (paths.reread_dir / "reread_summary.json").write_text(
+        json.dumps({"arms": {FLAGGED: {"contingent_regen_triggered": True}}})
+    )
+    with pytest.raises(RuntimeError, match="SUPERSEDED"):
+        ana._arm_record(paths, "imp", "bare", "con", 1e-4, 42)
