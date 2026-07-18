@@ -246,8 +246,18 @@ def gate_slice_rows(out_dir: Path) -> dict[tuple[str, str], str]:
     return rows
 
 
+# The single source of the seed-identity FAIL threshold (review-1 minor 2):
+# consumed by ``check_seed_differentiation`` (gate slices, dispatch monitor)
+# AND the figure script's full-corpus ``digest_cross_check``. Byte-identical
+# corpora score 1.0; two INDEPENDENT temperature-0.6 corpora share ~0% of
+# completions, so 0.5 keeps zero false-positive mass while halving the
+# false-negative window (duplicate seeds + vLLM continuous-batching
+# nondeterminism could land between 0.5 and 0.9).
+IDENTICAL_FRAC_MAX = 0.5
+
+
 def check_seed_differentiation(
-    out_a: Path, out_b: Path, *, identical_frac_max: float = 0.9
+    out_a: Path, out_b: Path, *, identical_frac_max: float = IDENTICAL_FRAC_MAX
 ) -> dict:
     """Early per-request-seed differentiation check (critic addition B).
 
@@ -257,9 +267,8 @@ def check_seed_differentiation(
     identical slices (the vLLM per-request-seed failure mode, assumption 6)
     score 1.0. The threshold sits below 1.0 so a partial rewrite of one
     seed's gate files (a 16,384 regen of a few cap-hit rows) cannot mask a
-    seeding failure; two INDEPENDENT temperature-0.6 corpora share ~0% of
-    completions, so ≥0.9 has no false-positive mass. Zero shared rows is
-    itself a FAIL (nothing was compared — never a silent pass).
+    seeding failure; see ``IDENTICAL_FRAC_MAX`` for the 0.5 rationale. Zero
+    shared rows is itself a FAIL (nothing was compared — never a silent pass).
     """
     rows_a, rows_b = gate_slice_rows(out_a), gate_slice_rows(out_b)
     shared = sorted(set(rows_a) & set(rows_b))

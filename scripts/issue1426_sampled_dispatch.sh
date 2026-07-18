@@ -176,6 +176,17 @@ run_seed() {
     --hf-prefix-root "$SAMPLED_ROOT/seed$s" \
     "${DRIVER_FLAGS[@]}" ${resume[@]+"${resume[@]}"}
 
+  # SMOKE-only fault injection (review-1 Critical negative smoke): a
+  # MID-function failure — after invocation A, before the manifest check —
+  # must propagate through the EXIT-trap rc plumbing (dispatch.rc != 0, no
+  # downstream step runs). Never reachable in production (SMOKE guard).
+  #   SMOKE=1 SMOKE_FAULT_SEEDS="42 137" bash scripts/issue1426_sampled_dispatch.sh
+  if [ "$SMOKE" = "1" ] && [[ " ${SMOKE_FAULT_SEEDS:-} " == *" $s "* ]]; then
+    echo "[dispatch] FAULT-INJECTION seed$s: forced post-invocation-A failure" \
+      "(SMOKE_FAULT_SEEDS='${SMOKE_FAULT_SEEDS:-}')"
+    false
+  fi
+
   # Store-manifest provenance validation (critic addition A — the load-bearing
   # cross-seed guard; FAILS LOUD before any fit on rung/gen_seed mismatch).
   echo "[phase=dispatch_manifest_check_s$s]"
@@ -301,11 +312,15 @@ launch_seed() { # $1 = seed, $2 = CUDA_VISIBLE_DEVICES value ("" = no pin, smoke
   rm -f "$out/dispatch.rc"
   set -m # own process group per seed pipeline: kill -- -PGID reaps vLLM workers too
   (
+    # rc recorded via EXIT trap so errexit stays LIVE inside run_seed (review-1
+    # Critical: `run_seed || rc=$?` suppressed errexit inside the function, so
+    # a failed invocation A / manifest validation / fit fell through to the
+    # trailing echo and recorded rc=0 — unvalidated fits ran and a
+    # both-seeds-failed round emitted [phase=done] as success). A SIGKILLed
+    # subshell leaves NO rc file -> wait_seed's 99 default still fails.
+    trap 'echo "$?" > "$out/dispatch.rc"' EXIT
     if [ -n "$cvd" ]; then export CUDA_VISIBLE_DEVICES="$cvd"; fi
-    rc=0
-    run_seed "$s" || rc=$?
-    echo "$rc" > "$out/dispatch.rc"
-    exit "$rc"
+    run_seed "$s"
   ) 2>&1 | sed -u "s/^/[s$s] /" &
   SEED_PID[$s]=$!
   SEED_PGID[$s]=$(ps -o pgid= -p "${SEED_PID[$s]}" 2>/dev/null | tr -d ' ' || true)
@@ -326,6 +341,10 @@ wait_seed() { # records SEED_RC[$s]; never trips set -e
   out="$(seed_out_dir "$s")"
   wait "${SEED_PID[$s]}" 2>/dev/null || true
   SEED_RC[$s]=$(cat "$out/dispatch.rc" 2>/dev/null || echo 99)
+  # PID/PGID-recycling safety (review-1 minor 1): once the pipeline has
+  # exited, its PGID may be recycled — a later kill_seed (width-1
+  # fail_differentiation) must never TERM an unrelated process group.
+  SEED_PGID[$s]=""
   echo "[dispatch] seed$s pipeline exited rc=${SEED_RC[$s]}"
 }
 

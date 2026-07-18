@@ -28,7 +28,8 @@ per-seed rollout dirs). Produces:
 Plus the **rollout-digest cross-check** (assumption 6's in-run verification):
 row-by-row comparison of the two seeds' FULL rollout corpora, FAILING LOUD
 (``SystemExit``) when they are (near-)identical — byte-identical corpora score
-1.0; the 0.9 threshold means a handful of 16,384-regen rows cannot mask a
+1.0; the shared ``IDENTICAL_FRAC_MAX`` threshold (0.5, single-sourced from
+``issue1426_common``) means a handful of 16,384-regen rows cannot mask a
 per-request-seeding failure. Report: ``<seed-results-root>/rollout_digest_check.json``.
 
 Never prints rollout completion TEXT (the probe pool is misalignment
@@ -72,11 +73,10 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
-from issue1426_common import THINK_CLOSE  # noqa: E402
+from issue1426_common import IDENTICAL_FRAC_MAX, THINK_CLOSE  # noqa: E402
 from issue928_common import dump_json, reproducibility_metadata  # noqa: E402
 
 RNG_SEED, N_BOOT = 42, 2000
-IDENTICAL_FRAC_MAX = 0.9
 FAMILIES = ["persona", "wildchat", "icl", "rephrase", "format", "behavior", "default"]
 
 
@@ -441,6 +441,16 @@ def main() -> int:  # noqa: C901 — linear figure battery, one block per regist
     for s in seeds:
         len_sources.append((f"seed {s}", rollout_lengths_by_family(roll_dirs[s])))
     lfams = [f for f in FAMILIES if all(f in d for _n, d in len_sources)]
+    dropped = [f for f in FAMILIES if f not in lfams]
+    if dropped:
+        # review-1 minor 4: never a silent drop — name the family + the
+        # source(s) missing it (the coverage panel carries the full set).
+        for f in dropped:
+            missing_from = [dec for dec, d in len_sources if f not in d]
+            print(
+                f"[sampled-figures] NOTE: family {f!r} DROPPED from the CoT-length "
+                f"panel — no well-formed rows in source(s): {missing_from}"
+            )
     fig, ax = plt.subplots(figsize=(11.5, 4.8))
     n_dec = len(len_sources)
     w = 0.8 / n_dec

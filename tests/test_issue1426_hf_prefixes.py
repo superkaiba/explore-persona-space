@@ -501,3 +501,89 @@ def test_sampled_manifest_validation_wrong_seed_fails(tmp_path):
         with pytest.raises(SystemExit) as exc:
             validate_sampled_store_manifest(_write_and_load(bad), expected_seed=137)
         assert exc.value.code  # non-zero shell exit through the dispatch heredoc
+
+
+def _write_gate_slice(out_dir, contexts_rows: dict[str, list[tuple[str, str]]]) -> None:
+    """Fixture Gate-1 slice: gate_report.json + one rollout blob per context."""
+    import json
+
+    rollouts = out_dir / "raw_completions" / "thinking_rollouts"
+    rollouts.mkdir(parents=True, exist_ok=True)
+    (out_dir / "gate_report.json").write_text(
+        json.dumps({"chosen_rung": "sample", "gate_contexts": sorted(contexts_rows)})
+    )
+    for c, rows in contexts_rows.items():
+        (rollouts / f"{c}.json").write_text(
+            json.dumps(
+                {
+                    "context_id": c,
+                    "completions": [{"probe": p, "completion": t} for p, t in rows],
+                }
+            )
+        )
+
+
+def test_gate_slice_status_branches(tmp_path):
+    """Review-1 minor 3: the monitor's readiness predicate branches — empty
+    dir → pending; null chosen_rung → gate_failed; report present but a gate
+    context's blob missing → pending; complete slice → ready."""
+    import json
+
+    from issue1426_common import gate_slice_status
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate_slice_status(empty) == "pending"
+
+    failed = tmp_path / "gatefail"
+    failed.mkdir()
+    (failed / "gate_report.json").write_text(json.dumps({"chosen_rung": None, "gate_contexts": []}))
+    assert gate_slice_status(failed) == "gate_failed"
+
+    partial = tmp_path / "partial"
+    _write_gate_slice(partial, {"c0": [("p0", "t0")]})
+    report = json.loads((partial / "gate_report.json").read_text())
+    report["gate_contexts"] = ["c0", "c_missing"]
+    (partial / "gate_report.json").write_text(json.dumps(report))
+    assert gate_slice_status(partial) == "pending"
+
+    ready = tmp_path / "ready"
+    _write_gate_slice(ready, {"c0": [("p0", "t0")], "c1": [("p0", "u0")]})
+    assert gate_slice_status(ready) == "ready"
+
+
+def test_check_seed_differentiation_branches(tmp_path):
+    """Review-1 minor 3: identical slices FAIL (SystemExit, non-zero code),
+    differing slices PASS with a report dict, zero shared rows FAIL, an
+    exactly-at-threshold fraction FAILs, and the threshold is the
+    single-sourced ``IDENTICAL_FRAC_MAX`` (0.5)."""
+    import pytest
+    from issue1426_common import IDENTICAL_FRAC_MAX, check_seed_differentiation
+
+    a = tmp_path / "seed_a"
+    b_same = tmp_path / "seed_b_same"
+    rows = {"c0": [("p0", "same text"), ("p1", "same too")]}
+    _write_gate_slice(a, rows)
+    _write_gate_slice(b_same, rows)
+    with pytest.raises(SystemExit) as exc:
+        check_seed_differentiation(a, b_same)
+    assert exc.value.code  # byte-identical slices → non-zero exit
+
+    b_diff = tmp_path / "seed_b_diff"
+    _write_gate_slice(b_diff, {"c0": [("p0", "OTHER text"), ("p1", "other too")]})
+    report = check_seed_differentiation(a, b_diff)
+    assert report["identical_fraction"] == 0.0
+    assert report["n_shared_rows"] == 2
+    assert report["identical_frac_max"] == IDENTICAL_FRAC_MAX == 0.5
+
+    b_disjoint = tmp_path / "seed_b_disjoint"
+    _write_gate_slice(b_disjoint, {"c9": [("p9", "elsewhere")]})
+    with pytest.raises(SystemExit) as exc:
+        check_seed_differentiation(a, b_disjoint)
+    assert exc.value.code  # zero shared rows → never a silent pass
+
+    # exactly at the threshold: 1 of 2 rows identical (0.5 >= 0.5) → FAIL
+    b_half = tmp_path / "seed_b_half"
+    _write_gate_slice(b_half, {"c0": [("p0", "same text"), ("p1", "different")]})
+    with pytest.raises(SystemExit):
+        check_seed_differentiation(a, b_half)
