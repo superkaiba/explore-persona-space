@@ -1,0 +1,4913 @@
+{
+  "commit": "2b4ba446f5",
+  "created": "2026-07-18T00:12:57Z",
+  "figsize": [
+    11.0,
+    9.2
+  ],
+  "points": [
+    {
+      "held-out prefix-end read (ridge prediction)": 7.897789669168072,
+      "per-prefix mean judge score (0-100), sycophancy": 6.220833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.970344035815996,
+      "per-prefix mean judge score (0-100), sycophancy": 9.216666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.224977655527255,
+      "per-prefix mean judge score (0-100), sycophancy": 6.508333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.856956142127428,
+      "per-prefix mean judge score (0-100), sycophancy": 7.891666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.950811656185042,
+      "per-prefix mean judge score (0-100), sycophancy": 6.591666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.04756679117531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.554166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.99646023059036,
+      "per-prefix mean judge score (0-100), sycophancy": 10.291666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.914949230932933,
+      "per-prefix mean judge score (0-100), sycophancy": 11.229166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.770425002720806,
+      "per-prefix mean judge score (0-100), sycophancy": 13.172916666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.278331976603845,
+      "per-prefix mean judge score (0-100), sycophancy": 10.233333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.983807408550446,
+      "per-prefix mean judge score (0-100), sycophancy": 14.441666666666668,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.703525909845522,
+      "per-prefix mean judge score (0-100), sycophancy": 9.920833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.084592718284341,
+      "per-prefix mean judge score (0-100), sycophancy": 16.366666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.160493761694038,
+      "per-prefix mean judge score (0-100), sycophancy": 10.245833333333332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.761822609424907,
+      "per-prefix mean judge score (0-100), sycophancy": 15.6875,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.629926035829374,
+      "per-prefix mean judge score (0-100), sycophancy": 12.404166666666669,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.791285958750708,
+      "per-prefix mean judge score (0-100), sycophancy": 10.9375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.868084111443917,
+      "per-prefix mean judge score (0-100), sycophancy": 16.358333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.229405700479901,
+      "per-prefix mean judge score (0-100), sycophancy": 12.570833333333335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.165329670059986,
+      "per-prefix mean judge score (0-100), sycophancy": 13.166666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.64561494004539,
+      "per-prefix mean judge score (0-100), sycophancy": 9.795833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.74127745860088,
+      "per-prefix mean judge score (0-100), sycophancy": 13.487499999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.977590944153189,
+      "per-prefix mean judge score (0-100), sycophancy": 13.7125,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.733765476390783,
+      "per-prefix mean judge score (0-100), sycophancy": 15.604166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.215518948838245,
+      "per-prefix mean judge score (0-100), sycophancy": 9.391666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.707727372224344,
+      "per-prefix mean judge score (0-100), sycophancy": 14.625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.140505967305906,
+      "per-prefix mean judge score (0-100), sycophancy": 11.920833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.471668596088003,
+      "per-prefix mean judge score (0-100), sycophancy": 12.424999999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.155786728884252,
+      "per-prefix mean judge score (0-100), sycophancy": 13.583333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.486751241547815,
+      "per-prefix mean judge score (0-100), sycophancy": 11.104166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.932534218774338,
+      "per-prefix mean judge score (0-100), sycophancy": 11.966666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.173461621186043,
+      "per-prefix mean judge score (0-100), sycophancy": 13.833333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.880224647942291,
+      "per-prefix mean judge score (0-100), sycophancy": 9.620833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.039730933998799,
+      "per-prefix mean judge score (0-100), sycophancy": 8.941666666666668,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.597376412029968,
+      "per-prefix mean judge score (0-100), sycophancy": 6.270833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.229382798751859,
+      "per-prefix mean judge score (0-100), sycophancy": 5.695833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.191408812672744,
+      "per-prefix mean judge score (0-100), sycophancy": 7.420833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.396297290631123,
+      "per-prefix mean judge score (0-100), sycophancy": 7.041666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.644597159989784,
+      "per-prefix mean judge score (0-100), sycophancy": 6.825,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.232104775625535,
+      "per-prefix mean judge score (0-100), sycophancy": 3.954166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.155205948214487,
+      "per-prefix mean judge score (0-100), sycophancy": 6.545833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.790788738925225,
+      "per-prefix mean judge score (0-100), sycophancy": 7.1000000000000005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.291311268096607,
+      "per-prefix mean judge score (0-100), sycophancy": 9.275,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 6.166666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.994523475961214,
+      "per-prefix mean judge score (0-100), sycophancy": 6.870833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.641957981020026,
+      "per-prefix mean judge score (0-100), sycophancy": 5.0625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.635012713143633,
+      "per-prefix mean judge score (0-100), sycophancy": 5.633333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.389029752497982,
+      "per-prefix mean judge score (0-100), sycophancy": 5.325,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.551531388931755,
+      "per-prefix mean judge score (0-100), sycophancy": 7.829166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.249632851291734,
+      "per-prefix mean judge score (0-100), sycophancy": 6.525000000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.807239754548819,
+      "per-prefix mean judge score (0-100), sycophancy": 12.704166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 6.0375000000000005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 16.382068200927836,
+      "per-prefix mean judge score (0-100), sycophancy": 13.195833333333335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.812360157971233,
+      "per-prefix mean judge score (0-100), sycophancy": 11.383333333333335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.207250424257175,
+      "per-prefix mean judge score (0-100), sycophancy": 17.349999999999998,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.179166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.703723724120085,
+      "per-prefix mean judge score (0-100), sycophancy": 11.041666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 7.654166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 8.333333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 7.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 7.920833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.410637534847162,
+      "per-prefix mean judge score (0-100), sycophancy": 16.204166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 7.916666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.925849304846608,
+      "per-prefix mean judge score (0-100), sycophancy": 14.241666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 4.733333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 6.1375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.629858718264973,
+      "per-prefix mean judge score (0-100), sycophancy": 9.933333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.98333623674457,
+      "per-prefix mean judge score (0-100), sycophancy": 15.091666666666669,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.967373935438687,
+      "per-prefix mean judge score (0-100), sycophancy": 11.470833333333331,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 5.820833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 7.504166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.20265918345053,
+      "per-prefix mean judge score (0-100), sycophancy": 12.741666666666665,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 3.9,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3125,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.633333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.316185839806511,
+      "per-prefix mean judge score (0-100), sycophancy": 11.308333333333332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 7.716666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.001945555276281,
+      "per-prefix mean judge score (0-100), sycophancy": 9.487499999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.453561701085182,
+      "per-prefix mean judge score (0-100), sycophancy": 11.8125,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.708333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.925,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 5.817708333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 5.5,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.984025155873294,
+      "per-prefix mean judge score (0-100), sycophancy": 8.866666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.583333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.741011712877137,
+      "per-prefix mean judge score (0-100), sycophancy": 16.875,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6000000000000005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.483333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 5.525000000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.55,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.537547689163631,
+      "per-prefix mean judge score (0-100), sycophancy": 13.916666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.345337499283355,
+      "per-prefix mean judge score (0-100), sycophancy": 20.2,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 5.151041666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 5.933333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.252338665034333,
+      "per-prefix mean judge score (0-100), sycophancy": 17.1375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6625000000000005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 17.227759118315134,
+      "per-prefix mean judge score (0-100), sycophancy": 9.591666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.861458333333332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 7.212500000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.679894431300962,
+      "per-prefix mean judge score (0-100), sycophancy": 15.633333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.762461959680271,
+      "per-prefix mean judge score (0-100), sycophancy": 13.183333333333332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 4.929166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.621724765960012,
+      "per-prefix mean judge score (0-100), sycophancy": 9.229166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.578345331131253,
+      "per-prefix mean judge score (0-100), sycophancy": 13.762500000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.063670497191362,
+      "per-prefix mean judge score (0-100), sycophancy": 12.133333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 6.170833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.097761102866073,
+      "per-prefix mean judge score (0-100), sycophancy": 11.0625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.078736255735095,
+      "per-prefix mean judge score (0-100), sycophancy": 12.116666666666665,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.278285728590266,
+      "per-prefix mean judge score (0-100), sycophancy": 7.858333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.282482091357478,
+      "per-prefix mean judge score (0-100), sycophancy": 10.204166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 6.933333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.652771022026059,
+      "per-prefix mean judge score (0-100), sycophancy": 12.737500000000002,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121909,
+      "per-prefix mean judge score (0-100), sycophancy": 5.441666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.570833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.403836478261635,
+      "per-prefix mean judge score (0-100), sycophancy": 8.666666666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.949668093926862,
+      "per-prefix mean judge score (0-100), sycophancy": 13.1625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 6.525000000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.425793335384345,
+      "per-prefix mean judge score (0-100), sycophancy": 10.745833333333332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.372537950568454,
+      "per-prefix mean judge score (0-100), sycophancy": 12.387500000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.49218695577225,
+      "per-prefix mean judge score (0-100), sycophancy": 9.729166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.93837620036058,
+      "per-prefix mean judge score (0-100), sycophancy": 9.866666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 5.25,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.266428812529531,
+      "per-prefix mean judge score (0-100), sycophancy": 8.595833333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.572205252394866,
+      "per-prefix mean judge score (0-100), sycophancy": 14.604166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.362674567735631,
+      "per-prefix mean judge score (0-100), sycophancy": 11.754166666666668,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.912499999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.804166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.21824159492857,
+      "per-prefix mean judge score (0-100), sycophancy": 11.104166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 6.008333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 5.854166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.50852781324658,
+      "per-prefix mean judge score (0-100), sycophancy": 5.920833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.508527813246581,
+      "per-prefix mean judge score (0-100), sycophancy": 6.6375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.15069308207425,
+      "per-prefix mean judge score (0-100), sycophancy": 14.654166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.3080210081701,
+      "per-prefix mean judge score (0-100), sycophancy": 8.775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.522564516645083,
+      "per-prefix mean judge score (0-100), sycophancy": 12.5875,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.983333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.968909049084658,
+      "per-prefix mean judge score (0-100), sycophancy": 11.279166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.679158419764825,
+      "per-prefix mean judge score (0-100), sycophancy": 11.020833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.433525778211294,
+      "per-prefix mean judge score (0-100), sycophancy": 9.033333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121907,
+      "per-prefix mean judge score (0-100), sycophancy": 6.795833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.233670695944824,
+      "per-prefix mean judge score (0-100), sycophancy": 6.991666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 7.245833333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 6.929166666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.289920434121907,
+      "per-prefix mean judge score (0-100), sycophancy": 5.2749999999999995,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.377638683847351,
+      "per-prefix mean judge score (0-100), sycophancy": 6.083333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.062558024069514,
+      "per-prefix mean judge score (0-100), sycophancy": 8.5625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.727506728563748,
+      "per-prefix mean judge score (0-100), sycophancy": 9.333333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.039730933998799,
+      "per-prefix mean judge score (0-100), sycophancy": 5.511024338812888,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.288466203066479,
+      "per-prefix mean judge score (0-100), sycophancy": 5.728980801519802,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.53720147213416,
+      "per-prefix mean judge score (0-100), sycophancy": 5.946937264226715,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 5.78593674120184,
+      "per-prefix mean judge score (0-100), sycophancy": 6.164893726933631,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.03467201026952,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3828501896405445,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.283407279337201,
+      "per-prefix mean judge score (0-100), sycophancy": 6.600806652347458,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.532142548404881,
+      "per-prefix mean judge score (0-100), sycophancy": 6.818763115054374,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 6.780877817472561,
+      "per-prefix mean judge score (0-100), sycophancy": 7.036719577761287,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.029613086540241,
+      "per-prefix mean judge score (0-100), sycophancy": 7.254676040468201,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.278348355607921,
+      "per-prefix mean judge score (0-100), sycophancy": 7.472632503175115,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.527083624675602,
+      "per-prefix mean judge score (0-100), sycophancy": 7.69058896588203,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 7.775818893743282,
+      "per-prefix mean judge score (0-100), sycophancy": 7.908545428588944,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.024554162810963,
+      "per-prefix mean judge score (0-100), sycophancy": 8.126501891295858,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.273289431878643,
+      "per-prefix mean judge score (0-100), sycophancy": 8.344458354002771,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.522024700946323,
+      "per-prefix mean judge score (0-100), sycophancy": 8.562414816709687,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 8.770759970014003,
+      "per-prefix mean judge score (0-100), sycophancy": 8.7803712794166,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.019495239081683,
+      "per-prefix mean judge score (0-100), sycophancy": 8.998327742123514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.268230508149365,
+      "per-prefix mean judge score (0-100), sycophancy": 9.21628420483043,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.516965777217045,
+      "per-prefix mean judge score (0-100), sycophancy": 9.434240667537344,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 9.765701046284725,
+      "per-prefix mean judge score (0-100), sycophancy": 9.652197130244257,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.014436315352405,
+      "per-prefix mean judge score (0-100), sycophancy": 9.870153592951173,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.263171584420085,
+      "per-prefix mean judge score (0-100), sycophancy": 10.088110055658086,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.511906853487766,
+      "per-prefix mean judge score (0-100), sycophancy": 10.306066518365,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 10.760642122555446,
+      "per-prefix mean judge score (0-100), sycophancy": 10.524022981071914,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.009377391623126,
+      "per-prefix mean judge score (0-100), sycophancy": 10.741979443778828,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.258112660690806,
+      "per-prefix mean judge score (0-100), sycophancy": 10.959935906485741,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.506847929758486,
+      "per-prefix mean judge score (0-100), sycophancy": 11.177892369192657,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 11.755583198826168,
+      "per-prefix mean judge score (0-100), sycophancy": 11.395848831899572,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.004318467893848,
+      "per-prefix mean judge score (0-100), sycophancy": 11.613805294606486,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.253053736961528,
+      "per-prefix mean judge score (0-100), sycophancy": 11.8317617573134,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.501789006029208,
+      "per-prefix mean judge score (0-100), sycophancy": 12.049718220020313,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.75052427509689,
+      "per-prefix mean judge score (0-100), sycophancy": 12.267674682727229,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 12.99925954416457,
+      "per-prefix mean judge score (0-100), sycophancy": 12.485631145434143,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.24799481323225,
+      "per-prefix mean judge score (0-100), sycophancy": 12.703587608141056,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.49673008229993,
+      "per-prefix mean judge score (0-100), sycophancy": 12.921544070847972,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.74546535136761,
+      "per-prefix mean judge score (0-100), sycophancy": 13.139500533554886,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 13.99420062043529,
+      "per-prefix mean judge score (0-100), sycophancy": 13.3574569962618,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.24293588950297,
+      "per-prefix mean judge score (0-100), sycophancy": 13.575413458968713,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.49167115857065,
+      "per-prefix mean judge score (0-100), sycophancy": 13.793369921675627,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.74040642763833,
+      "per-prefix mean judge score (0-100), sycophancy": 14.01132638438254,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 14.989141696706012,
+      "per-prefix mean judge score (0-100), sycophancy": 14.229282847089456,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 15.237876965773692,
+      "per-prefix mean judge score (0-100), sycophancy": 14.44723930979637,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 15.486612234841372,
+      "per-prefix mean judge score (0-100), sycophancy": 14.665195772503285,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 15.735347503909052,
+      "per-prefix mean judge score (0-100), sycophancy": 14.883152235210199,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 15.984082772976732,
+      "per-prefix mean judge score (0-100), sycophancy": 15.101108697917113,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 16.232818042044414,
+      "per-prefix mean judge score (0-100), sycophancy": 15.319065160624028,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 16.481553311112094,
+      "per-prefix mean judge score (0-100), sycophancy": 15.537021623330942,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 16.730288580179774,
+      "per-prefix mean judge score (0-100), sycophancy": 15.754978086037855,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 16.979023849247454,
+      "per-prefix mean judge score (0-100), sycophancy": 15.97293454874477,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 17.227759118315134,
+      "per-prefix mean judge score (0-100), sycophancy": 16.190891011451683,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.197646918618776,
+      "per-prefix mean judge score (0-100), sycophancy": 6.220833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.010611809183166,
+      "per-prefix mean judge score (0-100), sycophancy": 9.216666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.368685056948062,
+      "per-prefix mean judge score (0-100), sycophancy": 6.508333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.172604548627285,
+      "per-prefix mean judge score (0-100), sycophancy": 7.891666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.385951758606476,
+      "per-prefix mean judge score (0-100), sycophancy": 6.591666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.918081610688157,
+      "per-prefix mean judge score (0-100), sycophancy": 6.554166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.868873934698756,
+      "per-prefix mean judge score (0-100), sycophancy": 10.291666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.927444634264615,
+      "per-prefix mean judge score (0-100), sycophancy": 11.229166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.852399464039781,
+      "per-prefix mean judge score (0-100), sycophancy": 13.172916666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.25271635387805,
+      "per-prefix mean judge score (0-100), sycophancy": 10.233333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.298097526362191,
+      "per-prefix mean judge score (0-100), sycophancy": 14.441666666666668,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.64795632298003,
+      "per-prefix mean judge score (0-100), sycophancy": 9.920833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.714996288058114,
+      "per-prefix mean judge score (0-100), sycophancy": 16.366666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.148126656828275,
+      "per-prefix mean judge score (0-100), sycophancy": 10.245833333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.37829818753644,
+      "per-prefix mean judge score (0-100), sycophancy": 15.6875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.61802277737236,
+      "per-prefix mean judge score (0-100), sycophancy": 12.404166666666669,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.076528681864623,
+      "per-prefix mean judge score (0-100), sycophancy": 10.9375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.461746629525443,
+      "per-prefix mean judge score (0-100), sycophancy": 16.358333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.610452957671352,
+      "per-prefix mean judge score (0-100), sycophancy": 12.570833333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.46363571094716,
+      "per-prefix mean judge score (0-100), sycophancy": 13.166666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.548050769507185,
+      "per-prefix mean judge score (0-100), sycophancy": 9.795833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.645411164897974,
+      "per-prefix mean judge score (0-100), sycophancy": 13.487499999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.595136055419513,
+      "per-prefix mean judge score (0-100), sycophancy": 13.7125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.723473680425503,
+      "per-prefix mean judge score (0-100), sycophancy": 15.604166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.928268373301101,
+      "per-prefix mean judge score (0-100), sycophancy": 9.391666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.044387509688303,
+      "per-prefix mean judge score (0-100), sycophancy": 14.625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.499751439964498,
+      "per-prefix mean judge score (0-100), sycophancy": 11.920833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.342282799285432,
+      "per-prefix mean judge score (0-100), sycophancy": 12.424999999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.855833929272125,
+      "per-prefix mean judge score (0-100), sycophancy": 13.583333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.403034076567778,
+      "per-prefix mean judge score (0-100), sycophancy": 11.104166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.197897712330121,
+      "per-prefix mean judge score (0-100), sycophancy": 11.966666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.505285542249288,
+      "per-prefix mean judge score (0-100), sycophancy": 13.833333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.216772305570348,
+      "per-prefix mean judge score (0-100), sycophancy": 9.620833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 4.213053026689089,
+      "per-prefix mean judge score (0-100), sycophancy": 8.941666666666668,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.972956731560394,
+      "per-prefix mean judge score (0-100), sycophancy": 6.270833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.601710081447143,
+      "per-prefix mean judge score (0-100), sycophancy": 5.695833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.113128829373775,
+      "per-prefix mean judge score (0-100), sycophancy": 7.420833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.747618778349931,
+      "per-prefix mean judge score (0-100), sycophancy": 7.041666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 4.240743833449933,
+      "per-prefix mean judge score (0-100), sycophancy": 6.825,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 3.111119353224911,
+      "per-prefix mean judge score (0-100), sycophancy": 3.954166666666666,
+      "label": "r = 0.77  (p<0.001)\nn = 149 prefixes",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.221799933250455,
+      "per-prefix mean judge score (0-100), sycophancy": 6.545833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.872660549332872,
+      "per-prefix mean judge score (0-100), sycophancy": 7.1000000000000005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.071874123917308,
+      "per-prefix mean judge score (0-100), sycophancy": 9.275,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 6.166666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.2322932280975305,
+      "per-prefix mean judge score (0-100), sycophancy": 6.870833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.634432895599264,
+      "per-prefix mean judge score (0-100), sycophancy": 5.0625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.397313444306442,
+      "per-prefix mean judge score (0-100), sycophancy": 5.633333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.563574592204672,
+      "per-prefix mean judge score (0-100), sycophancy": 5.325,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.528042237432978,
+      "per-prefix mean judge score (0-100), sycophancy": 7.829166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.671800509905452,
+      "per-prefix mean judge score (0-100), sycophancy": 6.525000000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.792078318861545,
+      "per-prefix mean judge score (0-100), sycophancy": 12.704166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 6.0375000000000005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 19.04015582548611,
+      "per-prefix mean judge score (0-100), sycophancy": 13.195833333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.789629354794396,
+      "per-prefix mean judge score (0-100), sycophancy": 11.383333333333335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.065531062985546,
+      "per-prefix mean judge score (0-100), sycophancy": 17.349999999999998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.179166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.904618887693754,
+      "per-prefix mean judge score (0-100), sycophancy": 11.041666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 7.654166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 8.333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 7.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 7.920833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.836405901501687,
+      "per-prefix mean judge score (0-100), sycophancy": 16.204166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 7.916666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.034087189660093,
+      "per-prefix mean judge score (0-100), sycophancy": 14.241666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 4.733333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 6.1375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.473979177921295,
+      "per-prefix mean judge score (0-100), sycophancy": 9.933333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.676337309807211,
+      "per-prefix mean judge score (0-100), sycophancy": 15.091666666666669,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.819223520622119,
+      "per-prefix mean judge score (0-100), sycophancy": 11.470833333333331,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 5.820833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 7.504166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.732995169397295,
+      "per-prefix mean judge score (0-100), sycophancy": 12.741666666666665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 3.9,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.633333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.107318136949896,
+      "per-prefix mean judge score (0-100), sycophancy": 11.308333333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 7.716666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.872983591170339,
+      "per-prefix mean judge score (0-100), sycophancy": 9.487499999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.892685138178376,
+      "per-prefix mean judge score (0-100), sycophancy": 11.8125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.708333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.925,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 5.817708333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 5.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.287530722183435,
+      "per-prefix mean judge score (0-100), sycophancy": 8.866666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.583333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.770848936095248,
+      "per-prefix mean judge score (0-100), sycophancy": 16.875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6000000000000005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.483333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 5.525000000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.55,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.188350119969549,
+      "per-prefix mean judge score (0-100), sycophancy": 13.916666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.35869595040571,
+      "per-prefix mean judge score (0-100), sycophancy": 20.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 5.151041666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 5.933333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.798264825765337,
+      "per-prefix mean judge score (0-100), sycophancy": 17.1375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.6625000000000005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.08718947678453,
+      "per-prefix mean judge score (0-100), sycophancy": 9.591666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.861458333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 7.212500000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.480137484415856,
+      "per-prefix mean judge score (0-100), sycophancy": 15.633333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.06332781048825,
+      "per-prefix mean judge score (0-100), sycophancy": 13.183333333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 4.929166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.652447848209013,
+      "per-prefix mean judge score (0-100), sycophancy": 9.229166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.600613173159399,
+      "per-prefix mean judge score (0-100), sycophancy": 13.762500000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.163339771772907,
+      "per-prefix mean judge score (0-100), sycophancy": 12.133333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 6.170833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.706078664957928,
+      "per-prefix mean judge score (0-100), sycophancy": 11.0625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.178367580288743,
+      "per-prefix mean judge score (0-100), sycophancy": 12.116666666666665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.072098602555593,
+      "per-prefix mean judge score (0-100), sycophancy": 7.858333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.934166007808194,
+      "per-prefix mean judge score (0-100), sycophancy": 10.204166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 6.933333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.742950059860013,
+      "per-prefix mean judge score (0-100), sycophancy": 12.737500000000002,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.28387546721014,
+      "per-prefix mean judge score (0-100), sycophancy": 5.441666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.570833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.812434051573913,
+      "per-prefix mean judge score (0-100), sycophancy": 8.666666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.60833816146465,
+      "per-prefix mean judge score (0-100), sycophancy": 13.1625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 6.525000000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.347898593846145,
+      "per-prefix mean judge score (0-100), sycophancy": 10.745833333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.46363893218567,
+      "per-prefix mean judge score (0-100), sycophancy": 12.387500000000001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.139421084381908,
+      "per-prefix mean judge score (0-100), sycophancy": 9.729166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.25036339098686,
+      "per-prefix mean judge score (0-100), sycophancy": 9.866666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 5.25,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.258881143475805,
+      "per-prefix mean judge score (0-100), sycophancy": 8.595833333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.749493615706344,
+      "per-prefix mean judge score (0-100), sycophancy": 14.604166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.537740047916142,
+      "per-prefix mean judge score (0-100), sycophancy": 11.754166666666668,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.912499999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.804166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.008369101054113,
+      "per-prefix mean judge score (0-100), sycophancy": 11.104166666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 6.008333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 5.854166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972943,
+      "per-prefix mean judge score (0-100), sycophancy": 5.920833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.503496194972942,
+      "per-prefix mean judge score (0-100), sycophancy": 6.6375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 15.28998480885379,
+      "per-prefix mean judge score (0-100), sycophancy": 14.654166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.997727751647158,
+      "per-prefix mean judge score (0-100), sycophancy": 8.775,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.273892574112438,
+      "per-prefix mean judge score (0-100), sycophancy": 12.5875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.983333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.150809886393088,
+      "per-prefix mean judge score (0-100), sycophancy": 11.279166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.146886480481975,
+      "per-prefix mean judge score (0-100), sycophancy": 11.020833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.990676794877754,
+      "per-prefix mean judge score (0-100), sycophancy": 9.033333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.283875467210143,
+      "per-prefix mean judge score (0-100), sycophancy": 6.795833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.230079402315399,
+      "per-prefix mean judge score (0-100), sycophancy": 6.991666666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 7.245833333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.3701343928816785,
+      "per-prefix mean judge score (0-100), sycophancy": 6.929166666666667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.283875467210143,
+      "per-prefix mean judge score (0-100), sycophancy": 5.2749999999999995,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.370134392881679,
+      "per-prefix mean judge score (0-100), sycophancy": 6.083333333333333,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.095601073773141,
+      "per-prefix mean judge score (0-100), sycophancy": 8.5625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.903517017823901,
+      "per-prefix mean judge score (0-100), sycophancy": 9.333333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 3.111119353224911,
+      "per-prefix mean judge score (0-100), sycophancy": 4.213096551916648,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 3.4362017302098335,
+      "per-prefix mean judge score (0-100), sycophancy": 4.482761869960237,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 3.761284107194756,
+      "per-prefix mean judge score (0-100), sycophancy": 4.752427188003827,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 4.0863664841796785,
+      "per-prefix mean judge score (0-100), sycophancy": 5.022092506047417,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 4.411448861164601,
+      "per-prefix mean judge score (0-100), sycophancy": 5.291757824091007,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 4.7365312381495235,
+      "per-prefix mean judge score (0-100), sycophancy": 5.561423142134596,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.061613615134446,
+      "per-prefix mean judge score (0-100), sycophancy": 5.8310884601781865,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.386695992119368,
+      "per-prefix mean judge score (0-100), sycophancy": 6.100753778221775,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 5.711778369104291,
+      "per-prefix mean judge score (0-100), sycophancy": 6.3704190962653655,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.0368607460892125,
+      "per-prefix mean judge score (0-100), sycophancy": 6.640084414308955,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.361943123074136,
+      "per-prefix mean judge score (0-100), sycophancy": 6.909749732352545,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 6.6870255000590575,
+      "per-prefix mean judge score (0-100), sycophancy": 7.179415050396134,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.01210787704398,
+      "per-prefix mean judge score (0-100), sycophancy": 7.449080368439724,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.3371902540289025,
+      "per-prefix mean judge score (0-100), sycophancy": 7.718745686483314,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.662272631013825,
+      "per-prefix mean judge score (0-100), sycophancy": 7.9884110045269034,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 7.987355007998747,
+      "per-prefix mean judge score (0-100), sycophancy": 8.258076322570492,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.31243738498367,
+      "per-prefix mean judge score (0-100), sycophancy": 8.527741640614083,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.637519761968592,
+      "per-prefix mean judge score (0-100), sycophancy": 8.797406958657673,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 8.962602138953514,
+      "per-prefix mean judge score (0-100), sycophancy": 9.06707227670126,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.287684515938437,
+      "per-prefix mean judge score (0-100), sycophancy": 9.336737594744852,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.61276689292336,
+      "per-prefix mean judge score (0-100), sycophancy": 9.606402912788443,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 9.937849269908282,
+      "per-prefix mean judge score (0-100), sycophancy": 9.876068230832033,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.262931646893204,
+      "per-prefix mean judge score (0-100), sycophancy": 10.14573354887562,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.588014023878127,
+      "per-prefix mean judge score (0-100), sycophancy": 10.415398866919212,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 10.913096400863049,
+      "per-prefix mean judge score (0-100), sycophancy": 10.685064184962801,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.238178777847972,
+      "per-prefix mean judge score (0-100), sycophancy": 10.95472950300639,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.563261154832894,
+      "per-prefix mean judge score (0-100), sycophancy": 11.22439482104998,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 11.888343531817817,
+      "per-prefix mean judge score (0-100), sycophancy": 11.49406013909357,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.213425908802739,
+      "per-prefix mean judge score (0-100), sycophancy": 11.76372545713716,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.538508285787662,
+      "per-prefix mean judge score (0-100), sycophancy": 12.03339077518075,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.863590662772584,
+      "per-prefix mean judge score (0-100), sycophancy": 12.303056093224338,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.188673039757507,
+      "per-prefix mean judge score (0-100), sycophancy": 12.57272141126793,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.513755416742429,
+      "per-prefix mean judge score (0-100), sycophancy": 12.842386729311519,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.83883779372735,
+      "per-prefix mean judge score (0-100), sycophancy": 13.112052047355107,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.163920170712274,
+      "per-prefix mean judge score (0-100), sycophancy": 13.381717365398698,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.489002547697195,
+      "per-prefix mean judge score (0-100), sycophancy": 13.651382683442288,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.814084924682119,
+      "per-prefix mean judge score (0-100), sycophancy": 13.921048001485877,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 15.13916730166704,
+      "per-prefix mean judge score (0-100), sycophancy": 14.190713319529467,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 15.464249678651964,
+      "per-prefix mean judge score (0-100), sycophancy": 14.460378637573058,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 15.789332055636885,
+      "per-prefix mean judge score (0-100), sycophancy": 14.730043955616646,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.114414432621807,
+      "per-prefix mean judge score (0-100), sycophancy": 14.999709273660235,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.43949680960673,
+      "per-prefix mean judge score (0-100), sycophancy": 15.269374591703826,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.764579186591654,
+      "per-prefix mean judge score (0-100), sycophancy": 15.539039909747416,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.089661563576577,
+      "per-prefix mean judge score (0-100), sycophancy": 15.808705227791007,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.4147439405615,
+      "per-prefix mean judge score (0-100), sycophancy": 16.078370545834595,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.73982631754642,
+      "per-prefix mean judge score (0-100), sycophancy": 16.348035863878184,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.064908694531344,
+      "per-prefix mean judge score (0-100), sycophancy": 16.617701181921774,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.389991071516263,
+      "per-prefix mean judge score (0-100), sycophancy": 16.887366499965363,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.715073448501187,
+      "per-prefix mean judge score (0-100), sycophancy": 17.157031818008953,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 19.04015582548611,
+      "per-prefix mean judge score (0-100), sycophancy": 17.426697136052542,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.629466099675632,
+      "per-prefix mean judge score (0-100), hallucination": 22.974999999999998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.716572648582474,
+      "per-prefix mean judge score (0-100), hallucination": 30.557291666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.98664430673162,
+      "per-prefix mean judge score (0-100), hallucination": 26.900000000000002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.356773215677308,
+      "per-prefix mean judge score (0-100), hallucination": 19.36666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.460412290423225,
+      "per-prefix mean judge score (0-100), hallucination": 23.145833333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.748434390213994,
+      "per-prefix mean judge score (0-100), hallucination": 24.675,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 29.4075006545897,
+      "per-prefix mean judge score (0-100), hallucination": 33.19583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 28.662122368491676,
+      "per-prefix mean judge score (0-100), hallucination": 32.05833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.14298792855917,
+      "per-prefix mean judge score (0-100), hallucination": 30.212499999999995,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.63138381268284,
+      "per-prefix mean judge score (0-100), hallucination": 28.4875,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.521142780294475,
+      "per-prefix mean judge score (0-100), hallucination": 34.38229166666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.82446119776901,
+      "per-prefix mean judge score (0-100), hallucination": 31.1125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.779090158161658,
+      "per-prefix mean judge score (0-100), hallucination": 36.52291666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.870690995635684,
+      "per-prefix mean judge score (0-100), hallucination": 29.454166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.93802055928488,
+      "per-prefix mean judge score (0-100), hallucination": 38.645833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.851120103907604,
+      "per-prefix mean judge score (0-100), hallucination": 39.862500000000004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.05917670974608,
+      "per-prefix mean judge score (0-100), hallucination": 33.645833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.48280843860432,
+      "per-prefix mean judge score (0-100), hallucination": 31.534375,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.74434536114607,
+      "per-prefix mean judge score (0-100), hallucination": 32.84166666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.780744215009975,
+      "per-prefix mean judge score (0-100), hallucination": 30.33125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.32387527194485,
+      "per-prefix mean judge score (0-100), hallucination": 33.708333333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.954192101164182,
+      "per-prefix mean judge score (0-100), hallucination": 32.329166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.55258447972618,
+      "per-prefix mean judge score (0-100), hallucination": 35.666666666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.85193711970986,
+      "per-prefix mean judge score (0-100), hallucination": 35.66388888888889,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.095489557556963,
+      "per-prefix mean judge score (0-100), hallucination": 28.625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.095313245501316,
+      "per-prefix mean judge score (0-100), hallucination": 32.8125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 29.23374287397591,
+      "per-prefix mean judge score (0-100), hallucination": 34.15833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.62804010670715,
+      "per-prefix mean judge score (0-100), hallucination": 29.191666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 27.611012260294892,
+      "per-prefix mean judge score (0-100), hallucination": 31.304166666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.14896681475771,
+      "per-prefix mean judge score (0-100), hallucination": 27.28333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 27.053070772366382,
+      "per-prefix mean judge score (0-100), hallucination": 29.21666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 28.22099324353246,
+      "per-prefix mean judge score (0-100), hallucination": 28.162499999999998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.62311203196711,
+      "per-prefix mean judge score (0-100), hallucination": 24.491666666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 18.744735422926414,
+      "per-prefix mean judge score (0-100), hallucination": 23.391666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.46247116556549,
+      "per-prefix mean judge score (0-100), hallucination": 20.554166666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.539814961507933,
+      "per-prefix mean judge score (0-100), hallucination": 22.77916666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.628126521844287,
+      "per-prefix mean judge score (0-100), hallucination": 22.520833333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.739973315025175,
+      "per-prefix mean judge score (0-100), hallucination": 22.02916666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 17.702118835614876,
+      "per-prefix mean judge score (0-100), hallucination": 19.4125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.98456732470759,
+      "per-prefix mean judge score (0-100), hallucination": 13.366666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 19.797281026247756,
+      "per-prefix mean judge score (0-100), hallucination": 22.15833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.77823039981824,
+      "per-prefix mean judge score (0-100), hallucination": 20.625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.9001425555029,
+      "per-prefix mean judge score (0-100), hallucination": 22.2625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 20.958333333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.362157148201277,
+      "per-prefix mean judge score (0-100), hallucination": 23.483333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 23.08731319896699,
+      "per-prefix mean judge score (0-100), hallucination": 33.4125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 23.782507953522835,
+      "per-prefix mean judge score (0-100), hallucination": 21.754166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 19.658240800108793,
+      "per-prefix mean judge score (0-100), hallucination": 24.84583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.476417932235965,
+      "per-prefix mean judge score (0-100), hallucination": 21.441666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.685958318123006,
+      "per-prefix mean judge score (0-100), hallucination": 22.654166666666665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.886515247757394,
+      "per-prefix mean judge score (0-100), hallucination": 37.47083333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 21.125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.66824293254167,
+      "per-prefix mean judge score (0-100), hallucination": 36.324999999999996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 37.20167090323629,
+      "per-prefix mean judge score (0-100), hallucination": 36.25,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.8519808573143,
+      "per-prefix mean judge score (0-100), hallucination": 36.15833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 20.616666666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.60982858702402,
+      "per-prefix mean judge score (0-100), hallucination": 31.962499999999995,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 22.7,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.745833333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.70416666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 21.09583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.22496933701369,
+      "per-prefix mean judge score (0-100), hallucination": 35.270833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 18.599999999999998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 39.31627687428862,
+      "per-prefix mean judge score (0-100), hallucination": 38.797916666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 19.854166666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 20.741666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.18792800395523,
+      "per-prefix mean judge score (0-100), hallucination": 31.8625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.46064151652452,
+      "per-prefix mean judge score (0-100), hallucination": 38.84583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 28.104453898655468,
+      "per-prefix mean judge score (0-100), hallucination": 31.137500000000003,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.058333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 21.174999999999997,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.161588233024645,
+      "per-prefix mean judge score (0-100), hallucination": 29.391666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 21.220833333333335,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 20.933333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 21.583333333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.042208386972305,
+      "per-prefix mean judge score (0-100), hallucination": 37.108333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.6875,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.23444582988146,
+      "per-prefix mean judge score (0-100), hallucination": 32.79583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.47083333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.96893464683422,
+      "per-prefix mean judge score (0-100), hallucination": 31.32083333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 21.358333333333338,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 21.779166666666665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 20.8125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 19.833333333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.37676419105707,
+      "per-prefix mean judge score (0-100), hallucination": 36.675000000000004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 19.629166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.462010159191465,
+      "per-prefix mean judge score (0-100), hallucination": 42.69166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 20.495833333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 20.866666666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 21.120833333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 21.78333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.30739875410559,
+      "per-prefix mean judge score (0-100), hallucination": 42.649652777777774,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.351553882838964,
+      "per-prefix mean judge score (0-100), hallucination": 35.604166666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 20.020833333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 21.47083333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 20.725,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.168235038536107,
+      "per-prefix mean judge score (0-100), hallucination": 28.59583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 21.279166666666665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.07810232437363,
+      "per-prefix mean judge score (0-100), hallucination": 32.20416666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 22.05,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 23.275000000000002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.09676061998741,
+      "per-prefix mean judge score (0-100), hallucination": 32.041666666666664,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.87201561840709,
+      "per-prefix mean judge score (0-100), hallucination": 39.153125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 20.258333333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.89519379609245,
+      "per-prefix mean judge score (0-100), hallucination": 39.34583333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.998238403121505,
+      "per-prefix mean judge score (0-100), hallucination": 41.975,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.639750379779734,
+      "per-prefix mean judge score (0-100), hallucination": 31.96666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 23.0125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.7343600116435,
+      "per-prefix mean judge score (0-100), hallucination": 31.683333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.670044478868775,
+      "per-prefix mean judge score (0-100), hallucination": 31.329166666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.197704216517764,
+      "per-prefix mean judge score (0-100), hallucination": 22.533333333333335,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.44818707737881,
+      "per-prefix mean judge score (0-100), hallucination": 39.9625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 22.3125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.53141919529604,
+      "per-prefix mean judge score (0-100), hallucination": 36.15833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.41742847526938,
+      "per-prefix mean judge score (0-100), hallucination": 21.9375,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 23.820833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.4359933770694,
+      "per-prefix mean judge score (0-100), hallucination": 33.62916666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.08222231199762,
+      "per-prefix mean judge score (0-100), hallucination": 31.766666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 21.570833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 29.26825585273727,
+      "per-prefix mean judge score (0-100), hallucination": 25.279166666666665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.56023805741994,
+      "per-prefix mean judge score (0-100), hallucination": 29.541666666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.80067191613231,
+      "per-prefix mean judge score (0-100), hallucination": 27.20416666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 27.82580430216411,
+      "per-prefix mean judge score (0-100), hallucination": 23.320833333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 22.0625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.325799308319546,
+      "per-prefix mean judge score (0-100), hallucination": 21.53333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.30435758398762,
+      "per-prefix mean judge score (0-100), hallucination": 32.68333333333334,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.543343570513436,
+      "per-prefix mean judge score (0-100), hallucination": 33.25416666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 22.3,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 21.099999999999998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.79503426685999,
+      "per-prefix mean judge score (0-100), hallucination": 29.104166666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 22.212500000000002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 20.458333333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.452120712369446,
+      "per-prefix mean judge score (0-100), hallucination": 19.508333333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.45212071236945,
+      "per-prefix mean judge score (0-100), hallucination": 21.770833333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.24894306500214,
+      "per-prefix mean judge score (0-100), hallucination": 31.05,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.13990696235589,
+      "per-prefix mean judge score (0-100), hallucination": 32.391666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.83973760176611,
+      "per-prefix mean judge score (0-100), hallucination": 32.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 20.916666666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.9599402340528,
+      "per-prefix mean judge score (0-100), hallucination": 36.49861111111111,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.55384284600368,
+      "per-prefix mean judge score (0-100), hallucination": 26.041666666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.562542598089294,
+      "per-prefix mean judge score (0-100), hallucination": 29.641666666666666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.417428475269375,
+      "per-prefix mean judge score (0-100), hallucination": 22.15833333333333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.256801103579633,
+      "per-prefix mean judge score (0-100), hallucination": 22.875,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 22.3625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.335958471259936,
+      "per-prefix mean judge score (0-100), hallucination": 21.46666666666667,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.417428475269375,
+      "per-prefix mean judge score (0-100), hallucination": 21.041666666666668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.33595847125994,
+      "per-prefix mean judge score (0-100), hallucination": 22.220833333333335,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.380217690905518,
+      "per-prefix mean judge score (0-100), hallucination": 23.8125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.96548538898129,
+      "per-prefix mean judge score (0-100), hallucination": 30.645833333333332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 17.702118835614876,
+      "per-prefix mean judge score (0-100), hallucination": 17.877484084573645,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 18.14322410171026,
+      "per-prefix mean judge score (0-100), hallucination": 18.306894004767727,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 18.58432936780564,
+      "per-prefix mean judge score (0-100), hallucination": 18.736303924961806,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 19.025434633901025,
+      "per-prefix mean judge score (0-100), hallucination": 19.16571384515589,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 19.466539899996405,
+      "per-prefix mean judge score (0-100), hallucination": 19.595123765349967,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 19.90764516609179,
+      "per-prefix mean judge score (0-100), hallucination": 20.02453368554405,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 20.34875043218717,
+      "per-prefix mean judge score (0-100), hallucination": 20.453943605738125,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 20.789855698282555,
+      "per-prefix mean judge score (0-100), hallucination": 20.883353525932208,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.230960964377935,
+      "per-prefix mean judge score (0-100), hallucination": 21.312763446126286,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 21.67206623047332,
+      "per-prefix mean judge score (0-100), hallucination": 21.74217336632037,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.1131714965687,
+      "per-prefix mean judge score (0-100), hallucination": 22.171583286514448,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.554276762664085,
+      "per-prefix mean judge score (0-100), hallucination": 22.60099320670853,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 22.995382028759465,
+      "per-prefix mean judge score (0-100), hallucination": 23.030403126902605,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 23.43648729485485,
+      "per-prefix mean judge score (0-100), hallucination": 23.459813047096688,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 23.87759256095023,
+      "per-prefix mean judge score (0-100), hallucination": 23.889222967290767,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.318697827045614,
+      "per-prefix mean judge score (0-100), hallucination": 24.31863288748485,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 24.759803093140995,
+      "per-prefix mean judge score (0-100), hallucination": 24.748042807678928,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.20090835923638,
+      "per-prefix mean judge score (0-100), hallucination": 25.17745272787301,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 25.64201362533176,
+      "per-prefix mean judge score (0-100), hallucination": 25.606862648067086,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.083118891427144,
+      "per-prefix mean judge score (0-100), hallucination": 26.036272568261168,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.524224157522525,
+      "per-prefix mean judge score (0-100), hallucination": 26.465682488455247,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 26.96532942361791,
+      "per-prefix mean judge score (0-100), hallucination": 26.89509240864933,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 27.406434689713294,
+      "per-prefix mean judge score (0-100), hallucination": 27.324502328843412,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 27.847539955808674,
+      "per-prefix mean judge score (0-100), hallucination": 27.75391224903749,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 28.288645221904055,
+      "per-prefix mean judge score (0-100), hallucination": 28.183322169231566,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 28.72975048799944,
+      "per-prefix mean judge score (0-100), hallucination": 28.61273208942565,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 29.170855754094823,
+      "per-prefix mean judge score (0-100), hallucination": 29.04214200961973,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 29.611961020190204,
+      "per-prefix mean judge score (0-100), hallucination": 29.47155192981381,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.053066286285585,
+      "per-prefix mean judge score (0-100), hallucination": 29.90096185000789,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.49417155238097,
+      "per-prefix mean judge score (0-100), hallucination": 30.33037177020197,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 30.935276818476353,
+      "per-prefix mean judge score (0-100), hallucination": 30.75978169039605,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.376382084571734,
+      "per-prefix mean judge score (0-100), hallucination": 31.18919161059013,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 31.817487350667115,
+      "per-prefix mean judge score (0-100), hallucination": 31.618601530784208,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.2585926167625,
+      "per-prefix mean judge score (0-100), hallucination": 32.04801145097829,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 32.69969788285788,
+      "per-prefix mean judge score (0-100), hallucination": 32.47742137117237,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.14080314895327,
+      "per-prefix mean judge score (0-100), hallucination": 32.90683129136645,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 33.581908415048645,
+      "per-prefix mean judge score (0-100), hallucination": 33.33624121156053,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.02301368114403,
+      "per-prefix mean judge score (0-100), hallucination": 33.76565113175461,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.46411894723941,
+      "per-prefix mean judge score (0-100), hallucination": 34.195061051948684,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 34.90522421333479,
+      "per-prefix mean judge score (0-100), hallucination": 34.62447097214276,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.34632947943018,
+      "per-prefix mean judge score (0-100), hallucination": 35.05388089233685,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 35.78743474552556,
+      "per-prefix mean judge score (0-100), hallucination": 35.483290812530925,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.22854001162094,
+      "per-prefix mean judge score (0-100), hallucination": 35.91270073272501,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 36.66964527771633,
+      "per-prefix mean judge score (0-100), hallucination": 36.34211065291909,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 37.110750543811704,
+      "per-prefix mean judge score (0-100), hallucination": 36.771520573113165,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 37.55185580990709,
+      "per-prefix mean judge score (0-100), hallucination": 37.20093049330725,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 37.99296107600247,
+      "per-prefix mean judge score (0-100), hallucination": 37.63034041350133,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 38.43406634209785,
+      "per-prefix mean judge score (0-100), hallucination": 38.059750333695405,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 38.87517160819324,
+      "per-prefix mean judge score (0-100), hallucination": 38.489160253889494,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out prefix-end read (ridge prediction)": 39.31627687428862,
+      "per-prefix mean judge score (0-100), hallucination": 38.91857017408357,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 24.83165581258976,
+      "per-prefix mean judge score (0-100), hallucination": 22.974999999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.441296470210684,
+      "per-prefix mean judge score (0-100), hallucination": 30.557291666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.73041888275918,
+      "per-prefix mean judge score (0-100), hallucination": 26.900000000000002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.661226855634013,
+      "per-prefix mean judge score (0-100), hallucination": 19.36666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.014487900235775,
+      "per-prefix mean judge score (0-100), hallucination": 23.145833333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.238150091930535,
+      "per-prefix mean judge score (0-100), hallucination": 24.675,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.624147498207265,
+      "per-prefix mean judge score (0-100), hallucination": 33.19583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.289022022817857,
+      "per-prefix mean judge score (0-100), hallucination": 32.05833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.618423263815664,
+      "per-prefix mean judge score (0-100), hallucination": 30.212499999999995,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.77458584051671,
+      "per-prefix mean judge score (0-100), hallucination": 28.4875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.728847791732406,
+      "per-prefix mean judge score (0-100), hallucination": 34.38229166666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.667399468869984,
+      "per-prefix mean judge score (0-100), hallucination": 31.1125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.667976201663656,
+      "per-prefix mean judge score (0-100), hallucination": 36.52291666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.338249120055764,
+      "per-prefix mean judge score (0-100), hallucination": 29.454166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.74469857001263,
+      "per-prefix mean judge score (0-100), hallucination": 38.645833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 38.03613177610636,
+      "per-prefix mean judge score (0-100), hallucination": 39.862500000000004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.142091305003497,
+      "per-prefix mean judge score (0-100), hallucination": 33.645833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.196923831394713,
+      "per-prefix mean judge score (0-100), hallucination": 31.534375,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.61259131551243,
+      "per-prefix mean judge score (0-100), hallucination": 32.84166666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.42638834926576,
+      "per-prefix mean judge score (0-100), hallucination": 30.33125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.887240847654226,
+      "per-prefix mean judge score (0-100), hallucination": 33.708333333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.835145671898317,
+      "per-prefix mean judge score (0-100), hallucination": 32.329166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.54396344336903,
+      "per-prefix mean judge score (0-100), hallucination": 35.666666666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.42248819026871,
+      "per-prefix mean judge score (0-100), hallucination": 35.66388888888889,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.830483826897936,
+      "per-prefix mean judge score (0-100), hallucination": 28.625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.6794918990354,
+      "per-prefix mean judge score (0-100), hallucination": 32.8125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.82317801528292,
+      "per-prefix mean judge score (0-100), hallucination": 34.15833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.53538114759791,
+      "per-prefix mean judge score (0-100), hallucination": 29.191666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.71627722510324,
+      "per-prefix mean judge score (0-100), hallucination": 31.304166666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.65192451334933,
+      "per-prefix mean judge score (0-100), hallucination": 27.28333333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.432585147921486,
+      "per-prefix mean judge score (0-100), hallucination": 29.21666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.132316773251794,
+      "per-prefix mean judge score (0-100), hallucination": 28.162499999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.644680566601615,
+      "per-prefix mean judge score (0-100), hallucination": 24.491666666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.381360126086456,
+      "per-prefix mean judge score (0-100), hallucination": 23.391666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 24.2813517289777,
+      "per-prefix mean judge score (0-100), hallucination": 20.554166666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 23.33779127186367,
+      "per-prefix mean judge score (0-100), hallucination": 22.77916666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 22.36455800379772,
+      "per-prefix mean judge score (0-100), hallucination": 22.520833333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 22.929969833404805,
+      "per-prefix mean judge score (0-100), hallucination": 22.02916666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.631652097937017,
+      "per-prefix mean judge score (0-100), hallucination": 19.4125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.13797099655945,
+      "per-prefix mean judge score (0-100), hallucination": 13.366666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.634793356333589,
+      "per-prefix mean judge score (0-100), hallucination": 22.15833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.589826670899214,
+      "per-prefix mean judge score (0-100), hallucination": 20.625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 28.482596162515303,
+      "per-prefix mean judge score (0-100), hallucination": 22.2625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 20.958333333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 23.281471378481918,
+      "per-prefix mean judge score (0-100), hallucination": 23.483333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.53328118499969,
+      "per-prefix mean judge score (0-100), hallucination": 33.4125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 24.565282233948697,
+      "per-prefix mean judge score (0-100), hallucination": 21.754166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 19.974007366578263,
+      "per-prefix mean judge score (0-100), hallucination": 24.84583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.380661896342698,
+      "per-prefix mean judge score (0-100), hallucination": 21.441666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 22.75826726498554,
+      "per-prefix mean judge score (0-100), hallucination": 22.654166666666665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 40.04067561277081,
+      "per-prefix mean judge score (0-100), hallucination": 37.47083333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 35.528506499883264,
+      "per-prefix mean judge score (0-100), hallucination": 36.324999999999996,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 40.30153385925017,
+      "per-prefix mean judge score (0-100), hallucination": 36.25,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.11332951884411,
+      "per-prefix mean judge score (0-100), hallucination": 36.15833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 20.616666666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.242150353307125,
+      "per-prefix mean judge score (0-100), hallucination": 31.962499999999995,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 22.7,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.745833333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.70416666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.09583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.995318118047315,
+      "per-prefix mean judge score (0-100), hallucination": 35.270833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 18.599999999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 38.98805204266044,
+      "per-prefix mean judge score (0-100), hallucination": 38.797916666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 19.854166666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 20.741666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.406879963405196,
+      "per-prefix mean judge score (0-100), hallucination": 31.8625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.06275347710542,
+      "per-prefix mean judge score (0-100), hallucination": 38.84583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.737068078427374,
+      "per-prefix mean judge score (0-100), hallucination": 31.137500000000003,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.058333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.174999999999997,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.159240892973756,
+      "per-prefix mean judge score (0-100), hallucination": 29.391666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 21.220833333333335,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 20.933333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 21.583333333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.09364159420409,
+      "per-prefix mean judge score (0-100), hallucination": 37.108333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.6875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.52084247717846,
+      "per-prefix mean judge score (0-100), hallucination": 32.79583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.47083333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.795082492384275,
+      "per-prefix mean judge score (0-100), hallucination": 31.32083333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 21.358333333333338,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 21.779166666666665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 20.8125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 19.833333333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 39.77872881989809,
+      "per-prefix mean judge score (0-100), hallucination": 36.675000000000004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 19.629166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.725841643208035,
+      "per-prefix mean judge score (0-100), hallucination": 42.69166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 20.495833333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 20.866666666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 21.120833333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 21.78333333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.76974170912969,
+      "per-prefix mean judge score (0-100), hallucination": 42.649652777777774,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.31284800389898,
+      "per-prefix mean judge score (0-100), hallucination": 35.604166666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 20.020833333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.47083333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 20.725,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.44897352343596,
+      "per-prefix mean judge score (0-100), hallucination": 28.59583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 21.279166666666665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.095510790608994,
+      "per-prefix mean judge score (0-100), hallucination": 32.20416666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 22.05,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 23.275000000000002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.7776510500884,
+      "per-prefix mean judge score (0-100), hallucination": 32.041666666666664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.474265885387915,
+      "per-prefix mean judge score (0-100), hallucination": 39.153125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 20.258333333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.851713346770765,
+      "per-prefix mean judge score (0-100), hallucination": 39.34583333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 38.20377146760439,
+      "per-prefix mean judge score (0-100), hallucination": 41.975,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.005745660490437,
+      "per-prefix mean judge score (0-100), hallucination": 31.96666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 23.0125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.07480646014744,
+      "per-prefix mean judge score (0-100), hallucination": 31.683333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.2745023797292,
+      "per-prefix mean judge score (0-100), hallucination": 31.329166666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.4604082588305,
+      "per-prefix mean judge score (0-100), hallucination": 22.533333333333335,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.99646279277089,
+      "per-prefix mean judge score (0-100), hallucination": 39.9625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 22.3125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.38380419202836,
+      "per-prefix mean judge score (0-100), hallucination": 36.15833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.9375,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 23.820833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.96521463697859,
+      "per-prefix mean judge score (0-100), hallucination": 33.62916666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.63942453502516,
+      "per-prefix mean judge score (0-100), hallucination": 31.766666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 21.570833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 28.474629742835063,
+      "per-prefix mean judge score (0-100), hallucination": 25.279166666666665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.599560902477943,
+      "per-prefix mean judge score (0-100), hallucination": 29.541666666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.613443769480725,
+      "per-prefix mean judge score (0-100), hallucination": 27.20416666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 24.28329940909993,
+      "per-prefix mean judge score (0-100), hallucination": 23.320833333333336,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 22.0625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.32570629456338,
+      "per-prefix mean judge score (0-100), hallucination": 21.53333333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.93044420462376,
+      "per-prefix mean judge score (0-100), hallucination": 32.68333333333334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.10276977154981,
+      "per-prefix mean judge score (0-100), hallucination": 33.25416666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 22.3,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 21.099999999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.133341365691265,
+      "per-prefix mean judge score (0-100), hallucination": 29.104166666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 22.212500000000002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 20.458333333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624466,
+      "per-prefix mean judge score (0-100), hallucination": 19.508333333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.453163791624462,
+      "per-prefix mean judge score (0-100), hallucination": 21.770833333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.447280119233874,
+      "per-prefix mean judge score (0-100), hallucination": 31.05,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.27817775561595,
+      "per-prefix mean judge score (0-100), hallucination": 32.391666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.56269034656317,
+      "per-prefix mean judge score (0-100), hallucination": 32.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 20.916666666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.750975226042485,
+      "per-prefix mean judge score (0-100), hallucination": 36.49861111111111,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.8443284729091,
+      "per-prefix mean judge score (0-100), hallucination": 26.041666666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.82005188193175,
+      "per-prefix mean judge score (0-100), hallucination": 29.641666666666666,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 22.15833333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.257963565378297,
+      "per-prefix mean judge score (0-100), hallucination": 22.875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 22.3625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.33395306570157,
+      "per-prefix mean judge score (0-100), hallucination": 21.46666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.415845494726938,
+      "per-prefix mean judge score (0-100), hallucination": 21.041666666666668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.333953065701568,
+      "per-prefix mean judge score (0-100), hallucination": 22.220833333333335,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.89185211366609,
+      "per-prefix mean judge score (0-100), hallucination": 23.8125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 35.88612305820888,
+      "per-prefix mean judge score (0-100), hallucination": 30.645833333333332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 12.634793356333589,
+      "per-prefix mean judge score (0-100), hallucination": 14.035454236754692,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.199420713535968,
+      "per-prefix mean judge score (0-100), hallucination": 14.543696677043902,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 13.764048070738347,
+      "per-prefix mean judge score (0-100), hallucination": 15.051939117333115,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.328675427940727,
+      "per-prefix mean judge score (0-100), hallucination": 15.560181557622327,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 14.893302785143106,
+      "per-prefix mean judge score (0-100), hallucination": 16.068423997911538,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 15.457930142345486,
+      "per-prefix mean judge score (0-100), hallucination": 16.57666643820075,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.022557499547865,
+      "per-prefix mean judge score (0-100), hallucination": 17.084908878489962,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 16.58718485675024,
+      "per-prefix mean judge score (0-100), hallucination": 17.59315131877917,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.151812213952624,
+      "per-prefix mean judge score (0-100), hallucination": 18.101393759068387,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 17.716439571155,
+      "per-prefix mean judge score (0-100), hallucination": 18.609636199357595,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.281066928357383,
+      "per-prefix mean judge score (0-100), hallucination": 19.11787863964681,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 18.84569428555976,
+      "per-prefix mean judge score (0-100), hallucination": 19.62612107993602,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 19.41032164276214,
+      "per-prefix mean judge score (0-100), hallucination": 20.134363520225232,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 19.974948999964518,
+      "per-prefix mean judge score (0-100), hallucination": 20.642605960514445,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 20.539576357166897,
+      "per-prefix mean judge score (0-100), hallucination": 21.150848400803657,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.104203714369277,
+      "per-prefix mean judge score (0-100), hallucination": 21.65909084109287,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 21.668831071571656,
+      "per-prefix mean judge score (0-100), hallucination": 22.16733328138208,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 22.233458428774036,
+      "per-prefix mean judge score (0-100), hallucination": 22.675575721671294,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 22.798085785976415,
+      "per-prefix mean judge score (0-100), hallucination": 23.183818161960506,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 23.362713143178794,
+      "per-prefix mean judge score (0-100), hallucination": 23.692060602249718,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 23.927340500381174,
+      "per-prefix mean judge score (0-100), hallucination": 24.20030304253893,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 24.491967857583553,
+      "per-prefix mean judge score (0-100), hallucination": 24.708545482828143,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.05659521478593,
+      "per-prefix mean judge score (0-100), hallucination": 25.21678792311735,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 25.621222571988312,
+      "per-prefix mean judge score (0-100), hallucination": 25.725030363406567,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.185849929190688,
+      "per-prefix mean judge score (0-100), hallucination": 26.233272803695776,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 26.75047728639307,
+      "per-prefix mean judge score (0-100), hallucination": 26.741515243984992,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.315104643595447,
+      "per-prefix mean judge score (0-100), hallucination": 27.2497576842742,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 27.87973200079783,
+      "per-prefix mean judge score (0-100), hallucination": 27.758000124563416,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 28.444359358000206,
+      "per-prefix mean judge score (0-100), hallucination": 28.266242564852625,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.008986715202585,
+      "per-prefix mean judge score (0-100), hallucination": 28.774485005141837,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 29.573614072404965,
+      "per-prefix mean judge score (0-100), hallucination": 29.28272744543105,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.138241429607344,
+      "per-prefix mean judge score (0-100), hallucination": 29.790969885720262,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 30.702868786809724,
+      "per-prefix mean judge score (0-100), hallucination": 30.29921232600947,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.267496144012103,
+      "per-prefix mean judge score (0-100), hallucination": 30.807454766298683,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 31.832123501214483,
+      "per-prefix mean judge score (0-100), hallucination": 31.315697206587895,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.396750858416866,
+      "per-prefix mean judge score (0-100), hallucination": 31.82393964687711,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 32.96137821561924,
+      "per-prefix mean judge score (0-100), hallucination": 32.33218208716632,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 33.52600557282162,
+      "per-prefix mean judge score (0-100), hallucination": 32.84042452745553,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.090632930024,
+      "per-prefix mean judge score (0-100), hallucination": 33.34866696774475,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 34.65526028722638,
+      "per-prefix mean judge score (0-100), hallucination": 33.856909408033964,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 35.21988764442876,
+      "per-prefix mean judge score (0-100), hallucination": 34.36515184832317,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 35.784515001631135,
+      "per-prefix mean judge score (0-100), hallucination": 34.87339428861238,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.34914235883352,
+      "per-prefix mean judge score (0-100), hallucination": 35.3816367289016,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 36.913769716035894,
+      "per-prefix mean judge score (0-100), hallucination": 35.889879169190806,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 37.47839707323827,
+      "per-prefix mean judge score (0-100), hallucination": 36.398121609480015,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 38.04302443044065,
+      "per-prefix mean judge score (0-100), hallucination": 36.90636404976923,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 38.607651787643036,
+      "per-prefix mean judge score (0-100), hallucination": 37.414606490058446,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 39.17227914484541,
+      "per-prefix mean judge score (0-100), hallucination": 37.922848930347655,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 39.73690650204779,
+      "per-prefix mean judge score (0-100), hallucination": 38.431091370636864,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "held-out averaged-context read (ridge prediction)": 40.30153385925017,
+      "per-prefix mean judge score (0-100), hallucination": 38.93933381092608,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 796,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy \u2014 prefix-end",
+        "xlabel": "held-out prefix-end read (ridge prediction)",
+        "ylabel": "per-prefix mean judge score (0-100), sycophancy",
+        "annotations": [
+          "r = 0.76  (p<0.001)\nn = 149 prefixes"
+        ],
+        "xticklabels": [
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "20"
+        ],
+        "yticklabels": [
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ]
+      },
+      {
+        "title_left": "Sycophancy \u2014 averaged-context",
+        "xlabel": "held-out averaged-context read (ridge prediction)",
+        "ylabel": "per-prefix mean judge score (0-100), sycophancy",
+        "annotations": [
+          "r = 0.77  (p<0.001)\nn = 149 prefixes"
+        ],
+        "xticklabels": [
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "20"
+        ],
+        "yticklabels": [
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ]
+      },
+      {
+        "title_left": "Hallucination \u2014 prefix-end",
+        "xlabel": "held-out prefix-end read (ridge prediction)",
+        "ylabel": "per-prefix mean judge score (0-100), hallucination",
+        "annotations": [
+          "r = 0.89  (p<0.001)\nn = 149 prefixes"
+        ],
+        "xticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ],
+        "yticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      },
+      {
+        "title_left": "Hallucination \u2014 averaged-context",
+        "xlabel": "held-out averaged-context read (ridge prediction)",
+        "ylabel": "per-prefix mean judge score (0-100), hallucination",
+        "annotations": [
+          "r = 0.89  (p<0.001)\nn = 149 prefixes"
+        ],
+        "xticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ],
+        "yticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      }
+    ]
+  }
+}

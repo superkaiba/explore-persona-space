@@ -247,6 +247,7 @@ def process_cell_trait(  # noqa: C901
     g_ctx = np.stack([X_ctx[pref_idx == j].mean(0) for j in range(n_pref)])
     g_pre = np.stack([X_pre[pref_idx == j][0] for j in range(n_pref)])
     g_score = np.array([y[pref_idx == j].mean() for j in range(n_pref)])
+    g_std = np.array([float(y[pref_idx == j].std()) for j in range(n_pref)])
     g_nq = np.array([int((pref_idx == j).sum()) for j in range(n_pref)])
 
     # ONE monitor per fold, fit on TRAIN group states; applied to held-out group
@@ -391,6 +392,14 @@ def process_cell_trait(  # noqa: C901
         },
         "averaging_curve_context": curve,
         "prefix_end_flat_reference_r": r_prefixend,
+        "per_prefix": {
+            "prefix_id": uniq_pref.tolist(),
+            "read_prefix_end": [float(x) for x in g_pred_pre],
+            "read_averaged_context": [float(x) for x in g_pred_ctx],
+            "judge_mean": [float(x) for x in g_score],
+            "judge_std": [float(x) for x in g_std],
+            "n_queries": [int(x) for x in g_nq],
+        },
     }
 
 
@@ -480,6 +489,137 @@ def make_figure(results: dict, headline_layer: int) -> dict:
     return {k: str(v) for k, v in paths.items()}
 
 
+def _by_trait(results: dict, cell: str, layer: int) -> dict:
+    return {d["trait"]: d for d in results["cells"].get(cell, {}).get(str(layer), [])}
+
+
+def _scatter_panel(ax, xv, yv, xlabel, ylabel, color, title) -> None:
+    from scipy import stats
+
+    xv = np.asarray(xv, dtype=np.float64)
+    yv = np.asarray(yv, dtype=np.float64)
+    ax.scatter(xv, yv, s=26, alpha=0.5, color=color, edgecolors="none")
+    r, p = stats.pearsonr(xv, yv)
+    b, a = np.polyfit(xv, yv, 1)
+    xs = np.linspace(xv.min(), xv.max(), 50)
+    ax.plot(xs, a + b * xs, color="#333", lw=1.4)
+    ptxt = "p<0.001" if p < 1e-3 else f"p={p:.3f}"
+    ax.annotate(
+        f"r = {r:.2f}  ({ptxt})\nn = {len(xv)} prefixes",
+        xy=(0.04, 0.93),
+        xycoords="axes fraction",
+        ha="left",
+        va="top",
+        fontsize=10,
+    )
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=11)
+
+
+def make_scatter_figures(results: dict, layer: int) -> dict:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots as pp
+
+    out: dict = {}
+    pp.set_paper_style("blog")
+    c_pre = pp.paper_palette_role("accent")
+    c_ctx = pp.paper_palette_role("primary")
+
+    # Instruct arm: rows = traits, cols = [prefix-end, averaged-context].
+    inst = _by_trait(results, "cell_inst_own", layer)
+    traits = [t for t in TRAITS if t in inst]
+    if traits:
+        fig, axes = plt.subplots(
+            len(traits), 2, figsize=(11.0, 4.6 * len(traits)), layout="constrained"
+        )
+        axes = np.atleast_2d(axes)
+        for row, trait in enumerate(traits):
+            pp_ = inst[trait]["per_prefix"]
+            ym = pp_["judge_mean"]
+            # consistent axes per trait row: shared x + y across the two arms
+            allx = pp_["read_prefix_end"] + pp_["read_averaged_context"]
+            xlo, xhi = min(allx), max(allx)
+            xpad = 0.04 * (xhi - xlo + 1e-9)
+            ylo, yhi = min(ym), max(ym)
+            ypad = 0.06 * (yhi - ylo + 1e-9)
+            for col, (arm_key, arm_lab, arm_col) in enumerate(
+                [
+                    ("read_prefix_end", "prefix-end", c_pre),
+                    ("read_averaged_context", "averaged-context", c_ctx),
+                ]
+            ):
+                ax = axes[row, col]
+                _scatter_panel(
+                    ax,
+                    pp_[arm_key],
+                    ym,
+                    f"held-out {arm_lab} read (ridge prediction)",
+                    f"per-prefix mean judge score (0-100), {trait}",
+                    arm_col,
+                    f"{trait.capitalize()} — {arm_lab}",
+                )
+                ax.set_xlim(xlo - xpad, xhi + xpad)
+                ax.set_ylim(ylo - ypad, yhi + ypad)
+        paths = pp.savefig_paper(fig, "prefixend_monitoring_scatter", dir=FIG_DIR)
+        plt.close(fig)
+        out.update({f"instruct_{k}": str(v) for k, v in paths.items()})
+
+    # Base-model collapse case: hallucination, prefix-end vs averaged-context.
+    base = _by_trait(results, "cell_pre_own", layer)
+    if "hallucination" in base:
+        pp_ = base["hallucination"]["per_prefix"]
+        ym = pp_["judge_mean"]
+        fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), layout="constrained")
+        allx = pp_["read_prefix_end"] + pp_["read_averaged_context"]
+        xlo, xhi = min(allx), max(allx)
+        xpad = 0.04 * (xhi - xlo + 1e-9)
+        for col, (arm_key, arm_lab, arm_col) in enumerate(
+            [
+                ("read_prefix_end", "prefix-end", c_pre),
+                ("read_averaged_context", "averaged-context", c_ctx),
+            ]
+        ):
+            _scatter_panel(
+                axes[col],
+                pp_[arm_key],
+                ym,
+                f"held-out {arm_lab} read (ridge prediction)",
+                "per-prefix mean judge score (0-100), hallucination",
+                arm_col,
+                f"Base model — hallucination — {arm_lab}",
+            )
+            axes[col].set_xlim(xlo - xpad, xhi + xpad)
+        paths = pp.savefig_paper(fig, "prefixend_monitoring_scatter_base", dir=FIG_DIR)
+        plt.close(fig)
+        out.update({f"base_{k}": str(v) for k, v in paths.items()})
+    return out
+
+
+def write_per_prefix_points(results: dict, layer: int, out_dir: Path) -> str:
+    payload = {
+        "read": "#1092 prefix-end vs averaged-context monitoring — per-prefix points",
+        "layer": layer,
+        "generated_utc": datetime.now(UTC).isoformat(),
+        "git_commit": _git_sha(),
+        "provenance": results["provenance"],
+        "columns": (
+            "prefix_id, read_prefix_end, read_averaged_context (held-out ridge "
+            "predictions of judge score), judge_mean, judge_std, n_queries"
+        ),
+        "cells": {},
+    }
+    for cell in CELLS:
+        by_trait = _by_trait(results, cell, layer)
+        if by_trait:
+            payload["cells"][cell] = {t: by_trait[t]["per_prefix"] for t in by_trait}
+    path = out_dir / "per_prefix_points.json"
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=1)
+    return str(path)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", type=int, nargs="+", default=[14])
@@ -559,7 +699,11 @@ def main() -> int:
             results["cells"][cell][str(layer)] = per_layer
 
     figs = make_figure(results, args.headline_layer)
+    figs.update(make_scatter_figures(results, args.headline_layer))
     results["figures"] = figs
+
+    points_path = write_per_prefix_points(results, args.headline_layer, out_dir)
+    print("WROTE", points_path)
 
     out_path = out_dir / "results.json"
     with open(out_path, "w") as f:
