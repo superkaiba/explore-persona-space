@@ -1,0 +1,19 @@
+{
+  "regime": "avg_q",
+  "store_identity": "a8e41e04036d4548",
+  "layers": [
+    12,
+    24
+  ],
+  "combos": [
+    "mean",
+    "max",
+    "boundary"
+  ],
+  "n_perms": 50,
+  "shuffle_null_seed": 658,
+  "standardization": "per_fold",
+  "do_cross": true,
+  "std_sensitivity_layer": null,
+  "device": "cuda"
+}

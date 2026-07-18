@@ -1,0 +1,421 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:55Z",
+  "figsize": [
+    10.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "mlc_cotK",
+      "held-out skill (remainder target)": 0.8775496902055763,
+      "error": 0.01998980372939435,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mlc_cotK_first",
+      "held-out skill (remainder target)": 0.837699003853985,
+      "error": 0.02189343802567323,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "mlc_apfx",
+      "held-out skill (remainder target)": 0.916404206987854,
+      "error": 0.015093636532194532,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "f1_house_librarian",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_house_surgeon",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_house_programmer",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_house_medical_doctor",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_house_software_engineer",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_house_data_scientist",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_01",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_02",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_03",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_04",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_05",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_06",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_07",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f1_phub_08",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_short_1",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_short_2",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_short_3",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_short_4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_short_5",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_long_1",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_long_2",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_long_3",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_long_4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f2_wc_long_5",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_marker_k4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_french_k4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_json_k4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_pirate_k4",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_marker_k2",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_marker_k8",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_json_k2",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f3_icl_json_k8",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_imperative",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_polite",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_casual",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_legalese",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_enthusiastic",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f4_reph_archaic",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f5_fmt_json",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f5_fmt_code_comment",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f5_fmt_markdown_table",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f5_fmt_xml",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f5_fmt_bullets",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f6_default_template",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f6_helpful_asst",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f8_behav_marker",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f8_behav_sycophant",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f8_behav_refusal",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f8_behav_fact",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "f8_behav_harmful",
+      "rows dropped (matched_length_floor)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 53,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sufficiency analogues @ L24 (indiv)",
+        "ylabel": "held-out skill (remainder target)",
+        "xticklabels": [
+          "mlc_cotK",
+          "mlc_cotK_first",
+          "mlc_apfx"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Per-context floor drops",
+        "ylabel": "rows dropped (matched_length_floor)",
+        "xticklabels": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "yticklabels": [
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ]
+  }
+}

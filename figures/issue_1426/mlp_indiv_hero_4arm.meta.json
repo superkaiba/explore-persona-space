@@ -1,0 +1,72 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:11:19Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "lin D",
+      "held-out skill-over-mean R\u00b2": 0.5627626655154394,
+      "error": 0.07168313334157031,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "MLP D",
+      "held-out skill-over-mean R\u00b2": -4.9119099457422,
+      "error": 2.661018142384197,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "MLP G",
+      "held-out skill-over-mean R\u00b2": 0.6731668831859996,
+      "error": 0.10889415320399909,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lin G",
+      "held-out skill-over-mean R\u00b2": 0.8899579527674999,
+      "error": 0.02506990453779162,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-question arms at frozen L24 (paired 95% bootstrap CIs)",
+        "ylabel": "held-out skill-over-mean R\u00b2",
+        "annotations": [
+          "linear direct",
+          "MLP direct",
+          "MLP augmented",
+          "linear augmented",
+          "identity ceiling 0.972"
+        ],
+        "xticklabels": [
+          "lin D",
+          "MLP D",
+          "MLP G",
+          "lin G"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      }
+    ]
+  }
+}

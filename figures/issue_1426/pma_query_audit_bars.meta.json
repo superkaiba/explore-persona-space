@@ -1,0 +1,66 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:15:04Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "prefix\nonly",
+      "held-out skill (remainder target)": 0.04268364175012007,
+      "error": 0.01295131412805846,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "query only\n(exploratory)",
+      "held-out skill (remainder target)": 0.6211871013010604,
+      "error": 0.04141864494232911,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "prefix+query\n(exploratory)",
+      "held-out skill (remainder target)": 0.6029618492548636,
+      "error": 0.04242430523002311,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "context\n(committed)",
+      "held-out skill (remainder target)": 0.5390331522416637,
+      "error": 0.06854038569840049,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Query audit \u2014 does the two-part split recover the context arm?",
+        "ylabel": "held-out skill (remainder target)",
+        "xticklabels": [
+          "prefix\nonly",
+          "query only\n(exploratory)",
+          "prefix+query\n(exploratory)",
+          "context\n(committed)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}
