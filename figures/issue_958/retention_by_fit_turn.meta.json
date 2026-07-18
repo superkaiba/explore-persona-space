@@ -1,0 +1,178 @@
+{
+  "commit": "5235fa0676",
+  "created": "2026-07-18T03:37:17Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "evaluation turn": 1.0,
+      "retention of own-turn skill (%)": 100.0,
+      "series": "map fit at turn 1 (duplicate-excluded)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 2.0,
+      "retention of own-turn skill (%)": 77.18173510355633,
+      "series": "map fit at turn 1 (duplicate-excluded)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 3.0,
+      "retention of own-turn skill (%)": 69.00541873215728,
+      "series": "map fit at turn 1 (duplicate-excluded)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 4.0,
+      "retention of own-turn skill (%)": 64.34323038775157,
+      "series": "map fit at turn 1 (duplicate-excluded)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 5.0,
+      "retention of own-turn skill (%)": 45.16733332194276,
+      "series": "map fit at turn 1 (long panel, matched shrinkage)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 6.0,
+      "retention of own-turn skill (%)": 49.962571351137896,
+      "series": "map fit at turn 1 (long panel, matched shrinkage)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 7.0,
+      "retention of own-turn skill (%)": 38.29921416664786,
+      "series": "map fit at turn 1 (long panel, matched shrinkage)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 8.0,
+      "retention of own-turn skill (%)": 41.39289382086698,
+      "series": "map fit at turn 1 (long panel, matched shrinkage)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 2.0,
+      "retention of own-turn skill (%)": 100.0,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 3.0,
+      "retention of own-turn skill (%)": 98.406852365754,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 4.0,
+      "retention of own-turn skill (%)": 96.71579030630298,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 2.0,
+      "retention of own-turn skill (%)": 97.7472527079661,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 3.0,
+      "retention of own-turn skill (%)": 100.0,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 4.0,
+      "retention of own-turn skill (%)": 100.04982720001149,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 2.0,
+      "retention of own-turn skill (%)": 95.33778415449767,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 3.0,
+      "retention of own-turn skill (%)": 99.03340644818724,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 4.0,
+      "retention of own-turn skill (%)": 100.0,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "One map, every turn: cross-turn retention of the context\u2192answer map",
+        "xlabel": "evaluation turn",
+        "ylabel": "retention of own-turn skill (%)",
+        "legend_labels": [
+          "map fit at turn 1 (duplicate-excluded)",
+          "map fit at turn 1 (long panel, matched shrinkage)",
+          "map fit at turn 2",
+          "map fit at turn 3",
+          "map fit at turn 4"
+        ],
+        "annotations": [
+          "held-out skill of the map fit at turn j, evaluated at turn k, as % of turn k's own-map skill"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ],
+    "series": [
+      "map fit at turn 1 (duplicate-excluded)",
+      "map fit at turn 1 (long panel, matched shrinkage)",
+      "map fit at turn 2",
+      "map fit at turn 3",
+      "map fit at turn 4"
+    ]
+  }
+}
