@@ -46,6 +46,11 @@ if [ "$SMOKE" = "1" ]; then
   CAP16K_PERMS=10 CAP16K_BOOT=50
   NEED_GB_START=2 NEED_GB_STAGE=1
 else
+  # #1426 crash-fix: the shared data repo's 256-commits/hr rate limit resets on
+  # an ~1 h horizon, so hub.retry_transient's default 1800 s budget may not
+  # outlive a fleet-wide 429 storm; 5400 s rides it out (inherited by the
+  # driver + every subprocess fit script via os.environ passthrough).
+  export EPM_HF_RETRY_BUDGET_S="${EPM_HF_RETRY_BUDGET_S:-5400}"
   OUT_DIR="${OUT_DIR:-$REPO_ROOT/data/issue_1426}"
   EVAL_OUT="${EVAL_OUT:-$REPO_ROOT/eval_results/issue_1426}"
   FIGURES_DIR="${FIGURES_DIR:-$REPO_ROOT/figures/issue_1426}"
