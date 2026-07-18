@@ -872,6 +872,23 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   false claims. Incident: task #1072 r2 footer claimed the gitignored
   `.npz` set inside the pinned `eval_results/issue_1072` git tree (#1507).
 
+- **check 44** (`check_footer_hf_paths_pinned`, WARN, v4-only, #1509):
+  every bare backtick HF-style artifact path in the `**Repro:**`/
+  `**Context:**` footer (`issue<N>_` prefix, or a `raw_completions`/
+  `analysis_tensors` path segment; first segment not a git/local root;
+  brace-expansion/glob charset) sits in a bullet/paragraph unit carrying
+  an HF pin — a pinned `huggingface.co` `/(tree|resolve|blob)/<7-40 hex>`
+  link anywhere in the unit, or `@ [HF ]rev <hex>` immediately after the
+  token (position-anchored: the incident bullet's EARLIER GitHub `@`-pin
+  must not rescue). Tokens check 40's gatherer already claims are excluded
+  (no double-WARN; the check-30/40 partition convention). Fence-aware +
+  blockquote-stripped unit splitter (`_footer_units`). Pure text — zero
+  Hub probes, no env fences; WARN never FAILs. Incident: task #1335's
+  pre-fix footer bullet shipped `issue1335_ablation_ladder/
+  onpolicy_assistant_label/{raw_completions,analysis_tensors}/` bare
+  (GitHub pins + code shas in-bullet, no HF pin) and the verifier read
+  PASS (#1509).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -10434,6 +10451,169 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     )
 
 
+# ─── Check 44: footer HF artifact paths carry an adjacent pinned link ────────
+#
+# The #1335 pre-fix footer (git `6d3c847946`) shipped
+# `issue1335_ablation_ladder/onpolicy_assistant_label/
+# {raw_completions,analysis_tensors}/` as a bare backtick path with no HF
+# pin anywhere in its bullet; only URL-bearing or count-paren claims were
+# gated (checks 8/23/30/32/40), so the verifier read PASS and the LM critic
+# had to catch the shape cold (#1509). Pure text check — zero Hub probes
+# (pin ABSENCE is a body-text fact, the check-40 rationale) and no
+# EPM_VERIFY_BODY_NO_HF / EPM_VERIFY_BODY_NO_EVAL_SCAN fences (the
+# check-37 "deliberately NOT fenced" convention).
+
+# Backtick token charset EXTENDED over the plain [A-Za-z0-9_./-] dir-token
+# charset with {},* for brace-expansion / glob forms (the #1335
+# `{raw_completions,analysis_tensors}/` and #841 `issue841_scaling/{...}` /
+# `analysis_tensors/pass_a/*_cx.pt` shapes). Leading ./ ../ declined.
+_FOOTER_HF_PATH_TOKEN_RE = re.compile(r"`(?P<tok>(?!\.\.?/)[A-Za-z0-9_\-./{},*]{1,160})`")
+# HF-identity arm (gate G2b): a raw_completions / analysis_tensors path
+# segment (word-bounded — matches inside braces too).
+_FOOTER_HF_ARTIFACT_SEG_RE = re.compile(r"\b(?:raw_completions|analysis_tensors)\b")
+# Search-form pinned-HF-URL satisfier S1 (the anchored
+# _HF_HUB_TREE_BLOB_URL_RE cannot search inside a unit): huggingface.co +
+# tree|resolve|blob + 7-40 hex, per SPEC.md § "All footer URLs pinned
+# (v4)"; `/tree/main` never matches (not hex).
+_FOOTER_HF_PIN_URL_RE = re.compile(
+    r"huggingface\.co/[^\s()`]*?/(?:tree|resolve|blob)/[0-9a-fA-F]{7,40}\b",
+    re.IGNORECASE,
+)
+# Position-ANCHORED @-rev satisfier S2: must begin within 4 chars of the
+# token's closing backtick (the committed `@ rev `6aab0cce1fac`` /
+# `@ HF rev `deb7a452`` #1112/#1335 footer shapes). Anchoring is
+# load-bearing: the #1335 offending bullet carries `@ `be61a85e`` (a
+# GitHub figures pin) EARLIER in the bullet, so an anywhere-in-unit @-rev
+# (check 37's shape) would false-negative the motivating incident.
+# `@ main` / `@ HEAD` are not hex and never satisfy.
+_FOOTER_AT_REV_ADJ_RE = re.compile(
+    r"[ \t]{0,4}@\s*(?:(?:HF\s+)?rev\s+)?`?[0-9a-fA-F]{7,40}\b", re.IGNORECASE
+)
+
+
+def _footer_units(footer: str) -> list[str]:
+    """Split footer text into pin-adjacency units: each `- `/`* ` bullet
+    (indented AND lazy continuation lines joined) and each non-bullet
+    paragraph run (the `**Repro:**` / `**Context:**` blocks). Fence-aware
+    (illustrative skeletons ignored); `>`-quoted blockquote lines dropped
+    (the #959 verbatim-prompt exemption — quote text is provenance
+    content, not a provenance link); blank lines terminate a unit.
+
+    Generalizes `_footer_reused_bullets` (which keeps only `- Reused`
+    bullets and joins only INDENTED continuations) to ALL footer content.
+    Stated recall/precision trade (#1509 §4.3): lazy (non-indented)
+    continuations also join — a wrapped bullet whose pin lands on an
+    unindented wrap line still satisfies; the cost is a bounded
+    false-negative residual (a pin on an immediately-following unrelated
+    line rescuing a token — blank-line unit termination bounds it).
+    """
+    units: list[str] = []
+    cur: str | None = None
+    in_fence = False
+    for line in footer.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            if cur is not None:
+                units.append(cur)
+                cur = None
+            continue
+        if in_fence or s.startswith(">"):
+            continue
+        if not s:
+            if cur is not None:
+                units.append(cur)
+                cur = None
+            continue
+        if re.match(r"^\s*[-*]\s", line):
+            if cur is not None:
+                units.append(cur)
+            cur = s
+        elif cur is not None:
+            cur += " " + s  # indented OR lazy continuation joins its unit
+        else:
+            cur = s
+    if cur is not None:
+        units.append(cur)
+    return units
+
+
+def check_footer_hf_paths_pinned(body: str) -> CheckResult:
+    """Check 44 (WARN, v4-only, #1509): every bare backtick HF-style
+    artifact path in the `**Repro:**`/`**Context:**` footer sits in a
+    unit (bullet / paragraph) carrying an HF pin — a pinned
+    `huggingface.co` `/(tree|resolve|blob)/<7-40 hex>` link anywhere in
+    the unit (S1), or an `@ [HF ]rev <hex>` immediately after the token
+    (S2, position-anchored). Token identity gates: a backtick span with
+    a `/` (G1), first segment not in `_GIT_SIDE_ROOTS` (G3 — git/local
+    paths resolve in git; checks 27/29 territory), and an `issue<N>_`
+    prefix OR a `raw_completions`/`analysis_tensors` segment (G2).
+    Tokens `_gather_hf_unpinned_count_claims` already extracts are
+    excluded (G5 — check 40 keeps its own missing-pin WARN; the
+    check-30/40 partition convention: no claim is ever double-WARNed).
+
+    WARN, never FAIL — there is NO code path returning ``passed=False``
+    (corpus 2026-07-18: 50 committed v4 bodies; 2 parked bodies (#1310,
+    #841) carry 10 genuine unpinned tokens — a FAIL would newly block
+    their promote-time re-verify. FAIL-flip path: a one-line severity
+    change once the parked corpus clears, via a future infra task).
+    Body-text-only: zero Hub probes, no EPM_VERIFY_BODY_NO_HF /
+    EPM_VERIFY_BODY_NO_EVAL_SCAN fence (pin absence is a text fact, cf.
+    check 40; the check-37 unfenced convention). Forward-only via
+    `is_v4` — v3/v2/legacy bodies are never newly flagged.
+
+    Named recall residuals (the LM critic stays the backstop): HF paths
+    OUTSIDE backticks (plain prose / link-text paths are not extracted),
+    and HF paths with NEITHER an `issue<N>_` prefix NOR a
+    raw_completions/analysis_tensors segment (G2 declines — precision
+    first). Incident: task #1335's pre-fix footer bullet (git
+    `6d3c847946`) carried the brace-form path with GitHub pins + bare
+    code shas in-bullet but no HF pin — checks 37/40 both (correctly,
+    per their own scopes) stayed silent.
+    """
+    name = "footer HF artifact paths carry an adjacent pinned link"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    # G5 (check-40 interplay): the gatherer is pure regex — ZERO Hub probes
+    # (probes live only in check 40's check function), so it is safe+cheap
+    # to call here for the partition set.
+    c40_tokens = {tok for _c, _n, tok, _r in _gather_hf_unpinned_count_claims(body)}
+    offenders: list[str] = []
+    seen: set[str] = set()
+    for unit in _footer_units(footer):
+        unit_pinned = _FOOTER_HF_PIN_URL_RE.search(unit) is not None
+        for m in _FOOTER_HF_PATH_TOKEN_RE.finditer(unit):
+            tok = m.group("tok")
+            if "/" not in tok:
+                continue  # G1: a path, not a filename / hex token
+            first = tok.split("/", 1)[0]
+            if not first or first in _GIT_SIDE_ROOTS:
+                continue  # G3: git/local path — resolves in git (checks 27/29)
+            if not (_HF_ISSUE_PREFIX_RE.match(tok) or _FOOTER_HF_ARTIFACT_SEG_RE.search(tok)):
+                continue  # G2: not an HF-identity token (precision first)
+            if tok in c40_tokens or tok in seen:
+                continue  # G5: check-40 territory / per-body dedup
+            if unit_pinned:
+                continue  # S1: pinned huggingface.co /(tree|resolve|blob)/<hex> in unit
+            if _FOOTER_AT_REV_ADJ_RE.match(unit, m.end()):
+                continue  # S2: `@ [HF ]rev <hex>` immediately after the token
+            seen.add(tok)
+            offenders.append(tok)
+    if not offenders:
+        return CheckResult(name, True, "all footer HF artifact paths pinned")
+    shown = "; ".join(f"`{t[:120]}`" for t in offenders[:8])
+    detail = (
+        f"{len(offenders)} bare HF artifact path(s) in the footer carry no adjacent "
+        f"pin: {shown} — add a pinned huggingface.co /tree/<rev> (or /resolve|/blob/"
+        "<rev>) link in the same bullet/paragraph, or `@ <rev>` immediately after "
+        "the path (SPEC.md § All footer URLs pinned (v4), check 44)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -12613,6 +12793,9 @@ CHECKS = [
     # check 43 (WARN, generation-agnostic) — git-tree twin of check 32: backtick file
     # claims adjacent to same-repo /tree/<sha> links resolve via git ls-tree (#1507):
     check_github_tree_adjacent_file_claims,
+    # check 44 (WARN, v4-only) — bare backtick HF artifact paths in the footer carry
+    # an adjacent pinned huggingface.co link / `@ rev <hex>` (#1509; incident #1335):
+    check_footer_hf_paths_pinned,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

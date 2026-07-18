@@ -159,7 +159,7 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (42 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (45 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -175,7 +175,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 55 results total (2 prepended + CHECKS[1:]=42 + 11 appended; check 36
+    # 58 results total (2 prepended + CHECKS[1:]=45 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
@@ -185,17 +185,20 @@ def test_good_body_passes_all():
     # here, and GOOD_BODY's only same-repo URL lives in the footer so it
     # PASSes vacuously), and check 43
     # `check_github_tree_adjacent_file_claims` (#1507 — vacuous PASS, no
-    # git-tree-adjacent claims) ride CHECKS; 36/37/39
+    # git-tree-adjacent claims), and check 44
+    # `check_footer_hf_paths_pinned` (#1509 — PASS-skip, not a v4 body)
+    # ride CHECKS; 36/37/39/44
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 57
+    assert len(results) == 58
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
+    assert "footer HF artifact paths carry an adjacent pinned link" in {r.name for r in results}
     assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
     assert "footer Reused bullets carry a revision/path pin" in {r.name for r in results}
@@ -5581,21 +5584,23 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 57 results (2 prepended + CHECKS[1:]=44 +
+    So `verify_text` returns 58 results (2 prepended + CHECKS[1:]=45 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 45 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 46 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
     `Disclosure: N of M` count reconciliation, #1421 — check 40
     `check_hf_unpinned_count_claims` (#1433) — check 41
-    `check_figure_sidecar_coverage` (#1478) — and checks 42
+    `check_figure_sidecar_coverage` (#1478) — checks 42
     `check_body_artifact_urls_exist` + 43
-    `check_github_tree_adjacent_file_claims` (#1507) ride CHECKS).
+    `check_github_tree_adjacent_file_claims` (#1507) — and check 44
+    `check_footer_hf_paths_pinned` (#1509) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 45
+    assert len(verify_task_body.CHECKS) == 46
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
@@ -11102,11 +11107,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (45 as of
-    checks 42/43, #1507; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (46 as of
+    check 44, #1509; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 45
+    assert len(verify_task_body.CHECKS) == 46
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13519,6 +13524,192 @@ def test_footer_reuse_bullet_fenced_skeleton_ignored():
     )
     res = verify_task_body.check_footer_reuse_bullets_pinned(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 44: footer HF artifact paths carry an adjacent pinned link ───────
+#
+# (#1509, incident #1335): a bare backtick HF-style artifact path in the
+# footer (`issue<N>_` prefix or a raw_completions/analysis_tensors segment,
+# brace/glob charset) whose bullet/paragraph unit carries neither a pinned
+# huggingface.co /(tree|resolve|blob)/<hex> link (S1) nor an
+# immediately-following `@ [HF ]rev <hex>` (S2) -> WARN. Direct-call style
+# on `_V4_GOOD_BODY`-derived fixtures (the check-37 block's convention);
+# `_V4_GOOD_BODY`'s own footer is S1-pinned (the `tree/abc123def` model
+# link) and carries no HF-identity backtick tokens, so appended bullets
+# are the only trigger surface.
+
+# The verbatim PRE-FIX #1335 footer bullet, recovered from
+# `git show 6d3c847946` (the fix commit's `-` side). Load-bearing traps it
+# carries: GitHub /tree/<sha> pins (never HF), bare code shas, an EARLIER
+# `@ `be61a85e`` GitHub figures pin (must NOT rescue under S2 anchoring),
+# non-HF backtick tokens (`cells_/nulls_/...`, `scripts/...`), and the
+# brace-form offending token with NO count-paren (so check 40 never
+# extracts it).
+_I1335_FOOTER_UNPINNED_LINE = (
+    "- Follow-up round `onpolicy-assistant-label` (2026-07-18, ~6 GPU-h, GCE 4×A100-80 "
+    "flex-start, 6-lane parallel dispatch): round artifacts "
+    "[eval_results/issue_1335/onpolicy-assistant-label/](https://github.com/superkaiba/"
+    "explore-persona-space/tree/be61a85e9ae2710f254c6e0b4fd422ac5244dec1/eval_results/"
+    "issue_1335/onpolicy-assistant-label) (`label_comparison.json` + per-cell "
+    "`cells_/nulls_/loso_/swap_/wiring_*.json`); fit/driver `scripts/issue1335_fit.py` + "
+    "`scripts/issue1335_fig_label.py` at code SHA "
+    "`01ebb89738835c656f4b8a942a0d3afe4647be25`. Figures: "
+    "[figures/issue_1335/onpolicy-assistant-label/](https://github.com/superkaiba/"
+    "explore-persona-space/tree/be61a85e9ae2710f254c6e0b4fd422ac5244dec1/figures/"
+    "issue_1335/onpolicy-assistant-label) (`hero_label_delta` + `answer_length_register`, "
+    "with `.meta.json` sidecars, @ `be61a85e`; `placement_panel` + `collapse_slots` @ "
+    "[`185a6bd8ee`](https://github.com/superkaiba/explore-persona-space/tree/"
+    "185a6bd8ee3f9165c346d27f9876efcefe845314/figures/issue_1335/onpolicy-assistant-label)). "
+    "HF rollouts and stores under "
+    "`issue1335_ablation_ladder/onpolicy_assistant_label/{raw_completions,analysis_tensors}/` "
+    "(verified via `list_repo_tree` on the interpretation pass)."
+)
+_I1335_OFFENDING_TOKEN = (
+    "issue1335_ablation_ladder/onpolicy_assistant_label/{raw_completions,analysis_tensors}/"
+)
+_C44_NAME = "footer HF artifact paths carry an adjacent pinned link"
+
+
+def test_footer_hf_path_unpinned_warns_1335_shape():
+    """MAIN / durability-pin test (#1509, incident #1335): the verbatim
+    pre-fix footer bullet -> WARN (`passed=True`, `is_warn=True`) naming
+    the brace-form token. The in-bullet GitHub pins / bare code shas /
+    earlier `@ `be61a85e`` must NOT rescue."""
+    body = _V4_GOOD_BODY + "\n" + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert _I1335_OFFENDING_TOKEN in res.detail, res.render()
+
+
+def test_footer_hf_path_pinned_same_unit_passes():
+    """S1: the same incident bullet PLUS a pinned huggingface.co
+    /tree/<sha> link in the SAME bullet (the post-fix #1335 shape) ->
+    clean PASS."""
+    line = _I1335_FOOTER_UNPINNED_LINE + (
+        " Full tree: [rollouts](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/53e014c4a530cfba76f1e5f2b29a1ae4841d46b3/"
+        "issue1335_ablation_ladder/onpolicy_assistant_label)."
+    )
+    body = _V4_GOOD_BODY + "\n" + line + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all footer HF artifact paths pinned" in res.detail, res.render()
+
+
+def test_footer_hf_path_adjacent_at_rev_passes():
+    """S2: the committed `@ rev `<hex>`` / `@ HF rev `<hex>`` footer
+    shapes (#1112/#1335) immediately after the token -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused mix: `issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl` "
+        "@ rev `6aab0cce1fac` — fit: same recipe.\n"
+        "- Rollouts `issue825_userbase_map/raw_completions/track_s/` @ HF rev `deb7a452` "
+        "verified live.\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_preceding_at_rev_does_not_rescue():
+    """S2 position-anchoring regression pin (the motivating incident's
+    exact bullet shape): an `@ `<hex>`` EARLIER in the bullet (a GitHub
+    figures pin), bare HF token later, no HF URL -> still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n- Figures @ `be61a85e`; stores under `issue999_slug/analysis_tensors/` "
+        "(verified on the interpretation pass).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "issue999_slug/analysis_tensors/" in res.detail, res.render()
+
+
+def test_footer_hf_path_adjacent_unit_pin_does_not_rescue():
+    """Unit-scoped-adjacency positive control (#1509 §13.2): the
+    offending token in bullet A, a pinned huggingface.co /tree/<hex>
+    link in a SEPARATE blank-line-separated bullet -> still WARNs. A
+    whole-footer pin scope (or a degenerate `_footer_units`) must FAIL
+    this test."""
+    body = _V4_GOOD_BODY + (
+        "\n- Stores under `issue999_slug/raw_completions/` for the record.\n"
+        "\n- Pinned elsewhere: [tree](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/53e014c4a530cfba76f1e5f2b29a1ae4841d46b3/"
+        "issue999_slug).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "issue999_slug/raw_completions/" in res.detail, res.render()
+
+
+def test_footer_hf_path_v3_body_skipped():
+    """Forward-only: a grandfathered v3 body with the SAME offending line
+    -> vacuous PASS (never newly WARN/FAIL a v3/v2 body)."""
+    body = _V3_GOOD_BODY + "\n" + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail, res.render()
+
+
+def test_footer_local_git_paths_pass():
+    """G3 `_GIT_SIDE_ROOTS`: git/local backtick paths in a pin-less
+    footer bullet (they resolve in git — checks 27/29 territory) ->
+    clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n- Round artifacts: `eval_results/issue_1310/onpolicy/*.json`, "
+        "`figures/issue_1335/hero.png`, `scripts/issue1335_fit.py` (committed).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_count_claim_token_left_to_check40(monkeypatch):
+    """G5 partition (the check-30/40 convention — exactly ONE WARN per
+    defect): a footer count-paren claim is check 40's territory — the
+    gatherer extracts it, check 44 stays silent, and check 40 names it
+    (offline note-shape assert under the `EPM_VERIFY_BODY_NO_HF=1`
+    fence, per the check-40 test idiom)."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    body = _V4_GOOD_BODY + (
+        "\n- HF rollouts `issue931_story_map/raw_completions/` (6 files) uploaded.\n"
+    )
+    claimed = {t for _c, _n, t, _r in verify_task_body._gather_hf_unpinned_count_claims(body)}
+    assert "issue931_story_map/raw_completions/" in claimed
+    res44 = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res44.passed and not res44.is_warn, res44.render()
+    res40 = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert res40.passed, res40.render()
+    assert "issue931_story_map/raw_completions/" in res40.detail, res40.render()
+
+
+def test_footer_hf_path_fence_and_blockquote_exempt():
+    """`_footer_units` stripping: the offending line inside a ```-fenced
+    footer block (illustrative skeleton) AND inside a `>` Context quote
+    (#959 verbatim-prompt exemption) -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n```\n" + _I1335_FOOTER_UNPINNED_LINE + "\n```\n\n> " + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_hf_path_methodology_out_of_scope():
+    """Footer scoping: the bare token in `## Methodology` prose (above
+    the footer) is out of check 44's scope -> clean PASS (check-40
+    semantics elsewhere in the body are untouched)."""
+    body = _V4_GOOD_BODY.replace(
+        "## Results",
+        "Stores under `issue999_x/analysis_tensors/` (bare mention).\n\n## Results",
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all footer HF artifact paths pinned" in res.detail, res.render()
+
+
+def test_footer_hf_path_no_footer_skips():
+    """No-crash on a footer-less v4 body (#1509 §13.3): `_v4_footer_text`
+    -> None path returns cleanly (pass, no exception)."""
+    body = _V4_GOOD_BODY.split("**Repro:**")[0]
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no **Repro:** footer" in res.detail, res.render()
 
 
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────
