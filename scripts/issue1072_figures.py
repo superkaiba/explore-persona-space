@@ -35,7 +35,11 @@ if str(_REPO_ROOT) not in sys.path:
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from explore_persona_space.analysis.paper_plots import paper_palette, set_paper_style  # noqa: E402
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    paper_palette,
+    savefig_paper,
+    set_paper_style,
+)
 from scripts.issue1072_stats import CH, K_FOLDS, _safe_ratio  # noqa: E402
 
 logger = logging.getLogger("issue1072.figures")
@@ -90,10 +94,10 @@ def fig_hero(stats: dict, out_dir: pathlib.Path) -> None:
     )
     ax.axhline(0.0, lw=0.8, color="gray")
     ax.set_xticks(x, [f"L{la}" for la in layers])
-    ax.set_ylabel("own - ext_plain gap contribution (c-leg, remainder target)")
+    ax.set_ylabel("own - ext_plain gap contribution")
     ax.set_title("Component decomposition of the own-answer advantage by layer")
     ax.legend(fontsize=8)
-    fig.savefig(out_dir / "hero_component_decomposition.png", dpi=200)
+    savefig_paper(fig, "hero_component_decomposition", dir=out_dir)
     plt.close(fig)
 
 
@@ -117,7 +121,7 @@ def fig_closure(stats: dict, out_dir: pathlib.Path) -> None:
     ax.set_ylabel("own - ext_plain gap")
     ax.set_title(f"Per-component prefix closure at L{primary}")
     ax.legend(fontsize=8)
-    fig.savefig(out_dir / "closure_by_component_L26.png", dpi=200)
+    savefig_paper(fig, "closure_by_component_L26", dir=out_dir)
     plt.close(fig)
 
 
@@ -158,7 +162,7 @@ def fig_percontext(stats: dict, npzs: dict[int, dict], out_dir: pathlib.Path) ->
     axx.tick_params(labelbottom=False)
     axy.tick_params(labelleft=False)
     fig.suptitle(f"Per-context paired contribution differences (n={int(m.sum())} matched contexts)")
-    fig.savefig(out_dir / "percontext_par_vs_perp_L26.png", dpi=200)
+    savefig_paper(fig, "percontext_par_vs_perp_L26", dir=out_dir)
     plt.close(fig)
 
 
@@ -244,7 +248,7 @@ def fig_exploratory(
         )
         ax.set_axis_off()
         logger.warning("raw-vs-folded cos histogram SKIPPED — npz not provided/found")
-    fig.savefig(out_dir / "exploratory_component_profiles.png", dpi=200)
+    savefig_paper(fig, "exploratory_component_profiles", dir=out_dir)
     plt.close(fig)
 
 

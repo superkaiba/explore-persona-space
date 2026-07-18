@@ -1,0 +1,1055 @@
+{
+  "commit": "9bdd1f70fa",
+  "created": "2026-07-18T05:22:19Z",
+  "figsize": [
+    10.5,
+    7.5
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.015429584697804663,
+      "error": 0.01909615216242716,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.01664930863584856,
+      "error": 0.005599018150690253,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.026588217026291733,
+      "error": 0.006568541215945536,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.02386354675696516,
+      "error": 0.005347365036034222,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.015429584697804663,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.01664930863584856,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.026588217026291733,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.02386354675696516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.009093064142229433,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.01270265498195856,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.02147319958339152,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.01938505584006589,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.047285368467083755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.023900691283339066,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.034610282015282594,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "S_par = \u0394C_par / \u0394R\u00b2_full": 0.030079785912134335,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0005525904270787025,
+      "series": "own",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0011501134499499125,
+      "series": "own",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.003025183229712262,
+      "series": "own",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.006054223779605932,
+      "series": "own",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0003878096081976728,
+      "series": "ext_plain",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0007889652223423992,
+      "series": "ext_plain",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.002339878454808125,
+      "series": "ext_plain",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.005348598007935064,
+      "series": "ext_plain",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0002522914918478655,
+      "series": "ext_style",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.00048322396125505485,
+      "series": "ext_style",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0014894919090239717,
+      "series": "ext_style",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.003595458559687651,
+      "series": "ext_style",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0005388497442029152,
+      "series": "mismatch",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0010901609719932794,
+      "series": "mismatch",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0026037345924847352,
+      "series": "mismatch",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.00536470447032097,
+      "series": "mismatch",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer position t (f16 slots)": 1.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0053720243168099355,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 2.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0026404206243722,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 3.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00197083516642094,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 4.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0016668843577030083,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 5.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0011847886983868885,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 6.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0010853330469231014,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 7.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0008820587883892503,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 8.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0007152891741102549,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 9.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.000627903557808973,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 10.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.000553898201456588,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 11.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00015823311545619986,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 12.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0003020749962249932,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 13.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.0003686126363728511,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 14.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00037965264967952184,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 15.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00012166163079190912,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 16.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00016818758083744187,
+      "series": "\u0394C_par (own-ext_plain)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer position t (f16 slots)": 1.0,
+      "per-slot gap contribution, L26 (cal fold)": -0.008114840664621703,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 2.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.07892983528131808,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 3.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.05361615643331957,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 4.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.039300770825785425,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 5.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.03688572346741903,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 6.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.033554179153579264,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 7.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.031400372015605416,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 8.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.024098497307537464,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 9.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.021983069405565936,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 10.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.01588712155544887,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 11.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.01612288307236276,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 12.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.00971791291286249,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 13.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.011819700477540149,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 14.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.014374853194748433,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 15.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.012713928850615147,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer position t (f16 slots)": 16.0,
+      "per-slot gap contribution, L26 (cal fold)": 0.009737825208320644,
+      "series": "\u0394C_perp (own-ext_plain)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.691207,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.695033,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.698859,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.702685,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.706511,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.710338,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.714164,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.71799,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.721816,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.725642,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.729469,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.733295,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.737121,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.740947,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.744773,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.748599,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.752426,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.756252,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.760078,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.763904,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.76773,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.771557,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.775383,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.779209,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.783035,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.786861,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.790687,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.794514,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.79834,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.802166,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.805992,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.809818,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.813644,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.817471,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.821297,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.825123,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.828949,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.832775,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.836602,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.840428,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.844254,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.84808,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.851906,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.855732,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.859559,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.863385,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.867211,
+      "y": 20.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.871037,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.874863,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.87869,
+      "y": 26.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.882516,
+      "y": 35.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.886342,
+      "y": 41.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.890168,
+      "y": 47.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.893994,
+      "y": 52.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.89782,
+      "y": 71.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.901647,
+      "y": 77.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.905473,
+      "y": 82.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.909299,
+      "y": 111.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.913125,
+      "y": 110.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.916951,
+      "y": 115.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.920778,
+      "y": 161.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.924604,
+      "y": 177.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.92843,
+      "y": 231.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.932256,
+      "y": 273.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.936082,
+      "y": 332.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.939908,
+      "y": 441.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.943735,
+      "y": 628.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.947561,
+      "y": 814.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.951387,
+      "y": 1178.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.955213,
+      "y": 1521.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.959039,
+      "y": 2248.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.962866,
+      "y": 3225.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.966692,
+      "y": 4681.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.970518,
+      "y": 6706.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.974344,
+      "y": 8970.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.97817,
+      "y": 10984.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.981996,
+      "y": 12355.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.985823,
+      "y": 13668.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.989649,
+      "y": 13955.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "cos(W_U[y], gamma\u2299W_U[y])": 0.993475,
+      "y": 3956.0,
+      "_kind": "bar",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Parallel share of the gap by depth (H3)",
+        "xlabel": "layer",
+        "ylabel": "S_par = \u0394C_par / \u0394R\u00b2_full",
+        "xticklabels": [
+          "12",
+          "14",
+          "16",
+          "18",
+          "20",
+          "22",
+          "24",
+          "26",
+          "28"
+        ],
+        "yticklabels": [
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040",
+          "0.045",
+          "0.050"
+        ]
+      },
+      {
+        "title_left": "Token-identity variance share (remainder target)",
+        "xlabel": "layer",
+        "ylabel": "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full",
+        "legend_labels": [
+          "own",
+          "ext_plain",
+          "ext_style",
+          "mismatch"
+        ],
+        "xticklabels": [
+          "12",
+          "14",
+          "16",
+          "18",
+          "20",
+          "22",
+          "24",
+          "26",
+          "28"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$"
+        ]
+      },
+      {
+        "title_left": "Per-slot component profile",
+        "xlabel": "answer position t (f16 slots)",
+        "ylabel": "per-slot gap contribution, L26 (cal fold)",
+        "legend_labels": [
+          "\u0394C_par (own-ext_plain)",
+          "\u0394C_perp (own-ext_plain)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ]
+      },
+      {
+        "title_left": "gamma-folding sensitivity (n=87597 unique next tokens)",
+        "xlabel": "cos(W_U[y], gamma\u2299W_U[y])",
+        "xticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00",
+          "1.05"
+        ],
+        "yticklabels": [
+          "0",
+          "2000",
+          "4000",
+          "6000",
+          "8000",
+          "10000",
+          "12000",
+          "14000",
+          "16000"
+        ]
+      }
+    ],
+    "series": [
+      "own",
+      "ext_plain",
+      "ext_style",
+      "mismatch",
+      "\u0394C_par (own-ext_plain)",
+      "\u0394C_perp (own-ext_plain)"
+    ]
+  }
+}
