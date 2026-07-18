@@ -6,7 +6,8 @@ Task #1288 (2026-07-13) changed Step 10d so that:
    ``kind: infra|batch`` (the watcher's INFRA_DRAIN_KINDS, the population that
    same-batch races Step 10d by construction; server-side ``--rebase`` went
    0/4 first-try in the 2026-07-12 fleet), ``--rebase`` retained as the
-   default / fail-open form (experiments, unreadable kind).
+   default / fail-open form (experiments, unreadable kind; experiments
+   deliberately — #1493 rationale + revisit criterion).
 2. The safe-case merge call uses the ``$MERGE_FORM`` variable, not a
    hardcoded form.
 3. A "Known failure shape 0" documents the transient GitHub error
@@ -42,3 +43,16 @@ def test_known_failure_shape_0_present():
     span = _step10d_span()
     assert "Known failure shape 0" in span
     assert "Base branch was modified" in span
+
+
+def test_experiment_rebase_rationale_current():
+    """#1493: the stale '#1288 no-evidence' clause is gone and the updated
+    experiments rationale + revisit criterion are present in Step 10d.
+
+    Whitespace-normalized so a future re-wrap of the prose cannot evade
+    either the absence or the presence assertions.
+    """
+    flat = " ".join(_step10d_span().split())
+    assert "empirical record does not cover them" not in flat
+    assert "Revisit criterion: extend squash-first to `kind: experiment`" in flat
+    assert "zero shape-1 first refusals" in flat
