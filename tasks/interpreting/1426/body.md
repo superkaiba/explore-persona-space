@@ -1,6 +1,7 @@
 ---
-title: Third-lineage CoT-decomposition replication on DeepSeek-R1-Distill-Llama-8B
-  (non-Qwen base)
+title: 'The chain-of-thought mediation signature and the family gain excess replicate
+  on a Llama-base R1 distill: both are base-family-general, not Qwen-specific (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-16T13:52:31Z'
