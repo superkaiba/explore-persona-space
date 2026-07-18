@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1496,
+  "highest_id": 1497,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3867,6 +3867,13 @@
       "path": "tasks/proposed/1496",
       "status": "proposed",
       "title": "daily-fix: 9c selector rules-to-prose-pin-test mapping"
+    },
+    "1497": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1497",
+      "status": "proposed",
+      "title": "daily-fix: route-3 needs-human tag dropped at filing"
     },
     "15": {
       "has_clean_result": false,
