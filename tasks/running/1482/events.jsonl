@@ -82,3 +82,4 @@
 {"ts": "2026-07-18T15:34:08Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "[long-phase-heartbeat] P0 grinding through throttled Hub (~5/min avg, last confirmed 725/1920 at 15:15Z); pid 1568 alive; envelope holding."}
 {"ts": "2026-07-18T16:14:10Z", "kind": "epm:progress", "version": 23, "by": "unknown", "note": "[long-phase-heartbeat] P0 1075/1920 (~56%); pid 1568 alive; throttled-but-steady."}
 {"ts": "2026-07-18T17:02:28Z", "kind": "epm:progress", "version": 24, "by": "unknown", "note": "[long-phase-heartbeat] P0 1300+/1920 (~68%); pid 1568 alive; ETA P0 ~1h at current pace, then P2 (P1+Gate B seeded)."}
+{"ts": "2026-07-18T17:51:03Z", "kind": "epm:progress", "version": 25, "by": "unknown", "note": "[long-phase-heartbeat] P0 1650/1920 (86%); pid 1568 alive; P2 next (P1 + Gate B seeded)."}
