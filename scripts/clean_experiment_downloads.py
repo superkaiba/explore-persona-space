@@ -108,8 +108,11 @@ wrapper) document the between-phase use: call it after a phase's judge /
 extraction step has CONSUMED its download inputs, BEFORE the next phase
 downloads more, to bound peak footprint rather than only cleaning at the end.
 The safety contract is identical (``store/`` + ``eval_results/`` NEVER touched,
-re-downloadable caches only) — the cache is rebuilt on demand if a later phase
-needs it again, so reaping a consumed phase's cache mid-run is safe. The
+re-downloadable caches only) — hub-download code paths re-fetch a reaped cache
+on a miss, so a reap placed strictly AFTER the cache's LAST consumer in the run
+is safe; a direct-path open() reader implements no re-download and crashes
+FileNotFoundError if any later phase still reads the cache (#1489;
+.claude/rules/gotchas.md). The
 ``vm_disk_guard`` fleet backstop's terminal-status gate (``--apply`` only on
 ``completed`` / ``archived`` / ``awaiting_promotion`` issues) does NOT cover
 the active-issue case; the incremental entry point is the experiment's OWN
@@ -1681,8 +1684,10 @@ def clean_issue_downloads_incremental(
     is NO terminal-status gate: the calling experiment is itself the authority
     that the phase is done, so an ACTIVE issue self-reaping its own consumed
     cache mid-run is the intended path. ``store/`` + ``eval_results/`` are never
-    touched; the re-downloadable cache is rebuilt on demand if a later phase
-    needs it again.
+    touched; the cache re-downloads on demand ONLY via hub-download paths —
+    place the reap strictly after the cache's LAST consumer in the whole run
+    (a direct open() reader does not re-download; #1489, see
+    .claude/rules/gotchas.md).
 
     The active-CONSUMER gate (#773) RUNS on this path too. The within-run reaper
     self-excludes ``self_issue_n`` in :func:`_active_consumer_protected_issues`,

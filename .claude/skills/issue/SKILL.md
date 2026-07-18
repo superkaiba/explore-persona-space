@@ -5594,8 +5594,10 @@ URLs.
   ```bash
   # Between-phase: reap THIS phase's consumed hf_dl/g*_dl cache (repo-root
   # + worktree); store/ + eval_results/ kept; no terminal-status gate (the
-  # run knows the phase is done). Re-downloads on demand if a later phase
-  # needs it again.
+  # run knows the phase is done). Legal ONLY after the cache's LAST consumer
+  # in the WHOLE run: only hub-download paths re-fetch on a miss — a
+  # direct-path open() reader crashes FileNotFoundError (#1489; see
+  # .claude/rules/gotchas.md).
   uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
   ```
 
