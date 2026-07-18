@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1487,
+  "highest_id": 1488,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3794,6 +3794,13 @@
       "path": "tasks/proposed/1487",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body Check 40 misses subpath (N files) counts under unlinked backtick prefixes"
+    },
+    "1488": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1488",
+      "status": "proposed",
+      "title": "Pre-trigger detectability of conditional implants from prompt states (band-stopped marker organisms, prefix-end + context arms)"
     },
     "149": {
       "has_clean_result": false,
