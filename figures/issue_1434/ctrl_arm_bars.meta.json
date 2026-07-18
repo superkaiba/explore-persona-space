@@ -1,0 +1,168 @@
+{
+  "commit": "f69b4ba077",
+  "created": "2026-07-18T04:12:37Z",
+  "figsize": [
+    10.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "judged casual-register rate": 0.01,
+      "error": 0.02636006909769367,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "judged casual-register rate": 0.04,
+      "error": 0.041354560887112854,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.733333,
+      "judged casual-register rate": 0.0,
+      "error": 0.018497403738000955,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.733333,
+      "judged casual-register rate": 0.0,
+      "error": 0.018860662047729022,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.733333,
+      "judged casual-register rate": 0.16,
+      "error": 0.07162621104710348,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.733333,
+      "judged casual-register rate": 0.01,
+      "error": 0.02636006909769367,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Default assistant",
+      "judged casual-register rate": 0.08,
+      "error": 0.0544448496541099,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Persona (software engineer)",
+      "judged casual-register rate": 0.6632653061224489,
+      "error": 0.09199334840242535,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Police officer",
+      "judged casual-register rate": 0.38,
+      "error": 0.09346488489577642,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Philosopher",
+      "judged casual-register rate": 0.5257731958762887,
+      "error": 0.09746541005903442,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Two-shot ICL prefix",
+      "judged casual-register rate": 0.69,
+      "error": 0.08923338135911663,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "WildChat prefix",
+      "judged casual-register rate": 0.37,
+      "error": 0.09298719927678861,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 5.266667,
+      "judged casual-register rate": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "control arms: casual rate per read context (Wilson 95% CIs)",
+        "ylabel": "judged casual-register rate",
+        "legend_labels": [
+          "Inert impolite adapter (install delta 0)",
+          "Installed impolite organism (unrelated behavior)",
+          "committed base panel"
+        ],
+        "xticklabels": [
+          "Default assistant",
+          "Persona (software engineer)",
+          "Police officer",
+          "Philosopher",
+          "Two-shot ICL prefix",
+          "WildChat prefix"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Inert impolite adapter (install delta 0)",
+      "Installed impolite organism (unrelated behavior)",
+      "committed base panel"
+    ]
+  }
+}
