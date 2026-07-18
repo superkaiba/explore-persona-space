@@ -81,7 +81,10 @@ include = ["explore_persona_space*"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["scripts/archive", "external"]
+# Artifact dirs (#1023): .py files under these are write-once experiment
+# artifacts (eval_results is JSON/text-artifact-only by CLAUDE.md policy;
+# figures/ holds saved plot scripts). Excluded from lint AND format.
+extend-exclude = ["scripts/archive", "external", "eval_results", "figures"]
 
 [tool.ruff.lint]
 select = [
@@ -109,6 +112,38 @@ max-complexity = 15
 # (#576 round 2; round-1 commit 9f2e8d10a hit the mirror image of this). Pin
 # the classification so the lint verdict is environment-independent.
 known-third-party = ["wandb"]
+
+[tool.ruff.lint.per-file-ignores]
+# Frozen per-issue experiment/figure scripts (#1023 decision, 2026-07):
+# per-issue artifacts cited by clean-result Repro footers — never bulk-edited.
+# Two measured reasons for scoping style/noise rules OFF on these paths:
+# (a) style enforcement was vacuous on the debt-accretion channel — experiment
+#     merges never run ruff, so new frozen scripts accrete style noise ungated
+#     (~+12 errors/day into the repo-wide count); and
+# (b) the Step 9c touched-file absolute-clean rule made touching ONE line of a
+#     frozen script demand fixing ALL of its style errors (e.g. 74 in
+#     i474_cosine_followup.py), deterring surgical fixes.
+# (Not a pure "write-once" claim: 389/668 frozen-pattern scripts were re-touched
+# in >=2 commits over 30d — reason (b) is what bites on every such touch.)
+# Real-bug rules stay ON everywhere: F* undefined names/imports, E9 syntax
+# errors, core bugbear B, and E722 bare-except. E7 is ignored via the two
+# specific codes present in the frozen-path histogram (E731 lambda-assign x6,
+# E741 ambiguous-name x32) rather than the whole E7 class, so E722 (bare
+# except) stays enforced — measured 0 E722 hits on these paths (2026-07-17),
+# so keeping it costs nothing.
+# src/ and tests/ keep the full ruleset.
+# RUF100 MUST stay in this list: frozen scripts carry inline `# noqa`
+# directives across 776 files that become "unused" under these ignores and
+# would otherwise ADD ~3.3k RUF100 errors (measured 2026-07-17).
+# Step 9c NOTE: landing this dropped main's repo-wide ruff baseline from
+# 2,226 to ~33. A worktree cut BEFORE this change lints with its own old
+# pyproject, so its Step 9c lint compare reads wt_ruff_count >> base_ruff_count
+# with touched files clean — the main-side-cleanup false-FAIL
+# (step9c_baseline.py lint_verdict docstring). Recovery: rebase the branch
+# onto origin/main and re-run.
+"scripts/*" = ["E4", "E5", "E731", "E741", "W", "I", "F841", "F541", "B905", "B007", "B023", "SIM", "C901", "UP", "RUF001", "RUF002", "RUF003", "RUF005", "RUF015", "RUF046", "RUF059", "RUF100"]
+"experiments/*" = ["E4", "E5", "E731", "E741", "W", "I", "F841", "F541", "B905", "B007", "B023", "SIM", "C901", "UP", "RUF001", "RUF002", "RUF003", "RUF005", "RUF015", "RUF046", "RUF059", "RUF100"]
+"eps/experiments/*" = ["E4", "E5", "E731", "E741", "W", "I", "F841", "F541", "B905", "B007", "B023", "SIM", "C901", "UP", "RUF001", "RUF002", "RUF003", "RUF005", "RUF015", "RUF046", "RUF059", "RUF100"]
 
 [dependency-groups]
 dev = [
