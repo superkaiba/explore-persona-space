@@ -3,7 +3,8 @@ title: 'The chain-of-thought mediation signature and the family gain excess repl
   on a Llama-base R1 distill: both are base-family-general, not Qwen-specific (MODERATE
   confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-16T13:52:31Z'
 has_clean_result: true
 parent_id: 1005
