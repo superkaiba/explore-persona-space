@@ -3850,8 +3850,8 @@
     "1494": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1494",
-      "status": "proposed",
+      "path": "tasks/planning/1494",
+      "status": "planning",
       "title": "daily-fix: vm_disk_guard tier-e nonfinite env clamp"
     },
     "1495": {
