@@ -13,10 +13,14 @@ the 500 held-out test conversations (997 draws, seed 0 — the analyzer's conven
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()  # BEFORE numpy/matplotlib so the shared-VM thread caps bind (#847)
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -192,8 +196,6 @@ def main() -> None:
     fig_trait_drift()
 
 
-
-
 def fig_trait_drift() -> None:
     """Result 4: answer projections drift along trait read-out directions with turn depth.
 
@@ -213,8 +215,11 @@ def fig_trait_drift() -> None:
     colors = paper_palette(4)
     fig, axes = plt.subplots(1, 3, figsize=(11.5, 4.0), sharey=True)
 
-    panels = [("sycophancy", "block 26", colors[0]), ("hallucination", "block 17", colors[1]),
-              ("evil", "block 20", colors[2])]
+    panels = [
+        ("sycophancy", "block 26", colors[0]),
+        ("hallucination", "block 17", colors[1]),
+        ("evil", "block 20", colors[2]),
+    ]
     for ax, (trait, blk, color) in zip(axes, panels):
         main = np.stack([z[f"main_k{k}_{trait}"] for k in (1, 2, 3, 4)], axis=0)  # (4,500,103)
         act = main[:, :, trait_col[trait]]
@@ -225,7 +230,9 @@ def fig_trait_drift() -> None:
         assert abs(slope - dr["drift"][trait]["within_conv_turn_slope"]) < 1e-6, (trait, slope)
         rs = (tc[:, None, None] * main[:, :, 3:103]).sum(axis=0) / (tc**2).sum()
         band = np.percentile(rs.mean(axis=0), [2.5, 97.5])
-        assert np.allclose(band, dr["drift"][trait]["turn_slope_randdir_band_ci95"], atol=1e-6), trait
+        assert np.allclose(band, dr["drift"][trait]["turn_slope_randdir_band_ci95"], atol=1e-6), (
+            trait
+        )
         centered = act.mean(axis=1) - act[0].mean()
         rng = np.random.default_rng(SEED)
         n = act.shape[1]
@@ -240,25 +247,55 @@ def fig_trait_drift() -> None:
         rand = main[:, :, 3:103].mean(axis=1)  # (4, 100) per-dir mean per turn
         rand_c = rand - rand[0]
         blo, bhi = np.percentile(rand_c, [2.5, 97.5], axis=1)
-        ax.fill_between([1, 2, 3, 4], blo, bhi, color="#BBBBBB", alpha=0.4, linewidth=0,
-                        label="norm-matched random directions (95% band)")
+        ax.fill_between(
+            [1, 2, 3, 4],
+            blo,
+            bhi,
+            color="#BBBBBB",
+            alpha=0.4,
+            linewidth=0,
+            label="norm-matched random directions (95% band)",
+        )
         ax.axhline(0, color="#B0B0B0", linewidth=0.6, linestyle=":")
-        ax.errorbar([1, 2, 3, 4], centered, yerr=yerr, marker="o", color=color, capsize=2,
-                    label="trait direction")
+        ax.errorbar(
+            [1, 2, 3, 4],
+            centered,
+            yerr=yerr,
+            marker="o",
+            color=color,
+            capsize=2,
+            label="trait direction",
+        )
 
-        lp = np.stack([z[f"long_k{k}_{trait}"] for k in range(1, 9)], axis=0)[:, :, trait_col[trait]]
+        lp = np.stack([z[f"long_k{k}_{trait}"] for k in range(1, 9)], axis=0)[
+            :, :, trait_col[trait]
+        ]
         lcent = lp.mean(axis=1) - lp[0].mean()
-        ax.plot(range(1, 9), lcent, marker="o", markerfacecolor="white", markeredgewidth=1.1,
-                markeredgecolor=color, color=color, linestyle="--", linewidth=1.0,
-                label="long panel (n=60)")
+        ax.plot(
+            range(1, 9),
+            lcent,
+            marker="o",
+            markerfacecolor="white",
+            markeredgewidth=1.1,
+            markeredgecolor=color,
+            color=color,
+            linestyle="--",
+            linewidth=1.0,
+            label="long panel (n=60)",
+        )
 
         ax.set_title(f"{trait} direction ({blk})", loc="left", fontsize=11)
         ax.set_xlabel("turn")
         ax.set_xticks(range(1, 9))
     axes[0].set_ylabel("answer projection, change from turn 1")
     axes[0].legend(loc="lower left", fontsize=8)
-    fig.suptitle("Answer-activation drift along trait read-out directions", x=0.02,
-                 ha="left", fontsize=14, fontweight="semibold")
+    fig.suptitle(
+        "Answer-activation drift along trait read-out directions",
+        x=0.02,
+        ha="left",
+        fontsize=14,
+        fontweight="semibold",
+    )
     savefig_paper(fig, "issue_958/trait_drift_by_turn", dir=str(ROOT / "figures"))
     plt.close(fig)
 
