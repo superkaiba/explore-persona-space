@@ -670,13 +670,64 @@ def _route3_dup_or_none(item: dict, tasks_root: Path) -> dict | None:
     """
     try:
         return find_open_daily_held_duplicate(tasks_root, item["title"], item["bug"])
-    except Exception as e:  # noqa: BLE001 — deliberate fail-open, see docstring
+    except Exception as e:  # deliberate fail-open, see docstring
         print(
             f"WARNING {item['slug']}: daily-held overlap scan skipped"
             f" ({e.__class__.__name__}: {e}) — fail-open, filing proceeds (#1483)",
             file=sys.stderr,
         )
         return None
+
+
+def _route3_already_tracked(
+    item: dict, tasks_root: Path, *, dirpath: Path, fp: str, dry_run: bool
+) -> str | None:
+    """Route-3 open daily-held overlap-dedup outcome for process_item, or None (#1483).
+
+    Non-route-3 items and no-overlap scans return None (caller proceeds). On a hit
+    the ALREADY-TRACKED line prints either way; the real path first appends the
+    `already-tracked` ledger row and returns 'already-tracked', while dry-run stays
+    read-only by construction (no ledger write) and returns 'skip'.
+    """
+    if item["route"] != 3:
+        return None
+    dup3 = _route3_dup_or_none(item, tasks_root)
+    if dup3 is None:
+        return None
+    slug = item["slug"]
+    if not dry_run:
+        append_row(
+            dirpath,
+            {
+                "slug": slug,
+                "outcome": "already-tracked",
+                "against": dup3["id"],
+                "against_title": dup3["title"],
+                "shared": dup3["shared"],
+                "fp": fp,
+                "route": 3,
+            },
+        )
+    print(f"ALREADY-TRACKED {slug} -> #{dup3['id']} (shared: {','.join(dup3['shared'])})")
+    return "skip" if dry_run else "already-tracked"
+
+
+def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
+    """Read-only injection-intent probe for the dry-run FILE line (#1173): write-free.
+
+    Returns the ' [will inject workflow_fix_target provenance]' suffix when the real
+    path would inject the wf-fix Provenance block, else ''. No exists() guard — a
+    missing/unreadable body fails LOUD here, the same fail-fast contract
+    load_and_validate_manifest enforces up front. Non-wf-fix items get the
+    stray-provenance WARN instead.
+    """
+    if not _wf_fix_enabled(item):
+        _warn_stray_wf_fix_provenance(item, dirpath)
+        return ""
+    body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+    if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
+        return " [will inject workflow_fix_target provenance]"
+    return ""
 
 
 def _filer_cmd(
@@ -818,9 +869,9 @@ def process_item(
 
     if dry_run:
         # #1483 dry-run mirror of the route-3 overlap dedup (read-only by construction).
-        if item["route"] == 3 and (dup3 := _route3_dup_or_none(item, tasks_root)) is not None:
-            print(f"ALREADY-TRACKED {slug} -> #{dup3['id']} (shared: {','.join(dup3['shared'])})")
-            return "skip"
+        outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=True)
+        if outcome3 is not None:
+            return outcome3
         if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
@@ -828,16 +879,7 @@ def process_item(
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
-            inject = ""
-            if _wf_fix_enabled(item):
-                # Read-only injection-intent probe (#1173): dry-run stays write-free.
-                # No exists() guard — a missing/unreadable body fails LOUD here, the
-                # same fail-fast contract load_and_validate_manifest enforces up front.
-                body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
-                if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
-                    inject = " [will inject workflow_fix_target provenance]"
-            else:
-                _warn_stray_wf_fix_provenance(item, dirpath)
+            inject = _dry_run_inject_note(item, dirpath, fp)
             sha_note = _dry_run_sha_note(item, dirpath, root)
             print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}{sha_note}")
         return "skip"
@@ -870,23 +912,9 @@ def process_item(
     # re-file whose title-scan recovery MISSED will overlap-match its own night-1
     # task and record `already-tracked` instead of `recovered` — benign, no
     # duplicate is filed.
-    if item["route"] == 3:
-        dup3 = _route3_dup_or_none(item, tasks_root)
-        if dup3 is not None:
-            append_row(
-                dirpath,
-                {
-                    "slug": slug,
-                    "outcome": "already-tracked",
-                    "against": dup3["id"],
-                    "against_title": dup3["title"],
-                    "shared": dup3["shared"],
-                    "fp": fp,
-                    "route": 3,
-                },
-            )
-            print(f"ALREADY-TRACKED {slug} -> #{dup3['id']} (shared: {','.join(dup3['shared'])})")
-            return "already-tracked"
+    outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=False)
+    if outcome3 is not None:
+        return outcome3
 
     body_path = _resolve_body_path(item, dirpath)
     if _wf_fix_enabled(item):
