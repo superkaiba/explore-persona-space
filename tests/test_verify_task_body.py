@@ -185,13 +185,15 @@ def test_good_body_passes_all():
     # here, and GOOD_BODY's only same-repo URL lives in the footer so it
     # PASSes vacuously), and check 43
     # `check_github_tree_adjacent_file_claims` (#1507 — vacuous PASS, no
-    # git-tree-adjacent claims) ride CHECKS; 36/37/39
+    # git-tree-adjacent claims), and check 45
+    # `check_figure_caption_count_claims_vs_sidecar` (#1511 — vacuous
+    # PASS, no registered count claim) ride CHECKS; 36/37/39
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 57
+    assert len(results) == 58
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -5581,19 +5583,20 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 57 results (2 prepended + CHECKS[1:]=44 +
+    So `verify_text` returns 58 results (2 prepended + CHECKS[1:]=45 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 45 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 46 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
     `Disclosure: N of M` count reconciliation, #1421 — check 40
     `check_hf_unpinned_count_claims` (#1433) — check 41
-    `check_figure_sidecar_coverage` (#1478) — and checks 42
+    `check_figure_sidecar_coverage` (#1478) — checks 42
     `check_body_artifact_urls_exist` + 43
-    `check_github_tree_adjacent_file_claims` (#1507) ride CHECKS).
+    `check_github_tree_adjacent_file_claims` (#1507) — and check 45
+    `check_figure_caption_count_claims_vs_sidecar` (#1511) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 45
+    assert len(verify_task_body.CHECKS) == 46
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -11102,11 +11105,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (45 as of
-    checks 42/43, #1507; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (46 as of
+    check 45, #1511; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 45
+    assert len(verify_task_body.CHECKS) == 46
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -14287,3 +14290,458 @@ def test_gh_tree_ancestor_entries_not_members(tmp_path):
     assert "issue_1072" not in basenames
     assert "stats_component.json" in basenames
     assert "battery_1072_fold4.json" in basenames
+
+
+# ─── Check 45: caption count claims vs sidecar point values (#1511) ─────────
+
+_CHECK45_NAME = "figure caption count claims vs sidecar point values (count drift)"
+
+_C45_CAPTION_BASE = (
+    "> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* "
+    "Baseline gray, tulu-25 blue; error bars 95% Wald CIs."
+)
+
+
+def _check45_body(caption: str) -> str:
+    """`_V4_GOOD_BODY` with its figure's blockquote caption replaced by
+    ``caption`` (may span multiple `> `-prefixed lines, e.g. to place the
+    per-figure opt-out comment inside the caption)."""
+    return _V4_GOOD_BODY.replace(_C45_CAPTION_BASE, caption)
+
+
+def _count_scatter_sidecar(*ys, labels=None):
+    """#1426-shaped scatter sidecar: per point a POSITIVE x column
+    ("median CoT length (tokens)"), the y column under test, a label,
+    `_kind`, `_group`. The all-positive x pool exercises the any-pool rule
+    for real (it can never rescue a below-zero claim but is always a
+    same-size candidate — and it DOES rescue "no ... below zero" claims)."""
+    labels = labels if labels is not None else [f"ctx{i}" for i in range(len(ys))]
+    return {
+        "created": "2026-07-18T00:00:00Z",
+        "points": [
+            {
+                "median CoT length (tokens)": 400.0 + 10.0 * i,
+                "per-context delta skill @ L24": y,
+                "label": lab,
+                "_kind": "scatter",
+                "_group": 0,
+            }
+            for i, (y, lab) in enumerate(zip(ys, labels, strict=True))
+        ],
+        "n_series": 1,
+        "total_points": len(ys),
+    }
+
+
+def test_check45_all_n_below_zero_contradicted_warns(tmp_path, monkeypatch):
+    """Durability pin (#1511): "All 3 contexts lie below zero" beside a
+    sidecar whose y pool holds a +0.004 point → WARN naming the offending
+    label + value; WARN never FAIL (passed=True, is_warn=True)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004, labels=["a", "b", "pos_ctx"])
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert "pos_ctx" in res.detail and "+0.004" in res.detail
+    assert "count-claims: manual" in res.detail  # the WARN names the opt-out
+
+
+def test_check45_all_n_below_zero_correct_passes(tmp_path, monkeypatch):
+    """All-negative y pool satisfies "all 3 ... below zero" → clean PASS
+    (the all-positive x pool contradicts, but ANY satisfying pool passes)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, -0.3))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "recompute consistently" in res.detail
+
+
+def test_check45_k_of_n_matching_passes(tmp_path, monkeypatch):
+    """ "2 of 3 contexts lie below zero" vs y = (-0.1, -0.2, +0.004) →
+    exact-count match → PASS."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *2 of 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check45_k_of_n_contradicted_warns(tmp_path, monkeypatch):
+    """ "1 of 3 contexts lie below zero" vs a recomputed 2-of-3 → WARN
+    reporting claimed-vs-recomputed counts (exact equality, no ±1 slack)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *1 of 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "claimed 1 of 3" in res.detail
+    assert "recomputes" in res.detail
+
+
+def test_check45_none_above_zero_contradicted_warns(tmp_path, monkeypatch):
+    """ "none of the 3 contexts lie above zero" vs a +0.004 point → WARN
+    naming the point that DOES sit above zero."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _count_scatter_sidecar(0.004, -0.1, -0.2, labels=["pos_ctx", "b", "c"])
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *None of the 3 contexts lie above zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "pos_ctx" in res.detail
+
+
+def test_check45_no_unit_above_zero_both_directions(tmp_path, monkeypatch):
+    """The bare `no <unit>` branch (n=None → ALL pools are candidates),
+    both directions: contradicted → WARN; correct → PASS via the y pool
+    even though the all-positive x pool contradicts (any-pool rescue)."""
+    bad_repo, bad_sha = _make_repo_with_figure_meta(
+        tmp_path, _count_scatter_sidecar(0.004, -0.1, -0.2)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: bad_repo)
+    body = _check45_body("> **Figure.** *No contexts sit above zero.*").replace(
+        "0123456789abcdef", bad_sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    (tmp_path / "ok").mkdir()
+    ok_repo, ok_sha = _make_repo_with_figure_meta(
+        tmp_path / "ok", _count_scatter_sidecar(-0.3, -0.1, -0.2)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: ok_repo)
+    body2 = _check45_body("> **Figure.** *No contexts sit above zero.*").replace(
+        "0123456789abcdef", ok_sha
+    )
+    res2 = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body2)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check45_copula_negative_end_to_end(tmp_path, monkeypatch):
+    """The copula branch end-to-end: "all 3 deltas are negative" beside a
+    +0.004 point → WARN (negative ≡ below zero); all-negative → PASS. An
+    inverted neg/pos direction mapping would flip both outcomes."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004, labels=["a", "b", "pos_ctx"])
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 deltas are negative.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "pos_ctx" in res.detail
+    (tmp_path / "ok").mkdir()
+    ok_repo, ok_sha = _make_repo_with_figure_meta(
+        tmp_path / "ok", _count_scatter_sidecar(-0.1, -0.2, -0.3)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: ok_repo)
+    body2 = _check45_body("> **Figure.** *All 3 deltas are negative.*").replace(
+        "0123456789abcdef", ok_sha
+    )
+    res2 = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body2)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check45_no_size_matching_pool_skips(tmp_path, monkeypatch):
+    """ "all 5 contexts ..." vs a 3-point sidecar → the referenced set is
+    unidentifiable → silent PASS (never guess a pool)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 5 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure caption with a registered count claim" in res.detail
+
+
+def test_check45_aggregate_only_sidecar_skips(tmp_path, monkeypatch):
+    """A sidecar with no `points`/`rows` (aggregates/text only) → silent
+    PASS (no value pool to recount against)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {"created": "2026-07-18T00:00:00Z", "text": {"suptitle": "s", "axes": []}},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check45_missing_sidecar_skips(tmp_path, monkeypatch):
+    """A figure with NO `.meta.json` sibling → silent-skip PASS (check-24
+    convention, NOT check 26's loud missing-sidecar FAIL)."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # hero.png, no sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check45_truncated_sidecar_skips(tmp_path, monkeypatch):
+    """A `data_truncated` sidecar → silent PASS (a count over truncated
+    rows is not figure truth)."""
+    sidecar = _count_scatter_sidecar(-0.1, -0.2, 0.004)
+    sidecar["data_truncated"] = True
+    repo, sha = _make_repo_with_figure_meta(tmp_path, sidecar)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body("> **Figure.** *All 3 contexts lie below zero.*").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check45_all_but_and_bound_qualifiers_skip(tmp_path, monkeypatch):
+    """ "all but 1 of 3" (inverted semantics) and "at least 2 of 3" (bound,
+    not exact) parse NO claim — unit-level + body-level no-fire."""
+    assert verify_task_body._caption_count_claims("all but 1 of 3 contexts lie below zero") == []
+    assert verify_task_body._caption_count_claims("at least 2 of 3 contexts lie below zero") == []
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body(
+        "> **Figure.** *All but 1 of 3 contexts lie below zero; at least 2 of 3 "
+        "contexts lie below zero.*"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure caption with a registered count claim" in res.detail
+
+
+def test_check45_not_all_pre_guard_no_claim():
+    """ "not all 50 contexts lie below zero" parses NO claim (the `\\bnot`
+    preceding-qualifier guard — reading it as all-50 would invert the
+    caption's meaning)."""
+    assert verify_task_body._caption_count_claims("not all 50 contexts lie below zero") == []
+    # "cannot" must NOT trip the guard (no word boundary before "not"):
+    claims = verify_task_body._caption_count_claims(
+        "we cannot ignore that all 3 contexts lie below zero"
+    )
+    assert [c["shape"] for c in claims] == ["all"]
+
+
+def test_check45_at_or_below_zero_no_claim():
+    """ "all 50 contexts lie at or below zero" is a NON-strict (<=) claim —
+    the strict recompute must not read it (an exact-zero point would
+    false-WARN); the `at or` gap guard rejects it."""
+    assert verify_task_body._caption_count_claims("all 50 contexts lie at or below zero") == []
+    assert (
+        verify_task_body._caption_count_claims("none of the 3 contexts sit at or above zero") == []
+    )
+
+
+def test_check45_numeral_zero_forms():
+    """ "below 0" (bare numeral, incl. sentence-final "0.") parses a claim;
+    "below 0.05" (a decimal — a non-zero referent) does not."""
+    got = verify_task_body._caption_count_claims("all 3 contexts lie below 0.")
+    assert [(c["shape"], c["direction"]) for c in got] == [("all", "below")]
+    assert verify_task_body._caption_count_claims("all 3 contexts lie below 0.05") == []
+
+
+def test_check45_no_qualifier_words_skip():
+    """ "no further points ..." — the captured unit IS the qualifier token
+    (a claim about ADDITIONAL items, not a counted set) → no claim."""
+    assert verify_task_body._caption_count_claims("no further points dip below zero") == []
+    assert verify_task_body._caption_count_claims("no other contexts fall below zero") == []
+
+
+def test_check45_nonzero_referent_not_matched():
+    """The real #1426 second-figure caption — "44 of 50 contexts fall more
+    than 0.05 below the linear fit" — parses NO claim (decimal breaks the
+    punctuation-free gap; "below the" is not "below zero")."""
+    assert (
+        verify_task_body._caption_count_claims(
+            "44 of 50 contexts fall more than 0.05 below the linear fit"
+        )
+        == []
+    )
+
+
+def test_check45_optout_in_beat1_suppresses(tmp_path, monkeypatch):
+    """The (contradicted) claim + `<!-- count-claims: manual -->` in the
+    figure's beat-1 prose → suppressed, PASS with "opted out" in detail."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = (
+        _check45_body("> **Figure.** *All 3 contexts lie below zero.*")
+        .replace(
+            _CHECK33_PLOTTED_BASE,
+            _CHECK33_PLOTTED_BASE + "\n\n<!-- count-claims: manual -->",
+        )
+        .replace("0123456789abcdef", sha)
+    )
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "opted out" in res.detail
+
+
+def test_check45_optout_in_caption_suppresses(tmp_path, monkeypatch):
+    """The opt-out literal on a `> `-prefixed CAPTION line is honored too
+    (`_figure_caption_after` joins blockquote lines, so the literal lands
+    in the caption text the opt-out window includes)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _count_scatter_sidecar(-0.1, -0.2, 0.004))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check45_body(
+        "> **Figure.** *All 3 contexts lie below zero.*\n> <!-- count-claims: manual -->"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "opted out" in res.detail
+
+
+def test_check45_grandfathered_v3_body_noop(tmp_path, monkeypatch):
+    """The v3 exemplar body (no count claim, unresolvable placeholder sha)
+    → vacuous PASS, never flagged (generation-agnostic, forward-safe)."""
+    repo, _sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(_V3_GOOD_BODY)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check45_registered():
+    """The check rides `CHECKS` (generation-agnostic block)."""
+    assert verify_task_body.check_figure_caption_count_claims_vs_sidecar in verify_task_body.CHECKS
+
+
+def test_check45_bar_x_dodge_excluded_from_pools():
+    """`_sidecar_value_pools` on issue_1005-shaped bar sidecars: a numeric
+    first key (`"x": -0.19` dodge offset) forms NO pool (a negative layout
+    slot must never count as a below-zero point); the heights column does;
+    a string `category` first key consumes the first slot so heights stay
+    untagged (mirrors `_sidecar_plotted_values` first-slot consumption)."""
+    pools = verify_task_body._sidecar_value_pools(
+        {
+            "points": [
+                {"x": -0.19, "compliance": 0.5, "_kind": "bar"},
+                {"x": 0.81, "compliance": 0.7, "_kind": "bar"},
+            ]
+        }
+    )
+    assert (None, "x") not in pools
+    assert [v for v, _l in pools[(None, "compliance")]] == [0.5, 0.7]
+    pools2 = verify_task_body._sidecar_value_pools(
+        {
+            "points": [
+                {"category": "fam1", "height": 0.5, "_kind": "bar"},
+                {"category": "fam2", "height": -0.2, "_kind": "bar"},
+            ]
+        }
+    )
+    assert [v for v, _l in pools2[(None, "height")]] == [0.5, -0.2]
+
+
+def test_check45_mixed_kind_pools_get_per_kind_grain():
+    """Mixed bar+line rows SHARING a column name (the issue_1005 mediation
+    shape) get per-`(kind, column)` pools in ADDITION to the merged pool —
+    the per-kind grain is what restores an N-sized candidate there."""
+    pools = verify_task_body._sidecar_value_pools(
+        {
+            "points": [
+                {"cat": "a", "held-out skill (LOCO)": 0.4, "_kind": "bar"},
+                {"cat": "b", "held-out skill (LOCO)": 0.5, "_kind": "bar"},
+                {"step": 1.0, "held-out skill (LOCO)": 0.6, "_kind": "line"},
+            ]
+        }
+    )
+    assert len(pools[(None, "held-out skill (LOCO)")]) == 3
+    assert len(pools[("bar", "held-out skill (LOCO)")]) == 2
+    assert len(pools[("line", "held-out skill (LOCO)")]) == 1
+
+
+def test_check45_incident_1426_shape(tmp_path, monkeypatch):
+    """The motivating incident, two-series real shape (sidecar
+    `figures/issue_1426/mlc_percontext_delta_scatter.meta.json` @
+    `4a65c36ab0`): 100 points = two 50-point scatter series (series 2
+    duplicates the y values under a bare `y` column), 49 negative + one
+    +0.004368588982575972 labeled `f1_house_medical_doctor`. Pre-fix
+    caption ("all 50 contexts lie below zero") → WARN naming the point;
+    corrected caption ("49 of 50 ... (one persona context marginally
+    positive at +0.004)") → PASS — and the parenthetical parses NO claim
+    (no copula), and the duplicate `y` pool never double-reports."""
+    ys = [-(i + 1) / 100.0 for i in range(49)] + [0.004368588982575972]
+    labels = [f"ctx{i}" for i in range(49)] + ["f1_house_medical_doctor"]
+    points = []
+    for i, (y, lab) in enumerate(zip(ys, labels, strict=True)):
+        points.append(
+            {
+                "median CoT length (tokens)": 400.0 + i,
+                "per-context delta skill (read 1) @ L24": y,
+                "label": lab,
+                "_kind": "scatter",
+                "_group": 0,
+            }
+        )
+    for i, (y, lab) in enumerate(zip(ys, labels, strict=True)):
+        points.append(
+            {
+                "median K (tokens)": 300.0 + i,
+                "y": y,
+                "label": lab,
+                "_kind": "scatter",
+                "_group": 1,
+            }
+        )
+    sidecar = {"created": "2026-07-18T00:00:00Z", "points": points, "total_points": 100}
+    repo, sha = _make_repo_with_figure_meta(tmp_path, sidecar)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    prefix_body = _check45_body(
+        "> **Figure.** *Per-context demotion (full-context, read 1) at layer 24; "
+        "all 50 contexts lie below zero.*"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_caption_count_claims_vs_sidecar(prefix_body)
+    assert res.passed and res.is_warn, res.render()
+    assert "f1_house_medical_doctor" in res.detail
+    assert "+0.004369" in res.detail
+    assert res.detail.count("caption claims") == 1  # duplicate y pool: no double report
+    fixed_body = _check45_body(
+        "> **Figure.** *Per-context demotion (full-context, read 1) at layer 24; "
+        "49 of 50 contexts lie below zero (one persona context marginally positive "
+        "at +0.004).*"
+    ).replace("0123456789abcdef", sha)
+    res2 = verify_task_body.check_figure_caption_count_claims_vs_sidecar(fixed_body)
+    assert res2.passed and not res2.is_warn, res2.render()
+    assert "1 caption count claim(s)" in res2.detail  # the parenthetical parses no claim
+
+
+def test_check45_subset_claim_larger_pool_rescue():
+    """The #1090 corpus-calibration shape: "all 2 probes are negative"
+    counts a named SUBSET of a larger plotted column. The only size-2 pool
+    (a different measure, all positive) contradicts, but a size-5 column
+    with >=2 negative values plausibly hosts the subset → rescued (no
+    WARN). With the larger column all-positive too, no rescue → WARN."""
+    pools = {
+        (None, "judged delta"): [(0.1, "a"), (0.2, "b")],
+        (None, "projection"): [(-1.0, None), (-2.0, None), (-3.0, None), (0.5, None), (0.6, None)],
+    }
+    claims = verify_task_body._caption_count_claims("all 2 probes are negative")
+    warns, n_checked, sat = verify_task_body._count_claim_failures(claims, pools, "f.png")
+    assert n_checked == 1 and warns == [], (warns, sat)
+    assert "subset of n=5" in sat[0]
+    pools_bad = {
+        (None, "judged delta"): [(0.1, "a"), (0.2, "b")],
+        (None, "projection"): [(1.0, None), (2.0, None), (3.0, None), (0.5, None), (0.6, None)],
+    }
+    warns2, n2, _sat2 = verify_task_body._count_claim_failures(claims, pools_bad, "f.png")
+    assert n2 == 1 and len(warns2) == 1, warns2
+    # The incident class is unaffected: pools all EXACTLY size n → no host.
+    pools_incident = {(None, "y"): [(-0.1, "a"), (-0.2, "b"), (0.004, "pos_ctx")]}
+    claims3 = verify_task_body._caption_count_claims("all 3 contexts lie below zero")
+    warns3, n3, _s3 = verify_task_body._count_claim_failures(claims3, pools_incident, "f.png")
+    assert n3 == 1 and len(warns3) == 1 and "pos_ctx" in warns3[0]

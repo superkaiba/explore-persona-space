@@ -382,6 +382,12 @@ one `### <finding>` per result.)
   (Lens 11); they count as ONE narrative unit (what-is-plotted above the
   pair, interpretation below the pair). (v3: the per-finding
   setup-above/read-below skeleton.)
+- Quantified caption count claims ("all N / K of N / none … below/above
+  zero") now have a mechanical backstop (`verify_task_body.py` check 45);
+  the lens still owns the purely-verbal half — "nearly all", magnitude
+  glosses ("far below zero"), non-zero referents, subset claims a
+  same-size sibling or larger column coincidentally rescues, and count
+  claims outside the caption.
 
 ### Lens 4 — Takeaways quality
 

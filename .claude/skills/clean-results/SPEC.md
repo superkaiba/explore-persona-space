@@ -1059,8 +1059,15 @@ PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
 window — the previous-figure-bounded beat-1 slice plus the caption — must
 appear among the sidecar's plotted values under rounding / sign / percent
 tolerance; per-figure opt-out for genuinely derived quantities: the literal
-`<!-- prose-numerics: derived -->` anywhere in that window). The
-Goal-of-experiment frontmatter
+`<!-- prose-numerics: derived -->` anywhere in that window), and figure
+caption count claims vs sidecar point values (check 45, WARN: quantified
+caption count claims — `all N <unit>`, `K of N <unit>`, `none of the N
+<unit>` / `no <unit>` + a below/above-zero or copula negative/positive
+predicate — recompute against the sidecar's per-column point-value pools,
+contradiction-only; vague count glosses ("nearly all", "far below zero")
+stay the LM critic's; per-figure opt-out: the literal
+`<!-- count-claims: manual -->` in the figure's beat-1 window or caption).
+The Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 
