@@ -1095,3 +1095,185 @@ def test_import_map_live_tree_issue1286_shape():
     assert "import-map:scripts/issue810_fit_readout.py" in reasons[target]
     assert "scripts/issue810_common.py" not in untested
     assert "scripts/issue810_fit_readout.py" not in untested
+
+
+# --- Rules-pin discovery arm (#1496) ---------------------------------------------
+# Cases 52-62: a touched .claude/rules/<name>.md selects every tests/**/test_*.py
+# whose raw text contains the basename <name>.md (reason rules-pin:<rule path>),
+# ADDITIVE to the WORKFLOW_SURFACE skip (which is unchanged); --map-files unions
+# the same pairs MINUS WORKFLOW_INVARIANT members.
+
+
+# --- Case 52: full-path-literal reference form -----------------------------------
+def test_rules_pin_full_path_literal_selected(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_some_rule_pin.py").write_text('RULE = ".claude/rules/some-rule.md"\n')
+    touched = [".claude/rules/some-rule.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_some_rule_pin.py" in tests
+    assert reasons["tests/test_some_rule_pin.py"] == ["rules-pin:.claude/rules/some-rule.md"]
+    assert untested == []  # rules files stay a correct SKIP, never "untested"
+
+
+# --- Case 53: path-join reference form (no full-path literal) ---------------------
+def test_rules_pin_path_join_basename_selected(tmp_path: Path):
+    """The test_battery_basis_prose_pins.py shape: basename via path-join only."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_join_pin.py").write_text(
+        'text = (ROOT / ".claude" / "rules" / "some-rule.md").read_text()\n'
+    )
+    tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_join_pin.py" in tests
+
+
+# --- Case 54: comment/docstring mentions count (documented over-select posture) ---
+def test_rules_pin_comment_mention_counts(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_citer.py").write_text(
+        "# see .claude/rules/some-rule.md for the recipe\ndef test_x():\n    assert True\n"
+    )
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_citer.py" in tests
+    assert reasons["tests/test_citer.py"] == ["rules-pin:.claude/rules/some-rule.md"]
+
+
+# --- Case 55: SUPERSTRING basenames over-select by design --------------------------
+def test_rules_pin_superstring_basename_over_selects(tmp_path: Path):
+    """Substring matching means touching x.md also selects a test mentioning
+    only prefix-x.md ("x.md" is a substring of "prefix-x.md"); the live-tree
+    instance is critic-lens-reference.md vs
+    clean-result-critic-lens-reference.md. Accepted over-select (safe
+    direction) — pinned so extra hits are never misread as a scan bug."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_superstring_citer.py").write_text('DOC = ".claude/rules/prefix-x.md"\n')
+    hits = sel.rules_pin_hits([".claude/rules/x.md"], repo)
+    assert ".claude/rules/x.md" in hits.get("tests/test_superstring_citer.py", set())
+
+
+# --- Case 56: no rules file touched -> zero hits, ZERO file reads ------------------
+def test_rules_pin_no_rules_touched_no_hits(tmp_path: Path, capsys):
+    """Proof of the zero-read early return: an undecodable test file is
+    planted; any scan pass reads raw text (case 58 shows that read WARNs), so
+    the absence of a WARN here proves no file was read."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"\xff\xfe bad")
+    assert sel.rules_pin_hits(["scripts/widget.py", "docs/x.md"], repo) == {}
+    assert "rules-pin scan cannot read" not in capsys.readouterr().err
+
+
+# --- Case 57: monotonicity — the arm only ever GROWS the selection -----------------
+def test_rules_pin_selection_only_grows(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin test (mirror of case 41):
+    WITH-selection is a superset and every WITHOUT reason list is preserved
+    verbatim (acceptance R3)."""
+    touched = ["scripts/widgetlib.py", ".claude/rules/some-rule.md"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_rule_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_rule_pin.py" in t_with
+    assert u_without == u_with == []
+
+
+# --- Case 58: unreadable test file WARNs + is skipped; never crashes ---------------
+def test_rules_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_good_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    (repo / "tests" / "test_bad.py").write_bytes(b'R = ".claude/rules/some-rule.md"\n\xff\xfe')
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_good_pin.py" in tests  # the valid hit still selected
+    assert "tests/test_bad.py" not in tests
+    assert untested == []
+    err = capsys.readouterr().err
+    assert err.count("rules-pin scan cannot read") == 1
+    assert "test_bad.py" in err
+    # 1 failure over the ~42-file fixture tree is < 5%: no aggregate WARN.
+    assert "systemic tests/ breakage" not in err
+
+
+# --- Case 59: aggregate read-failure WARN (systemic-breakage signal) ---------------
+def test_rules_pin_aggregate_read_failure_warn(tmp_path: Path, capsys):
+    """>5% of scanned test files unreadable emits ONE extra summary WARN
+    (mirrors the import-map arm's #1299 aggregate signal, case 48)."""
+    repo = _make_tree(tmp_path, [])
+    for i in range(3):
+        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
+    (repo / "tests" / "test_ok_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_ok_pin.py" in tests
+    err = capsys.readouterr().err
+    assert err.count("rules-pin scan cannot read") == 3  # one per-file WARN each
+    assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
+
+
+# --- Case 60: LIVE-tree drift/regression pin (the #1496 durability pin) ------------
+def test_rules_pin_live_tree_known_pairs():
+    """DRIFT/REGRESSION PIN: the discovery scan, run against the LIVE repo
+    tree, finds these verified (rule -> pin test) pairs — the full-path-literal
+    form (pod-side-reporting), the path-join form (critic-lens-reference; pins
+    the basename-substring semantics on the real tree), and the llm-judging
+    pair. SUPERSET assert: new pin tests joining later must not break this; a
+    rename of a pinned test legitimately forces a deliberate 1-line update
+    here (that loudness is the point)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    hits = sel.rules_pin_hits(
+        [
+            ".claude/rules/pod-side-reporting.md",
+            ".claude/rules/critic-lens-reference.md",  # path-join form on the live tree
+            ".claude/rules/llm-judging.md",
+        ],
+        root,
+    )
+    assert ".claude/rules/pod-side-reporting.md" in hits.get(
+        "tests/test_pod_side_reporting_push_contract.py", set()
+    )
+    assert ".claude/rules/critic-lens-reference.md" in hits.get(
+        "tests/test_battery_basis_prose_pins.py", set()
+    )
+    assert ".claude/rules/llm-judging.md" in hits.get("tests/test_judge_dispatch.py", set())
+
+
+# --- Case 61: --map-files unions rules-pin pairs; no-rules payload unchanged -------
+def test_cli_map_files_rules_pin_pair(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_some_rule_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/rules/some-rule.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == ["tests/test_some_rule_pin.py\t.claude/rules/some-rule.md"]
+    # A payload with NO rules file is byte-identical to today's scan-map output
+    # (the pin test's mention is irrelevant: pairs key on the PAYLOAD paths).
+    listing.write_text("scripts/dispatch_x.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out.splitlines() == [
+        "tests/test_shared_vm_thread_caps.py\tscripts/dispatch_x.py",
+        "tests/test_subprocess_env_explicit.py\tscripts/dispatch_x.py",
+    ]
+
+
+# --- Case 62: --map-files EXCLUDES invariant members; the 9c arm keeps them --------
+def test_cli_map_files_rules_pin_excludes_invariant(tmp_path: Path, capsys):
+    """The deliberate asymmetry (#1496 D3): tests/test_workflow_lint.py (a
+    WORKFLOW_INVARIANT member and the only SLOW_TESTS entry) is filtered from
+    the --map-files pairs, while select_tests_with_reasons still carries the
+    rules-pin reason on it (the union dedupes; the extra reason is
+    informative)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_workflow_lint.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/rules/some-rule.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""  # invariant member filtered -> the skip signal
+    _, _, reasons = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert set(reasons["tests/test_workflow_lint.py"]) == {
+        "invariant",
+        "rules-pin:.claude/rules/some-rule.md",
+    }

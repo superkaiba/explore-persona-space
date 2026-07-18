@@ -10756,10 +10756,10 @@ Decision tree:
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
   fi
-  # MAPPED INVARIANT-TEST LEG (#1147) — form (iii), DORMANT TODAY by
-  # construction: the additive pathspec set above excludes scripts/ and src/,
-  # so no additive payload can match a GLOB_SCAN_TESTS glob and the trigger
-  # map is empty. The leg exists as defense-in-depth should that pathspec set
+  # MAPPED INVARIANT-TEST LEG (#1147) — form (iii): dormant for scripts/src
+  # payloads by pathspec (no additive payload can match a GLOB_SCAN_TESTS
+  # glob); an ADDED .claude/rules/*.md payload arms it via rules-pin pairs
+  # (#1496). The leg exists as defense-in-depth should that pathspec set
   # ever grow; it costs one ~1 s helper call per surgical landing. Sequencing
   # mirrors the lint legs: TG BASELINE runs BEFORE the checkout (the payload
   # lands in the ROOT tree — a post-checkout "baseline" would be a degenerate
