@@ -3864,8 +3864,8 @@
     "1496": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1496",
-      "status": "planning",
+      "path": "tasks/approved/1496",
+      "status": "approved",
       "title": "daily-fix: 9c selector rules-to-prose-pin-test mapping"
     },
     "1497": {
