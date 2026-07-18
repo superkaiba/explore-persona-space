@@ -1515,13 +1515,14 @@ def _ssh_probe(
     # count — a tools-only holder counting would satisfy the veto triple
     # during a genuine total collapse and silently suppress the #664 true
     # positive. Per MATCHED holder the scan additionally counts
-    # NVIDIA_UVM_ALLOC_HOLDERS (#1216): holders whose `/proc/<pid>/maps`
-    # carries a per-GPU device-node mapping (` /dev/nvidia[0-9]`, the
-    # presumptive S2 allocation-evidence signal — context creation maps
-    # per-GPU device regions; a bare-cuInit coordinator holds the uvm fd
-    # but maps no per-GPU node, the #864 §7 disqualifier). The leading
-    # space anchors the path start and the digit-after-`nvidia` requirement
-    # excludes `-uvm` / `ctl` / `-tools` / `-caps`. The VETO predicate keys
+    # NVIDIA_UVM_ALLOC_HOLDERS (#1216): allocation-evidenced = holds a
+    # file-backed `/dev/nvidia-uvm` maps entry (UVM regions are
+    # allocation-time mmaps); picked by the #1216 §7 gate (amended rung
+    # 4), driver 580.126.09. The match is END-ANCHORED
+    # (` /dev/nvidia-uvm$`) with the leading space anchoring the path
+    # start, so `/dev/nvidia-uvm-tools` / `nvidiactl` never count; a
+    # bare-cuInit coordinator holds the uvm fd but maps no UVM region,
+    # the #864 §7 disqualifier. The VETO predicate keys
     # on the ALLOC count; the LIVE-holder count stays a forensic read.
     # Healthy matched-regime ticks pay zero cost (the scan is skipped
     # without a candidate); an unreadable / dying-mid-scan proc is skipped
@@ -1556,7 +1557,7 @@ def _ssh_probe(
         "    for p in /proc/[0-9]*; do "
         '      if ls -l "$p/fd" 2>/dev/null | grep -q " -> /dev/nvidia-uvm$"; then '
         "        UVM_HOLDERS=$((UVM_HOLDERS+1)); "
-        '        if grep -qm1 " /dev/nvidia[0-9]" "$p/maps" 2>/dev/null; then '
+        '        if grep -qm1 " /dev/nvidia-uvm$" "$p/maps" 2>/dev/null; then '
         "          UVM_ALLOC_HOLDERS=$((UVM_ALLOC_HOLDERS+1)); "
         "        fi; "
         "      fi; "

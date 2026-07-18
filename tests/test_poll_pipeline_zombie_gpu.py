@@ -1282,12 +1282,14 @@ def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -
     assert 'grep -q " -> /dev/nvidia-uvm$"' in remote
     assert "/dev/nvidia-uvm-tools" not in remote
 
-    # (d) the finalized #1216 allocation-evidence matcher (presumptive S2:
-    # a per-GPU device-node maps entry). The leading space anchors the path
-    # start; the digit-after-`nvidia` requirement excludes -uvm/ctl/-tools/
-    # -caps; the per-holder 2>/dev/null guard fails an unreadable proc
-    # toward NOT counting (less suppression, the #826 fall-through).
-    assert 'grep -qm1 " /dev/nvidia[0-9]" "$p/maps" 2>/dev/null' in remote
+    # (d) the finalized #1216 allocation-evidence matcher (S3-standalone,
+    # picked by the amended §7 rung-4 gate): a file-backed /dev/nvidia-uvm
+    # maps entry, END-ANCHORED so -uvm-tools never counts; the per-holder
+    # 2>/dev/null guard fails an unreadable proc toward NOT counting (less
+    # suppression, the #826 fall-through). Pin the FULL maps invocation —
+    # the bare suffix ` /dev/nvidia-uvm$` is a substring of the fd matcher
+    # ` -> /dev/nvidia-uvm$` above and would be vacuously satisfied.
+    assert 'grep -qm1 " /dev/nvidia-uvm$" "$p/maps" 2>/dev/null' in remote
 
 
 # ── #951 material-compute liveness veto ───────────────────────────────────────
