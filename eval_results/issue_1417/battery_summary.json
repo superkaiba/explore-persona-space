@@ -1,0 +1,214 @@
+{
+  "metadata": {
+    "git_commit": "91eb98a2e6c4cf2c1b995424623eb80cb8c6ab7f",
+    "timestamp": "2026-07-18T19:17:55Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1417_battery.py",
+    "issue": 931
+  },
+  "issue": 1417,
+  "render_config_hash": "e90076475177f13a",
+  "cells": {
+    "instruct__c1_helpful_ctrl": {
+      "n_kept": 3629,
+      "yield_frac": 0.7682049110922947,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.08046293744833287,
+      "r2_l19": -1.4809794981357092,
+      "null_p975_l19": -0.03161768185421695,
+      "map_exists": false,
+      "y_trace_cov_l19": 1536.8805462182092,
+      "y_var_ratio_vs_c0": 0.9616757770197698,
+      "rel_l19": 0.9648906734785613,
+      "delta_rel_ci95": [
+        0.4614061392655447,
+        0.4682513777738443
+      ],
+      "verdict_raw": "Shared",
+      "verdict": "Shared"
+    },
+    "instruct__c2_rude": {
+      "n_kept": 3128,
+      "yield_frac": 0.6621507197290432,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.0559462915601023,
+      "r2_l19": 0.5460883631466313,
+      "null_p975_l19": -0.025187104710423836,
+      "map_exists": true,
+      "y_trace_cov_l19": 777.3320365524519,
+      "y_var_ratio_vs_c0": 0.4864017519731178,
+      "rel_l19": -1.6044082617392672,
+      "delta_rel_ci95": [
+        -2.38708870406991,
+        -1.9120202468243737
+      ],
+      "verdict_raw": "Distinct",
+      "verdict": "content-collapsed (demoted)"
+    },
+    "instruct__c3_evasive": {
+      "n_kept": 2214,
+      "yield_frac": 0.4686706181202371,
+      "primary_grade": false,
+      "dup_prefix_rate": 0.04923215898825655,
+      "r2_l19": -0.5854574712856693,
+      "null_p975_l19": -0.03343822924927841,
+      "map_exists": false,
+      "y_trace_cov_l19": 1057.6588610935664,
+      "y_var_ratio_vs_c0": 0.6618112966338419,
+      "rel_l19": 2.2422250217688977,
+      "delta_rel_ci95": [
+        1.3802045948886075,
+        2.5057961771785457
+      ],
+      "verdict_raw": "Shared",
+      "verdict": "Shared"
+    },
+    "instruct__c4_exposition": {
+      "n_kept": 3526,
+      "yield_frac": 0.7464013547840813,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.04112308564946115,
+      "r2_l19": 0.5164814450215096,
+      "null_p975_l19": -0.032318270977004855,
+      "map_exists": true,
+      "y_trace_cov_l19": 1029.6933080640051,
+      "y_var_ratio_vs_c0": 0.6443123472160304,
+      "rel_l19": -0.38952201707751755,
+      "delta_rel_ci95": [
+        -0.9304037050663847,
+        -0.8537921215959555
+      ],
+      "verdict_raw": "Distinct",
+      "rel_l19_vs_c0p": -0.2648112773172925,
+      "delta_rel_ci95_vs_c0p": [
+        -0.7932433796326522,
+        -0.7411438740938543
+      ],
+      "verdict_vs_c0p": "Distinct",
+      "verdict": "Distinct"
+    },
+    "instruct__c5_ai_addressee": {
+      "n_kept": 3600,
+      "yield_frac": 0.7620660457239627,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.08666666666666667,
+      "r2_l19": -1.204515097994467,
+      "null_p975_l19": -0.03270654480293314,
+      "map_exists": false,
+      "y_trace_cov_l19": 1540.708886466285,
+      "y_var_ratio_vs_c0": 0.9640712931136026,
+      "rel_l19": 0.9543646370911515,
+      "delta_rel_ci95": [
+        0.44916329711062725,
+        0.45924439366731495
+      ],
+      "verdict_raw": "Shared",
+      "verdict": "Shared"
+    },
+    "pretrained__c1_helpful_ctrl": {
+      "n_kept": 2245,
+      "yield_frac": 0.4752328535139712,
+      "primary_grade": false,
+      "dup_prefix_rate": 0.04320712694877506,
+      "r2_l19": 0.37787860267506335,
+      "null_p975_l19": -0.03558478952118711,
+      "map_exists": true,
+      "y_trace_cov_l19": 1457.0186707977753,
+      "y_var_ratio_vs_c0": 0.8288506305446236,
+      "rel_l19": -6.549739519510566,
+      "delta_rel_ci95": [
+        -12.76825712049878,
+        -4.977313054822475
+      ],
+      "verdict_raw": "Distinct",
+      "verdict": "Distinct"
+    },
+    "pretrained__c2_rude": {
+      "n_kept": 516,
+      "yield_frac": 0.10922946655376799,
+      "primary_grade": false,
+      "dup_prefix_rate": 0.011627906976744186,
+      "r2_l19": -0.002170746094595888,
+      "null_p975_l19": -0.26172860566596773,
+      "map_exists": true,
+      "y_trace_cov_l19": 812.1296170959383,
+      "y_var_ratio_vs_c0": 0.46199417941937876,
+      "rel_l19": 1.1667176706279994,
+      "delta_rel_ci95": [
+        0.6158258046305127,
+        0.7254997841029404
+      ],
+      "verdict_raw": "Shared",
+      "verdict": "Shared"
+    },
+    "pretrained__c3_evasive": {
+      "n_kept": 2932,
+      "yield_frac": 0.6206604572396275,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.09481582537517053,
+      "r2_l19": 0.12772433454295362,
+      "null_p975_l19": -0.0316245842895682,
+      "map_exists": true,
+      "y_trace_cov_l19": 1375.0354843139653,
+      "y_var_ratio_vs_c0": 0.7822130567282516,
+      "rel_l19": -0.33906944153429386,
+      "delta_rel_ci95": [
+        -0.8678720470393703,
+        -0.8158341655148146
+      ],
+      "verdict_raw": "Distinct",
+      "verdict": "Distinct"
+    },
+    "pretrained__c4_exposition": {
+      "n_kept": 2993,
+      "yield_frac": 0.6335732430143945,
+      "primary_grade": true,
+      "dup_prefix_rate": 0.06715669896424992,
+      "r2_l19": 0.3560424011580442,
+      "null_p975_l19": -0.033772331227663724,
+      "map_exists": true,
+      "y_trace_cov_l19": 1458.9564030086567,
+      "y_var_ratio_vs_c0": 0.8299529435053328,
+      "rel_l19": -0.596087636418436,
+      "delta_rel_ci95": [
+        -1.1656087526009027,
+        -1.0356767279003367
+      ],
+      "verdict_raw": "Distinct",
+      "rel_l19_vs_c0p": -0.4278976002035055,
+      "delta_rel_ci95_vs_c0p": [
+        -0.9739509108311609,
+        -0.8896047360927212
+      ],
+      "verdict_vs_c0p": "Distinct",
+      "verdict": "Distinct"
+    },
+    "pretrained__c5_ai_addressee": {
+      "n_kept": 2249,
+      "yield_frac": 0.47607959356477564,
+      "primary_grade": false,
+      "dup_prefix_rate": 0.07692307692307693,
+      "r2_l19": 0.3970158178222304,
+      "null_p975_l19": -0.035188827639609246,
+      "map_exists": true,
+      "y_trace_cov_l19": 1463.8231837270503,
+      "y_var_ratio_vs_c0": 0.8327214970921953,
+      "rel_l19": -13.50594367429277,
+      "delta_rel_ci95": [
+        -76.94543339294296,
+        -6.125956830775464
+      ],
+      "verdict_raw": "Distinct",
+      "verdict": "Distinct"
+    }
+  },
+  "h_table_lookup": {
+    "instruct": "unresolved \u2014 content confound (C2 collapsed)",
+    "pretrained": "H2 (user-directed-only)"
+  },
+  "conventions": {
+    "rel": "composition.linear.comp_samefn_b2i / ceilings.within_instruct (ref='i', cell='b'; ceiling recomputed on the SAME kept\u2229kept rows + shared folds as the numerator \u2014 plan \u00a76 rule 1)",
+    "verdict": "Shared iff \u0394REL 95% CI wholly > 0; Distinct iff wholly < 0"
+  }
+}

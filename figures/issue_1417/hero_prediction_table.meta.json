@@ -1,0 +1,47 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:05Z",
+  "figsize": [
+    4.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 1.62,
+      "y": 1.22,
+      "series": "Base",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 1,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prediction table \u2014 realized verdicts",
+        "legend_labels": [
+          "Base"
+        ],
+        "annotations": [
+          "Neither\n(generic QA structure)",
+          "H2\n(user-directed-only)",
+          "H1\n(helpful-only)",
+          "Conjunction\n(both required)"
+        ],
+        "xticklabels": [
+          "C4 exposition: Shared",
+          "C4 exposition: Distinct"
+        ],
+        "yticklabels": [
+          "C2 rude:\nShared",
+          "C2 rude:\nDistinct"
+        ]
+      }
+    ],
+    "series": [
+      "Base"
+    ]
+  }
+}
