@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1506,
+  "highest_id": 1507,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3951,6 +3951,13 @@
       "path": "tasks/proposed/1506",
       "status": "proposed",
       "title": "workflow-fix: check-28 opaque-code classes for bare H<d> + f16/l16 tokens"
+    },
+    "1507": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1507",
+      "status": "proposed",
+      "title": "workflow-fix: check 8b body-wide git-URL resolution + git-tree backtick-claims twin"
     },
     "151": {
       "has_clean_result": false,
