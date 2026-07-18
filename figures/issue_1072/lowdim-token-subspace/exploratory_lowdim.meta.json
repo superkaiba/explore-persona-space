@@ -1,0 +1,1264 @@
+{
+  "commit": "74ea8b8e7e",
+  "created": "2026-07-18T14:32:32Z",
+  "figsize": [
+    14.5,
+    8.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "variance share inside the subspace": 0.024529557725205223,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "variance share inside the subspace": 0.0162156402246003,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "variance share inside the subspace": 0.047764971556062026,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.04,
+      "variance share inside the subspace": 0.0221736814345209,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.04,
+      "variance share inside the subspace": 0.013929568845409678,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.04,
+      "variance share inside the subspace": 0.04399467915617386,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.08,
+      "variance share inside the subspace": 0.01722230425830919,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.08,
+      "variance share inside the subspace": 0.009326150679358403,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.08,
+      "variance share inside the subspace": 0.03551578780652828,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.12,
+      "variance share inside the subspace": 0.026124328424248968,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.12,
+      "variance share inside the subspace": 0.015947150662562318,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.12,
+      "variance share inside the subspace": 0.05106773224885241,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.3125,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.002039014567774512,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.6875,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.030828121951411658,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.1875,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.0017506243234401957,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.8125,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.0190161722701232,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.0625,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.0014474256033423392,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.9375,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.02982705469844482,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0625,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.0012072494957336942,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.0625,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.01782489975732754,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.1875,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.003302613459690719,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.1875,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.029530881490501648,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.3125,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.0026387303687908405,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.3125,
+      "gap without prefix (solid) vs with 16-token prefix (faded)": 0.01877320115004394,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.18,
+      "fraction of answer positions": 0.98261546847431,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.82,
+      "fraction of answer positions": 0.9217416186480386,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.82,
+      "fraction of answer positions": 0.8166458253452306,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.82,
+      "fraction of answer positions": 0.9409143872036899,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.18,
+      "fraction of answer positions": 0.996261918847214,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.18,
+      "fraction of answer positions": 0.9691421744837774,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.18,
+      "fraction of answer positions": 0.8965112783983075,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.18,
+      "fraction of answer positions": 0.9731518026674023,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "distinct words in the realized 8-word window": 0.0,
+      "fraction of positions": 0.0,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 1.0,
+      "fraction of positions": 0.0036769571391270447,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 2.0,
+      "fraction of positions": 0.003769238748260778,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 3.0,
+      "fraction of positions": 0.004122627235951198,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 4.0,
+      "fraction of positions": 0.006524810518672718,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 5.0,
+      "fraction of positions": 0.014171307573172521,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 6.0,
+      "fraction of positions": 0.03765661941705207,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 7.0,
+      "fraction of positions": 0.135611043747921,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 8.0,
+      "fraction of positions": 0.7944673956198427,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "distinct words in the realized 8-word window": 0.0,
+      "fraction of positions": 0.0,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 1.0,
+      "fraction of positions": 0.01624322496488446,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 2.0,
+      "fraction of positions": 0.0048227267384841266,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 3.0,
+      "fraction of positions": 0.005105963186968811,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 4.0,
+      "fraction of positions": 0.007039967167693319,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 5.0,
+      "fraction of positions": 0.014557293723904192,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 6.0,
+      "fraction of positions": 0.034597235843476216,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 7.0,
+      "fraction of positions": 0.12352240169094086,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 8.0,
+      "fraction of positions": 0.794111186683648,
+      "series": "external answer (distinct style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "distinct words in the realized 8-word window": 0.0,
+      "fraction of positions": 0.0,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 1.0,
+      "fraction of positions": 0.0037949554426462725,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 2.0,
+      "fraction of positions": 0.003199967453648465,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 3.0,
+      "fraction of positions": 0.003374776958962992,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 4.0,
+      "fraction of positions": 0.004628955700728669,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 5.0,
+      "fraction of positions": 0.009211507423682937,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 6.0,
+      "fraction of positions": 0.02841258348743056,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 7.0,
+      "fraction of positions": 0.13424416501763034,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 8.0,
+      "fraction of positions": 0.8131330885152698,
+      "series": "mismatched answer (floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "distinct words in the realized 8-word window": 0.0,
+      "fraction of positions": 0.0,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 1.0,
+      "fraction of positions": 0.003214310624985469,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 2.0,
+      "fraction of positions": 0.003249831437598328,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 3.0,
+      "fraction of positions": 0.0034254980017928323,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 4.0,
+      "fraction of positions": 0.0047126430842915346,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 5.0,
+      "fraction of positions": 0.00932389039439727,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 6.0,
+      "fraction of positions": 0.02854775418047673,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 7.0,
+      "fraction of positions": 0.1351502336623637,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "distinct words in the realized 8-word window": 8.0,
+      "fraction of positions": 0.8123758386140941,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "answer position (first 16 positions)": 1.0,
+      "pooled gap inside the subspace": 0.001717365549114891,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 2.0,
+      "pooled gap inside the subspace": 0.0094467517446905,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 3.0,
+      "pooled gap inside the subspace": 0.003383357484922,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 4.0,
+      "pooled gap inside the subspace": 0.0028495824266660252,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 5.0,
+      "pooled gap inside the subspace": 0.0020626305776609757,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 6.0,
+      "pooled gap inside the subspace": 0.0019308545451396661,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 7.0,
+      "pooled gap inside the subspace": 0.0017315474863563293,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 8.0,
+      "pooled gap inside the subspace": 0.0017675173686606492,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 9.0,
+      "pooled gap inside the subspace": 0.0011075095228647094,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 10.0,
+      "pooled gap inside the subspace": 0.0008166529247737133,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 11.0,
+      "pooled gap inside the subspace": 0.0008546446331555645,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 12.0,
+      "pooled gap inside the subspace": 0.0008811216798663927,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 13.0,
+      "pooled gap inside the subspace": 0.00085769653662975,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 14.0,
+      "pooled gap inside the subspace": 0.0008972734673123405,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 15.0,
+      "pooled gap inside the subspace": 0.0008657849571452776,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 16.0,
+      "pooled gap inside the subspace": 0.0009284314134059414,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer position (first 16 positions)": 1.0,
+      "pooled gap inside the subspace": 0.00644303497680833,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 2.0,
+      "pooled gap inside the subspace": 0.0036941015073707712,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 3.0,
+      "pooled gap inside the subspace": 0.002502342484297239,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 4.0,
+      "pooled gap inside the subspace": 0.0022083009237922474,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 5.0,
+      "pooled gap inside the subspace": 0.0013525160210260175,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 6.0,
+      "pooled gap inside the subspace": 0.00124923423490414,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 7.0,
+      "pooled gap inside the subspace": 0.001151144046879087,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 8.0,
+      "pooled gap inside the subspace": 0.0009820597309439477,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 9.0,
+      "pooled gap inside the subspace": 0.000675573475153314,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 10.0,
+      "pooled gap inside the subspace": 0.0005344006338809153,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 11.0,
+      "pooled gap inside the subspace": 0.0002934728253265772,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 12.0,
+      "pooled gap inside the subspace": 0.00035071038421204776,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 13.0,
+      "pooled gap inside the subspace": 0.0003532782455445688,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 14.0,
+      "pooled gap inside the subspace": 0.0002686276715232168,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 15.0,
+      "pooled gap inside the subspace": 0.00029085632307135594,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 16.0,
+      "pooled gap inside the subspace": 0.00037326278807245936,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer position (first 16 positions)": 1.0,
+      "pooled gap inside the subspace": 0.001180486528813418,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 2.0,
+      "pooled gap inside the subspace": 0.012496161229998975,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 3.0,
+      "pooled gap inside the subspace": 0.005206548203936004,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 4.0,
+      "pooled gap inside the subspace": 0.004013028149396183,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 5.0,
+      "pooled gap inside the subspace": 0.0030756461881736837,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 6.0,
+      "pooled gap inside the subspace": 0.0028201015381702976,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 7.0,
+      "pooled gap inside the subspace": 0.0028305587263742138,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 8.0,
+      "pooled gap inside the subspace": 0.0026407022033223516,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 9.0,
+      "pooled gap inside the subspace": 0.001843345054171077,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 10.0,
+      "pooled gap inside the subspace": 0.0016757875859648242,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 11.0,
+      "pooled gap inside the subspace": 0.001519577749102778,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 12.0,
+      "pooled gap inside the subspace": 0.0013119237162350283,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 13.0,
+      "pooled gap inside the subspace": 0.0013551482546380073,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 14.0,
+      "pooled gap inside the subspace": 0.001293814201827101,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 15.0,
+      "pooled gap inside the subspace": 0.0014197041926549353,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer position (first 16 positions)": 16.0,
+      "pooled gap inside the subspace": 0.001193093136077124,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "ridge regularization strength": 0.01,
+      "own-answer contribution inside the subspace": -0.035632280532385235,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 0.03162277660168379,
+      "own-answer contribution inside the subspace": -0.03211461690076129,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 0.1,
+      "own-answer contribution inside the subspace": -0.025323850134711664,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 0.31622776601683794,
+      "own-answer contribution inside the subspace": -0.017723704298862494,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 1.0,
+      "own-answer contribution inside the subspace": -0.012785464988782476,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 3.1622776601683795,
+      "own-answer contribution inside the subspace": -0.008804348349982722,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 10.0,
+      "own-answer contribution inside the subspace": -0.0036487271284340495,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 31.622776601683793,
+      "own-answer contribution inside the subspace": 0.00235498864367216,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 100.0,
+      "own-answer contribution inside the subspace": 0.007646378462964397,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 316.2277660168379,
+      "own-answer contribution inside the subspace": 0.011189061741822081,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 1000.0,
+      "own-answer contribution inside the subspace": 0.0130113701283056,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 3162.2776601683795,
+      "own-answer contribution inside the subspace": 0.013576463295460982,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 10000.0,
+      "own-answer contribution inside the subspace": 0.013259857904603042,
+      "series": "top-8 candidate words",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "ridge regularization strength": 0.01,
+      "own-answer contribution inside the subspace": -0.0509674853078062,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 0.03162277660168379,
+      "own-answer contribution inside the subspace": -0.04611446228885159,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 0.1,
+      "own-answer contribution inside the subspace": -0.03670674013413353,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 0.31622776601683794,
+      "own-answer contribution inside the subspace": -0.026224217025801404,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 1.0,
+      "own-answer contribution inside the subspace": -0.019819715330579378,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 3.1622776601683795,
+      "own-answer contribution inside the subspace": -0.015450469621880453,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 10.0,
+      "own-answer contribution inside the subspace": -0.010283779424185364,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 31.622776601683793,
+      "own-answer contribution inside the subspace": -0.004433329344949838,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 100.0,
+      "own-answer contribution inside the subspace": 0.00066731699091832,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 316.2277660168379,
+      "own-answer contribution inside the subspace": 0.004069036952467778,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 1000.0,
+      "own-answer contribution inside the subspace": 0.005847867831439503,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 3162.2776601683795,
+      "own-answer contribution inside the subspace": 0.006492264600362029,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 10000.0,
+      "own-answer contribution inside the subspace": 0.006409936421056549,
+      "series": "realized next 8 words",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "ridge regularization strength": 0.01,
+      "own-answer contribution inside the subspace": -0.06036843986349373,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 0.03162277660168379,
+      "own-answer contribution inside the subspace": -0.05484484160362645,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 0.1,
+      "own-answer contribution inside the subspace": -0.04412727104380896,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 0.31622776601683794,
+      "own-answer contribution inside the subspace": -0.03197613864535058,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 1.0,
+      "own-answer contribution inside the subspace": -0.02371481149055545,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 3.1622776601683795,
+      "own-answer contribution inside the subspace": -0.0164393443464195,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 10.0,
+      "own-answer contribution inside the subspace": -0.006696422704199994,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 31.622776601683793,
+      "own-answer contribution inside the subspace": 0.004724281880846504,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 100.0,
+      "own-answer contribution inside the subspace": 0.014841844546938954,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 316.2277660168379,
+      "own-answer contribution inside the subspace": 0.021634443972031663,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 1000.0,
+      "own-answer contribution inside the subspace": 0.025100266309939757,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 3162.2776601683795,
+      "own-answer contribution inside the subspace": 0.026095163473311176,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "ridge regularization strength": 10000.0,
+      "own-answer contribution inside the subspace": 0.025358074102575536,
+      "series": "top-32 candidate words",
+      "_kind": "line",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 155,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Token-subspace variance share by answer arm",
+        "ylabel": "variance share inside the subspace",
+        "legend_labels": [
+          "own answer",
+          "external answer (plain)",
+          "external answer (distinct style)",
+          "mismatched answer (floor)"
+        ],
+        "xticklabels": [
+          "top-8 candidate words",
+          "realized next 8 words",
+          "top-32 candidate words"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "title_left": "Per-basis prefix closure of the gap",
+        "ylabel": "gap without prefix (solid) vs with 16-token prefix (faded)",
+        "legend_labels": [
+          "top-8 candidate words",
+          "realized next 8 words",
+          "top-32 candidate words"
+        ],
+        "xticklabels": [
+          "inside the subspace",
+          "outside the subspace"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035"
+        ]
+      },
+      {
+        "title_left": "Do the candidate sets contain the realized next word?",
+        "ylabel": "fraction of answer positions",
+        "legend_labels": [
+          "realized word in top-8",
+          "realized word in top-32"
+        ],
+        "xticklabels": [
+          "own answer",
+          "external answer (plain)",
+          "external answer (distinct style)",
+          "mismatched answer (floor)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Lookahead window effective size (after dedupe)",
+        "xlabel": "distinct words in the realized 8-word window",
+        "ylabel": "fraction of positions",
+        "legend_labels": [
+          "external answer (plain)",
+          "external answer (distinct style)",
+          "mismatched answer (floor)",
+          "own answer"
+        ],
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Per-position subspace gap contribution",
+        "xlabel": "answer position (first 16 positions)",
+        "ylabel": "pooled gap inside the subspace",
+        "legend_labels": [
+          "top-8 candidate words",
+          "realized next 8 words",
+          "top-32 candidate words"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u22120.002",
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006",
+          "0.008",
+          "0.010",
+          "0.012",
+          "0.014"
+        ]
+      },
+      {
+        "title_left": "Regularization sensitivity (exploratory)",
+        "xlabel": "ridge regularization strength",
+        "ylabel": "own-answer contribution inside the subspace",
+        "legend_labels": [
+          "top-8 candidate words",
+          "realized next 8 words",
+          "top-32 candidate words"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04"
+        ]
+      }
+    ],
+    "series": [
+      "own answer",
+      "external answer (plain)",
+      "external answer (distinct style)",
+      "mismatched answer (floor)",
+      "top-8 candidate words",
+      "realized next 8 words",
+      "top-32 candidate words",
+      "realized word in top-8",
+      "realized word in top-32"
+    ]
+  }
+}
