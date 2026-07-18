@@ -870,19 +870,28 @@ def _distill_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
             result_q.put(("error", slug, 0, f"{type(exc).__name__}: {exc}"))
 
 
-def _train_distill_run(args, slug: str, train_jsonl: Path, run_out: Path) -> None:
-    """One context-distillation LoRA run (plan §4.3 recipe, Source: #778)."""
-    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+def _distill_steps_per_epoch(n_rows: int) -> int:
+    """Optimizer steps per epoch under the production distill batch geometry."""
+    return max(1, math.ceil(n_rows / (DISTILL_BATCH_SIZE * DISTILL_GRAD_ACCUM)))
 
-    n_rows = sum(1 for line in open(train_jsonl, encoding="utf-8") if line.strip())
-    steps_per_epoch = max(1, math.ceil(n_rows / (DISTILL_BATCH_SIZE * DISTILL_GRAD_ACCUM)))
+
+def _distill_train_cfg(args, slug: str, n_rows: int):
+    """The production distill TrainLoraConfig (plan §4.3 recipe, Source: #778).
+
+    Extracted from ``_train_distill_run`` so the tiny-real CPU seam test
+    (``tests/test_issue1489_distill_dataset.py``) drives train_lora with the
+    EXACT production config fields, replacing only compute-scale knobs.
+    """
+    from explore_persona_space.train.sft import TrainLoraConfig
+
+    steps_per_epoch = _distill_steps_per_epoch(n_rows)
     if args.smoke:
         epochs = 1
         save_steps = 1  # 2 optimizer steps @ 30 rows -> 2 checkpoints (multi-LoRA floor)
     else:
         epochs = DISTILL_EPOCHS
         save_steps = max(1, math.ceil(steps_per_epoch / 2))  # every 0.5 epoch -> 8 ckpts
-    cfg = TrainLoraConfig(
+    return TrainLoraConfig(
         gpu_id=0,  # CVD pinned by the launcher env; inherited single-GPU pin is authoritative
         epochs=epochs,
         lr=DISTILL_LR,
@@ -898,8 +907,21 @@ def _train_distill_run(args, slug: str, train_jsonl: Path, run_out: Path) -> Non
         save_steps=save_steps,
         save_total_limit=None,  # keep the full 8-ckpt dose ladder (uploaded below)
         save_only_model=True,
+        # #778 recipe (scripts/issue778_finetune.py): loss on the answer tokens
+        # only — TRL builds the completion_mask from the conversational
+        # prompt/completion chat-template boundary. Explicit True (rather than
+        # TRL's prompt-completion auto-default) pins the #778 contract.
+        completion_only_loss=True,
         hf_upload=False,  # checkpoints uploaded explicitly below (all rungs)
     )
+
+
+def _train_distill_run(args, slug: str, train_jsonl: Path, run_out: Path) -> None:
+    """One context-distillation LoRA run (plan §4.3 recipe, Source: #778)."""
+    from explore_persona_space.train.sft import train_lora
+
+    n_rows = sum(1 for line in open(train_jsonl, encoding="utf-8") if line.strip())
+    cfg = _distill_train_cfg(args, slug, n_rows)
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     out_dir, loss = train_lora(MODEL_ID, str(train_jsonl), str(run_out), cfg=cfg)
     logger.info("[distill] %s trained: loss=%.4f out=%s", slug, loss, out_dir)
@@ -908,9 +930,9 @@ def _train_distill_run(args, slug: str, train_jsonl: Path, run_out: Path) -> Non
             {
                 "slug": slug,
                 "n_rows": n_rows,
-                "epochs": epochs,
-                "save_steps": save_steps,
-                "steps_per_epoch": steps_per_epoch,
+                "epochs": cfg.epochs,
+                "save_steps": cfg.save_steps,
+                "steps_per_epoch": _distill_steps_per_epoch(n_rows),
                 "final_loss": loss,
                 "recipe": {
                     "lora_r": DISTILL_LORA_R,
@@ -1266,14 +1288,32 @@ def build_distill_jsonl(
             n_empty += 1
             continue
         messages = plain_prompt_messages(r, prefix_store, query_store)
-        lines.append(json.dumps({"prompt": messages, "completion": comp}, ensure_ascii=False))
+        # TRL 0.29 CONVERSATIONAL prompt-completion format — BOTH sides are
+        # message-dict lists (the #778 recipe, scripts/issue778_finetune.py::
+        # _messages_to_prompt_completion). A MIXED {prompt: list, completion:
+        # str} row is undefined behavior in TRL: is_conversational() pops an
+        # ARBITRARY key from the {"prompt","completion"} set, so the row can
+        # route to the plain-text tokenize_fn, which requires `str` and raises
+        # ValueError at SFTTrainer init (the att-20260718-064815 P3 crash).
+        # The message-list completion is also what gives TRL the chat-template
+        # prompt/completion boundary the answer-tokens-only loss mask needs.
+        completion = [{"role": "assistant", "content": comp}]
+        lines.append(json.dumps({"prompt": messages, "completion": completion}, ensure_ascii=False))
     if n_empty > max(1, len(train_rows) // 20):
         raise ValueError(f"distill {slug}: {n_empty}/{len(train_rows)} empty generations")
     if n_empty:
         logger.warning("[distill] %s: dropped %d empty-generation rows", slug, n_empty)
     dest.parent.mkdir(parents=True, exist_ok=True)
     _atomic_write(dest, "\n".join(lines) + "\n")
-    logger.info("[distill] %s: %d train rows -> %s", slug, len(lines), dest)
+    # Fix-engaged signal (crash-fix round 4): this line proves the relaunch is
+    # building the conversational-schema dataset, not the pre-fix mixed one.
+    logger.info(
+        "[distill] %s dataset schema: conversational prompt/completion "
+        "(message lists both sides, n=%d) -> %s",
+        slug,
+        len(lines),
+        dest,
+    )
     return dest
 
 
