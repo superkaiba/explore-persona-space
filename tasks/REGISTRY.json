@@ -3777,8 +3777,8 @@
     "1485": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1485",
-      "status": "reviewing",
+      "path": "tasks/completed/1485",
+      "status": "completed",
       "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
     },
     "1486": {
