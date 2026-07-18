@@ -2971,11 +2971,11 @@ _CREATED_NOTHING_MARKERS: tuple[str, ...] = (
 #: r2 sibling-B fix: a bare ``already exists`` substring also occurs in
 #: bootstrap stderr — e.g. git's ``destination path ... already exists and is
 #: not an empty directory`` — which must NOT read as created-nothing).
-#: NOTE: the refusal text prints to STDOUT, which the relay leaves INHERITED
-#: (only the stderr tail rides ``PodLifecycleProcessError``), so in production
-#: this shape usually classifies ``unknown`` → ``leaked`` (still never a
-#: terminate; the matcher fires when the text does reach the evidence, e.g.
-#: via a future relay change or a caller-composed message).
+#: NOTE: as of #1518 the refusal text prints to STDERR, so in production it
+#: rides the ``PodLifecycleProcessError`` stderr tail (#1465) into the
+#: evidence text and this conjunctive matcher classifies it
+#: ``created-nothing`` directly (pre-#1518 it printed to stdout — INHERITED,
+#: never captured — and usually classified ``unknown`` → ``leaked``).
 _PROVISION_REFUSAL_MARKERS: tuple[str, ...] = (
     "already exists",
     "Use `pod.py resume",

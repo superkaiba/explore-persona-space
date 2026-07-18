@@ -1904,7 +1904,10 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 f"(status={existing.desired_status}, id={existing.pod_id}).\n"
                 f"Use `pod.py resume --issue {args.issue}{suffix_hint}` to bring it back, "
                 f"or `pod.py terminate --issue {args.issue}{suffix_hint}` first "
-                f"if you want a fresh one."
+                f"if you want a fresh one.",
+                # stderr so the refusal rides the #1465 PodLifecycleProcessError
+                # stderr tail into the router failure marker (#1518; incident #1481).
+                file=sys.stderr,
             )
             sys.exit(1)
 
@@ -1963,7 +1966,8 @@ def cmd_provision(args: argparse.Namespace) -> None:
                     f"RunPod create-time validation rejects it, #1010).\n"
                     f"Shrink --container-disk-gb/--volume-gb to <= "
                     f"{caps.max_container_disk_gb}, or route the big-footprint "
-                    f"stage to `--intent cpu-bigmem` (GCP n2-highmem)."
+                    f"stage to `--intent cpu-bigmem` (GCP n2-highmem).",
+                    file=sys.stderr,  # error-path diagnostic before exit 1 (#1518)
                 )
                 sys.exit(1)
             print(
