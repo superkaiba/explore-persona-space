@@ -29,6 +29,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1417.md](https://github.com/superkaiba/explore-persona-space/blob/fdaea4c8095c05dc74854aee3a640560c2561ce1/docs/methodology/issue_1417.md) · [gist](https://gist.github.com/superkaiba/e24b7ef89bfade036e4f876f304df8b1)
+
 ## Takeaways
 
 - The run's map-identity verdicts are void: generalized-cross-validation ridge λ selection collapsed on judge-filtered row subsets (a train-RSS-collapse artifact), leaving 10 of 12 pair-level ceilings against the chat/plain-text references negative.
