@@ -261,7 +261,7 @@ What is plotted: the persona-context regime contrast D (positive-only minus cont
 
 ![Ten per-cell regime contrasts with intervals at both dose brackets.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a76e5839490d893f887aaf6bfc238af373ae11a7/figures/issue_1434/dose_cells.png)
 
-> **Figure.** The 10 per-cell contrasts behind the pooled bars: per-read-context D with Newcombe 95% intervals at both dose brackets (darker points matched-high, lighter near-matched-low). Every matched-high cell sits above zero; the near-matched-low philosopher and two-shot ICL cells cross zero.
+> **Figure.** *Every matched-high cell sits above zero.* The 10 per-cell contrasts behind the pooled bars: per-read-context D with Newcombe 95% intervals at both dose brackets (darker points matched-high, lighter near-matched-low). The near-matched-low philosopher and two-shot ICL cells cross zero.
 
 | Pairing | Positive-only arm (ladder rate) | Contrastive arm (ladder rate) | D [95% CI] |
 |---|---|---|---|
