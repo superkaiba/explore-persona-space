@@ -198,15 +198,23 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    `DEVICE = "cpu"`, #810's reused verify crawled the full data repo into a 429 wedge) or names
    a caller-side workaround where checklist item (i)'s remedy is a
    source-module fix — the reused serial loop / CPU pin then blows the §9 wall-time projection;
+   or the plan reuses a fit/analysis INSTRUMENT on a data regime that crosses a validity boundary
+   the instrument's own docs/comments declare (an n-vs-d regime note, a dof cap, a selection
+   fallback) without engaging the registered mitigation or stating a justification — the item-(l)
+   validity-domain check (#1417: fit825's GCV collapsed on judge-filtered n_train<d subsets —
+   held-out R² −0.6…−1.5 vs +0.3…+0.65 on supersets and matched-n subsamples — with both
+   mitigations documented in the instrument's own module comments/constants, unengaged);
    (ii) the plan RETRAINS / REGENERATES something an
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(k) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(l) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
-   checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse).
+   checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse; a
+   checklist-item-(l) failure likewise licenses no retrain — its remedy is
+   engage-the-registered-mitigation-then-reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field

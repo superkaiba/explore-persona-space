@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(k) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), the staged-layout consumer-open probe (#928), and parent-lineage coherence (#1345), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(l) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), the staged-layout consumer-open probe (#928), and parent-lineage coherence (#1345), and instrument validity-domain transfer (#1417), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(k)
+# Trained-artifact (and code) reuse — the fitness check (a)-(l)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(k); this file is the full checklist AND, as of
+summary naming checks (a)-(l); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -445,8 +445,38 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the opposite direction: the consistency-checker's "Reused code module
   reachable on `main`" row (#595) verifies the module EXISTS on main;
   leg A verifies main's copy is CURRENT vs the parent branch.)
+- **(l) Validity-domain transfer (reused fit/analysis INSTRUMENTS; N/A when
+  no fit/analysis code artifact is reused, or the instrument's docs declare
+  no validity boundaries).** Before reusing a fit/analysis INSTRUMENT (the
+  same code class item (i) governs for throughput: a ridge/GCV fitter, a
+  probe trainer, a statistical battery) on a NEW consumption regime, READ
+  the instrument's own docs/comments/module constants for DECLARED validity
+  boundaries and registered mitigations — n-vs-d regime notes, dof caps,
+  selection fallbacks (e.g. a module-global knob like `GCV_DOF_CAP`, an
+  alternative selection mode like `lambda_selection="inner-group-cv"`) —
+  and CHECK the new regime against each boundary: per-fold n_train vs d, a
+  subset/filter that shrinks n below a documented bound, a
+  correlation-structure shift a comment names. Crossing a declared boundary
+  REQUIRES engaging the instrument's registered mitigation — or a stated
+  justification for not engaging it — named in the plan (§4/§11) next to
+  the reuse record. Scope split vs item (b): (b) asks whether the reused
+  ARTIFACT is in a valid measurement regime for the new QUESTION
+  (DV/question-scoped); (l) asks whether the new DATA REGIME crosses a
+  boundary the reused CODE itself declares (instrument-doc-scoped) — #1417
+  passed (a)/(b)/(i)/(k) and still shipped a voided verdict layer because
+  no item asked the instrument-doc question. (Incident #1417 × fit825,
+  2026-07-18: the frozen `scripts/issue825_fit_cells.py` ridge instrument
+  documents — from the #1335 incident — that GCV lambda selection collapses
+  at the grid-min lambda when the fold Gram can near-interpolate
+  (n_tr < D), and registers two mitigations in its own module comments/constants
+  (`GCV_DOF_CAP` (e.g. 0.9; default None), `lambda_selection="inner-group-cv"`, lines ~66–91);
+  #1417 reused it on judge-filtered row subsets (per-fold n_train < d=3584)
+  with neither mitigation engaged — held-out R² −0.6…−1.5 on exactly those
+  subsets where supersets and matched-n subsamples fit at +0.3…+0.65,
+  voiding the run's map-identity verdict layer, found only by the analyzer
+  post-run.)
 
-A failing check other than (i)/(h)(iv)/(k) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k)/(l) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
@@ -454,7 +484,11 @@ local-rel fn + fail-loud entry-file check), then reuse; a failing
 parent-lineage check (k) → port the unmerged parent-branch fix (or declare
 it not-needed against the cited commit SHAs) and name the filter explaining
 any count shortfall, then reuse — regenerate only when the shortfall traces
-to a genuine defect in the artifact itself. Say why in the plan either way.
+to a genuine defect in the artifact itself; a failing validity-domain check
+(l) → engage the instrument's registered mitigation (or state the
+justification), then reuse — never a silent retrain: the instrument is
+sound, the CONSUMPTION REGIME crossed its declared boundary. Say why in the
+plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 
