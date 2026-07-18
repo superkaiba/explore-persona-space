@@ -1811,8 +1811,8 @@
     "1232": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1232",
-      "status": "proposed",
+      "path": "tasks/planning/1232",
+      "status": "planning",
       "title": "composer-side trigger-dense pointers for Codex twins"
     },
     "1233": {
