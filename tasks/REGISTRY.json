@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1503,
+  "highest_id": 1504,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3930,6 +3930,13 @@
       "path": "tasks/proposed/1503",
       "status": "proposed",
       "title": "daily-fix: windowed-read duty for first-pass guard briefs"
+    },
+    "1504": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1504",
+      "status": "proposed",
+      "title": "daily-fix: LESSONS ratchet constant conflict magnet"
     },
     "151": {
       "has_clean_result": false,
