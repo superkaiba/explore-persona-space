@@ -1,6 +1,6 @@
 {
-  "commit": "79bb95a13c",
-  "created": "2026-07-18T04:30:23Z",
+  "commit": "9a222e5d01",
+  "created": "2026-07-18T08:26:42Z",
   "figsize": [
     11.0,
     4.2
@@ -885,238 +885,238 @@
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.25884331380700876,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 6
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.32062659452684084,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 6
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3648557735782273,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 6
     },
     {
       "training rows (n_train)": 1200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.38788852959738307,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 6
     },
     {
       "training rows (n_train)": 1242.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3888073118565458,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 6
     },
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2290087796045121,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 7
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2804905341516074,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 7
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3137649622417503,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 7
     },
     {
       "training rows (n_train)": 1130.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.327401866039289,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 7
     },
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.24383618686717687,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 8
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2933948183749382,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 8
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.33838936053727603,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 8
     },
     {
       "training rows (n_train)": 1200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3528857819868979,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 8
     },
     {
       "training rows (n_train)": 1275.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3559316502277693,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 8
     },
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.19609764539148272,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 9
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.24619043102414886,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 9
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2817035276944037,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 9
     },
     {
       "training rows (n_train)": 1200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.29338922908675674,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 9
     },
     {
       "training rows (n_train)": 1381.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.29916170347828996,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 9
     },
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.22165828977498508,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2783656741595053,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.320805518885184,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 1200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.34440414219584764,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 1600.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.35831691234682295,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 2400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3773768181287736,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 3500.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3913092469716273,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 10
     },
     {
       "training rows (n_train)": 200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.23602139305710548,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.2896745819612139,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 800.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.33501895494937967,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 1200.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3582319375914899,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 1600.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.37341354538740124,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 2400.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.3895925940064164,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 3600.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.406008593973531,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
     {
       "training rows (n_train)": 3671.0,
       "held-out R\u00b2 (layer 19) \u2191 better": 0.40651297614884807,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 11
     },
@@ -2029,245 +2029,245 @@
     {
       "training rows (n_train)": 200.0,
       "y": 0.18075733121899898,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 18
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.2347837879715801,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 18
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.27099582375179504,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 18
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.2878558309643483,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 18
     },
     {
       "training rows (n_train)": 1440.0,
       "y": 0.2926056305645912,
-      "series": "Wren",
+      "series": "Wren \u2014 warm helpful assistant character",
       "_kind": "line",
       "_group": 18
     },
     {
       "training rows (n_train)": 200.0,
       "y": 0.2130677159564301,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 19
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.2547816720601014,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 19
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.29886205567464363,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 19
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.31643917623613993,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 19
     },
     {
       "training rows (n_train)": 1438.0,
       "y": 0.32412100386200515,
-      "series": "HELIOS",
+      "series": "HELIOS \u2014 AI character",
       "_kind": "line",
       "_group": 19
     },
     {
       "training rows (n_train)": 200.0,
       "y": 0.1390842374285583,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 20
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.19124871420738992,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 20
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.23032810784540061,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 20
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.246942380836401,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 20
     },
     {
       "training rows (n_train)": 1398.0,
       "y": 0.25043778394244887,
-      "series": "Dana",
+      "series": "Dana \u2014 ordinary person",
       "_kind": "line",
       "_group": 20
     },
     {
       "training rows (n_train)": 200.0,
       "y": 0.16329133516057892,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 21
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.1935221455567428,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 21
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.22802301988034265,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 21
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.24203950088857015,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 21
     },
     {
       "training rows (n_train)": 1438.0,
       "y": 0.24762840075287906,
-      "series": "Vex",
+      "series": "Vex \u2014 theatrical villain",
       "_kind": "line",
       "_group": 21
     },
     {
       "training rows (n_train)": 200.0,
       "y": 0.31401706578148125,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.3689911270217084,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.41602589222745373,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.4407725943676791,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 1600.0,
       "y": 0.4565211638246982,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 2400.0,
       "y": 0.4766017339814887,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 3538.0,
       "y": 0.4941795833899104,
-      "series": "one-line Q&A",
+      "series": "Assistant (one-line Q&A)",
       "_kind": "line",
       "_group": 22
     },
     {
       "training rows (n_train)": 200.0,
       "y": 0.28186343272688064,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 400.0,
       "y": 0.340547769803898,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 800.0,
       "y": 0.39143887179782483,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 1200.0,
       "y": 0.41704553143813616,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 1600.0,
       "y": 0.43625023353558234,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 2400.0,
       "y": 0.45704643436913284,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 3600.0,
       "y": 0.474114246932574,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     },
     {
       "training rows (n_train)": 3679.0,
       "y": 0.4750766350092127,
-      "series": "full-answer Q&A",
+      "series": "Assistant (full-answer Q&A)",
       "_kind": "line",
       "_group": 23
     }
@@ -2317,12 +2317,12 @@
       }
     ],
     "series": [
-      "Wren",
-      "HELIOS",
-      "Dana",
-      "Vex",
-      "one-line Q&A",
-      "full-answer Q&A"
+      "Wren \u2014 warm helpful assistant character",
+      "HELIOS \u2014 AI character",
+      "Dana \u2014 ordinary person",
+      "Vex \u2014 theatrical villain",
+      "Assistant (one-line Q&A)",
+      "Assistant (full-answer Q&A)"
     ]
   }
 }

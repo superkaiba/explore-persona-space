@@ -36,6 +36,15 @@ FIG_SUBDIR = "issue_1335/learning_curves"
 # Fixed series order + encoding (identical across both panels AND both figures).
 CHARACTERS = ["Wren", "HELIOS", "Dana", "Vex"]
 ANCHORS = [("r1_qa_oneline", "one-line Q&A"), ("r0_qa_full", "full-answer Q&A")]
+# Display names: anchors are the assistant itself; characters get their scene-header role.
+DISPLAY_LABEL = {
+    "Wren": "Wren — warm helpful assistant character",
+    "HELIOS": "HELIOS — AI character",
+    "Dana": "Dana — ordinary person",
+    "Vex": "Vex — theatrical villain",
+    "one-line Q&A": "Assistant (one-line Q&A)",
+    "full-answer Q&A": "Assistant (full-answer Q&A)",
+}
 _PAL = paper_palette(6)
 SERIES_COLOR = {
     "Wren": _PAL[0],
@@ -85,7 +94,7 @@ def _plot_arm(cells_by: dict, arm: str, stem: str, subtitle: str) -> str:
                 rx = np.asarray([r[0] for r in raw], dtype=float)
                 ry = np.asarray([r[1] for r in raw])
                 ax.scatter(rx, ry, color=col, s=9, alpha=0.22, linewidths=0, zorder=1)
-            ax.plot(x, y, color=col, lw=1.6, zorder=3, label=lbl, **st)
+            ax.plot(x, y, color=col, lw=1.6, zorder=3, label=DISPLAY_LABEL[lbl], **st)
         ax.set_xscale("log", base=2)
         ax.set_xticks([200, 400, 800, 1600, 3200])
         ax.get_xaxis().set_major_formatter(mticker.ScalarFormatter())
@@ -98,7 +107,7 @@ def _plot_arm(cells_by: dict, arm: str, stem: str, subtitle: str) -> str:
     # style uses layout="constrained", so a bbox_to_anchor legend + manual
     # subplots_adjust would overlap the x-axis labels).
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="outside lower center", ncol=6, frameon=False)
+    fig.legend(handles, labels, loc="outside lower center", ncol=3, frameon=False)
     # Figure-level title block (set_title_subtitle targets a single Axes; a
     # 2-panel figure uses suptitle + a subtitle line instead).
     fig.suptitle(
