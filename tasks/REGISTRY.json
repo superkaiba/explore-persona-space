@@ -3913,8 +3913,8 @@
     "1501": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1501",
-      "status": "proposed",
+      "path": "tasks/planning/1501",
+      "status": "planning",
       "title": "daily-fix: repo-root guard heredoc payload false positive"
     },
     "1502": {
