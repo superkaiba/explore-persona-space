@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1516,
+  "highest_id": 1517,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4029,6 +4029,13 @@
       "path": "tasks/planning/1516",
       "status": "planning",
       "title": "workflow-fix: lint bash function-invocation || rc=$? errexit-suppression in scripts/*.sh"
+    },
+    "1517": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1517",
+      "status": "proposed",
+      "title": "workflow-fix: GCE crash-persist workload.log upload silently fails on large logs \u2014 tail-cap before upload"
     },
     "152": {
       "has_clean_result": false,
