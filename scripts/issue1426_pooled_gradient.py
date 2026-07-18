@@ -58,6 +58,10 @@ _SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
