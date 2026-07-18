@@ -529,9 +529,15 @@ def phase_reread(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
                     repo_type="model",
                 )
             else:
+                # stage_hub_prefix lands files at dest/<repo-relative path>
+                # (#1402 "verbatim prefix mirror"), so the staged checkpoint
+                # root is dest/<ckpt_prefix>, NOT dest itself — rebind so the
+                # P3 gauge + the vLLM LoRA load open the staged files
+                # (#928 staged-layout consumer-open; #1481 reread crash).
                 hub.stage_hub_prefix(
                     run1090.HF_MODEL_REPO, ckpt_prefix, ckpt_dir, repo_type="model"
                 )
+                ckpt_dir = ckpt_dir / ckpt_prefix
             _assert_reused_gauge(arm, ckpt_dir)
             ctx = fu3w.ensure_context(arm.context_id, arm.behavior)
             organism = ModelOrganism(
