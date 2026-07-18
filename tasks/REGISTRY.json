@@ -4033,8 +4033,8 @@
     "1517": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1517",
-      "status": "planning",
+      "path": "tasks/approved/1517",
+      "status": "approved",
       "title": "workflow-fix: GCE crash-persist workload.log upload silently fails on large logs \u2014 tail-cap before upload"
     },
     "152": {
