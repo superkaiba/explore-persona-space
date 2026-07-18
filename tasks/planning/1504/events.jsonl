@@ -4,3 +4,4 @@
 {"ts": "2026-07-18T10:36:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-18T11:00:04Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS on plan v1 (n_fail=0, n_warn=0, no overrides). Goal-currency: MATCH at persist."}
 {"ts": "2026-07-18T11:11:31Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 plan-critic lenses this round."}
+{"ts": "2026-07-18T11:13:02Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=plan-critique round=1 subagent=critic-ensemble worktree=repo-root — 3 Claude lens critics (methodology/statistics/alternatives) + consistency-checker spawned in one batch; codex twins skipped (quota sentinel live, #1204)."}
