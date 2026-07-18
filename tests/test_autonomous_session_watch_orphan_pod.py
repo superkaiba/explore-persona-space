@@ -184,6 +184,63 @@ def test_orphan_arm_realerts_on_new_pod_incarnation(
     assert len(_orphan_posts(marker_recorder)) == 1
     assert stop_recorder == []
 
+    # End-to-end once-per-incarnation pin (r2): after the alert tick, the
+    # persisted state carries the NEW pod_id + the noted flag, and a second
+    # tick on the same incarnation stays quiet. On THIS (healthy-pod) path the
+    # wedge arm's _clear_wedge_state laundering save re-keys the state to the
+    # new pod_id BEFORE the status-class load, so the flag survives even
+    # pre-r2; the direct pre-fix-failing pin of the r2 pod_id mirror is
+    # test_orphan_arm_mirror_survives_status_class_save_on_new_incarnation.
+    state = json.loads((isolated_registry / "pod-safety-1417.json").read_text())
+    assert state["pod_id"] == "p_NEW"
+    assert state["orphan_gcp_noted"] is True
+
+    asw._process_pod(
+        1417, "p_NEW", _healthy_info(pod_id="p_NEW"), now + 600, dry_run=False, threshold=2
+    )
+    assert len(_orphan_posts(marker_recorder)) == 1
+    assert stop_recorder == []
+
+
+def test_orphan_arm_mirror_survives_status_class_save_on_new_incarnation(
+    isolated_registry, gcp_sidecar, marker_recorder, monkeypatch
+):
+    """r2 Minor fix (pod_id-change-tick carry clobber): when NO earlier save
+    re-keyed the state to the new incarnation (the wedged-DONE-status MF6
+    fall-through skips the wedge arm's _clear_wedge_state laundering save),
+    the caller's in-memory prev_state still holds the OLD pod_id when the arm
+    alerts. The arm mirrors the NEW pod_id alongside the flag, so a later
+    status-class-arm save in the SAME tick (orphan_gcp_noted at the
+    pod_id-keyed None carry, prev=the in-memory snapshot) carries the
+    just-persisted flag forward — pre-fix it recomputed same_pod=False off
+    the stale OLD pod_id and clobbered the flag back to False, costing one
+    duplicate alert on the next tick."""
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    now = time.time()
+    prev_state = {
+        "pod_id": "p_OLD",
+        "missed": 0,
+        "alerted": False,
+        "last_progress_ts": None,
+        "first_seen": now - GRACE - 600,
+        "orphan_gcp_noted": True,
+    }
+    alerted = asw._maybe_flag_orphan_gcp_handle_pod(
+        1417, _healthy_info(pod_id="p_NEW"), now, False, False, prev_state, False
+    )
+    assert alerted is True
+    assert prev_state["pod_id"] == "p_NEW"  # the r2 mirror
+
+    # The status-class arm's later same-tick save (keep-shaped: the flag left
+    # at its None carry, prev=the in-memory snapshot the arm just mirrored).
+    asw._save_pod_safety_state(
+        1417, "p_NEW", missed=0, alerted=False, last_progress_ts=None, prev=prev_state
+    )
+    state = json.loads((isolated_registry / "pod-safety-1417.json").read_text())
+    assert state["orphan_gcp_noted"] is True  # pre-fix: clobbered to False
+    assert state["pod_id"] == "p_NEW"
+
 
 # ---------------------------------------------------------------------------
 # 10. Negative controls (parametrized where the predicate leg allows)

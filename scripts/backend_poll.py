@@ -2950,20 +2950,35 @@ RUNPOD_PROVISION_LEAKED_REASON = "runpod_provision_leaked_pod"
 #: - ``[wait-for-capacity] STILL-WAITING`` + ``EXIT_STILL_WAITING == 75``
 #:   (pod_lifecycle.py ``_emit_still_waiting_and_exit``, stderr+stdout — the
 #:   wait loop exhausted its budget BEFORE any create ran);
-#: - the ``cmd_provision`` idempotency refusal ``Pod <name> already exists ...
-#:   Use `pod.py resume`` (pod_lifecycle.py ~L1903-1907 — refused BEFORE
-#:   creating). NOTE: that text prints to STDOUT, which the relay leaves
-#:   INHERITED (only the stderr tail rides ``PodLifecycleProcessError``), so
-#:   in production this shape usually classifies ``unknown`` → ``leaked``
-#:   (still never a terminate; the matcher fires when the text does reach the
-#:   evidence, e.g. via a future relay change or a caller-composed message);
 #: - a no-capacity shape (``RunPodNoCapacityError`` / ``SUPPLY_CONSTRAINT``,
 #:   runpod_api.py — the create was refused, nothing exists).
+#: NOTE (r2, mixed-evidence): these markers can co-occur with a LATER create —
+#: the per-attempt wait-for-capacity heartbeat (pod_lifecycle.py ~L1154-1157)
+#: embeds the capacity exception text (``SUPPLY_CONSTRAINT``) on stderr, and
+#: the relay's 60-line tail keeps those lines when bootstrap fails early — so
+#: :func:`_classify_provision_failure` gives :data:`_CREATED_THEN_FAILED_MARKERS`
+#: PRECEDENCE (positive our-create evidence always wins).
 _CREATED_NOTHING_MARKERS: tuple[str, ...] = (
     "STILL-WAITING",
-    "already exists",
     "RunPodNoCapacityError",
     "SUPPLY_CONSTRAINT",
+)
+
+#: The ``cmd_provision`` idempotency-refusal pair (pod_lifecycle.py
+#: ~L1903-1907): ``Pod <name> already exists (status=..., id=...).\nUse
+#: `pod.py resume --issue <N>...``` — refused BEFORE creating, so it is a
+#: ``created-nothing`` shape, matched CONJUNCTIVELY (BOTH fragments required;
+#: r2 sibling-B fix: a bare ``already exists`` substring also occurs in
+#: bootstrap stderr — e.g. git's ``destination path ... already exists and is
+#: not an empty directory`` — which must NOT read as created-nothing).
+#: NOTE: the refusal text prints to STDOUT, which the relay leaves INHERITED
+#: (only the stderr tail rides ``PodLifecycleProcessError``), so in production
+#: this shape usually classifies ``unknown`` → ``leaked`` (still never a
+#: terminate; the matcher fires when the text does reach the evidence, e.g.
+#: via a future relay change or a caller-composed message).
+_PROVISION_REFUSAL_MARKERS: tuple[str, ...] = (
+    "already exists",
+    "Use `pod.py resume",
 )
 
 #: ``created-then-failed`` = our provision CREATED a pod, then failed — the
@@ -3015,17 +3030,28 @@ def _classify_provision_failure(evidence_text: str, returncode: int | None) -> s
     Returns ``"created-nothing"`` (our provision provably created NO pod),
     ``"created-then-failed"`` (our provision created a pod, then failed —
     the POSITIVE our-create evidence the terminate requires), or
-    ``"unknown"``. The ``created-nothing`` markers are checked FIRST so mixed
-    evidence biases toward never-terminate (the fail-safe direction);
-    ``returncode == 75`` is ``EXIT_STILL_WAITING`` (pod_lifecycle.py — the
-    exit-75 still-waiting contract ``dispatch_issue._provision_still_waiting``
-    also reads).
+    ``"unknown"``. The ``created-then-failed`` markers take PRECEDENCE over
+    mixed evidence (r2 fix, concern
+    ``mixed-evidence-misroutes-residue-foreign-created``): a provision that
+    WAITED for capacity, then CREATED the pod, then failed bootstrap carries
+    BOTH families in the bounded stderr tail (the wait heartbeat embeds
+    ``SUPPLY_CONSTRAINT`` text), and the bootstrap/SSH markers only ever
+    appear when OUR create ran — so they always win, keeping the terminate
+    reachable for the genuine #1417 residue. ``returncode == 75`` is
+    ``EXIT_STILL_WAITING`` (pod_lifecycle.py — the exit-75 still-waiting
+    contract ``dispatch_issue._provision_still_waiting`` also reads; the
+    exit-75 path structurally precedes any create, so it cannot co-occur
+    with a real created-then-failed marker). The idempotency-refusal pair
+    is matched conjunctively (BOTH fragments) so a generic ``already
+    exists`` inside bootstrap stderr never reads as created-nothing.
     """
     text = evidence_text or ""
-    if returncode == 75 or any(marker in text for marker in _CREATED_NOTHING_MARKERS):
-        return "created-nothing"
     if any(marker in text for marker in _CREATED_THEN_FAILED_MARKERS):
         return "created-then-failed"
+    if returncode == 75 or any(marker in text for marker in _CREATED_NOTHING_MARKERS):
+        return "created-nothing"
+    if all(marker in text for marker in _PROVISION_REFUSAL_MARKERS):
+        return "created-nothing"
     return "unknown"
 
 
@@ -3034,13 +3060,23 @@ def _terminate_error_is_pod_not_found(exc: Exception) -> bool:
 
     The RunPod GraphQL layer surfaces a terminate of a nonexistent pod id as a
     ``RunPodError`` whose message carries the API's ``POD_NOT_FOUND`` error
-    code / a ``not found`` phrase (see runpod_api.py — a GraphQL ``errors``
-    payload raises with its message text; the project's canonical shape is the
+    code / a ``not found`` phrase INSIDE a GraphQL-errors payload (see
+    runpod_api.py — ``graphql()`` raises ``RunPodError(f"GraphQL errors:
+    {err_text}")`` with the errors JSON; the project's canonical shape is the
     ``POD_NOT_FOUND`` extension code). A pod that is already gone is a
     SUCCESSFUL reclaim (#1490 test 15 — no needless human park), not a leak.
+
+    r2 sibling-C fix: the phrase form REQUIRES the ``GraphQL errors`` context
+    — a bare lowercase ``not found`` also matches transport-shaped errors
+    (``RunPodError(f"HTTP 404 from RunPod: <html>Not Found...")``,
+    runpod_api.py ~L346 — a transient proxy blip), which must classify
+    ``leaked`` (fail direction: an unrecognized terminate error never reads
+    torn-down while the pod may still bill).
     """
     text = str(exc)
-    return "POD_NOT_FOUND" in text or "not found" in text.lower()
+    if "POD_NOT_FOUND" in text:
+        return True
+    return "GraphQL errors" in text and "not found" in text.lower()
 
 
 def _reclaim_failed_runpod_provision(

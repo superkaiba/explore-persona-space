@@ -3828,3 +3828,135 @@ def test_failover_terminate_not_found_treated_torn_down(tmp_path, monkeypatch, c
     assert "torn-down" in out["log_tail_excerpt"]
     assert "already gone" in out["log_tail_excerpt"]
     assert terminations == []
+
+
+@pytest.mark.parametrize(
+    "heartbeat",
+    [
+        "[wait-for-capacity] attempt 3 for pod-1116: no capacity "
+        '(RunPodSupplyConstraintError: GraphQL errors: [{"message": "SUPPLY_CONSTRAINT"}]); '
+        "waited 2m 0s, next retry in 30.0s",
+        "[wait-for-capacity] STILL-WAITING: provision pod-1116 has been waiting 10m 0s "
+        "across 3 attempt(s) (a later attempt then created the pod).",
+    ],
+    ids=["supply-constraint-heartbeat", "still-waiting-line"],
+)
+def test_failover_provision_mixed_evidence_created_then_failed_wins(
+    tmp_path, monkeypatch, capsys, heartbeat
+):
+    """#1490 r2 Major fix (concern mixed-evidence-misroutes-residue-foreign-created):
+    a provision that WAITED for capacity, then CREATED the pod, then failed
+    bootstrap carries BOTH marker families in the bounded stderr tail — the
+    per-attempt wait heartbeat (pod_lifecycle.py ~L1154-1157) embeds the
+    SUPPLY_CONSTRAINT exception text and the 60-line relay tail retains it.
+    The created-then-failed markers are POSITIVE our-create evidence and take
+    precedence, so the genuine #1417 residue is terminated (torn-down) —
+    never misrouted to the re-drivable foreign-created cell while the pod
+    bills."""
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+    exc = PodLifecycleProcessError(
+        1,
+        ["uv", "run", "python", "scripts/pod_lifecycle.py", "provision", "--issue", "1116"],
+        output=None,
+        stderr=heartbeat + "\nBootstrap exited with code 1. Pod is up but not experiment-ready.",
+    )
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(
+        tmp_path, monkeypatch, team_list=team_list, backend=_ProvisionFailedRunpodBackend(exc=exc)
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "torn-down" in out["log_tail_excerpt"]
+    assert "foreign-created" not in out["log_tail_excerpt"]
+    assert terminations == ["podX"]
+
+
+def test_failover_provision_generic_already_exists_not_created_nothing(
+    tmp_path, monkeypatch, capsys
+):
+    """#1490 r2 sibling-B fix: a bare ``already exists`` substring in the
+    stderr tail (git's ``destination path ... already exists and is not an
+    empty directory`` during a failed bootstrap) is NOT the pod_lifecycle
+    idempotency-refusal — without the distinctive ``Use `pod.py resume``
+    fragment the pair does not match, the evidence stays unknown, and the
+    singleton routes to the non-re-drivable leaked park (never terminate,
+    never the confidently-false foreign-created detail)."""
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+    exc = PodLifecycleProcessError(
+        1,
+        ["uv", "run", "python", "scripts/pod_lifecycle.py", "provision", "--issue", "1116"],
+        output=None,
+        stderr=(
+            "fatal: destination path 'explore-persona-space' already exists and is "
+            "not an empty directory."
+        ),
+    )
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(
+        tmp_path, monkeypatch, team_list=team_list, backend=_ProvisionFailedRunpodBackend(exc=exc)
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert "foreign-created" not in out["log_tail_excerpt"]
+    assert terminations == []
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            'GraphQL errors: [{"message": "pod not found", '
+            '"extensions": {"code": "POD_NOT_FOUND"}}]',
+            True,
+        ),
+        ('GraphQL errors: [{"message": "Pod not found"}]', True),
+        ("HTTP 404 from RunPod: <html><head><title>404 Not Found</title></head></html>", False),
+        ("Network error contacting RunPod: [Errno 110] Connection timed out", False),
+        ("boom", False),
+    ],
+    ids=[
+        "graphql-pod-not-found-code",
+        "graphql-not-found-phrase",
+        "http-404-transient",
+        "network-error",
+        "unrelated",
+    ],
+)
+def test_terminate_error_is_pod_not_found_shapes(text, expected):
+    """#1490 r2 sibling-C fix: the ALREADY-GONE classifier requires the
+    ``POD_NOT_FOUND`` code or a ``not found`` phrase INSIDE a GraphQL-errors
+    payload — an HTTP-404-shaped transient (a proxy blip whose body carries
+    ``Not Found``) must NOT read torn-down while the pod may still bill."""
+    from scripts.backend_poll import _terminate_error_is_pod_not_found
+
+    assert _terminate_error_is_pod_not_found(RuntimeError(text)) is expected
+
+
+def test_failover_terminate_http_404_transient_leaked_not_torn_down(tmp_path, monkeypatch, capsys):
+    """#1490 r2 sibling-C end-to-end: terminate_pod raising an HTTP-404-shaped
+    transport error routes to the non-re-drivable leaked park (the pod may
+    still bill), NEVER the torn-down/re-drivable read the old bare
+    ``not found`` catch-all produced."""
+    runpod_api = _import_runpod_api()
+    team_list = _ScriptedTeamList([[], [_residue_pod("podX")]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    def _raise_404(pod_id):
+        raise RuntimeError("HTTP 404 from RunPod: <html><title>404 Not Found</title></html>")
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _raise_404, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert "torn-down" not in out["log_tail_excerpt"]
+    assert terminations == []

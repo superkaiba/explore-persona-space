@@ -9461,7 +9461,14 @@ def _maybe_flag_orphan_gcp_handle_pod(
         )
     # Mirror into the caller's in-memory snapshot so the status-class arm's
     # later save (which passes prev=prev_state) carries the flag forward.
+    # The pod_id mirrors TOO (r2 Minor fix): _save_pod_safety_state's None-carry
+    # is pod_id-keyed (same_pod), so on a NEW pod incarnation a stale OLD
+    # pod_id in prev_state would make the status-class save recompute
+    # same_pod=False and clobber the just-persisted flag back to False — one
+    # duplicate alert on the next tick. The arm just persisted this pod_id to
+    # disk (above), so the in-memory mirror only restores consistency.
     prev_state["orphan_gcp_noted"] = True
+    prev_state["pod_id"] = info.pod_id
     return True
 
 
