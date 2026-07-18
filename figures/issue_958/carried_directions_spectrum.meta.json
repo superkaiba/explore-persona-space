@@ -1,0 +1,2163 @@
+{
+  "commit": "2528220dcd",
+  "created": "2026-07-18T07:34:48Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 1.0,
+      "forecast R\u00b2 from the turn-1 state": 0.4790295362472534,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 2.0,
+      "forecast R\u00b2 from the turn-1 state": 0.5080342292785645,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 3.0,
+      "forecast R\u00b2 from the turn-1 state": 0.46276623010635376,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 4.0,
+      "forecast R\u00b2 from the turn-1 state": 0.371615469455719,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 5.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2985535264015198,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 6.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2865055203437805,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 7.0,
+      "forecast R\u00b2 from the turn-1 state": 0.4529302716255188,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 8.0,
+      "forecast R\u00b2 from the turn-1 state": 0.3825308084487915,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 9.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2630963921546936,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 10.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2768974304199219,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 11.0,
+      "forecast R\u00b2 from the turn-1 state": 0.36694324016571045,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 12.0,
+      "forecast R\u00b2 from the turn-1 state": 0.23245203495025635,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 13.0,
+      "forecast R\u00b2 from the turn-1 state": 0.26227468252182007,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 14.0,
+      "forecast R\u00b2 from the turn-1 state": 0.22913604974746704,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 15.0,
+      "forecast R\u00b2 from the turn-1 state": 0.20319926738739014,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 16.0,
+      "forecast R\u00b2 from the turn-1 state": 0.25432687997817993,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 17.0,
+      "forecast R\u00b2 from the turn-1 state": 0.11099976301193237,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 18.0,
+      "forecast R\u00b2 from the turn-1 state": 0.31613093614578247,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 19.0,
+      "forecast R\u00b2 from the turn-1 state": 0.19190680980682373,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 20.0,
+      "forecast R\u00b2 from the turn-1 state": 0.15237540006637573,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 21.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1789250373840332,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 22.0,
+      "forecast R\u00b2 from the turn-1 state": 0.22512948513031006,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 23.0,
+      "forecast R\u00b2 from the turn-1 state": 0.22361338138580322,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 24.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1729760766029358,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 25.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2567785978317261,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 26.0,
+      "forecast R\u00b2 from the turn-1 state": 0.17801839113235474,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 27.0,
+      "forecast R\u00b2 from the turn-1 state": -0.01915597915649414,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 28.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2324279546737671,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 29.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12683892250061035,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 30.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08494222164154053,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 31.0,
+      "forecast R\u00b2 from the turn-1 state": 0.126428484916687,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 32.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12199318408966064,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 33.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12575507164001465,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 34.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06653976440429688,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 35.0,
+      "forecast R\u00b2 from the turn-1 state": 0.23090791702270508,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 36.0,
+      "forecast R\u00b2 from the turn-1 state": 0.20283126831054688,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 37.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1631871461868286,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 38.0,
+      "forecast R\u00b2 from the turn-1 state": 0.17923641204833984,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 39.0,
+      "forecast R\u00b2 from the turn-1 state": 0.014640986919403076,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 40.0,
+      "forecast R\u00b2 from the turn-1 state": 0.02970486879348755,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 41.0,
+      "forecast R\u00b2 from the turn-1 state": 0.11135578155517578,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 42.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12108838558197021,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 43.0,
+      "forecast R\u00b2 from the turn-1 state": 0.11368095874786377,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 44.0,
+      "forecast R\u00b2 from the turn-1 state": 0.047173917293548584,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 45.0,
+      "forecast R\u00b2 from the turn-1 state": 0.029576897621154785,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 46.0,
+      "forecast R\u00b2 from the turn-1 state": 0.015599310398101807,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 47.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13153135776519775,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 48.0,
+      "forecast R\u00b2 from the turn-1 state": 0.11356616020202637,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 49.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0465165376663208,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 50.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2386155128479004,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 51.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06652480363845825,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 52.0,
+      "forecast R\u00b2 from the turn-1 state": 0.008989691734313965,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 53.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04920339584350586,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 54.0,
+      "forecast R\u00b2 from the turn-1 state": 0.18837660551071167,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 55.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0181465744972229,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 56.0,
+      "forecast R\u00b2 from the turn-1 state": -0.06384456157684326,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 57.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1115574836730957,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 58.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1075320839881897,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 59.0,
+      "forecast R\u00b2 from the turn-1 state": 0.10357725620269775,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 60.0,
+      "forecast R\u00b2 from the turn-1 state": 0.037604451179504395,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 61.0,
+      "forecast R\u00b2 from the turn-1 state": -0.04064345359802246,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 62.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13375496864318848,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 63.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13913071155548096,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 64.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1716441512107849,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 65.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06430399417877197,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 66.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05341094732284546,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 67.0,
+      "forecast R\u00b2 from the turn-1 state": 0.09948444366455078,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 68.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13427048921585083,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 69.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04842734336853027,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 70.0,
+      "forecast R\u00b2 from the turn-1 state": 0.044026851654052734,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 71.0,
+      "forecast R\u00b2 from the turn-1 state": 0.09195530414581299,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 72.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0360870361328125,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 73.0,
+      "forecast R\u00b2 from the turn-1 state": 0.017316043376922607,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 74.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04150348901748657,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 75.0,
+      "forecast R\u00b2 from the turn-1 state": 0.09414041042327881,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 76.0,
+      "forecast R\u00b2 from the turn-1 state": 0.045995891094207764,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 77.0,
+      "forecast R\u00b2 from the turn-1 state": 0.026126563549041748,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 78.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06436097621917725,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 79.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1192634105682373,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 80.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06528496742248535,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 81.0,
+      "forecast R\u00b2 from the turn-1 state": -0.059690237045288086,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 82.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06956928968429565,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 83.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1461542248725891,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 84.0,
+      "forecast R\u00b2 from the turn-1 state": 0.14976614713668823,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 85.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05661231279373169,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 86.0,
+      "forecast R\u00b2 from the turn-1 state": -0.006331920623779297,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 87.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08863383531570435,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 88.0,
+      "forecast R\u00b2 from the turn-1 state": 0.02417391538619995,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 89.0,
+      "forecast R\u00b2 from the turn-1 state": 0.09130501747131348,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 90.0,
+      "forecast R\u00b2 from the turn-1 state": -0.038521647453308105,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 91.0,
+      "forecast R\u00b2 from the turn-1 state": -0.07646965980529785,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 92.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13559585809707642,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 93.0,
+      "forecast R\u00b2 from the turn-1 state": 0.024022996425628662,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 94.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07084262371063232,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 95.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06439489126205444,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 96.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0070116519927978516,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 97.0,
+      "forecast R\u00b2 from the turn-1 state": 0.01555854082107544,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 98.0,
+      "forecast R\u00b2 from the turn-1 state": 0.010177850723266602,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 99.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12959349155426025,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 100.0,
+      "forecast R\u00b2 from the turn-1 state": 0.054751038551330566,
+      "series": "eval turn 2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 1.0,
+      "forecast R\u00b2 from the turn-1 state": 0.4488934278488159,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 2.0,
+      "forecast R\u00b2 from the turn-1 state": 0.44702422618865967,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 3.0,
+      "forecast R\u00b2 from the turn-1 state": 0.382998526096344,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 4.0,
+      "forecast R\u00b2 from the turn-1 state": 0.3401302695274353,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 5.0,
+      "forecast R\u00b2 from the turn-1 state": 0.24129736423492432,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 6.0,
+      "forecast R\u00b2 from the turn-1 state": 0.25566017627716064,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 7.0,
+      "forecast R\u00b2 from the turn-1 state": 0.3448207378387451,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 8.0,
+      "forecast R\u00b2 from the turn-1 state": 0.26559972763061523,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 9.0,
+      "forecast R\u00b2 from the turn-1 state": 0.16847211122512817,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 10.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2181519865989685,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 11.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2145642638206482,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 12.0,
+      "forecast R\u00b2 from the turn-1 state": 0.16872471570968628,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 13.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1770300269126892,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 14.0,
+      "forecast R\u00b2 from the turn-1 state": 0.16730159521102905,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 15.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12830066680908203,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 16.0,
+      "forecast R\u00b2 from the turn-1 state": 0.17648965120315552,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 17.0,
+      "forecast R\u00b2 from the turn-1 state": 0.035490453243255615,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 18.0,
+      "forecast R\u00b2 from the turn-1 state": 0.23187822103500366,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 19.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06884151697158813,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 20.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1133679747581482,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 21.0,
+      "forecast R\u00b2 from the turn-1 state": 0.11050409078598022,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 22.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1264745593070984,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 23.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1806820034980774,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 24.0,
+      "forecast R\u00b2 from the turn-1 state": 0.15320312976837158,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 25.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0804595947265625,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 26.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07712382078170776,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 27.0,
+      "forecast R\u00b2 from the turn-1 state": -0.017406463623046875,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 28.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1178736686706543,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 29.0,
+      "forecast R\u00b2 from the turn-1 state": 0.056122779846191406,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 30.0,
+      "forecast R\u00b2 from the turn-1 state": -0.08112633228302002,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 31.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05977135896682739,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 32.0,
+      "forecast R\u00b2 from the turn-1 state": 0.021885693073272705,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 33.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0747341513633728,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 34.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06607651710510254,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 35.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08828794956207275,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 36.0,
+      "forecast R\u00b2 from the turn-1 state": 0.14740455150604248,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 37.0,
+      "forecast R\u00b2 from the turn-1 state": 0.17254269123077393,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 38.0,
+      "forecast R\u00b2 from the turn-1 state": 0.16827070713043213,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 39.0,
+      "forecast R\u00b2 from the turn-1 state": -0.026011943817138672,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 40.0,
+      "forecast R\u00b2 from the turn-1 state": -0.024043917655944824,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 41.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0426030158996582,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 42.0,
+      "forecast R\u00b2 from the turn-1 state": 0.013160109519958496,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 43.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06694519519805908,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 44.0,
+      "forecast R\u00b2 from the turn-1 state": -0.037018775939941406,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 45.0,
+      "forecast R\u00b2 from the turn-1 state": -0.022628307342529297,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 46.0,
+      "forecast R\u00b2 from the turn-1 state": -0.02209758758544922,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 47.0,
+      "forecast R\u00b2 from the turn-1 state": 0.10600686073303223,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 48.0,
+      "forecast R\u00b2 from the turn-1 state": -0.032608866691589355,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 49.0,
+      "forecast R\u00b2 from the turn-1 state": 0.033164918422698975,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 50.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07209575176239014,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 51.0,
+      "forecast R\u00b2 from the turn-1 state": 0.03635990619659424,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 52.0,
+      "forecast R\u00b2 from the turn-1 state": -0.09369146823883057,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 53.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07155603170394897,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 54.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0908210277557373,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 55.0,
+      "forecast R\u00b2 from the turn-1 state": -0.03102576732635498,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 56.0,
+      "forecast R\u00b2 from the turn-1 state": -0.1344536542892456,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 57.0,
+      "forecast R\u00b2 from the turn-1 state": 0.15885305404663086,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 58.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06714040040969849,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 59.0,
+      "forecast R\u00b2 from the turn-1 state": -0.029207468032836914,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 60.0,
+      "forecast R\u00b2 from the turn-1 state": 0.016269683837890625,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 61.0,
+      "forecast R\u00b2 from the turn-1 state": 0.018763840198516846,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 62.0,
+      "forecast R\u00b2 from the turn-1 state": 0.135708749294281,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 63.0,
+      "forecast R\u00b2 from the turn-1 state": 0.012315690517425537,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 64.0,
+      "forecast R\u00b2 from the turn-1 state": -0.010548949241638184,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 65.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0516054630279541,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 66.0,
+      "forecast R\u00b2 from the turn-1 state": 0.047489047050476074,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 67.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05989110469818115,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 68.0,
+      "forecast R\u00b2 from the turn-1 state": 0.02781820297241211,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 69.0,
+      "forecast R\u00b2 from the turn-1 state": -0.031043410301208496,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 70.0,
+      "forecast R\u00b2 from the turn-1 state": 0.03934979438781738,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 71.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06451237201690674,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 72.0,
+      "forecast R\u00b2 from the turn-1 state": -0.03791987895965576,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 73.0,
+      "forecast R\u00b2 from the turn-1 state": -0.022403717041015625,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 74.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05489760637283325,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 75.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07766789197921753,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 76.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07315683364868164,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 77.0,
+      "forecast R\u00b2 from the turn-1 state": -0.033957839012145996,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 78.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06785804033279419,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 79.0,
+      "forecast R\u00b2 from the turn-1 state": 0.03771793842315674,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 80.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0718737244606018,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 81.0,
+      "forecast R\u00b2 from the turn-1 state": -0.02766871452331543,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 82.0,
+      "forecast R\u00b2 from the turn-1 state": 0.012828052043914795,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 83.0,
+      "forecast R\u00b2 from the turn-1 state": -0.06292033195495605,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 84.0,
+      "forecast R\u00b2 from the turn-1 state": 0.10099077224731445,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 85.0,
+      "forecast R\u00b2 from the turn-1 state": 0.03799915313720703,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 86.0,
+      "forecast R\u00b2 from the turn-1 state": -0.07647323608398438,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 87.0,
+      "forecast R\u00b2 from the turn-1 state": 0.03843402862548828,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 88.0,
+      "forecast R\u00b2 from the turn-1 state": -0.03372657299041748,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 89.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04197293519973755,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 90.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08241784572601318,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 91.0,
+      "forecast R\u00b2 from the turn-1 state": -0.156669020652771,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 92.0,
+      "forecast R\u00b2 from the turn-1 state": 0.022840797901153564,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 93.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05525100231170654,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 94.0,
+      "forecast R\u00b2 from the turn-1 state": -0.006152033805847168,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 95.0,
+      "forecast R\u00b2 from the turn-1 state": -0.04691755771636963,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 96.0,
+      "forecast R\u00b2 from the turn-1 state": -0.06292486190795898,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 97.0,
+      "forecast R\u00b2 from the turn-1 state": -0.11401772499084473,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 98.0,
+      "forecast R\u00b2 from the turn-1 state": -0.11447441577911377,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 99.0,
+      "forecast R\u00b2 from the turn-1 state": -0.014441132545471191,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 100.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05594801902770996,
+      "series": "eval turn 3",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 1.0,
+      "forecast R\u00b2 from the turn-1 state": 0.4008157253265381,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 2.0,
+      "forecast R\u00b2 from the turn-1 state": 0.3460504412651062,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 3.0,
+      "forecast R\u00b2 from the turn-1 state": 0.2977803945541382,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 4.0,
+      "forecast R\u00b2 from the turn-1 state": 0.24469995498657227,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 5.0,
+      "forecast R\u00b2 from the turn-1 state": 0.20023691654205322,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 6.0,
+      "forecast R\u00b2 from the turn-1 state": 0.19414657354354858,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 7.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1910499930381775,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 8.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1750657558441162,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 9.0,
+      "forecast R\u00b2 from the turn-1 state": 0.17472976446151733,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 10.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13728618621826172,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 11.0,
+      "forecast R\u00b2 from the turn-1 state": 0.13098645210266113,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 12.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1288253664970398,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 13.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12628567218780518,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 14.0,
+      "forecast R\u00b2 from the turn-1 state": 0.12333381175994873,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 15.0,
+      "forecast R\u00b2 from the turn-1 state": 0.10592919588088989,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 16.0,
+      "forecast R\u00b2 from the turn-1 state": 0.1043347716331482,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 17.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08903414011001587,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 18.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0874028205871582,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 19.0,
+      "forecast R\u00b2 from the turn-1 state": 0.08634155988693237,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 20.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07522118091583252,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 21.0,
+      "forecast R\u00b2 from the turn-1 state": 0.07354342937469482,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 22.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06720572710037231,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 23.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06602662801742554,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 24.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06169760227203369,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 25.0,
+      "forecast R\u00b2 from the turn-1 state": 0.06075412034988403,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 26.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05813157558441162,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 27.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05566447973251343,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 28.0,
+      "forecast R\u00b2 from the turn-1 state": 0.055303990840911865,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 29.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05212658643722534,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 30.0,
+      "forecast R\u00b2 from the turn-1 state": 0.05165356397628784,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 31.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04879558086395264,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 32.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04735487699508667,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 33.0,
+      "forecast R\u00b2 from the turn-1 state": 0.046950340270996094,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 34.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04679214954376221,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 35.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04539978504180908,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 36.0,
+      "forecast R\u00b2 from the turn-1 state": 0.04379439353942871,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 37.0,
+      "forecast R\u00b2 from the turn-1 state": 0.031819701194763184,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 38.0,
+      "forecast R\u00b2 from the turn-1 state": 0.028950631618499756,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 39.0,
+      "forecast R\u00b2 from the turn-1 state": 0.028114676475524902,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 40.0,
+      "forecast R\u00b2 from the turn-1 state": 0.024539172649383545,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 41.0,
+      "forecast R\u00b2 from the turn-1 state": 0.02425098419189453,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 42.0,
+      "forecast R\u00b2 from the turn-1 state": 0.02036184072494507,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 43.0,
+      "forecast R\u00b2 from the turn-1 state": 0.019664227962493896,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 44.0,
+      "forecast R\u00b2 from the turn-1 state": 0.01461857557296753,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 45.0,
+      "forecast R\u00b2 from the turn-1 state": 0.014259159564971924,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 46.0,
+      "forecast R\u00b2 from the turn-1 state": 0.012682557106018066,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 47.0,
+      "forecast R\u00b2 from the turn-1 state": 0.01099330186843872,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 48.0,
+      "forecast R\u00b2 from the turn-1 state": 0.009965658187866211,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 49.0,
+      "forecast R\u00b2 from the turn-1 state": 0.0018416047096252441,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 50.0,
+      "forecast R\u00b2 from the turn-1 state": 0.00015407800674438477,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 51.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0018041133880615234,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 52.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0036154985427856445,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 53.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0036187171936035156,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 54.0,
+      "forecast R\u00b2 from the turn-1 state": -0.005422711372375488,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 55.0,
+      "forecast R\u00b2 from the turn-1 state": -0.007514357566833496,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 56.0,
+      "forecast R\u00b2 from the turn-1 state": -0.00897681713104248,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 57.0,
+      "forecast R\u00b2 from the turn-1 state": -0.01092839241027832,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 58.0,
+      "forecast R\u00b2 from the turn-1 state": -0.013634324073791504,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 59.0,
+      "forecast R\u00b2 from the turn-1 state": -0.013968467712402344,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 60.0,
+      "forecast R\u00b2 from the turn-1 state": -0.016764044761657715,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 61.0,
+      "forecast R\u00b2 from the turn-1 state": -0.018376469612121582,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 62.0,
+      "forecast R\u00b2 from the turn-1 state": -0.018474817276000977,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 63.0,
+      "forecast R\u00b2 from the turn-1 state": -0.020581960678100586,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 64.0,
+      "forecast R\u00b2 from the turn-1 state": -0.02427220344543457,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 65.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0252835750579834,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 66.0,
+      "forecast R\u00b2 from the turn-1 state": -0.027096033096313477,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 67.0,
+      "forecast R\u00b2 from the turn-1 state": -0.028398513793945312,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 68.0,
+      "forecast R\u00b2 from the turn-1 state": -0.02888965606689453,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 69.0,
+      "forecast R\u00b2 from the turn-1 state": -0.031271934509277344,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 70.0,
+      "forecast R\u00b2 from the turn-1 state": -0.031723737716674805,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 71.0,
+      "forecast R\u00b2 from the turn-1 state": -0.03178989887237549,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 72.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0353245735168457,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 73.0,
+      "forecast R\u00b2 from the turn-1 state": -0.03584742546081543,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 74.0,
+      "forecast R\u00b2 from the turn-1 state": -0.036463379859924316,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 75.0,
+      "forecast R\u00b2 from the turn-1 state": -0.04059445858001709,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 76.0,
+      "forecast R\u00b2 from the turn-1 state": -0.041985511779785156,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 77.0,
+      "forecast R\u00b2 from the turn-1 state": -0.04244530200958252,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 78.0,
+      "forecast R\u00b2 from the turn-1 state": -0.044121623039245605,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 79.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05201232433319092,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 80.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05291306972503662,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 81.0,
+      "forecast R\u00b2 from the turn-1 state": -0.053696393966674805,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 82.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05616593360900879,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 83.0,
+      "forecast R\u00b2 from the turn-1 state": -0.05888259410858154,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 84.0,
+      "forecast R\u00b2 from the turn-1 state": -0.06550049781799316,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 85.0,
+      "forecast R\u00b2 from the turn-1 state": -0.07707357406616211,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 86.0,
+      "forecast R\u00b2 from the turn-1 state": -0.07853376865386963,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 87.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0821601152420044,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 88.0,
+      "forecast R\u00b2 from the turn-1 state": -0.0832756757736206,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 89.0,
+      "forecast R\u00b2 from the turn-1 state": -0.08877241611480713,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 90.0,
+      "forecast R\u00b2 from the turn-1 state": -0.09863054752349854,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 91.0,
+      "forecast R\u00b2 from the turn-1 state": -0.09989500045776367,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 92.0,
+      "forecast R\u00b2 from the turn-1 state": -0.10283493995666504,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 93.0,
+      "forecast R\u00b2 from the turn-1 state": -0.1079246997833252,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 94.0,
+      "forecast R\u00b2 from the turn-1 state": -0.12052738666534424,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 95.0,
+      "forecast R\u00b2 from the turn-1 state": -0.13634026050567627,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 96.0,
+      "forecast R\u00b2 from the turn-1 state": -0.14458465576171875,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 97.0,
+      "forecast R\u00b2 from the turn-1 state": -0.14684522151947021,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 98.0,
+      "forecast R\u00b2 from the turn-1 state": -0.149644136428833,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 99.0,
+      "forecast R\u00b2 from the turn-1 state": -0.1626220941543579,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs": 100.0,
+      "forecast R\u00b2 from the turn-1 state": -0.19436955451965332,
+      "series": "eval turn 4",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 300,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Which answer directions the turn-1 map carries across turns",
+        "xlabel": "PC rank (sorted by forecast R\u00b2 at turn 4)  \u00b7  \u25c6 = trait dirs",
+        "ylabel": "forecast R\u00b2 from the turn-1 state",
+        "legend_labels": [
+          "eval turn 2",
+          "eval turn 3",
+          "eval turn 4",
+          "random-direction band (turn 4, 95%)"
+        ],
+        "annotations": [
+          "evil\n0.30",
+          "sycophancy\n0.25",
+          "hallucination\n-0.01",
+          "per-direction forecast R\u00b2 at block 19; turns 2\u20134; random band shaded"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "eval turn 2",
+      "eval turn 3",
+      "eval turn 4"
+    ]
+  }
+}
