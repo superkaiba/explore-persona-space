@@ -6532,62 +6532,73 @@ explicit eval-data path):
    read from the file before the push:
 
    ```bash
-   # Inline payload lint gate (#1460) — ONE background Bash (run_in_background=true)
+   # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
    printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
-     > /tmp/issue-<N>-inline-payload.txt   # one path per line; NO blank lines
-                                           # (a blank grep -F pattern matches everything)
-   { uv run python scripts/workflow_lint.py; \
-     uv run python scripts/select_step9c_tests.py \
-         --map-files /tmp/issue-<N>-inline-payload.txt \
-       | tee /tmp/issue-<N>-inline-map.txt \
-       | cut -f1 | sort -u | xargs -r uv run pytest -q -rA; \
-   } > /tmp/issue-<N>-inline-lint.txt 2>&1
-   # VERDICT — payload-attributed; never a bare exit-0 on the repo-wide runs.
-   # INSTRUMENT-RAN completeness FIRST (fail CLOSED — a dead/silent leg must
-   # never read as push-clean; `workflow_lint: schema FAIL` is deliberately
-   # rejected — it prints BEFORE any check executes):
-   [ -s /tmp/issue-<N>-inline-payload.txt ] || echo INCONCLUSIVE-payload-file-empty
-   grep -qE '^workflow_lint: (PASS|FAIL \()' /tmp/issue-<N>-inline-lint.txt \
-     || echo INCONCLUSIVE-lint-leg-dead
-   if [ -s /tmp/issue-<N>-inline-map.txt ]; then
-     # Scope to non-lint lines + a pytest-SUMMARY shape: the lint leg's own
-     # `workflow_lint: FAIL (N error(s))` line must not satisfy this check
-     # (it would mask a silently-dead pytest leg in the double-failure case).
-     grep -v '^workflow_lint' /tmp/issue-<N>-inline-lint.txt \
-       | grep -qE '[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran' \
-       || echo INCONCLUSIVE-pytest-leg-dead
-   fi
-   # Payload attribution:
-   grep -F -f /tmp/issue-<N>-inline-payload.txt /tmp/issue-<N>-inline-lint.txt \
-     | grep -v '^WARN' || echo NO-PAYLOAD-HITS
+     > /tmp/issue-<N>-inline-payload.txt   # one path per line (the helper
+                                           # strips blank lines defensively)
+   uv run python scripts/inline_lint_gate.py --issue <N> \
+     --payload-file /tmp/issue-<N>-inline-payload.txt
    ```
+
+   The helper mechanizes both legs (no-flags `workflow_lint.py`;
+   `select_step9c_tests.py --map-files` → mapped pytest at the #1046
+   timeout formula) and the verdict semantics below, persists the leg
+   output to `/tmp/issue-<N>-inline-lint.txt` +
+   `/tmp/issue-<N>-inline-map.txt` (audit parity with the pre-#1500
+   fenced recipe), and on a passing path writes a content-hash-bound
+   certification line (`v1 <epoch> <blobsha> <path>`) to
+   `/tmp/eps-inline-lint-cert-v1.txt` — the cert the
+   `guard_root_code_commit.sh` hook validates. NEVER hand-write the
+   cert file (#1082 parity).
 
    **Verdict — payload-attributed with instrument-ran completeness,
    NEVER a bare exit-0 (main can be pre-existing-red) and NEVER a push
-   on a dead instrument.**
-   - Any `INCONCLUSIVE-*` line ⇒ the instrument did not run to
-     completion (lint-leg death / schema early-exit, mapped-pytest-leg
-     death, or a missing/empty payload file) — **NEVER push on the
-     `NO-PAYLOAD-HITS` token in this state**; re-run the failed leg
-     (foreground single-flag / single-test re-runs are ~20-40s) or
-     investigate, then re-evaluate. `NO-PAYLOAD-HITS` is honored ONLY
-     with completeness evidence: the lint leg's healthy terminal line
-     (`workflow_lint: PASS` or `workflow_lint: FAIL (`) present, AND —
-     when the map file is non-empty — a pytest summary line present.
-   - A non-WARN output line naming a payload path **blocks the push**
-     when (i) the payload file is NEW this round (absent from
-     `origin/main` — payload-caused by construction; both #1388
-     offenders and both #1092 offenders were this case), or (ii) for a
-     MODIFIED file, the flagged construct sits in the round's own added
-     lines (`git diff -- <path>` pre-commit / `git diff origin/main --
-     <path>` post-commit). Fix, re-run just the relevant single
-     `--check-<x>` flag or single mapped test (~20-40s measured), then
-     push.
-   - Hits naming only non-payload paths, WARN lines, and modified-file
-     hits whose flagged construct is absent from the round's added
-     lines are **pre-existing red — never block**; name them in the
-     round's `epm:progress` completion note (visible, not re-buried).
-   - `NO-PAYLOAD-HITS` + completeness satisfied ⇒ push.
+   on a dead instrument. The helper's exit code IS the verdict:**
+   - **exit 3 = INCONCLUSIVE** (`inline_lint_gate: INCONCLUSIVE
+     (<reason>)`; no cert written) ⇒ the instrument did not run to
+     completion — lint-leg death / `workflow_lint: schema FAIL`
+     early-exit (deliberately rejected: it prints BEFORE any check
+     executes), mapped-pytest-leg death, a missing/empty payload file,
+     or a payload path edited DURING the gate run — **NEVER push in
+     this state**; re-run the failed leg (foreground single-flag /
+     single-test re-runs are ~20-40s) or investigate, then re-run the
+     helper. A clean read is honored ONLY with completeness evidence:
+     the lint leg's healthy terminal line (`workflow_lint: PASS` or
+     `workflow_lint: FAIL (`) present, AND — when the test mapping is
+     non-empty — a pytest summary line present.
+   - **exit 1 = BLOCK** (`inline_lint_gate: BLOCK (<paths>)`): a
+     non-WARN output line names a payload path that is (i) NEW this
+     round (absent from `origin/main` — payload-caused by construction;
+     both #1388 offenders and both #1092 offenders were this case), or
+     (ii) a MODIFIED file whose flagged construct sits in the round's
+     own added lines (`git diff -U0 origin/main -- <path>`), or (iii) a
+     MODIFIED file with a payload-naming hit carrying no parseable
+     `<path>:<lineno>:` (conservative — see the enforcement note
+     below). Fix, re-run just the relevant single `--check-<x>` flag or
+     single mapped test (~20-40s measured), then re-run the helper and
+     push. Clean sibling paths are still certified (per-path certs).
+   - **exit 0 = PASS** (`inline_lint_gate: PASS`): hits naming only
+     non-payload paths, WARN lines, and modified-file hits whose
+     flagged construct is absent from the round's added lines are
+     **pre-existing red — never block**; the helper reports them — name
+     them in the round's `epm:progress` completion note (visible, not
+     re-buried). Every payload path is certified; push.
+
+   The gate is mechanically enforced for CODE payload:
+   `guard_root_code_commit.sh` (PreToolUse) refuses a repo-root commit
+   of uncertified `scripts/`/`src/`/`tests/` payload until
+   `scripts/inline_lint_gate.py` has certified the exact landing
+   content (#1500). The hook covers ONLY that code glob and ONLY
+   Bash-tool root commits — the prose gate here still binds for every
+   other payload shape (non-code payload such as rules/docs edits with
+   lint surface, and the scratch-worktree `git push origin HEAD:main`
+   merge channel). The helper is deliberately STRICTER than the prose
+   in one arm: a payload-naming hit without a parseable
+   `<path>:<lineno>:` on a MODIFIED file blocks conservatively (the
+   prose's "pre-existing red never blocks" judgment call routes through
+   the override instead). Deliberate override:
+   `EPM_ALLOW_ROOT_CODE_COMMIT=1` + an `epm:progress` note naming the
+   reason.
 
    This gate binds the user-chat sibling (the CLAUDE.md § Routing
    "User-chat inline free analysis" carve-out) identically —
