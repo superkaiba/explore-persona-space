@@ -222,7 +222,7 @@ Every battery component for this pair (n = 1,588) at layer 19 is plotted: own-ro
 
 Recovery fraction 0.937 (CI 0.928–0.946, per-fold maps held fixed under row resampling), reverse direction 0.959, stable at layers 14/18 (0.92/0.94). The Shared lean rests on the ceiling-independent reads: rotation-aligned cosine 0.634 against a chance band whose 97.5th percentile is 0.0005, and frozen-map transfer positive both ways (+0.346/+0.339 vs shuffle nulls −0.32/−0.44).
 
-Hedges: this pair's layer-26 ceiling is broken (−0.017), so layer stability holds at 14/18/19 only. At n = 1,588 the fits sit inside the vulnerable regime, and an attenuated ceiling inflates the recovery fraction, so 0.937 leans upper-bound. The rubric never verified the model noticed the AI-relay framing (ignored instruction vs genuine invariance unresolved); single pair, base lane only. Both cells' keep fractions sit just under the 50% primary floor (47.5%/47.6%), exploratory-grade under the plan's yield rule.
+Hedges: this pair's layer-26 ceiling is broken (−0.017), so layer stability holds at 14/18/19 only. At n = 1,588 the fits sit inside the vulnerable regime, and an attenuated ceiling inflates the recovery fraction, so 0.937 leans upper-bound. The rubric never verified the model noticed the AI-relay framing (ignored instruction vs genuine invariance unresolved); single pair, base lane only; and both cells' keep fractions sit just under the 50% primary floor (47.5%/47.6%), exploratory-grade under the plan's yield rule.
 
 ---
 
