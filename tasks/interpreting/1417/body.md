@@ -5,7 +5,7 @@ title: Ridge-regularization collapse on judge-filtered row subsets voids the fra
 kind: experiment
 tags: []
 created_at: '2026-07-16T08:28:52Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 825
 origin_prompt: 'Help me to test these hypotheses: [the #825 chat-vs-no-template-vs-story
   writeup + Next Steps hypotheses — ''this mapping is only for when the assistant
