@@ -102,7 +102,7 @@ an EXISTING codex-companion job through the same poll loop, stall
 detector (timer re-armed from attach time), bounded result fetch,
 output-preserving write, and marker posts — the recovery path for a
 wrapper/session kill that orphaned a running job. Precondition: confirm
-the old wrapper is actually dead (``pgrep -f 'codex_task.py.*<job-id>'``
+the old wrapper is actually dead (``pgrep -f 'codex_task[.]py.*<job-id>'``
 empty) — a live wrapper would double-poll, duplicate markers, and
 cross-cancel on signal. With ``--issue N`` the job id must be bound to
 issue N's own ``epm:codex-task-spawned`` history and not already
@@ -1497,7 +1497,7 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
             "epm:codex-task-spawned history (fail-closed guard against the "
             "cross-issue registry serving another issue's job); "
             "--reattach-unbound overrides, and is REQUIRED without --issue. "
-            "Confirm the dead wrapper first: pgrep -f 'codex_task.py.*<job-id>' "
+            "Confirm the dead wrapper first: pgrep -f 'codex_task[.]py.*<job-id>' "
             "must be empty. Mutually exclusive with --prompt/--prompt-file; "
             "stdin is not read; --effort/--write and the cancelled/transient "
             "re-dispatch caps are inert (nothing to re-dispatch)."

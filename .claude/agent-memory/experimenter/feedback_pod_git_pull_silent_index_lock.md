@@ -18,9 +18,9 @@ When a pod's prior workload crashes (SIGKILL, OOM, abrupt shutdown) while a `git
 
 1. Run `git pull --ff-only origin <branch>` as usual.
 2. Then run `git rev-parse HEAD` and verify the sha matches the brief's `commit=` field. Never trust the pull's stdout — verify the on-disk HEAD instead.
-3. On mismatch: `ls -la .git/index.lock`. If present AND the mtime is old AND `pgrep -af git` shows no live git proc, remove the lock and re-pull.
+3. On mismatch: `ls -la .git/index.lock`. If present AND the mtime is old AND `pgrep -ax git` shows no live git proc, remove the lock and re-pull.
 4. The re-pull (after lock removal) can take long enough that the SSH MCP ~30s client cap times out before git returns — but git completes server-side regardless. Re-probe HEAD in a FRESH SSH call rather than treating the timeout as a failure.
-5. If `pgrep -af git` shows a live git proc, do NOT remove the lock — wait. A live git is doing legitimate work.
+5. If `pgrep -ax git` shows a live git proc, do NOT remove the lock — wait. A live git is doing legitimate work.
 
 **Worked recipe for the experimenter pre-launch sync** (now standing instruction
 in `experimenter.md` § "Before Running" **item 2** — the canonical sync step;
@@ -38,7 +38,7 @@ ssh_execute pod-X 'cd /workspace/explore-persona-space && \
 
 # On mismatch:
 ssh_execute pod-X 'cd /workspace/explore-persona-space && \
-  ls -la .git/index.lock; pgrep -af git'
+  ls -la .git/index.lock; pgrep -ax git'
 # Verify lock is stale (mtime old, no live proc), then:
 ssh_execute pod-X 'cd /workspace/explore-persona-space && \
   rm -f .git/index.lock && git pull --ff-only origin <branch>'
