@@ -92,7 +92,9 @@ def _render_r3(stories: list[dict], tokenizer) -> tuple[list, dict]:
     return rendered, stats
 
 
-def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple[list, dict]:
+def _render_r4(
+    stories: list[dict], tokenizer, *, verbatim_check: bool, extra_slots: bool = False
+) -> tuple[list, dict]:
     """Paired-story rows -> Rendered (ONE turn per story; conv_id = ORIGINAL id).
 
     Teacher-forced capture (plan v8 §4): the render is the story text truncated
@@ -107,6 +109,13 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
     normalized matcher (c.norm_text: story[a_start:a_end] == answer up to
     NFKC + curly-quote + whitespace-collapse drift; r4 only — the op
     companion has no fixed answer).
+
+    ``extra_slots=True`` (plan v10 §4 slot ablation): recomputes ``attr_start``
+    per story via the SAME ``c.ANSWER_ATTRIB_RE`` the gen gate used (fail-loud
+    exactly-one-match assert — the keep gate guarantees it; re-asserted at the
+    trust boundary) and threads it into ``render_story_turn(extra_slots=True)``
+    so all 5 single positions + the pooled attribution-phrase span come from
+    the SAME row (one TF forward per story downstream).
     """
     rendered, stats = [], {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
     for s in stories:
@@ -116,6 +125,15 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
             f"got {len(s['parsed_turns'])} (gen keep-filter drift)"
         )
         turn = s["parsed_turns"][0]
+        attr_start = None
+        if extra_slots:
+            attribs = list(c.ANSWER_ATTRIB_RE.finditer(s["story"]))
+            assert len(attribs) == 1, (
+                f"paired story {s['conv_id']}: ANSWER_ATTRIB_RE matched {len(attribs)} "
+                "times at extraction — the gen keep gate guarantees exactly one "
+                "(attribution_multi/zero rejects); regex/name-seam drift"
+            )
+            attr_start = attribs[0].start()
         if verbatim_check:
             # The SAME matcher as the gen gate (c.norm_text under
             # c.find_verbatim_occurrences' normalization — cps fix round):
@@ -131,7 +149,14 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
                 f"paired story {s['conv_id']}: stored span is not the verbatim answer "
                 "under the shared normalized matcher (gen keep-filter drift)"
             )
-        r = c.render_story_turn(s["story"], turn, s["conv_id"], tokenizer)
+        r = c.render_story_turn(
+            s["story"],
+            turn,
+            s["conv_id"],
+            tokenizer,
+            extra_slots=extra_slots,
+            attr_start=attr_start,
+        )
         if r is None:
             stats["turns_dropped"] += 1
             continue
@@ -140,12 +165,147 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
     return rendered, stats
 
 
+def _assert_prefix_before_context(rendered: list, ctx_name: str) -> None:
+    """Parent 2-slot invariant: prefix strictly before the context slot."""
+    for r in rendered:
+        assert r.slot_idx["prefix"] < r.slot_idx[ctx_name], (r.conv_id, r.slot_idx)
+
+
+def _slot_order_and_diagnostics(rendered: list, out_dir: Path, stem: str, *, smoke: bool) -> dict:
+    """Slot-ablation post-render checks (plan v10 §4): the per-row positional
+    sort must realize EXACTLY the canonical SLOT_SINGLE_ORDER (ties keep
+    insertion order under the stable sort — the span-ordering chain), the
+    pooled read is exactly ctx_attrmean, and the registered diagnostics
+    (answer-overlap hard assert 0.0, anchor-coincidence rates, positions) are
+    computed + persisted BEFORE any GPU forward."""
+    for r in rendered:
+        names = [n for n, _ in sorted(r.slot_idx.items(), key=lambda kv: kv[1])]
+        assert names == list(c.SLOT_SINGLE_ORDER), (r.conv_id, names, r.slot_idx)
+        assert list(r.pooled_spans) == ["ctx_attrmean"], (r.conv_id, list(r.pooled_spans))
+    slot_diag = slot_diagnostics(rendered)
+    diag_path = out_dir / f"{stem}_slot_diagnostics.json"
+    c.write_json(
+        diag_path,
+        {
+            "metadata": c.metadata(0, len(rendered), "scripts/issue1345_extract_turnstore.py"),
+            "bundle_revision": c.STORIES_BUNDLE_REV,
+            "smoke": smoke,
+            **slot_diag,
+        },
+    )
+    coinc = {k: round(v, 4) for k, v in slot_diag["anchor_coincidence_rates"].items()}
+    print(
+        "[slot-ablation] answer-overlap rates all 0.0 (hard-asserted); "
+        f"anchor-coincidence: {coinc} -> {diag_path}",
+        flush=True,
+    )
+    return slot_diag
+
+
+def _smoke_slice_slot_stories(stories: list[dict], turnstore_dir: Path, n: int = 10) -> list[dict]:
+    """Smoke slice for the slot-ablation leg: PREFER stories whose conv_id is
+    in the already-STAGED r1 chat store (prefetch_reuse stages shard000 only
+    under smoke), so the tiny leg exercises the chat-matched comparator + the
+    paired-D verdict deterministically whenever an overlap exists; fill to
+    ``n`` with non-overlapping stories otherwise (the downstream drivers then
+    take their documented informational smoke skips)."""
+    staged_ids: set[str] = set()
+    for sp in sorted(Path(turnstore_dir).glob("instruct_chat_s_shard*.json")):
+        staged_ids.update(str(x) for x in json.loads(sp.read_text())["conv_ids"])
+    overlapping = [s for s in stories if str(s["conv_id"]) in staged_ids]
+    rest = [s for s in stories if str(s["conv_id"]) not in staged_ids]
+    picked = (overlapping + rest)[:n]
+    n_over = sum(1 for s in picked if str(s["conv_id"]) in staged_ids)
+    print(
+        f"[smoke][slot] {n_over}/{len(picked)} smoke stories overlap the staged r1 "
+        f"subset ({len(staged_ids)} staged conv_ids)",
+        flush=True,
+    )
+    return picked
+
+
+def slot_diagnostics(rendered: list) -> dict:
+    """Registered per-slot diagnostics for the slot-ablation store (plan v10 §4).
+
+    Per slot: token positions (exploratory histogram input), ANSWER-OVERLAP
+    RATE (fraction of rows whose slot char-span overlaps [a_start, a_end) —
+    MUST be 0.0 by construction, HARD-asserted here at the extraction trust
+    boundary), and anchor-COINCIDENCE RATE (fraction of rows whose read
+    position equals the anchor slot; the attrmean read "coincides" when its
+    pooled token span is exactly the anchor's single token). Degeneracy
+    policy: coincidence > SLOT_DEGENERACY_COINCIDENCE_MAX flags the slot
+    ``degenerate`` (the verdict driver excludes it; reportable, not a crash).
+    """
+    n = len(rendered)
+    assert n > 0, "slot_diagnostics on an empty render"
+    single = [name for name in c.SLOT_SINGLE_ORDER]
+    positions: dict[str, list] = {name: [] for name in c.SLOT_STORE_ORDER}
+    overlap = dict.fromkeys(c.SLOT_STORE_ORDER, 0)
+    coincide = dict.fromkeys([*single, "ctx_attrmean"], 0)
+    for r in rendered:
+        a0, a1 = r.meta["a_char_span"]
+        anchor = r.slot_idx["context"]
+        for name in single:
+            idx = r.slot_idx[name]
+            positions[name].append(int(idx))
+            s_ch, e_ch = r.meta["slot_char_spans"][name]
+            if s_ch < a1 and e_ch > a0:
+                overlap[name] += 1
+            if idx == anchor:
+                coincide[name] += 1
+        ps, pe = r.pooled_spans["ctx_attrmean"]
+        positions["ctx_attrmean"].append([int(ps), int(pe)])
+        cs, ce = r.meta["pooled_char_spans"]["ctx_attrmean"]
+        if cs < a1 and ce > a0:
+            overlap["ctx_attrmean"] += 1
+        if (ps, pe) == (anchor, anchor + 1):
+            coincide["ctx_attrmean"] += 1
+    overlap_rates = {name: overlap[name] / n for name in overlap}
+    # HARD assert (plan v10 §4): every slot definition is fully-contained-
+    # before, so any overlap with the answer span is a render bug.
+    assert all(v == 0.0 for v in overlap_rates.values()), (
+        f"answer-overlap rate nonzero: { {k: v for k, v in overlap_rates.items() if v} } — "
+        "a slot read position overlaps the answer span (fully-contained-before "
+        "idiom violated; plan v10 §4 registered diagnostic)"
+    )
+    coincidence_rates = {name: coincide[name] / n for name in coincide}
+    verdict_slot_names = {k: c.SLOT_NAME_FOR_CELL[cid] for k, cid in c.SLOT_VERDICT_CELLS.items()}
+    degenerate = {
+        k: coincidence_rates[sn] > c.SLOT_DEGENERACY_COINCIDENCE_MAX
+        for k, sn in verdict_slot_names.items()
+    }
+    return {
+        "n_rows": n,
+        "slot_order": list(c.SLOT_STORE_ORDER),
+        "answer_overlap_rates": overlap_rates,
+        "anchor_coincidence_rates": coincidence_rates,
+        "degeneracy_threshold": c.SLOT_DEGENERACY_COINCIDENCE_MAX,
+        "degenerate_verdict_slots": degenerate,
+        "positions": positions,
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     # r4op = the on-policy companion CONTROL store (a fit cell, not a
     # transfer/opcomp regime — hence not in c.REGIMES); variant-gated.
-    regime_choices = (*c.REGIMES, "r4op") if c.HAS_R4 else c.REGIMES
+    # Slot-ablation variant (plan v10): r4 is legal for the multi-slot re-read
+    # of the REUSED paired corpus (no gen phase exists in that mode).
+    if c.HAS_R4:
+        regime_choices = (*c.REGIMES, "r4op")
+    elif c.HAS_SLOT_ABLATION:
+        regime_choices = (*c.REGIMES, "r4")
+    else:
+        regime_choices = c.REGIMES
     ap.add_argument("--regime", choices=regime_choices, required=True)
+    ap.add_argument(
+        "--slot-ablation",
+        action="store_true",
+        help="plan v10 multi-slot TF re-read: legal ONLY with --regime r4 under "
+        "EPM_I1345_VARIANT=story_slot_ablation; captures all 5 single slot "
+        "positions + the pooled attribution-phrase mean from ONE forward per "
+        "story into the r4slot stem",
+    )
     ap.add_argument("--model", choices=("instruct", "pretrained"), required=True)
     ap.add_argument("--out-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
@@ -160,6 +320,13 @@ def main() -> None:
         "real tokenizer — CPU plumbing/shape validation; production never passes this",
     )
     args = ap.parse_args()
+    if args.slot_ablation:
+        assert c.HAS_SLOT_ABLATION, (
+            f"--slot-ablation requires EPM_I1345_VARIANT in {c.SLOT_ABLATION_VARIANTS} "
+            f"(got {c.VARIANT!r}) — the slot store is variant-scoped by design"
+        )
+        assert args.regime == "r4", "--slot-ablation is defined for --regime r4 only (plan v10)"
+        assert args.model in c.R4_MODELS, "slot ablation is instruct-only (base N/A by scope)"
 
     model, tokenizer, model_id = ex.load_model(args.model, tiny_model_dir=args.tiny_model_dir)
 
@@ -189,11 +356,25 @@ def main() -> None:
         )
         kept_path = args.stories_dir / f"kept_stories_{mode_slug}_{args.model}.jsonl"
         stories = c.read_jsonl(kept_path)
+        if not args.smoke and args.slot_ablation:
+            # Bundle-integrity gate (plan v10 §7): the staged pinned bundle
+            # parses to exactly the landed kept count — no regeneration path
+            # exists in this mode by design.
+            assert len(stories) == c.STORIES_BUNDLE_N_ROWS, (
+                f"kept-stories bundle has {len(stories)} rows, expected "
+                f"{c.STORIES_BUNDLE_N_ROWS} (pinned @ {c.STORIES_BUNDLE_REV[:10]})"
+            )
         if args.smoke:
-            stories = stories[:8]
+            if args.slot_ablation:
+                stories = _smoke_slice_slot_stories(stories, args.out_dir)
+            else:
+                stories = stories[:8]
             print(f"[smoke] limiting to {len(stories)} paired stories", flush=True)
         rendered, render_stats = _render_r4(
-            stories, tokenizer, verbatim_check=(args.regime == "r4")
+            stories,
+            tokenizer,
+            verbatim_check=(args.regime == "r4"),
+            extra_slots=args.slot_ablation,
         )
         assert rendered, "no paired story turns rendered — parser/render drift"
 
@@ -210,7 +391,7 @@ def main() -> None:
     # never corpus text) persists next to the shards.
     n_pre_filter = len(rendered)
     rendered, drops = ex.partition_rendered(rendered)
-    stem = c.stem_for(args.model, args.regime)
+    stem = c.stem_for(args.model, "r4slot" if args.slot_ablation else args.regime)
     manifest_path = args.out_dir / f"{stem}_skip_manifest.json"
     c.write_json(
         manifest_path,
@@ -236,10 +417,16 @@ def main() -> None:
 
     # Slot-order invariant the fit registry depends on: prefix strictly before
     # the context slot in EVERY row (extractor sorts slots by position, so
-    # slot_index 0 = prefix, 1 = context across all three regimes).
+    # slot_index 0 = prefix, 1 = context across all three regimes). Slot
+    # ablation generalizes the chain: the per-row positional sort must realize
+    # EXACTLY the canonical SLOT_SINGLE_ORDER (ties keep insertion order under
+    # the stable sort — plan v10 §4 span-ordering chain), with the pooled
+    # attribution-mean read appended by process_batch as storage index 5.
     ctx_name = "a1" if args.regime in ("r1", "r2") else "context"
-    for r in rendered:
-        assert r.slot_idx["prefix"] < r.slot_idx[ctx_name], (r.conv_id, r.slot_idx)
+    if args.slot_ablation:
+        _slot_order_and_diagnostics(rendered, args.out_dir, stem, smoke=bool(args.smoke))
+    else:
+        _assert_prefix_before_context(rendered, ctx_name)
 
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     do_causal = args.smoke  # parent default: causal check on smoke
@@ -273,7 +460,8 @@ def main() -> None:
         # Story-arm character name (plan v6 §4 provenance; "ARIA" on r1/r2 rows too
         # — the constant is global, only the r3 render consumes it).
         "story_character_name": c.STORY_CHARACTER_NAME,
-        "slot_names": ["prefix", ctx_name],
+        "slot_names": (list(c.SLOT_STORE_ORDER) if args.slot_ablation else ["prefix", ctx_name]),
+        "slot_ablation": bool(args.slot_ablation),
         "peak_layers": peak_layers,
         "expected_layers": ex.EXPECTED_LAYERS,
         "expected_hidden": ex.EXPECTED_HIDDEN,
