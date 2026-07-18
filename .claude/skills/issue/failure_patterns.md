@@ -134,14 +134,17 @@ host PIDs unresolvable in the container's `/proc`, so the bare signature
 is false-positive on healthy runs (#816/#778); a fresh-log zombie flag is
 a namespace artifact, not a hang — and (since #864) only when the
 dead-in-/proc signature is namespace-informative: zero-resolvable compute
-PIDs with live in-container `/dev/nvidia-uvm` holders (exact fd-target
-match) are a PID-namespace artifact and are vetoed regardless of log
-staleness (#813: a healthy ~29-min CPU-bound quiet stretch outlived the
-#826 stale-log veto). The #864 veto ships default-OFF
-(`EPM_ZOMBIE_NAMESPACE_VETO=1` arms it; read at poller import) per its
-pre-merge live-pod gate — a cuInit'd parent/coordinator holding exact uvm
-while absent from compute-apps would suppress a genuine total collapse if
-armed unverified. The emit surface
+PIDs with live in-container ALLOCATION-EVIDENCED `/dev/nvidia-uvm` holders
+(exact fd-target match AND an end-anchored file-backed `/dev/nvidia-uvm`
+entry in `/proc/<pid>/maps` — UVM regions are allocation-time mmaps, so a
+bare-cuInit coordinator holding only the fd never counts, #1216) are a
+PID-namespace artifact and are vetoed regardless of log staleness (#813: a
+healthy ~29-min CPU-bound quiet stretch outlived the #826 stale-log veto).
+The veto ships default-ON as of #1216 (§7 live-pod gate 2026-07-18,
+disposition D1; single-driver caveat: the entire gate evidence base is
+driver 580.126.09) — kill-switch `EPM_ZOMBIE_NAMESPACE_VETO=0` (pure #826
+behavior; read at poller import, so a live poller needs a restart for an
+ops flip). The emit surface
 is `scripts/poll_pipeline.py` + `scripts/backend_poll.py`; the
 known-reason set is `STALL_REASON_INFRA` in `failure_classifier.py`; the
 recovery brief + recipe references are SKILL.md Step 7 § "Zombie-GPU
