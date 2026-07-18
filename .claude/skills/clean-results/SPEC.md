@@ -612,6 +612,12 @@ below). Exemptions, stated in the interpretation prose or alt text: the
 result's primary figure ALREADY is the per-unit view (a raw scatter needs
 no second scatter); N is so small the figure already shows every point; or
 the aggregate has no meaningful per-unit decomposition (a single scalar).
+When a committed per-unit companion is deliberately NOT embedded, name the
+file AND state the omission with an explicit exemption phrase — "not
+embedded: <reason>" or "superseded by <the embedded view>" — in the same
+paragraph as the filename; a bare provenance mention ("committed at the
+same pin") does not count, and `verify_task_body.py` check 31 WARNs
+`companion-named-not-embedded`.
 
 **Raw alongside processed** (the transformed-figure special case). When a
 result's figure plots a residualized / partialled / binned /
