@@ -3878,8 +3878,8 @@
     "1498": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1498",
-      "status": "running",
+      "path": "tasks/reviewing/1498",
+      "status": "reviewing",
       "title": "daily-fix: 9c selector misses literal-path pinning tests"
     },
     "1499": {
