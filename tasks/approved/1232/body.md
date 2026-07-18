@@ -36,3 +36,15 @@ Add composer-side trigger-dense-review pointers to codex-code-reviewer.md and co
 - fingerprint: 136169962192
 
 Parked prose-followup on #1185, 2026-07-09T18:34:22Z (Methodology critic, Phase 2, plan v2 review): 'composer-side pointer additions are a one-line follow-up IF wrapper kills recur. Conditional — file only on recurrence evidence.' confidence: low. Routed route-3 (genuine judgment call: the emitter's own condition is unevaluated).
+
+## Resolution (2026-07-18)
+
+**DECISION: no-change — archived** after full adversarial evaluation (plan v1 = the reasoned deflection report; verify_plan.py PASS; fact-checker 7/7 CONFIRMED; adapted Alternatives-lens critic APPROVE, zero Must-Fix).
+
+- The gating condition (recurrence evidence of composer/wrapper filter-kills) is **unmet**: zero composer-side kills recorded since filing — or ever (#1058/#1098/#1152/#1413 were review-role reads, return-text, and orchestrator-brief kills; independently re-swept by the fact-checker).
+- **Superseded channels landed since filing:** #1231 (Step 5a excerpt-file + `return_text:` lines delivered in BOTH reviewer briefs on trigger-dense rounds), #1252 (trigger-dense-review.md discipline 4 binds the Codex twin wrappers' return text), #1275 (file-only verdict posting; findings passed by reference), #1461 (revision-round briefs by reference). The critic additionally verified the composer's canonical assembly path (codex-code-reviewer.md Step 2-pre: task.py redirect → `template.replace()`) routes gated content around composer-generated text entirely.
+- **Byte cost is real:** codex-code-reviewer.md sits 447 B under its 59,200 B lint ratchet; a third redundant delivery channel is the emitter's own named "spec noise" branch.
+- **REOPEN criterion (unconditional):** ONE recorded composer-side filter-kill — a spawn killed during prompt composition (not Codex-runtime, not orchestrator collection), attributed to the composer's own generation — re-files this immediately; a closed workflow-fix task never blocks a re-raise (workflow-fix-on-bug.md § Dedup). The re-filed fix should bind the ASSEMBLY MECHANICS (inlined gated content assembled by shell redirection, never model-generated Write, on trigger-dense rounds) rather than a one-line pointer.
+
+Full report: `plans/v1.md` on this task.
+
