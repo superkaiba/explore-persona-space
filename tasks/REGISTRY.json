@@ -4068,8 +4068,8 @@
     "1521": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1521",
-      "status": "running",
+      "path": "tasks/reviewing/1521",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body Context-row provenance vs epm:followup-scope cross-check"
     },
     "1522": {
