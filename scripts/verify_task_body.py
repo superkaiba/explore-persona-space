@@ -12305,7 +12305,7 @@ def _followup_scope_facts(events: list[dict]) -> dict[str, dict]:
     provenance). `est_gpu_hours` comes from the authoritative note only;
     unparseable → None. Groups founded as `unlabeled-<ts>` pseudo-labels are
     EXCLUDED — a body cannot sensibly name them."""
-    from explore_persona_space.task_workflow import (  # local import — matches _same_issue_run_rounds
+    from explore_persona_space.task_workflow import (  # local import (module convention)
         followup_label_groups,
         parse_followup_note_field,
     )
@@ -12449,7 +12449,7 @@ def check_context_followup_scope_consistency(body: str, *, issue: int | None = N
       → FAIL (v4) / WARN (v3/v2) — the #1426 shape. Suppressed when an
       explicit in-enum body source claim MATCHES the marker source.
     - W1: explicit body `est N GPU-h` vs marker `est_gpu_hours`,
-      `|N − est| > 0.5` → WARN only (a body may state a legitimately
+      `|N - est| > 0.5` → WARN only (a body may state a legitimately
       revised estimate; never FAIL).
 
     Skips (never FAIL): legacy pre-v2 body; no `**Context:**` row; no issue
@@ -12468,7 +12468,7 @@ def check_context_followup_scope_consistency(body: str, *, issue: int | None = N
         return CheckResult(name, True, "skipped — no **Context:** row")
     if issue is None:
         return CheckResult(name, True, "skipped — no issue id (bare --file/--body-stdin)")
-    from explore_persona_space.task_workflow import (  # local import — matches _followup_events_rounds
+    from explore_persona_space.task_workflow import (  # local import (module convention)
         StaleTaskPathError,
         list_events,
     )
