@@ -413,3 +413,134 @@ def test_collect_texts_chunk_checkpoint_resume(tmp_path, monkeypatch):
     cache.write_text('{"broken\n' + cache.read_text(encoding="utf-8"), encoding="utf-8")
     with pytest.raises(ValueError):
         A._collect_texts(ns, rows)
+
+
+# ── r3: SAE inference-semantics pins (tiny synthetic SAE with known weights) ────
+# Root cause of the P2-pilot FVE in [-7900, -3400] / L0 253-2708: the pool fed the
+# encoder token positions the reference (andyrdt/dictionary_learning@andyrdt/qwen)
+# excludes from BOTH training and its published eval — the first BOS_OFFSET=8
+# positions per context and >10x-median-norm rows (buffer.py remove_bos). These
+# tests pin the corrected semantics EXACTLY and demonstrate the pre-r3 recipe
+# (unfiltered, uncentered) differs on a poisoned pool.
+
+
+def _tiny_sae() -> S.BatchTopKSAE:
+    """act_dim=2 / dict_size=3 SAE with hand-computable weights: perfect
+    reconstruction on the positive inlier cluster (feature 2 inactive), blown-up
+    reconstruction on huge-norm rows (feature 2 fires with decoder [0.6, 0.8])."""
+    sd = {
+        "encoder.weight": torch.tensor([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]),
+        "encoder.bias": torch.tensor([0.0, 0.0, -4.0]),
+        "decoder.weight": torch.tensor([[1.0, 0.0, 0.6], [0.0, 1.0, 0.8]]),
+        "b_dec": torch.tensor([0.5, -0.25]),
+        "threshold": torch.tensor(0.5),
+        "k": torch.tensor(2, dtype=torch.int32),
+    }
+    return S.BatchTopKSAE(sd, k=2, act_dim=2, dict_size=3)
+
+
+def test_sae_encode_decode_exact_reference_semantics():
+    sae = _tiny_sae()
+    # encode: f = relu((x - b_dec) @ W_enc.T + b_enc) * (f > threshold)
+    f = sae.encode(torch.tensor([[2.5, 0.75]]))
+    assert torch.allclose(f, torch.tensor([[2.0, 1.0, 0.0]]), atol=1e-6), f
+    # threshold placement is STRICT >: a pre-act exactly AT threshold is zeroed
+    f_at = sae.encode(torch.tensor([[1.0, 0.25]]))  # pre-acts [0.5, 0.5, -3.0]
+    assert torch.equal(f_at, torch.zeros(1, 3)), f_at
+    # decode adds b_dec: [2 + 0.6, 1 + 0.8] + [0.5, -0.25]
+    xhat = sae.decode(torch.tensor([[2.0, 1.0, 1.0]]))
+    assert torch.allclose(xhat, torch.tensor([[3.1, 1.55]]), atol=1e-6), xhat
+
+
+def test_fve_l0_reference_parity_and_legacy_recipe_differs():
+    sae = _tiny_sae()
+    g = torch.Generator().manual_seed(0)
+    inliers = torch.tensor([2.5, 0.75]) + 0.2 * torch.randn(6, 2, generator=g)
+    outlier = torch.tensor([[250.0, 75.0]])  # >10x median norm (massive-token class)
+    x = torch.cat([inliers, outlier])
+    fve, l0, diag = sae.fve_l0(x)
+    # outlier dropped; inlier reconstruction is EXACT by construction -> FVE 1.0, L0 2
+    assert diag == {
+        "n_rows": 7,
+        "n_inlier": 6,
+        "n_outlier_dropped": 1,
+        "median_norm": diag["median_norm"],
+    }
+    assert 0 < diag["median_norm"] < 5
+    assert fve > 0.999999, fve
+    assert abs(l0 - 2.0) < 1e-9, l0
+    # the PRE-r3 recipe (no outlier filter, uncentered ss_res/ss_tot) demonstrably
+    # differs on the same pool: the poisoned row drives it NEGATIVE
+    xhat = sae.decode(sae.encode(x))
+    mu = x.mean(0)
+    fve_legacy = 1.0 - float(((x - xhat) ** 2).sum()) / float(((x - mu) ** 2).sum())
+    assert fve_legacy < 0.0, fve_legacy
+    # min-rows gate (data-dependent): variance undefined below 2 inlier rows
+    with pytest.raises(ValueError):
+        sae.fve_l0(inliers[:1])
+
+
+def test_fve_l0_scale_fold_equivariance():
+    """Pins the normalization-folding contract (training.py scale_biases at save):
+    jointly scaling activations + biases + threshold by c leaves FVE/L0 invariant,
+    so the released (folded) weights consume RAW activations."""
+    sae = _tiny_sae()
+    c = 7.0
+    sd2 = {
+        "encoder.weight": sae.w_enc.clone(),
+        "encoder.bias": sae.b_enc * c,
+        "decoder.weight": sae.w_dec.clone(),
+        "b_dec": sae.b_dec * c,
+        "threshold": torch.tensor(sae.threshold * c),
+        "k": torch.tensor(2, dtype=torch.int32),
+    }
+    sae2 = S.BatchTopKSAE(sd2, k=2, act_dim=2, dict_size=3)
+    g = torch.Generator().manual_seed(1)
+    x = torch.tensor([2.5, 0.75]) + 0.2 * torch.randn(8, 2, generator=g)
+    f1 = sae.encode(x)
+    f2 = sae2.encode(c * x)
+    assert torch.allclose(f2, c * f1, rtol=1e-5, atol=1e-5)
+    fve1, l01, _ = sae.fve_l0(x)
+    fve2, l02, _ = sae2.fve_l0(c * x)
+    assert abs(fve1 - fve2) < 1e-5 and abs(l01 - l02) < 1e-9
+
+
+def test_token_inlier_mask_exact():
+    h = torch.zeros(5, 2)
+    h[:, 0] = torch.tensor([1.0, 1.2, 0.9, 1.1, 50.0])  # median 1.1 -> keep <= 11.0
+    mask = S.token_inlier_mask(h)
+    assert mask.tolist() == [True, True, True, True, False]
+
+
+def test_row_features_reference_masking():
+    sae = _tiny_sae()
+    T, ce = 14, 10
+    base = torch.tensor([2.5, 0.75])
+    h = base.repeat(T, 1) + 0.05 * torch.randn(T, 2, generator=torch.Generator().manual_seed(2))
+    # (a) normal row: BOS positions 0-7 dropped from ctx pool; psi_last position-pinned
+    _sp, spm, spl, ctx_n_out, ans_n_out, ans_all_out = D._row_features(sae, h.clone(), ce)
+    assert ctx_n_out == 8 and ans_n_out == 0 and ans_all_out == 0
+    exp_psi_mean = sae.encode(h[8 : ce + 1]).mean(0)
+    exp_spm = S.sparsify({"mean": exp_psi_mean})
+    assert np.array_equal(spm["idx"], exp_spm["idx"])
+    assert np.allclose(spm["mean"], exp_spm["mean"])
+    exp_spl = S.sparsify({"last": sae.encode(h[ce : ce + 1])[0]})
+    assert np.array_equal(spl["idx"], exp_spl["idx"]) and np.allclose(spl["last"], exp_spl["last"])
+    # (b) massive ctx token at position 9 is excluded from psi_mean
+    h_b = h.clone()
+    h_b[9] = torch.tensor([300.0, 90.0])
+    _, spm_b, _, ctx_n_out_b, _, _ = D._row_features(sae, h_b, ce)
+    assert ctx_n_out_b == 9
+    exp_b = S.sparsify({"mean": sae.encode(h_b[[8, 10]]).mean(0)})
+    assert np.array_equal(spm_b["idx"], exp_b["idx"]) and np.allclose(spm_b["mean"], exp_b["mean"])
+    # (c) all-outlier answer falls back to the unmasked pool, FLAGGED
+    h_c = h.clone()
+    h_c[ce + 1 :] = torch.tensor([300.0, 90.0])
+    sp_c, _, _, _, ans_n_out_c, ans_all_out_c = D._row_features(sae, h_c, ce)
+    assert ans_all_out_c == 1 and ans_n_out_c == 3
+    exp_trio = S.pool_answer_features(sae.encode(h_c[ce + 1 :]))
+    exp_sp = S.sparsify(exp_trio)
+    assert np.array_equal(sp_c["idx"], exp_sp["idx"]) and np.allclose(sp_c["max"], exp_sp["max"])
+    # (d) context emptied by the BOS strip fails loud (degenerate-input gate probe)
+    with pytest.raises(ValueError):
+        D._row_features(sae, h.clone(), 3)

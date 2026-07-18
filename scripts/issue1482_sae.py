@@ -12,9 +12,35 @@ pinned revision (check (c), 2026-07-17):
 Inference-time thresholding uses the learned SCALAR ``threshold`` (per 2412.06410
 BatchTopK inference; NOT batch top-k, NOT a per-feature vector — asserted at load).
 
-Encode/decode convention (dictionary_learning BatchTopKSAE):
+Encode/decode convention (dictionary_learning BatchTopKSAE — verified VERBATIM
+against ``andyrdt/dictionary_learning@andyrdt/qwen`` ``trainers/batch_top_k.py``
+lines 37-59, r3 source read 2026-07-17):
     f      = relu((x - b_dec) @ W_enc.T + b_enc);  f = f * (f > threshold)
     x_hat  = f @ W_dec.T + b_dec
+
+Input scale (r3 source read): the suite was trained with
+``trainSAE(..., normalize_activations=True)`` (``run_from_config.py:145``), and
+``training.py`` FOLDS the norm factor into the released weights at the final save
+(``ae.scale_biases(norm_factor)`` before ``t.save`` — ``training.py:241-246``), so
+the released ``ae.pt`` consumes RAW residual-stream activations. ``config.json``
+carries NO normalization field (the ``trainer.config["norm_factor"]`` write in
+``training.py:194`` lands in a discarded temporary dict).
+
+TOKEN-POOL semantics (r3 root cause — the #1482 P2-pilot FVE ∈ [-7900, -3400] /
+L0 253-2708 incident): the suite's training AND its published eval
+(FVE 0.806 / L0 60 at k=64) both run under ``remove_bos=True``
+(``run_from_config.py:199,210``), which per ``buffer.py``:
+  (a) drops the FIRST ``BOS_OFFSET = 8`` token positions of every context
+      ("a subset of which have super large activations" — buffer.py:13,142-147);
+  (b) drops token rows with L2 norm > 10x the pool median
+      (``outlier_norm_factor = 10.0`` — buffer.py:150-156, "this unfortunately
+      seems necessary for Qwen2.5-7B-Instruct");
+and the published FVE is the VAR-based read ``1 - var(x - x_hat)/var(x)``
+(per-dim unbiased variance, summed — ``evaluation.py:231-233``). Feeding the
+excluded massive-activation tokens through the encoder explodes L0 (~42k features
+on a 30x-norm row; locally reproduced) and drives FVE to -10^3 — the exact pilot
+signature. ``fve_l0`` therefore implements the reference eval semantics (b)+(c);
+sequence-level consumers apply (a) via ``BOS_OFFSET`` before pooling.
 
 Fail-loud: key-set / shape / config asserts at load; no silent fallbacks.
 """
@@ -46,11 +72,40 @@ EXPECTED_KEYS = {"b_dec", "k", "threshold", "decoder.weight", "encoder.weight", 
 # Published suite eval (each trainer's eval_results.json) — Gate B calibration source.
 PUBLISHED_FVE = {64: 0.80572265625, 128: 0.84236328125}
 
+# Reference token-pool constants (andyrdt/dictionary_learning@andyrdt/qwen buffer.py —
+# see module docstring "TOKEN-POOL semantics"). Applied by fve_l0 (outlier filter)
+# and by sequence-level consumers (BOS strip) so fitness reads are calibrated
+# against the suite's own published eval.
+BOS_OFFSET = 8  # buffer.py:13 — first 8 positions carry Qwen massive activations
+OUTLIER_NORM_FACTOR = 10.0  # buffer.py:151 — drop rows with norm > 10x pool median
+
+
+@torch.no_grad()
+def token_inlier_mask(h: torch.Tensor, *, median_norm: float | None = None) -> torch.Tensor:
+    """Reference outlier mask over token rows: bool (T,), True = keep.
+
+    Keeps rows with L2 norm <= OUTLIER_NORM_FACTOR x median (buffer.py:150-156).
+    The median is computed over the given rows unless supplied. Does NOT apply
+    the BOS strip — position-level, the caller owns it (``h[BOS_OFFSET:]``).
+    """
+    assert h.ndim == 2, tuple(h.shape)
+    norms = h.float().norm(dim=1)
+    med = float(norms.median()) if median_norm is None else float(median_norm)
+    return norms <= OUTLIER_NORM_FACTOR * med
+
 
 class BatchTopKSAE:
     """Minimal inference-only BatchTopK SAE (encode / decode / fve)."""
 
-    def __init__(self, state_dict: dict, k: int, device: str = "cpu"):
+    def __init__(
+        self,
+        state_dict: dict,
+        k: int,
+        device: str = "cpu",
+        *,
+        act_dim: int = ACT_DIM,
+        dict_size: int = DICT_SIZE,
+    ):
         keys = set(state_dict.keys())
         assert keys == EXPECTED_KEYS, (
             f"ae.pt key set drift: {sorted(keys)} != {sorted(EXPECTED_KEYS)}"
@@ -60,14 +115,16 @@ class BatchTopKSAE:
         w_dec = state_dict["decoder.weight"]
         b_dec = state_dict["b_dec"]
         thr = state_dict["threshold"]
-        assert tuple(w_enc.shape) == (DICT_SIZE, ACT_DIM), w_enc.shape
-        assert tuple(w_dec.shape) == (ACT_DIM, DICT_SIZE), w_dec.shape
-        assert tuple(b_enc.shape) == (DICT_SIZE,), b_enc.shape
-        assert tuple(b_dec.shape) == (ACT_DIM,), b_dec.shape
+        assert tuple(w_enc.shape) == (dict_size, act_dim), w_enc.shape
+        assert tuple(w_dec.shape) == (act_dim, dict_size), w_dec.shape
+        assert tuple(b_enc.shape) == (dict_size,), b_enc.shape
+        assert tuple(b_dec.shape) == (act_dim,), b_dec.shape
         # A5 resolution: the inference threshold is a learned SCALAR (0-dim tensor).
         assert thr.ndim == 0, f"threshold expected SCALAR, got shape {tuple(thr.shape)}"
         assert int(state_dict["k"]) == k, (int(state_dict["k"]), k)
         self.k = k
+        self.act_dim = act_dim
+        self.dict_size = dict_size
         self.device = device
         self.w_enc = w_enc.to(device=device, dtype=torch.float32)
         self.b_enc = b_enc.to(device=device, dtype=torch.float32)
@@ -99,11 +156,11 @@ class BatchTopKSAE:
 
     @torch.no_grad()
     def encode(self, h: torch.Tensor, chunk: int = 2048) -> torch.Tensor:
-        """(T, 3584) activations -> (T, 131072) thresholded-ReLU features (fp32).
+        """(T, act_dim) activations -> (T, dict_size) thresholded-ReLU features (fp32).
 
-        Chunked over rows so the (chunk, DICT_SIZE) buffer bounds peak memory.
+        Chunked over rows so the (chunk, dict_size) buffer bounds peak memory.
         """
-        assert h.ndim == 2 and h.shape[1] == ACT_DIM, tuple(h.shape)
+        assert h.ndim == 2 and h.shape[1] == self.act_dim, tuple(h.shape)
         outs = []
         for s in range(0, h.shape[0], chunk):
             x = h[s : s + chunk].to(device=self.device, dtype=torch.float32) - self.b_dec
@@ -114,26 +171,66 @@ class BatchTopKSAE:
 
     @torch.no_grad()
     def decode(self, f: torch.Tensor) -> torch.Tensor:
-        """(T, 131072) features -> (T, 3584) reconstruction (fp32)."""
-        assert f.ndim == 2 and f.shape[1] == DICT_SIZE, tuple(f.shape)
+        """(T, dict_size) features -> (T, act_dim) reconstruction (fp32)."""
+        assert f.ndim == 2 and f.shape[1] == self.dict_size, tuple(f.shape)
         return f.to(device=self.device, dtype=torch.float32) @ self.w_dec.T + self.b_dec
 
     @torch.no_grad()
-    def fve_l0(self, h: torch.Tensor, chunk: int = 2048) -> tuple[float, float]:
-        """Reconstruction FVE (1 - ||x-x_hat||^2 / ||x-mean||^2) + mean L0 over rows."""
-        assert h.ndim == 2 and h.shape[1] == ACT_DIM, tuple(h.shape)
+    def fve_l0(self, h: torch.Tensor, chunk: int = 2048) -> tuple[float, float, dict]:
+        """Reference-parity reconstruction fitness -> (fve, l0, diag).
+
+        Implements the suite's OWN eval semantics (the Gate B calibration source —
+        see module docstring "TOKEN-POOL semantics"): drops rows with L2 norm >
+        OUTLIER_NORM_FACTOR x pool median (buffer.py:150-156), then
+        FVE = 1 - sum_d var(x - x_hat)_d / sum_d var(x)_d (per-dim UNBIASED
+        variance, evaluation.py:231-233) and L0 = mean nnz, both over kept rows.
+        fp64 accumulators (massive-dim means make fp32 sum-of-squares cancel).
+        Sequence-level callers strip the first BOS_OFFSET positions per sequence
+        BEFORE pooling rows into ``h`` (buffer.py remove_bos).
+
+        diag: n_rows / n_inlier / n_outlier_dropped / median_norm (pre-filter).
+        Raises ValueError when fewer than 2 inlier rows remain (variance undefined).
+        """
+        assert h.ndim == 2 and h.shape[1] == self.act_dim, tuple(h.shape)
         h32 = h.to(device=self.device, dtype=torch.float32)
-        mu = h32.mean(0)
-        ss_res, l0_sum = 0.0, 0.0
-        for s in range(0, h32.shape[0], chunk):
-            x = h32[s : s + chunk]
+        norms = h32.norm(dim=1)
+        med = float(norms.median())
+        keep = norms <= OUTLIER_NORM_FACTOR * med
+        n_dropped = int((~keep).sum())
+        hk = h32[keep]
+        n = int(hk.shape[0])
+        if n < 2:
+            raise ValueError(
+                f"fve_l0: only {n} inlier rows (need >= 2 for variance); "
+                f"n_rows={int(h.shape[0])} n_outlier_dropped={n_dropped}"
+            )
+        x_sum = torch.zeros(self.act_dim, dtype=torch.float64, device=self.device)
+        x_sq = torch.zeros_like(x_sum)
+        r_sum = torch.zeros_like(x_sum)
+        r_sq = torch.zeros_like(x_sum)
+        l0_sum = 0.0
+        for s in range(0, n, chunk):
+            x = hk[s : s + chunk]
             f = self.encode(x, chunk=chunk)
-            xhat = self.decode(f)
-            ss_res += float(((x - xhat) ** 2).sum())
+            r = x - self.decode(f)
+            x_sum += x.sum(0, dtype=torch.float64)
+            x_sq += (x * x).sum(0, dtype=torch.float64)
+            r_sum += r.sum(0, dtype=torch.float64)
+            r_sq += (r * r).sum(0, dtype=torch.float64)
             l0_sum += float((f > 0).sum())
-        ss_tot = float(((h32 - mu) ** 2).sum())
-        fve = float("nan") if ss_tot < 1e-12 else 1.0 - ss_res / ss_tot
-        return fve, l0_sum / h32.shape[0]
+
+        def _var_sum(ssum: torch.Tensor, ssq: torch.Tensor) -> float:
+            return float(((ssq - ssum * ssum / n) / (n - 1)).sum())
+
+        ss_tot = _var_sum(x_sum, x_sq)
+        fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
+        diag = {
+            "n_rows": int(h.shape[0]),
+            "n_inlier": n,
+            "n_outlier_dropped": n_dropped,
+            "median_norm": round(med, 2),
+        }
+        return fve, l0_sum / n, diag
 
 
 @torch.no_grad()
@@ -164,3 +261,62 @@ def sparsify(pooled: dict[str, torch.Tensor]) -> dict[str, object]:
     for name, v in pooled.items():
         out[name] = v[idx].cpu().numpy().astype(np.float16)
     return out
+
+
+# ── local fitness check (VM-side; the r3 p2-pilot-local verification command) ────────
+_CAPTURE_PREFIX = "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture"
+_DATA_REPO = "superkaiba1/explore-persona-space-data"
+
+
+def _cli() -> None:
+    """Local reconstruction check on STORED parent capture rows (no GPU).
+
+    Stages N capture chunks + the revision-pinned SAE under --scratch, then prints
+    the reference-parity FVE/L0 on stored cx_last@--layer (and, with --legacy, the
+    pre-r3 unfiltered/uncentered read for comparison). Digest-only output.
+    """
+    import argparse
+
+    from huggingface_hub import hf_hub_download
+
+    ap = argparse.ArgumentParser(description=_cli.__doc__)
+    ap.add_argument("--scratch", type=Path, required=True, help="staging dir (data disk)")
+    ap.add_argument("--chunks", type=int, default=2, help="number of shard00 chunks")
+    ap.add_argument("--k", type=int, default=64, choices=sorted(TRAINER_SUBDIR))
+    ap.add_argument("--layer", type=int, default=19)
+    ap.add_argument("--field", default="cx_last", choices=("cx_last", "v_x"))
+    ap.add_argument("--legacy", action="store_true", help="ALSO print the pre-r3 (unfiltered) read")
+    args = ap.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+
+    parts = []
+    for i in range(args.chunks):
+        p = hf_hub_download(
+            _DATA_REPO,
+            filename=f"{_CAPTURE_PREFIX}/shard00_chunk{i:04d}.pt",
+            repo_type="dataset",
+            local_dir=str(args.scratch),
+        )
+        b = torch.load(p, map_location="cpu", weights_only=True)
+        col = list(b["layers"]).index(args.layer)
+        parts.append(b[args.field][:, col, :].to(torch.float32))
+    x = torch.cat(parts)
+    sae = BatchTopKSAE.load(k=args.k, device="cpu", cache_dir=args.scratch / "sae")
+    fve, l0, diag = sae.fve_l0(x)
+    print(
+        f"[sae-local] {args.field}@L{args.layer} k={args.k} fve={fve:.4f} l0={l0:.2f} "
+        f"diag={diag} published_fve={PUBLISHED_FVE[args.k]}"
+    )
+    if args.legacy:
+        xhat = sae.decode(sae.encode(x))
+        mu = x.mean(0)
+        fve_legacy = 1.0 - float(((x - xhat) ** 2).sum()) / float(((x - mu) ** 2).sum())
+        l0_legacy = float((sae.encode(x) > 0).sum()) / x.shape[0]
+        print(
+            f"[sae-local] LEGACY (pre-r3, unfiltered/uncentered) "
+            f"fve={fve_legacy:.4f} l0={l0_legacy:.2f}"
+        )
+
+
+if __name__ == "__main__":
+    _cli()

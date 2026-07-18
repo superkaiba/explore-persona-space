@@ -745,6 +745,45 @@ def _batched_capture(model, tok, batch_rows, layers, device):
     return out
 
 
+def _row_features(sae, h: torch.Tensor, context_end: int):
+    """Per-row SAE feature extraction under the reference token-pool semantics
+    (issue1482_sae docstring "TOKEN-POOL"): the first BOS_OFFSET positions and
+    >10x-median-norm token rows are excluded from POOLED reads (answer trio +
+    psi_mean) — the SAE's training and published eval both exclude them, and
+    their features are off-distribution garbage (~42k active features on a
+    massive-norm row). psi_last stays position-pinned at ``context_end`` (the
+    map's own final-context-token read — independent of masking; unchanged vs
+    r2, where it was ``f_ctx[-1]``). Returns
+    ``(sp, spm, spl, ctx_n_out, ans_n_out, ans_all_out)``; falls back to the
+    unmasked answer pool (flagged via ``ans_all_out``) when the mask would
+    empty it; raises on an emptied context pool (a real context always spans
+    the > BOS_OFFSET chat-template header)."""
+    import issue1482_sae as S
+
+    keep = S.token_inlier_mask(h)
+    keep[: min(S.BOS_OFFSET, keep.shape[0])] = False
+    ctx_keep = keep[: context_end + 1]
+    ans_keep = keep[context_end + 1 :]
+    ctx_n_out = int((~ctx_keep).sum())
+    ans_n_out = int((~ans_keep).sum())
+    if int(ctx_keep.sum()) == 0:
+        raise ValueError(
+            f"_row_features: context pool empty after reference masking "
+            f"(context_end={context_end}, ctx_n_out={ctx_n_out})"
+        )
+    f_ctx = sae.encode(h[: context_end + 1][ctx_keep])
+    h_ans = h[context_end + 1 :]
+    ans_all_out = int(h_ans.shape[0] > 0 and int(ans_keep.sum()) == 0)
+    f_ans = sae.encode(h_ans if ans_all_out else h_ans[ans_keep])
+    trio = S.pool_answer_features(f_ans)
+    sp = S.sparsify(trio)
+    psi_mean = f_ctx.mean(0)
+    psi_last = sae.encode(h[context_end : context_end + 1])[0]
+    spm = S.sparsify({"mean": psi_mean})
+    spl = S.sparsify({"last": psi_last})
+    return sp, spm, spl, ctx_n_out, ans_n_out, ans_all_out
+
+
 def gate_b_verdict(fve64: float, fve128: float) -> tuple[str, int]:
     """Pure Gate B lattice (plan §7): >=0.70 PASS k64; [0.55,0.70) WARN (escalate to
     k128 if IT clears 0.70, else k64 + caveat); <0.55 HALT. Unit-probed."""
@@ -776,17 +815,28 @@ def _pilot(args, model, tok, sae_loader, pilot_rows, X) -> dict:
         tot_tokens += sum(len(r[2]) for r in batch)
     tps = tot_tokens / max(1e-9, time.time() - t0)
 
-    fitness: dict = {"tokens_per_s": round(tps, 1), "n_pilot": len(pilot_rows), "layers": {}}
+    fitness: dict = {
+        "tokens_per_s": round(tps, 1),
+        "n_pilot": len(pilot_rows),
+        # r3 reference-parity eval semantics (issue1482_sae docstring "TOKEN-POOL"):
+        # published FVE 0.806/0.842 is measured under remove_bos (BOS strip +
+        # >10x-median outlier drop + var-based FVE); Gate B calibrates against it.
+        "bos_offset": S.BOS_OFFSET,
+        "outlier_norm_factor": S.OUTLIER_NORM_FACTOR,
+        "layers": {},
+    }
     for li in PILOT_LAYERS:
         fitness["layers"][str(li)] = {}
     for kname, kval in (("k64", 64), ("k128", 128)):
         sae = sae_loader(kval)  # SEQUENTIAL: one SAE resident at a time (VM RSS bound)
         for li in PILOT_LAYERS:
-            h_all = torch.cat([c[li] for c in caps])
-            fve, l0 = sae.fve_l0(h_all)
+            # reference remove_bos: drop the first BOS_OFFSET positions per sequence
+            h_all = torch.cat([c[li][S.BOS_OFFSET :] for c in caps])
+            fve, l0, diag = sae.fve_l0(h_all)
             fitness["layers"][str(li)][kname] = {
                 "fve": round(float(fve), 4),
                 "l0": round(float(l0), 2),
+                **diag,
             }
         del sae
     # prefix-end constancy (A4): identical prefix tokens => near-identical states
@@ -887,6 +937,9 @@ def phase_p2_worker(args) -> None:
                 "psil_idx",
                 "psil_val",
                 "h_prefix",
+                "ctx_n_out",
+                "ans_n_out",
+                "ans_all_out",
             )
         }
         for s in range(0, len(rows), args.gen_batch):
@@ -896,14 +949,12 @@ def phase_p2_worker(args) -> None:
                 batch, caps, strict=True
             ):
                 h = cap[LAYER]
-                f_ctx = sae.encode(h[: context_end + 1])
-                f_ans = sae.encode(h[context_end + 1 :])
-                trio = S.pool_answer_features(f_ans)
-                sp = S.sparsify(trio)
-                psi_mean = f_ctx.mean(0)
-                psi_last = f_ctx[-1]
-                spm = S.sparsify({"mean": psi_mean})
-                spl = S.sparsify({"last": psi_last})
+                # r3: reference token-pool masking (BOS strip + outlier drop) for
+                # POOLED reads; psi_last stays position-pinned at context_end.
+                sp, spm, spl, ctx_n_out, ans_n_out, ans_all_out = _row_features(sae, h, context_end)
+                rec["ctx_n_out"].append(ctx_n_out)
+                rec["ans_n_out"].append(ans_n_out)
+                rec["ans_all_out"].append(ans_all_out)
                 rec["row_idx"].append(row_idx)
                 rec["ci"].append(ci)
                 rec["set_tag"].append({"holdout": 0, "sae_fit": 1, "sae_val": 2}[set_tag[row_idx]])
@@ -959,17 +1010,21 @@ def phase_p2_worker(args) -> None:
             "h_prefix": np.stack(rec["h_prefix"])
             if rec["h_prefix"]
             else np.empty((0, 3584), np.float16),
+            "ctx_n_out": np.asarray(rec["ctx_n_out"], np.int16),
+            "ans_n_out": np.asarray(rec["ans_n_out"], np.int16),
+            "ans_all_out": np.asarray(rec["ans_all_out"], np.int8),
         }
         tmp = shard_path.parent / f".tmp_{shard_path.name}"
         np.savez(tmp, **{k2: v for k2, v in arrays.items() if k2 != "chunk"})
         os.replace(tmp, shard_path)
         n_done += len(rec["row_idx"])
         logger.info(
-            "[p2-worker %d] shard %s: %d ctx (total %d)",
+            "[p2-worker %d] shard %s: %d ctx (total %d; ans_all_out=%d)",
             args.worker,
             shard_path.name,
             len(rec["row_idx"]),
             n_done,
+            int(sum(rec["ans_all_out"])),
         )
     # per-worker G2 spot check on the FIRST processed shard rows (vs stored cx_last)
     logger.info("[p2-worker %d] done (%d contexts)", args.worker, n_done)
