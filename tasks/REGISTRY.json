@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1491,
+  "highest_id": 1492,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3832,6 +3832,13 @@
       "path": "tasks/plan_pending/1491",
       "status": "plan_pending",
       "title": "Does the context\u2192answer map get more predictable with model scale? (Qwen-2.5-Instruct 0.5B\u219232B)"
+    },
+    "1492": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1492",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md bullet \u2014 SAE reference-eval token-pool semantics (remove_bos + outlier filter)"
     },
     "15": {
       "has_clean_result": false,
