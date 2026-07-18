@@ -24,9 +24,9 @@ relates_to:
 
 ## Takeaways
 
-- The mediation signature replicates on a non-Qwen lineage: per-question CoT gain +0.33 (95% CI +0.27 to +0.39) on DeepSeek-R1-Distill-Llama-8B, matching R1-Qwen's +0.33; OpenThinker2 read +0.20.
+- The mediation signature replicates on a non-Qwen lineage: per-question CoT gain +0.33 (95% CI +0.27 to +0.39) on DeepSeek-R1-Distill-Llama-8B, equal to R1-Qwen's +0.33; OpenThinker2 read +0.20.
 - The length-matched in-context-learning+WildChat gain excess replicates at +0.45 per-question (CI +0.38 to +0.51), between the prior lineages' like-for-like +0.43 and +0.52 — not Qwen-specific.
-- Neither falsification branch fires: the worst family's usable rate is 0.958 at the 8,192 cap and 0.994 after the forced 16,384 re-generation, clearing both coverage bars.
+- Neither falsification branch fires: the worst family's usable rate is 0.958 at the 8,192 cap and 0.994 after the forced 16,384 re-generation; both coverage bars clear.
 - The tercile profile is non-falling (+0.15 / +0.19 / +0.17, mutually overlapping CIs), its points nearly coincident with the R1-Qwen parent's and unlike OpenThinker2's falling profile; the rank correlation +0.35 (p = 0.052, n = 32) is formally unresolved.
 - The matched-length demotion replicates under both input conventions (−0.036 full-context, −0.077 query-excluded prefix); context adds −0.019 beyond the realized CoT; composition matches direct within 0.007.
 - The width-512 MLP control underfits outright (direct-map skill −4.9 vs linear +0.56): nonlinearity stays unadjudicated on this model — the broken control neither confirms nor challenges the linear-decoder reads.
@@ -83,7 +83,7 @@ Per-family usable-row rates under the exact parser at the 8,192 production cap a
 
 > **Figure.** *Compliance clears both bars at both budgets.* Bars: this run at 8,192 (blue) and post-16,384 (red); markers: the R1-Qwen lineage. Dotted line = the 0.95 bar on the production corpus; dashed = the 0.94 conditioning bar on the post-16,384 corpus.
 
-All 7 families sit at or above 0.958 already at 8,192 (2,359 of 2,400 rows usable; of the 40 cap-hit rows, 39 dropped as truncated and 1 parsed usable, plus 2 degenerate repetitions dropped), making this the first lineage whose coverage statistic is positive at the production cap (+0.008). The forced re-generation recovers 32 of the 40 cap-hit rows, lifting the worst family to 0.994 and the conditioning statistic to +0.054. The coverage-collapse branch is excluded outright; the family-excess read below carries no coverage caveat.
+All 7 families sit at or above 0.958 already at 8,192 (2,359 of 2,400 rows usable; of the 40 cap-hit rows, 39 dropped as truncated and 1 parsed usable, plus 2 degenerate repetitions dropped). This is the first lineage whose coverage statistic is positive at the production cap (+0.008). The forced re-generation recovers 32 of the 40 cap-hit rows; the worst family rises to 0.994, and the same statistic recomputed on the 16,384-updated corpus — the value the verdict scheme conditions on — reaches +0.054. The coverage-collapse branch is excluded; the family-excess read below carries no coverage caveat.
 
 ### The mediation signature replicates a third time: the realized CoT adds a third of a skill unit that context cannot supply
 
@@ -95,7 +95,7 @@ Held-out skill of the four per-question mediation arms at frozen layer 24 (boots
 
 The CoT-conditioning gain is +0.327 per-question (CI +0.266 to +0.392; 0 of 2,000 draws at or below zero) and +0.204 query-averaged (CI +0.123 to +0.306) — the per-question value lands on the R1-Qwen lineage's +0.330. Context adds −0.019 on top of the realized CoT (CI −0.027 to −0.012) and composing through a predicted CoT matches the direct map to −0.007.
 
-The gain is positive in all 50 contexts (minimum +0.078); every arm clears its null band by at least 0.2 skill units; the secondary layer conventions agree in sign; the 16,384-appended re-fit moves the gain by +0.002. Greedy decoding makes each cell one deterministic rollout — n = 1 decode, no sampling-variance estimate, in-distribution probes — the lineage convention capping this run's confidence.
+The gain is positive in all 50 contexts (minimum +0.078); every arm clears its null band by at least 0.2 skill units; the secondary layer conventions agree in sign; the 16,384-appended re-fit moves the gain by +0.002. Greedy decoding makes each cell one deterministic rollout — n = 1 decode, no sampling-variance estimate, in-distribution probes — the lineage convention that caps this run's confidence.
 
 ### The family gain excess survives length matching — the family property generalizes across base families
 
@@ -105,7 +105,7 @@ The length-matched family contrast (mean per-context CoT gain over the 18 in-con
 
 > **Figure.** *The per-question excess is positive in all three lineages (intervals exclude zero); OpenThinker2's query-averaged interval straddles it.* Red = this run; gray = the like-for-like baselines recomputed from each lineage's committed per-context deltas (parity-gated against the committed +0.426 / +0.520 values).
 
-The excess is +0.449 per-question (CI +0.384 to +0.511; 0 of 2,000 draws at or below zero), between the R1-Qwen +0.426 and OpenThinker2 +0.520, and +0.182 query-averaged (CI +0.031 to +0.357). The 16,384-appended sensitivity read is +0.441 per-question — same branch.
+Length-matched, the excess reads +0.449 per-question (CI +0.384 to +0.511; 0 of 2,000 draws at or below zero), between the R1-Qwen +0.426 and OpenThinker2 +0.520, and +0.182 query-averaged (CI +0.031 to +0.357). The 16,384-appended sensitivity read is +0.441 per-question — same branch.
 
 Donor matching is without replacement (mean pair length gap 226 characters), so the contrast is not driven by donor reuse. With the conditioning statistic positive, the family-property branch lands: the Qwen-specific-excess falsification branch is excluded.
 
@@ -117,7 +117,7 @@ Per-context CoT gain against median well-formed CoT length for all 50 contexts, 
 
 > **Figure.** *The family split is visible per context.* Red = the 18 in-context-learning+WildChat contexts, blue = the 32 donors, pair lines connect matched-length partners; green diamonds mark tercile means. Panel titles carry the fit-regime keys.
 
-This is the per-unit view behind the two aggregates above. The highlighted family sits above its matched-length donors across the whole length range in the per-question half of the figure rather than clustering at one length — the excess is not carried by a few outlier contexts. The query-averaged half shows the same separation compressed toward zero, matching its wider, smaller contrast.
+This is the per-unit view behind the two aggregates above. The highlighted family sits above its matched-length donors across the whole length range in the per-question half of the figure — the excess is not carried by a few outlier contexts. The query-averaged half shows the same separation compressed toward zero, in line with its wider, smaller contrast.
 
 ### The tercile point profile is near-coincident with R1-Qwen's; the rank-correlation read is formally unresolved
 
@@ -127,7 +127,7 @@ Per-question CoT gain by median-CoT-length tercile within the 32 non-in-context-
 
 > **Figure.** *The tercile points coincide with R1-Qwen's, unlike OpenThinker2's falling profile.* Red = this run (11/11/10 contexts per tercile); gray squares = R1-Qwen (32 non-in-context-learning/WildChat contexts, like this run); orange diamonds = OpenThinker2, computed over its 36 unflagged contexts — denominators differ slightly.
 
-Terciles read +0.149, +0.187, +0.171 (shortest to longest), with mutually overlapping bootstrap CIs — non-falling rather than cleanly rising — and nearly coincident with the R1-Qwen lineage's +0.147, +0.198, +0.194, unlike OpenThinker2's falling +0.245, +0.066, +0.044. The per-context gain-vs-length rank correlation is +0.347 (p = 0.052, n = 32), just missing the positive bar the verdict scheme requires, so the read is formally unresolved; the 16,384-appended re-read lands at +0.354 (p = 0.047), on the other side of the boundary.
+Terciles read +0.149, +0.187, +0.171 (shortest to longest), with mutually overlapping bootstrap CIs (the profile does not fall; nor does it cleanly rise) and nearly coincident with the R1-Qwen lineage's +0.147, +0.198, +0.194, unlike OpenThinker2's falling +0.245, +0.066, +0.044. The per-context gain-vs-length rank correlation is +0.347 (p = 0.052, n = 32); it just misses the positive bar the verdict scheme requires, so the read stays formally unresolved; the 16,384-appended re-read lands at +0.354 (p = 0.047), on the other side of the boundary.
 
 The falling branch (interval wholly negative) is firmly excluded either way. Query-averaged, the correlation is −0.157 (p = 0.39): the profile claim is a per-question-regime read in all three lineages.
 
@@ -139,7 +139,7 @@ The matched-budget contrast — CoT-conclusion slice minus answer-opening slice 
 
 > **Figure.** *The answer's own opening beats the matched CoT slice in every read.* Red = this run (whiskers = bootstrap 95% CIs); gray squares = R1-Qwen lineage.
 
-The demotion is −0.036 per-question with the full context (CI −0.046 to −0.029; R1-Qwen −0.048, OpenThinker2 −0.052) and −0.077 with the query-excluded prefix (CI −0.089 to −0.067; R1-Qwen −0.107), with query-averaged reads −0.032 and −0.033. The full CoT recovers +0.007 over its own slice, matching the parent. As in both parents, the answer-opening control is same-pass and token-adjacent to its target, so this is conservative evidence against a privileged CoT position, not proof of none.
+With the full context the demotion reads −0.036 per-question (CI −0.046 to −0.029; R1-Qwen −0.048, OpenThinker2 −0.052) and −0.077 with the query-excluded prefix (CI −0.089 to −0.067; R1-Qwen −0.107), with query-averaged reads −0.032 and −0.033. The full CoT recovers +0.007 over its own slice, as in the parent. As in both parents, the answer-opening control is same-pass and token-adjacent to its target, so this is conservative evidence against a privileged CoT position, not proof of none.
 
 ### The width-512 MLP control underfits outright and cannot adjudicate nonlinearity
 
@@ -151,7 +151,7 @@ Held-out skill of the four per-question answer-predicting arms — linear and ML
 
 Both parents' MLP controls ran modestly below their linear fits and were read as closing none of the gap. Here the failure is qualitative: the MLP direct fit scores −4.91 at the frozen layer (−1.46 even at its own best layer), far below the predict-the-mean floor of zero, while the MLP-augmented arm trails the linear one (0.673 vs 0.890).
 
-The control's own validity gate (MLP within 0.05 of linear) fails, so its decision rule labels the closure read inconclusive: the broken instrument cannot adjudicate whether a better-tuned nonlinear decoder would close the CoT gain on this model's 4,096-dim summaries, and the linear reads stand unchallenged rather than affirmed.
+The control's own validity gate (MLP within 0.05 of linear) fails, so its decision rule labels the closure read inconclusive: the broken instrument cannot adjudicate whether a better-tuned nonlinear decoder would close the CoT gain on this model's 4,096-dim summaries, and the linear reads stand unchallenged — though also unaffirmed.
 
 ---
 
