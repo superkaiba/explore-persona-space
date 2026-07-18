@@ -1,128 +1,128 @@
 {
-  "commit": "3fdf8222e5",
-  "created": "2026-07-18T11:10:42Z",
+  "commit": "277d485cdd",
+  "created": "2026-07-18T11:54:58Z",
   "figsize": [
     7.8,
     4.8
   ],
   "points": [
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.1491798228966169,
       "error": 0.0465590121113057,
-      "series": "R1-Llama-8B (this run)",
+      "series": "R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.18664040374328583,
       "error": 0.05056861224260675,
-      "series": "R1-Llama-8B (this run)",
+      "series": "R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.17122632995694487,
       "error": 0.028686189080935037,
-      "series": "R1-Llama-8B (this run)",
+      "series": "R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.1491798228966169,
       "_kind": "line",
       "_group": 1
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.18664040374328583,
       "_kind": "line",
       "_group": 1
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.17122632995694487,
       "_kind": "line",
       "_group": 1
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.11265370574824096,
       "_kind": "line",
       "_group": 2
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.14508982610250712,
       "_kind": "line",
       "_group": 2
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.14347573012807052,
       "_kind": "line",
       "_group": 2
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.20577172997085236,
       "_kind": "line",
       "_group": 3
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.24622705058772063,
       "_kind": "line",
       "_group": 3
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.2008481082899406,
       "_kind": "line",
       "_group": 3
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.147,
-      "series": "R1-Qwen-7B",
+      "series": "R1-Qwen-7B (32 non-ICL/WildChat contexts)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.198,
-      "series": "R1-Qwen-7B",
+      "series": "R1-Qwen-7B (32 non-ICL/WildChat contexts)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.194,
-      "series": "R1-Qwen-7B",
+      "series": "R1-Qwen-7B (32 non-ICL/WildChat contexts)",
       "_kind": "line",
       "_group": 4
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 0.0,
+      "median well-formed CoT length tercile": 0.0,
       "per-context CoT gain (\u0394 skill)": 0.245,
-      "series": "OpenThinker2-7B",
+      "series": "OpenThinker2-7B (its 36 unflagged contexts)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 1.0,
+      "median well-formed CoT length tercile": 1.0,
       "per-context CoT gain (\u0394 skill)": 0.066,
-      "series": "OpenThinker2-7B",
+      "series": "OpenThinker2-7B (its 36 unflagged contexts)",
       "_kind": "line",
       "_group": 5
     },
     {
-      "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)": 2.0,
+      "median well-formed CoT length tercile": 2.0,
       "per-context CoT gain (\u0394 skill)": 0.044,
-      "series": "OpenThinker2-7B",
+      "series": "OpenThinker2-7B (its 36 unflagged contexts)",
       "_kind": "line",
       "_group": 5
     }
@@ -135,12 +135,12 @@
     "axes": [
       {
         "title_left": "CoT-length tercile profile across the three lineages",
-        "xlabel": "median well-formed CoT length tercile (32 non-ICL/WildChat contexts)",
+        "xlabel": "median well-formed CoT length tercile",
         "ylabel": "per-context CoT gain (\u0394 skill)",
         "legend_labels": [
-          "R1-Qwen-7B",
-          "OpenThinker2-7B",
-          "R1-Llama-8B (this run)"
+          "R1-Qwen-7B (32 non-ICL/WildChat contexts)",
+          "OpenThinker2-7B (its 36 unflagged contexts)",
+          "R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)"
         ],
         "annotations": [
           "+0.149",
@@ -168,9 +168,9 @@
       }
     ],
     "series": [
-      "R1-Qwen-7B",
-      "OpenThinker2-7B",
-      "R1-Llama-8B (this run)"
+      "R1-Qwen-7B (32 non-ICL/WildChat contexts)",
+      "OpenThinker2-7B (its 36 unflagged contexts)",
+      "R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)"
     ]
   }
 }

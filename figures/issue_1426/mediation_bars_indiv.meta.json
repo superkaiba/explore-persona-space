@@ -1,0 +1,56 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:59Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "direct (ctx\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5627626655154394,
+      "_kind": "bar"
+    },
+    {
+      "category": "stage 2 oracle (cot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.9092517693350529,
+      "_kind": "bar"
+    },
+    {
+      "category": "composed (ctx\u2192\u0109ot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5560693185339367,
+      "_kind": "bar"
+    },
+    {
+      "category": "augmented ([ctx,cot]\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.8899579527674999,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mediation reads \u2014 indiv @ frozen D-best layer L24\n\u0394(G\u2212D) +0.327 [+0.266, +0.392]; \u0394(A\u2218B\u2212D) -0.007 [-0.011, -0.002]; \u0394(G\u2212B) -0.019 [-0.027, -0.012]",
+        "ylabel": "held-out skill-over-mean R\u00b2",
+        "xticklabels": [
+          "direct (ctx\u2192ans)",
+          "stage 2 oracle (cot\u2192ans)",
+          "composed (ctx\u2192\u0109ot\u2192ans)",
+          "augmented ([ctx,cot]\u2192ans)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

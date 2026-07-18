@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 MAIN_ROOT = Path("/home/thomasjiralerspong/explore-persona-space")
 
-import matplotlib
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -73,8 +73,8 @@ def main() -> int:
     h4 = pcd["h4_sufficiency_percontext"]["by_regime"]["indiv"]["per_context"]
     sk_d = np.array([r["skill_d_ctx2ans"] for r in h2])
     sk_g = np.array([r["skill_g_aug"] for r in h2])
-    comp_key = [k for k in h3[0] if k.startswith("skill_") and "ctx2ans" not in k][0]
-    b_key = [k for k in h4[0] if k.startswith("skill_") and "g_aug" not in k][0]
+    comp_key = next(k for k in h3[0] if k.startswith("skill_") and "ctx2ans" not in k)
+    b_key = next(k for k in h4[0] if k.startswith("skill_") and "g_aug" not in k)
     sk_comp = np.array([r[comp_key] for r in h3])
     sk_b = np.array([r[b_key] for r in h4])
 
@@ -96,7 +96,7 @@ def main() -> int:
         ("composed\n(ctx→ĈoT→ans)", sk_comp, pal[2]),
         ("context+CoT\n→ answer", sk_g, pal[3]),
     ]
-    for i, (label, vals, color) in enumerate(arms):
+    for i, (_label, vals, color) in enumerate(arms):
         lo, hi = boot_ci(vals, rng)
         m = float(vals.mean())
         ax.bar(i, m, color=color, width=0.62)
@@ -139,7 +139,7 @@ def main() -> int:
         ("R1-Qwen-7B\n(prior lineage)", {"observed": 0.3302, "ci95": [0.2724, 0.3929]}),
         ("OpenThinker2-7B\n(prior lineage)", {"observed": 0.2033, "ci95": [0.1464, 0.2717]}),
     ]
-    for i, (label, s) in enumerate(tri):
+    for i, (_label, s) in enumerate(tri):
         y = len(tri) - 1 - i
         ax2.errorbar(
             s["observed"],
@@ -182,7 +182,7 @@ def main() -> int:
             rows.append(
                 (f"{labels3[model]} — {regname}", b["observed"], b["ci95"], model == "this")
             )
-    for i, (label, obs, ci, is_this) in enumerate(rows):
+    for i, (_label, obs, ci, is_this) in enumerate(rows):
         y = len(rows) - 1 - i
         ax.errorbar(
             obs,
@@ -224,14 +224,28 @@ def main() -> int:
         color=pal[3],
         capsize=4,
         markersize=8,
-        label="R1-Llama-8B (this run)",
+        label="R1-Llama-8B (this run, 32 non-ICL/WildChat contexts)",
     )
-    ax.plot(xs, [0.147, 0.198, 0.194], "s--", color="0.45", markersize=7, label="R1-Qwen-7B")
-    ax.plot(xs, [0.245, 0.066, 0.044], "d--", color=pal[1], markersize=7, label="OpenThinker2-7B")
-    for x, y in zip(xs, this_obs):
+    ax.plot(
+        xs,
+        [0.147, 0.198, 0.194],
+        "s--",
+        color="0.45",
+        markersize=7,
+        label="R1-Qwen-7B (32 non-ICL/WildChat contexts)",
+    )
+    ax.plot(
+        xs,
+        [0.245, 0.066, 0.044],
+        "d--",
+        color=pal[1],
+        markersize=7,
+        label="OpenThinker2-7B (its 36 unflagged contexts)",
+    )
+    for x, y in zip(xs, this_obs, strict=True):
         ax.text(x + 0.06, y - 0.014, f"{y:+.3f}", ha="left", va="top", fontsize=10)
     ax.set_xticks(xs, ["shortest third", "middle third", "longest third"])
-    ax.set_xlabel("median well-formed CoT length tercile (32 non-ICL/WildChat contexts)")
+    ax.set_xlabel("median well-formed CoT length tercile")
     ax.set_ylabel("per-context CoT gain (Δ skill)")
     ax.legend(frameon=False, fontsize=10)
     ax.set_title("CoT-length tercile profile across the three lineages", fontsize=13, pad=10)
@@ -252,7 +266,7 @@ def main() -> int:
     ax.bar(x + w / 2, r16, w, color=pal[3], label="this run, post-16,384 regen")
     ax.plot(x - w / 2, p8, "D", color="0.25", markersize=6, label="R1-Qwen-7B, 8,192")
     ax.plot(x + w / 2, p16, "s", color="0.25", markersize=6, label="R1-Qwen-7B, post-16,384")
-    for xi, (a, b) in enumerate(zip(r8, r16)):
+    for xi, (a, b) in enumerate(zip(r8, r16, strict=True)):
         ax.text(xi - w / 2, a + 0.004, f"{a:.3f}", ha="center", fontsize=8, rotation=90)
         ax.text(xi + w / 2, b + 0.004, f"{b:.3f}", ha="center", fontsize=8, rotation=90)
     ax.axhline(0.95, ls=":", color="0.4")
@@ -290,9 +304,9 @@ def main() -> int:
 
     def r1(blob, reg):
         st = blob["by_regime"][reg]["statistics"]
-        k = [kk for kk in st if kk.startswith("read1")][0]
+        k = next(kk for kk in st if kk.startswith("read1"))
         v = st[k]
-        return [vv for vv in v.values() if isinstance(vv, dict) and "observed" in vv][0]
+        return next(vv for vv in v.values() if isinstance(vv, dict) and "observed" in vv)
 
     rows = [
         ("full context — per-question", r1(mlc, "indiv"), (-0.0480, -0.0558, -0.0411)),
@@ -301,7 +315,7 @@ def main() -> int:
         ("query-excluded prefix — query-averaged", r1(pma, "avg_q"), (-0.0474, -0.0745, -0.0247)),
     ]
     fig, ax = plt.subplots(figsize=(8.8, 4.4))
-    for i, (label, s, ref) in enumerate(rows):
+    for i, (_label, s, ref) in enumerate(rows):
         y = len(rows) - 1 - i
         obs, ci = s["observed"], s["ci95"]
         ax.errorbar(

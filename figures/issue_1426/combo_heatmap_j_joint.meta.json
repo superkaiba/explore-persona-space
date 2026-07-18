@@ -1,0 +1,72 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:56Z",
+  "figsize": [
+    9.5,
+    2.1
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "joint (ctx\u2192[cot,ans]) \u2014 LOCO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "max/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "title_left": "joint (ctx\u2192[cot,ans]) \u2014 LOFO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "max/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u2212200",
+          "\u2212150",
+          "\u2212100",
+          "\u221250",
+          "0",
+          "50"
+        ]
+      }
+    ]
+  }
+}

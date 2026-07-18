@@ -1,0 +1,87 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:54Z",
+  "figsize": [
+    9.5,
+    5.1
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "stage 2 oracle (cot\u2192ans) \u2014 LOCO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "boundary/max",
+          "boundary/mean",
+          "max/boundary",
+          "max/max",
+          "max/mean",
+          "mean/boundary",
+          "mean/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "title_left": "stage 2 oracle (cot\u2192ans) \u2014 LOFO",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24",
+          "28"
+        ],
+        "yticklabels": [
+          "boundary/boundary",
+          "max/max",
+          "mean/mean"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.75",
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      }
+    ]
+  }
+}
