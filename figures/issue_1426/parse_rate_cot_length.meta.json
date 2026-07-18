@@ -1,0 +1,484 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:43Z",
+  "figsize": [
+    9.5,
+    3.8
+  ],
+  "points": [
+    {
+      "x": 0.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.25,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.25,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 0.96875,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.25,
+      "well-formed parse rate": 0.96875,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 0.96875,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.25,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.9270833333333333,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.25,
+      "well-formed parse rate": 0.9270833333333333,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.25,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.9270833333333333,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.25,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 0.0,
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 70,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "parse rate per family",
+        "ylabel": "well-formed parse rate",
+        "xticklabels": [
+          "behavior",
+          "default",
+          "format",
+          "icl",
+          "persona",
+          "rephrase",
+          "wildchat"
+        ],
+        "yticklabels": [
+          "0.86",
+          "0.88",
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02"
+        ]
+      },
+      {
+        "title_left": "CoT length per family",
+        "ylabel": "CoT length (chars)",
+        "xticklabels": [
+          "behavior",
+          "default",
+          "format",
+          "icl",
+          "persona",
+          "rephrase",
+          "wildchat"
+        ],
+        "yticklabels": [
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ]
+  }
+}

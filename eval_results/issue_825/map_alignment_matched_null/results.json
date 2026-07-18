@@ -1,0 +1,291 @@
+{
+  "metadata": {
+    "git_commit": "427c6d6fd1b7264ffb9b916aa1a1c9189c988f8a",
+    "timestamp": "2026-07-18T00:46:12Z",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision_pinned": "deb7a4523b5233393e4fbd2497622527b3622d35",
+    "hf_revision_resolved": "deb7a4523b5233393e4fbd2497622527b3622d35",
+    "hf_prefix": "issue825_userbase_map/analysis_tensors",
+    "stems": [
+      "instruct_chat_s",
+      "pretrained_chat_s"
+    ],
+    "role": "assistant",
+    "headline_layer": 19,
+    "n_folds": 5,
+    "fit_seed": 0,
+    "lambdas": [
+      0.01,
+      0.03162277660168379,
+      0.1,
+      0.31622776601683794,
+      1.0,
+      3.1622776601683795,
+      10.0,
+      31.622776601683793,
+      100.0,
+      316.22776601683796,
+      1000.0,
+      3162.2776601683795,
+      10000.0
+    ],
+    "device": "cpu",
+    "n_common": 5000,
+    "n_conversations": 5000,
+    "n1_draws": 20,
+    "n2_draws": 20,
+    "ci_draws": 1000,
+    "n2_energy_keep": 0.9999,
+    "thread_caps": {
+      "OMP_NUM_THREADS": "8",
+      "MKL_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8"
+    },
+    "torch_version": "2.8.0+cu128",
+    "numpy_version": "2.2.6",
+    "script": "scripts/issue825_reparam_matched_null.py",
+    "ridge_core_source": "issue825_map_alignment.py (crossmodel -> fit_cells@56ee95fe8a)",
+    "smoke": false,
+    "wall_seconds": 2658.4
+  },
+  "wiring_gate": {
+    "within_instruct": {
+      "observed": 0.6730940896675954,
+      "committed": 0.6730940896675954,
+      "abs_delta": 0.0,
+      "pass": true
+    },
+    "within_base": {
+      "observed": 0.5876803039140208,
+      "committed": 0.5876803039140206,
+      "abs_delta": 2.220446049250313e-16,
+      "pass": true
+    },
+    "repswap_b2i": {
+      "observed": 0.586957191583785,
+      "committed": 0.5869571915837851,
+      "abs_delta": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "comp_samefn_b2i": {
+      "observed": 0.6727814645576686,
+      "committed": 0.6727814645576687,
+      "abs_delta": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "comp_samefn_i2b": {
+      "observed": 0.5888438808713612,
+      "committed": 0.5888438808713607,
+      "abs_delta": 4.440892098500626e-16,
+      "pass": true
+    },
+    "all_pass": true
+  },
+  "self_check": {
+    "n2_primal_vs_dual_max_abs": 7.283063041541027e-13
+  },
+  "observed_foldlocal": {
+    "within_instruct": 0.6730940896675954,
+    "within_base": 0.5876803039140208,
+    "repswap_b2i": 0.586957191583785,
+    "comp_samefn_b2i": 0.6727814645576686,
+    "comp_samefn_i2b": 0.5888438808713612
+  },
+  "observed_global": {
+    "within_instruct": 0.6734489624360014,
+    "within_base": 0.5881361399952163,
+    "comp_samefn_b2i": 0.6731366766963183,
+    "comp_samefn_i2b": 0.5892984305712228
+  },
+  "nulls": {
+    "N1_shuffled_correspondence": {
+      "b2i": {
+        "null_mean": -0.001954452859608424,
+        "null_std": 0.00040091249853054867,
+        "null_p975": -0.001426843730963251,
+        "null_max": -0.0014218952292541776,
+        "n_draws": 20,
+        "draws": [
+          -0.0015020871007478398,
+          -0.00181555275448253,
+          -0.002059868016500488,
+          -0.0018649668393966312,
+          -0.002881674310089233,
+          -0.0024319744853706915,
+          -0.002160335913496292,
+          -0.0015211112660848958,
+          -0.0014218952292541776,
+          -0.002003064308203628,
+          -0.0019282808923481998,
+          -0.0020497260903984404,
+          -0.0014323131275890688,
+          -0.0025986717486228272,
+          -0.0015749111131115878,
+          -0.0024522846880845606,
+          -0.0014356670454285236,
+          -0.001982407659107288,
+          -0.002042801716956255,
+          -0.0019294628868953279
+        ]
+      },
+      "i2b": {
+        "null_mean": -0.0022366716203952473,
+        "null_std": 0.0005314692371288535,
+        "null_p975": -0.0013044996666152335,
+        "null_max": -0.0011820834803188962,
+        "n_draws": 20,
+        "draws": [
+          -0.0014398017672585528,
+          -0.002551365103418357,
+          -0.0018895715053965922,
+          -0.002344604130584127,
+          -0.002329150235449884,
+          -0.0024932539821387323,
+          -0.0028264832431315057,
+          -0.0019163063604765718,
+          -0.0014658863933487698,
+          -0.0029417086134597703,
+          -0.0020038908105877162,
+          -0.0017762542045460794,
+          -0.001879658677105711,
+          -0.002907270768551573,
+          -0.0021121851127472446,
+          -0.0026506254558482656,
+          -0.0011820834803188962,
+          -0.0030286885015966547,
+          -0.002858869167489564,
+          -0.002135774894450382
+        ]
+      }
+    },
+    "N2_spectrum_matched_middle": {
+      "b2i": {
+        "null_mean": -0.252821023894677,
+        "null_std": 0.011651546197459823,
+        "null_p975": -0.23310610046343413,
+        "null_max": -0.22906551528066998,
+        "n_draws": 20,
+        "draws": [
+          -0.24368407677993176,
+          -0.24909068472588736,
+          -0.24606198160877302,
+          -0.2538688701105798,
+          -0.24726370122541508,
+          -0.2375720104022787,
+          -0.2644277268538413,
+          -0.24131720572862836,
+          -0.25143403798595343,
+          -0.272965687762629,
+          -0.2582839326865429,
+          -0.269047627122877,
+          -0.24554102902737784,
+          -0.2415293502884841,
+          -0.22906551528066998,
+          -0.25274164175752367,
+          -0.2669099344816801,
+          -0.2518534010630811,
+          -0.2668110119336953,
+          -0.26695105106768846
+        ],
+        "rank_retained_per_fold": [
+          2771,
+          2768,
+          2766,
+          2763,
+          2771
+        ],
+        "frobenius_energy_retained_per_fold": [
+          0.9999004769491674,
+          0.9999002018175643,
+          0.999900220194672,
+          0.9999001727248031,
+          0.999900088536248
+        ]
+      },
+      "i2b": {
+        "null_mean": -0.4672410041513155,
+        "null_std": 0.008792627594807376,
+        "null_p975": -0.4504085435967741,
+        "null_max": -0.44560996344594295,
+        "n_draws": 20,
+        "draws": [
+          -0.47189967708716307,
+          -0.4691183694920644,
+          -0.46902584873254893,
+          -0.46656979960428346,
+          -0.46826976812815646,
+          -0.48215065576162464,
+          -0.476573750087697,
+          -0.47462115357319234,
+          -0.45571223744769274,
+          -0.46428821560198075,
+          -0.47221874666899866,
+          -0.4574912745281705,
+          -0.4589654971662376,
+          -0.4693615074429298,
+          -0.44560996344594295,
+          -0.4758767664422485,
+          -0.45733148004494484,
+          -0.46326083648627914,
+          -0.47992842131301594,
+          -0.46654611397113843
+        ],
+        "rank_retained_per_fold": [
+          2816,
+          2969,
+          2965,
+          2962,
+          2819
+        ],
+        "frobenius_energy_retained_per_fold": [
+          0.9999002509809114,
+          0.9999004438262443,
+          0.9999005626401418,
+          0.9999000335254687,
+          0.9999005466794649
+        ]
+      }
+    }
+  },
+  "equality_ci": {
+    "b2i": {
+      "observed_delta_global": -0.0003122857396836709,
+      "observed_comp_r2_global": 0.673136676696318,
+      "observed_ceiling_r2_global": 0.6734489624360017,
+      "boot_delta_mean": -0.00028115792355346946,
+      "boot_delta_ci95": [
+        -0.0024125707029373556,
+        0.0019300110872141176
+      ],
+      "boot_delta_ci90": [
+        -0.00207042229774263,
+        0.0016321235763031236
+      ],
+      "n_boot": 1000,
+      "n_conversations": 5000
+    },
+    "i2b": {
+      "observed_delta_global": 0.001162290576006919,
+      "observed_comp_r2_global": 0.5892984305712228,
+      "observed_ceiling_r2_global": 0.5881361399952159,
+      "boot_delta_mean": 0.0011571723930645273,
+      "boot_delta_ci95": [
+        0.0003153791181230603,
+        0.0020765683181414225
+      ],
+      "boot_delta_ci90": [
+        0.00041386453053889884,
+        0.0019050469190779848
+      ],
+      "n_boot": 1000,
+      "n_conversations": 5000
+    }
+  },
+  "caveats": [
+    "Descriptive geometry on a SINGLE seed (fit seed 0); no mechanism claims.",
+    "S_assistant_chat pair (chat single-turn, assistant slot); 1 row/conversation, so conversation-grouped == row-level here.",
+    "Nulls use fold-local pooled R^2 (parent frozen_sweep convention) so the null distribution is directly comparable to the fold-local observed comp/ceiling. The equality CI uses GLOBAL pooled R^2 on each bootstrap resample (standard for a fixed held-out prediction set); observed_global is reported for that comparison.",
+    "N1 shuffles the cross-model ALIGNMENT correspondence (center operator real); N2 replaces the center operator with a spectrum-matched random operator (alignments real). Both keep the full fitting machinery (ridge class, GCV grid, folds, n, cached eigh(Gram)) identical -- MATCHED CAPACITY. This differs from #1345's reparam nulls, which perturb the CENTER (shuffle its train answers / sandwich the true center in random rotations) with alignments real; the two null families are complementary.",
+    "N2 retains >=99.99% of the center operator's Frobenius (squared-SV) energy in the top-r singular values (r + retained energy reported per fold); the near-zero SV tail is dropped for tractable per-draw QR of the random orthonormal factors."
+  ]
+}

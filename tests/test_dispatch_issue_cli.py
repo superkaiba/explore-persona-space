@@ -2401,6 +2401,170 @@ def test_finalize_confirm_artifacts_fail_skips_teardown_and_exits_nonzero(
     assert len(nibi.teardowns) == 0
 
 
+# ---------------------------------------------------------------------------
+# finalize action — keep-running teardown shield (#1485)
+# ---------------------------------------------------------------------------
+
+
+def test_finalize_keep_running_tag_skips_teardown_rc0_sidecar_kept(monkeypatch, tmp_path) -> None:
+    """DURABILITY PIN (#1485 acceptance criterion 5): a tagged task's
+    finalize SKIPS teardown with rc 0 + a typed machine-readable JSON
+    (``phase: teardown_skipped`` / ``reason: keep_running_tag_present``),
+    runs NO artifact gate, and KEEPS the sidecar (no ``.finalized`` rename
+    — the pod stays alive and the handle must survive for the eventual real
+    finalize). Incident 2026-07-17: a finalize retry destroyed the parallel
+    pod-1345-onpolicy mid-launch despite the tag. Stubs the LIBRARY reader
+    (task_workflow.keep_running_tag_state) so the real
+    ``_keep_running_tag_state_safe`` wrapper body executes."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 410, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        lambda issue: True,
+    )
+
+    import scripts.dispatch_issue as di
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "410",
+                "--handle-file",
+                str(tmp_path / "issue-410-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown_skipped"
+    assert body["reason"] == "keep_running_tag_present"
+    assert "remove-tag 410 keep-running" in body["detail"]
+    # No gate ran, nothing was destroyed.
+    assert len(nibi.confirms) == 0
+    assert len(nibi.teardowns) == 0
+    # Sidecar KEPT at its bare path — never renamed to .finalized.
+    assert (tmp_path / "issue-410-handle.json").exists()
+    assert not (tmp_path / "issue-410-handle.json.finalized").exists()
+
+
+def test_finalize_keep_running_unreadable_skips_teardown_rc3(monkeypatch, tmp_path) -> None:
+    """#1485 acceptance criterion 6 (fail-closed): an UNREADABLE tag state
+    (library reader returns None) skips teardown at rc 3 with
+    ``reason: keep_running_tag_unreadable`` — and the sidecar is NOT renamed
+    (the skip is re-runnable after the task read heals)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 411, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        lambda issue: None,
+    )
+
+    import scripts.dispatch_issue as di
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "411",
+                "--handle-file",
+                str(tmp_path / "issue-411-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["phase"] == "teardown_skipped"
+    assert body["reason"] == "keep_running_tag_unreadable"
+    assert len(nibi.confirms) == 0
+    assert len(nibi.teardowns) == 0
+    assert (tmp_path / "issue-411-handle.json").exists()
+    assert not (tmp_path / "issue-411-handle.json.finalized").exists()
+
+
+def test_finalize_skip_confirm_artifacts_does_not_bypass_keep_running(
+    monkeypatch, tmp_path
+) -> None:
+    """#1485 constraint: ``--skip-confirm-artifacts`` skips the ARTIFACT
+    gates, never the keep-running shield — the incident's finalize retry was
+    exactly an automated bypass path. Tag present + skip flag → still the
+    rc-0 teardown_skipped JSON, zero teardowns."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 412, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_keep_running_tag_state_safe", lambda _issue: True)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "412",
+                "--handle-file",
+                str(tmp_path / "issue-412-handle.json"),
+                "--skip-confirm-artifacts",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["phase"] == "teardown_skipped"
+    assert body["reason"] == "keep_running_tag_present"
+    assert len(nibi.teardowns) == 0
+    assert (tmp_path / "issue-412-handle.json").exists()
+
+
+def test_finalize_untagged_teardown_unchanged(monkeypatch, tmp_path) -> None:
+    """Control (#1485 acceptance criterion 7): an untagged task (reader
+    returns False) takes the pre-#1485 path byte-identically — confirm PASS
+    → teardown → rc 0 / phase teardown."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 413, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_keep_running_tag_state_safe", lambda _issue: False)
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "413",
+                "--handle-file",
+                str(tmp_path / "issue-413-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown"
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 1
+
+
 def test_finalize_no_declaration_with_agent_pass_degrades_to_teardown(
     monkeypatch, tmp_path
 ) -> None:
@@ -2903,6 +3067,13 @@ def test_failed_verifier_round_refuses_never_silent(monkeypatch, tmp_path) -> No
         },
     ]
     (task_dir / "events.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+    # #1485: this synthetic task dir has NO body.md, which under the new
+    # keep-running shield reads as StaleTaskPathError → fail-closed refusal
+    # BEFORE the currency gate under test. Pin the tag state to the untagged
+    # value so the test keeps exercising its subject (the REAL currency
+    # read path); the shield's own tri-state semantics are pinned in
+    # test_task_workflow.py::test_keep_running_tag_state_tristate.
+    monkeypatch.setattr(tw, "keep_running_tag_state", lambda _id: False)
 
     _seed_sidecar(tmp_path, 777, kind="runpod", with_declaration=False)
     runpod = _MockBackend(kind="runpod", confirm_passes=False)
@@ -2939,6 +3110,10 @@ def test_finalize_real_read_path_blocks_unresolved_crumb(monkeypatch, tmp_path) 
         },
     ]
     (task_dir / "events.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+    # #1485: the synthetic task dir carries no body.md (StaleTaskPathError →
+    # fail-closed refusal before the gate under test) — pin the untagged
+    # state; the shield's own semantics are pinned elsewhere.
+    monkeypatch.setattr(tw, "keep_running_tag_state", lambda _id: False)
 
     import scripts.dispatch_issue as di
 

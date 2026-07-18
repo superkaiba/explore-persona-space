@@ -55,10 +55,12 @@ def tokenizer():
 
 
 def test_registry_invariants():
-    assert len(r1335.RUNGS) == 11
+    # 11 ladder rungs + the 3 onpolicy-assistant-label cells (plan v7 §4.2).
+    assert len(r1335.RUNGS) == 14
     assert set(r1335.TF_RUNGS) == {"r2_tf", "s1_assistant_label", "s2a_familiar", "s2b_novel"}
     # base-prime flag identical (and absent — the v3 prefill recipe) across
-    # every fiction-render base cell incl. r4 (plan §4.2 pin).
+    # every fiction-render base cell incl. r4 (plan §4.2 pin) AND the r7_op_*
+    # label cells (plan v7: assert_base_prime_uniform extends over them).
     assert r1335.assert_base_prime_uniform() is False
     assert set(r1335.FICTION_RENDER_RUNGS) == {
         "r4_fictionframe",
@@ -67,6 +69,9 @@ def test_registry_invariants():
         "s1_assistant_label",
         "s2a_familiar",
         "s2b_novel",
+        "r7_op_assistant",
+        "r7_op_wren",
+        "r7_op_wren46",
     }
 
 
@@ -543,6 +548,40 @@ def _write_matched(out_dir: Path, cell_id: str, slug: str, value: float, rng) ->
     (out_dir / f"matched_{cell_id}.json").write_text(json.dumps(payload))
 
 
+def _write_endpoint_rollouts(data_dir: Path, model_kind: str) -> Path:
+    """Tiny r7_endpoint gen JSONL fixture (8 lines): 6 healthy Wren slots plus
+    two Vex lines, one of which is the slot-4 'I agree.' under-floor shape."""
+    rows = [
+        {
+            "scenario_id": "sc0",
+            "persona": "Wren",
+            "slot": s,
+            "completion": "A healthy line of dialogue.",
+            "n_completion_tokens": 10,
+        }
+        for s in range(6)
+    ] + [
+        {
+            "scenario_id": "sc0",
+            "persona": "Vex",
+            "slot": 4,
+            "completion": "I agree.",
+            "n_completion_tokens": 3,
+        },
+        {
+            "scenario_id": "sc0",
+            "persona": "Vex",
+            "slot": 5,
+            "completion": "A healthy closing line.",
+            "n_completion_tokens": 9,
+        },
+    ]
+    path = r1335.gen_path(data_dir, "r7_endpoint", model_kind)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return path
+
+
 def _write_cell(out_dir: Path, cell_id: str, slug: str, value: float, n: int) -> None:
     fp = r1335.fingerprint(slug)
     payload = {
@@ -957,9 +996,16 @@ def test_seed_compare_fixture(tmp_path):
             }
         )
     )
-    args = SimpleNamespace(out_dir=out, seed=0, reference_summary=ref_path)
+    data_dir = tmp_path / "data"
+    _write_endpoint_rollouts(data_dir, "base")
+    args = SimpleNamespace(out_dir=out, seed=0, reference_summary=ref_path, data_dir=data_dir)
     res = f1335.build_seed_comparison(args, ["base"], smoke=False)
     pm = res["per_model"]["base"]
+    # the collapse audit rides every seed-compare (the seed43-round read, wired in)
+    assert pm["collapse_audit"]["n_lines"] == 8
+    assert res["models_compared"] == ["base"]
+    assert "scope_note" in res  # base-only = declared subset scope
+    assert "reference_2" not in res  # no second reference requested
     assert pm["gap_G"]["value"] == pytest.approx(0.60 - 0.15, abs=1e-9)
     assert pm["framing"]["value"] == pytest.approx(0.10, abs=1e-9)
     # joint-draw CIs on this run's own deltas (the ladder pairing, not new stats)

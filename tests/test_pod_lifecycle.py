@@ -11,6 +11,7 @@ runs without network access.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import sys
 from pathlib import Path
@@ -354,8 +355,50 @@ def test_cmd_provision_refuses_existing_running_pod(isolated_state, stub_list_te
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle.cmd_provision(ns)
     assert exc.value.code == 1
-    out = capsys.readouterr().out
-    assert "already exists" in out
+    # #1518: the refusal is an error-path diagnostic — it rides stderr (the
+    # #1465 PodLifecycleProcessError tail surface), never stdout.
+    captured = capsys.readouterr()
+    assert "already exists" in captured.err
+    assert "already exists" not in captured.out
+
+
+def test_provision_refusal_stderr_classifies_created_nothing(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1518 fail-loud contract: the already-exists refusal rides stderr (the
+    #1465 ``PodLifecycleProcessError`` tail surface) and the REAL #1490
+    classifier reads the produced text as ``created-nothing`` — the production
+    route that turned #1481's self-explanatory refusal into an unexplained
+    ``exit status 1`` on the router failure marker."""
+    import backend_poll  # scripts/ already on sys.path (module header)
+
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-50", desired_status="RUNNING")]
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(50))
+    assert exc.value.code == 1
+
+    err = capsys.readouterr().err
+    # Both conjunctive fragments of backend_poll._PROVISION_REFUSAL_MARKERS
+    # must survive in the REAL produced stderr text (kill criterion 3: the
+    # message text is a classifier-matched surface — never reword it).
+    assert "already exists" in err
+    assert "Use `pod.py resume" in err
+    assert backend_poll._classify_provision_failure(err, 1) == "created-nothing"
+
+    # Composition hop: the router's failure-marker text is
+    # str(PodLifecycleProcessError(...)) carrying the stderr tail — both
+    # classifier fragments must survive that composition too.
+    marker_text = str(
+        PodLifecycleProcessError(1, ["pod_lifecycle.py", "provision"], output=None, stderr=err)
+    )
+    assert "already exists" in marker_text
+    assert "Use `pod.py resume" in marker_text
+    assert backend_poll._classify_provision_failure(marker_text, 1) == "created-nothing"
 
 
 def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_list_team_pods):
@@ -550,7 +593,7 @@ def test_cpu_provision_clamps_default_disk_to_instance_cap(
 
 
 def test_cpu_provision_refuses_explicit_disk_above_cap(
-    isolated_state, stub_list_team_pods, cpu_provision_stubs
+    isolated_state, stub_list_team_pods, cpu_provision_stubs, capsys
 ):
     """#1010: an EXPLICIT above-default-band request (> 50 GB effective) over
     the instance cap refuses pre-API with exit 1 (same UX as the 'Pod already
@@ -563,6 +606,10 @@ def test_cpu_provision_refuses_explicit_disk_above_cap(
         pod_lifecycle.cmd_provision(ns)
     assert exc.value.code == 1
     assert cpu_provision_stubs["cpu_calls"] == []  # pre-API: create never called
+    # #1518: the refusal diagnostic rides stderr (the #1465 tail surface).
+    captured = capsys.readouterr()
+    assert "exceeds the" in captured.err
+    assert "exceeds the" not in captured.out
 
 
 def test_cpu_provision_threaded_floor_50_clamps_not_refuses_when_cap_below_50(
@@ -1124,6 +1171,246 @@ def test_terminate_parser_exposes_skip_upload_verify_flag():
 
 
 # ---------------------------------------------------------------------------
+# cmd_terminate — keep-running teardown shield (#1485)
+# ---------------------------------------------------------------------------
+
+
+def _stub_keep_running_state(monkeypatch, state) -> None:
+    """Monkeypatch task_workflow.keep_running_tag_state (imported lazily
+    inside ``_guard_keep_running_before_terminate``) to a fixed tri-state
+    value — the seam is the LIBRARY reader, so the guard's own routing
+    (refuse / proceed / force / dry-run) runs for real."""
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        lambda issue: state,
+    )
+
+
+def test_terminate_bare_refuses_on_keep_running_tag(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """DURABILITY PIN (#1485 acceptance criterion 1): the bare (issue-wide)
+    terminate REFUSES via SystemExit when the owning task carries the
+    keep-running tag — zero terminate_pod calls — and the message names all
+    three remedies (remove-tag / --name-suffix / --force-keep-running).
+    Incident 2026-07-17: pod-1345-onpolicy destroyed mid-launch by an
+    issue-wide sweep that never read the tag."""
+    pod_name = _register_pod_for_issue(600)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, True)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=600))
+
+    msg = str(exc.value)
+    assert "keep-running" in msg
+    assert "remove-tag 600 keep-running" in msg
+    assert "--name-suffix" in msg
+    assert "--force-keep-running" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called when the shield refuses"
+
+
+def test_terminate_name_suffix_allowed_despite_keep_running_tag(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 2: a surgical --name-suffix destroy is the
+    operator's explicit single-pod choice — never blocked by the tag. The
+    reader stub RAISES, pinning that the surgical path reads NO tag state at
+    all (the guard early-returns before any read)."""
+    _write_metadata_file(
+        {
+            "pod-601": _meta("pod-601", issue=601),
+            "pod-601-b": _meta("pod-601-b", issue=601, pod_id="live-suffix-b"),
+        }
+    )
+    stub_list_team_pods.return_value = [
+        _info("pod-601", pod_id="live-canonical"),
+        _info("pod-601-b", pod_id="live-suffix-b"),
+    ]
+
+    def boom(_issue):
+        raise AssertionError("keep-running state must not be read on the surgical path")
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        boom,
+    )
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=601, name_suffix="b"))
+
+    assert stub_terminate_pod == ["live-suffix-b"], (
+        f"surgical terminate must destroy ONLY pod-601-b; got {stub_terminate_pod}"
+    )
+
+
+@pytest.mark.parametrize("state", [True, None])
+def test_terminate_force_keep_running_overrides_with_warning(
+    state,
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 3: --force-keep-running proceeds with a
+    LOUD stderr warning — for BOTH the tag-present and the unreadable state
+    (the force check precedes the None refusal)."""
+    pod_name = _register_pod_for_issue(602)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, state)
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    ns = terminate_ns(issue=602)
+    ns.force_keep_running = True  # the fixture Namespace predates the flag
+    pod_lifecycle.cmd_terminate(ns)
+
+    err = capsys.readouterr().err
+    assert "--force-keep-running" in err
+    assert "DESPITE keep-running" in err
+    assert len(stub_terminate_pod) == 1, (
+        f"terminate must proceed under --force-keep-running (state={state!r})"
+    )
+
+
+def test_terminate_keep_running_unknown_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 4 (fail-closed): an UNREADABLE tag state
+    (branch-guard RuntimeError, corrupt frontmatter, registry corruption —
+    the library reader returns None) refuses the irreversible bare terminate,
+    naming the override."""
+    pod_name = _register_pod_for_issue(603)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, None)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=603))
+
+    msg = str(exc.value)
+    assert "could not be read" in msg
+    assert "--force-keep-running" in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_keep_running_dry_run_notes_and_previews(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """Phase-2 Statistics Must-Fix (#1485): --dry-run previews and reads NO
+    task state — BOTH get_task and keep_running_tag_state are stubbed to
+    raise — while a generic would-check NOTE names what a real run would do.
+    The pre-existing pin test_terminate_dry_run_bypasses_guard stays green
+    unmodified; this test additionally pins the NOTE + the reader."""
+    pod_name = _register_pod_for_issue(604)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+
+    def should_not_read_task(_issue):
+        raise AssertionError("dry-run must not inspect task state")
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        should_not_read_task,
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        should_not_read_task,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=604, dry_run=True))
+
+    err = capsys.readouterr().err
+    assert "keep-running tag" in err
+    assert "REFUSE this issue-wide terminate" in err
+    assert stub_terminate_pod == [], "dry-run must not call terminate_pod"
+
+
+def test_terminate_parser_exposes_force_keep_running_flag():
+    """Regression guard: the --force-keep-running flag exists on the
+    terminate subparser (and only defaults False)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["terminate", "--issue", "1", "--yes", "--force-keep-running"])
+    assert ns.force_keep_running is True
+
+    ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
+    assert ns2.force_keep_running is False
+
+
+def test_keep_running_tag_constant_matches_task_workflow():
+    """The pod_lifecycle module keeps its own lazy-import-independent copy of
+    the tag literal; pin it to the task_workflow canonical constant so the
+    two can never drift."""
+    import explore_persona_space.task_workflow as tw
+
+    assert pod_lifecycle._KEEP_RUNNING_TAG == tw.KEEP_RUNNING_TAG == "keep-running"
+
+
+def test_runpod_backend_teardown_composes_bare_terminate_no_force(monkeypatch):
+    """#1485 defense-in-depth pin (transitive inheritance): RunPodBackend.
+    teardown delegates to a ``pod_lifecycle.py terminate --issue N --yes``
+    SUBPROCESS in the BARE form — no --force-keep-running, no --name-suffix —
+    so the new keep-running guard binds in the child. (An in-process
+    monkeypatch cannot cross the subprocess boundary; the argv assertion is
+    the mechanizable form.)"""
+    from explore_persona_space.backends import runpod as rp
+    from explore_persona_space.backends.base import RunHandle
+
+    captured: list[list[str]] = []
+    monkeypatch.setattr(rp, "_run_pod_lifecycle_relay", lambda cmd, **k: captured.append(cmd))
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="job-1485",
+        pod_name="pod-1485",
+        scratch_dir="/workspace",
+        log_path="/log",
+        extra={"issue": 1485},
+    )
+    rp.RunPodBackend().teardown(handle)
+
+    assert len(captured) == 1
+    cmd = captured[0]
+    assert "terminate" in cmd
+    assert "--issue" in cmd and "1485" in cmd and "--yes" in cmd
+    assert "--force-keep-running" not in cmd
+    assert "--name-suffix" not in cmd
+
+
+# ---------------------------------------------------------------------------
 # cmd_terminate — live-API authority for pod_id (post-#475 hardening)
 # ---------------------------------------------------------------------------
 
@@ -1251,7 +1538,7 @@ def test_provision_name_suffix_collision_scope(
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle.cmd_provision(_gpu_provision_ns(779))
     assert exc.value.code == 1
-    assert "already exists" in capsys.readouterr().out
+    assert "already exists" in capsys.readouterr().err  # #1518: refusal rides stderr
 
     # Suffixed provision proceeds past the collision check (dry-run plan
     # names pod-779-b — acceptance criterion 2).
@@ -1265,7 +1552,7 @@ def test_provision_name_suffix_collision_scope(
     with pytest.raises(SystemExit) as exc2:
         pod_lifecycle.cmd_provision(_gpu_provision_ns(779, name_suffix="b"))
     assert exc2.value.code == 1
-    assert "pod-779-b already exists" in capsys.readouterr().out
+    assert "pod-779-b already exists" in capsys.readouterr().err  # #1518: stderr
 
 
 def test_provision_registers_owning_issue_for_suffixed_name(isolated_state, monkeypatch, capsys):
@@ -2096,3 +2383,129 @@ def test_resume_calls_check(monkeypatch, capsys, isolated_state, stub_list_team_
     assert "WARNING" in captured.err and "pod-safety" in captured.err
     assert "Proceeding with resume" in captured.err
     assert "[dry-run]" in captured.out
+
+
+# ---------------------------------------------------------------------------
+# Error-path diagnostics stream routing (#1518) — durability pin
+# ---------------------------------------------------------------------------
+
+#: Functions allowed to bare-print to stdout immediately before a nonzero
+#: exit. `_emit_still_waiting_and_exit` deliberately DUAL-prints (stderr +
+#: stdout) before its exit-75 still-waiting contract, "so an output-capturing
+#: caller that only keeps stdout still sees it" (its docstring). Exempt by
+#: enclosing-function NAME, never line number; a new deliberate dual-print
+#: function gets added here with a comment.
+_STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS = frozenset({"_emit_still_waiting_and_exit"})
+
+
+def _is_bare_stdout_print_stmt(stmt) -> bool:
+    """True for a statement-level ``print(...)`` call with NO ``file=`` kwarg."""
+    return (
+        isinstance(stmt, ast.Expr)
+        and isinstance(stmt.value, ast.Call)
+        and isinstance(stmt.value.func, ast.Name)
+        and stmt.value.func.id == "print"
+        and not any(kw.arg == "file" for kw in stmt.value.keywords)
+    )
+
+
+def _is_nonzero_exit_stmt(stmt) -> bool:
+    """True for ``sys.exit(<arg>)`` / ``raise SystemExit(<arg>)`` with an arg
+    that is not provably zero (a string, a Name like EXIT_STILL_WAITING, or
+    any expression counts as nonzero; a bare call exits 0)."""
+    if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+        call = stmt.value
+        func = call.func
+        if not (
+            isinstance(func, ast.Attribute)
+            and func.attr == "exit"
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "sys"
+        ):
+            return False
+    elif isinstance(stmt, ast.Raise) and isinstance(stmt.exc, ast.Call):
+        call = stmt.exc
+        func = call.func
+        if not (isinstance(func, ast.Name) and func.id == "SystemExit"):
+            return False
+    else:
+        return False
+    if not call.args:
+        return False  # sys.exit() / SystemExit() -> exit code 0
+    arg = call.args[0]
+    return not (isinstance(arg, ast.Constant) and arg.value == 0)
+
+
+def _scan_bare_stdout_prints_before_nonzero_exit(path):
+    """AST-scan ``path`` for bare stdout ``print(...)`` statements immediately
+    preceding a nonzero exit in the same block.
+
+    Returns ``(offenders, exempt_hits)`` — lists of ``(lineno, func_name)``
+    for each contiguous bare ``print(...)`` (no ``file=`` kwarg) statement
+    directly preceding a ``sys.exit(<nonzero>)`` / ``raise SystemExit(<arg>)``
+    statement in the same statement block. Hits inside a function named in
+    :data:`_STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS` land in ``exempt_hits``.
+    """
+    offenders: list[tuple[int, str]] = []
+    exempt_hits: list[tuple[int, str]] = []
+
+    def _visit_block(stmts, func_name: str) -> None:
+        for i, stmt in enumerate(stmts):
+            if _is_nonzero_exit_stmt(stmt):
+                j = i - 1
+                while j >= 0 and _is_bare_stdout_print_stmt(stmts[j]):
+                    hit = (stmts[j].lineno, func_name)
+                    if func_name in _STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS:
+                        exempt_hits.append(hit)
+                    else:
+                        offenders.append(hit)
+                    j -= 1
+            _visit_children(stmt, func_name)
+
+    def _visit_children(node, func_name: str) -> None:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            func_name = node.name
+        for field in ("body", "orelse", "finalbody"):
+            block = getattr(node, field, None)
+            if block:
+                _visit_block(block, func_name)
+        for handler in getattr(node, "handlers", None) or []:
+            _visit_block(handler.body, func_name)
+        for case in getattr(node, "cases", None) or []:
+            _visit_block(case.body, func_name)
+
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    _visit_children(tree, "<module>")
+    return offenders, exempt_hits
+
+
+def test_no_bare_stdout_print_before_nonzero_exit():
+    """#1518 durability pin: ``scripts/pod_lifecycle.py`` must contain NO bare
+    stdout ``print(...)`` statement immediately preceding a nonzero
+    ``sys.exit(...)`` / ``raise SystemExit(...)`` in the same block — an
+    error-path diagnostic on stdout never reaches the #1465
+    ``PodLifecycleProcessError`` stderr tail, so the router failure marker
+    reads as an unexplained exit (incident #1481).
+
+    Scope limit: the scan catches only CONTIGUOUS bare prints immediately
+    preceding a nonzero exit in the same block — a print two statements
+    earlier, or one buried in a helper called before the exit, escapes it.
+
+    Positive witness: the scan must FIND exactly one exempted site (the
+    ``_emit_still_waiting_and_exit`` deliberate dual print) — if the exempt
+    count is not exactly 1, the scanner itself has been disarmed by a scan
+    bug, or the dual print moved (update the exempt set deliberately).
+    """
+    offenders, exempt_hits = _scan_bare_stdout_prints_before_nonzero_exit(pod_lifecycle.__file__)
+    assert not offenders, (
+        "bare stdout print(...) immediately before a nonzero exit in "
+        f"scripts/pod_lifecycle.py at (lineno, func): {sorted(offenders)}; "
+        "route error-path diagnostics to stderr (file=sys.stderr) so they ride "
+        "the #1465 PodLifecycleProcessError stderr tail (#1518), or add a "
+        "deliberate dual-print function to _STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS "
+        "with a comment."
+    )
+    assert len(exempt_hits) == 1, (
+        "expected exactly 1 exempted dual-print site "
+        f"(_emit_still_waiting_and_exit), found {len(exempt_hits)}: {exempt_hits}"
+    )

@@ -5594,8 +5594,10 @@ URLs.
   ```bash
   # Between-phase: reap THIS phase's consumed hf_dl/g*_dl cache (repo-root
   # + worktree); store/ + eval_results/ kept; no terminal-status gate (the
-  # run knows the phase is done). Re-downloads on demand if a later phase
-  # needs it again.
+  # run knows the phase is done). Legal ONLY after the cache's LAST consumer
+  # in the WHOLE run: only hub-download paths re-fetch on a miss — a
+  # direct-path open() reader crashes FileNotFoundError (#1489; see
+  # .claude/rules/gotchas.md).
   uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
   ```
 
@@ -5864,7 +5866,7 @@ aggregation / permutation battery) MUST be launched fully detached:
 
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
-                                  # recover via pgrep -f '<distinctive invocation>'
+                                  # recover via pgrep -f '<distinctive invocatio[n]>'
     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
       || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
@@ -6532,62 +6534,73 @@ explicit eval-data path):
    read from the file before the push:
 
    ```bash
-   # Inline payload lint gate (#1460) — ONE background Bash (run_in_background=true)
+   # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
    printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
-     > /tmp/issue-<N>-inline-payload.txt   # one path per line; NO blank lines
-                                           # (a blank grep -F pattern matches everything)
-   { uv run python scripts/workflow_lint.py; \
-     uv run python scripts/select_step9c_tests.py \
-         --map-files /tmp/issue-<N>-inline-payload.txt \
-       | tee /tmp/issue-<N>-inline-map.txt \
-       | cut -f1 | sort -u | xargs -r uv run pytest -q -rA; \
-   } > /tmp/issue-<N>-inline-lint.txt 2>&1
-   # VERDICT — payload-attributed; never a bare exit-0 on the repo-wide runs.
-   # INSTRUMENT-RAN completeness FIRST (fail CLOSED — a dead/silent leg must
-   # never read as push-clean; `workflow_lint: schema FAIL` is deliberately
-   # rejected — it prints BEFORE any check executes):
-   [ -s /tmp/issue-<N>-inline-payload.txt ] || echo INCONCLUSIVE-payload-file-empty
-   grep -qE '^workflow_lint: (PASS|FAIL \()' /tmp/issue-<N>-inline-lint.txt \
-     || echo INCONCLUSIVE-lint-leg-dead
-   if [ -s /tmp/issue-<N>-inline-map.txt ]; then
-     # Scope to non-lint lines + a pytest-SUMMARY shape: the lint leg's own
-     # `workflow_lint: FAIL (N error(s))` line must not satisfy this check
-     # (it would mask a silently-dead pytest leg in the double-failure case).
-     grep -v '^workflow_lint' /tmp/issue-<N>-inline-lint.txt \
-       | grep -qE '[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran' \
-       || echo INCONCLUSIVE-pytest-leg-dead
-   fi
-   # Payload attribution:
-   grep -F -f /tmp/issue-<N>-inline-payload.txt /tmp/issue-<N>-inline-lint.txt \
-     | grep -v '^WARN' || echo NO-PAYLOAD-HITS
+     > /tmp/issue-<N>-inline-payload.txt   # one path per line (the helper
+                                           # strips blank lines defensively)
+   uv run python scripts/inline_lint_gate.py --issue <N> \
+     --payload-file /tmp/issue-<N>-inline-payload.txt
    ```
+
+   The helper mechanizes both legs (no-flags `workflow_lint.py`;
+   `select_step9c_tests.py --map-files` → mapped pytest at the #1046
+   timeout formula) and the verdict semantics below, persists the leg
+   output to `/tmp/issue-<N>-inline-lint.txt` +
+   `/tmp/issue-<N>-inline-map.txt` (audit parity with the pre-#1500
+   fenced recipe), and on a passing path writes a content-hash-bound
+   certification line (`v1 <epoch> <blobsha> <path>`) to
+   `/tmp/eps-inline-lint-cert-v1.txt` — the cert the
+   `guard_root_code_commit.sh` hook validates. NEVER hand-write the
+   cert file (#1082 parity).
 
    **Verdict — payload-attributed with instrument-ran completeness,
    NEVER a bare exit-0 (main can be pre-existing-red) and NEVER a push
-   on a dead instrument.**
-   - Any `INCONCLUSIVE-*` line ⇒ the instrument did not run to
-     completion (lint-leg death / schema early-exit, mapped-pytest-leg
-     death, or a missing/empty payload file) — **NEVER push on the
-     `NO-PAYLOAD-HITS` token in this state**; re-run the failed leg
-     (foreground single-flag / single-test re-runs are ~20-40s) or
-     investigate, then re-evaluate. `NO-PAYLOAD-HITS` is honored ONLY
-     with completeness evidence: the lint leg's healthy terminal line
-     (`workflow_lint: PASS` or `workflow_lint: FAIL (`) present, AND —
-     when the map file is non-empty — a pytest summary line present.
-   - A non-WARN output line naming a payload path **blocks the push**
-     when (i) the payload file is NEW this round (absent from
-     `origin/main` — payload-caused by construction; both #1388
-     offenders and both #1092 offenders were this case), or (ii) for a
-     MODIFIED file, the flagged construct sits in the round's own added
-     lines (`git diff -- <path>` pre-commit / `git diff origin/main --
-     <path>` post-commit). Fix, re-run just the relevant single
-     `--check-<x>` flag or single mapped test (~20-40s measured), then
-     push.
-   - Hits naming only non-payload paths, WARN lines, and modified-file
-     hits whose flagged construct is absent from the round's added
-     lines are **pre-existing red — never block**; name them in the
-     round's `epm:progress` completion note (visible, not re-buried).
-   - `NO-PAYLOAD-HITS` + completeness satisfied ⇒ push.
+   on a dead instrument. The helper's exit code IS the verdict:**
+   - **exit 3 = INCONCLUSIVE** (`inline_lint_gate: INCONCLUSIVE
+     (<reason>)`; no cert written) ⇒ the instrument did not run to
+     completion — lint-leg death / `workflow_lint: schema FAIL`
+     early-exit (deliberately rejected: it prints BEFORE any check
+     executes), mapped-pytest-leg death, a missing/empty payload file,
+     or a payload path edited DURING the gate run — **NEVER push in
+     this state**; re-run the failed leg (foreground single-flag /
+     single-test re-runs are ~20-40s) or investigate, then re-run the
+     helper. A clean read is honored ONLY with completeness evidence:
+     the lint leg's healthy terminal line (`workflow_lint: PASS` or
+     `workflow_lint: FAIL (`) present, AND — when the test mapping is
+     non-empty — a pytest summary line present.
+   - **exit 1 = BLOCK** (`inline_lint_gate: BLOCK (<paths>)`): a
+     non-WARN output line names a payload path that is (i) NEW this
+     round (absent from `origin/main` — payload-caused by construction;
+     both #1388 offenders and both #1092 offenders were this case), or
+     (ii) a MODIFIED file whose flagged construct sits in the round's
+     own added lines (`git diff -U0 origin/main -- <path>`), or (iii) a
+     MODIFIED file with a payload-naming hit carrying no parseable
+     `<path>:<lineno>:` (conservative — see the enforcement note
+     below). Fix, re-run just the relevant single `--check-<x>` flag or
+     single mapped test (~20-40s measured), then re-run the helper and
+     push. Clean sibling paths are still certified (per-path certs).
+   - **exit 0 = PASS** (`inline_lint_gate: PASS`): hits naming only
+     non-payload paths, WARN lines, and modified-file hits whose
+     flagged construct is absent from the round's added lines are
+     **pre-existing red — never block**; the helper reports them — name
+     them in the round's `epm:progress` completion note (visible, not
+     re-buried). Every payload path is certified; push.
+
+   The gate is mechanically enforced for CODE payload:
+   `guard_root_code_commit.sh` (PreToolUse) refuses a repo-root commit
+   of uncertified `scripts/`/`src/`/`tests/` payload until
+   `scripts/inline_lint_gate.py` has certified the exact landing
+   content (#1500). The hook covers ONLY that code glob and ONLY
+   Bash-tool root commits — the prose gate here still binds for every
+   other payload shape (non-code payload such as rules/docs edits with
+   lint surface, and the scratch-worktree `git push origin HEAD:main`
+   merge channel). The helper is deliberately STRICTER than the prose
+   in one arm: a payload-naming hit without a parseable
+   `<path>:<lineno>:` on a MODIFIED file blocks conservatively (the
+   prose's "pre-existing red never blocks" judgment call routes through
+   the override instead). Deliberate override:
+   `EPM_ALLOW_ROOT_CODE_COMMIT=1` + an `epm:progress` note naming the
+   reason.
 
    This gate binds the user-chat sibling (the CLAUDE.md § Routing
    "User-chat inline free analysis" carve-out) identically —
@@ -7697,6 +7710,16 @@ inline, this loop handles the GPU-backed case (the cheap `< 20` GPU-h
 band auto-runs in both modes; the expensive band auto-runs only in
 autonomous mode or on an explicit user pick).
 
+**Canonical §5 step id for this loop is `9b-same`.** workflow.yaml
+§ steps has no `9b` id — the prose name "Step 9b" is NOT a step id — so
+any `scripts/post_step_completed.py` post made from within this loop
+passes `--step 9b-same` (the helper aliases legacy `9b` → `9b-same` as
+a backstop, #1499). A helper refusal (exit 2, unknown step id) means
+the resume record was NOT posted: re-run with a canonical id from the
+stderr `Known:` list / `Did you mean` hint before continuing — never
+continue past the refusal (#1335: the dropped record degraded crash
+recovery for the `followups_running` hold).
+
 **Loop liveness backstop (arm BEFORE dispatching loop work — BOTH session modes).**
 ANY session driving this loop — interactive (typically entry point (b),
 a chat session) OR autonomous (the Step 9b C3 cheap-band / step-6
@@ -8140,7 +8163,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       Bash calls). A MISSING rc file means the background run died before
       pytest exited (tool kill / watcher force-stop, #833): treat as FAIL,
       never a silent PASS, and apply crash-fix-rounds § Kill-before-relaunch
-      (probe `pgrep -af 'pytest.*step9c-junit-issue-<N>'` — the junit path
+      (probe `pgrep -af '[p]ytest.*step9c-junit-issue-<N>'` — the junit path
       makes the probe exact-invocation-scoped) before any re-run:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
@@ -8361,7 +8384,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
       # earlyoom-protect the refresh (#1045; fail-open): sweep its session; the refresh's own
       # start_new_session pytest child (spawned >=~1s later, after lock + git-root resolution + selector/venv resolution + uv-run startup) inherits adj.
-      ps -p "$REFRESH_PID" -o args=   # verify the pid is the workload (canonical form); on mismatch recover via pgrep -f 'step9c_baseline.py refresh'; a lock-held instant exit makes this benignly fail (choom=failed below)
+      ps -p "$REFRESH_PID" -o args=   # verify the pid is the workload (canonical form); on mismatch recover via pgrep -f 'step9c_baseline[.]py refresh'; a lock-held instant exit makes this benignly fail (choom=failed below)
       bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$REFRESH_PID" >/dev/null \
         && echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=ok" \
         || echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=failed"
@@ -9597,8 +9620,9 @@ tests BEFORE anything lands:
     done < /tmp/issue-<N>-overlay-files.txt
     # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
     # diff touches scripts/workflow_lint.py, the loop above overlaid the
-    # BRANCH's lint copy, whose ratchet constants (_LESSONS_RATCHET_BYTES,
-    # agent-spec caps, gotchas row caps — bumped on main every few days) may
+    # BRANCH's lint copy, whose ratchet constants
+    # (_LESSONS_ROW_GRANDFATHER_MAX_BYTES, AGENT_SPEC_SIZE_GRANDFATHER —
+    # bumped on main every few days) may
     # predate main's raises and flag main-advanced files on the gated legs
     # only (NEW non-empty -> spurious block). Approximate the post-rebase
     # trunk lint instead: 3-way-merge branch copy (ours) + merge-base copy +
@@ -9785,7 +9809,7 @@ tests BEFORE anything lands:
   before writing a verdict (tool kill / watcher force-stop / wedge-bound
   kill) — treat as gate-not-run, fail CLOSED: NEVER proceed to the merge
   conditional, NEVER hand-write the verdict (#1082). Apply crash-fix-rounds
-  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tree'` —
+  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tre[e]'` —
   the gate-tree path in the lint legs' argv makes the probe
   exact-issue-scoped) before re-running the gate ONCE; still dying ->
   `epm:merge-failed v1` (Verdict bullet case 3). A partial death (killed
@@ -10079,7 +10103,9 @@ else
   # a single-logical-change branch, and it reverts as ONE commit (the only
   # grain that exists on such a branch). Experiments (Step 9b trigger) keep
   # --rebase: heterogeneous per-item commits retain per-commit revert value
-  # and the empirical record does not cover them. An unreadable kind falls
+  # on the clean path, and the 07-12→07-17 conflicted-experiment record is
+  # shape-2-dominated (method-independent — see the merge-form paragraph
+  # below, #1493): squash-first buys nothing there. An unreadable kind falls
   # to --rebase (fail-open to today's behavior). REPO_ROOT is re-derived
   # inline — fenced blocks are separate shells, and the guards block's
   # derivation is not in scope here:
@@ -10133,6 +10159,23 @@ it as ONE independently-revertible commit, and the empirical record
 landing on --squash anyway) makes the rebase attempt a pure wall-time
 tax under fleet churn. Shape 1 cannot fire on the --squash path (the
 error is rebase-specific); shapes 0/2/else apply to both forms.
+
+`kind: experiment` branches keep `--rebase` deliberately (#1493, which
+updates the #1288 no-evidence rationale): the 07-12→07-17 record — 210
+`epm:merged` (attempt split of the `merge_attempts`-annotated subset:
+160 attempt-1 / 20 attempt-2 / 3 attempt-3), zero `epm:merge-failed`
+since 07-05 — shows every CLASSIFIED conflicted experiment first
+refusal was shape 2 (mergeability — method-independent: GitHub's
+mergeability state is a 3-way test merge that declines `--squash` and
+`--rebase` identically) or shape 0 (transient), with zero shape-1 first
+refusals on record; and
+#1310 additionally recorded a FIRST `--squash` refused on the same
+shape-2 mergeability, so squash-first would not have saved the burned
+attempt in any classified case, while the clean path (the large
+majority) retains per-commit revert value under `--rebase`.
+Revisit criterion: extend squash-first to `kind: experiment` if shape-1
+(`can't be rebased`) FIRST refusals appear on experiment branches —
+shape 1 is the only failure shape squash-first avoids.
 
 **Known failure shape 0 — base branch advanced mid-merge (`Base branch
 was modified`, #1288).** Substring-match `Base branch was modified` (the
@@ -10737,10 +10780,10 @@ Decision tree:
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
   fi
-  # MAPPED INVARIANT-TEST LEG (#1147) — form (iii), DORMANT TODAY by
-  # construction: the additive pathspec set above excludes scripts/ and src/,
-  # so no additive payload can match a GLOB_SCAN_TESTS glob and the trigger
-  # map is empty. The leg exists as defense-in-depth should that pathspec set
+  # MAPPED INVARIANT-TEST LEG (#1147) — form (iii): dormant for scripts/src
+  # payloads by pathspec (no additive payload can match a GLOB_SCAN_TESTS
+  # glob); an ADDED .claude/rules/*.md payload arms it via rules-pin pairs
+  # (#1496). The leg exists as defense-in-depth should that pathspec set
   # ever grow; it costs one ~1 s helper call per surgical landing. Sequencing
   # mirrors the lint legs: TG BASELINE runs BEFORE the checkout (the payload
   # lands in the ROOT tree — a post-checkout "baseline" would be a degenerate
@@ -10907,7 +10950,7 @@ Decision tree:
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'scripts/workflow_lint.py'` — root-copy invocations are
+    (`pgrep -af 'scripts/workflow_lint[.]py'` — root-copy invocations are
     not issue-scoped in argv, so on an ambiguous match WAIT for exit,
     never kill; the Step 0 single-orchestrator guard excludes same-issue
     concurrency). (2) Landed/committed classification BEFORE any cleanup —
@@ -11225,6 +11268,12 @@ uv run python scripts/post_step_completed.py \
 The helper looks up `next_expected_step` from `.claude/workflow.yaml`
 and appends the event row; refuses to post if the step ID is unknown to
 the YAML or if `exit_kind` is not in the choices list (typo guard).
+
+Legacy prose id `9b` is aliased to canonical `9b-same` before
+validation (the marker records the canonical id), and an unknown-id
+refusal prints near-miss suggestions (#1499). A nonzero exit from this
+helper means NO resume record was posted — correct the step id and
+re-post; ignoring the refusal silently drops the §5 record.
 
 **Re-entry router.**
 `src/explore_persona_space/orchestrate/resume.py:decide_entry_step`

@@ -844,16 +844,16 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(l) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the eleven letters.
+    forcing the section to exist and naming the twelve letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
-    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    plan record), '(self-)attestation(s)', or the literal (a)-(l) range
+    token ((a)-(j)/(a)-(k) grandfathered for in-flight plans; #1366/#1522)
     (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
@@ -874,30 +874,30 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l); older ranges grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-l])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/12 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(l) items detectable — verify all twelve attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance/parent-lineage) before approval",
+            "code-throughput/pair-provenance/parent-lineage/validity-domain) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(l) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(l); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 
@@ -5686,14 +5686,15 @@ def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
         return None
     size = p.stat().st_size
     if p.name == "LESSONS.md":
-        # #1269: the binding runtime constraint is min(cap, growth ratchet) —
-        # a plan passing the 8000-byte cap headroom could still FAIL
-        # workflow_lint's ratchet at implement time (the plan-time miss c34
-        # exists to close).
-        ratchet = wl._LESSONS_RATCHET_BYTES
-        cap = min(wl._LESSONS_MAX_BYTES, ratchet)
-        src = "_LESSONS_RATCHET_BYTES" if ratchet < wl._LESSONS_MAX_BYTES else "_LESSONS_MAX_BYTES"
-        return cap - size, cap, src
+        # #1504: the TOTAL growth ratchet is retired — the binding total
+        # constraint is the leanness cap. Per-row / non-row budgets also
+        # bind at implement time; c34's summed-block-bytes heuristic keeps
+        # the total cap as its denominator (a single-row insert over
+        # _LESSONS_ROW_MAX_BYTES is a disclosed FN here, caught by the
+        # lint). No trigger-regex change (_C34_PATH_RE / _C34_VERB_RE /
+        # _C34_BUDGET_RE untouched) — the re-audit clause does not fire;
+        # the looser denominator only monotonically reduces WARNs.
+        return wl._LESSONS_MAX_BYTES - size, wl._LESSONS_MAX_BYTES, "_LESSONS_MAX_BYTES"
     cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
     if cap is not None:
         return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"

@@ -1,0 +1,85 @@
+{
+  "commit": "277d485cdd",
+  "created": "2026-07-18T11:54:57Z",
+  "figsize": [
+    8.6,
+    4.6
+  ],
+  "points": [
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.44888124646125704,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.18240643208689966,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.4259485229516266,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.16117481165335684,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.5203427000053655,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)": 0.10934100385366831,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Length-matched family contrast, like-for-like across lineages",
+        "xlabel": "\u0394 family gain excess (ICL+WildChat \u2212 length-matched donors)",
+        "annotations": [
+          "+0.449",
+          "+0.182",
+          "+0.426",
+          "+0.161",
+          "+0.520",
+          "+0.109"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "OpenThinker2-7B \u2014 query-averaged",
+          "OpenThinker2-7B \u2014 per-question",
+          "R1-Qwen-7B \u2014 query-averaged",
+          "R1-Qwen-7B \u2014 per-question",
+          "R1-Llama-8B (this run) \u2014 query-averaged",
+          "R1-Llama-8B (this run) \u2014 per-question"
+        ]
+      }
+    ]
+  }
+}

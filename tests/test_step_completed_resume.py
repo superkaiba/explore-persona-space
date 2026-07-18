@@ -443,3 +443,67 @@ def test_helper_dry_run_prints_body_for_known_step(helper_module, capsys):
     # next_expected_step is looked up from workflow.yaml. For step 5
     # (code_review) the §1 mapping says "6a" (pod_provision).
     assert "next_expected_step: 6a" in captured.out
+
+
+def test_helper_aliases_legacy_9b_to_9b_same(helper_module, capsys):
+    """#1499: legacy prose id '9b' aliases to canonical '9b-same'.
+
+    The marker body records the CANONICAL id (the §5 router and the
+    watcher's step-field readers key on workflow.yaml ids),
+    next_expected_step resolves from the canonical row ('2' — the loop
+    re-enters the pipeline), and the alias is announced on stderr.
+    """
+    rc = helper_module.main(
+        ["--issue", "1499", "--step", "9b", "--exit-kind", "clean", "--dry-run"]
+    )
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "step: 9b-same" in captured.out
+    assert "step: 9b\n" not in captured.out  # canonical only, never the legacy id
+    assert "next_expected_step: 2" in captured.out
+    assert "aliased to canonical" in captured.err
+
+
+def test_helper_canonical_9b_same_still_accepted_directly(helper_module, capsys):
+    """The canonical id passes through the alias map unchanged (no NOTE)."""
+    rc = helper_module.main(
+        ["--issue", "1499", "--step", "9b-same", "--exit-kind", "parked", "--dry-run"]
+    )
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "step: 9b-same" in captured.out
+    assert "next_expected_step: 2" in captured.out
+    assert "aliased" not in captured.err
+
+
+def test_unknown_step_error_suggests_near_miss(helper_module, capsys):
+    """The exit-2 typo guard survives the alias AND names near-miss ids."""
+    rc = helper_module.main(
+        ["--issue", "1499", "--step", "9b-sam", "--exit-kind", "clean", "--dry-run"]
+    )
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "is not in workflow.yaml" in captured.err
+    assert "Did you mean: 9b-same" in captured.err
+
+
+def test_alias_keys_never_shadow_real_step_ids(helper_module):
+    """#1499: an alias key must never collide with a REAL workflow.yaml id.
+
+    If a future workflow.yaml genuinely adds a `9b` step id, the alias
+    would silently rewrite every `--step 9b` post to `9b-same`; this
+    test makes that collision fail the suite instead.
+    """
+    assert set(helper_module._STEP_ALIASES) & set(helper_module._load_workflow_steps()) == set()
+
+
+def test_skill_md_followup_loop_names_canonical_9b_same_id():
+    """Durability pin (#1499): the same-issue follow-up loop section names
+    the canonical `9b-same` step id + the exit-2 refusal duty, so a later
+    SKILL.md editor cannot silently drop the guidance."""
+    text = SKILL_MD_PATH.read_text()
+    section_start = text.find("**Same-issue follow-up loop (`question_relation: same`).**")
+    assert section_start > 0
+    window = text[section_start : section_start + 4000]
+    assert "9b-same" in window
+    assert "post_step_completed.py" in window

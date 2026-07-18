@@ -612,6 +612,12 @@ below). Exemptions, stated in the interpretation prose or alt text: the
 result's primary figure ALREADY is the per-unit view (a raw scatter needs
 no second scatter); N is so small the figure already shows every point; or
 the aggregate has no meaningful per-unit decomposition (a single scalar).
+When a committed per-unit companion is deliberately NOT embedded, name the
+file AND state the omission with an explicit exemption phrase — "not
+embedded: <reason>" or "superseded by <the embedded view>" — in the same
+paragraph as the filename; a bare provenance mention ("committed at the
+same pin") does not count, and `verify_task_body.py` check 31 WARNs
+`companion-named-not-embedded`.
 
 **Raw alongside processed** (the transformed-figure special case). When a
 result's figure plots a residualized / partialled / binned /
@@ -700,6 +706,16 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   pinned authority — `test_v4_context_fresh_direction_alone_passes`
   pins it as the sanctioned PARENTLESS lineage form, so it contradicts
   a set `parent_id` the same way.
+  Follow-up provenance tokens in the row are additionally cross-checked
+  against each scope-armed `followup_label`'s latest `epm:followup-scope`
+  note fields (`verify_task_body.py` check 47, #1521; incident #1426): a
+  clause after a scope-armed label mention claiming a `source <slug>` that
+  contradicts the marker's `source`, or claiming a free-analysis /
+  zero-GPU round where the marker records a GPU-band round
+  (`proposer-9b-cheap` / `proposer-9b`, or `est_gpu_hours > 0`), is a hard
+  v4 FAIL (v3/v2: WARN-only, never a new hard FAIL); an explicit
+  `est N GPU-h` figure differing from the marker's `est_gpu_hours` by
+  more than 0.5 GPU-h WARNs only.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -851,7 +867,12 @@ accepted. No `TBD`, `{{`, `default`, `see config` sentinels. **Write
 MDX-safe markdown** (same three rules as v3): (a) `[label](url)` only,
 never `<https://...>` autolinks; (b) no `<` immediately before a digit
 (`p<0.05`); (c) table-cell tokens with inner pipes (`<|im_start|>`) escape
-the pipes inside a code span.
+the pipes inside a code span. Enforcement note (check 44, WARN — no
+semantic change to this contract): a bare backtick HF-style artifact path
+(`issue<N>_...` prefix, or a `raw_completions`/`analysis_tensors` path) in
+the footer must sit in the same bullet/paragraph as a pinned
+`huggingface.co` `/tree|/resolve|/blob/<rev>` link or carry `@ <rev>`
+immediately after it (`verify_task_body.py` check 44, #1509).
 
 ### Stray `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` / `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` is a FAIL (v4)
 
@@ -1051,15 +1072,23 @@ Forward-only: each check branches on the sentinel. The v4 checks
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
-slugs in figure-sidecar-carried text — plain-English condition names only;
+slugs + bare hypothesis codes (`H3`) + slot-family codes (`f16`/`l16`) in
+figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
 PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
 (check 33, WARN: every BOLDED decimal in a figure's what-is-plotted prose
 window — the previous-figure-bounded beat-1 slice plus the caption — must
 appear among the sidecar's plotted values under rounding / sign / percent
 tolerance; per-figure opt-out for genuinely derived quantities: the literal
-`<!-- prose-numerics: derived -->` anywhere in that window). The
-Goal-of-experiment frontmatter
+`<!-- prose-numerics: derived -->` anywhere in that window), and figure
+caption count claims vs sidecar point values (check 45, WARN: quantified
+caption count claims — `all N <unit>`, `K of N <unit>`, `none of the N
+<unit>` / `no <unit>` + a below/above-zero or copula negative/positive
+predicate — recompute against the sidecar's per-column point-value pools,
+contradiction-only; vague count glosses ("nearly all", "far below zero")
+stay the LM critic's; per-figure opt-out: the literal
+`<!-- count-claims: manual -->` in the figure's beat-1 window or caption).
+The Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 

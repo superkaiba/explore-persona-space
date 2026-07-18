@@ -1,0 +1,228 @@
+{
+  "commit": "60f0c18004",
+  "created": "2026-07-18T14:41:21Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "realized next word\n(1 direction, completed run)",
+      "own minus external (plain) gap contribution": 0.0008090281541341879,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "top-8 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.002039014567774512,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "realized next 8\nwords",
+      "own minus external (plain) gap contribution": 0.0014474256033423392,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "top-32 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.003302613459690719,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "realized next word\n(1 direction, completed run)",
+      "own minus external (plain) gap contribution": 0.03222975819697621,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "top-8 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.030828121951411658,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "realized next 8\nwords",
+      "own minus external (plain) gap contribution": 0.02982705469844482,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "top-32 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.029530881490501648,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "realized next word\n(1 direction, completed run)",
+      "own minus external (plain) gap contribution": 0.000863471287914433,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "top-8 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.0010351208532111064,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "realized next 8\nwords",
+      "own minus external (plain) gap contribution": 0.0026277787405730516,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "top-32 candidate\nwords",
+      "own minus external (plain) gap contribution": 0.0010687643338776406,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.32,
+      "own minus external (plain) gap contribution": -0.03142073004284202,
+      "error": 0.006609250371161451,
+      "series": "D = inside minus outside (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.32,
+      "own minus external (plain) gap contribution": -0.028789107383637144,
+      "error": 0.006233307994790263,
+      "series": "D = inside minus outside (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.32,
+      "own minus external (plain) gap contribution": -0.02837962909510248,
+      "error": 0.006411445921142003,
+      "series": "D = inside minus outside (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.32,
+      "own minus external (plain) gap contribution": -0.02622826803081093,
+      "error": 0.005907140662087756,
+      "series": "D = inside minus outside (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "own minus external (plain) gap contribution": -0.03142073004284202,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.32,
+      "own minus external (plain) gap contribution": -0.028789107383637144,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.32,
+      "own minus external (plain) gap contribution": -0.02837962909510248,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.32,
+      "own minus external (plain) gap contribution": -0.02622826803081093,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.32,
+      "own minus external (plain) gap contribution": -0.038113743947815755,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.32,
+      "own minus external (plain) gap contribution": -0.03508670995479731,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.32,
+      "own minus external (plain) gap contribution": -0.03484907073527122,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.32,
+      "own minus external (plain) gap contribution": -0.03218167234085825,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.32,
+      "own minus external (plain) gap contribution": -0.024895243205492853,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.32,
+      "own minus external (plain) gap contribution": -0.022620093965216786,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.32,
+      "own minus external (plain) gap contribution": -0.022026178892987216,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.32,
+      "own minus external (plain) gap contribution": -0.02036739101668274,
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does a low-dimensional token subspace carry the own-answer advantage?",
+        "ylabel": "own minus external (plain) gap contribution",
+        "legend_labels": [
+          "inside the token subspace",
+          "outside the token subspace",
+          "cross term",
+          "D = inside minus outside (95% CI)"
+        ],
+        "xticklabels": [
+          "realized next word\n(1 direction, completed run)",
+          "top-8 candidate\nwords",
+          "realized next 8\nwords",
+          "top-32 candidate\nwords"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04"
+        ]
+      }
+    ],
+    "series": [
+      "inside the token subspace",
+      "outside the token subspace",
+      "cross term",
+      "D = inside minus outside (95% CI)"
+    ]
+  }
+}

@@ -64,6 +64,10 @@ UPLOAD_STAGE = {
     "r4_fictionframe": "fictionframe",
     "r6_nofoil": "nofoil",
     "r7_endpoint": "endpoint",
+    # onpolicy-assistant-label round (plan v7 §10 output destinations).
+    "r7_op_assistant": "r7_op_assistant",
+    "r7_op_wren": "r7_op_wren",
+    "r7_op_wren46": "r7_op_wren46",
 }
 
 
@@ -158,7 +162,7 @@ def hf_resume_gen(args, slug: str, model_kind: str, fp: dict) -> bool:
     c1310.write_json(
         out_path.with_name(f"{model_kind}_gen_manifest.json"),
         {
-            "metadata": common.metadata(SCRIPT, r1335.GEN_SEED, n_records),
+            "metadata": common.metadata(SCRIPT, r1335.gen_seed_for_rung(slug), n_records),
             **fp,
             "model_kind": model_kind,
             "n_records": n_records,
@@ -240,7 +244,10 @@ def _base_record(slug: str, model_kind: str, fp: dict) -> dict:
         "rung": slug,
         "model": r1335.MODEL_IDS[model_kind],
         "model_kind": model_kind,
-        "gen_seed": r1335.GEN_SEED,
+        # Effective rung seed (== GEN_SEED except under a gen_seed_override,
+        # e.g. r7_op_wren46's 46 — the record must state the seed that
+        # actually drove its sampling).
+        "gen_seed": r1335.gen_seed_for_rung(slug),
         "temperature": c1310.GEN_TEMPERATURE,
         "top_p": c1310.GEN_TOP_P,
         **fp,
@@ -326,7 +333,13 @@ def gen_fiction(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
     battery = c1310.build_scenario_battery()
     if args.n_scenarios:
         battery = battery[: args.n_scenarios]
-    personas = list(c1310.PERSONA_LABELS)
+    # Rung-resolved lead panel (plan v7 §4.2 item 2): the committed 4-persona
+    # panel for existing rungs; the single override lead for the r7_op_* label
+    # cells. Descriptions route through the same dict so an override lead
+    # (e.g. "Assistant", absent from c1310.PERSONAS) renders without KeyError.
+    persona_descs = r1335.personas_for_rung(slug)
+    personas = list(persona_descs)
+    rung_seed = r1335.gen_seed_for_rung(slug)
     cells = [(sc, persona) for persona in personas for sc in battery]
     foils_by_sc = {
         sc["scenario_id"]: r1335.foils_for_rung(slug, sc["scenario_id"]) for sc in battery
@@ -354,7 +367,15 @@ def gen_fiction(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
                 foils = foils_by_sc[sc["scenario_id"]]
                 body = bodies[(sc["scenario_id"], persona)]
                 prompts.append(
-                    r1335.fiction_prefix(tokenizer, sc, persona, args.model, body, foils)
+                    r1335.fiction_prefix(
+                        tokenizer,
+                        sc,
+                        persona,
+                        args.model,
+                        body,
+                        foils,
+                        persona_desc=persona_descs[persona],
+                    )
                 )
                 keys.append(persona)
             print(f"[i1335-gen] slot {slot + 1}/{args.slots} ({len(prompts)} prompts)", flush=True)
@@ -366,7 +387,12 @@ def gen_fiction(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
                     prompts,
                     max_tokens=r1335.ONELINE_MAX_TOKENS,
                     stop=r1335.ONELINE_STOP,
-                    seed=r1335.GEN_SEED + slot,
+                    # Per-slot sampling seed = rung gen seed + slot (plan v7
+                    # §4.2 item 2; == GEN_SEED+slot for every existing rung,
+                    # 46+slot for the r7_op_wren46 replicate). The ENGINE seed
+                    # stays GEN_SEED (§10: engine seed 45, the committed
+                    # convention — per-request seeds drive sampling).
+                    seed=rung_seed + slot,
                 )
             for (sc, persona), prompt, g in zip(cells, prompts, gen, strict=True):
                 sc_id = sc["scenario_id"]
@@ -436,7 +462,7 @@ def main() -> int:
     c1310.write_json(
         out_path.with_name(f"{model_kind}_gen_manifest.json"),
         {
-            "metadata": common.metadata(SCRIPT, r1335.GEN_SEED, len(records)),
+            "metadata": common.metadata(SCRIPT, r1335.gen_seed_for_rung(slug), len(records)),
             **fp,
             "model_kind": model_kind,
             "n_records": len(records),

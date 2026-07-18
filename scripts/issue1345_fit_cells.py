@@ -60,11 +60,17 @@ SLIM_KEYS = ("slots", "profiles", "nll")  # fits never read perpos (~36 GB/bundl
 
 
 def load_regime_bundle(turnstore_dir: Path, model: str, regime: str) -> dict:
-    """Load one (model, regime) store via the 28-layer pt loader + sanity asserts."""
+    """Load one (model, regime) store via the 28-layer pt loader + sanity asserts.
+
+    Every parent-registry store carries 2 slots (prefix + context); the
+    slot-ablation store (regime ``r4slot``, plan v10) carries the 5 single
+    positions + the appended pooled attribution-mean read.
+    """
+    expect_slots = len(c.SLOT_STORE_ORDER) if regime == "r4slot" else 2
     bundle = fc._load_bundle_any(
         turnstore_dir, model, c.REGIME_FORMAT[regime], c.TRACK, wanted_keys=SLIM_KEYS
     )
-    c.assert_pt_bundle(bundle, expect_slots=2, expect_layers=fc.EXPECTED_LAYERS)
+    c.assert_pt_bundle(bundle, expect_slots=expect_slots, expect_layers=fc.EXPECTED_LAYERS)
     return bundle
 
 

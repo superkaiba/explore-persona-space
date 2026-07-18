@@ -1,0 +1,10 @@
+{
+  "rung_slug": "r7_op_wren46",
+  "render_config_hash": "6d170b5391eaeae2",
+  "code_sha": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+  "n_rows": 200,
+  "nll_own": 1.73433538546929,
+  "nll_shuffled": 2.3041130568430974,
+  "own_beats_shuffled": true,
+  "delta": 0.5697776713738074
+}

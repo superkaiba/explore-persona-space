@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "git_commit": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+    "timestamp": "2026-07-18T09:39:29Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r7_op_wren",
+  "render_config_hash": "8c105b9074bf43bc",
+  "code_sha": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+  "rung": "r7_op_wren",
+  "model_kind": "instruct",
+  "headline_layer": 19,
+  "per_unit": {
+    "Wren": {
+      "n": 1797,
+      "n_settings": 20,
+      "r2_headline_loso": 0.23848874352800287
+    }
+  }
+}

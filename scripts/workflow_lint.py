@@ -134,6 +134,21 @@ Behaviours:
   ``PUSH_SWALLOW_LEGACY_ALLOWLIST``. Contract:
   ``.claude/rules/pod-side-reporting.md`` § Result-push verification
   contract (#1205).
+* ``--check-sh-function-rc-capture`` (also bundled into the no-flags
+  default run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  SAME-FILE bash function invoked via ``func || rc=$?`` / ``|| true`` /
+  ``|| :`` while the script runs under ``set -e`` — bash disables errexit
+  throughout the function BODY when the call sits in an ``||`` context,
+  so mid-function failures collapse to the last command's rc (#1426: a
+  Gate-1 terminal failure + a manifest SystemExit read as rc=0 and the
+  ``[phase=done]`` success sentinel fired). Single external-command
+  captures (``uv run python ... || rc=$?``) never match (the invocation
+  regex requires a collected same-file function name at command
+  position); ``set +e`` regions are unflagged (line-order state
+  tracking); quoted strings, definition lines, heredoc bodies, trailing
+  comments, and later ``;``-segments never match. Waive with
+  ``# RC_CAPTURE_EXEMPT: <reason>``. ShellCheck SC2310 is the broader
+  external analogue (#1516).
 * ``--check-grep-qv`` (also bundled into the no-flags default run): scan
   fenced code blocks in ``.claude/skills/**/SKILL.md`` +
   ``.claude/agents/*.md`` and logical lines of ``scripts/**/*.sh``, and
@@ -3515,6 +3530,241 @@ def check_push_failure_swallow(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# `--check-sh-function-rc-capture` (#1516; incident #1426): bash disables
+# errexit throughout a function BODY when the call sits in an `||` context,
+# so `func || rc=$?` / `func || true` collapses mid-function failures to the
+# last command's rc (usually 0) — #1426's `run_seed "$s" || rc=$?` let a
+# Gate-1 terminal failure + a manifest SystemExit proceed to `[phase=done]`.
+# ShellCheck SC2310 is the broader external analogue (also `if func`,
+# `while func`, `! func`, `func && x`); v1 deliberately matches the filed
+# incident class only (`|| rc=$?` / `|| true` on a same-file function).
+# Parse limitations degrade toward false NEGATIVES (same direction as
+# check_upload_or_true), with TWO named FP-side exceptions, both measured
+# harmless on the live tree (0 instances; the repo-tree-is-clean test + the
+# waiver contain them):
+# (a) pass-1 over-collection — the brace-optional def regex can collect bare
+#     zero-arg call lines inside heredoc python bodies (errs toward flagging);
+# (b) a case-arm PATTERN that equals a collected function name
+#     (`fname) cmd || true ;;`) matches the invocation regex at ^ and would
+#     flag.
+# The naive double-quote masking (no \" escape handling) can also mis-mask
+# exotic lines in either direction — see _rc_capture_mask_quotes.
+RC_CAPTURE_FUNC_DEF_RE = re.compile(
+    r"^\s*(?:function\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*\{?"  # name() {  /  name ()
+    r"|^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{"  # function name {   (paren-less)
+)
+RC_CAPTURE_SUPPRESS_RE = re.compile(r"\|\|\s*(?:[A-Za-z_][A-Za-z0-9_]*=\$\?|true\b|:(?=[\s;]|$))")
+# Three suppressor shapes (capture-SPELLING variants covered, not just the
+# filed `rc=$?`):
+#   (1) `|| <var>=$?` — ANY simple variable name (rc / status / ret / code /
+#       ...), not the literal `rc` only; the danger is the
+#       capture-and-continue shape, not the name.
+#   (2) `|| true\b` — the \b sits INSIDE the true branch only: `?` is a
+#       non-word char, so a trailing \b after the alternation would NEVER
+#       match `=$?` (a dead branch in the draft regex, corrected at plan
+#       fact-check; the corrected form matches all shapes and still returns
+#       0 live findings).
+#   (3) `|| :` — the colon builtin, an exact synonym of `|| true` (the
+#       lookahead bounds it to whitespace / `;` / EOL so `:=`-style text
+#       cannot match).
+# Deliberately NOT matched (documented residuals; see the check docstring):
+# `|| { rc=$?; ... }` brace-group capture (brace-group handlers are a
+# pervasive live fail-loud idiom — 20+ sites incl. a same-file-function call
+# at run_program_orchestrator.sh:86 — and covering them would threaten the
+# 0-findings bundling precondition), and quoted `|| rc="$?"` (quote masking
+# blanks the `"$?"` span BEFORE the suppressor scan, a masking-induced FN;
+# 0 live hits).
+RC_CAPTURE_WAIVER_RE = re.compile(r"#\s*RC_CAPTURE_EXEMPT\s*:\s*(.+?)\s*$")
+RC_CAPTURE_WAIVER_MIN_REASON_CHARS = 10
+# Initial errexit state per file: ON iff the shebang carries a short-option
+# cluster containing `e` (`#!/bin/bash -e` / `-eu`); otherwise OFF.
+RC_CAPTURE_SHEBANG_E_RE = re.compile(r"^#!\S+.*\s-[a-zA-Z]*e[a-zA-Z]*\b")
+
+
+def _rc_capture_set_e_transition(stripped: str) -> bool | None:
+    """Token-scan a logical shell line for a ``set -e`` / ``set +e``
+    errexit transition. Returns True (errexit ON), False (OFF), or None
+    (no transition — the line is not a ``set`` command, or carries no
+    e-bearing token). A short-option cluster containing ``e`` (``-e``,
+    ``-euo``, ``-eux``) turns errexit ON; the ``+`` cluster form turns it
+    OFF; the long forms ``-o errexit`` / ``+o errexit`` are covered for
+    completeness (0 live uses). The LAST matching token on the line wins.
+    This is LINE-ORDER state tracking (the ``check_piped_git_push``
+    ``pipefail_seen`` precedent), not file-level presence — 7 live scripts
+    toggle ``set +e`` mid-file, and under ``set +e`` the ``|| rc=$?``
+    pattern is not the footgun. Known coarseness: ``set -e`` inside a
+    function body or subshell is treated as a file-scope transition (no
+    scope tracking); it errs toward the state the author most recently
+    declared."""
+    tokens = [tok.rstrip(";") for tok in stripped.split()]
+    if not tokens or tokens[0] != "set":
+        return None
+    transition: bool | None = None
+    for i, tok in enumerate(tokens[1:], start=1):
+        nxt = tokens[i + 1] if i + 1 < len(tokens) else ""
+        if tok == "-o" and nxt == "errexit":
+            transition = True
+        elif tok == "+o" and nxt == "errexit":
+            transition = False
+        elif re.fullmatch(r"-[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = True
+        elif re.fullmatch(r"\+[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = False
+    return transition
+
+
+def _rc_capture_mask_quotes(s: str) -> str:
+    """Replace each single-quoted then double-quoted span with same-length
+    spaces, so quoted text (a remote command carrying ``|| true``, e.g. the
+    ``bootstrap_pod.sh`` ``ssh_cmd 'cd ... || true'`` shape) can never
+    satisfy the invocation or suppressor regexes, while character positions
+    stay aligned for the ``;``-segment guard. Single-quoted spans are
+    masked first (bash forbids escapes inside them, so that pass is exact);
+    the double-quote pass is naive about ``\\"`` escapes — a known
+    imperfection that can only mis-mask exotic lines, and any mis-mask
+    lands on the fail-toward-false-negative side in practice because the
+    flag additionally requires a collected same-file function name at
+    command position."""
+    s = re.sub(r"'[^']*'", lambda m: " " * len(m.group(0)), s)
+    return re.sub(r'"[^"]*"', lambda m: " " * len(m.group(0)), s)
+
+
+def check_sh_function_rc_capture(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any SAME-FILE
+    bash function invoked via ``func || rc=$?`` / ``|| true`` / ``|| :``
+    while the script runs under ``set -e``.
+
+    Rationale (#1516; incident #1426): bash disables errexit throughout a
+    function's BODY whenever the call appears in an ``||`` context, so a
+    dispatcher written in the house ``set -euo pipefail`` style loses
+    every implicit guard inside the function — a mid-function
+    ``SystemExit``, gate failure, or fit crash falls through and ``rc``
+    captures only the LAST command's exit code (usually 0). On #1426 this
+    let partial uploads and the ``[phase=done]`` success sentinel proceed
+    past a Gate-1 terminal failure. ShellCheck SC2310 is the broader
+    external analogue (optional/off-by-default even there); v1
+    deliberately matches the filed incident class only.
+
+    Detection, per logical line (backslash continuations merged, heredoc
+    bodies consumed via :func:`_iter_sh_logicals_with_heredocs`, trailing
+    comments stripped quote-aware via :func:`_strip_sh_trailing_comment`,
+    quotes masked via :func:`_rc_capture_mask_quotes`):
+
+    1. Pass 1 collects the file's own function names
+       (:data:`RC_CAPTURE_FUNC_DEF_RE`); no functions -> file skipped.
+    2. A collected name must sit at COMMAND POSITION (line start, or
+       after ``;`` ``&`` ``|`` ``(`` ``{`` or a ``then``/``do``/``else``
+       keyword) — this keeps single external-command captures
+       (``uv run python ... || rc=$?``, all current live captures)
+       unflagged: their first word is never a same-file function.
+    3. The suppressor (:data:`RC_CAPTURE_SUPPRESS_RE`) must follow the
+       invocation with no ``;`` between them (segment guard — a
+       suppressor on a LATER ``;``-segment belongs to that segment's own
+       command; ``&&`` chains deliberately stay in scope, since
+       ``cd x && func || rc=$?`` puts ``func`` in the ``||`` context).
+    4. Errexit state is tracked line-order
+       (:func:`_rc_capture_set_e_transition`; initial state from the
+       shebang, :data:`RC_CAPTURE_SHEBANG_E_RE`) — a hit inside a
+       ``set +e`` region does not flag (the function body never had
+       errexit protection there, so the author owns explicit error
+       handling; failing toward false-negative, the safe direction).
+    5. Definition lines are skipped (a definition is not an invocation —
+       kills the one-liner-def ``... || true; }`` shape; accepted FN: a
+       one-liner def whose BODY invokes another collected function with
+       ``|| true`` is skipped with it); ``#``-comment lines are skipped;
+       one error per logical line, first hit wins.
+    6. ``# RC_CAPTURE_EXEMPT: <reason>`` (reason >= 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Out-of-scope contexts (documented residuals — all the same bash
+    footgun; ShellCheck SC2310's broader scope is the named future
+    extension if the class recurs through one of them): ``if func`` /
+    ``while func`` / ``until func`` / ``! func`` / ``func && x``
+    suppressing contexts, ``var=$(func) || rc=$?`` assignment-hidden
+    substitutions, ``env VAR=1 func || true`` and bare assignment-prefix
+    forms (fname not at command position), cross-file sourced functions
+    (the collector is same-file by design, per the #1516 Goal),
+    ``func || { rc=$?; ... }`` brace-group capture, quoted
+    ``func || rc="$?"``, fail-loud handlers ``func || exit 1``, and
+    case-arm invocations ``pattern) func || true ;;``. ``.claude/hooks/``
+    is out of scope (0 of its 6 files use ``set -e`` — guards are
+    deliberately fail-open, so the class cannot fire there today).
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_push_failure_swallow``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        funcs: set[str] = set()
+        for line in lines:
+            def_match = RC_CAPTURE_FUNC_DEF_RE.match(line)
+            if def_match:
+                funcs.add(def_match.group(1) or def_match.group(2))
+        if not funcs:
+            continue
+        inv_re = re.compile(
+            r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*("
+            + "|".join(re.escape(f) for f in sorted(funcs))
+            + r")\b"
+        )
+        errexit_on = bool(lines) and bool(RC_CAPTURE_SHEBANG_E_RE.match(lines[0]))
+        for first, last, logical, _bodies in _iter_sh_logicals_with_heredocs(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            # Comment-strip BEFORE the transition scan: `set -uo pipefail  # NOT set -e`
+            # must not flip errexit ON from the comment's `-e` token (live shapes:
+            # i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30).
+            transition = _rc_capture_set_e_transition(_strip_sh_trailing_comment(stripped))
+            if transition is not None:
+                errexit_on = transition
+                continue
+            if not errexit_on:
+                continue
+            if RC_CAPTURE_FUNC_DEF_RE.match(logical):
+                continue
+            masked = _rc_capture_mask_quotes(_strip_sh_trailing_comment(logical))
+            for inv in inv_re.finditer(masked):
+                suppress = RC_CAPTURE_SUPPRESS_RE.search(masked, inv.end())
+                if suppress is None or ";" in masked[inv.end() : suppress.start()]:
+                    continue
+                if not _sh_waiver_present(
+                    lines,
+                    first,
+                    last,
+                    waiver_re=RC_CAPTURE_WAIVER_RE,
+                    min_reason_chars=RC_CAPTURE_WAIVER_MIN_REASON_CHARS,
+                ):
+                    fname = inv.group(1)
+                    errors.append(
+                        f"{sh}:{first + 1}: same-file bash function `{fname}` invoked "
+                        f"via `|| <var>=$?`/`|| true`/`|| :` under set -e — bash "
+                        f"disables errexit inside the function BODY in an `||` "
+                        f"context, so mid-function failures collapse to the last "
+                        f"command's rc (#1426: a Gate-1 terminal failure + a manifest "
+                        f"SystemExit read as rc=0 and `[phase=done]` fired). PRIMARY "
+                        f"remedies: harden the body's failure-prone steps with "
+                        f"explicit `|| exit`/`|| return $?`, or extract the body to a "
+                        f"child script (`bash x.sh || rc=$?` — a child process keeps "
+                        f"its own set -e; this is why single-external-command "
+                        f"captures are safe). NOTE: `set +e; {fname}; rc=$?; set -e` "
+                        f"bracketing alone does NOT restore body errexit — it has the "
+                        f"identical collapse semantics and must be paired with body "
+                        f"hardening. A genuinely-safe shape may be waived with "
+                        f"`# RC_CAPTURE_EXEMPT: <reason>` (#1516)."
+                    )
+                break  # one error per logical line, first hit wins
+    return errors
+
+
 # `--check-grep-qv` (#928 -> #1125): an rc-consumed quiet+invert grep trigger
 # is implementation-divergent — GNU grep exits 0 iff a line is SELECTED (with
 # -v, selected = non-matching), while ugrep 7.5.0 returns rc=1 in the same
@@ -3848,8 +4098,11 @@ def check_upload_or_true(
     Files whose repo-root-relative path is in
     :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
     (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
-    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
-    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?`` — whose
+    same-file-FUNCTION-invocation subclass is now covered by
+    :func:`check_sh_function_rc_capture` (#1516), the single-command
+    ``|| rc=$?`` shape remaining that check's residual — ``set +e``,
+    function-wrapped uploads, subshell-closing-paren swallows)
     are documented in the regex block above — every parse limitation
     degrades to a false NEGATIVE, never a false positive.
 
@@ -9556,43 +9809,44 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1435 added the subprocess-per-phase dispatcher trigger (merged with
     # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
-    "gotchas": 800,
+    # #1492 added the SAE reference-eval token-pool trigger (row 776 B ->
+    # 862 B). Cap = measured + <=40.
+    # #1513 added the between-phase cache-reap trigger (merged with #1512's
+    # smoke-gate slice-arithmetic clause, +29 B and +27 B on the 862 B base;
+    # re-measured row 918 B). Cap = measured + <=40.
+    "gotchas": 940,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
-# Growth ratchet (#1269, the #986 agent-spec grandfather pattern applied to
-# LESSONS.md's TOTAL size): the constant must HUG the measured size. Growing
-# the index requires raising this constant IN THE SAME DIFF (visible,
-# reviewed, and merge-conflicting for concurrent growers — the 07-10
-# silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
-# the index requires ratcheting it DOWN (banked slack defeats the mechanism).
-# Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
-# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
-# artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
-# ratchet = measured + ~34. #1396 grew the upload-policy row
-# (phase-sequencing trigger, store-before-long-fit #825): measured 6,147 B;
-# ratchet = measured + ~253 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1395
-# grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
-# batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
-# covers both concurrent growers).
-# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
-# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
-# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-# #1476 reworded the selection-symmetric-nulls row (bootstrap-CI
-# selection-inheritance trigger; row 278 B -> 278 B, net 0) and absorbed
-# the pre-existing committed overage (6,675 B vs ratchet 6,650 — the
-# #1462-era growth at 26d450bce8 landed without a raise): re-measured
-# total 6,675 B; ratchet 6800 (headroom ~125,
-# <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6800
-_LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
+# Non-row scaffolding budget (#1504). Growth control for the always-on index
+# is PER-CHANNEL, not a hand-bumped total:
+#   - rows: _LESSONS_ROW_MAX_BYTES / _LESSONS_ROW_GRANDFATHER_MAX_BYTES catch
+#     a bloated row at edit time in the grower's own tree (#1269), and index
+#     parity means a NEW row requires a reviewed .claude/rules/*.md;
+#   - non-row scaffolding (header prose, headings, blank lines, row newlines,
+#     anything the row grammar does not match): bounded by this FIXED budget;
+#   - aggregate: the _LESSONS_WARN_BYTES advisory band + _LESSONS_MAX_BYTES.
+# The former TOTAL growth ratchet (_LESSONS_RATCHET_BYTES, #1269) is RETIRED
+# (#1504): its same-diff constant bump made every concurrent LESSONS.md
+# growth a merge-conflict / trunk-red hazard — 2 Step-10d conflicts (#1335
+# PR #1227, #1435 PR #1188), 1 fleet-wide trunk red (#1462), 1 duplicate fix
+# pipeline (#1476/#1479) in ~48h — while per-row caps + parity already make
+# row growth deliberate. Residual: two individually-green concurrent growths
+# can sum past the 8000 cap post-merge, but every such residual-red scenario
+# has BOTH growers already inside the 7200 WARN band before pushing (for two
+# cap-sized 280-B rows the window opens at base >= ~7,440 > 7,200). Measured
+# non-row bytes at retirement: 546 (2026-07-18). 900 leaves headroom for a
+# deliberate header note. Raise ONLY for a deliberate header restructure —
+# NEVER for row growth (rows never count against this budget; pinned by
+# test_check_lessons_index_nonrow_ignores_row_bytes).
+_LESSONS_NONROW_MAX_BYTES = 900
 
 
-def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, growth ratchet, per-row caps + grandfather hygiene, #1269); extracting a branch would just relocate it
+def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, non-row budget, per-row caps + grandfather hygiene, #1269/#1504); extracting a branch would just relocate it
     *,
     repo_root: Path | None = None,
     warn_sink: list[str] | None = None,
-    ratchet_bytes: int | None = _LESSONS_RATCHET_BYTES,
+    nonrow_max_bytes: int | None = _LESSONS_NONROW_MAX_BYTES,
     row_max_bytes: int | None = _LESSONS_ROW_MAX_BYTES,
 ) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
@@ -9610,18 +9864,18 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
     under the cap emits an early-warning WARN — stderr-only / advisory, never
     a FAIL — so a near-cap landing is visible a few rows before the next
-    addition FAILs. #1269 adds the durable growth mechanisms: (e) the growth
-    RATCHET — total size over `_LESSONS_RATCHET_BYTES` FAILs (grow only via a
-    same-diff constant raise), a ratchet sitting more than
-    `_LESSONS_RATCHET_MAX_HEADROOM_BYTES` above the live size FAILs (banked
-    slack / stale ratchet — ratchet DOWN after a trim), and a ratchet above
-    `_LESSONS_MAX_BYTES` FAILs (config error — the ratchet can never
-    authorize crossing the cap); (f) PER-ROW caps — a row over
-    `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
+    addition FAILs; the cap FAIL and WARN both name the largest rows as
+    actionable trim targets (#1504); (e) the NON-ROW scaffolding budget
+    (#1504) — bytes the row grammar does not claim (header prose, headings,
+    blank lines, row newlines, malformed rows) over
+    `_LESSONS_NONROW_MAX_BYTES` FAIL; row growth NEVER counts against this
+    budget (the per-growth TOTAL ratchet is retired — see the
+    `_LESSONS_NONROW_MAX_BYTES` comment); (f) PER-ROW caps (#1269) — a row
+    over `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
     `_LESSONS_ROW_GRANDFATHER_MAX_BYTES` legacy exceptions under the same
     over-cap / excess-hug / obsolete-entry hygiene as the #986 agent-spec
     grandfather. `repo_root` is a unit-test override hook; production
-    callers pass None (canonical repo root). `ratchet_bytes` /
+    callers pass None (canonical repo root). `nonrow_max_bytes` /
     `row_max_bytes` are TEST-ONLY opt-outs (`None` disables that mode so a
     small synthetic fixture can isolate another failure mode); production
     callers never pass them. `warn_sink` mirrors
@@ -9647,6 +9901,17 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
         )
         return errors
     raw = lessons.read_bytes()
+    text = raw.decode("utf-8")
+    row_matches = list(_LESSONS_ROW_RE.finditer(text))
+    row_sizes = sorted(
+        ((len(m.group(0).encode("utf-8")), m.group("name")) for m in row_matches),
+        reverse=True,
+    )
+    largest_suffix = (
+        " Largest rows: " + ", ".join(f"{name} ({b} B)" for b, name in row_sizes[:3]) + "."
+        if row_sizes
+        else ""
+    )
     if len(raw) > _LESSONS_MAX_BYTES:
         errors.append(
             f".claude/rules/LESSONS.md: {len(raw)} bytes exceeds the "
@@ -9654,44 +9919,31 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
             f"always-on; trim 'fires when:' triggers until it fits. "
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
+            f"{largest_suffix}"
         )
     elif len(raw) > _LESSONS_WARN_BYTES:
         _warn(
             f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
             f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
-            f"decision before the next addition FAILs."
+            f"decision before the next addition FAILs.{largest_suffix}"
         )
-    # Growth ratchet (#1269) — three failure modes, all strictly-greater and
-    # DISTINCT from the 8000-byte leanness-cap FAIL above: a ratchet RED means
-    # "one-line constant bump in the SAME diff", not a real budget breach.
-    if ratchet_bytes is not None:
-        if ratchet_bytes > _LESSONS_MAX_BYTES:
+    # Non-row scaffolding budget (#1504): bytes the row grammar does not
+    # claim. Row growth NEVER counts here — growing/adding rows must not
+    # require touching this file (the retired ratchet's per-growth bump was
+    # the 4-incidents/48h conflict magnet; see _LESSONS_NONROW_MAX_BYTES).
+    if nonrow_max_bytes is not None:
+        row_total = sum(b for b, _ in row_sizes)
+        nonrow = len(raw) - row_total
+        if nonrow > nonrow_max_bytes:
             errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) exceeds "
-                f"_LESSONS_MAX_BYTES ({_LESSONS_MAX_BYTES}) — config error: "
-                f"the growth ratchet can never authorize crossing the "
-                f"leanness cap; lower the ratchet (a cap raise is a "
-                f"deliberate #869/#872-class token-budget decision)."
-            )
-        if len(raw) > ratchet_bytes:
-            errors.append(
-                f".claude/rules/LESSONS.md: {len(raw)} bytes grew past the "
-                f"_LESSONS_RATCHET_BYTES growth ratchet "
-                f"({len(raw)}/{ratchet_bytes}) — this is the one-line-bump "
-                f"gate, NOT the {_LESSONS_MAX_BYTES}-byte budget breach: "
-                f"trim the index, or raise _LESSONS_RATCHET_BYTES in the "
-                f"SAME diff (a deliberate, reviewed budget consumption — "
-                f"never above the _LESSONS_MAX_BYTES cap)."
-            )
-        elif ratchet_bytes - len(raw) > _LESSONS_RATCHET_MAX_HEADROOM_BYTES:
-            errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) sits "
-                f"{ratchet_bytes - len(raw)} bytes above the live "
-                f".claude/rules/LESSONS.md ({len(raw)} bytes) — banked slack "
-                f"/ stale ratchet defeats the growth mechanism (max headroom "
-                f"{_LESSONS_RATCHET_MAX_HEADROOM_BYTES}); ratchet DOWN to <= "
-                f"{len(raw) + _LESSONS_RATCHET_MAX_HEADROOM_BYTES} after a "
-                f"trim."
+                f".claude/rules/LESSONS.md: {nonrow} non-row scaffolding bytes "
+                f"(total {len(raw)} minus {row_total} row bytes) exceed the "
+                f"{nonrow_max_bytes}-byte non-row budget "
+                f"(_LESSONS_NONROW_MAX_BYTES). Trim header/scaffolding prose "
+                f"(a malformed index row also lands here — check the row "
+                f"grammar), or — a deliberate header-restructure decision — "
+                f"raise _LESSONS_NONROW_MAX_BYTES in the SAME diff. Row "
+                f"growth never needs this constant."
             )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
@@ -9699,7 +9951,7 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     # The same pass runs the per-row byte budgets (#1269): the full-line row
     # regex makes `m.group(0)` the whole row.
     index_counts: Counter[str] = Counter()
-    for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")):
+    for m in row_matches:
         name = m.group("name")
         index_counts[name] += 1
         if row_max_bytes is None:
@@ -10747,6 +10999,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run (#1205).",
     )
     parser.add_argument(
+        "--check-sh-function-rc-capture",
+        action="store_true",
+        help="Verify no shell script under scripts/ invokes a SAME-FILE "
+        "bash function via `func || rc=$?` / `|| true` / `|| :` under "
+        "set -e — bash disables errexit inside the function BODY when "
+        "the call sits in an `||` context, so mid-function failures "
+        "collapse to the last command's rc (#1426: partial uploads + the "
+        "`[phase=done]` success sentinel proceeded past a Gate-1 "
+        "terminal failure). Single external-command captures never "
+        "match; `set +e` regions are unflagged; waive a genuinely-safe "
+        "shape with `# RC_CAPTURE_EXEMPT: <reason>`. ShellCheck SC2310 "
+        "is the broader external analogue. Bundled into the no-flags "
+        "default run (#1516).",
+    )
+    parser.add_argument(
         "--check-grep-qv",
         action="store_true",
         help="Verify no executable workflow snippet (fenced code blocks in "
@@ -11292,6 +11559,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_pipe_python
         or args.check_piped_git_push
         or args.check_push_failure_swallow
+        or args.check_sh_function_rc_capture
         or args.check_grep_qv
         or args.check_marker_registry
         or args.check_agent_model_pins
@@ -11389,6 +11657,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_piped_git_push())
     if args.check_push_failure_swallow or no_flags:
         errors.extend(check_push_failure_swallow())
+    if args.check_sh_function_rc_capture or no_flags:
+        errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:

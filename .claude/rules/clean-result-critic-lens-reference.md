@@ -382,6 +382,12 @@ one `### <finding>` per result.)
   (Lens 11); they count as ONE narrative unit (what-is-plotted above the
   pair, interpretation below the pair). (v3: the per-finding
   setup-above/read-below skeleton.)
+- Quantified caption count claims ("all N / K of N / none … below/above
+  zero") now have a mechanical backstop (`verify_task_body.py` check 45);
+  the lens still owns the purely-verbal half — "nearly all", magnitude
+  glosses ("far below zero"), non-zero referents, subset claims a
+  same-size sibling or larger column coincidentally rescues, and count
+  claims outside the caption.
 
 ### Lens 4 — Takeaways quality
 
@@ -1045,9 +1051,13 @@ from it. Concrete checks:
    `## Findings`, `### <finding>`, setup/read prose.) Mechanical
    backstop: `verify_task_body.py` check 31 WARNs when a committed
    `figures/issue_<N>/*per{context,unit,cell}*` PNG at a body-cited
-   figure SHA is unreferenced by any body image URL (task #1011,
-   incident #928) — a pre-gate nudge only; this lens remains the
-   substantive owner.
+   figure SHA is (a) never mentioned in the body, or (b) **named in
+   prose but not embedded without an exemption phrase — detail token
+   `companion-named-not-embedded`, the class to key on** (`not
+   embedded` / `superseded by` in the filename's own paragraph silences
+   it); check 38 owns the markdown-linked-in-Results case
+   (#1011/#1371/#1510; incidents #928/#1315/#1426) — pre-gate nudges
+   only; this lens remains the substantive owner.
 1. **Figures (transformed special case).** Every figure that plots a
    residualized / partialled / binned / log-transformed / normalized
    quantity has its raw counterpart embedded inline inside the same

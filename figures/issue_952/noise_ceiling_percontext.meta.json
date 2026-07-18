@@ -1,0 +1,706 @@
+{
+  "commit": "977e183b42",
+  "created": "2026-07-18T00:09:53Z",
+  "figsize": [
+    12.4,
+    4.4
+  ],
+  "points": [
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.095229,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.114863,
+      "contexts": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.134497,
+      "contexts": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.154131,
+      "contexts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.173765,
+      "contexts": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.193399,
+      "contexts": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.213033,
+      "contexts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.232667,
+      "contexts": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.252301,
+      "contexts": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.271935,
+      "contexts": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.291569,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.311203,
+      "contexts": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.330837,
+      "contexts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.350471,
+      "contexts": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.370105,
+      "contexts": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.389738,
+      "contexts": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.409372,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.429006,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.44864,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.468274,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.23807845010906226,
+      "contexts": 0.0,
+      "series": "mean ceiling = 0.238",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.23807845010906226,
+      "contexts": 1.0,
+      "series": "mean ceiling = 0.238",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.15646361800021713,
+      "contexts": 0.0,
+      "series": "own R2 (aug) = 0.156",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-context noise-ceiling R2 (ICC)": 0.15646361800021713,
+      "contexts": 1.0,
+      "series": "own R2 (aug) = 0.156",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-context total single-draw variance T": 368489.5004746795,
+      "per-context within-context variance W": 284688.0890909088,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 331532.96429850697,
+      "per-context within-context variance W": 291575.8097646112,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 328160.40571806196,
+      "per-context within-context variance W": 264303.2457975735,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 312511.6448283757,
+      "per-context within-context variance W": 254535.51413222103,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 311692.65789103834,
+      "per-context within-context variance W": 263977.2712052261,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 336500.3533148212,
+      "per-context within-context variance W": 203397.26750483594,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 337986.04247692775,
+      "per-context within-context variance W": 249682.1674897856,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 324329.8296324515,
+      "per-context within-context variance W": 204007.91781828145,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 331061.2059324467,
+      "per-context within-context variance W": 260147.21754274916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 313167.8499518056,
+      "per-context within-context variance W": 271380.2837377584,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 314692.76612236025,
+      "per-context within-context variance W": 190215.9413671109,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 327698.7647915068,
+      "per-context within-context variance W": 264047.7455038011,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315331.4257052042,
+      "per-context within-context variance W": 259488.44415383914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 310123.43320771045,
+      "per-context within-context variance W": 213949.79305613253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 317889.26399846934,
+      "per-context within-context variance W": 264951.20525250107,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 305646.83322298044,
+      "per-context within-context variance W": 200053.93293830988,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 324871.42270898464,
+      "per-context within-context variance W": 206402.40644068393,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 321903.3091263339,
+      "per-context within-context variance W": 236297.7260698586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 303177.4017112496,
+      "per-context within-context variance W": 221119.6871884975,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 330721.4836514934,
+      "per-context within-context variance W": 238152.98765971445,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 312346.9403822318,
+      "per-context within-context variance W": 276992.19638211274,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 317575.0782504782,
+      "per-context within-context variance W": 229926.8151931781,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 328790.4164375939,
+      "per-context within-context variance W": 274192.8665546434,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315647.7223882268,
+      "per-context within-context variance W": 265283.65465361084,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315837.0065942778,
+      "per-context within-context variance W": 207980.77184521678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 321252.3984994586,
+      "per-context within-context variance W": 203777.55630583395,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 317683.57684500684,
+      "per-context within-context variance W": 201655.78051030092,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 359201.94465978397,
+      "per-context within-context variance W": 248218.27211407464,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 320924.89138373703,
+      "per-context within-context variance W": 279237.4729874869,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 317703.23021935613,
+      "per-context within-context variance W": 252541.07033763037,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 367408.9815905543,
+      "per-context within-context variance W": 237469.79404564327,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 308831.0658158311,
+      "per-context within-context variance W": 263548.59489417606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 318511.4622159213,
+      "per-context within-context variance W": 247668.71727094916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 322726.3606602764,
+      "per-context within-context variance W": 168433.66393019914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 321301.9897014127,
+      "per-context within-context variance W": 250398.0105707371,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315807.9761645078,
+      "per-context within-context variance W": 211167.91074220062,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 328250.0286215855,
+      "per-context within-context variance W": 278925.7908656839,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 341608.3674711661,
+      "per-context within-context variance W": 257596.87629003523,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315135.9769027469,
+      "per-context within-context variance W": 278518.08315065084,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 322454.5343671852,
+      "per-context within-context variance W": 275958.5356948369,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 329378.44981750014,
+      "per-context within-context variance W": 247472.3895961083,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 339846.74313959986,
+      "per-context within-context variance W": 282643.45761012926,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 343113.38651994214,
+      "per-context within-context variance W": 270664.8097789533,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 318656.34003240167,
+      "per-context within-context variance W": 240677.4175874029,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 301261.7931703271,
+      "per-context within-context variance W": 223689.06746271593,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 319907.6810579293,
+      "per-context within-context variance W": 230382.5734546922,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 357683.4956592505,
+      "per-context within-context variance W": 221064.4898035349,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 319386.4517715476,
+      "per-context within-context variance W": 229835.26781076923,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 307041.25429022644,
+      "per-context within-context variance W": 261381.98952295372,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 342441.82385237585,
+      "per-context within-context variance W": 267749.4487463827,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 306936.40595642925,
+      "per-context within-context variance W": 265093.62560035306,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 313193.70169032365,
+      "per-context within-context variance W": 226255.46111622843,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 334768.352914247,
+      "per-context within-context variance W": 263113.2599679791,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 445126.0246527879,
+      "per-context within-context variance W": 267810.8939857403,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 314703.9655800678,
+      "per-context within-context variance W": 266054.133309912,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 323970.46798143047,
+      "per-context within-context variance W": 288665.0123378566,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 321658.98516048223,
+      "per-context within-context variance W": 226935.7719223279,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 342656.7979149481,
+      "per-context within-context variance W": 277057.7464302482,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 309883.97329632577,
+      "per-context within-context variance W": 195464.35443598824,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 348618.23451280553,
+      "per-context within-context variance W": 296141.24008867785,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 315007.0735674119,
+      "per-context within-context variance W": 261105.11455966253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 327686.63527454186,
+      "per-context within-context variance W": 272064.8925867356,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 355785.47174703825,
+      "per-context within-context variance W": 284083.76249926735,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 354635.03853431955,
+      "per-context within-context variance W": 279958.0448928783,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 320508.684364583,
+      "per-context within-context variance W": 190479.77400462495,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 304640.99249433714,
+      "per-context within-context variance W": 254911.35940525206,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 336512.9450615593,
+      "per-context within-context variance W": 291277.90139996505,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 419394.9874637718,
+      "per-context within-context variance W": 260655.15856058436,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 331268.432261803,
+      "per-context within-context variance W": 302974.1869511767,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 352991.6664783401,
+      "per-context within-context variance W": 236201.26487818456,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 320244.52021843236,
+      "per-context within-context variance W": 277435.8043487619,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 363907.3077891499,
+      "per-context within-context variance W": 247064.65769540798,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 317236.9899698046,
+      "per-context within-context variance W": 270137.5645761574,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 331223.27376999473,
+      "per-context within-context variance W": 253479.0213744161,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 325686.8997061003,
+      "per-context within-context variance W": 211899.78709983543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 321357.288330316,
+      "per-context within-context variance W": 258814.39079566696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 314103.8638258818,
+      "per-context within-context variance W": 275791.8523876153,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 325894.0015015192,
+      "per-context within-context variance W": 256507.52862424645,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context total single-draw variance T": 0.0,
+      "per-context within-context variance W": 0.0,
+      "series": "W = T (ceiling 0)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "per-context total single-draw variance T": 467382.3258854273,
+      "per-context within-context variance W": 467382.3258854273,
+      "series": "W = T (ceiling 0)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 104,
+  "text": {
+    "suptitle": "Per-context noise-ceiling view (k=10 own resamples, layer-20, 42 position slots)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-context ceiling spread (n=78)",
+        "xlabel": "per-context noise-ceiling R2 (ICC)",
+        "ylabel": "contexts",
+        "legend_labels": [
+          "mean ceiling = 0.238",
+          "own R2 (aug) = 0.156"
+        ],
+        "xticklabels": [
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      },
+      {
+        "title_left": "Variance decomposition per context (lower W/T = higher ceiling)",
+        "xlabel": "per-context total single-draw variance T",
+        "ylabel": "per-context within-context variance W",
+        "legend_labels": [
+          "W = T (ceiling 0)"
+        ],
+        "xticklabels": [
+          "0",
+          "100000",
+          "200000",
+          "300000",
+          "400000",
+          "500000"
+        ],
+        "yticklabels": [
+          "0",
+          "100000",
+          "200000",
+          "300000",
+          "400000",
+          "500000"
+        ]
+      }
+    ],
+    "series": [
+      "mean ceiling = 0.238",
+      "own R2 (aug) = 0.156",
+      "W = T (ceiling 0)"
+    ]
+  }
+}

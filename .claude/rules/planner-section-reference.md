@@ -537,6 +537,16 @@ the `git log --oneline origin/main..origin/issue-<M> -- <module>` outcome
 realized-vs-corpus count reconciliation (equal, or the named filter explaining
 the shortfall) (#1345).
 
+**Validity-domain transfer (checklist item (l)) is recorded here too.** When
+the plan reuses a fit/analysis INSTRUMENT on a data regime that differs from
+the parent's (subsets, judge-filters, a different n-vs-d balance), this card
+carries the item-(l) validity-domain record — the boundary the instrument's
+own docs declare (docstring / comment / module constant, line-cited), the new
+regime read against it (e.g. per-fold n_train vs d), and the engaged
+mitigation or the stated justification for not engaging it. Escape:
+`N/A — no fit/analysis instrument reused` or `no declared validity
+boundaries`.
+
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the
 Reproducibility Card names WHERE each produced artifact persists: model

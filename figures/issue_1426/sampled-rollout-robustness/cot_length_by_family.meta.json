@@ -1,0 +1,47 @@
+{
+  "commit": "ce341a98ac",
+  "created": "2026-07-18T18:12:28Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "CoT-length distributions per family",
+        "ylabel": "well-formed CoT length (chars before </think>)",
+        "legend_labels": [
+          "seed 42",
+          "seed 137"
+        ],
+        "xticklabels": [
+          "persona",
+          "wildchat",
+          "icl",
+          "rephrase",
+          "format",
+          "behavior",
+          "default"
+        ],
+        "yticklabels": [
+          "\u22121000",
+          "0",
+          "1000",
+          "2000",
+          "3000",
+          "4000",
+          "5000",
+          "6000",
+          "7000",
+          "8000"
+        ]
+      }
+    ],
+    "series": [
+      "seed 42",
+      "seed 137"
+    ]
+  }
+}

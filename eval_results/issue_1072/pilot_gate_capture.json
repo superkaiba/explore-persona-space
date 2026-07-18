@@ -1,0 +1,14 @@
+{
+  "gate": "capture",
+  "measured_wall_s": 1.8184328079223633,
+  "units_done": 2,
+  "units_total": 2460,
+  "per_unit_s": 0.9092164039611816,
+  "projected_wall_h": 0.6212978760401408,
+  "booked_wall_h": 4.0,
+  "abort_threshold_h": 8.0,
+  "execution_shape": "batched TF forward, batch_size=8",
+  "verdict": "PASS",
+  "smoke_demoted": false,
+  "ts": 1784335248.8630123
+}

@@ -755,7 +755,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -769,7 +769,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -783,7 +783,7 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_k_in_widened_class():
@@ -797,19 +797,33 @@ def test_c6_fitness_counts_item_k_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
-def test_c6_fitness_letters_beyond_k_do_not_count():
-    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366): an unrelated
-    # (l) elsewhere in the body must NOT lift a 3-letter fitness attestation to
-    # a 4-letter PASS — an over-widening of the class to [a-l]/[a-z] would flip
-    # this to PASS.
+def test_c6_fitness_counts_item_l_in_widened_class():
+    # Pins the [a-l] regex widening (#1522): exactly four counted letters, one of
+    # them (l) — a regression to [a-k] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (l) validity-domain — instrument docstring read, new regime inside declared bounds / mitigation engaged.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/12" in r.detail
+
+
+def test_c6_fitness_letters_beyond_l_do_not_count():
+    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366, (l)->(m) at
+    # #1522): an unrelated (m) elsewhere in the body must NOT lift a 3-letter
+    # fitness attestation to a 4-letter PASS — an over-widening of the class to
+    # [a-m]/[a-z] would flip this to PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (l) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (m) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -825,7 +839,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(k)" in r.detail or "eleven" in r.detail
+    assert "(a)–(l)" in r.detail or "twelve" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -871,7 +885,7 @@ def test_c6_reuse_map_table_without_fitness_word_passes():
     # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
     # word anywhere — must PASS, not WARN "no fitness check found".
     # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
-    # heading token still declares under the widened \([jk]\) detector.
+    # heading token still declares under the widened \([jkl]\) detector.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -905,7 +919,7 @@ def test_c6_letters_without_declaration_vocab_still_warns():
 
 def test_c6_reuse_map_with_few_letters_warns():
     # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
-    # (a)–(j)/(a)–(k) range token — guard-asserted below, so this fixture  # noqa: RUF003
+    # (a)–(j)/(a)–(k)/(a)–(l) range token — guard-asserted below, so this fixture  # noqa: RUF003
     # isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
     # the declaration counted, but the letters threshold still gates. A
     # mutant dropping the reuse-map branch fails this test — with no
@@ -920,7 +934,7 @@ def test_c6_reuse_map_with_few_letters_warns():
     lowered = plan.lower()
     assert "fitness" not in lowered
     assert "attestation" not in lowered
-    assert re.search(r"\(a\)\s*[-–—…]\s*\([jk]\)", plan) is None
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jkl]\)", plan) is None
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
@@ -929,7 +943,7 @@ def test_c6_reuse_map_with_few_letters_warns():
 
 def test_c6_range_token_counts_as_declaration():
     # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
-    # range token still declares under the widened \([jk]\) detector. No
+    # range token still declares under the widened \([jkl]\) detector. No
     # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
     # item letters.
     plan = (
@@ -948,13 +962,35 @@ def test_c6_range_token_counts_as_declaration():
 
 
 def test_c6_new_range_token_counts_as_declaration():
-    # Pins the CURRENT en-dash (a)–(k) range-token branch (#1366): no  # noqa: RUF003
-    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
-    # item letters.
+    # GRANDFATHER pin (#1522): an in-flight plan citing the OLD en-dash (a)–(k)  # noqa: RUF003
+    # range token (#1366's current form) still declares under the widened
+    # \([jkl]\) detector. No 'fitness', no 'map', no 'attestation' word
+    # (guard-asserted), four real item letters.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nArtifact checks (a)–(k): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_current_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(l) range-token branch (#1522): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters. All three widened-class members {j,k,l} now carry a pin
+    # (this test + the two grandfather pins above) — a [jkl]->[jl] narrowing
+    # cannot ship green.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(l): (a) recipe; (b) regime; (c) cells; "
         + "(d) single-variable.\n"
     )
     lowered = plan.lower()
@@ -6853,12 +6889,12 @@ def test_skillmd_canonical_escapes_documents_standalone_line():
 # Fixture strategy (plan #1260 §6): monkeypatch verify_plan._C34_REPO_ROOT to
 # tmp_path and create ratcheted files at controlled sizes — testagent.md at
 # 39,900 B (non-grandfathered → headroom 100 B vs AGENT_SPEC_FAIL_BYTES
-# 40,000) and LESSONS.md 50 B under its BINDING constraint (#1269:
-# min(_LESSONS_MAX_BYTES, _LESSONS_RATCHET_BYTES) — the growth ratchet in
-# practice; derived from the live constants so routine ratchet bumps don't
-# shift the pinned headroom arithmetic). The trigger fragments mirror the
-# real #1230 plan v1 §4.1 shape: a heading naming the path, a "Verbatim text
-# to insert" line, then the fenced block.
+# 40,000) and LESSONS.md 50 B under its BINDING constraint (#1504: the total
+# growth ratchet is retired, so the binding TOTAL constraint is the
+# _LESSONS_MAX_BYTES leanness cap; derived from the live constant so a
+# coordinated cap raise doesn't shift the pinned headroom arithmetic). The
+# trigger fragments mirror the real #1230 plan v1 §4.1 shape: a heading
+# naming the path, a "Verbatim text to insert" line, then the fenced block.
 
 
 def _c34_fixture_root(tmp_path):
@@ -6866,7 +6902,7 @@ def _c34_fixture_root(tmp_path):
     (tmp_path / ".claude" / "agents").mkdir(parents=True)
     (tmp_path / ".claude" / "rules").mkdir(parents=True)
     (tmp_path / ".claude" / "agents" / "testagent.md").write_bytes(b"x" * 39_900)
-    lessons_size = min(wl._LESSONS_MAX_BYTES, wl._LESSONS_RATCHET_BYTES) - 50
+    lessons_size = wl._LESSONS_MAX_BYTES - 50
     (tmp_path / ".claude" / "rules" / "LESSONS.md").write_bytes(b"x" * lessons_size)
     return tmp_path
 
@@ -7009,14 +7045,14 @@ def test_c34_fenced_path_mention_does_not_trigger():
 
 
 def test_c34_lessons_md_headroom_warns(tmp_path, monkeypatch):
-    # #1269: the binding LESSONS.md constraint is min(cap, growth ratchet) —
-    # the ratchet in practice (it must sit under the cap), so the WARN
-    # detail names _LESSONS_RATCHET_BYTES as the cap source.
+    # #1504: the total growth ratchet is retired, so the binding LESSONS.md
+    # TOTAL constraint is the leanness cap — the WARN detail names
+    # _LESSONS_MAX_BYTES as the cap source.
     monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
     _, by_id = _run(GOOD_PLAN + _c34_lessons_fragment(200), kind="infra")
     r = by_id["c34_ratchet_headroom"]
     assert r.status == "WARN"
-    assert "_LESSONS_RATCHET_BYTES" in r.detail
+    assert "_LESSONS_MAX_BYTES" in r.detail
     assert "headroom 50 B" in r.detail
 
 

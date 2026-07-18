@@ -76,7 +76,7 @@ This is the load-bearing constraint for the entire wrapper agent.
   the containment.
 - **Orphan-adoption recovery (orchestrator-side).** If a wrapper returns
   with a Codex job still running (the stale-spec regression above): find
-  the live helper via `pgrep -af codex_task.py`, get the job id from the
+  the live helper via `pgrep -af 'codex_task[.]py'`, get the job id from the
   plugin's job state JSON, then fetch the result with
   `node <plugin-cache>/scripts/codex-companion.mjs result <job-id>` run
   from the SAME cwd the job was registered under — the companion job
