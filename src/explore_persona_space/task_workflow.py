@@ -3758,6 +3758,36 @@ def get_task(task_id: int) -> dict[str, Any]:
     }
 
 
+# The issue-wide pod-teardown shield tag (CLAUDE.md § Pods; #1485).
+KEEP_RUNNING_TAG = "keep-running"
+
+
+def keep_running_tag_state(task_id: int) -> bool | None:
+    """Tri-state read of the issue-wide teardown shield (#1485).
+
+    True  -> task read OK and the ``keep-running`` tag is present.
+    False -> task read OK and the tag is absent, OR the task does not
+             exist (registry miss / ad-hoc pod: nothing to shield).
+    None  -> the read ERRORED (branch-guard RuntimeError, corrupt
+             frontmatter ValueError, StaleTaskPathError registry
+             corruption, other OSError) - the tag state is UNKNOWABLE.
+             Callers on a DESTRUCTIVE path treat None as "do not
+             destroy" (the _wedge_keep_running 'unknown' posture).
+    """
+    # Exception ordering is load-bearing: StaleTaskPathError subclasses
+    # FileNotFoundError, which subclasses OSError — catch narrowest first.
+    try:
+        task = get_task(int(task_id))
+    except StaleTaskPathError:
+        return None  # multi-hit registry corruption: unknowable
+    except FileNotFoundError:
+        return False  # no task => no tag; ad-hoc pods stay terminable
+    except (RuntimeError, ValueError, OSError):
+        return None
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and KEEP_RUNNING_TAG in tags
+
+
 # ─── Events ─────────────────────────────────────────────────────────────────
 
 
@@ -6725,6 +6755,7 @@ __all__ = [
     "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "HUSK_REAP_TERMINAL_STATUSES",
+    "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6757,6 +6788,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "keep_running_tag_state",
     "latest_event",
     "list_by_status",
     "list_comments",

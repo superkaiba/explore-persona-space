@@ -18,6 +18,8 @@
 #   eval_results/issue_257  — test_issue_360_target_logprobs.py reads run_seed42_v2[_coref]/headline_numbers.json
 #   eval_results/issue_276  — test_issue_360_target_logprobs.py reads pre_poison_similarity.json + slash_anth_followup/headline_numbers.json
 #   eval_results/issue_537  — test_issue811_turn_nl.py -> scripts/issue811_fit.py::run_phase0_gate
+#   eval_results/issue_1345 — test_issue1345_slot_ablation.py reads the landed refit-equality
+#                             anchors (conversation_paired_stories_assistant cell JSONs)
 #                             -> scripts/issue722_fit_M.py::_load_E reads G_tensor/G_meta.json
 #                             (missing line surfaced as a sparse-worktree FileNotFoundError, #897)
 #   eval_results/issue_952  — test_issue952_kfold.py reads the committed
@@ -36,3 +38,4 @@ eval_results/issue_537
 eval_results/issue_952
 eval_results/issue_1092
 eval_results/issue_1090
+eval_results/issue_1345

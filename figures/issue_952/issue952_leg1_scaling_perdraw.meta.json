@@ -1,0 +1,734 @@
+{
+  "commit": "4eecdb789a",
+  "created": "2026-07-17T23:47:09Z",
+  "figsize": [
+    7.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.017434100546899572,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.029630015493634667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.030895664238470306,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.02623507936577675,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.031945811747036736,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.029865441854164343,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.044885548906136934,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.031338852425301385,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.02392525286929678,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.032468156355715504,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.029149642241211922,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.024642787117936563,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.03285532949431796,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.028921088539179827,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0403797906320313,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.028914659907583698,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.048715264597571833,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0477473903260943,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0514908082025908,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.047107651174526706,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.03759352671106207,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04962549491036667,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.03440316660704002,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.05903425341636391,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.05638654956851287,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04088628982292633,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04598839982136619,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04302563386656175,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04448465100867631,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.04598084735054476,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0499494797355678,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.045532180011913954,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06113992745917427,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0731671380077937,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06982783462187013,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07011354501641447,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06536354915873499,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07859338683489449,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07726392237014773,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07195766245573455,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.056449919169184626,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07181027762587039,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06651755042944901,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06430175596396667,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06538418743041814,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0659831055813973,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.061625983076935786,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0622786045604154,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08504353117727916,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08049581551183702,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07873063696448494,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0809207783449648,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07456828422119302,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08857140692929114,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08085442647278392,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07553498840916043,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0834568357906918,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07817640134186601,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07988559687727549,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0780361320242174,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07755217449019755,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08510944993332588,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08265297222580953,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0784403830065229,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10090068858433573,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09690479197370948,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09425083299442887,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09653319304640824,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09668223906170896,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09733415947309042,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.1039550619397864,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09946043089645525,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09723382805291135,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09232613600212913,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.0901538209304374,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09602223865591891,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09324167650776778,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09491730555098653,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09851775700130408,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09495719892711219,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10951477046200098,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10882228030339271,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10639459160504132,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.107386907227848,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10631624678949358,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10881092842828614,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.108533779503977,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10805355191305598,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10029544361679006,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10213384701757659,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10096628414448518,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10105164625933917,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.1002819220354985,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10173116745413197,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10197515115736035,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10021334428512492,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.11275113996762014,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10516946555854638,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.030278814322177584,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.046964694493202036,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.07092837074059555,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08058998350387431,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09825267474624041,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10797913202913696,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.11275113996762014,
+      "series": "own draw mean",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.030157088394659193,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.046529253898258745,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.06429392297970467,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.08041374321123831,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.09467124520357093,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10108110074628834,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 (per subsample draw)": 0.10516946555854638,
+      "series": "ext draw mean",
+      "_kind": "line",
+      "_group": 99
+    }
+  ],
+  "n_series": 100,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "LEG 1 \u2014 per-draw R\u00b2 behind the scaling means (8 draws/size)",
+        "xlabel": "Training-pool size N (contexts)",
+        "ylabel": "Held-out R\u00b2 (per subsample draw)",
+        "legend_labels": [
+          "own draw mean",
+          "ext draw mean"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ]
+      }
+    ],
+    "series": [
+      "own draw mean",
+      "ext draw mean"
+    ]
+  }
+}

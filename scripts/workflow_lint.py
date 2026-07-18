@@ -9578,7 +9578,13 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
 # trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
 # (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6650
+# #1476 reworded the selection-symmetric-nulls row (bootstrap-CI
+# selection-inheritance trigger; row 278 B -> 278 B, net 0) and absorbed
+# the pre-existing committed overage (6,675 B vs ratchet 6,650 — the
+# #1462-era growth at 26d450bce8 landed without a raise): re-measured
+# total 6,675 B; ratchet 6800 (headroom ~125,
+# <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+_LESSONS_RATCHET_BYTES = 6800
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 

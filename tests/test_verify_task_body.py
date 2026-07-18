@@ -117,7 +117,7 @@ def test_good_body_passes_all():
     # `check_v4_result_paragraph_sentences` WARN (#1368); check 20 v4
     # `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the ELEVEN
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the TWELVE
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -150,12 +150,16 @@ def test_good_body_passes_all():
     # `meta["text"]` block could resolve even if a sidecar did), and
     # check 40 (`check_hf_unpinned_count_claims`, WARN), a vacuous PASS
     # here because no backtick `dir/` + count-paren claim appears in the
-    # fixture, so ZERO Hub probes are issued even before the fence.
+    # fixture, so ZERO Hub probes are issued even before the fence, and
+    # check 41 (`check_figure_sidecar_coverage`, WARN), a NO-OP
+    # "no same-repo sha-pinned figures to check" PASS here because the
+    # fixture's only figure pins a fake sha (`_git_object_exists` returns
+    # 'skip', so the figure never passes the PNG-resolves scope gate).
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (41 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (42 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -171,16 +175,18 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 54 results total (2 prepended + CHECKS[1:]=41 + 11 appended; check 36
+    # 55 results total (2 prepended + CHECKS[1:]=42 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
-    # `check_v4_sample_disclosure_count` (#1421), and check 40
-    # `check_hf_unpinned_count_claims` (#1433) ride CHECKS; 36/37/39
-    # PASS-skip here — not a v4 body — and 40 is the vacuous PASS above). The
+    # `check_v4_sample_disclosure_count` (#1421), check 40
+    # `check_hf_unpinned_count_claims` (#1433), and check 41
+    # `check_figure_sidecar_coverage` (#1478) ride CHECKS; 36/37/39
+    # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
+    # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 54
+    assert len(results) == 55
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -194,6 +200,7 @@ def test_good_body_passes_all():
     assert "figure beat claims vs sidecar rendered text (series-structure drift)" in {
         r.name for r in results
     }
+    assert "figure sidecar coverage (sidecar-less embedded figures)" in {r.name for r in results}
 
 
 def test_missing_confidence_tag():
@@ -5096,7 +5103,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 42 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 43 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -5112,7 +5119,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the TWELVE generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the THIRTEEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -5159,7 +5166,14 @@ def test_checks_list_size():
     binder returned None — the UNPINNED residue checks 30/32 never see —
     flag the missing /tree/<sha> pin + best-effort count resolution against
     the data repo at the moving ref `main`; incident #1345's `rejudge/`
-    (2 files) footer claim, #1433). The
+    (2 files) footer claim, #1433), and check 41
+    (`check_figure_sidecar_coverage`, WARN: same-repo sha-pinned embedded
+    figures whose PNG resolves at the cited sha but whose sibling
+    `.meta.json` does NOT — the sidecar-less figures checks 24/28/33/34
+    silently skip under the check-24 fail-soft convention; ONE WARN per
+    body naming the basenames; existence-only `git cat-file -e` probes,
+    never a content read; incident #1434's 3 sidecar-less "po" figures,
+    #1478). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -5176,16 +5190,17 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 54 results (2 prepended + CHECKS[1:]=41 +
+    So `verify_text` returns 55 results (2 prepended + CHECKS[1:]=42 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 42 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 43 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
-    `Disclosure: N of M` count reconciliation, #1421 — and check 40
-    `check_hf_unpinned_count_claims` (#1433) ride CHECKS).
+    `Disclosure: N of M` count reconciliation, #1421 — check 40
+    `check_hf_unpinned_count_claims` (#1433) — and check 41
+    `check_figure_sidecar_coverage` (#1478) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 42
+    assert len(verify_task_body.CHECKS) == 43
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -5195,6 +5210,7 @@ def test_checks_list_size():
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -10693,10 +10709,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count is unchanged (belt-and-suspenders beside
-    the migration-history `len(CHECKS)` pin)."""
+    position 7 and the CHECKS count matches the current registry (43 as of
+    check 41, #1478; belt-and-suspenders beside the migration-history
+    `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 42
+    assert len(verify_task_body.CHECKS) == 43
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -11261,6 +11278,120 @@ def test_check28_plain_english_text_block_clean(tmp_path, monkeypatch):
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
+
+_CHECK41_NAME = "figure sidecar coverage (sidecar-less embedded figures)"
+
+
+def _make_repo_with_figure_meta_plus_bare(tmp_path):
+    """Like `_make_repo_with_figure_meta` (hero.png + hero.meta.json), plus
+    an extra `bare.png` committed WITHOUT a sidecar in the same tree — the
+    mixed sidecar-ed / sidecar-less fixture check 41's numerator/denominator
+    test reads; return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo41"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (fig_dir / "hero.meta.json").write_text(json.dumps({"description": "clean"}, indent=2) + "\n")
+    (fig_dir / "bare.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add sidecar-ed hero + sidecar-less bare figure")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def _check41_two_figure_body(sha: str) -> str:
+    """Minimal legacy-shape body embedding TWO same-repo sha-pinned figures
+    under `## TL;DR` (the legacy figure-scan section): hero.png (sidecar-ed)
+    + bare.png (sidecar-less)."""
+    base = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/"
+    )
+    return f"# Title\n\n## TL;DR\n\n![hero]({base}hero.png)\n\n![bare]({base}bare.png)\n"
+
+
+def test_check41_sidecar_missing_warns(tmp_path, monkeypatch):
+    """PNG committed WITHOUT a sidecar → WARN (passed=True, is_warn=True)
+    naming the basename + the skipped checks; must not flip the body's
+    overall verdict. THE durability pin for #1478."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # PNG only, no .meta.json
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK41_NAME]
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail and "24/28/33/34" in res.detail
+    assert "1 sidecar-less" in res.detail
+    assert _CHECK41_NAME not in {r.name for r in results if not r.passed}
+
+
+def test_check41_sidecar_present_passes_clean(tmp_path, monkeypatch):
+    """PNG + sidecar committed → clean PASS (no WARN)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, {"description": "clean"})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all carry sidecar files" in res.detail
+
+
+def test_check41_repo_unresolved_noop_pass(monkeypatch):
+    """Offline / --body-stdin → NO-OP PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_figure_sidecar_coverage(_CHECK24_BODY)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail
+
+
+def test_check41_unresolvable_sha_skips(tmp_path, monkeypatch):
+    """The cited sha does not resolve (fake sha vs a real repo) → the figure
+    is skipped (check 22's domain), NO WARN."""
+    repo, _real_sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_sidecar_coverage(_CHECK24_BODY)  # fake sha kept
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures to check" in res.detail
+
+
+def test_check41_non_same_repo_url_ignored(tmp_path, monkeypatch):
+    """A raw-GitHub figure on ANOTHER owner/repo is out of scope → NO-OP PASS."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "raw.githubusercontent.com/superkaiba/", "raw.githubusercontent.com/otherorg/"
+    )
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
+    """A body mixing a sidecar-ed and a sidecar-less figure (r1 Statistics
+    concern — the numerator/denominator path must not rest on the mutable
+    live #1332 fixture): WARN names ONLY the sidecar-less basename, with
+    denominator 2."""
+    repo, sha = _make_repo_with_figure_meta_plus_bare(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check41_two_figure_body(sha)  # hero.png (sidecar-ed) + bare.png (sidecar-less)
+    res = verify_task_body.check_figure_sidecar_coverage(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "bare.png" in res.detail and "hero.png" not in res.detail
+    assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───

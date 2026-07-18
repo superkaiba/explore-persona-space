@@ -2280,6 +2280,9 @@ def test_stalled_hardening_fields_legacy_defaults_and_advancement_clear():
         "daemon_blocked_ticks": 2,
         "daemon_blocked_pushed": True,
         "wedge_hits": 1,
+        # #1480 stalled-manual escalation counters ride the same contract.
+        "manual_escalate_count": 2,
+        "manual_escalate_first_ts": 9.0,
     }
     carried = asw._stalled_hardening_fields(populated, advanced=False)
     assert carried == populated
@@ -2651,3 +2654,563 @@ def test_stalled_pass_daemon_outage_note_threaded(
     assert "Happy daemon unreachable" in note
     assert "next daemon-reachable tick" in note
     assert "watcher bug" not in note
+
+
+# ─── #1480 stalled-manual escalation rung ────────────────────────────────────
+#
+# An unactioned stalled alert on a MANUAL registration (`manual-issue-<N>.json`)
+# holding an ACTIVE task escalates — after >= 3 consecutive stalled-confirmed
+# ticks spanning >= 24h with zero non-watcher task progress — to an
+# UNREGISTER-ONLY action: the registration file is deleted (the session is
+# NEVER stopped — #505) so the registration-independent orphan sweep re-drives
+# the task. Origin incident #928: a wedged manual session froze a
+# followups_running task for ~6 days behind the one-time alert.
+
+
+_ESC_WINDOW_S = 24 * 3600.0
+
+
+@pytest.mark.parametrize(
+    "confirm_count,first_offset_s",
+    [
+        # Exact >= boundary (S3): count' == min_confirms AND span == window.
+        (2, _ESC_WINDOW_S),
+        # Comfortably past both bars.
+        (5, 30 * 3600.0),
+    ],
+)
+def test_decide_stalled_manual_escalation_fires_after_k_confirms_and_window(
+    confirm_count, first_offset_s
+):
+    """AC-1 predicate arm + the AC-10 #928 replay arithmetic: on the #928
+    timeline (alert at ~+2.3h, zero progress after) the first stalled
+    confirmation lands at ~+2.0-2.3h, the count reaches K=3 by ~+2.5h, and
+    the 24h window gate (anchored at the FIRST confirmation — stall onset)
+    fires the escalation at ~+26h; the orphan sweep re-drives ~20-30 min
+    later — recovery <= ~27h vs the incident's ~6.4 days (~5.7x)."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    verdict, count, first = asw.decide_stalled_manual_escalation(
+        in_active=True,
+        alerted=True,
+        stale_confirmed=True,
+        confirm_count=confirm_count,
+        first_confirm_ts=now - first_offset_s,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    )
+    assert verdict == "escalate"
+    assert count == confirm_count + 1
+    assert first == now - first_offset_s
+
+
+def test_decide_stalled_manual_escalation_counts_below_k():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    anchor = now - 25 * 3600.0
+    assert asw.decide_stalled_manual_escalation(
+        in_active=True,
+        alerted=True,
+        stale_confirmed=True,
+        confirm_count=1,  # 2nd confirmation this tick: still below K=3
+        first_confirm_ts=anchor,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    ) == ("count", 2, anchor)
+
+
+def test_decide_stalled_manual_escalation_window_not_met():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    anchor = now - 3600.0  # only 1h since first confirmation
+    assert asw.decide_stalled_manual_escalation(
+        in_active=True,
+        alerted=True,
+        stale_confirmed=True,
+        confirm_count=4,  # count'=5 >= 3, but the window gate holds
+        first_confirm_ts=anchor,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    ) == ("count", 5, anchor)
+
+
+def test_decide_stalled_manual_escalation_requires_unactioned_alert():
+    # Pre-alert confirmations accumulate but can NEVER fire: the trigger is
+    # an UNACTIONED alert, so alerted=True is required at fire time — even
+    # with both thresholds met (exact boundary AND far past it).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    for confirm_count, first_offset_s in ((2, _ESC_WINDOW_S), (99, 40 * 3600.0)):
+        anchor = now - first_offset_s
+        assert asw.decide_stalled_manual_escalation(
+            in_active=True,
+            alerted=False,
+            stale_confirmed=True,
+            confirm_count=confirm_count,
+            first_confirm_ts=anchor,
+            now=now,
+            min_confirms=3,
+            min_window_s=_ESC_WINDOW_S,
+        ) == ("count", confirm_count + 1, anchor)
+
+
+def test_decide_stalled_manual_escalation_resets_on_progress():
+    # A fresh self-report / non-watcher marker (stale_confirmed=False) breaks
+    # the consecutive chain: the WHOLE accumulation resets.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    assert asw.decide_stalled_manual_escalation(
+        in_active=True,
+        alerted=True,
+        stale_confirmed=False,
+        confirm_count=99,
+        first_confirm_ts=now - 48 * 3600.0,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    ) == ("reset", 0, None)
+
+
+def test_decide_stalled_manual_escalation_resets_on_non_active_status():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    assert asw.decide_stalled_manual_escalation(
+        in_active=False,  # None/parked/terminal status read -> conservative False
+        alerted=True,
+        stale_confirmed=True,
+        confirm_count=99,
+        first_confirm_ts=now - 48 * 3600.0,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    ) == ("reset", 0, None)
+
+
+@pytest.mark.parametrize(
+    "bad_anchor",
+    [
+        None,  # missing (fresh episode / pre-#1480 on-disk file)
+        0.0,  # zeroed
+        -5.0,  # negative garbage
+        1_000_000.0 + 3600.0,  # FUTURE-dated (S4: clock skew / corrupt state)
+    ],
+)
+def test_decide_stalled_manual_escalation_malformed_anchor_fails_toward_keep(bad_anchor):
+    # A malformed / missing / future-dated anchor RESTARTS the window at
+    # `now` — never an instant fire on a corrupt state file (fail toward
+    # keep), even with an absurd inherited count.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    verdict, count, first = asw.decide_stalled_manual_escalation(
+        in_active=True,
+        alerted=True,
+        stale_confirmed=True,
+        confirm_count=99,
+        first_confirm_ts=bad_anchor,
+        now=now,
+        min_confirms=3,
+        min_window_s=_ESC_WINDOW_S,
+    )
+    assert verdict == "count"
+    assert count == 100
+    assert first == now
+
+
+def test_stalled_manual_escalation_env_knob_parsing(monkeypatch):
+    import autonomous_session_watch as asw
+
+    # Window knob: malformed / non-positive -> default (never an instant
+    # unregisterer); valid HOURS parse.
+    for bad in ("abc", "-1", "0"):
+        monkeypatch.setenv("EPM_STALLED_MANUAL_ESCALATE_H", bad)
+        assert asw._stalled_manual_escalate_window_s() == 24 * 3600.0
+    monkeypatch.setenv("EPM_STALLED_MANUAL_ESCALATE_H", "12")
+    assert asw._stalled_manual_escalate_window_s() == 12 * 3600.0
+    monkeypatch.delenv("EPM_STALLED_MANUAL_ESCALATE_H")
+    assert asw._stalled_manual_escalate_window_s() == 24 * 3600.0
+    # Confirms knob: malformed / < 1 -> default (never a stealth kill switch).
+    for bad in ("abc", "0", "-3", "1.5"):
+        monkeypatch.setenv("EPM_STALLED_MANUAL_ESCALATE_CONFIRMS", bad)
+        assert asw._stalled_manual_escalate_confirms() == 3
+    monkeypatch.setenv("EPM_STALLED_MANUAL_ESCALATE_CONFIRMS", "2")
+    assert asw._stalled_manual_escalate_confirms() == 2
+    monkeypatch.delenv("EPM_STALLED_MANUAL_ESCALATE_CONFIRMS")
+    assert asw._stalled_manual_escalate_confirms() == 3
+    # Kill switch: truthy disables the rung entirely; anything else enables.
+    for on in ("1", "true", "YES"):
+        monkeypatch.setenv("EPM_DISABLE_STALLED_MANUAL_ESCALATION", on)
+        assert asw._stalled_manual_escalation_enabled() is False
+    monkeypatch.setenv("EPM_DISABLE_STALLED_MANUAL_ESCALATION", "0")
+    assert asw._stalled_manual_escalation_enabled() is True
+    monkeypatch.delenv("EPM_DISABLE_STALLED_MANUAL_ESCALATION")
+    assert asw._stalled_manual_escalation_enabled() is True
+
+
+def _write_manual_entry(reg_dir, issue, session_id="manual-sess"):
+    """Mimic spawn_session's manual (bare ``spawn-issue``) registration shape."""
+    (reg_dir / f"manual-issue-{issue}.json").write_text(
+        json.dumps(
+            {
+                "issue": issue,
+                "happy_session_id": session_id,
+                "cwd": "/repo",
+                "spawned_at": time.time(),
+                "mode": "manual",
+            }
+        )
+    )
+
+
+def _rig_manual_escalation(
+    monkeypatch,
+    isolated_registry,
+    *,
+    issue=100,
+    now=2_000_000.0,
+    status="running",
+    count=2,
+    first_offset_s=25 * 3600.0,
+    alerted=True,
+):
+    """Fire-ready #1480 rig: a manual registration + a seeded stalled state
+    whose NEXT confirmation crosses both bars (count'=count+1 >= 3, span
+    first_offset_s >= 24h), with every I/O signal stubbed hermetic (frozen
+    self-report matching the seeded ts so the advancement-clear stays off,
+    zero events => marker_age None => stale corroborated, ACTIVE status).
+    Returns (posts, pushes) recorders."""
+    import autonomous_session_watch as asw
+
+    posts: list[tuple[int, str, bool, str]] = []
+    pushes: list[tuple[str, bool]] = []
+    _write_manual_entry(isolated_registry, issue)
+    asw._save_stalled_state(
+        issue,
+        "manual-sess",
+        missed=0,
+        alerted=alerted,
+        last_self_report_ts="2026-06-05T10:00:00Z",
+        manual_escalate_count=count,
+        manual_escalate_first_ts=now - first_offset_s,
+        prev=None,
+    )
+    stale = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, note, dry_run, label)),
+    )
+    monkeypatch.setattr(
+        asw, "_telegram_push", lambda msg, dry_run: pushes.append((msg, dry_run)) or True
+    )
+    return posts, pushes
+
+
+def test_stalled_manual_escalation_unregisters_and_posts_marker(isolated_registry, monkeypatch):
+    # AC-1: the full fire — registration unlinked, escalation marker posted,
+    # sidecar row appended (with structured fields), push attempted, counters
+    # reset at fire.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert not (isolated_registry / "manual-issue-100.json").exists()
+    esc = [p for p in posts if p[3] == "stalled-manual-escalation"]
+    assert len(esc) == 1
+    issue, note, dry_run, _label = esc[0]
+    assert issue == 100
+    assert dry_run is False
+    assert asw._STALLED_MANUAL_ESCALATION_NOTE_SENTINEL in note
+    assert "NOT stopped" in note
+    assert "manual-issue-100.json" in note
+    # Empty events => no unrun follow-up scope on record (informational only).
+    assert "none on record" in note
+    sidecar = isolated_registry / "stalled-manual-escalation-events.jsonl"
+    rows = [json.loads(line) for line in sidecar.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "stalled-manual-escalation"
+    assert rows[0]["issue"] == 100
+    assert rows[0]["sid"] == "manual-sess"
+    assert rows[0]["count"] == 3
+    assert rows[0]["span_h"] == 25.0
+    assert rows[0]["window_h"] == 24.0
+    assert rows[0]["status"] == "running"
+    assert len(pushes) == 1
+    assert "NOT stopped" in pushes[0][0]
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["manual_escalate_count"] == 0
+    assert state["manual_escalate_first_ts"] is None
+
+
+def test_stalled_manual_escalation_never_stops_or_spawns(isolated_registry, monkeypatch):
+    # AC-2 (#505 preserved): the escalation's ONLY mutation is the
+    # registration-file delete + state/marker/sidecar writes — no session
+    # stop, no spawn, no subprocess of any kind on the fire path.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    _posts, _pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+    stops: list = []
+    spawns: list = []
+    monkeypatch.setattr(asw, "_stop_session", lambda *a, **k: stops.append(a) or True)
+    monkeypatch.setattr(
+        asw, "_respawn_stalled_session", lambda *a, **k: spawns.append(a) or "spawned"
+    )
+    monkeypatch.setattr(asw, "_respawn", lambda *a, **k: spawns.append(a) or True)
+
+    def _no_subprocess(*a, **k):
+        raise AssertionError(f"subprocess.run called on the escalation path: {a!r}")
+
+    monkeypatch.setattr(asw.subprocess, "run", _no_subprocess)
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert stops == []
+    assert spawns == []
+    # ...and the fire DID happen (the assertions above are not vacuous).
+    assert not (isolated_registry / "manual-issue-100.json").exists()
+
+
+def test_stalled_manual_escalation_once_per_episode(isolated_registry, monkeypatch):
+    # AC-4: registration deletion is self-deduping (the entry no longer
+    # exists next tick) AND the persisted counters reset at fire, so a
+    # RE-REGISTERED manual session starts a fresh full accumulation.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, _pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert not (isolated_registry / "manual-issue-100.json").exists()
+
+    _write_manual_entry(isolated_registry, 100)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now + 600, daemon_reachable=True)
+
+    assert (isolated_registry / "manual-issue-100.json").exists()  # no re-fire
+    esc = [p for p in posts if p[3] == "stalled-manual-escalation"]
+    assert len(esc) == 1
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["manual_escalate_count"] == 1  # a fresh accumulation began
+
+
+def test_stalled_manual_escalation_never_fires_on_autonomous_entries(
+    isolated_registry, monkeypatch
+):
+    # AC-5: `issue-<N>.json` autonomous registrations never enter the rung
+    # (they keep the existing respawn machinery) — even with an absurd
+    # fire-ready counter seeded in the shared state file.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts: list = []
+    _write_autonomous_entry(isolated_registry, 200, "sess-200")
+    asw._save_stalled_state(
+        200,
+        "sess-200",
+        missed=0,
+        alerted=True,
+        last_self_report_ts="2026-06-05T10:00:00Z",
+        manual_escalate_count=5,
+        manual_escalate_first_ts=now - 30 * 3600.0,
+        prev=None,
+    )
+    stale = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_telegram_push", lambda *_a, **_k: True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, note, dry_run, label)),
+    )
+
+    # daemon UNREACHABLE => the autonomous arm degrades to alert-only, so the
+    # assertion isolates the rung's manual-only gate rather than respawn wiring.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+
+    assert (isolated_registry / "issue-200.json").exists()
+    assert [p for p in posts if p[3] == "stalled-manual-escalation"] == []
+
+
+def test_stalled_manual_escalation_kill_switch(isolated_registry, monkeypatch):
+    # AC-6: EPM_DISABLE_STALLED_MANUAL_ESCALATION=1 disables the rung
+    # entirely (alert-only behavior preserved; counters untouched — the
+    # predicate is never even evaluated).
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+    monkeypatch.setenv("EPM_DISABLE_STALLED_MANUAL_ESCALATION", "1")
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert (isolated_registry / "manual-issue-100.json").exists()
+    assert posts == []  # alerted episode: the ordinary dedup suppresses too
+    assert pushes == []
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["manual_escalate_count"] == 2
+    assert state["manual_escalate_first_ts"] == now - 25 * 3600.0
+
+
+@pytest.mark.parametrize(
+    "helper",
+    [
+        "_spend_approval_park_reason",
+        "_user_pause_hold_reason",
+        "_provision_in_flight_reason",
+    ],
+)
+def test_stalled_manual_escalation_exemption_veto(isolated_registry, monkeypatch, helper):
+    # AC-7: a fire-time exemption hit (user-pause prose, over-cap
+    # spend-approval park, in-flight provision, ...) VETOES the fire and
+    # RESETS the counters — the task is legitimately parked, so when the
+    # park lifts either the session resumes (advancement clear) or a fresh
+    # 24h accumulation begins.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+    monkeypatch.setattr(asw, helper, lambda *_a, **_k: f"stub {helper} exemption")
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert (isolated_registry / "manual-issue-100.json").exists()  # no unregister
+    assert [p for p in posts if p[3] == "stalled-manual-escalation"] == []
+    assert pushes == []
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["manual_escalate_count"] == 0
+    assert state["manual_escalate_first_ts"] is None
+
+
+def test_stalled_manual_escalation_worktree_activity_defers(isolated_registry, monkeypatch):
+    # Fire-time veto 1: fresh worktree activity (someone is mid-edit) DEFERS
+    # the fire but KEEPS the accumulated counters (re-evaluated next tick) —
+    # unlike the exemption veto, which resets them.
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert (isolated_registry / "manual-issue-100.json").exists()
+    assert [p for p in posts if p[3] == "stalled-manual-escalation"] == []
+    assert pushes == []
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["manual_escalate_count"] == 3  # this tick's confirmation counted
+    assert state["manual_escalate_first_ts"] == now - 25 * 3600.0
+
+
+def test_stalled_manual_escalation_dry_run(isolated_registry, monkeypatch):
+    # Dry-run fires nothing durable: no unlink, no sidecar file, no state
+    # write; the marker + push helpers are invoked through their dry-run
+    # paths (dry_run=True threaded).
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    posts, pushes = _rig_manual_escalation(monkeypatch, isolated_registry, now=now)
+    state_before = (isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text()
+
+    asw.stalled_session_pass(dry_run=True, threshold=2, now=now, daemon_reachable=True)
+
+    assert (isolated_registry / "manual-issue-100.json").exists()
+    assert (isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text() == state_before
+    assert not (isolated_registry / "stalled-manual-escalation-events.jsonl").exists()
+    esc = [p for p in posts if p[3] == "stalled-manual-escalation"]
+    assert len(esc) == 1
+    assert esc[0][2] is True  # dry_run threaded into the marker helper
+    assert len(pushes) == 1
+    assert pushes[0][1] is True  # dry_run threaded into the push helper
+
+
+def test_save_stalled_state_roundtrips_manual_escalate_fields(isolated_registry):
+    import autonomous_session_watch as asw
+
+    asw._save_stalled_state(
+        1480,
+        "sess-1480",
+        missed=0,
+        alerted=True,
+        last_self_report_ts="2026-07-17T10:00:00Z",
+        manual_escalate_count=3,
+        manual_escalate_first_ts=123.0,
+        prev=None,
+    )
+    state = asw._load_stalled_state(1480)
+    assert state["manual_escalate_count"] == 3
+    assert state["manual_escalate_first_ts"] == 123.0
+    # Defaults when not passed -> (0, None) (backward/forward compatible).
+    asw._save_stalled_state(1481, "x", missed=0, alerted=False, last_self_report_ts=None, prev=None)
+    state2 = asw._load_stalled_state(1481)
+    assert state2["manual_escalate_count"] == 0
+    assert state2["manual_escalate_first_ts"] is None
+
+
+def test_stalled_hardening_fields_clear_manual_escalate_on_advancement():
+    # The counters ride the #845 hardening-field contract: episode-scoped —
+    # a self-report ADVANCE (session resumed => trap over) clears them; a
+    # malformed on-disk value loads as the safe default (fail toward keep).
+    import autonomous_session_watch as asw
+
+    prev = {"manual_escalate_count": 3, "manual_escalate_first_ts": 123.0}
+    kept = asw._stalled_hardening_fields(prev, advanced=False)
+    assert kept["manual_escalate_count"] == 3
+    assert kept["manual_escalate_first_ts"] == 123.0
+    cleared = asw._stalled_hardening_fields(prev, advanced=True)
+    assert cleared["manual_escalate_count"] == 0
+    assert cleared["manual_escalate_first_ts"] is None
+    garbled = asw._stalled_hardening_fields(
+        {"manual_escalate_count": "x", "manual_escalate_first_ts": "y"}, advanced=False
+    )
+    assert garbled["manual_escalate_count"] == 0
+    assert garbled["manual_escalate_first_ts"] is None
+
+
+def test_stalled_manual_escalation_sentinel_in_watcher_note_sentinels():
+    """AC-8 Durability pin (anti-liveness): the escalation marker's sentinel
+    MUST be a member of ``_WATCHER_NOTE_SENTINELS`` so the fire marker never
+    resets any staleness clock — otherwise the escalation itself would push
+    the orphan sweep's re-drive back ~90 min and delay the very recovery it
+    exists to enable (#1480)."""
+    import autonomous_session_watch as asw
+
+    assert asw._STALLED_MANUAL_ESCALATION_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-17T10:00:00Z",
+            "note": (
+                f"{asw._STALLED_MANUAL_ESCALATION_NOTE_SENTINEL} ESCALATED "
+                f"stalled MANUAL issue session (#1480) ..."
+            ),
+        }
+    ]
+    assert asw._latest_nonwatcher_event_ts(events) is None

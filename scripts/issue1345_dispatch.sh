@@ -28,7 +28,9 @@ cd "$REPO_ROOT" || { echo "FATAL: cd $REPO_ROOT failed" >&2; exit 1; }
 # GCE lane exports tokens via startup metadata and has NO .env — conditional only.
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
-PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""; CHARACTER_NAME="ARIA"; VARIANT=""
+# Default honors an ambient EPM_STORY_CHARACTER_NAME (the plan v10 workload
+# command exports it inline); byte-identical when unset (parent runs never set it).
+PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""; CHARACTER_NAME="${EPM_STORY_CHARACTER_NAME:-ARIA}"; VARIANT=""; SLOTAB=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --phase) PHASE="$2"; shift 2 ;;
@@ -37,6 +39,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN="1"; shift ;;
     --character-name) CHARACTER_NAME="$2"; shift 2 ;;
     --variant) VARIANT="$2"; shift 2 ;;
+    --slot-ablation) SLOTAB="1"; shift ;;
     *) echo "FATAL: unknown arg $1" >&2; exit 1 ;;
   esac
 done
@@ -68,7 +71,36 @@ fi
 # Extractor RSS trim (#825 run-5 kernel OOM: arena free lists retained blocks)
 export MALLOC_MMAP_THRESHOLD_=131072
 
-PHASES=(prefetch prefetch_reuse phase0 gen_stories extract_r1r2 extract_stories matchedn fits transfer opcomp plots upload push)
+# conversation-paired-stories variant (plan v8 §4): swaps the story-corpus
+# construction — gen_stories_paired (verbatim-embedded answers) + extract_r4_tf
+# (teacher-forced capture) + extract_r4_op_companion (N<=200 on-policy control)
+# + matched_row_refits replace gen_stories/extract_stories; r3 is OUT OF SCOPE
+# this round (the parent ARIA run is the committed anchor, never rerun).
+# EXPLICIT membership (mirrors c.PAIRED_STORIES_VARIANTS — never a prefix
+# match): the v8 ARIA scope + the v9 Assistant scope (plan v9 header).
+CPS=""
+case "$VARIANT" in
+  conversation_paired_stories|conversation_paired_stories_assistant) CPS=1 ;;
+esac
+
+# story-slot-position-ablation mode (plan v10 §4 item 6): its OWN phase list —
+# NO gen/judge phases exist in this mode by design (a missing/short bundle is
+# a fail-loud halt, never a regeneration). --slot-ablation is pinned to the
+# story_slot_ablation variant (mirrors c.SLOT_ABLATION_VARIANTS).
+if [[ -n "$SLOTAB" && "$VARIANT" != "story_slot_ablation" ]]; then
+  echo "FATAL: --slot-ablation requires --variant story_slot_ablation (plan v10 §4)" >&2
+  exit 1
+fi
+if [[ -z "$SLOTAB" && "$VARIANT" == "story_slot_ablation" ]]; then
+  echo "FATAL: --variant story_slot_ablation requires --slot-ablation (plan v10 §4)" >&2
+  exit 1
+fi
+
+if [[ -n "$SLOTAB" ]]; then
+  PHASES=(prefetch_stories prefetch_reuse extract_r4_slots upload_stems fits_slots slot_transfer verdict plots upload push)
+else
+  PHASES=(prefetch prefetch_reuse phase0 gen_stories gen_stories_paired extract_r1r2 extract_stories extract_r4_tf extract_r4_op_companion matchedn fits matched_row_refits transfer opcomp plots upload push)
+fi
 
 VSUB=""; [[ -n "$VARIANT" ]] && VSUB="/$VARIANT"
 if [[ -n "$SMOKE" ]]; then
@@ -115,14 +147,39 @@ r3_models_to_run() {
   echo "${out[*]-}"
 }
 
+# Paired-story (r4) halt state (plan v8 §7: kept < 2160/2700 -> rc=21 halt) +
+# companion halt (rc=23: kept below the usable floor — 5 production / 1 smoke,
+# the grouped-CV minimum — TF headline proceeds, calibration N/A).
+R4_HALT_FILE="$DATA_DIR/story_regime_halted_r4"
+R4OP_HALT_FILE="$DATA_DIR/companion_halted_r4op"
+no_r4_flag() { [[ -f "$R4_HALT_FILE" ]] && echo "--no-r4" || true; }
+# Threads the companion halt into the fits phase (r1 code-review Major: without
+# it, all_cells() still enumerates the r4op cells and run_cells dies on the
+# never-extracted r4op store — a full-run FATAL from a designed control lane).
+no_r4op_flag() { [[ -f "$R4OP_HALT_FILE" ]] && echo "--no-r4op" || true; }
+
+# Under the paired variant, r3 is halted BY SCOPE (never generated this round;
+# the parent ARIA run is the committed anchor). Reuses the whole %NO_R3% /
+# halted_models plumbing with zero further changes.
+if [[ -n "$CPS" ]]; then
+  touch "$DATA_DIR/story_regime_halted_instruct" "$DATA_DIR/story_regime_halted_pretrained"
+  echo "[dispatch] cps variant: r3 story regime out of scope this round (parent anchor reused)"
+fi
+
 NGPU=0
 if command -v nvidia-smi >/dev/null 2>&1; then
   NGPU=$(nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null | wc -l)
 fi
-echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU character_name=$CHARACTER_NAME variant=${VARIANT:-none}"
+echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU character_name=$CHARACTER_NAME variant=${VARIANT:-none} slot_ablation=${SLOTAB:-0}"
 
 should_run() {
   local phase="$1"
+  # Mode-scoped membership: a phase not in the active PHASES list never runs
+  # (the slot-ablation mode swaps the list; legacy mode enumerates every
+  # legacy phase, so legacy behavior is byte-identical).
+  local known=""
+  for p in "${PHASES[@]}"; do [[ "$p" == "$phase" ]] && known="yes"; done
+  if [[ -z "$known" ]]; then return 1; fi
   if [[ "$PHASE" != "all" && "$PHASE" != "$phase" ]]; then return 1; fi
   if [[ -n "$FROM_PHASE" ]]; then
     local started=""
@@ -241,6 +298,15 @@ if should_run prefetch; then
   run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1345_common as c; [c.list_parent_shards(s) for s in c.PARENT_STEMS]; print('prefetch OK: all four pinned stems resolve @', c.PIN_REV)"
 fi
 
+if should_run prefetch_stories; then
+  echo "[phase=prefetch_stories]"
+  # Slot-ablation mode: stage the PINNED kept-stories bundle + yield report
+  # (db92091a8c… — plan v10 §10) + the 2,164-row / character-name gates
+  # (exit 3 halt; NO regeneration path exists in this mode by design).
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --prefetch-stories --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+fi
+
 if should_run prefetch_reuse; then
   if [[ -z "$VARIANT" ]]; then
     echo "[phase=prefetch_reuse] SKIPPED — default run re-extracts r1/r2 (no --variant)"
@@ -248,9 +314,12 @@ if should_run prefetch_reuse; then
     echo "[phase=prefetch_reuse]"
     # Stages the parent ARIA-run's 4 r1/r2 stems + matched-n allowlist at the
     # pinned revision (REPLACES extract_r1r2 — plan v6 §4) and runs the
-    # per-stem realized-keys probe (plan §10 c30).
+    # per-stem realized-keys probe (plan §10 c30). Slot-ablation mode stages
+    # instruct_chat_s ONLY (~23 GB not ~87 GB — plan v10 §4 item 6).
+    REUSE_STEMS_FLAG=""
+    [[ -n "$SLOTAB" ]] && REUSE_STEMS_FLAG="--stems instruct_chat_s"
     run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_prefetch_reuse.py \
-      --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG
+      --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" $REUSE_STEMS_FLAG $SMOKE_FLAG
   fi
 fi
 
@@ -260,7 +329,9 @@ if should_run phase0; then
     --dl-dir "$DL_DIR" --out-dir "$EVAL_DIR"
 fi
 
-if should_run gen_stories; then
+if should_run gen_stories && [[ -n "$CPS" ]]; then
+  echo "[phase=gen_stories] SKIPPED — paired variant generates via gen_stories_paired (r3 out of scope)"
+elif should_run gen_stories; then
   echo "[phase=gen_stories]"
   run_per_model gen "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_gen_stories.py --model %MODEL% --out-dir '$STORIES_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
   if [[ -z "$DRY_RUN" ]]; then
@@ -284,6 +355,34 @@ if should_run gen_stories; then
   fi
 fi
 
+if should_run gen_stories_paired; then
+  if [[ -z "$CPS" ]]; then
+    echo "[phase=gen_stories_paired] SKIPPED — not a paired-stories (CPS) variant"
+  else
+    echo "[phase=gen_stories_paired]"
+    # Instruct only (base N/A by scope, plan v8 §5). rc=21 == the 2160/2700
+    # yield floor failed -> the r4 leg halts (reported N/A); other rc fatal.
+    RC_PAIRED=0
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
+      --model instruct --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_PAIRED=$?
+    if [[ -z "$DRY_RUN" ]]; then
+      if [[ "$RC_PAIRED" -eq 21 ]]; then
+        echo "[gen_stories_paired] YIELD FLOOR FAILED (rc=21) — r4 leg halted (plan v8 §7, N/A — not tested)"
+        touch "$R4_HALT_FILE"
+      elif [[ "$RC_PAIRED" -ne 0 ]]; then
+        echo "FATAL: gen_stories_paired failed (rc=$RC_PAIRED)" >&2; exit 1
+      else
+        # Floor PASSED: clear any STALE halt from a prior attempt (cps fix
+        # round) — the halt files persist on the pod volume, and a leftover
+        # one would demote extract_r4_tf/fits/transfer/opcomp on the very
+        # relaunch that fixed the yield. The halt is re-evaluated per run.
+        [[ -f "$R4_HALT_FILE" ]] && echo "[gen_stories_paired] floor passed — clearing stale r4 halt"
+        rm -f "$R4_HALT_FILE"
+      fi
+    fi
+  fi
+fi
+
 if should_run extract_r1r2; then
   if [[ -n "$VARIANT" ]]; then
     echo "[phase=extract_r1r2] SKIPPED — variant reuses the parent's turnstore at the pinned revision (prefetch_reuse, plan v6 §4)"
@@ -296,7 +395,9 @@ if should_run extract_r1r2; then
   fi
 fi
 
-if should_run extract_stories; then
+if should_run extract_stories && [[ -n "$CPS" ]]; then
+  echo "[phase=extract_stories] SKIPPED — paired variant extracts via extract_r4_tf (r3 out of scope)"
+elif should_run extract_stories; then
   R3_LIVE="$(r3_models_to_run)"
   if [[ -z "$R3_LIVE" ]]; then
     echo "[phase=extract_stories] SKIPPED — story regime halted for both models (yield floor)"
@@ -311,27 +412,98 @@ if should_run extract_stories; then
   fi
 fi
 
+if should_run extract_r4_tf; then
+  if [[ -z "$CPS" ]]; then
+    echo "[phase=extract_r4_tf] SKIPPED — not a paired-stories (CPS) variant"
+  elif [[ -f "$R4_HALT_FILE" ]]; then
+    echo "[phase=extract_r4_tf] SKIPPED — r4 leg halted (yield floor)"
+  else
+    echo "[phase=extract_r4_tf]"
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
+      --regime r4 --model instruct --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+    # Upload-before-long-fit (plan v8 §9): the regeneration-costly TF stems
+    # persist BEFORE the ~6 h fits phase; idempotent per-shard verify.
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
+      --legs turnstore --turnstore-glob "*stories_paired_s_shard*" \
+      --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
+      --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
+  fi
+fi
+
+if should_run extract_r4_op_companion; then
+  if [[ -z "$CPS" ]]; then
+    echo "[phase=extract_r4_op_companion] SKIPPED — not a paired-stories (CPS) variant"
+  elif [[ -f "$R4_HALT_FILE" ]]; then
+    echo "[phase=extract_r4_op_companion] SKIPPED — r4 leg halted (yield floor)"
+  else
+    echo "[phase=extract_r4_op_companion]"
+    # rc=23 == companion unusable (kept below the usable floor — the grouped-CV
+    # minimum): the TF headline proceeds and the calibration reports N/A
+    # (plan v8 §4.5 — a control, never a kill); no_r4op_flag threads the halt
+    # into the fits phase.
+    RC_OP=0
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
+      --model instruct --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
+      --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_OP=$?
+    if [[ -z "$DRY_RUN" && "$RC_OP" -eq 23 ]]; then
+      echo "[extract_r4_op_companion] companion unusable (rc=23) — TF headline proceeds, calibration N/A"
+      touch "$R4OP_HALT_FILE"
+    elif [[ -z "$DRY_RUN" && "$RC_OP" -ne 0 ]]; then
+      echo "FATAL: companion generation failed (rc=$RC_OP)" >&2; exit 1
+    elif [[ -z "$DRY_RUN" ]]; then
+      # Usable-floor PASSED: clear any stale companion halt from a prior
+      # attempt (same re-evaluation semantics as the r4 halt above).
+      [[ -f "$R4OP_HALT_FILE" ]] && echo "[extract_r4_op_companion] floor passed — clearing stale companion halt"
+      rm -f "$R4OP_HALT_FILE"
+    fi
+    if [[ ! -f "$R4OP_HALT_FILE" ]]; then
+      run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
+        --regime r4op --model instruct --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+      run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
+        --legs turnstore --turnstore-glob "*stories_paired_op_s_shard*" \
+        --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
+        --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
+    fi
+  fi
+fi
+
 if should_run matchedn; then
   echo "[phase=matchedn]"
   # Parity gate (±0.02 vs pinned anchors; exit 3 halts) + matched-n subsets.
   # $SMOKE_FLAG demotes ONLY the anchor comparison to informational — the
   # anchors bind at production n; the computation still runs (PASS_UNIFIED).
   run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_fit_cells.py \
-    --parity --build-matched --no-r3-models "$(halted_models)" $SMOKE_FLAG \
+    --parity --build-matched --no-r3-models "$(halted_models)" $(no_r4_flag) $SMOKE_FLAG \
     --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" --out-dir "$EVAL_DIR"
 fi
 
 if should_run fits; then
   echo "[phase=fits]"
-  run_per_model fits "${ENV_INLINE:+$ENV_INLINE }uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt && ${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt) %NO_R3% $SMOKE_FLAG $REFIT_REF_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
+  run_per_model fits "${ENV_INLINE:+$ENV_INLINE }uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt && ${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt) %NO_R3% $(no_r4_flag) $(no_r4op_flag) $SMOKE_FLAG $REFIT_REF_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: fits failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
 fi
 
+if should_run matched_row_refits; then
+  if [[ -z "$CPS" ]]; then
+    echo "[phase=matched_row_refits] SKIPPED — not a paired-stories (CPS) variant"
+  elif [[ -f "$R4_HALT_FILE" ]]; then
+    echo "[phase=matched_row_refits] SKIPPED — r4 leg halted (yield floor)"
+  else
+    echo "[phase=matched_row_refits]"
+    # Same-n comparators (plan v8 §4): r1/r2 refit on the r4-kept conv subset +
+    # the TF cell on the companion's exact subset + tf_op_calibration.json.
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_matched_row_refits.py \
+      $SMOKE_FLAG --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" \
+      --eval-dir "$EVAL_DIR" --out-dir "$EVAL_DIR/matched_row" \
+      --preds-dir "$PREDS_DIR/matched_row" --null-draws $NULLS --n-boot $NBOOT
+  fi
+fi
+
 if should_run transfer; then
   echo "[phase=transfer]"
-  run_per_model transfer "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
+  run_per_model transfer "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% %NO_R3% $(no_r4_flag) $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: transfer failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -339,16 +511,72 @@ fi
 
 if should_run opcomp; then
   echo "[phase=opcomp]"
-  run_per_model opcomp "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_operator_comparison.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
+  run_per_model opcomp "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_operator_comparison.py --models %MODEL% %NO_R3% $(no_r4_flag) $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: opcomp failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# story-slot-position-ablation phases (plan v10 §4 item 6; membership-gated —
+# these names are only in the slot-mode PHASES list)
+# ---------------------------------------------------------------------------
+if should_run extract_r4_slots; then
+  echo "[phase=extract_r4_slots]"
+  # Multi-slot TF re-read: ONE forward per story, 5 single positions + the
+  # pooled attribution-phrase mean (answer-overlap rate hard-asserted 0.0 at
+  # the render trust boundary; diagnostics JSON written before any forward).
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
+    --regime r4 --model instruct --slot-ablation \
+    --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+fi
+
+if should_run upload_stems; then
+  echo "[phase=upload_stems]"
+  # Upload-before-long-fit (plan v10 §9): the regeneration-costly slot stems
+  # persist BEFORE the fits phase; idempotent per-shard verify.
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
+    --legs turnstore --turnstore-glob "*stories_paired_slots_s_shard*" \
+    --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
+    --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
+fi
+
+if should_run fits_slots; then
+  echo "[phase=fits_slots]"
+  # 7 cells (anchor refit + 4 candidates + prefix refit + chat matched
+  # recompute) on the registered row intersection, then the three-anchor
+  # ±0.02 refit-equality gate (exit 3 on a production miss BEFORE any slot
+  # read is interpreted; informational under --smoke).
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --fits --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --null-draws $NULLS --n-boot $NBOOT $SMOKE_FLAG
+fi
+
+if should_run slot_transfer; then
+  echo "[phase=slot_transfer]"
+  TRANSFER_NULLS=100
+  [[ -n "$SMOKE" ]] && TRANSFER_NULLS=5
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --transfer --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --transfer-null-draws $TRANSFER_NULLS $SMOKE_FLAG
+fi
+
+if should_run verdict; then
+  echo "[phase=verdict]"
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --verdict --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --n-boot $NBOOT $SMOKE_FLAG
+fi
+
 if should_run plots; then
   echo "[phase=plots]"
-  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" \
-    --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
+  if [[ -n "$SLOTAB" ]]; then
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_slot_plots.py \
+      --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --preds-dir "$PREDS_DIR"
+  else
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" $(no_r4_flag) \
+      --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
+  fi
 fi
 
 if should_run upload; then
@@ -358,7 +586,18 @@ if should_run upload; then
   # Variant: only the NEW story stems upload — the staged parent r1/r2 shards
   # are bit-identical to the pinned Hub copies (plan v6 §9, ~5-10 GB not ~90 GB).
   UPLOAD_EXTRA=()
-  [[ -n "$VARIANT" ]] && UPLOAD_EXTRA=(--turnstore-glob "*stories_s_shard*")
+  if [[ -n "$SLOTAB" ]]; then
+    # Slot mode: preds caches + the slot stems (already uploaded at
+    # upload_stems — idempotent re-verify); the staged stories bundle is an
+    # INPUT (already on HF at the parent prefix) and is NOT re-uploaded.
+    UPLOAD_EXTRA=(--legs preds,turnstore --turnstore-glob "*stories_paired_slots_s_shard*")
+  elif [[ -n "$CPS" ]]; then
+    # Paired variant: only the NEW r4 TF + companion stems upload (matches
+    # instruct_stories_paired_s_shard* AND instruct_stories_paired_op_s_shard*).
+    UPLOAD_EXTRA=(--turnstore-glob "*stories_paired*_shard*")
+  elif [[ -n "$VARIANT" ]]; then
+    UPLOAD_EXTRA=(--turnstore-glob "*stories_s_shard*")
+  fi
   run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG $DELETE_LOCAL \
     ${UPLOAD_EXTRA[@]+"${UPLOAD_EXTRA[@]}"} \
     --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
@@ -414,7 +653,12 @@ if [[ -n "$SMOKE" || -n "$DRY_RUN" ]]; then
   SENTINEL_KIND="epm:smoke-result"
   SENTINEL_PATH="$LOG_DIR/issue-1345-smoke-results.json"
 fi
-uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" "$CHARACTER_NAME" "$VARIANT" <<'PY'
+R4_STATE="not_applicable"
+if [[ -n "$CPS" ]]; then
+  R4_STATE="live"
+  [[ -f "$R4_HALT_FILE" ]] && R4_STATE="halted"
+fi
+uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" "$CHARACTER_NAME" "$VARIANT" "$R4_STATE" <<'PY'
 import json
 import sys
 import time
@@ -423,6 +667,7 @@ from pathlib import Path
 kind, out_path, eval_dir, commit_sha, gpu_hours, smoke, halted_csv, char_name, variant = (
     sys.argv[1:10]
 )
+r4_state = sys.argv[10]
 eval_dir = Path(eval_dir)
 eval_paths = sorted(str(p) for p in eval_dir.glob("*.json"))
 lattice = {}
@@ -442,13 +687,42 @@ refit_eq = {}
 refit_path = eval_dir / "refit_equality.json"
 if refit_path.exists():
     refit_eq = {"pass": json.loads(refit_path.read_text()).get("pass")}
+# Slot-ablation round (plan v10): lattice + three-anchor gate summaries.
+slot_lattice = {}
+sl_path = eval_dir / "slot_verdict_lattice.json"
+if sl_path.exists():
+    sl = json.loads(sl_path.read_text())
+    bat = sl.get("battery") or {}
+    slot_lattice = {
+        "verdict": sl.get("verdict"),
+        "d_obs": bat.get("d_obs"),
+        "d_ci95": bat.get("d_ci95"),
+        "chat_r2_l19_obs": bat.get("chat_r2_l19_obs"),
+        "per_slot": bat.get("per_slot"),
+        "nondegenerate_slots": sl.get("nondegenerate_slots"),
+        "answer_overlap_rates": sl.get("answer_overlap_rates"),
+        "anchor_coincidence_rates": sl.get("anchor_coincidence_rates"),
+        "registered_n_rows": sl.get("registered_n_rows"),
+    }
+refit_eq_slots = {}
+res_path = eval_dir / "refit_equality_slots.json"
+if res_path.exists():
+    refit_eq_slots = {"pass": json.loads(res_path.read_text()).get("pass")}
+tf_op = {}
+tf_op_path = eval_dir / "matched_row" / "tf_op_calibration.json"
+if tf_op_path.exists():
+    tf_op = json.loads(tf_op_path.read_text()).get("calibration", {})
 halted_models = [m for m in halted_csv.split(",") if m]
 vsub = f"/{variant}" if variant else ""
 payload = {
     "eval_numbers": {"verdict_lattice": lattice, "parity_gate": parity,
                      "refit_equality": refit_eq,
+                     "slot_verdict_lattice": slot_lattice,
+                     "refit_equality_slots": refit_eq_slots,
                      "story_regime_halted_models": halted_models,
-                     "story_regime_halted": len(halted_models) == 2},
+                     "story_regime_halted": len(halted_models) == 2,
+                     "paired_story_regime_r4": r4_state,
+                     "tf_op_calibration": tf_op},
     "eval_paths": eval_paths,
     "reproducibility_card": {
         "models": {"instruct": "Qwen/Qwen2.5-7B-Instruct", "pretrained": "Qwen/Qwen2.5-7B"},
@@ -458,6 +732,13 @@ payload = {
         "variant": variant or None,
         "reused_turnstore_revision": (
             "2a3cb30acada04defc84fd04d28a2b54da3104cd" if variant else None
+        ),
+        "paired_story_target": (
+            {"n_target": 2700, "yield_floor": 2160, "subsample_seed": 42,
+             "op_companion_n": 200, "op_companion_seed": 0}
+            # Membership mirrors c.PAIRED_STORIES_VARIANTS (v8 ARIA + v9 Assistant scope)
+            if variant in ("conversation_paired_stories",
+                           "conversation_paired_stories_assistant") else None
         ),
         "hf_data_prefix": (
             f"issue1345_smoke{vsub}/" if smoke == "1" else f"issue1345_framing{vsub}/"
@@ -469,7 +750,14 @@ payload = {
     "worktree_path": str(Path.cwd()),
     "final_commit_sha": commit_sha,
     "gpu_hours_used": float(gpu_hours),
-    "gpu_hours_budgeted": 13.0 if variant else 14.0,
+    "gpu_hours_budgeted": (
+        # 16.0 = the paired-stories plan v8/v9 §9 ceiling (both CPS scopes);
+        # 4.0 = the slot-ablation plan v10 §9 ceiling (~2.9 projected).
+        16.0 if variant in ("conversation_paired_stories",
+                            "conversation_paired_stories_assistant")
+        else (4.0 if variant == "story_slot_ablation"
+              else (13.0 if variant else 14.0))
+    ),
     "plan_deviations": [
         {"deviation": "HF store layout uses the canonical issue1345_framing/ prefix",
          "rationale": "plan §10 wrote a bare analysis_tensors/issue_1345 path; Upload Policy pins issueN_<slug>/ prefixes"},

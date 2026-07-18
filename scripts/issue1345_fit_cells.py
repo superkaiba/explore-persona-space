@@ -60,11 +60,17 @@ SLIM_KEYS = ("slots", "profiles", "nll")  # fits never read perpos (~36 GB/bundl
 
 
 def load_regime_bundle(turnstore_dir: Path, model: str, regime: str) -> dict:
-    """Load one (model, regime) store via the 28-layer pt loader + sanity asserts."""
+    """Load one (model, regime) store via the 28-layer pt loader + sanity asserts.
+
+    Every parent-registry store carries 2 slots (prefix + context); the
+    slot-ablation store (regime ``r4slot``, plan v10) carries the 5 single
+    positions + the appended pooled attribution-mean read.
+    """
+    expect_slots = len(c.SLOT_STORE_ORDER) if regime == "r4slot" else 2
     bundle = fc._load_bundle_any(
         turnstore_dir, model, c.REGIME_FORMAT[regime], c.TRACK, wanted_keys=SLIM_KEYS
     )
-    c.assert_pt_bundle(bundle, expect_slots=2, expect_layers=fc.EXPECTED_LAYERS)
+    c.assert_pt_bundle(bundle, expect_slots=expect_slots, expect_layers=fc.EXPECTED_LAYERS)
     return bundle
 
 
@@ -162,7 +168,12 @@ def degenerate_fold_reason(conv_ids, *, n_folds: int, seed: int, tgt_conv_ids=No
 # Phase 3 — matched-n subsets
 # ---------------------------------------------------------------------------
 def build_matched(
-    turnstore_dir: Path, matched_dir: Path, *, r3_models: set[str], smoke: bool = False
+    turnstore_dir: Path,
+    matched_dir: Path,
+    *,
+    r3_models: set[str],
+    r4_models: set[str] | None = None,
+    smoke: bool = False,
 ) -> dict:
     """Pair-level matched-n subsets (plan §4 Phase 3), persisted + returned.
 
@@ -272,9 +283,73 @@ def build_matched(
                 "n_r3_rows_total": int(n_r3_rows),
                 "n_r3_stories_total": len(uniq_stories),
             }
+    # Conversation-paired r4 subsets (plan v8 §4): the r4 corpus is keyed by the
+    # ORIGINAL conv_ids (one story per conversation), so the pair subset is the
+    # kept-conv intersection with the shared R1/R2 set — the data-paired
+    # alignment domain for the r1<->r4 reparameterization + the matched-row
+    # comparator refits.
+    out["per_model_r4_pair"] = _build_r4_pairs(
+        turnstore_dir, shared, r4_models or set(), smoke=smoke
+    )
     matched_dir.mkdir(parents=True, exist_ok=True)
     c.write_json(matched_dir / "matched_subsets.json", out)
     return out
+
+
+def _build_r4_pairs(
+    turnstore_dir: Path, shared: list[str], r4_models: set[str], *, smoke: bool
+) -> dict:
+    """per_model_r4_pair entries (plan v8 §4) — see build_matched docstring."""
+    pairs: dict = {}
+    for model in sorted(r4_models):
+        assert model in c.R4_MODELS, model
+        r4_ids = bundle_conv_ids(turnstore_dir, model, "r4")
+        uniq_r4 = sorted(set(r4_ids))
+        assert len(uniq_r4) == len(r4_ids), (
+            f"r4 store for {model} has duplicate conv_ids ({len(r4_ids)} rows, "
+            f"{len(uniq_r4)} unique) — the paired corpus is one story per conversation"
+        )
+        r4_convs = sorted(set(uniq_r4) & set(shared))
+        foreign = sorted(set(uniq_r4) - set(shared))
+        if foreign or not r4_convs:
+            msg = (
+                f"r4 conv set for {model}: {len(foreign)} conv(s) outside the shared "
+                f"R1/R2 set, intersection={len(r4_convs)}"
+            )
+            if smoke:
+                # Smoke prefetch stages shard000 only, so the rebuilt shared set is
+                # a small subset and the r4 smoke convs may fall outside it — the
+                # r4 pair build is skipped informationally (gate-calibration rule).
+                print(f"[matchedn][smoke] SKIP r4 pair for {model}: {msg}", flush=True)
+                continue
+            raise RuntimeError(
+                f"{msg} — the paired corpus is drawn FROM the shared allowlist "
+                "(plan v8 §4), so any foreign conv means extraction/allowlist drift"
+            )
+        entry: dict = {"n": len(r4_convs), "r4_convs": r4_convs}
+        try:
+            op_ids = bundle_conv_ids(turnstore_dir, model, "r4op")
+        except AssertionError:
+            op_ids = None  # companion halted (rc=23) / not yet extracted
+        if op_ids is not None:
+            op_convs = sorted(set(str(x) for x in op_ids) & set(r4_convs))
+            entry["op_companion_convs"] = op_convs
+            entry["n_op"] = len(op_convs)
+            # Explicit demotion record (r1 review Major): downstream consumers
+            # (matched-row refits / tf_op_calibration / payload matched_n rows)
+            # carry it forward instead of inferring from an absent list.
+            entry["companion"] = "present" if op_convs else "empty_intersection"
+        else:
+            entry["op_companion_convs"] = None
+            entry["n_op"] = 0
+            entry["companion"] = "halted"
+            print(
+                f"[matchedn] no r4op store for {model} (companion halted — the rc=23 "
+                "lane, plan v8 §4.5: TF headline proceeds, calibration N/A)",
+                flush=True,
+            )
+        pairs[model] = entry
+    return pairs
 
 
 def load_matched(matched_dir: Path) -> dict:
@@ -402,8 +477,10 @@ def parity_gate(
 # Phase 4 — within-regime fits
 # ---------------------------------------------------------------------------
 def allowlist_for(cell: dict, matched: dict | None) -> list[str] | None:
-    """R1/R2 cells fit on the shared conversation subset; R3 fits its full store."""
-    if matched is None or cell["regime"] == "r3":
+    """R1/R2 cells fit on the shared conversation subset; story-type regimes
+    (r3, and the paired r4/r4op — whose conv sets are subsets of the shared
+    set by construction) fit their full stores."""
+    if matched is None or cell["regime"] not in ("r1", "r2"):
         return None
     return matched["shared_r1r2_convs"]
 
@@ -420,7 +497,11 @@ def run_cells(
     null_draws: int,
     n_boot: int,
     smoke: bool = False,
+    allowlist_fn=None,
 ) -> None:
+    """Fit the given cells; ``allowlist_fn(cell) -> list | None`` overrides the
+    default matched-subset allowlist (used by the matched-row refit driver)."""
+    resolve_allowlist = allowlist_fn or (lambda cell: allowlist_for(cell, matched))
     preds_dir.mkdir(parents=True, exist_ok=True)
     # Loader-path assert + ONE slim load per (model, regime) — plan §4 Phase 4
     # binding staging rule (pt loader, 28 layers, non-arange conv_ids).
@@ -438,7 +519,7 @@ def run_cells(
             # arrays. Skip the cell informationally; production never guards.
             xy_probe = fc._apply_row_allowlist(
                 fc._cell_xy(bundles[(cell["model_key"], cell["regime"])], cell),
-                allowlist_for(cell, matched),
+                resolve_allowlist(cell),
                 cid,
             )
             reason = degenerate_fold_reason(xy_probe["conv_ids"], n_folds=n_folds, seed=seed)
@@ -457,7 +538,7 @@ def run_cells(
             seed=seed,
             null_draws=null_draws,
             n_boot=n_boot,
-            allowlist=allowlist_for(cell, matched),
+            allowlist=resolve_allowlist(cell),
             bundle=bundles[(cell["model_key"], cell["regime"])],
         )
         sweep, xy = res["sweep"], res["xy"]
@@ -522,6 +603,8 @@ def refit_equality_check(
     for cell in cells:
         if cell["regime"] == "r3":
             continue
+        if cell["regime"] in ("r4", "r4op"):
+            continue  # new paired-story cells have no parent reference by design
         cid = cell["cell_id"]
         new_path = out_dir / f"cells_{cid}.json"
         ref_path = ref_dir / f"cells_{cid}.json"
@@ -572,13 +655,21 @@ def refit_equality_check(
         raise SystemExit(3)
 
 
-def select_cells(cells_arg: str, halted: set[str]) -> list[dict]:
+def select_cells(
+    cells_arg: str, halted: set[str], *, no_r4: bool = False, no_r4op: bool = False
+) -> list[dict]:
     """Resolve --cells against the registry, then drop halted models' r3 cells.
 
     Membership is asserted against the FULL registry BEFORE the per-model halt
     filter — a halted model's r3 cell in --cells is a deliberate logged drop
     (plan §7 per-model yield floor), never an "unknown cell id" crash (the
     pre-r6 ordering crashed exactly there under --no-r3 + an explicit list).
+    ``no_r4`` mirrors the same drop-and-log semantics for the paired-story
+    regime (r4 + its r4op companion) when its own yield floor halted;
+    ``no_r4op`` drops ONLY the r4op companion cells (the rc=23 companion-halt
+    lane, plan v8 §4.5: the TF headline proceeds, calibration reports N/A —
+    without this, run_cells would FileNotFoundError on the never-extracted
+    r4op store and kill the whole fits phase; r1 code-review Major).
     """
     cells = c.all_cells()
     if cells_arg != "all":
@@ -593,6 +684,25 @@ def select_cells(cells_arg: str, halted: set[str]) -> list[dict]:
             "(per-model yield floor, plan §7)",
             flush=True,
         )
+    if no_r4:
+        dropped_r4 = [x["cell_id"] for x in cells if x["regime"] in ("r4", "r4op")]
+        if dropped_r4:
+            print(
+                f"[fits] dropping r4/r4op cells (paired-story yield floor, plan v8 §7): "
+                f"{dropped_r4}",
+                flush=True,
+            )
+        dropped += dropped_r4
+    if no_r4op:
+        dropped_op = [x["cell_id"] for x in cells if x["regime"] == "r4op"]
+        if dropped_op:
+            print(
+                f"[fits] dropping r4op companion cells (companion halted rc=23, plan v8 "
+                f"§4.5 — TF headline proceeds, calibration N/A): {dropped_op}",
+                flush=True,
+            )
+        dropped += dropped_op
+    if dropped:
         cells = [x for x in cells if x["cell_id"] not in set(dropped)]
     return cells
 
@@ -613,6 +723,19 @@ def main() -> None:
         help="comma-separated models whose story regime halted (per-model yield "
         "floor, plan §7); their r3 cells/pairs are dropped with a logged reason "
         "while the other model's story leg proceeds",
+    )
+    ap.add_argument(
+        "--no-r4",
+        action="store_true",
+        help="paired-story regime halted (r4 yield floor, plan v8 §7): drop the "
+        "r4/r4op cells + skip the r4 matched-pair build",
+    )
+    ap.add_argument(
+        "--no-r4op",
+        action="store_true",
+        help="on-policy companion halted (rc=23 usable-floor miss, plan v8 §4.5): "
+        "drop ONLY the r4op companion cells — the r4 TF headline proceeds and "
+        "tf_op_calibration reports N/A (keyed on R4OP_HALT_FILE in the dispatcher)",
     )
     ap.add_argument("--parity", action="store_true", help="±0.02 anchor parity gate")
     ap.add_argument(
@@ -651,10 +774,11 @@ def main() -> None:
             args.turnstore_dir,
             args.matched_dir,
             r3_models=set(c.MODELS) - halted,
+            r4_models=(set(c.R4_MODELS) if c.HAS_R4 and not args.no_r4 else set()),
             smoke=args.smoke,
         )
     if args.cells:
-        cells = select_cells(args.cells, halted)
+        cells = select_cells(args.cells, halted, no_r4=args.no_r4, no_r4op=args.no_r4op)
         matched = load_matched(args.matched_dir)
         run_cells(
             args.turnstore_dir,

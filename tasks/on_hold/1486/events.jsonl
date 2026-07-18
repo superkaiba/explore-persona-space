@@ -1,0 +1,2 @@
+{"ts": "2026-07-18T00:15:10Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-18T00:29:02Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Carry-over from #1023 code review (1 Minor): the bare 'figures' extend-exclude also swallows scripts/figures/plot_issue261_per_persona.py (one frozen plot script loses real-bug lint; no load-bearing siblings). Consider narrowing the exclude or re-homing that file when this burn-down runs."}

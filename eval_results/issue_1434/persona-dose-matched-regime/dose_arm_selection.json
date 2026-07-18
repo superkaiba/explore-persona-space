@@ -1,0 +1,143 @@
+{
+  "issue": 1434,
+  "round_label": "persona-dose-matched-regime",
+  "selection_rule": "argmin |Tier-1 rate - target| over every rung of the three same-side persona ladders; tie-break: same run as the context's verdict arm, then lower step (plan §11 row 2)",
+  "tolerance": 0.1,
+  "targets": {
+    "con_side": 0.81,
+    "po_side": 0.6
+  },
+  "arms": [
+    {
+      "label": "con@45",
+      "arm_dir": "ws-pers-lr1e5-step45",
+      "cell_key": "ws-pers",
+      "side": "con",
+      "run_id": "ws-pers-lr1e5",
+      "step": 45,
+      "hub_subfolder": "issue1434/ws-pers-lr1e5/checkpoint-45",
+      "source_ctx": "persona_software_engineer",
+      "tier1_rate": 0.86,
+      "target": 0.81,
+      "gap": 0.05,
+      "tolerance_verdict": "matched (0.05 <= 0.10)"
+    },
+    {
+      "label": "po@10",
+      "arm_dir": "ws-po-pers-lr3e5-step10",
+      "cell_key": "ws-po-pers",
+      "side": "po",
+      "run_id": "ws-po-pers-lr3e5",
+      "step": 10,
+      "hub_subfolder": "issue1434/ws-po-pers-lr3e5/checkpoint-10",
+      "source_ctx": "persona_software_engineer",
+      "tier1_rate": 0.49,
+      "target": 0.6,
+      "gap": 0.11,
+      "tolerance_verdict": "near-matched (0.11)"
+    }
+  ],
+  "po_infeasibility": {
+    "pre_registered_clause": "re-select the po-persona checkpoint to the contrastive persona verdict rate 0.60 within 0.10; if no checkpoint sits within 0.10 of 0.60, report dose-matching infeasible at 5-step spacing (scope-caveat upgrade)",
+    "target": 0.6,
+    "tolerance": 0.1,
+    "nearest_per_run": [
+      {
+        "run_id": "ws-po-pers-lr3e5",
+        "step": 10,
+        "tier1_rate": 0.49,
+        "gap": 0.11
+      },
+      {
+        "run_id": "ws-po-pers-lr1e4",
+        "step": 5,
+        "tier1_rate": 0.47959183673469385,
+        "gap": 0.1204
+      },
+      {
+        "run_id": "ws-po-pers-lr1e5",
+        "step": 20,
+        "tier1_rate": 0.43,
+        "gap": 0.17
+      }
+    ],
+    "verdict": "INFEASIBLE within 0.10 at 5-step spacing (nearest gap 0.11) — the clause FIRES and is carried to the clean-result verbatim; resolution: two-point dose bracket (plan §2.2), the verdict binds to the con-side matched-high bracket only"
+  },
+  "static_arms": {
+    "po25": {
+      "run_id": "ws-po-pers-lr1e5",
+      "step": 25,
+      "tier1_rate": 0.81,
+      "pooled_nonsource": {
+        "k": 382,
+        "n": 500
+      },
+      "source_ctx_panel": {
+        "k": 71,
+        "n": 100,
+        "rate": 0.71
+      },
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/i1434po_ladders.json"
+    },
+    "con25": {
+      "run_id": "ws-pers-lr1e5",
+      "step": 25,
+      "tier1_rate": 0.6,
+      "pooled_nonsource": {
+        "k": 234,
+        "n": 489
+      },
+      "source_ctx_panel": {
+        "k": 61,
+        "n": 100,
+        "rate": 0.61
+      },
+      "source_file": "eval_results/issue_1434/i1434_ladders.json"
+    },
+    "base": {
+      "pooled_nonsource": {
+        "k": 1,
+        "n": 500
+      },
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/i1434po_ladders.json"
+    }
+  },
+  "references": {
+    "unmatched_persona": {
+      "D": 0.2854723926380368,
+      "newcombe_95": [
+        0.2263770093288917,
+        0.3417197365462134
+      ],
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/regime_contrast.json"
+    },
+    "bare_matched": {
+      "D": 0.13248472505091652,
+      "newcombe_95": [
+        0.07031572185889606,
+        0.19320893974616757
+      ],
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/regime_contrast.json"
+    }
+  },
+  "source_pins": {
+    "i1434_ladders.json": {
+      "path": "eval_results/issue_1434/i1434_ladders.json",
+      "git_commit": "de4e2774f1012cbcc8555ee1f36ff505d2528489",
+      "git_commit_date": "2026-07-17T04:17:40-07:00"
+    },
+    "i1434po_ladders.json": {
+      "path": "eval_results/issue_1434/writing-style-positive-only-regime/i1434po_ladders.json",
+      "git_commit": "ea2731fffc022da92987097f257e0ee2cbb41227",
+      "git_commit_date": "2026-07-17T09:03:22-07:00"
+    },
+    "regime_contrast.json": {
+      "path": "eval_results/issue_1434/writing-style-positive-only-regime/regime_contrast.json",
+      "git_commit": "ea2731fffc022da92987097f257e0ee2cbb41227",
+      "git_commit_date": "2026-07-17T09:03:22-07:00"
+    }
+  },
+  "smoke": false,
+  "git_commit": "dc3a465ca2",
+  "ts": "2026-07-17T18:15:42Z"
+}

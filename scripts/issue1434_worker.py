@@ -25,6 +25,17 @@ VM (post-pod):
   Newcombe, the §3 verdict lattice, leakage, the registered-rubric parity
   re-read, drop-split report -> eval_results/issue_1434/ aggregates.
 
+persona-dose-matched-regime round (plan v8, eval-only; run under
+``--round i1434po``):
+- ``--phase dose-select``        Q1 (VM, 0 GPU): deterministic dose-arm
+  recompute + plan-pin asserts + static-panel snapshots ->
+  ``dose_arm_selection.json`` (committed BEFORE dispatch).
+- ``--phase dose-panel``         Q3 (pod, 1 GPU): the phase_panel loop over the
+  2 dose-selected arms, checkpoints staged from the HF model repo.
+- ``--phase dose-judge-analyze`` Q5 (VM, 0 GPU): Batch judging of the 2 new
+  arms, D_hi/D_lo brackets vs the static committed sides, §3 lattice on D_hi
+  only, deliverables + figures.
+
 Pod-side code NEVER shells scripts/task.py; sentinels ride the fu4 contract
 (``/workspace/logs/issue-1434-*.json`` + out-of-glob status twins).
 """
@@ -40,6 +51,7 @@ import dataclasses  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
+import subprocess  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -992,6 +1004,7 @@ def _judge_rate_graded(
     n_draws: int,
     judge_root: Path,
     instrument: str,
+    include_scores: bool = False,
 ) -> dict:
     """Graded pv/registered judging of one arm's completions -> rate + spread.
 
@@ -1056,6 +1069,11 @@ def _judge_rate_graded(
         "n_transport_lost_draws": getattr(result, "n_transport_lost_draws", None),
         "drop_flag_over_bar": bool(drop_frac > JUDGE_DROP_FLAG_BAR),
     }
+    if include_scores:
+        # Per-item mean graded scores (kept draws) — the dose round's graded-
+        # distribution companion (plan v8 §6 item: distributions under every
+        # rate). Additive field; parent aggregates unchanged (no re-run).
+        rec["scores"] = scored
     if rec["drop_flag_over_bar"]:
         logger.warning(
             "[i1434-judge] %s: item drop fraction %.3f > %.2f — FLAGGED (rule 23 "
@@ -1535,6 +1553,658 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
     return 0
 
 
+# ── persona-dose-matched-regime round (plan v8): eval-only dose re-read ──────
+# Q1 dose-select (VM, 0 GPU) -> Q3 dose-panel (pod, 1 GPU) -> Q5
+# dose-judge-analyze (VM, 0 GPU). The ONLY manipulated variable vs the parent
+# panels is WHICH checkpoints the persona-context leakage panel reads
+# (dose-matched rungs instead of the band verdict rule); everything else is
+# byte-inherited (contexts, n, temperature, seed, judge instrument).
+
+DOSE_ROUND_LABEL = "persona-dose-matched-regime"
+DOSE_TOLERANCE = 0.10  # the pre-registered scope tolerance (plan §2.2/§7)
+# Plan §2.2 pins — Q1 recomputes and ASSERTS equality (any mismatch = the
+# committed ladder data changed under us; fail loud, never warn).
+DOSE_PLAN_PINS = {
+    "con": {"run_id": "ws-pers-lr1e5", "step": 45, "tier1_rate": 0.86, "target": 0.81},
+    "po": {"run_id": "ws-po-pers-lr3e5", "step": 10, "tier1_rate": 0.49, "target": 0.60},
+}
+# Plan §10 static-side pins (pooled non-source counts of the reused panels).
+DOSE_STATIC_PINS = {"po25": (382, 500), "con25": (234, 489), "base": (1, 500)}
+# Fitness check (a): recipe ground truth asserted on the fetched
+# adapter_config.json (both subfolders Hub-verified at plan + implementation).
+DOSE_ADAPTER_RECIPE_PIN = {
+    "r": 32,
+    "lora_alpha": 64,
+    "use_rslora": True,
+    "base_model_name_or_path": DEFAULT_BASE_MODEL,
+}
+
+
+def _git_file_pin(path: Path) -> dict:
+    """`git log -1` pin + working-tree-clean staleness check for a committed
+    source file (plan §4 Q1 + risk row 5). Raises on dirty/untracked."""
+    rel = str(path.resolve().relative_to(cells.REPO_ROOT.resolve()))
+
+    def _git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args, "--", rel],
+            cwd=cells.REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+    head = _git("log", "-1", "--format=%H %cI")
+    if not head:
+        raise RuntimeError(f"[i1434-dose] {rel}: no git history — refusing an untracked source")
+    if _git("status", "--porcelain"):
+        raise RuntimeError(
+            f"[i1434-dose] {rel}: uncommitted modifications — staleness check FAILED "
+            "(commit or restore the aggregate before any dose phase)"
+        )
+    commit, date = head.split(" ", 1)
+    return {"path": rel, "git_commit": commit, "git_commit_date": date}
+
+
+def _dose_nearest_arm(ladders: dict, prefix: str, target: float, verdict_run_id: str) -> dict:
+    """argmin |Tier-1 rate - target| over EVERY rung of the `<prefix>-lr*`
+    ladders; tie-break (plan §11 row 2): same run as the context's verdict
+    arm, then lower step. Deterministic (sorted runs, sorted int steps)."""
+    best_key: tuple | None = None
+    best: dict | None = None
+    for run_id in sorted(k for k in ladders if k.startswith(f"{prefix}-lr")):
+        rates = (ladders[run_id] or {}).get("rates_by_step") or {}
+        for step in sorted(int(s) for s in rates):
+            rate = float(rates[str(step)])
+            gap = abs(rate - target)
+            key = (round(gap, 9), 0 if run_id == verdict_run_id else 1, step)
+            if best_key is None or key < best_key:
+                best_key = key
+                best = {"run_id": run_id, "step": step, "tier1_rate": rate, "gap": gap}
+    if best is None:
+        raise RuntimeError(f"[i1434-dose] no {prefix}-lr* ladder rates found — cannot select")
+    return best
+
+
+def _dose_nearest_per_run(ladders: dict, prefix: str, target: float) -> list[dict]:
+    """Each `<prefix>-lr*` run's nearest rung to the target (the verbatim
+    po-side infeasibility record, plan §2.2), sorted by gap."""
+    rows: list[dict] = []
+    for run_id in sorted(k for k in ladders if k.startswith(f"{prefix}-lr")):
+        rates = (ladders[run_id] or {}).get("rates_by_step") or {}
+        if not rates:
+            continue
+        step, rate = min(rates.items(), key=lambda kv: (abs(float(kv[1]) - target), int(kv[0])))
+        rows.append(
+            {
+                "run_id": run_id,
+                "step": int(step),
+                "tier1_rate": float(rate),
+                "gap": round(abs(float(rate) - target), 4),
+            }
+        )
+    return sorted(rows, key=lambda r: (r["gap"], r["run_id"]))
+
+
+def _assert_dose_pin(side: str, computed: dict, pin: dict) -> None:
+    diffs = {k: (computed.get(k), pin[k]) for k in ("run_id", "step") if computed.get(k) != pin[k]}
+    if abs(float(computed["tier1_rate"]) - float(pin["tier1_rate"])) > 1e-9:
+        diffs["tier1_rate"] = (computed["tier1_rate"], pin["tier1_rate"])
+    if diffs:
+        raise RuntimeError(
+            f"[i1434-dose] {side}-side selection mismatch vs plan §2.2 pin "
+            f"(computed vs pinned): {diffs} — the committed ladder data changed; "
+            "re-approve the plan before running the panel"
+        )
+
+
+def phase_dose_select(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q1 (VM, 0 GPU, no API): deterministic dose-arm recompute + manifest.
+
+    Recomputes argmin |Tier-1 rate - target| for target 0.81 over the three
+    `ws-pers-*` ladders (con side) and target 0.60 over the three
+    `ws-po-pers-*` ladders (po side), ASSERTS both equal the plan-pinned
+    pair, snapshots the static reused-panel counts (git-pinned + dirty-
+    checked), and writes ``dose_arm_selection.json``."""
+    _ensure_family_round()
+    run1090._phase("i1434_dose_select")
+    del args
+    con_path = cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json"
+    po_path = cells.PO_DELIVERABLES_DIR / "i1434po_ladders.json"
+    contrast_path = cells.PO_DELIVERABLES_DIR / "regime_contrast.json"
+    source_pins = {p.name: _git_file_pin(p) for p in (con_path, po_path, contrast_path)}
+    con_agg = run1090._read_json(con_path)
+    po_agg = run1090._read_json(po_path)
+    parent_contrast = run1090._read_json(contrast_path)
+    source_ctx = cells.CONTEXT_BY_CELL_KEY["ws-pers"]
+
+    # Targets = the OPPOSITE regime's persona verdict Tier-1 rate (plan §2.2).
+    con_verdict = con_agg["verdict_arms"]["ws-pers"]
+    po_verdict = po_agg["verdict_arms"]["ws-po-pers"]
+    con_target = float(po_verdict["selection"]["rate"])  # 0.81: match con TO po
+    po_target = float(con_verdict["selection"]["rate"])  # 0.60: match po TO con
+    if (
+        abs(con_target - DOSE_PLAN_PINS["con"]["target"]) > 1e-9
+        or abs(po_target - DOSE_PLAN_PINS["po"]["target"]) > 1e-9
+    ):
+        raise RuntimeError(
+            f"[i1434-dose] verdict-rate targets drifted: con-side target {con_target} "
+            f"(pin {DOSE_PLAN_PINS['con']['target']}), po-side target {po_target} "
+            f"(pin {DOSE_PLAN_PINS['po']['target']}) — committed aggregates changed"
+        )
+
+    con_arm = _dose_nearest_arm(con_agg["ladders"], "ws-pers", con_target, con_verdict["run_id"])
+    po_arm = _dose_nearest_arm(po_agg["ladders"], "ws-po-pers", po_target, po_verdict["run_id"])
+    _assert_dose_pin("con", con_arm, DOSE_PLAN_PINS["con"])
+    _assert_dose_pin("po", po_arm, DOSE_PLAN_PINS["po"])
+
+    arms = []
+    for side, arm, target, cell_key in (
+        ("con", con_arm, con_target, "ws-pers"),
+        ("po", po_arm, po_target, "ws-po-pers"),
+    ):
+        gap = float(arm["gap"])
+        arms.append(
+            {
+                "label": f"{side}@{arm['step']}",
+                "arm_dir": f"{arm['run_id']}-step{arm['step']}",
+                "cell_key": cell_key,
+                "side": side,
+                "run_id": arm["run_id"],
+                "step": arm["step"],
+                "hub_subfolder": (
+                    f"{cells.ADAPTER_PREFIX_1434}/{arm['run_id']}/checkpoint-{arm['step']}"
+                ),
+                "source_ctx": source_ctx,
+                "tier1_rate": arm["tier1_rate"],
+                "target": target,
+                "gap": round(gap, 4),
+                "tolerance_verdict": (
+                    f"matched ({gap:.2f} <= {DOSE_TOLERANCE:.2f})"
+                    if gap <= DOSE_TOLERANCE + 1e-12
+                    else f"near-matched ({gap:.2f})"
+                ),
+            }
+        )
+
+    # Static reused-panel snapshots (plan §10) — asserted against the pins.
+    k_po, n_po, _ = _pooled_nonsource_counts(po_agg["panel"]["ws-po-pers"], source_ctx)
+    k_con, n_con, _ = _pooled_nonsource_counts(con_agg["panel"]["ws-pers"], source_ctx)
+    k_b, n_b, _ = _pooled_nonsource_counts(po_agg["panel"]["ws-po-pers"], source_ctx, side="base")
+    computed_counts = {"po25": (k_po, n_po), "con25": (k_con, n_con), "base": (k_b, n_b)}
+    for name, pin in DOSE_STATIC_PINS.items():
+        if computed_counts[name] != pin:
+            raise RuntimeError(
+                f"[i1434-dose] static panel counts drifted for {name}: committed "
+                f"{computed_counts[name]} != plan pin {pin} — a later round rewrote "
+                "the aggregates; re-approve before running"
+            )
+
+    def _src_read(panel_entry: dict) -> dict:
+        rec = ((panel_entry.get("contexts") or {}).get(source_ctx) or {}).get("trained") or {}
+        return {"k": rec.get("k_positive"), "n": rec.get("n_scored"), "rate": rec.get("rate")}
+
+    static_arms = {
+        "po25": {
+            "run_id": po_verdict["run_id"],
+            "step": int(po_verdict["selection"]["step"]),
+            "tier1_rate": float(po_verdict["selection"]["rate"]),
+            "pooled_nonsource": {"k": k_po, "n": n_po},
+            "source_ctx_panel": _src_read(po_agg["panel"]["ws-po-pers"]),
+            "source_file": source_pins[po_path.name]["path"],
+        },
+        "con25": {
+            "run_id": con_verdict["run_id"],
+            "step": int(con_verdict["selection"]["step"]),
+            "tier1_rate": float(con_verdict["selection"]["rate"]),
+            "pooled_nonsource": {"k": k_con, "n": n_con},
+            "source_ctx_panel": _src_read(con_agg["panel"]["ws-pers"]),
+            "source_file": source_pins[con_path.name]["path"],
+        },
+        "base": {
+            "pooled_nonsource": {"k": k_b, "n": n_b},
+            "source_file": source_pins[po_path.name]["path"],
+        },
+    }
+
+    # Magnitude references for the Q5 contrast + hero figure (plan §6 read 3).
+    pers_pooled = parent_contrast["contexts"]["ws-po-pers"]["pooled"]
+    bare_pooled = parent_contrast["contexts"]["ws-po-bare"]["pooled"]
+    references = {
+        "unmatched_persona": {
+            "D": pers_pooled["D"],
+            "newcombe_95": pers_pooled["newcombe_95"],
+            "source_file": source_pins[contrast_path.name]["path"],
+        },
+        "bare_matched": {
+            "D": bare_pooled["D"],
+            "newcombe_95": bare_pooled["newcombe_95"],
+            "source_file": source_pins[contrast_path.name]["path"],
+        },
+    }
+
+    out = {
+        "issue": cells.ISSUE_1434,
+        "round_label": DOSE_ROUND_LABEL,
+        "selection_rule": (
+            "argmin |Tier-1 rate - target| over every rung of the three same-side "
+            "persona ladders; tie-break: same run as the context's verdict arm, "
+            "then lower step (plan §11 row 2)"
+        ),
+        "tolerance": DOSE_TOLERANCE,
+        "targets": {"con_side": con_target, "po_side": po_target},
+        "arms": arms,
+        "po_infeasibility": {
+            "pre_registered_clause": (
+                "re-select the po-persona checkpoint to the contrastive persona "
+                "verdict rate 0.60 within 0.10; if no checkpoint sits within 0.10 "
+                "of 0.60, report dose-matching infeasible at 5-step spacing "
+                "(scope-caveat upgrade)"
+            ),
+            "target": po_target,
+            "tolerance": DOSE_TOLERANCE,
+            "nearest_per_run": _dose_nearest_per_run(po_agg["ladders"], "ws-po-pers", po_target),
+            "verdict": (
+                "INFEASIBLE within 0.10 at 5-step spacing (nearest gap 0.11) — the "
+                "clause FIRES and is carried to the clean-result verbatim; "
+                "resolution: two-point dose bracket (plan §2.2), the verdict binds "
+                "to the con-side matched-high bracket only"
+            ),
+        },
+        "static_arms": static_arms,
+        "references": references,
+        "source_pins": source_pins,
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    deliver = (cfg.out_root / "deliverables") if cfg.smoke else cells.DOSE_DELIVERABLES_DIR
+    deliver.mkdir(parents=True, exist_ok=True)
+    run1090._atomic_write_json(deliver / "dose_arm_selection.json", out)
+    logger.info("[i1434-dose-select] wrote %s", deliver / "dose_arm_selection.json")
+    return 0
+
+
+def _dose_selection(cfg: run1090.RunConfig) -> dict:
+    """The Q1 selection manifest (scratch copy first for a self-contained
+    smoke chain; the committed copy is the shared production source)."""
+    for path in (
+        cfg.out_root / "deliverables" / "dose_arm_selection.json",
+        cells.DOSE_DELIVERABLES_DIR / "dose_arm_selection.json",
+    ):
+        if path.exists():
+            return run1090._read_json(path)
+    raise RuntimeError(
+        "[i1434-dose] dose_arm_selection.json missing — run `--phase dose-select` "
+        "on the VM and commit it BEFORE dispatch (plan §4 Q1)"
+    )
+
+
+def _assert_adapter_recipe(config_path: Path, hub_subfolder: str) -> None:
+    """Fitness check (a): the fetched adapter_config.json must match the
+    recipe pin (r=32, alpha=64, rsLoRA, Qwen2.5-7B-Instruct base)."""
+    if not config_path.exists():
+        raise RuntimeError(f"[i1434-dose] {hub_subfolder}: adapter_config.json not staged")
+    cfgd = run1090._read_json(config_path)
+    diffs = {
+        k: (cfgd.get(k), want) for k, want in DOSE_ADAPTER_RECIPE_PIN.items() if cfgd.get(k) != want
+    }
+    if diffs:
+        raise RuntimeError(
+            f"[i1434-dose] {hub_subfolder}: adapter recipe mismatch (got vs pinned): "
+            f"{diffs} — refusing to panel a wrong-recipe checkpoint (fitness check (a))"
+        )
+
+
+def _stage_dose_adapter(cfg: run1090.RunConfig, arm: dict) -> Path:
+    """Stage one dose arm's adapter from the HF MODEL repo via a scoped
+    snapshot (plan §4 Q3) + recipe assert. Under smoke only the config is
+    fetched (same real snapshot_download path; weights unused by the
+    tiny-Qwen gen seam)."""
+    from huggingface_hub import snapshot_download
+
+    sub = arm["hub_subfolder"]
+    dest = cfg.out_root / "adapters"
+    patterns = [f"{sub}/adapter_config.json"] if cfg.smoke else [f"{sub}/*"]
+    hub.retry_transient(
+        lambda: snapshot_download(
+            repo_id=run1090.HF_MODEL_REPO, allow_patterns=patterns, local_dir=dest
+        ),
+        what=f"dose adapter snapshot {sub}",
+    )
+    local = dest / sub
+    _assert_adapter_recipe(local / "adapter_config.json", sub)
+    if not cfg.smoke and not (local / "adapter_model.safetensors").exists():
+        raise RuntimeError(
+            f"[i1434-dose] {local}: adapter_model.safetensors missing after the scoped "
+            "snapshot — partial fetch; refusing to panel a config-only checkpoint"
+        )
+    return local
+
+
+def phase_dose_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q3 (pod, 1 GPU): the SAME panel loop as ``phase_panel`` over the 2
+    dose-selected arms — checkpoint resolution from ``dose_arm_selection.json``
+    hub_subfolder fields via HF staging (NOT pod-local fu4 build records)."""
+    _ensure_family_round()
+    run1090._phase("i1434_dose_panel")
+    del args
+    sel = _dose_selection(cfg)
+    arms = sel["arms"]
+    qs = _eval_questions(cfg)
+    gen = _gen_fn(cfg)
+    panel_root = cfg.out_root / "panel"
+    try:
+        for arm in arms:
+            ckpt = _stage_dose_adapter(cfg, arm)
+            for bctx in fu3w.bystander_panel(cells.BEHAVIOR):
+                _generate_and_persist(
+                    gen,
+                    "trained",
+                    str(ckpt),
+                    bctx,
+                    qs,
+                    n=cfg.tier1_n,
+                    temperature=1.0,
+                    out_dir=panel_root / arm["arm_dir"],
+                    base_model=DEFAULT_BASE_MODEL,
+                )
+    finally:
+        close = getattr(gen, "close", None)
+        if callable(close):
+            close()
+    run1090._atomic_write_json(panel_root / "dose_panel_arms.json", {a["label"]: a for a in arms})
+    if cfg.upload:
+        url = hub._upload(
+            panel_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1434}/raw_completions/dose/panel",
+        )
+        if not str(url):
+            raise RuntimeError("dose panel upload returned no path — refusing silent loss")
+    return 0
+
+
+def _dose_static_recheck(sel: dict) -> tuple[dict, dict]:
+    """Q5 staleness re-check (risk row 5): re-pin + re-read the two committed
+    aggregates and assert the pooled counts still equal the Q1 snapshot."""
+    con_path = cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json"
+    po_path = cells.PO_DELIVERABLES_DIR / "i1434po_ladders.json"
+    _git_file_pin(con_path)
+    _git_file_pin(po_path)
+    con_agg = run1090._read_json(con_path)
+    po_agg = run1090._read_json(po_path)
+    source_ctx = cells.CONTEXT_BY_CELL_KEY["ws-pers"]
+    computed = {
+        "po25": _pooled_nonsource_counts(po_agg["panel"]["ws-po-pers"], source_ctx)[:2],
+        "con25": _pooled_nonsource_counts(con_agg["panel"]["ws-pers"], source_ctx)[:2],
+        "base": _pooled_nonsource_counts(po_agg["panel"]["ws-po-pers"], source_ctx, "base")[:2],
+    }
+    for name, (k, n) in computed.items():
+        snap = sel["static_arms"][name]["pooled_nonsource"]
+        if (k, n) != (snap["k"], snap["n"]):
+            raise RuntimeError(
+                f"[i1434-dose] static arm {name} drifted since the Q1 snapshot: "
+                f"committed ({k},{n}) != snapshot ({snap['k']},{snap['n']}) — a later "
+                "round rewrote the aggregates; re-run dose-select"
+            )
+    return po_agg, con_agg
+
+
+def _dose_bracket(
+    po_side: dict | None, con_side: dict | None, *, po_name: str, con_name: str, verdict: bool
+) -> dict:
+    """One bracket D = p_po - p_con (pooled non-source) + Newcombe 95%.
+    None/empty-propagating (drop-never-coerce). The §3 lattice binds to the
+    verdict-bearing (high) bracket ONLY."""
+    rec: dict[str, Any] = {"po_arm": po_name, "con_arm": con_name, "verdict_bearing": verdict}
+    if not po_side or not con_side or not po_side.get("n") or not con_side.get("n"):
+        rec.update({"status": "not_computable", "D": None, "newcombe_95": None})
+        if verdict:
+            rec["lattice"] = "not_computable"
+        return rec
+    k1, n1, k2, n2 = po_side["k"], po_side["n"], con_side["k"], con_side["n"]
+    d = k1 / n1 - k2 / n2
+    ci = cells.newcombe(k1, n1, k2, n2)
+    rec.update(
+        {
+            "status": "computed",
+            "D": d,
+            "newcombe_95": list(ci),
+            "po": {"k": k1, "n": n1, "rate": k1 / n1},
+            "con": {"k": k2, "n": n2, "rate": k2 / n2},
+        }
+    )
+    if verdict:
+        rec["lattice"] = _regime_lattice(d, ci)
+    else:
+        rec["role"] = (
+            "supporting-only — near-matched (0.11), po under-dosed; never verdict-bearing (plan §3)"
+        )
+    return rec
+
+
+def _score_summary(scores: list[float]) -> dict | None:
+    if not scores:
+        return None
+    s = sorted(scores)
+
+    def q(p: float) -> float:
+        return s[min(len(s) - 1, round(p * (len(s) - 1)))]
+
+    return {
+        "n": len(s),
+        "mean": sum(s) / len(s),
+        "quantiles": {"p0": q(0.0), "p25": q(0.25), "p50": q(0.5), "p75": q(0.75), "p100": q(1.0)},
+    }
+
+
+def phase_dose_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Q5 (VM, 0 GPU): Batch judging of the 2 new dose arms + the D_hi/D_lo
+    bracket recompute against the STATIC committed sides, the §3 lattice on
+    D_hi only, deliverables + figures."""
+    _ensure_family_round()
+    run1090._phase("i1434_dose_judge_analyze")
+    del args
+    sel = _dose_selection(cfg)
+    po_agg, con_agg = _dose_static_recheck(sel)
+    qs = _eval_questions(cfg)
+    deliver = (cfg.out_root / "deliverables") if cfg.smoke else cells.DOSE_DELIVERABLES_DIR
+    deliver.mkdir(parents=True, exist_ok=True)
+    judge_root = cfg.out_root / "judge"  # fresh round-scoped cache dir (rule 22/24)
+    pv_rubric = cells.pv_rubric_text()
+    source_ctx = cells.CONTEXT_BY_CELL_KEY["ws-pers"]
+    panel_ctx_ids = [c.context_id for c in fu3w.bystander_panel(cells.BEHAVIOR)]
+
+    arm_by_side = {a["side"]: a for a in sel["arms"]}
+    dose_panel: dict[str, Any] = {}
+    for arm in sel["arms"]:
+        rows: dict[str, Any] = {}
+        for ctx_id in panel_ctx_ids:
+            local = _stage_if_missing(
+                cfg.out_root / "panel" / arm["arm_dir"] / f"completions__trained__{ctx_id}.json",
+                f"{cells.DATA_PREFIX_1434}/raw_completions/dose/panel/{arm['arm_dir']}",
+            )
+            rec = _judge_rate_graded(
+                f"dn-{arm['arm_dir']}-{ctx_id}",
+                qs,
+                _completions_payload(local),
+                rubric=pv_rubric,
+                n_draws=2 if cfg.smoke else 3,
+                judge_root=judge_root,
+                instrument="pv",
+                include_scores=True,
+            )
+            rows[ctx_id] = {"trained": rec, "is_source_context": ctx_id == arm["source_ctx"]}
+        k, n, used = _pooled_nonsource_counts({"contexts": rows}, arm["source_ctx"])
+        pooled_scores = [
+            s
+            for cid, row in rows.items()
+            if cid != arm["source_ctx"]
+            for s in (row["trained"].get("scores") or [])
+        ]
+        src_rec = (rows.get(arm["source_ctx"]) or {}).get("trained") or {}
+        dose_panel[arm["label"]] = {
+            "arm": arm,
+            "contexts": rows,
+            "pooled_nonsource": {
+                "k": k,
+                "n": n,
+                "rate": (k / n) if n else None,
+                "wilson_95": list(cells.wilson(k, n)) if n else None,
+                "contexts": used,
+            },
+            "pooled_nonsource_scores": pooled_scores,
+            "graded_summary": _score_summary(pooled_scores),
+            "source_context_read": {
+                "k": src_rec.get("k_positive"),
+                "n": src_rec.get("n_scored"),
+                "rate": src_rec.get("rate"),
+                "tier1_selection_rate": arm["tier1_rate"],
+            },
+            "drop_report": {
+                "n_items": sum(r["trained"]["n_items"] for r in rows.values()),
+                "n_scored": sum(r["trained"]["n_scored"] for r in rows.values()),
+                "n_dropped_draws_content": sum(
+                    r["trained"].get("n_dropped_draws_content") or 0 for r in rows.values()
+                ),
+                "n_transport_lost_draws": sum(
+                    r["trained"].get("n_transport_lost_draws") or 0 for r in rows.values()
+                ),
+            },
+        }
+
+    con_label = arm_by_side["con"]["label"]
+    po_label = arm_by_side["po"]["label"]
+    hi = _dose_bracket(
+        sel["static_arms"]["po25"]["pooled_nonsource"],
+        dose_panel[con_label]["pooled_nonsource"],
+        po_name="po@25 (existing verdict arm)",
+        con_name=f"{con_label} (new matched-high arm)",
+        verdict=True,
+    )
+    lo = _dose_bracket(
+        dose_panel[po_label]["pooled_nonsource"],
+        sel["static_arms"]["con25"]["pooled_nonsource"],
+        po_name=f"{po_label} (new near-matched-low arm)",
+        con_name="con@25 (existing verdict arm)",
+        verdict=False,
+    )
+
+    # 10-cell per-read-context companion (5 non-source contexts x 2 brackets).
+    po25_ctxs = po_agg["panel"]["ws-po-pers"]["contexts"]
+    con25_ctxs = con_agg["panel"]["ws-pers"]["contexts"]
+    cells_rows: list[dict] = []
+    for ctx_id in sorted(set(panel_ctx_ids) - {source_ctx}):
+        hi_cell = _two_prop_contrast(
+            (po25_ctxs.get(ctx_id) or {}).get("trained"),
+            (dose_panel[con_label]["contexts"].get(ctx_id) or {}).get("trained"),
+        )
+        hi_cell.update({"bracket": "high", "read_ctx": ctx_id})
+        cells_rows.append(hi_cell)
+        lo_cell = _two_prop_contrast(
+            (dose_panel[po_label]["contexts"].get(ctx_id) or {}).get("trained"),
+            (con25_ctxs.get(ctx_id) or {}).get("trained"),
+        )
+        lo_cell.update({"bracket": "low", "read_ctx": ctx_id})
+        cells_rows.append(lo_cell)
+
+    panel_rungs = [
+        {
+            "run_id": sel["static_arms"]["con25"]["run_id"],
+            "step": sel["static_arms"]["con25"]["step"],
+            "rate": sel["static_arms"]["con25"]["tier1_rate"],
+            "role": "con verdict arm (existing)",
+        },
+        {
+            "run_id": arm_by_side["con"]["run_id"],
+            "step": arm_by_side["con"]["step"],
+            "rate": arm_by_side["con"]["tier1_rate"],
+            "role": "con matched-high (new)",
+        },
+        {
+            "run_id": sel["static_arms"]["po25"]["run_id"],
+            "step": sel["static_arms"]["po25"]["step"],
+            "rate": sel["static_arms"]["po25"]["tier1_rate"],
+            "role": "po verdict arm (existing)",
+        },
+        {
+            "run_id": arm_by_side["po"]["run_id"],
+            "step": arm_by_side["po"]["step"],
+            "rate": arm_by_side["po"]["tier1_rate"],
+            "role": "po near-matched-low (new)",
+        },
+    ]
+    source_context_reads = {
+        "po@25 (existing)": {
+            **sel["static_arms"]["po25"]["source_ctx_panel"],
+            "tier1_selection_rate": sel["static_arms"]["po25"]["tier1_rate"],
+        },
+        "con@25 (existing)": {
+            **sel["static_arms"]["con25"]["source_ctx_panel"],
+            "tier1_selection_rate": sel["static_arms"]["con25"]["tier1_rate"],
+        },
+        f"{con_label} (new)": dose_panel[con_label]["source_context_read"],
+        f"{po_label} (new)": dose_panel[po_label]["source_context_read"],
+    }
+
+    panel_payload = {
+        "issue": cells.ISSUE_1434,
+        "round_label": DOSE_ROUND_LABEL,
+        "arms": dose_panel,
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    contrast = {
+        "issue": cells.ISSUE_1434,
+        "round_label": DOSE_ROUND_LABEL,
+        "tolerance": sel["tolerance"],
+        "references": sel["references"],
+        "static_arms": sel["static_arms"],
+        "brackets": {"high": hi, "low": lo},
+        "cells": cells_rows,
+        "panel_rungs": panel_rungs,
+        "source_context_reads": source_context_reads,
+        "per_arm_drop_report": {lab: dose_panel[lab]["drop_report"] for lab in dose_panel},
+        "graded_summaries": {lab: dose_panel[lab]["graded_summary"] for lab in dose_panel},
+        "smoke": cfg.smoke,
+        "git_commit": i1074._git_short_sha(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    run1090._atomic_write_json(deliver / "i1434dose_panel.json", panel_payload)
+    run1090._atomic_write_json(deliver / "regime_contrast_dose_matched.json", contrast)
+    logger.info(
+        "[i1434-dose-judge-analyze] D_hi=%s %s lattice=%s | D_lo=%s %s — wrote %s",
+        hi.get("D"),
+        hi.get("newcombe_95"),
+        hi.get("lattice"),
+        lo.get("D"),
+        lo.get("newcombe_95"),
+        deliver / "regime_contrast_dose_matched.json",
+    )
+
+    # Figures (plan §6): hero + exploratory companions; smoke -> scratch dir.
+    import issue1434_figures as figs
+
+    fig_dir = (cfg.out_root / "figures") if cfg.smoke else cells.FIGURES_DIR_1434
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    for p in figs.dose_figures(contrast, panel_payload, po_agg, con_agg, fig_dir):
+        logger.info("[i1434-dose-judge-analyze] figure %s", p)
+
+    if cfg.upload:
+        url = hub._upload(
+            judge_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1434}/dose/judge",
+        )
+        if not str(url):
+            raise RuntimeError("dose judge records upload returned no path — refusing loss")
+    return 0
+
+
 # ── entrypoint ───────────────────────────────────────────────────────────────
 
 
@@ -1546,7 +2216,18 @@ def _own_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--phase",
         required=True,
-        choices=("questiongen", "datagen", "mixes", "stage", "base-arms", "panel", "judge-analyze"),
+        choices=(
+            "questiongen",
+            "datagen",
+            "mixes",
+            "stage",
+            "base-arms",
+            "panel",
+            "judge-analyze",
+            "dose-select",
+            "dose-panel",
+            "dose-judge-analyze",
+        ),
     )
     p.add_argument(
         "--round",
@@ -1615,15 +2296,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.phase == "datagen":
         phase_datagen(cfg, args)
         return 0
-    if args.phase == "mixes":
-        return phase_mixes(cfg, args)
-    if args.phase == "stage":
-        return phase_stage(cfg, args)
-    if args.phase == "base-arms":
-        return phase_base_arms(cfg, args)
-    if args.phase == "panel":
-        return phase_panel(cfg, args)
-    return phase_judge_analyze(cfg, args)
+    handlers = {
+        "mixes": phase_mixes,
+        "stage": phase_stage,
+        "base-arms": phase_base_arms,
+        "panel": phase_panel,
+        "judge-analyze": phase_judge_analyze,
+        "dose-select": phase_dose_select,
+        "dose-panel": phase_dose_panel,
+        "dose-judge-analyze": phase_dose_judge_analyze,
+    }
+    return handlers[args.phase](cfg, args)
 
 
 if __name__ == "__main__":

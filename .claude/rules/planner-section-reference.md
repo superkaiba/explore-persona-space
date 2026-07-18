@@ -201,7 +201,17 @@ even the parent round's +0.209 effect could not clear it). Band ≥ only the
 fallback reference point ⇒ report low-severity (underpowered against every
 previously-observed effect), not zero power. Full check:
 `.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling
-informativeness check. Full recipe + carve-outs
+informativeness check.
+
+A bootstrap / resampling CI registered at the max-selected position MUST
+be the selection-inherited CI (per-draw re-selection inside each
+resample) — or BOTH CIs, labeled frozen-at-<axis> vs selection-inherited;
+a frozen-only CI at a selected position is a critic REVISE (#1434:
+frozen [−0.949, −0.467] vs selection-inherited [−0.957, +0.866] in the
+same JSON). Full clause: `.claude/rules/selection-symmetric-nulls.md`
+§ Bootstrap CIs at a selected axis position.
+
+Full recipe + carve-outs
 (a pre-registered fixed position or a mechanistic single-anchor ablation
 does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
