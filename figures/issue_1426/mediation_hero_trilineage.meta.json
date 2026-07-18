@@ -1,0 +1,115 @@
+{
+  "commit": "3fdf8222e5",
+  "created": "2026-07-18T11:10:39Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "category": "context\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.5616613721892567,
+      "error": 0.07197640860754737,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "realized CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.908690223598056,
+      "error": 0.02121301977180945,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "composed\n(ctx\u2192\u0108oT\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5551414264468447,
+      "error": 0.07269882479317535,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "context+CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.889397665204405,
+      "error": 0.023924494649694372,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 CoT-conditioning gain (context+CoT \u2212 direct)": 0.3271952872520605,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 CoT-conditioning gain (context+CoT \u2212 direct)": 0.3302,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 CoT-conditioning gain (context+CoT \u2212 direct)": 0.2033,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 7,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-question arms, frozen layer 24",
+        "ylabel": "held-out skill-over-mean R\u00b2",
+        "annotations": [
+          "0.562",
+          "0.909",
+          "0.555",
+          "0.889",
+          "null band p95",
+          "identity ceiling"
+        ],
+        "xticklabels": [
+          "context\n\u2192 answer",
+          "realized CoT\n\u2192 answer",
+          "composed\n(ctx\u2192\u0108oT\u2192ans)",
+          "context+CoT\n\u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "CoT gain across the three lineages",
+        "xlabel": "\u0394 CoT-conditioning gain (context+CoT \u2212 direct)",
+        "annotations": [
+          "+0.327",
+          "+0.330",
+          "+0.203"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "OpenThinker2-7B\n(prior lineage)",
+          "R1-Qwen-7B\n(prior lineage)",
+          "R1-Llama-8B\n(this run)"
+        ]
+      }
+    ]
+  }
+}
