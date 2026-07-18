@@ -820,6 +820,26 @@ def _content_contrast(manifest: dict, aggregates: dict[str, dict], mix_meta_root
     return out
 
 
+def _panel_rec(marker_root: Path, run_id: str, step: int) -> dict:
+    """One panel battery read (``panel/rung<step>.json``), fail-loud on a
+    missing file (the marker dispatcher persists batteries at the selected /
+    emission-onset / ceiling rungs)."""
+    path = marker_root / run_id / "panel" / f"rung{step}.json"
+    if not path.exists():
+        raise RuntimeError(f"[i1481-contrast] marker panel read missing: {path}")
+    return _read_json(path)
+
+
+def _probe_dg_margin(row: dict) -> tuple[float, float]:
+    """Per-probe (ΔG, Δ(z_marker − z_eos)) trained − base from one four-float
+    ``per_probe`` row (`.claude/rules/marker-leakage-measurement.md`)."""
+    dg = float(row["trained"]["logp"]) - float(row["base"]["logp"])
+    dm = (float(row["trained"]["z_marker"]) - float(row["trained"]["z_eos"])) - (
+        float(row["base"]["z_marker"]) - float(row["base"]["z_eos"])
+    )
+    return dg, dm
+
+
 def _paired_marker_diffs(marker_root: Path, con_arm: dict, po_arm: dict) -> dict:
     """Per-(read_ctx, question) paired ΔG differences (po − con) at the two
     verdict arms' SELECTED rungs, from the panel four-float per_probe rows."""
@@ -827,10 +847,7 @@ def _paired_marker_diffs(marker_root: Path, con_arm: dict, po_arm: dict) -> dict
     for label, info in (("con", con_arm), ("po", po_arm)):
         run_id = info["run_id"]
         step = int(info["selection"]["step"])
-        path = marker_root / run_id / "panel" / f"rung{step}.json"
-        if not path.exists():
-            raise RuntimeError(f"[i1481-contrast] marker panel read missing: {path}")
-        rec = _read_json(path)
+        rec = _panel_rec(marker_root, run_id, step)
         for row in rec.get("per_probe") or []:
             ctx_id = row["row"]["context_id"]
             q = int(row["row"]["q"])
@@ -967,6 +984,134 @@ def _marker_contrast(manifest: dict, marker_root: Path) -> dict:
             "divergence_points": [
                 {"delta_logp": dl, "delta_z": dz} for dl, dz in zip(d_logp, d_z, strict=True)
             ],
+        }
+    # Plan §6 install-strength read 3: leakage-vs-install dose curves at the
+    # 3 panel rungs per cell + full source-install trajectories.
+    out["dose_curves"] = _marker_dose_curves(manifest, marker_root)
+    return out
+
+
+# Transfer fractions with a near-zero EOS-margin denominator are reported as
+# None (an uninstalled source has no meaningful fraction), never a wild ratio.
+MARGIN_FRACTION_FLOOR = 1e-6
+
+# Ladder trajectory fields copied verbatim from each reads_by_step record.
+_TRAJECTORY_KEYS = (
+    "delta_logp_mean",
+    "delta_margin_mean",
+    "source_emission_rate",
+    "gen_emission_rate",
+)
+
+
+def _marker_dose_curves(manifest: dict, marker_root: Path) -> dict:
+    """Plan §6 install-strength read 3 (marker): per cell, panel-context ΔG +
+    EOS-margin transfer fractions Δ(z_marker − z_eos) vs source install at the
+    3 panel rungs (selected / emission-onset / ceiling), plus the full
+    source-install trajectory from the per-rung ladder. Fractions are computed
+    in EOS-margin logit space, NEVER raw log P
+    (`.claude/rules/marker-leakage-measurement.md` § Install-strength
+    confound); the per-(context, question) rows ride along for the
+    raw-alongside-processed companion figure."""
+    import issue1481_marker as mk
+
+    marker = manifest.get("marker")
+    if not marker:
+        raise RuntimeError(
+            "[i1481-contrast] manifest has no marker section — re-run select with --marker-root"
+        )
+    out: dict[str, Any] = {}
+    for run_id, arm in sorted(marker["arms"].items()):
+        sel_path = marker_root / run_id / "selection.json"
+        if not sel_path.exists():
+            raise RuntimeError(f"[i1481-contrast] marker selection missing: {sel_path}")
+        sel = _read_json(sel_path)
+        panel_rungs = sel.get("panel_rungs")
+        if not panel_rungs:
+            raise RuntimeError(
+                f"[i1481-contrast] selection.json for {run_id} carries no panel_rungs — "
+                "the marker dispatcher's battery-role record is required for dose curves"
+            )
+        src_id = mk.CTX_SOURCE_ID[arm["ctx_key"]]
+        rungs: list[dict] = []
+        for step_s, roles in sorted(panel_rungs.items(), key=lambda kv: int(kv[0])):
+            step = int(step_s)
+            rec = _panel_rec(marker_root, run_id, step)
+            per_ctx: dict[str, dict[str, list[float]]] = {}
+            per_question: list[dict] = []
+            for row in rec.get("per_probe") or []:
+                ctx_id = row["row"]["context_id"]
+                dg, dm = _probe_dg_margin(row)
+                d = per_ctx.setdefault(ctx_id, {"dg": [], "dm": []})
+                d["dg"].append(dg)
+                d["dm"].append(dm)
+                if ctx_id != src_id:
+                    per_question.append(
+                        {
+                            "context_id": ctx_id,
+                            "q": int(row["row"]["q"]),
+                            "delta_logp": dg,
+                            "delta_margin": dm,
+                        }
+                    )
+            if src_id not in per_ctx:
+                raise RuntimeError(
+                    f"[i1481-contrast] {run_id} panel rung{step}: source context "
+                    f"{src_id} missing from per_probe rows"
+                )
+            src_dg = float(sum(per_ctx[src_id]["dg"]) / len(per_ctx[src_id]["dg"]))
+            src_dm = float(sum(per_ctx[src_id]["dm"]) / len(per_ctx[src_id]["dm"]))
+            contexts: dict[str, dict] = {}
+            for ctx_id, v in sorted(per_ctx.items()):
+                dg_mean = float(sum(v["dg"]) / len(v["dg"]))
+                dm_mean = float(sum(v["dm"]) / len(v["dm"]))
+                frac = None
+                if ctx_id != src_id and abs(src_dm) > MARGIN_FRACTION_FLOOR:
+                    frac = float(dm_mean / src_dm)
+                contexts[ctx_id] = {
+                    "delta_logp_mean": dg_mean,
+                    "delta_margin_mean": dm_mean,
+                    "margin_transfer_fraction": frac,
+                    "is_source": ctx_id == src_id,
+                }
+            ns = [c for cid, c in contexts.items() if cid != src_id]
+            if not ns:
+                raise RuntimeError(
+                    f"[i1481-contrast] {run_id} panel rung{step}: no non-source contexts"
+                )
+            fracs = [c["margin_transfer_fraction"] for c in ns]
+            frac_mean = (
+                float(sum(fracs) / len(fracs)) if all(f is not None for f in fracs) else None
+            )
+            rungs.append(
+                {
+                    "step": step,
+                    "roles": sorted(roles),
+                    "source_install_logp": src_dg,
+                    "source_install_margin": src_dm,
+                    "per_context": contexts,
+                    "nonsource_delta_logp_mean": float(
+                        sum(c["delta_logp_mean"] for c in ns) / len(ns)
+                    ),
+                    "nonsource_margin_transfer_fraction_mean": frac_mean,
+                    "per_question": per_question,
+                }
+            )
+        reads = {int(k): v for k, v in (arm.get("reads_by_step") or {}).items()}
+        if not reads:
+            raise RuntimeError(f"[i1481-contrast] {run_id}: empty reads_by_step ladder")
+        trajectory = [
+            {"step": s, **{k: reads[s][k] for k in _TRAJECTORY_KEYS}} for s in sorted(reads)
+        ]
+        out[run_id] = {
+            "ctx_key": arm["ctx_key"],
+            "regime": arm["regime"],
+            "lr_key": arm["lr_key"],
+            "seed": arm["seed"],
+            "selected_step": int(sel["step"]),
+            "source_context": src_id,
+            "rungs": rungs,
+            "trajectory": trajectory,
         }
     return out
 

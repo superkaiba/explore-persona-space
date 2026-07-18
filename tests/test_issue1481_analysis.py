@@ -151,10 +151,19 @@ def build_mix_meta_fixtures(root: Path) -> Path:
     return mix_root
 
 
+def _marker_probe_row(ctx_id: str, qi: int, trained: dict, base: dict) -> dict:
+    return {"row": {"context_id": ctx_id, "q": qi}, "trained": trained, "base": base}
+
+
 def build_marker_fixtures(root: Path) -> Path:
-    """All 48 marker runs: selection + ladder; panel + slot reads at the
-    selected rung with four-float per-probe rows (con ΔG=6, po ΔG=7)."""
+    """All 48 marker runs, schema-real per the marker dispatcher's writers:
+    selection.json (incl. ``ceiling_rung`` + ``panel_rungs`` battery roles),
+    ladder.json; panel batteries at TWO rungs — the emission-onset rung 10
+    (half-dose: source ΔG/2, non-source ΔG/4, margin fraction 0.75) and the
+    selected+ceiling rung 20 (source ΔG con=6 / po=7, uniform margins) — and
+    slot reads at the selected rung, all with four-float per-probe rows."""
     marker_root = root / "marker"
+    base = {"logp": -20.0, "z_marker": -4.0, "z_eos": 6.0, "logZ": 10.0}
     for ctx_key in mk.CTX_KEYS:
         src_id = mk.CTX_SOURCE_ID[ctx_key]
         panel_ctx_ids = [src_id] + [f"mkread_{ctx_key}_{i}" for i in range(5)]
@@ -176,8 +185,19 @@ def build_marker_fixtures(root: Path) -> Path:
                                 "fallback": None,
                                 "delta_logp_mean": dg,
                                 "window": [5.0, 12.0],
-                                "emission_onset_rung": 20,
+                                "run_id": run_id,
+                                "ctx_key": ctx_key,
+                                "regime": regime,
+                                "lr_key": lr_key,
+                                "seed": seed,
+                                "emission_onset_rung": 10,
+                                "ceiling_rung": 20,
                                 "selectivity_break_rung": None,
+                                "selectivity_break_resolution": [10, 20],
+                                "panel_rungs": {
+                                    "10": ["emission_onset"],
+                                    "20": ["ceiling", "selected"],
+                                },
                             }
                         )
                     )
@@ -190,7 +210,7 @@ def build_marker_fixtures(root: Path) -> Path:
                                         "delta_logp_mean": dg / 2,
                                         "delta_margin_mean": dg / 2,
                                         "source_emission_rate": 0.0,
-                                        "gen_emission_rate": 0.0,
+                                        "gen_emission_rate": 0.05,
                                     },
                                     "20": {
                                         "delta_logp_mean": dg,
@@ -202,29 +222,56 @@ def build_marker_fixtures(root: Path) -> Path:
                             }
                         )
                     )
-                    per_probe = []
-                    for ctx_id in panel_ctx_ids:
-                        for qi in range(len(QUESTIONS)):
-                            per_probe.append(
-                                {
-                                    "row": {"context_id": ctx_id, "q": qi},
-                                    "trained": {
-                                        "logp": trained_logp,
-                                        "z_marker": 2.0,
-                                        "z_eos": 5.0,
-                                        "logZ": 10.0,
-                                    },
-                                    "base": {
-                                        "logp": base_logp,
-                                        "z_marker": -4.0,
-                                        "z_eos": 6.0,
-                                        "logZ": 10.0,
-                                    },
-                                }
-                            )
+                    # Selected+ceiling rung 20: uniform ΔG + margins (Δmargin
+                    # (2-5)-(-4-6) = 7 everywhere → transfer fraction 1.0).
+                    trained20 = {"logp": trained_logp, "z_marker": 2.0, "z_eos": 5.0, "logZ": 10.0}
+                    per_probe = [
+                        _marker_probe_row(ctx_id, qi, trained20, base)
+                        for ctx_id in panel_ctx_ids
+                        for qi in range(len(QUESTIONS))
+                    ]
+                    # Emission-onset rung 10: half-dose — source ΔG/2 with
+                    # Δmargin (-1-5)-(-10) = 4; non-source ΔG/4 with Δmargin
+                    # (-2-5)-(-10) = 3 → margin transfer fraction 3/4 = 0.75.
+                    src10 = {
+                        "logp": base_logp + dg / 2,
+                        "z_marker": -1.0,
+                        "z_eos": 5.0,
+                        "logZ": 10.0,
+                    }
+                    ns10 = {
+                        "logp": base_logp + dg / 4,
+                        "z_marker": -2.0,
+                        "z_eos": 5.0,
+                        "logZ": 10.0,
+                    }
+                    per_probe10 = [
+                        _marker_probe_row(ctx_id, qi, src10 if ctx_id == src_id else ns10, base)
+                        for ctx_id in panel_ctx_ids
+                        for qi in range(len(QUESTIONS))
+                    ]
                     (d / "panel").mkdir(exist_ok=True)
+                    (d / "panel" / "rung10.json").write_text(
+                        json.dumps(
+                            {
+                                "run_id": run_id,
+                                "step": 10,
+                                "roles": ["emission_onset"],
+                                "source_context": src_id,
+                                "per_probe": per_probe10,
+                            }
+                        )
+                    )
                     (d / "panel" / f"rung{step}.json").write_text(
-                        json.dumps({"per_probe": per_probe})
+                        json.dumps(
+                            {
+                                "run_id": run_id,
+                                "step": step,
+                                "roles": ["candidate", "ceiling", "selected"],
+                                "source_context": src_id,
+                                "per_probe": per_probe,
+                            }
+                        )
                     )
                     (d / f"slot_reads_rung{step}.json").write_text(
                         json.dumps({"per_probe": per_probe})
@@ -403,6 +450,62 @@ def test_contrast_marker_bootstrap(pipeline):
     assert rec["divergence_points"]
 
 
+def test_contrast_marker_dose_curves(pipeline):
+    """Plan §6 install-strength read 3 (concern marker-dose-curves-analysis):
+    leakage-vs-install dose curves at the panel rungs per marker cell — ΔG +
+    EOS-margin transfer fractions (never raw-log-P fractions) — plus the full
+    source-install trajectory from the per-rung ladder."""
+    marker = json.loads((pipeline["out_dir"] / "regime_contrast_marker.json").read_text())
+    curves = marker["dose_curves"]
+    assert len(curves) == len(mk.CTX_KEYS) * 2 * len(mk.LR_ARMS) * len(mk.SEEDS)
+    lr_key = next(iter(mk.LR_ARMS))
+    ctx_key, seed = mk.CTX_KEYS[0], mk.SEEDS[0]
+    for regime, dg in (("con", 6.0), ("po", 7.0)):
+        cell = curves[mk.run_id_for(ctx_key, regime, lr_key, seed)]
+        assert cell["regime"] == regime
+        assert cell["selected_step"] == 20
+        assert [r["step"] for r in cell["rungs"]] == [10, 20]
+        r10, r20 = cell["rungs"]
+        assert r10["roles"] == ["emission_onset"]
+        assert r20["roles"] == ["ceiling", "selected"]
+        # Source install (the x-axis) in BOTH spaces per rung.
+        assert r20["source_install_logp"] == pytest.approx(dg)
+        assert r20["source_install_margin"] == pytest.approx(7.0)
+        assert r10["source_install_logp"] == pytest.approx(dg / 2)
+        assert r10["source_install_margin"] == pytest.approx(4.0)
+        # Leakage ΔG + the EOS-margin transfer fraction (margin space only).
+        assert r20["nonsource_delta_logp_mean"] == pytest.approx(dg)
+        assert r20["nonsource_margin_transfer_fraction_mean"] == pytest.approx(1.0)
+        assert r10["nonsource_delta_logp_mean"] == pytest.approx(dg / 4)
+        assert r10["nonsource_margin_transfer_fraction_mean"] == pytest.approx(0.75)
+        # Per-context blocks: 6 contexts, source flagged, source fraction None.
+        assert len(r20["per_context"]) == 6
+        src = cell["source_context"]
+        assert r20["per_context"][src]["is_source"] is True
+        assert r20["per_context"][src]["margin_transfer_fraction"] is None
+        # Raw-alongside-processed companion rows: 5 non-source ctx x questions.
+        assert len(r10["per_question"]) == 5 * len(QUESTIONS)
+        assert {p["context_id"] for p in r10["per_question"]} == set(r10["per_context"]) - {src}
+        # Full source-install trajectory copied from the ladder.
+        assert [t["step"] for t in cell["trajectory"]] == [10, 20]
+        assert cell["trajectory"][1]["delta_logp_mean"] == pytest.approx(dg)
+        assert cell["trajectory"][0]["gen_emission_rate"] == pytest.approx(0.05)
+
+
+def test_dose_curves_missing_panel_read_fails_loud(pipeline, tmp_path):
+    """A battery panel file missing for a panel_rungs entry is a RuntimeError
+    (fail-fast), never a silently skipped rung."""
+    import shutil
+
+    marker_root = tmp_path / "marker"
+    shutil.copytree(pipeline["marker_root"], marker_root)
+    manifest = pipeline["manifest"]
+    victim = next(iter(manifest["marker"]["arms"]))
+    (marker_root / victim / "panel" / "rung10.json").unlink()
+    with pytest.raises(RuntimeError, match="panel read missing"):
+        ana._marker_dose_curves(manifest, marker_root)
+
+
 def test_margin_rate_validation(pipeline):
     validation = json.loads((pipeline["out_dir"] / "margin_rate_validation.json").read_text())
     rec = validation[BEH_KEY]
@@ -555,6 +658,9 @@ def test_figures_render_end_to_end(pipeline):
         "heldout_vs_pooled_decomposition",
         "marker_three_space_divergence",
         "margin_vs_rate_validation",
+        "marker_dose_curves",
+        "marker_dose_curves_perq_raw",
+        "marker_install_trajectories",
     ]
     for stem in expected:
         png = fig_dir / f"{stem}.png"

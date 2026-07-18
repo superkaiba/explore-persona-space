@@ -25,6 +25,13 @@ Families (``--families`` subsets; default all that have inputs):
 - ``heldout_decomp``      — held-out-only vs pooled D paired bars.
 - ``marker_three_space``  — Δlog P vs Δz divergence scatter (+ table JSON).
 - ``margin_rate``         — TF-margin vs Tier-1 rate validation scatter.
+- ``marker_dose_curves``  — leakage-vs-install dose curves at the 3 panel
+  rungs per marker cell (panel non-source ΔG + EOS-margin transfer fraction
+  vs source install, con vs po overlaid; plan §6 install-strength read 3).
+- ``marker_dose_curves_perq`` — RAW companion: per-(context, question) panel
+  ΔG points vs source install.
+- ``marker_install_trajectories`` — per-cell full source-install trajectories
+  from the per-rung ladders (ΔG vs step), panel-battery rungs marked.
 
 Every error-bar call routes through ``_err_offsets`` (non-negative per-point
 offsets clamped at 0 — matplotlib rejects negative ``xerr``/``yerr``, and
@@ -523,6 +530,152 @@ def fig_margin_rate(analysis: dict, fig_dir: Path) -> None:
     plt.close(fig)
 
 
+def _dose_curves(analysis: dict) -> dict:
+    """The ``dose_curves`` block of the marker contrast JSON (fail-loud when
+    the analysis predates the dose-curve computation)."""
+    marker = analysis.get("marker_contrast")
+    if not marker or "dose_curves" not in marker:
+        raise RuntimeError(
+            "[i1481-figures] marker dose curves: no dose_curves in marker contrast JSON — "
+            "re-run the contrast phase"
+        )
+    return marker["dose_curves"]
+
+
+def fig_marker_dose_curves(analysis: dict, fig_dir: Path) -> None:
+    """Leakage-vs-install dose curves at the 3 panel rungs per marker cell
+    (plan §6 install-strength read 3): panel non-source ΔG (left) and
+    EOS-margin transfer fraction (right) vs source install in EOS-margin
+    space, one line per cell across its selected/onset/ceiling rungs, con vs
+    po overlaid."""
+    curves = _dose_curves(analysis)
+    fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.4))
+    pal = paper_palette(2)
+    color = {"con": pal[0], "po": pal[1]}
+    labeled: set[str] = set()
+    for _run_id, cell in sorted(curves.items()):
+        rungs = sorted(cell["rungs"], key=lambda r: r["source_install_margin"])
+        xs = [r["source_install_margin"] for r in rungs]
+        label = None
+        if cell["regime"] not in labeled:
+            labeled.add(cell["regime"])
+            label = REGIME_LABEL[cell["regime"]]
+        axes[0].plot(
+            xs,
+            [r["nonsource_delta_logp_mean"] for r in rungs],
+            marker="o",
+            ms=3,
+            lw=0.9,
+            alpha=0.6,
+            color=color[cell["regime"]],
+            label=label,
+        )
+        frac_pts = [
+            (x, r["nonsource_margin_transfer_fraction_mean"])
+            for x, r in zip(xs, rungs, strict=True)
+            if r["nonsource_margin_transfer_fraction_mean"] is not None
+        ]
+        if frac_pts:
+            axes[1].plot(
+                [p[0] for p in frac_pts],
+                [p[1] for p in frac_pts],
+                marker="o",
+                ms=3,
+                lw=0.9,
+                alpha=0.6,
+                color=color[cell["regime"]],
+            )
+    axes[0].set_ylabel("Panel non-source ΔG (nats)")
+    axes[1].set_ylabel("EOS-margin transfer fraction")
+    for ax in axes:
+        ax.set_xlabel("Source install Δ(z_marker − z_eos)")
+    axes[0].legend(fontsize=7, frameon=False)
+    fig.suptitle("Marker leakage vs install at the panel rungs (per cell)", fontsize=9)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    savefig_paper(fig, "marker_dose_curves", dir=fig_dir)
+    plt.close(fig)
+
+
+def fig_marker_dose_curves_perq(analysis: dict, fig_dir: Path) -> None:
+    """RAW companion to ``marker_dose_curves``: per-(context, question) panel
+    non-source ΔG points vs source install (EOS-margin space), con vs po
+    overlaid — the per-unit data behind the aggregate curves."""
+    curves = _dose_curves(analysis)
+    fig, ax = plt.subplots(figsize=(4.2, 3.4))
+    pal = paper_palette(2)
+    color = {"con": pal[0], "po": pal[1]}
+    labeled: set[str] = set()
+    for _run_id, cell in sorted(curves.items()):
+        for rung in cell["rungs"]:
+            x = rung["source_install_margin"]
+            ys = [p["delta_logp"] for p in rung["per_question"]]
+            label = None
+            if cell["regime"] not in labeled:
+                labeled.add(cell["regime"])
+                label = REGIME_LABEL[cell["regime"]]
+            ax.scatter([x] * len(ys), ys, s=6, alpha=0.25, color=color[cell["regime"]], label=label)
+    ax.set_xlabel("Source install Δ(z_marker − z_eos)")
+    ax.set_ylabel("Per-(context, question) non-source ΔG (nats)")
+    ax.set_title("Marker dose curves — raw per-question points", fontsize=9)
+    ax.legend(fontsize=7, frameon=False)
+    fig.tight_layout()
+    savefig_paper(fig, "marker_dose_curves_perq_raw", dir=fig_dir)
+    plt.close(fig)
+
+
+def fig_marker_install_trajectories(analysis: dict, fig_dir: Path) -> None:
+    """Per-cell FULL source-install trajectories from the per-rung ladders
+    (source ΔG vs optimizer step, every persisted rung), con vs po overlaid;
+    the panel-battery rungs (selected/onset/ceiling) marked per cell."""
+    curves = _dose_curves(analysis)
+    ctx_keys = sorted({c["ctx_key"] for c in curves.values()})
+    fig, axes = plt.subplots(
+        1, len(ctx_keys), figsize=(3.4 * len(ctx_keys), 3.2), squeeze=False, sharey=True
+    )
+    pal = paper_palette(2)
+    color = {"con": pal[0], "po": pal[1]}
+    labeled: set[str] = set()
+    for ax, ctx_key in zip(axes[0], ctx_keys, strict=True):
+        for _run_id, cell in sorted(curves.items()):
+            if cell["ctx_key"] != ctx_key:
+                continue
+            steps = [t["step"] for t in cell["trajectory"]]
+            gains = [t["delta_logp_mean"] for t in cell["trajectory"]]
+            label = None
+            if cell["regime"] not in labeled:
+                labeled.add(cell["regime"])
+                label = REGIME_LABEL[cell["regime"]]
+            ax.plot(
+                steps,
+                gains,
+                lw=0.9,
+                alpha=0.6,
+                color=color[cell["regime"]],
+                ls="-" if cell["seed"] == 42 else "--",
+                label=label,
+            )
+            battery_steps = {r["step"] for r in cell["rungs"]}
+            by_step = {t["step"]: t["delta_logp_mean"] for t in cell["trajectory"]}
+            marked = sorted(battery_steps & set(by_step))
+            ax.scatter(
+                marked,
+                [by_step[s] for s in marked],
+                s=14,
+                color=color[cell["regime"]],
+                zorder=3,
+            )
+        ax.set_title(CTX_LABEL.get(ctx_key, ctx_key), fontsize=8)
+        ax.set_xlabel("training step")
+    axes[0][0].set_ylabel("Source ΔG (nats, trained − base)")
+    fig.suptitle("Marker source-install trajectories (panel rungs marked)", fontsize=9)
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    if handles:
+        fig.legend(handles, labels, loc="upper right", fontsize=7, frameon=False)
+    savefig_paper(fig, "marker_install_trajectories", dir=fig_dir)
+    plt.close(fig)
+
+
 FAMILIES = {
     "hero1_forest": fig_hero1_forest,
     "hero1_percell": fig_hero1_percell,
@@ -534,8 +687,16 @@ FAMILIES = {
     "heldout_decomp": fig_heldout_decomp,
     "marker_three_space": fig_marker_three_space,
     "margin_rate": fig_margin_rate,
+    "marker_dose_curves": fig_marker_dose_curves,
+    "marker_dose_curves_perq": fig_marker_dose_curves_perq,
+    "marker_install_trajectories": fig_marker_install_trajectories,
 }
-MARKER_FAMILIES = {"hero2_marker_map", "marker_three_space"}
+DOSE_CURVE_FAMILIES = {
+    "marker_dose_curves",
+    "marker_dose_curves_perq",
+    "marker_install_trajectories",
+}
+MARKER_FAMILIES = {"hero2_marker_map", "marker_three_space"} | DOSE_CURVE_FAMILIES
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -580,6 +741,9 @@ def main(argv: list[str] | None = None) -> int:
             for f in FAMILIES
             if not (f in MARKER_FAMILIES and "marker" not in analysis)
             and not (f == "margin_rate" and "margin_rate" not in analysis)
+            and not (
+                f in DOSE_CURVE_FAMILIES and "dose_curves" not in (analysis.get("marker") or {})
+            )
         ]
     set_paper_style()
     for family in wanted:
