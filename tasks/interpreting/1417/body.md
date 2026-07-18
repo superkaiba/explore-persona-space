@@ -32,10 +32,10 @@ relates_to:
 ## Takeaways
 
 - The run's map-identity verdicts are void: generalized-cross-validation ridge λ selection collapsed on judge-filtered row subsets (a train-RSS-collapse artifact), leaving 10 of 12 pair-level ceilings against the chat/plain-text references negative.
-- The collapse is instrumental, not compositional: random matched-n subsamples of the same kept rows fit at +0.16 to +0.46 where the three collapsed per-cell kept fits read −0.59 to −1.48 (the 10 broken ceilings are pair-level refits built the same way).
+- The collapse is instrumental, not compositional: random matched-n subsamples of the same kept rows fit +0.16…+0.46; the collapsed fits read −0.59…−1.48 (the 10 broken ceilings are same-recipe pair-level refits).
 - The plan's own fallback selector (inner-group-cv on small cells) was never wired into the battery — the largest plan deviation; the decisive ~3 GPU-h follow-up executes it.
-- Both lane headlines are unsupported, so the Goal question — helpful register vs speaking-to-a-user — is unanswered; the discriminating rude-but-informative cell also failed its manipulation checks in both lanes.
-- The one pair with healthy layer-19 components reads Shared: base model, AI-relay addressee vs helpful-instruction reference — recovery fraction 0.94 (upper-bound-leaning), rotation-aligned map cosine 0.63 against a ≈0.0005 chance band.
+- Both per-model lane headlines are unsupported, so the Goal question — helpful register vs speaking-to-a-user — is unanswered; the discriminating rude-but-informative cell also failed its manipulation checks in both lanes.
+- The one healthy layer-19 pair (base AI-relay addressee vs helpful-instruction; both cells under the 50% keep floor, exploratory-grade) reads Shared: recovery fraction 0.94 (upper-bound-leaning); rotation-aligned cosine 0.63 (chance ≈0.0005).
 - Composed-transport numerators stay positive (82–98% of full-n anchors) wherever a cell's own map is healthy — a low-confidence lean toward map invariance across framings, ungraded until the refit.
 
 ## Goal
@@ -222,7 +222,7 @@ Every battery component for this pair (n = 1,588) at layer 19 is plotted: own-ro
 
 Recovery fraction 0.937 (CI 0.928–0.946, per-fold maps held fixed under row resampling), reverse direction 0.959, stable at layers 14/18 (0.92/0.94). The Shared lean rests on the ceiling-independent reads: rotation-aligned cosine 0.634 against a chance band whose 97.5th percentile is 0.0005, and frozen-map transfer positive both ways (+0.346/+0.339 vs shuffle nulls −0.32/−0.44).
 
-Hedges: this pair's layer-26 ceiling is broken (−0.017), so layer stability holds at 14/18/19 only. At n = 1,588 the fits sit inside the vulnerable regime, and an attenuated ceiling inflates the recovery fraction, so 0.937 leans upper-bound. The rubric never verified the model noticed the AI-relay framing (ignored instruction vs genuine invariance unresolved); single pair, base lane only.
+Hedges: this pair's layer-26 ceiling is broken (−0.017), so layer stability holds at 14/18/19 only. At n = 1,588 the fits sit inside the vulnerable regime, and an attenuated ceiling inflates the recovery fraction, so 0.937 leans upper-bound. The rubric never verified the model noticed the AI-relay framing (ignored instruction vs genuine invariance unresolved); single pair, base lane only. Both cells' keep fractions sit just under the 50% primary floor (47.5%/47.6%), exploratory-grade under the plan's yield rule.
 
 ---
 
