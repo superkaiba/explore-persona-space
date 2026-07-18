@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-27 passes ("pass" = one top-level per-tick action block in ``main()``'s
+28 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -17,7 +17,8 @@ recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
-10 (idle-unmapped) -> 8 (GC). The count is lint-pinned: ``workflow_lint.py
+28 (orphan-wrapper sweep) -> 10 (idle-unmapped) -> 8 (GC). The count is
+lint-pinned: ``workflow_lint.py
 --check-asw-docstring-pass-count`` FAILs when the header digit, the
 numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
 adding a pass means adding a numbered item here AND bumping the digit:
@@ -240,7 +241,12 @@ adding a pass means adding a numbered item here AND bumping the digit:
    live-session-keyed GC inside the session-reconcile pass. The
    per-session ``zombie-wrapper-<sid>.json`` and ``idle-unmapped-<sid>.json``
    files are likewise out of its per-issue sweep — reaped by their own
-   passes' live-session-keyed GCs.)
+   passes' live-session-keyed GCs. The per-pid ``wrapper-orphan-<pid>.json``
+   files (pass 28) are outside every :data:`_GC_TARGETS` glob by prefix
+   construction — the prefix is deliberately NOT ``orphan-wrapper-``, which
+   the ``orphan-`` glob would enumerate and spare only via the incidental
+   int-parse-failure branch — and are reaped by pass 28's own
+   candidate-keyed GC.)
 9. **Campaign pass** (runs right after pass 2; task #586). Driven by
    ``campaign-<N>.json`` registry entries (written by ``spawn_session.py
    spawn-campaign``): respawn a dead campaign session whose task is ACTIVE
@@ -477,6 +483,34 @@ adding a pass means adding a numbered item here AND bumping the digit:
    (``EPM_REGISTRY_DRIFT_REALERT_HOURS``). NEVER repairs
    (``apply=True`` is banned), posts NO task markers. Kill switch
    ``EPM_DISABLE_REGISTRY_DRIFT_PASS=1``. (:func:`registry_drift_pass`.)
+28. **Orphan-wrapper /proc sweep (#1215; ESCALATE-ONLY by default; runs
+   right after pass 7).** Catch the wrapper-orphan class #818 deliberately
+   descoped: Happy wrapper/launcher processes the daemon no longer tracks
+   (ABSENT from ``/list`` — the 2026-07-01 incident's 31 zombie wrappers +
+   a 54-day init-parented launcher), invisible to every /list-sourced
+   reaper above. ONE /proc scan enumerates candidates by cmdline signature
+   (``happy/dist/index.mjs`` with next argv token ``claude``, or
+   ``claude_local_launcher.cjs``; ``comm == "node"``; euid-owned; the Happy
+   daemon pid excluded twice — daemon.state.json pid + the argv-token
+   belt), TOPMOST-deduped. Conjunctive guards: daemon reachable AND pid
+   untracked (incl. ancestor/descendant live-set intersection), no Claude
+   descendant, delta-CPU < 1%/core between ticks, wrapper process age >=
+   24h, no live user TTY (:func:`_is_live_user_tty` with ``check_orphaned``
+   threaded from :func:`_orphaned_tmux_reap_enabled`), >= ``threshold``
+   consecutive ticks (per-pid ``wrapper-orphan-<pid>.json`` state keyed by
+   ``(pid, start_epoch)``). Default = escalate-only: sidecar rows in
+   ``~/.eps-autonomous/orphan-wrapper-events.jsonl`` + ONE batched summary
+   push per tick. The direct-SIGTERM stop arm is OPT-IN
+   (``EPM_ORPHAN_WRAPPER_REAP=1`` ANDed with the global
+   ``EPM_ZOMBIE_WRAPPER_REAP``), >= 7d of OBSERVED orphanhood
+   (``first_miss_ts`` pins at the first persisted observation of the
+   episode), <= 3 stops/tick, immediate pre-signal signature + start-epoch
+   re-verification, next-tick verification with ONE retry then a loud
+   stop-failed row — never SIGKILL in v1. Daemon unreachable => one skip
+   line, ALL state untouched (never signals on "unknown"). Kill switch
+   ``EPM_DISABLE_ORPHAN_WRAPPER_PASS=1``; ``--orphan-wrapper-only`` runs
+   just this pass with an in-invocation two-sample CPU delta (pair with
+   ``--dry-run`` for a read-only live smoke). (:func:`orphan_wrapper_pass`.)
 
 Why each pass exists
 --------------------
@@ -602,6 +636,7 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -18633,6 +18668,987 @@ def zombie_wrapper_pass(
         )
 
 
+# ─── orphaned-wrapper /proc sweep (pass 28, #1215) ───────────────────────────
+#
+# The daemon-INDEPENDENT enumeration complement of the zombie-wrapper pass:
+# every session reaper above sources its pids/sids from the Happy daemon's
+# /list, so a wrapper or launcher process the daemon no longer tracks — the
+# 2026-07-01 incident's 31 zombie wrappers (~4.8 GB RSS, 1-7 days old) and a
+# 54-day init-parented ``claude_local_launcher.cjs`` (recorded in #818's
+# body) — is invisible to ALL of them forever. #818 fixed the orphaned-tmux
+# blind spot for daemon-TRACKED wrappers and deliberately descoped
+# daemon-absent processes; this pass sweeps that remainder from ONE /proc
+# scan.
+#
+# DEFAULT ACTION = ESCALATE-ONLY (sidecar row per episode + ONE batched
+# summary push per tick) — the polarity is INVERTED vs passes 7/10 because
+# the stop action is a direct SIGTERM to a pid the daemon cannot see
+# (destructive; a daemon-restart-orphaned-but-still-revivable idle wrapper
+# is a real residual — review the sidecar rows before opting in). The stop
+# arm is OPT-IN: EPM_ORPHAN_WRAPPER_REAP truthy AND the global
+# EPM_ZOMBIE_WRAPPER_REAP not falsy, plus >= 7d of OBSERVED orphanhood
+# (first_miss_ts pins at the FIRST persisted observation of the
+# (pid, start_epoch) episode), <= 3 SIGTERMs per tick, and an immediate
+# pre-signal signature + start-epoch re-verification. SIGTERM only; one
+# retry next tick, then one loud stop-failed row — never SIGKILL in v1.
+#
+# Daemon unreachable => the whole pass prints one skip line and returns with
+# ALL state untouched: the class is DEFINED by the daemon's answer ("not
+# tracked"), so without the daemon there is nothing sound to evaluate, and
+# orphans persist for days — a skipped outage tick costs nothing. Never
+# signals on "unknown".
+
+# State files at ~/.eps-autonomous/wrapper-orphan-<pid>.json. The prefix is
+# deliberately NOT "orphan-wrapper-": pass 8's _GC_TARGETS includes the
+# ("orphan-", "") pair whose ``orphan-*.json`` glob would enumerate an
+# orphan-*-named file and spare it only via the incidental int-parse-failure
+# branch; ``wrapper-orphan-`` keeps these files OUTSIDE every _GC_TARGETS
+# glob structurally. Reaped by this pass's own candidate-keyed GC
+# (:func:`_gc_orphan_wrapper_state`).
+ORPHAN_WRAPPER_STATE_PREFIX = "wrapper-orphan-"
+
+# Escalation age floor for the wrapper PROCESS age: incident processes were
+# 1-54 days old, so 24h loses no true positive; it sits far above the
+# spawn->/list registration latency (seconds) and above the EPS zombie grace
+# (2h), keeping escalation rows low-noise. Override via
+# EPM_ORPHAN_WRAPPER_MIN_AGE_S; exact value not sensitive within ~4x.
+ORPHAN_WRAPPER_MIN_AGE_S = 24 * 3600
+
+# First-observation grace before any STOP: matches the strictest existing
+# lane (NONEPS_ZOMBIE_WRAPPER_GRACE_S, #1039) and doubles as the post-deploy
+# bake window (first_miss_ts cannot predate the merge). Override via
+# EPM_ORPHAN_WRAPPER_GRACE_S.
+ORPHAN_WRAPPER_GRACE_S = 7 * 86400
+
+# Delta-CPU disqualifier (fraction of one core per wall-second between
+# ticks): incident launchers showed 00:00:00 ACCUMULATED CPU over days
+# (~0%); the DELTA (not accumulated) read is required because a wrapper that
+# once served a long session carries CPU history. 1%/core is ~100x the
+# incident signal while excluding any actively-working process. Override via
+# EPM_ORPHAN_WRAPPER_CPU_FRAC_MAX; grounded live by the
+# --orphan-wrapper-only smoke's in-invocation two-sample delta.
+ORPHAN_WRAPPER_CPU_FRAC_MAX = 0.01
+
+# Per-tick SIGTERM bound even fully opted in: bounds a bad predicate's blast
+# radius to 3 processes per 10-min tick (the worst observed backlog — 31 —
+# drains in ~2h). Override via EPM_ORPHAN_WRAPPER_MAX_STOPS_PER_TICK.
+ORPHAN_WRAPPER_MAX_STOPS_PER_TICK = 3
+
+# Candidate cmdline markers (live /proc probe 2026-07-18, plan #1215 §4):
+#   wrapper:  /usr/bin/node .../happy/dist/index.mjs claude ...
+#   launcher: node .../happy/scripts/claude_local_launcher.cjs ...
+# The Happy daemon's own process substring-matches index.mjs but its argv
+# token after index.mjs is NOT "claude" (e.g. ``daemon start-sync``) — the
+# argv-token belt excludes it even when daemon.state.json is unreadable.
+# The outer ``node /usr/bin/happy claude`` shim is a deliberate v1 descope
+# (matches neither marker; residual population surfaces via the
+# wrapper/launcher escalate rows).
+_ORPHAN_WRAPPER_INDEX_MJS_MARKER = "happy/dist/index.mjs"
+_ORPHAN_WRAPPER_LAUNCHER_MARKER = "claude_local_launcher.cjs"
+
+# Sidecar (one-sidecar-per-pass family precedent: idle-unmapped-events.jsonl,
+# cpu-guard-events.jsonl). Deliberately NOT zombie-wrapper-events.jsonl —
+# that file's rows are sid-keyed daemon-session records; orphan rows are
+# pid-keyed with no sid by construction.
+_ORPHAN_WRAPPER_EVENTS_FILENAME = "orphan-wrapper-events.jsonl"
+
+
+def _orphan_wrapper_pass_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_ORPHAN_WRAPPER_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_ORPHAN_WRAPPER_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _orphan_wrapper_reap_enabled() -> bool:
+    """OPT-IN stop arm (#1215) — polarity INVERTED vs the opt-out
+    :func:`_zombie_wrapper_reap_enabled`: True ONLY when
+    ``EPM_ORPHAN_WRAPPER_REAP`` is explicitly "1"/"true"/"yes"
+    (case-insensitive); default False (escalate-only). The caller ANDs the
+    global :func:`_zombie_wrapper_reap_enabled` on top, so
+    ``EPM_ZOMBIE_WRAPPER_REAP=0`` keeps ALL wrapper reaping alert-only."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_REAP", "").strip().lower()
+    return raw in {"1", "true", "yes"}
+
+
+def _orphan_wrapper_grace_s() -> float:
+    """Stop grace in seconds: ``EPM_ORPHAN_WRAPPER_GRACE_S`` when set to a
+    positive number, else :data:`ORPHAN_WRAPPER_GRACE_S` (7d). Garbled /
+    non-positive values fall back (mirrors :func:`_zombie_noneps_grace_s`)."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_GRACE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return ORPHAN_WRAPPER_GRACE_S
+    return val if val > 0 else ORPHAN_WRAPPER_GRACE_S
+
+
+def _orphan_wrapper_min_age_s() -> float:
+    """Escalation age floor in seconds: ``EPM_ORPHAN_WRAPPER_MIN_AGE_S`` when
+    set to a positive number, else :data:`ORPHAN_WRAPPER_MIN_AGE_S` (24h)."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_MIN_AGE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return ORPHAN_WRAPPER_MIN_AGE_S
+    return val if val > 0 else ORPHAN_WRAPPER_MIN_AGE_S
+
+
+def _orphan_wrapper_cpu_frac_max() -> float:
+    """Delta-CPU disqualifier threshold: ``EPM_ORPHAN_WRAPPER_CPU_FRAC_MAX``
+    when set to a positive number, else :data:`ORPHAN_WRAPPER_CPU_FRAC_MAX`."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_CPU_FRAC_MAX", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return ORPHAN_WRAPPER_CPU_FRAC_MAX
+    return val if val > 0 else ORPHAN_WRAPPER_CPU_FRAC_MAX
+
+
+def _orphan_wrapper_max_stops_per_tick() -> int:
+    """Per-tick SIGTERM bound: ``EPM_ORPHAN_WRAPPER_MAX_STOPS_PER_TICK`` when
+    set to a positive int, else :data:`ORPHAN_WRAPPER_MAX_STOPS_PER_TICK`."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_MAX_STOPS_PER_TICK", "")
+    try:
+        val = int(raw)
+    except ValueError:
+        return ORPHAN_WRAPPER_MAX_STOPS_PER_TICK
+    return val if val > 0 else ORPHAN_WRAPPER_MAX_STOPS_PER_TICK
+
+
+def _proc_cpu_seconds(pid: int) -> float | None:
+    """Accumulated CPU seconds (utime+stime) of ``/proc/<pid>`` — stat fields
+    14/15, i.e. indices 11/12 after the LAST ``)`` (the same comm-safe parse
+    as :func:`_proc_children_map` / ``tick_triage.proc_start_epoch``), divided
+    by ``SC_CLK_TCK``. ``None`` on any read/parse failure (raced exit,
+    permission, malformed)."""
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        after_comm = stat.rsplit(")", 1)[1].split()
+        # after_comm[0] is field 3 (state); fields 14/15 (utime/stime) are
+        # indices 11/12.
+        ticks = float(after_comm[11]) + float(after_comm[12])
+        return ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _happy_daemon_pid() -> int | None:
+    """The Happy daemon's own pid from ``~/.happy/daemon.state.json``
+    (fail-soft ``None`` — the classifier's argv-token belt still excludes a
+    daemon-shaped cmdline on its own; plan #1215 assumption 3)."""
+    try:
+        data = json.loads((Path.home() / ".happy" / "daemon.state.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    pid = data.get("pid") if isinstance(data, dict) else None
+    return pid if isinstance(pid, int) and not isinstance(pid, bool) else None
+
+
+def _classify_orphan_wrapper_proc(
+    cmdline: list[str],
+    comm: str,
+    euid: int,
+    my_euid: int,
+    daemon_pid: int | None,
+    pid: int,
+) -> str | None:
+    """PURE per-proc classifier: ``"wrapper"`` | ``"launcher"`` | ``None``.
+
+    ALL structural candidate predicates live here so each is unit-testable
+    over crafted fixtures without touching /proc:
+
+    - ``comm == "node"`` — excludes greps / editors / tmux servers merely
+      carrying a marker string in argv;
+    - ``euid == my_euid`` — single-user VM today; also pre-empts EPERM on a
+      later signal;
+    - ``pid != daemon_pid`` — the Happy daemon's own index.mjs process
+      (exclusion layer 1, from daemon.state.json);
+    - marker match: ``happy/dist/index.mjs`` with the NEXT argv token
+      ``claude`` -> ``"wrapper"`` (exclusion layer 2: the daemon's own
+      index.mjs argv token is NOT "claude", so a daemon-shaped cmdline is
+      excluded even when ``daemon_pid`` is None);
+      ``claude_local_launcher.cjs`` anywhere -> ``"launcher"``.
+    """
+    if comm != "node":
+        return None
+    if euid != my_euid:
+        return None
+    if daemon_pid is not None and pid == daemon_pid:
+        return None
+    for i, tok in enumerate(cmdline):
+        if _ORPHAN_WRAPPER_INDEX_MJS_MARKER in tok:
+            nxt = cmdline[i + 1] if i + 1 < len(cmdline) else ""
+            return "wrapper" if nxt == "claude" else None
+    if any(_ORPHAN_WRAPPER_LAUNCHER_MARKER in tok for tok in cmdline):
+        return "launcher"
+    return None
+
+
+def _read_proc_identity(pid: int) -> tuple[list[str], str, int] | None:
+    """``(cmdline tokens, comm, owner uid)`` for ``/proc/<pid>``, or ``None``
+    on any read failure (raced exit — fail-soft skip)."""
+    entry = Path(f"/proc/{pid}")
+    try:
+        raw = (entry / "cmdline").read_bytes().decode("utf-8", "replace")
+        cmdline = [t for t in raw.split("\x00") if t]
+        comm = (entry / "comm").read_text().strip()
+        euid = entry.stat().st_uid
+    except OSError:
+        return None
+    return (cmdline, comm, euid)
+
+
+def _scan_orphan_wrapper_candidates(
+    children_map: dict[int, list[int]] | None = None,
+    proc_root: Path | None = None,
+) -> list[dict]:
+    """Thin /proc walker: ONE iterdir over numeric dirs -> per-pid
+    (cmdline, comm, euid) reads -> :func:`_classify_orphan_wrapper_proc`,
+    then TOPMOST dedup — a candidate whose /proc ancestor chain contains
+    another candidate is dropped (logged ``subsumed-by=<pid>``) and rides as
+    ``subsumed_children`` on its TOPMOST candidate ancestor; a surviving
+    orphaned child becomes topmost on a later tick. Raced /proc exits are
+    skipped fail-soft. Returns one dict per surviving candidate:
+    ``{pid, role, cmdline_head, ppid, subsumed_children}``. ``proc_root`` is
+    a unit-test override (default ``/proc``)."""
+    proc_root = proc_root if proc_root is not None else Path("/proc")
+    if children_map is None:
+        children_map = _proc_children_map()
+    parent_map: dict[int, int] = {}
+    for ppid, kids in children_map.items():
+        for kid in kids:
+            parent_map[kid] = ppid
+    daemon_pid = _happy_daemon_pid()
+    my_euid = os.geteuid()
+    raw: dict[int, dict] = {}
+    for entry in proc_root.iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        ident = _read_proc_identity(pid)
+        if ident is None:
+            continue
+        cmdline, comm, euid = ident
+        role = _classify_orphan_wrapper_proc(cmdline, comm, euid, my_euid, daemon_pid, pid)
+        if role is None:
+            continue
+        raw[pid] = {
+            "pid": pid,
+            "role": role,
+            "cmdline_head": " ".join(cmdline)[:120],
+            "ppid": parent_map.get(pid),
+            "subsumed_children": [],
+        }
+    out: list[dict] = []
+    for pid, cand in sorted(raw.items()):
+        cur = parent_map.get(pid)
+        seen: set[int] = set()
+        top_subsumer: int | None = None
+        while cur is not None and cur not in seen and cur > 1:
+            if cur in raw:
+                top_subsumer = cur
+            seen.add(cur)
+            cur = parent_map.get(cur)
+        if top_subsumer is not None:
+            print(f"  orphan-wrapper: pid {pid} subsumed-by={top_subsumer} (topmost dedup)")
+            raw[top_subsumer]["subsumed_children"].append(pid)
+            continue
+        out.append(cand)
+    return out
+
+
+def _pid_tree_intersects_live(
+    pid: int,
+    live_pids: set[int],
+    parent_map: dict[int, int],
+    children_map: dict[int, list[int]],
+) -> bool:
+    """True when the candidate's /proc ancestor chain OR descendant tree
+    intersects the daemon live-pid set — a live session's launcher / shim
+    belongs to pass 7's session, never to this sweep."""
+    cur = parent_map.get(pid)
+    seen: set[int] = set()
+    while cur is not None and cur not in seen and cur > 1:
+        if cur in live_pids:
+            return True
+        seen.add(cur)
+        cur = parent_map.get(cur)
+    stack = list(children_map.get(pid, ()))
+    seen_d: set[int] = set()
+    while stack:
+        p = stack.pop()
+        if p in seen_d:
+            continue
+        seen_d.add(p)
+        if p in live_pids:
+            return True
+        stack.extend(children_map.get(p, ()))
+    return False
+
+
+def decide_orphan_wrapper(
+    daemon_tracked: bool | None,
+    has_claude: bool,
+    live_user_tty: bool,
+    wrapper_age_s: float | None,
+    cpu_frac: float | None,
+    missed: int,
+    first_miss_age_s: float,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = False,
+    min_age_s: float = ORPHAN_WRAPPER_MIN_AGE_S,
+    grace_s: float = ORPHAN_WRAPPER_GRACE_S,
+    cpu_frac_max: float = ORPHAN_WRAPPER_CPU_FRAC_MAX,
+) -> tuple[str, int]:
+    """PURE decision for one daemon-untracked wrapper/launcher candidate
+    (pass 28, #1215). Returns ``(action, new_missed)`` with action
+    ``"clear"`` | ``"skip"`` | ``"keep"`` | ``"escalate"`` | ``"stop"``.
+
+    - ``daemon_tracked is None`` (daemon unreachable — a belt; the driver
+      skips the whole pass first) -> ``("skip", missed)``: UNKNOWN is not
+      "not tracked"; freeze (the idle-unmapped skip idiom).
+    - tracked -> clear (pass 7 owns it). Claude descendant / live user TTY
+      -> clear (healthy / user-attended; the episode ends).
+    - age unreadable or under the floor -> keep with the miss count
+      INCREMENTED — misses accrued under the 24h floor COUNT toward the
+      threshold (deliberate race protection: a candidate crossing the floor
+      with persisted history can escalate immediately).
+    - no delta-CPU baseline yet (first observation) -> keep; actively
+      computing (``cpu_frac > cpu_frac_max``) -> clear.
+    - below ``threshold`` -> keep. ``reap_enabled`` AND >= ``grace_s`` since
+      the FIRST persisted observation -> stop. Not yet ``alerted`` ->
+      escalate (once per episode; under default switches this is the
+      terminal action). Otherwise keep.
+    """
+    if daemon_tracked is None:
+        return ("skip", missed)
+    if daemon_tracked:
+        return ("clear", 0)
+    if has_claude or live_user_tty:
+        return ("clear", 0)
+    if wrapper_age_s is None or wrapper_age_s < min_age_s:
+        return ("keep", missed + 1)
+    if cpu_frac is None:
+        return ("keep", missed + 1)
+    if cpu_frac > cpu_frac_max:
+        return ("clear", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if reap_enabled and first_miss_age_s >= grace_s:
+        return ("stop", 0)
+    if not alerted:
+        return ("escalate", new_missed)
+    return ("keep", new_missed)
+
+
+def _orphan_wrapper_state_path(pid: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{ORPHAN_WRAPPER_STATE_PREFIX}{pid}.json"
+
+
+def _load_orphan_wrapper_state(pid: int) -> dict:
+    """Per-pid orphan-wrapper state (``{}`` on absent/garbled — the watcher
+    state-loader idiom)."""
+    path = _orphan_wrapper_state_path(pid)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_orphan_wrapper_state(
+    pid: int,
+    *,
+    start_epoch: float,
+    missed: int,
+    alerted: bool,
+    first_miss_ts: float,
+    cpu_s: float | None,
+    cpu_ts: float | None,
+    signalled_at: float | None = None,
+    signal_retried: bool = False,
+    stop_failed_alerted: bool = False,
+    cmdline_head: str = "",
+) -> None:
+    """Persist one ``(pid, start_epoch)`` episode atomically (tmp + rename).
+    ``start_epoch`` pins process identity against pid reuse;
+    ``first_miss_ts`` pins the FIRST persisted observation of the episode
+    (the 7d stop grace anchors here and is never reset while the episode
+    lives); ``{cpu_s, cpu_ts}`` is the delta-CPU baseline for the next tick;
+    the ``signalled_at``/``signal_retried``/``stop_failed_alerted`` trio
+    mirrors the zombie stop-verification contract (signal != death)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _orphan_wrapper_state_path(pid)
+    payload = {
+        "start_epoch": start_epoch,
+        "missed": missed,
+        "alerted": alerted,
+        "first_miss_ts": first_miss_ts,
+        "cpu_s": cpu_s,
+        "cpu_ts": cpu_ts,
+        "signalled_at": signalled_at,
+        "signal_retried": bool(signal_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
+        "cmdline_head": cmdline_head,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_orphan_wrapper_state(pid: int) -> None:
+    """Drop the per-pid state (episode over: the process became tracked,
+    revived, was verified gone, or its identity changed)."""
+    _orphan_wrapper_state_path(pid).unlink(missing_ok=True)
+
+
+def _gc_orphan_wrapper_state(current_keys: set[tuple[int, float]], dry_run: bool) -> None:
+    """Reap state files whose ``(pid, start_epoch)`` is no longer a live
+    candidate — the pid died (the stop-verification success path), became
+    daemon-tracked, or was recycled into a new process (±1s start-epoch
+    tolerance). Mirrors :func:`_gc_orphan_zombie_state`'s live-keyed shape;
+    a live episode's file never needs age-reaping because its key stays in
+    the candidate set."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    by_pid: dict[int, list[float]] = {}
+    for p, se in current_keys:
+        by_pid.setdefault(p, []).append(se)
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{ORPHAN_WRAPPER_STATE_PREFIX}*.json")):
+        try:
+            pid = int(path.stem[len(ORPHAN_WRAPPER_STATE_PREFIX) :])
+        except ValueError:
+            continue  # hand-debug artifact — none of the GC's business
+        try:
+            payload = json.loads(path.read_text())
+            state_se = payload.get("start_epoch") if isinstance(payload, dict) else None
+        except (json.JSONDecodeError, OSError):
+            state_se = None
+        live = isinstance(state_se, int | float) and any(
+            abs(se - state_se) <= 1.0 for se in by_pid.get(pid, [])
+        )
+        if live:
+            continue
+        print(f"  orphan-wrapper: GC state {path.name} (no longer a live candidate)")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _append_orphan_wrapper_event(payload: dict, dry_run: bool) -> None:
+    """Durable per-pid trace — no sid exists by construction, so there is
+    never a task marker; append one JSON line to
+    ``~/.eps-autonomous/orphan-wrapper-events.jsonl``. Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / _ORPHAN_WRAPPER_EVENTS_FILENAME
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "orphan-wrapper", **payload}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append orphan-wrapper event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending orphan-wrapper event failed: {e}", file=sys.stderr)
+
+
+def _orphan_parent_cmdline_head(ppid: int | None) -> str:
+    """First 80 chars of the parent's cmdline for the sidecar row (``"init"``
+    for pid <= 1 / unreadable parents) — init-parentage was the incident's
+    true-orphan fingerprint, and the field is unobtainable post-stop."""
+    if not isinstance(ppid, int) or ppid <= 1:
+        return "init"
+    try:
+        raw = Path(f"/proc/{ppid}/cmdline").read_bytes().decode("utf-8", "replace")
+    except OSError:
+        return "init"
+    head = " ".join(t for t in raw.split("\x00") if t)[:80]
+    return head or "init"
+
+
+def _orphan_presignal_reverify(pid: int, start_epoch: float) -> bool:
+    """Immediately before a SIGTERM: the pid must STILL classify as an
+    orphan-wrapper candidate (comm / euid / daemon-pid / marker signature)
+    AND its live start epoch must still match the episode's (±1s) — the last
+    line of the pid-reuse defense. Any unreadable signal -> False (never
+    signal on uncertainty)."""
+    live_se = proc_start_epoch(pid)
+    if live_se is None or abs(live_se - start_epoch) > 1.0:
+        return False
+    ident = _read_proc_identity(pid)
+    if ident is None:
+        return False
+    cmdline, comm, euid = ident
+    return (
+        _classify_orphan_wrapper_proc(cmdline, comm, euid, os.geteuid(), _happy_daemon_pid(), pid)
+        is not None
+    )
+
+
+def _orphan_smoke_cpu_fracs(pids: list[int]) -> dict[int, float | None]:
+    """``--orphan-wrapper-only`` in-invocation two-sample delta-CPU
+    measurement (read-only): dry-run never persists the ``{cpu_s, cpu_ts}``
+    baseline, so a naive dry-run smoke would read ``cpu_frac is None`` for
+    every candidate and could never ground the CPU threshold. Sample
+    :func:`_proc_cpu_seconds` twice, ``EPM_ORPHAN_WRAPPER_SMOKE_INTERVAL_S``
+    (default 8s) apart, and return the per-pid per-wall-second delta. No
+    state writes; the production tick path keeps the persisted-baseline
+    delta."""
+    raw = os.environ.get("EPM_ORPHAN_WRAPPER_SMOKE_INTERVAL_S", "")
+    try:
+        interval = float(raw)
+    except ValueError:
+        interval = 8.0
+    if interval <= 0:
+        interval = 8.0
+    s1 = {pid: _proc_cpu_seconds(pid) for pid in pids}
+    t1 = time.time()
+    time.sleep(interval)
+    t2 = time.time()
+    s2 = {pid: _proc_cpu_seconds(pid) for pid in pids}
+    elapsed = max(t2 - t1, 1e-6)
+    out: dict[int, float | None] = {}
+    for pid in pids:
+        a, b = s1.get(pid), s2.get(pid)
+        out[pid] = None if a is None or b is None else max(b - a, 0.0) / elapsed
+    return out
+
+
+def _check_orphan_stop_verification(
+    pid: int,
+    start_epoch: float,
+    prev: dict,
+    dry_run: bool,
+    now: float,
+    *,
+    in_scope: bool = True,
+) -> bool:
+    """Next-tick verification that a SIGTERM landed (signal != death).
+    Returns True when this tick was consumed by the verification path.
+
+    The candidate being scanned at all means the pid is still alive; a
+    verified-gone process needs no code here — it leaves the candidate set
+    and :func:`_gc_orphan_wrapper_state` reaps the state. A still-alive pid
+    escalates: ONE SIGTERM retry, then one loud ``stop-failed`` sidecar row
+    + push, then quiet — mirroring
+    :func:`_check_zombie_stop_verification`'s one-retry-then-loud contract
+    (the daemon stop RPC swapped for the direct signal). NEVER SIGKILL in
+    v1. ``in_scope=False`` (a Claude descendant or live user TTY reappeared
+    post-signal) returns False so the normal decision clears the episode
+    instead of re-signalling a revived process."""
+    signalled_at = prev.get("signalled_at")
+    if not isinstance(signalled_at, int | float) or not signalled_at:
+        return False
+    if not in_scope:
+        return False
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+    missed = prev.get("missed", 0)
+    if not isinstance(missed, int) or isinstance(missed, bool):
+        missed = 0
+    common = dict(
+        start_epoch=start_epoch,
+        missed=missed,
+        alerted=bool(prev.get("alerted", False)),
+        first_miss_ts=first_miss_ts,
+        cpu_s=prev.get("cpu_s") if isinstance(prev.get("cpu_s"), int | float) else None,
+        cpu_ts=prev.get("cpu_ts") if isinstance(prev.get("cpu_ts"), int | float) else None,
+        cmdline_head=str(prev.get("cmdline_head", "")),
+    )
+    print(
+        f"  ORPHAN STOP-VERIFY FAILED pid {pid}: still alive one tick after "
+        f"SIGTERM (signal != death).",
+        file=sys.stderr,
+    )
+    if not prev.get("signal_retried"):
+        print(f"  orphan-wrapper: SIGTERM RETRIED for pid {pid} (one retry per episode)")
+        if not dry_run:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                _clear_orphan_wrapper_state(pid)
+                return True
+            except PermissionError as e:
+                print(
+                    f"  WARNING: orphan-wrapper retry SIGTERM pid {pid} failed: {e}",
+                    file=sys.stderr,
+                )
+            _save_orphan_wrapper_state(
+                pid,
+                **common,
+                signalled_at=now,
+                signal_retried=True,
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return True
+    if not prev.get("stop_failed_alerted"):
+        _append_orphan_wrapper_event(
+            {
+                "event": "stop-failed",
+                "pid": pid,
+                "start_epoch": start_epoch,
+                "cmdline_head": common["cmdline_head"],
+                "recommended_action": (
+                    f"SIGTERM x2 did not land; inspect + stop manually with "
+                    f"`kill {pid}` (never SIGKILLed automatically in v1)"
+                ),
+            },
+            dry_run,
+        )
+        _telegram_push(
+            f"orphan-wrapper STOP FAILED: pid {pid} survived SIGTERM + one retry "
+            f"(daemon-untracked Happy wrapper/launcher, #1215). Inspect + stop "
+            f"manually with `kill {pid}`; the pass never SIGKILLs.",
+            dry_run,
+        )
+        if not dry_run:
+            _save_orphan_wrapper_state(
+                pid,
+                **common,
+                signalled_at=signalled_at,
+                signal_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  orphan-wrapper: pid {pid} already retried + alerted this episode; awaiting manual stop."
+    )
+    return True
+
+
+def _process_orphan_wrapper(
+    cand: dict,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+    children_map: dict[int, list[int]],
+    detached_tmux_ttys: set[str],
+    check_orphaned: bool,
+    stops_remaining: list[int],
+    new_escalations: list[dict],
+) -> None:
+    """One candidate through: pid-reuse guard -> stop-verification -> guard
+    computation -> :func:`decide_orphan_wrapper` -> action. Every state
+    write / sidecar append / push / signal is ``if not dry_run:`` gated (the
+    #1039 pin shape); the batched summary push is sent by the caller from
+    ``new_escalations`` (one push per tick, never per candidate)."""
+    pid = int(cand["pid"])
+    role = str(cand.get("role", "?"))
+    start_epoch = proc_start_epoch(pid)
+    if start_epoch is None:
+        # Raced exit / unreadable /proc: no identity to key an episode on —
+        # skip fail-soft (state untouched; the GC reaps any leftover once
+        # the pid is no longer a candidate).
+        print(f"  orphan-wrapper: pid {pid} start epoch unreadable; skipping (fail-soft)")
+        return
+    prev = _load_orphan_wrapper_state(pid)
+    prev_se = prev.get("start_epoch")
+    if prev and (not isinstance(prev_se, int | float) or abs(prev_se - start_epoch) > 1.0):
+        # Pid-reuse guard: the recorded episode belongs to a DIFFERENT
+        # process that once held this pid. Fresh episode; a signal is NEVER
+        # sent against a mismatched start epoch.
+        print(
+            f"  orphan-wrapper: pid {pid} start-epoch mismatch "
+            f"(state={prev_se!r} live={start_epoch:.0f}) — resetting episode"
+        )
+        if not dry_run:
+            _clear_orphan_wrapper_state(pid)
+        prev = {}
+
+    has_claude = _has_claude_descendant(pid, children_map)
+    live_tty = _is_live_user_tty(pid, detached_tmux_ttys, check_orphaned=check_orphaned)
+    in_scope = not has_claude and not live_tty
+    if _check_orphan_stop_verification(pid, start_epoch, prev, dry_run, now, in_scope=in_scope):
+        return
+
+    wrapper_age_s = now - start_epoch
+    cur_cpu = _proc_cpu_seconds(pid)
+    prev_cpu = prev.get("cpu_s")
+    prev_cpu_ts = prev.get("cpu_ts")
+    cpu_frac: float | None = None
+    smoke = cand.get("smoke_cpu_frac")
+    if isinstance(smoke, int | float):
+        # --orphan-wrapper-only in-invocation two-sample delta (read-only).
+        cpu_frac = float(smoke)
+    elif (
+        cur_cpu is not None
+        and isinstance(prev_cpu, int | float)
+        and isinstance(prev_cpu_ts, int | float)
+        and now > prev_cpu_ts
+    ):
+        cpu_frac = max(cur_cpu - prev_cpu, 0.0) / (now - prev_cpu_ts)
+
+    missed = prev.get("missed", 0)
+    if not isinstance(missed, int) or isinstance(missed, bool):
+        missed = 0
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now  # PIN: first persisted observation of this episode
+    alerted = bool(prev.get("alerted", False))
+
+    action, new_missed = decide_orphan_wrapper(
+        False,
+        has_claude,
+        live_tty,
+        wrapper_age_s,
+        cpu_frac,
+        missed,
+        now - first_miss_ts,
+        alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        min_age_s=_orphan_wrapper_min_age_s(),
+        grace_s=_orphan_wrapper_grace_s(),
+        cpu_frac_max=_orphan_wrapper_cpu_frac_max(),
+    )
+    cpu_label = f"{cpu_frac:.4f}" if cpu_frac is not None else "n/a"
+    print(
+        f"  orphan-wrapper: pid {pid} role={role} age={wrapper_age_s / 86400:.1f}d "
+        f"cpu_frac={cpu_label} missed={missed}->{new_missed} action={action}"
+    )
+
+    if action == "clear":
+        if not dry_run:
+            _clear_orphan_wrapper_state(pid)
+        return
+    if action == "skip":
+        return  # frozen — the daemon-unknown belt; the driver never passes None
+
+    save_common = dict(
+        start_epoch=start_epoch,
+        first_miss_ts=first_miss_ts,
+        cpu_s=cur_cpu,
+        cpu_ts=now,
+        cmdline_head=str(cand.get("cmdline_head", "")),
+    )
+
+    if action == "escalate":
+        row = {
+            "event": "escalate",
+            "pid": pid,
+            "start_epoch": start_epoch,
+            "role": role,
+            "cmdline_head": save_common["cmdline_head"],
+            "age_d": round(wrapper_age_s / 86400, 1),
+            "first_miss_age_h": round((now - first_miss_ts) / 3600, 1),
+            "cpu_frac": cpu_frac,
+            "missed": new_missed,
+            "daemon_state": "not-tracked",
+            "ppid": cand.get("ppid"),
+            "parent_cmdline_head": _orphan_parent_cmdline_head(cand.get("ppid")),
+            "tty": _wrapper_controlling_tty_path(pid) or "none",
+            "subsumed_children": list(cand.get("subsumed_children") or []),
+            "recommended_action": (
+                f"review; stop manually with `kill {pid}`; opt in to auto-stop "
+                f"with EPM_ORPHAN_WRAPPER_REAP=1 on the watcher cron"
+            ),
+        }
+        _append_orphan_wrapper_event(row, dry_run)
+        new_escalations.append(row)
+        if not dry_run:
+            _save_orphan_wrapper_state(pid, **save_common, missed=new_missed, alerted=True)
+        return
+
+    if action == "stop":
+        if stops_remaining[0] <= 0:
+            print(f"  orphan-wrapper: per-tick stop bound reached; pid {pid} kept this tick")
+            if not dry_run:
+                _save_orphan_wrapper_state(pid, **save_common, missed=missed + 1, alerted=alerted)
+            return
+        # Immediate pre-signal re-verification: signature + start epoch must
+        # STILL match right before the SIGTERM (pid-reuse belt-and-braces).
+        if not _orphan_presignal_reverify(pid, start_epoch):
+            print(f"  orphan-wrapper: pid {pid} failed pre-signal re-verification; NOT signalled")
+            if not dry_run:
+                _clear_orphan_wrapper_state(pid)
+            return
+        stops_remaining[0] -= 1
+        if dry_run:
+            print(f"  [dry-run] would SIGTERM orphaned {role} pid {pid}")
+        else:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                print(f"  orphan-wrapper: pid {pid} already gone at signal time")
+                _clear_orphan_wrapper_state(pid)
+                return
+            except PermissionError as e:
+                # EPERM should be impossible past the euid filter — loud row,
+                # then freeze the episode via the verification quiet branch.
+                print(f"  WARNING: orphan-wrapper SIGTERM pid {pid} failed: {e}", file=sys.stderr)
+                _append_orphan_wrapper_event(
+                    {
+                        "event": "stop-failed",
+                        "pid": pid,
+                        "start_epoch": start_epoch,
+                        "cmdline_head": save_common["cmdline_head"],
+                        "recommended_action": (
+                            f"EPERM on SIGTERM; inspect ownership + stop manually with `kill {pid}`"
+                        ),
+                    },
+                    dry_run,
+                )
+                _save_orphan_wrapper_state(
+                    pid,
+                    **save_common,
+                    missed=missed,
+                    alerted=alerted,
+                    signalled_at=now,
+                    signal_retried=True,
+                    stop_failed_alerted=True,
+                )
+                return
+        _append_orphan_wrapper_event(
+            {
+                "event": "stop",
+                "pid": pid,
+                "start_epoch": start_epoch,
+                "role": role,
+                "cmdline_head": save_common["cmdline_head"],
+                "age_d": round(wrapper_age_s / 86400, 1),
+                "first_miss_age_h": round((now - first_miss_ts) / 3600, 1),
+                "cpu_frac": cpu_frac,
+                "daemon_state": "not-tracked",
+            },
+            dry_run,
+        )
+        _telegram_push(
+            f"orphan-wrapper: SIGTERM sent to daemon-untracked {role} pid {pid} "
+            f"(age {wrapper_age_s / 86400:.1f}d, ~0 CPU, no Claude child, no live "
+            f"TTY; #1215 opt-in stop arm). Verified next tick; never SIGKILLed.",
+            dry_run,
+        )
+        if not dry_run:
+            _save_orphan_wrapper_state(
+                pid, **save_common, missed=0, alerted=alerted, signalled_at=now
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor
+    # (+ the delta-CPU baseline for the next tick).
+    if not dry_run:
+        _save_orphan_wrapper_state(pid, **save_common, missed=new_missed, alerted=alerted)
+
+
+def orphan_wrapper_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    children: list[dict] | None = None,
+    now: float | None = None,
+    smoke_cpu: bool = False,
+) -> None:
+    """Daemon-independent /proc sweep for orphaned Happy wrappers/launchers
+    (pass 28, #1215) — processes the daemon no longer tracks, invisible to
+    every /list-sourced reaper above. ESCALATE-ONLY by default (sidecar row
+    per episode + ONE batched summary push per tick); the direct-SIGTERM
+    stop arm is OPT-IN via ``EPM_ORPHAN_WRAPPER_REAP=1`` ANDed with the
+    global ``EPM_ZOMBIE_WRAPPER_REAP``. Daemon unreachable => one skip line,
+    ALL state untouched, never signals (the "not tracked" predicate needs
+    the daemon's answer). ``children`` may be injected (main()'s shared
+    reaper snapshot / tests); ``smoke_cpu=True`` (the ``--orphan-wrapper-only``
+    entrypoint) computes an in-invocation two-sample CPU delta so a dry-run
+    smoke prints per-candidate ``cpu_frac`` (read-only). Fail-soft: the pass
+    body self-isolates exceptions (main() calls passes bare)."""
+    try:
+        if not _orphan_wrapper_pass_enabled():
+            print("orphan-wrapper: disabled via EPM_DISABLE_ORPHAN_WRAPPER_PASS; skipping")
+            return
+        now = now if now is not None else time.time()
+        if not daemon_reachable or children is None:
+            print(
+                "orphan-wrapper: Happy daemon unreachable; skipping with state frozen "
+                "(the not-tracked predicate needs the daemon's answer; never signals "
+                "on unknown)"
+            )
+            return
+        live_pids = {c.get("pid") for c in children if isinstance(c.get("pid"), int)}
+        children_map = _proc_children_map()
+        parent_map: dict[int, int] = {}
+        for ppid, kids in children_map.items():
+            for kid in kids:
+                parent_map[kid] = ppid
+        candidates = _scan_orphan_wrapper_candidates(children_map)
+        kept: list[dict] = []
+        excluded = 0
+        for cand in candidates:
+            pid = cand["pid"]
+            if pid in live_pids or _pid_tree_intersects_live(
+                pid, live_pids, parent_map, children_map
+            ):
+                excluded += 1
+                continue
+            kept.append(cand)
+        # Candidate-keyed GC at pass start: reap episodes whose
+        # (pid, start_epoch) is no longer a live candidate (died / became
+        # tracked / recycled). Runs on every daemon-reachable tick.
+        keys: set[tuple[int, float]] = set()
+        for cand in kept:
+            se = proc_start_epoch(cand["pid"])
+            if se is not None:
+                keys.add((cand["pid"], se))
+        _gc_orphan_wrapper_state(keys, dry_run)
+        reap = _orphan_wrapper_reap_enabled() and _zombie_wrapper_reap_enabled()
+        print(
+            f"orphan-wrapper: {len(kept)} daemon-untracked candidate(s) "
+            f"({excluded} live-set/ancestry-excluded; "
+            f"reap={'ON (opt-in)' if reap else 'OFF — escalate-only (default)'})"
+        )
+        if not kept:
+            return
+        if smoke_cpu:
+            fracs = _orphan_smoke_cpu_fracs([c["pid"] for c in kept])
+            for cand in kept:
+                cand["smoke_cpu_frac"] = fracs.get(cand["pid"])
+        detached_tmux_ttys, _ = _detached_tmux_panes_with_activity()
+        check_orphaned = _orphaned_tmux_reap_enabled()
+        stops_remaining = [_orphan_wrapper_max_stops_per_tick()]
+        new_escalations: list[dict] = []
+        for cand in sorted(kept, key=lambda c: c["pid"]):
+            _process_orphan_wrapper(
+                cand,
+                now,
+                dry_run,
+                threshold,
+                reap_enabled=reap,
+                children_map=children_map,
+                detached_tmux_ttys=detached_tmux_ttys,
+                check_orphaned=check_orphaned,
+                stops_remaining=stops_remaining,
+                new_escalations=new_escalations,
+            )
+        if new_escalations:
+            # ONE summary push per tick covering all NEW episodes — a daemon
+            # restart can mass-untrack idle wrappers, and per-pid pushes
+            # would burst N notifications in one tick while the sidecar
+            # already keeps per-pid fidelity.
+            items = "; ".join(
+                f"pid {r['pid']} ({r['role']}, {r['age_d']}d)" for r in new_escalations
+            )
+            _telegram_push(
+                f"orphan-wrapper sweep (#1215): {len(new_escalations)} daemon-untracked "
+                f"dead Happy wrapper(s)/launcher(s): {items}. Escalate-only — review "
+                f"~/.eps-autonomous/orphan-wrapper-events.jsonl rows (ppid/tty/cpu) "
+                f"before opting in to auto-stop (EPM_ORPHAN_WRAPPER_REAP=1); stop "
+                f"manually with `kill <pid>`.",
+                dry_run,
+            )
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  orphan-wrapper: pass failed (fail-soft): {exc}", file=sys.stderr)
+
+
 # ─── idle-unmapped-session pass ──────────────────────────────────────────────
 #
 # The third session reaper, closing the class BOTH earlier reapers
@@ -22298,6 +23314,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "spawn) and exit; skip every other pass. Pair with --dry-run for a "
         "live smoke against the real registration set.",
     )
+    parser.add_argument(
+        "--orphan-wrapper-only",
+        action="store_true",
+        help="run ONLY the orphan-wrapper /proc sweep pass (#1215, "
+        "escalate-only by default — daemon-UNTRACKED dead Happy "
+        "wrappers/launchers) and exit; skip every other pass. Probes the "
+        "daemon itself (the not-tracked predicate needs /list) and computes "
+        "an in-invocation two-sample CPU delta so per-candidate cpu_frac "
+        "prints even under --dry-run. Pair with --dry-run for a read-only "
+        "live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -22401,6 +23428,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         boot_death_pass(
             args.dry_run,
             children=_live_children() if _daemon_reachable() else None,
+        )
+        return 0
+
+    # --orphan-wrapper-only mirrors --boot-death-only: run the single pass
+    # under the lock and exit. The pass probes the daemon itself (the
+    # not-tracked predicate needs /list); smoke_cpu=True computes the
+    # in-invocation two-sample CPU delta so a dry-run smoke prints
+    # per-candidate cpu_frac (the production persisted-baseline path cannot
+    # produce a measurement under dry-run — nothing is ever persisted there).
+    if args.orphan_wrapper_only:
+        reachable = _daemon_reachable()
+        orphan_wrapper_pass(
+            args.dry_run,
+            args.threshold,
+            daemon_reachable=reachable,
+            children=_live_children() if reachable else None,
+            smoke_cpu=True,
         )
         return 0
 
@@ -22730,6 +23774,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # registry-mapped-but-non-EPS-cwd (contradictory) sessions are never
     # touched. Daemon-gated.
     zombie_wrapper_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        children=reaper_children,
+    )
+
+    # Orphan-wrapper /proc sweep (#1215): the daemon-INDEPENDENT enumeration
+    # complement of the zombie pass — wrappers/launchers ABSENT from the
+    # daemon /list (the 2026-07-01 incident's 31 zombie wrappers + a 54-day
+    # init-parented launcher) are invisible to every /list-sourced reaper
+    # above. ESCALATE-ONLY by default (sidecar rows + one batched summary
+    # push per tick); the direct-SIGTERM stop arm is OPT-IN
+    # (EPM_ORPHAN_WRAPPER_REAP=1 ANDed with the global
+    # EPM_ZOMBIE_WRAPPER_REAP), 7d observed-orphanhood grace, <=3
+    # stops/tick, pre-signal signature re-verification, next-tick stop
+    # verification. Skips with state frozen when the daemon is unreachable
+    # (never signals on "unknown"). Runs AFTER the zombie pass (which owns
+    # daemon-TRACKED wrappers) on the same shared reaper snapshot.
+    orphan_wrapper_pass(
         args.dry_run,
         args.threshold,
         daemon_reachable=daemon_reachable,

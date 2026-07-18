@@ -1,0 +1,73 @@
+{
+  "issue": 1434,
+  "round_label": "icl-read-amplifier-specificity",
+  "verdict_cell": {
+    "arm": "imp-installed",
+    "read_ctx": "icl_prefix_writing_style",
+    "delta_icl": 0.69,
+    "newcombe_95": [
+      0.5868735512640829,
+      0.7722043679386762
+    ],
+    "m_anchor": 0.47,
+    "M": 0.21999999999999997,
+    "lattice": "no_verdict_engagement_gate_failed"
+  },
+  "casual_icl_reference_band": {
+    "ws-pers": 0.97,
+    "ws-bare": 0.98,
+    "ws-icl": 1.0,
+    "ws-conv": 0.47
+  },
+  "engagement_gate": {
+    "threshold": 0.5,
+    "rate": 0.48,
+    "wilson_95": [
+      0.38464384320080547,
+      0.5768359490982345
+    ],
+    "anchor_tier2": 0.805,
+    "passed": false
+  },
+  "register_overlap_flag": {
+    "threshold": 0.3,
+    "persona_casual_delta": 0.6632653061224489,
+    "flagged": true
+  },
+  "mechanism_read": {
+    "icl_impolite_rate": 0.01,
+    "wilson_95": [
+      0.0017673865655472645,
+      0.0544875247609346
+    ],
+    "anchor_tier2": 0.805,
+    "within_anchor_noise": false,
+    "mechanism_caveat_attached": false
+  },
+  "inert_consistency": {
+    "persona_impolite_rate": 0.0,
+    "wilson_95": [
+      0.0,
+      0.03699480747600191
+    ],
+    "expected_install_delta": 0.0,
+    "icl_impolite_rate": 0.0
+  },
+  "per_arm_drop_report": {
+    "imp-installed": {
+      "n_items": 800,
+      "n_scored": 795,
+      "n_dropped_draws_content": 17,
+      "n_transport_lost_draws": 0
+    },
+    "imp-inert": {
+      "n_items": 800,
+      "n_scored": 798,
+      "n_dropped_draws_content": 6,
+      "n_transport_lost_draws": 0
+    }
+  },
+  "smoke": false,
+  "git_commit": "f69b4ba077",
+  "ts": "2026-07-18T04:09:55Z"
+}

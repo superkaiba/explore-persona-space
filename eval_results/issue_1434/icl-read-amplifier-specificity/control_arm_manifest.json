@@ -1,0 +1,106 @@
+{
+  "issue": 1434,
+  "round_label": "icl-read-amplifier-specificity",
+  "arms": [
+    {
+      "label": "imp-installed",
+      "arm_dir": "imp-installed",
+      "role": "primary",
+      "hub_subfolder": "adapters/issue1090_fu4/imp-pers-lr3e5/checkpoint-30",
+      "behavior": "impolite",
+      "expected_tier2_impolite": 0.805,
+      "source_ctx": "persona_software_engineer",
+      "provenance": {
+        "selection": {
+          "step": 30,
+          "rate": 0.81,
+          "in_band": true,
+          "fallback": null
+        },
+        "tier2_confirm": 0.805,
+        "source_file": "eval_results/issue_1090/fu4-extended-dose-lr/fu4_ladders.json"
+      }
+    },
+    {
+      "label": "imp-inert",
+      "arm_dir": "imp-inert",
+      "role": "inert-reference",
+      "hub_subfolder": "issue1090/c2-impolite-claude",
+      "behavior": "impolite",
+      "expected_install_delta": 0.0,
+      "source_ctx": "persona_software_engineer",
+      "provenance": {
+        "install_delta": 0.0,
+        "selection": {
+          "step": 4,
+          "rate": 0.010638297872340425,
+          "in_band": false,
+          "fallback": "closest_approach"
+        },
+        "source_file": "eval_results/issue_1090/install/c2-impolite-claude_install.json"
+      }
+    }
+  ],
+  "base_panel": {
+    "default": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    },
+    "icl_prefix_writing_style": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    },
+    "neg_sp_ph4": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    },
+    "neg_sp_police": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    },
+    "persona_software_engineer": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    },
+    "wildchat_prefix_real545": {
+      "k": 0,
+      "n": 100,
+      "rate": 0.0
+    }
+  },
+  "casual_icl_deltas": {
+    "ws-pers": 0.97,
+    "ws-bare": 0.98,
+    "ws-icl": 1.0,
+    "ws-conv": 0.47
+  },
+  "m_anchor": 0.47,
+  "engagement_gate": 0.5,
+  "overlap_flag": 0.3,
+  "icl_read_ctx": "icl_prefix_writing_style",
+  "source_pins": {
+    "i1434_ladders.json": {
+      "path": "eval_results/issue_1434/i1434_ladders.json",
+      "git_commit": "de4e2774f1012cbcc8555ee1f36ff505d2528489",
+      "git_commit_date": "2026-07-17T04:17:40-07:00"
+    },
+    "fu4_ladders.json": {
+      "path": "eval_results/issue_1090/fu4-extended-dose-lr/fu4_ladders.json",
+      "git_commit": "583fe3bee6e745c78eb950da6844fecbf58f8dd0",
+      "git_commit_date": "2026-07-14T22:07:55-07:00"
+    },
+    "c2-impolite-claude_install.json": {
+      "path": "eval_results/issue_1090/install/c2-impolite-claude_install.json",
+      "git_commit": "275431b46e947624bc9392d55927a9a74f4709a5",
+      "git_commit_date": "2026-07-06T20:15:46-07:00"
+    }
+  },
+  "smoke": false,
+  "git_commit": "8b58d43c39",
+  "ts": "2026-07-18T02:30:26Z"
+}

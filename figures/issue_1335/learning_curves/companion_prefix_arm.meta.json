@@ -1,0 +1,2325 @@
+{
+  "commit": "79bb95a13c",
+  "created": "2026-07-18T04:30:28Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2758643032395497,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.28063700928930635,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2451118282738345,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2540098302060214,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.25906386381061575,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.33043615558424577,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3200936846979032,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3188635617062887,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.32948068222854876,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.31620995496914295,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3657857803714981,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3669945272469307,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.36914782286488923,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3679632253377205,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.36992862985939523,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3923768543388775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.39072744630473966,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.39233034169140735,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3898631755161883,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.39291283652109865,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 1242.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3921567234130007,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.22646444407397537,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2290307691889495,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2245254734903782,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.22499587484341765,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.23799752227214266,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.27732503889122695,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.28007903392109146,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2739928153125565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.27510659332918763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2846224441946139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.31413241538601233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3075710649766715,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.31274314101577816,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3137249686368202,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.31311560245221315,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 1130.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3262690482730314,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2509098537405532,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.24054351423615095,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2312885567766132,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2486742485104988,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2544581033941742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29994351238856554,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29035047824562177,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29062498264508996,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2959067083191014,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29694143124390115,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3403138676049786,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3438702305661526,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3453919133058141,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3460351003392472,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3361103329783979,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3588788514271485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3583571269229896,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.35938944208384227,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.35922323376490994,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3576679105196775,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 1275.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3617748691808501,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.19780967029655094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.21046367241816066,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.1945125872707455,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2000201920262723,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2003848874114884,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2420293152250007,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.243230909153608,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.24816184068157598,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2498371132913222,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.25314591978587586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2906059038976626,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.27952988835970805,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.28363771243846647,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2760553786815766,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.28399218059485054,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2938047165807435,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29710148346717824,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29660687206223846,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29400631718368586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2962183978202767,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 1381.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.30145626055692787,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.005585007464427472,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.005086021392065376,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.007182329008785793,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.008255598132921094,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.0065924773283456695,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.013418842285127464,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.008193916266435175,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.010378825617846976,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.007304864052581461,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.010098055040469789,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.01918351155908038,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02059426180675583,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.018561085058006355,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.01722960975199117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.019840293280479204,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02268564879145707,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02367814827534509,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02280175716930488,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02211778915063234,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.024838868612844567,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.025273836521557125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.026818758707867096,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.025937380858884973,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.025789527076018337,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02518935172391501,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02880423622009831,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02884543180121002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.028659386485789695,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.028060635164109504,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02796491260731815,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 3500.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.03002682330339712,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.026723426990599264,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02729413912537071,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.024993390404110638,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02534089878625767,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.017542964559662644,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.03925519677873124,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.03673981953166561,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04093111889874057,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02861126114357926,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.037369821797112124,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04749863080821104,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.0478248339383609,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04801890461336,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04871700210179164,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04898346750216509,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.052570786695096516,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.054588072400697074,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05469901611715955,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.053223168587716585,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.053957649118093864,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05600372117452468,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.055187444838700084,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.055897111498534935,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05495711769732792,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.0554273791022758,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05808728574423405,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05744481561599102,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.056799730604814025,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05716030179399623,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05848015691560071,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05909425581179839,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05890816536144339,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.058942891444343615,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05891132060838289,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.058939508775036065,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 3671.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.058940865160020395,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.26293736696386555,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.32301680783722586,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.36796399713608674,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.39164213087446226,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training rows (n_train)": 1242.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3921567234130007,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.22860281677377267,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.27822518512973526,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3122574384934991,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training rows (n_train)": 1130.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3262690482730314,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.24517485533159808,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.29475342256845594,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.34234428895891805,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.35870331294371355,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training rows (n_train)": 1275.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.3617748691808501,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2006382018846436,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.24728101962747653,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.28276421279445285,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.2955475574228245,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training rows (n_train)": 1381.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.30145626055692787,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": -0.006540286665309081,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.009878900652492173,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.019081752291262587,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02322444239991679,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.02580177097764851,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.028466920455705137,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 3500.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.03002682330339712,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.024378963973200184,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.03658144362996576,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.04820856779277773,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05380773858375272,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.055494554862272685,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05759445813492721,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.05895922840020087,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 3671.0,
+      "held-out R\u00b2 (layer 19) \u2191 better": 0.058940865160020395,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.17954926860820086,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.17815538825755317,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.1786935688125112,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.17830652640855682,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.17248770399455948,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2283622936720533,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2294053260004929,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2382497153584361,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.24087230219701494,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.22687337694503829,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2708840144627349,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.26748461537068124,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.26336536715665604,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2664124756682843,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2689312405340224,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2837010751025887,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2816545254606242,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2843117151884156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.282909704038113,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2835790711487908,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 1440.0,
+      "y": 0.28815768465695135,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.21083537435440047,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.21901443201542747,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.21512144721944515,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.20361672723746282,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.2052087746094854,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2578788406030539,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.24845722440282036,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2537508023131484,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2541955621272748,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2511438271191957,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.29018701843958006,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2984656984156556,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2972956727269742,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2956550968664622,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2954046032329445,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.31126348740194154,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.3124928802781105,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.3114686130198684,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.313178350450664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.3111638566187648,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 1438.0,
+      "y": 0.3190007323641667,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.13286540439534644,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.14230601602439807,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.14372438776086993,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.1440582109282147,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.11895396223661181,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.18229863221814935,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.17892985853548227,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.18541987595797293,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.19074189621030568,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.19910312746456682,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.23216043344442872,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2306501836996342,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22599799029071443,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.222348738685608,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22694937017184014,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2419216651051077,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24530978639613987,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24467267660400738,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24560085686382493,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24175276623912934,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 1398.0,
+      "y": 0.24750095512035042,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.16500035957020276,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.16188496646483064,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.16204384287473717,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.15493639837169781,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.16376897391288048,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.20149659177232737,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.18937760592108988,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.19392077753780967,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.19666548657068772,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.19030294611276977,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22753811387836054,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22513445052402514,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22793614705672438,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22658625773803975,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22429228612945584,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24270395190877936,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24021033447985973,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24207994697403978,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2434625037232806,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.2427495730741589,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 1438.0,
+      "y": 0.24811679634217398,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.020552321588861666,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.0149894669449393,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.013519146689237926,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.008511576033702895,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.01744813159228742,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.0017375493750229065,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.002394194513096859,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.0038483880589604835,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": -0.007431582664316538,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": -0.00256189565251308,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.008661649523836301,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.011651862413991965,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.010031109147116246,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.007839549109592947,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.010548592042626925,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.014461197232727763,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.012505312349665232,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.012213848057299526,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.018873432275086977,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.013996665532421515,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.01753314891423019,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.017256414505682605,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.016991224049672793,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.015021824727629918,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.017031192217925817,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.018699095421617073,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.020173875375950168,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.018735355490020145,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.018776214450800466,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.019108283573522344,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 3538.0,
+      "y": 0.020716957611568332,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.010667365270082274,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.005742917131814074,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.014866209139048348,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.0029177874900354617,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.01978418692225703,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.021039916024707006,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.025116224726208003,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.024044444931707876,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.02056047037274622,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.013909572938605508,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.03421788182389862,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.03711853028374035,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.027042827468110597,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.03710615142326634,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.02983309131427614,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.038670263224936496,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.03784064915820751,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.038070231782452724,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.03602183862921449,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.03963477686923522,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.04245058983157701,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.04193135494645106,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.04014955448151236,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.039790866021789495,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.040551813387391666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.04420431629524202,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.0440406857461495,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.04445272082334961,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.04158266663626364,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.04415996587199156,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.045057946589852516,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.04499996597702105,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.04508244544202511,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.04511755582493282,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.045090854431009575,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 3679.0,
+      "y": 0.04508887512656812,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.1774384912162763,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2327526028346071,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2674155426384758,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.28323121818770647,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training rows (n_train)": 1440.0,
+      "y": 0.28815768465695135,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.21075935108724425,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.2530852513130986,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.2954016179363233,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.31191343755386985,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training rows (n_train)": 1438.0,
+      "y": 0.3190007323641667,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.1363815962690882,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.18729867807729542,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22762134325844513,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24385155024164185,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training rows (n_train)": 1398.0,
+      "y": 0.24750095512035042,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.16152690823886978,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.1943526815829369,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.22629745106532112,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.24224126203202365,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (n_train)": 1438.0,
+      "y": 0.24811679634217398,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": -0.015004128569805842,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": -0.00040266927394987383,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.009746552447432878,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.014410091089440202,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.016766760883028264,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.01909856486238204,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 3538.0,
+      "y": 0.020716957611568332,
+      "series": "one-line Q&A",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (n_train)": 200.0,
+      "y": 0.010795693190647437,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 400.0,
+      "y": 0.020934125798794924,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 800.0,
+      "y": 0.03306369646265841,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 1200.0,
+      "y": 0.03804755193280929,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 1600.0,
+      "y": 0.040974835733744316,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 2400.0,
+      "y": 0.043688071074599266,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 3600.0,
+      "y": 0.04506975365296821,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (n_train)": 3679.0,
+      "y": 0.04508887512656812,
+      "series": "full-answer Q&A",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 366,
+  "text": {
+    "suptitle": "Context\u2192answer map R\u00b2 vs training size",
+    "fig_texts": [
+      "Layer 19, held-out R\u00b2, prefix arm (before the user query). Q&A prefix is the degenerate prefix_fallback_first_token control; generation seed 42."
+    ],
+    "axes": [
+      {
+        "title_left": "base",
+        "xlabel": "training rows (n_train)",
+        "ylabel": "held-out R\u00b2 (layer 19) \u2191 better",
+        "xticklabels": [
+          "200",
+          "400",
+          "800",
+          "1600",
+          "3200"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "instruct",
+        "xlabel": "training rows (n_train)",
+        "xticklabels": [
+          "200",
+          "400",
+          "800",
+          "1600",
+          "3200"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex",
+      "one-line Q&A",
+      "full-answer Q&A"
+    ]
+  }
+}

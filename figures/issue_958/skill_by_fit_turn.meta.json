@@ -1,0 +1,382 @@
+{
+  "commit": "d43ea7e66e",
+  "created": "2026-07-18T03:52:19Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.5071918900246628,
+      "error": 0.02009997841730199,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.354850868635639,
+      "error": 0.021487605859368486,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.3064166386301751,
+      "error": 0.020694938426597365,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2819247795695827,
+      "error": 0.020589096210772817,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.16568666140501093,
+      "error": 0.049532908657658574,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.16047037762351926,
+      "error": 0.044183408296170616,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.13653900296301666,
+      "error": 0.052529121439104,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1606750230361759,
+      "error": 0.06127273781216283,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.5071918900246628,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.354850868635639,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.3064166386301751,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2819247795695827,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.488683024378578,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.33439245569492504,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2857537948641468,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2620445480783688,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.528882981213182,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.377367667413662,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.32714367171734154,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.30322274049991443,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.16568666140501093,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.16047037762351926,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.13653900296301666,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1606750230361759,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.11259629192207822,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.1149284182863222,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.07865647581278098,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.09668454077946123,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.21166210923739537,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.20329523487866344,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.183714718690989,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.2192300164037869,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.4913480982628038,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.48925603883473495,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.4524978716943345,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.43910781921199565,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.44577640331842633,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.47823433666877313,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.459823539536161,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.4542449717383012,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.42466178439831687,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.4664458662671049,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.45537891485328724,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.45401874690918903,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.3668285223394374,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.3211811828012822,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.35650601698746875,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill (R\u00b2 vs corpus-mean baseline)": 0.3881705486248859,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-turn transfer of the context\u2192answer map, absolute skill",
+        "xlabel": "evaluation turn",
+        "ylabel": "held-out skill (R\u00b2 vs corpus-mean baseline)",
+        "legend_labels": [
+          "map fit at turn 2",
+          "map fit at turn 3",
+          "map fit at turn 4",
+          "own-turn map (long panel)",
+          "map fit at turn 1",
+          "map fit at turn 1 (long panel)"
+        ],
+        "annotations": [
+          "map fit at turn j, evaluated at turn k; 95% CIs on turn-1 cells"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "map fit at turn 2",
+      "map fit at turn 3",
+      "map fit at turn 4",
+      "own-turn map (long panel)",
+      "map fit at turn 1",
+      "map fit at turn 1 (long panel)"
+    ]
+  }
+}

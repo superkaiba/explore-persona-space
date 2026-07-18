@@ -1,0 +1,297 @@
+{
+  "commit": "0545f1d42c",
+  "created": "2026-07-18T04:25:10Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.5252886414527893,
+      "error": 0.023912853375077245,
+      "series": "context map (prefix + query)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.4926324188709259,
+      "error": 0.024074364081025125,
+      "series": "context map (prefix + query)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.4861755073070526,
+      "error": 0.02514623254537582,
+      "series": "context map (prefix + query)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.1349865198135376,
+      "error": 0.023912853375077245,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.14851970970630646,
+      "error": 0.024074364081025125,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.15624621510505676,
+      "error": 0.02514623254537582,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.5252886414527893,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.4926324188709259,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.4861755073070526,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.5090790033340454,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.47638575434684755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.4701645165681839,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.543629401922226,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.508878481388092,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.5023843228816987,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.1349865198135376,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.14851970970630646,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.15624621510505676,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.11114265993237496,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.12431910559535027,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.13128210604190826,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn": 2.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.15896836668252945,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn": 3.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.17246783375740052,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn": 4.0,
+      "held-out skill (R\u00b2 vs corpus mean)": 0.1815745711326599,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn": 2.0,
+      "prefix-only \u00f7 context skill": 0.2569758969853332,
+      "error": 0.0438164724405595,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn": 3.0,
+      "prefix-only \u00f7 context skill": 0.30148180269317587,
+      "error": 0.04625731218601317,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn": 4.0,
+      "prefix-only \u00f7 context skill": 0.321378211688432,
+      "error": 0.049711369105482794,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "turn": 2.0,
+      "prefix-only \u00f7 context skill": 0.2569758969853332,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn": 3.0,
+      "prefix-only \u00f7 context skill": 0.30148180269317587,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn": 4.0,
+      "prefix-only \u00f7 context skill": 0.321378211688432,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "turn": 2.0,
+      "prefix-only \u00f7 context skill": 0.21266976390402725,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn": 3.0,
+      "prefix-only \u00f7 context skill": 0.25504409414944385,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn": 4.0,
+      "prefix-only \u00f7 context skill": 0.27133412413653324,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "turn": 2.0,
+      "prefix-only \u00f7 context skill": 0.30030270878514626,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "turn": 3.0,
+      "prefix-only \u00f7 context skill": 0.3475587185214702,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "turn": 4.0,
+      "prefix-only \u00f7 context skill": 0.37075686234749883,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": "Context vs prefix-only map skill across turns 2\u20134",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "absolute skill, own-turn maps",
+        "xlabel": "turn",
+        "ylabel": "held-out skill (R\u00b2 vs corpus mean)",
+        "legend_labels": [
+          "context map (prefix + query)",
+          "prefix-only map"
+        ],
+        "xticklabels": [
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "skill ratio",
+        "xlabel": "turn",
+        "ylabel": "prefix-only \u00f7 context skill",
+        "xticklabels": [
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275",
+          "0.300",
+          "0.325",
+          "0.350",
+          "0.375",
+          "0.400"
+        ]
+      }
+    ],
+    "series": [
+      "context map (prefix + query)",
+      "prefix-only map"
+    ]
+  }
+}

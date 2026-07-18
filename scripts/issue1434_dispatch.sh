@@ -218,6 +218,14 @@ case "$PHASE" in
     [ "$MODE" = "--smoke" ] && DOSE_ARGS+=(--no-upload)
     run_phase "${DOSE_ARGS[@]}" "${EXTRA_ARGS[@]}"
     ;;
+  control-manifest|control-panel|control-judge-analyze)
+    # icl-read-amplifier-specificity phases (plan v11): the SAME passthrough
+    # shape as the dose round — smoke adds --no-upload; the smoke scratch
+    # out-root redirect above already keeps committed paths untouched.
+    CTRL_ARGS=("$WORKER" "$MODE" --phase "$PHASE" "${COMMON[@]:1}")
+    [ "$MODE" = "--smoke" ] && CTRL_ARGS+=(--no-upload)
+    run_phase "${CTRL_ARGS[@]}" "${EXTRA_ARGS[@]}"
+    ;;
   *)
     # Single-phase passthrough (crash-fix / resume surface).
     run_phase "$WORKER" "$MODE" --phase "$PHASE" "${COMMON[@]:1}" "${EXTRA_ARGS[@]}"
