@@ -4040,8 +4040,8 @@
     "1518": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1518",
-      "status": "proposed",
+      "path": "tasks/planning/1518",
+      "status": "planning",
       "title": "workflow-fix: provision refusals to stderr so failure markers name the cause"
     },
     "1519": {
