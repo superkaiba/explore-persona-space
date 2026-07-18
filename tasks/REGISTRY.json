@@ -4075,8 +4075,8 @@
     "1522": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1522",
-      "status": "running",
+      "path": "tasks/reviewing/1522",
+      "status": "reviewing",
       "title": "workflow-fix: artifact-reuse check (l) \u2014 instrument validity-domain transfer"
     },
     "153": {
