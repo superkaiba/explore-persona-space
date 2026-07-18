@@ -577,6 +577,48 @@ def _is_structural(key: str, value) -> bool:
     return key not in _STRUCTURED_CARD_FIELDS or isinstance(value, (dict, list))
 
 
+def _fold_cards(cards: list[tuple[dict, str]]) -> tuple[dict, dict[str, str], list[str]]:
+    """Newest-wins per-field fold over ``cards`` (newest first).
+
+    Returns ``(merged, fallback_fields, bypassed_prose)``: the merged card,
+    the ``field -> ts`` map of fields that fell back past the newest card,
+    and the ``"field @ ts"`` list of non-structural declarations bypassed in
+    favor of a structural value from another marker (#1489).
+    """
+    merged: dict = {}
+    fallback_fields: dict[str, str] = {}
+    # Newest non-structural value per structured field, kept as a LAST
+    # resort (#1489): used only when no marker declares a dict/list, so a
+    # prose-only history still reaches the #612 _prose_declaration_row
+    # diagnostic downstream instead of degrading to a generic MISSING.
+    deferred_nonstructural: dict[str, tuple[object, str, int]] = {}
+    for pos, (card, ts) in enumerate(cards):
+        for key, value in card.items():
+            if key in merged or not _is_declared(value):
+                continue
+            if key.startswith("_") and pos > 0:
+                # Provenance notes (e.g. a synthesized card's
+                # ``_card_provenance`` — #599) travel only with the newest
+                # card; an older card's note would misattribute the merged
+                # fields.
+                continue
+            if not _is_structural(key, value):
+                deferred_nonstructural.setdefault(key, (value, ts, pos))
+                continue
+            merged[key] = value
+            if pos > 0:
+                fallback_fields[key] = ts
+    bypassed_prose: list[str] = []
+    for key, (value, ts, pos) in deferred_nonstructural.items():
+        if key in merged:
+            bypassed_prose.append(f"{key} @ {ts}")
+            continue
+        merged[key] = value
+        if pos > 0:
+            fallback_fields[key] = ts
+    return merged, fallback_fields, bypassed_prose
+
+
 def merged_results_card(events: list[dict]) -> dict | None:
     """Merge reproducibility cards across ALL ``epm:results`` events.
 
@@ -609,37 +651,7 @@ def merged_results_card(events: list[dict]) -> dict | None:
             cards.append((card, str(ev.get("ts", "")) or "unknown-ts"))
     if not cards:
         return None
-    merged: dict = {}
-    fallback_fields: dict[str, str] = {}
-    # Newest non-structural value per structured field, kept as a LAST
-    # resort (#1489): used only when no marker declares a dict/list, so a
-    # prose-only history still reaches the #612 _prose_declaration_row
-    # diagnostic downstream instead of degrading to a generic MISSING.
-    deferred_nonstructural: dict[str, tuple[object, str, int]] = {}
-    for pos, (card, ts) in enumerate(cards):
-        for key, value in card.items():
-            if key in merged or not _is_declared(value):
-                continue
-            if key.startswith("_") and pos > 0:
-                # Provenance notes (e.g. a synthesized card's
-                # ``_card_provenance`` — #599) travel only with the newest
-                # card; an older card's note would misattribute the merged
-                # fields.
-                continue
-            if not _is_structural(key, value):
-                deferred_nonstructural.setdefault(key, (value, ts, pos))
-                continue
-            merged[key] = value
-            if pos > 0:
-                fallback_fields[key] = ts
-    bypassed_prose: list[str] = []
-    for key, (value, ts, pos) in deferred_nonstructural.items():
-        if key in merged:
-            bypassed_prose.append(f"{key} @ {ts}")
-            continue
-        merged[key] = value
-        if pos > 0:
-            fallback_fields[key] = ts
+    merged, fallback_fields, bypassed_prose = _fold_cards(cards)
     notes: list[str] = []
     if fallback_fields:
         notes.append(
