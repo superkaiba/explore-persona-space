@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1500,
+  "highest_id": 1501,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3909,6 +3909,13 @@
       "path": "tasks/proposed/1500",
       "status": "proposed",
       "title": "daily-fix: mechanical inline payload lint gate pre-push"
+    },
+    "1501": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1501",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard heredoc payload false positive"
     },
     "151": {
       "has_clean_result": false,
