@@ -3829,8 +3829,8 @@
       "goal": "On the Qwen-2.5-Instruct scale ladder (0.5B, 1.5B, 3B, 7B, 14B, 32B; 7B = the #779 fitter-fair-comparison-n1m anchor), measure how the context\u2192answer map h: c(x) \u2192 v(x) (pre-generation context representation \u2192 mean-own-response activation profile at a depth-matched layer) changes with model scale: per scale, generate each model's OWN responses to the SAME LMSYS+WildChat contexts (pinned splits, matched train-n), fit the same linear (ridge) + nonlinear (MLP) maps in BOTH mapping arms (prefix-based and context-based), and report held-out test R\u00b2 (variance-weighted, the #779 metric) vs scale \u2014 does the model's behavior, as summarized by its answer activation profile, get more predictable from its pre-generation context representation as scale grows; does the linear-vs-nonlinear gap (0.754 vs 0.810 at 7B) shrink or grow; and is the trend robust to layer choice (depth-fraction-matched primary, per-scale val-selected sweep secondary), train-set size (matched-n primary, R\u00b2-vs-n curves), and the dimension/response-length confounds?",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1491",
-      "status": "proposed",
+      "path": "tasks/planning/1491",
+      "status": "planning",
       "title": "Does the context\u2192answer map get more predictable with model scale? (Qwen-2.5-Instruct 0.5B\u219232B)"
     },
     "15": {
