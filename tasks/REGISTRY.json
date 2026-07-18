@@ -4011,8 +4011,8 @@
     "1514": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1514",
-      "status": "proposed",
+      "path": "tasks/planning/1514",
+      "status": "planning",
       "title": "Fix heavy-import-before-dotenv in issue1092 figure script (fleet-wide Step 9c thread-caps red)"
     },
     "152": {
