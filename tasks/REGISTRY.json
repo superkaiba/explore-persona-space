@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1515,
+  "highest_id": 1516,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4022,6 +4022,13 @@
       "path": "tasks/proposed/1515",
       "status": "proposed",
       "title": "Rank profile of the orthogonal carrier \u2014 what structure carries the 90%?"
+    },
+    "1516": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1516",
+      "status": "proposed",
+      "title": "workflow-fix: lint bash function-invocation || rc=$? errexit-suppression in scripts/*.sh"
     },
     "152": {
       "has_clean_result": false,
