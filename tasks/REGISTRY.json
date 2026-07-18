@@ -3885,8 +3885,8 @@
     "1499": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1499",
-      "status": "proposed",
+      "path": "tasks/planning/1499",
+      "status": "planning",
       "title": "daily-fix: alias step 9b to 9b-same in post_step_completed"
     },
     "15": {
