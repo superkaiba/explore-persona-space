@@ -159,6 +159,9 @@ def _run_children(specs: list[dict], args, phase: str, on_done=None) -> None:
             tag = spec["tag"]
             log = log_dir / f"{phase}_{tag}.log"
             env = {**os.environ}
+            # Reduce CUDA allocator fragmentation in long fit children (attempt-6
+            # OOM showed 16.4 GiB reserved-but-unallocated); torch-documented knob.
+            env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
             if slots[slot] is not None:
                 env["CUDA_VISIBLE_DEVICES"] = str(slots[slot])
             cmd = [sys.executable, str(Path(__file__).resolve()), *spec["cmd"]]
@@ -1357,6 +1360,14 @@ def _shared_gram_ridge_multi(Z, targets: dict[str, np.ndarray], tr, va, te, lamb
     per-target lambda selection on va, predictions on te. Parent internals UNCHANGED."""
     dims = {k: t.shape[1] for k, t in targets.items()}
     Ycat = np.concatenate([targets[k] for k in targets], axis=1)
+    # Cap the fp64 Y row-block by BYTES, not rows: the parent's default block was
+    # sized for dense 3,584-col targets; the SAE arm concatenates 3 poolings x
+    # F_out (49,152 cols realized) and the same row count became an 18.3 GiB
+    # single transfer -> CUDA OOM (attempt 6, p3_ridge__sae_ctx). ~4 GiB target
+    # keeps per-step transfers bounded on any target width; parent internals
+    # UNCHANGED (block is an existing _ridge_factorize parameter).
+    _Y_BLOCK_BYTES = 4 * (1 << 30)
+    block = min(block, max(2048, int(_Y_BLOCK_BYTES // (Ycat.shape[1] * 8))))
     fac = N1M._ridge_factorize(Z, Ycat, tr, dev, block)
     bounds, off = {}, 0
     for k in targets:
