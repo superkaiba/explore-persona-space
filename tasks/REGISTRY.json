@@ -3955,8 +3955,8 @@
     "1507": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1507",
-      "status": "running",
+      "path": "tasks/reviewing/1507",
+      "status": "reviewing",
       "title": "workflow-fix: check 8b body-wide git-URL resolution + git-tree backtick-claims twin"
     },
     "1508": {
