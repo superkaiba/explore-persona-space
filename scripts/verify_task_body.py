@@ -12262,11 +12262,16 @@ _CTX_EST_GPUH_RE = re.compile(r"\best\.?\s*[~≈]?\s*(?<![<>])(\d+(?:\.\d+)?)\s*
 # period (`.` + whitespace) after the label mention. The #1092 Context row
 # interleaves truthful free-analysis narration about ANOTHER round after a
 # scope-armed clause on the same line, separated by `; ` — without this
-# bound, C2 false-fires on that truthful body. Cost: tokens after an
-# intra-clause delimiter (the corrected #1426 row's `; source ...` tail, an
-# `est. ~N` self-cut at the `. `) fall out of the window — under-fire toward
-# per-label skip, the safe direction.
-_CTX_CLAUSE_DELIM_RE = re.compile(r";(?=\s)|\.(?=\s)")
+# bound, C2 false-fires on that truthful body. A `, and ` clause joiner
+# bounds too (cut at the comma): the paren-less comma-joined NEXT-round
+# narration (`... round (folded <date>), and a free-analysis re-read of X`)
+# otherwise attributes the next round's tokens to the scope-armed label
+# (#1521 r2, closes CONCERN check46-residual-comma-and-clause). Cost:
+# tokens after an intra-clause delimiter (the corrected #1426 row's
+# `; source ...` tail, an `est. ~N` self-cut at the `. `, an
+# `est N GPU-h, and source S` joiner) fall out of the window — under-fire
+# toward per-label skip, the safe direction.
+_CTX_CLAUSE_DELIM_RE = re.compile(r";(?=\s)|\.(?=\s)|,(?=\s+and\s)")
 
 # Multi-word inline-code spans (`...` containing whitespace) inside a claim
 # window are QUOTATIONS (a scope-note fragment), not body claims — stripped
@@ -12292,6 +12297,23 @@ def _first_unmatched_close_paren(window: str) -> int | None:
                 return i
             depth -= 1
     return None
+
+
+def _strip_enclosing_span_remainder(window: str) -> str:
+    """When `window` carries an ODD number of backticks it began INSIDE a
+    multi-word inline-code span (the mention itself was quotation): the
+    FIRST backtick is the enclosing span's CLOSER, and the remainder up to
+    it is quoted text `_CTX_MULTIWORD_CODE_SPAN_RE` cannot strip (the
+    opener lies before the window) — a Context row quoting a scope note
+    verbatim (`` `followup_label: X source: user-chat` ``) would otherwise
+    attribute the QUOTED source token to the label and false-fire C1
+    (#1521 r2 reviewer Minor). Strips through the closer — the
+    quotation-strip mirror of the unmatched-paren bound; an odd count from
+    a malformed unterminated OPENER over-strips harmlessly (under-fire
+    toward per-label skip, the safe direction)."""
+    if window.count("`") % 2 == 1:
+        return window[window.index("`") + 1 :]
+    return window
 
 
 def _followup_scope_facts(events: list[dict]) -> dict[str, dict]:
@@ -12343,9 +12365,13 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
     EARLIEST of: end of the physical line; the start of the next mention of
     ANY label on that line (multi-round one-line footers attribute tokens to
     the nearest preceding label). Multi-word inline-code spans are then
-    stripped (quotations, not claims — _CTX_MULTIWORD_CODE_SPAN_RE), and the
-    window is additionally bounded at the EARLIEST of the first clause
-    delimiter (_CTX_CLAUSE_DELIM_RE — the #1092 false-positive tighten) and
+    stripped (quotations, not claims — _CTX_MULTIWORD_CODE_SPAN_RE); a
+    window that BEGINS inside such a span (odd backtick count) has its
+    quotation remainder stripped through the enclosing span's closing
+    backtick (_strip_enclosing_span_remainder — #1521 r2). The window is
+    additionally bounded at the EARLIEST of the first clause delimiter
+    (_CTX_CLAUSE_DELIM_RE — the #1092 `;`/`. ` tighten + the #1521 r2
+    `, and ` clause joiner) and
     the first unmatched close paren (_first_unmatched_close_paren — the #922
     corpus shape: a `, and`-joined next-round clause after the mention's own
     parenthetical). Claims from
@@ -12368,6 +12394,7 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
             following = [s for s, _e, _l in mentions[i + 1 :] if s >= end]
             window = line[end : following[0] if following else len(line)]
             window = _CTX_MULTIWORD_CODE_SPAN_RE.sub(" ", window)
+            window = _strip_enclosing_span_remainder(window)
             cuts = [len(window)]
             delim = _CTX_CLAUSE_DELIM_RE.search(window)
             if delim:

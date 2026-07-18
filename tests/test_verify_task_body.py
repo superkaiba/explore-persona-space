@@ -15521,3 +15521,51 @@ def test_context_followup_scope_i922_paren_clause_passes(monkeypatch):
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=922)
     assert r.passed and not r.is_warn, r.detail
     assert "1 follow-up label clause(s) consistent" in r.detail
+
+
+def test_context_followup_scope_comma_and_joiner_bounds_window(monkeypatch):
+    """(#1521 r2 — closes CONCERN check46-residual-comma-and-clause) The
+    PAREN-LESS `, and `-joined next-round free-analysis narration after a
+    scope-armed clause must NOT attribute to the label: the `, and ` clause
+    joiner bounds the window (cut at the comma), so no C2 fires against the
+    GPU-band marker. Pre-fix this exact shape FAILed C2 (both parens are
+    MATCHED, so neither the `;`/`. ` delimiter nor the unmatched-paren
+    bound cuts before the free-analysis token)."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw,
+        "list_events",
+        lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")],
+    )
+    body = _v4_body_with_footer_line(
+        "one cheap-band round `r-x` (folded 2026-07-18), and a free-analysis "
+        "re-read of the stored activations (folded 2026-07-18)"
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    assert "1 follow-up label clause(s) consistent" in r.detail
+
+
+def test_context_followup_scope_quoted_note_span_no_c1(monkeypatch):
+    """(#1521 r2 — reviewer Minor) A label mention INSIDE a multi-word
+    backtick span quoting the scope note carries the QUOTED contradicting
+    source token before the span's closing backtick, which escapes the
+    paired-span quotation strip; the enclosing-span remainder strip
+    (odd-backtick window, `_strip_enclosing_span_remainder`) removes it, so
+    no C1 fires against the proposer-9b-cheap marker. Pre-fix this shape
+    FAILed C1 with the quoted `user-chat` attributed as a body claim."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw,
+        "list_events",
+        lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")],
+    )
+    body = _v4_body_with_footer_line(
+        "scope note quoted verbatim: `followup_label: r-x source: user-chat` "
+        "(a mis-filed draft field, corrected before dispatch)"
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    assert "1 follow-up label clause(s) consistent" in r.detail
