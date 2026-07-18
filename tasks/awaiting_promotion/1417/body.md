@@ -3,7 +3,8 @@ title: Ridge-regularization collapse on judge-filtered row subsets voids the fra
   map-identity verdicts; the run's user-directedness headline is a denominator artifact
   (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-16T08:28:52Z'
 has_clean_result: true
 parent_id: 825
