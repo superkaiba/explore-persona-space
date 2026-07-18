@@ -3871,8 +3871,8 @@
     "1497": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1497",
-      "status": "proposed",
+      "path": "tasks/archived/1497",
+      "status": "archived",
       "title": "daily-fix: route-3 needs-human tag dropped at filing"
     },
     "1498": {
