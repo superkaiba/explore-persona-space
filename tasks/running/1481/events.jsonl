@@ -16,3 +16,4 @@
 {"ts": "2026-07-18T00:07:04Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved"}
 {"ts": "2026-07-18T00:07:06Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "User approved plan v3 (275 GPU-h) via chat 2026-07-18. Cleared for dispatch: 5 GCP dispatches @ 8xA100, seeds 42+137, matched-install ladders + marker on the 4 factory contexts."}
 {"ts": "2026-07-18T01:11:11Z", "kind": "epm:progress", "version": 3, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cmrphpcroityiyc0u2kwl1cb0 reason=operator stop via spawn_session.py stop"}
+{"ts": "2026-07-18T01:14:16Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching experiment-implementer against plan v3 (275 GPU-h, user-approved); worktree .claude/worktrees/issue-1481 cut from origin/main 7a1af02c18."}
