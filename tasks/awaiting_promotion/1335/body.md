@@ -5,6 +5,7 @@ title: Fiction scene framing carries the instruct assistant-vs-fiction contextâ†
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-15T08:22:07Z'
 has_clean_result: true
 parent_id: 1310
