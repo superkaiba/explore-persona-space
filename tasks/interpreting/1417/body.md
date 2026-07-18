@@ -1,6 +1,7 @@
 ---
-title: 'Which property scopes the shared assistant context→answer map: helpful register,
-  or speaking to a user?'
+title: Ridge-regularization collapse on judge-filtered row subsets voids the framing-cell
+  map-identity verdicts; the run's user-directedness headline is a denominator artifact
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-16T08:28:52Z'
