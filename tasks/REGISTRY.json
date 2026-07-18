@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1141",
-      "status": "running",
+      "path": "tasks/reviewing/1141",
+      "status": "reviewing",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
