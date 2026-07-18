@@ -141,7 +141,9 @@ def _run_children(specs: list[dict], args, phase: str, on_done=None) -> None:
     gpus = _physical_gpu_ids() if args.device != "cpu" else []
     slots: list[int | None] = list(gpus) if gpus else [None]
     if args.n_gpus > 0:
-        slots = slots[: args.n_gpus]
+        # GPU: truncate to the first n physical slots (never widen — co-location OOMs);
+        # CPU: n parallel un-pinned worker slots (width>1 smoke of the fan-out itself).
+        slots = slots[: args.n_gpus] if gpus else [None] * args.n_gpus
     logger.info("[%s] fan-out over %d slot(s) (gpus=%s)", phase, len(slots), gpus or "cpu")
     queue = list(specs)
     running: dict[int, tuple[subprocess.Popen, dict, Path]] = {}
@@ -281,15 +283,14 @@ def _stage_smoke_chunks(args) -> Path:
     chunks locally (scoped list_repo_tree + parent's bounded per-chunk retry)."""
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate import hub
+
     dest = args.scratch / "n1m_chunks_smoke"
     dest.mkdir(parents=True, exist_ok=True)
-    names = sorted(
-        f.path.rsplit("/", 1)[-1]
-        for f in HfApi().list_repo_tree(
-            C.HF_DATA_REPO, path_in_repo=CAPTURE_PREFIX, repo_type="dataset", recursive=True
-        )
-        if getattr(f, "size", None) is not None and f.path.endswith(".pt")
-    )[: args.max_chunks]
+    files = hub.list_hf_files_under_path(
+        HfApi(), C.HF_DATA_REPO, CAPTURE_PREFIX, repo_type="dataset"
+    )
+    names = sorted(p.rsplit("/", 1)[-1] for p in files if p.endswith(".pt"))[: args.max_chunks]
     for n in names:
         if not (dest / n).exists():
             got = Path(
@@ -570,6 +571,15 @@ def gate_a_check(args) -> dict:
         "dropped_arms": dropped,
         "per_arm": rows,
         "smoke_demoted": bool(args.smoke),
+        # durable scope caveat in the artifact the analyzer reads (concern
+        # sae-arm-passb-text; also in split_1482.json plan_deviations)
+        "scope_caveats": [
+            "sae-arm-passb-text: SAE arm (P2/P3) covers NEW-pool rows only "
+            "(holdout + sae_fit + sae_val) — the pinned pass_b bundle has no "
+            "prompts/responses and round-1 raw completions are not on HF, so the "
+            "1,400 pinned pass_b val/test contexts are excluded from P2/P3; "
+            "P3 lambda selection uses the 2k sae_val carve."
+        ],
     }
     _write_json(args.out_eval / "reconciliation.json", doc)
     logger.info("[gate-a] verdict=%s halt=%s dropped=%s", verdict, halt, dropped)
@@ -684,13 +694,10 @@ def _load_model_tok(args):
 def _raw_chunk_names(args) -> list[str]:
     from huggingface_hub import HfApi
 
-    names = sorted(
-        f.path.rsplit("/", 1)[-1]
-        for f in HfApi().list_repo_tree(
-            C.HF_DATA_REPO, path_in_repo=RAW_PREFIX, repo_type="dataset", recursive=True
-        )
-        if getattr(f, "size", None) is not None and f.path.endswith(".json")
-    )
+    from explore_persona_space.orchestrate import hub
+
+    files = hub.list_hf_files_under_path(HfApi(), C.HF_DATA_REPO, RAW_PREFIX, repo_type="dataset")
+    names = sorted(p.rsplit("/", 1)[-1] for p in files if p.endswith(".json"))
     if args.max_chunks > 0:
         names = names[: args.max_chunks]
     return names
@@ -1101,16 +1108,51 @@ def _shared_gram_ridge_multi(Z, targets: dict[str, np.ndarray], tr, va, te, lamb
     return out
 
 
+def _midrank(a: np.ndarray) -> np.ndarray:
+    """Column-wise midrank (scipy ``rankdata(method='average')`` tie semantics) as
+    batched tensor ops — tie groups get their AVERAGE ordinal rank. Sparse SAE
+    targets are ~95-99% exact-zero ties, so ordinal double-argsort ranks largely
+    correlate arbitrary tie order (concern p3-rank-stats-corpus-order). The outer
+    loop is a fixed-size FEATURE-BLOCK chunk (memory bound), not a per-feature loop."""
+    n = a.shape[0]
+    out = np.empty(a.shape, dtype=np.float64)
+    pos = np.arange(n, dtype=np.float64)[:, None]
+    for j in range(0, a.shape[1], 4096):
+        blk = a[:, j : j + 4096]
+        order = np.argsort(blk, axis=0, kind="stable")
+        s = np.take_along_axis(blk, order, axis=0)
+        new_grp = np.ones(blk.shape, dtype=bool)
+        new_grp[1:] = s[1:] != s[:-1]
+        grp_start = np.maximum.accumulate(np.where(new_grp, pos, -1.0), axis=0)
+        last_in_grp = np.ones(blk.shape, dtype=bool)
+        last_in_grp[:-1] = new_grp[1:]
+        grp_end = np.minimum.accumulate(np.where(last_in_grp, pos, float(n))[::-1], axis=0)[::-1]
+        mid = (grp_start + grp_end) / 2.0 + 1.0  # 1-based midranks in sorted position
+        np.put_along_axis(out[:, j : j + 4096], order, mid, axis=0)
+    return out
+
+
+def _splithalf_perm(n: int) -> np.ndarray:
+    """Seeded permutation of the holdout rows BEFORE split-half halving. The parent
+    manifest is corpus-BLOCKED (lmsys_pool ++ wildchat_pool,
+    issue779_ffc_n1m_generate_capture ``pool = lmsys_pool + wildchat_pool``), so a
+    sorted-row-order midpoint split makes half A ~all-LMSYS / half B ~mostly-WildChat
+    — a corpus-transfer read, not a stability read (concern
+    p3-rank-stats-corpus-order). Seed = SPLIT_SEED_1482, recorded in the P3 summary."""
+    return np.random.default_rng(SPLIT_SEED_1482).permutation(n)
+
+
 def _per_feature_metrics(pred: np.ndarray, true: np.ndarray) -> dict[str, np.ndarray]:
-    """Batched per-feature held-out R2 + Spearman (no per-feature Python loop)."""
+    """Batched per-feature held-out R2 + Spearman with MIDRANK (average) ties —
+    no per-feature Python loop."""
     p = pred.astype(np.float64)
     t = true.astype(np.float64)
     mu = t.mean(0)
     ss_res = ((t - p) ** 2).sum(0)
     ss_tot = ((t - mu) ** 2).sum(0)
     r2 = np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
-    rp = np.argsort(np.argsort(p, axis=0), axis=0).astype(np.float64)
-    rt = np.argsort(np.argsort(t, axis=0), axis=0).astype(np.float64)
+    rp = _midrank(p)
+    rt = _midrank(t)
     rp -= rp.mean(0)
     rt -= rt.mean(0)
     num = (rp * rt).sum(0)
@@ -1119,13 +1161,32 @@ def _per_feature_metrics(pred: np.ndarray, true: np.ndarray) -> dict[str, np.nda
     return {"r2": r2, "spearman": rho, "ss_tot": ss_tot}
 
 
-def phase_p3(args) -> None:
-    C.phase("p3")
-    dev = torch.device(args.device)  # parent fitters expect a torch.device
+P3_ARMS_RIDGE = ("sae_ctx", "sae_dense_in", "sae_prefix_null")
+P3_ARMS_MLP = ("sae_ctx", "sae_dense_in")
+P3_POOLINGS = ("mean", "max", "frac")
+
+
+def p3_unit_specs() -> list[str]:
+    """The P3 unit registry — ONE source for dispatcher fan-out AND child resolve
+    (mirrors fit_specs; concern p3-serial-single-gpu: 3 arm-Grams + 6 MLP fits +
+    the aux reads shard across the realized GPU width via _run_children)."""
+    units = [f"ridge__{arm}" for arm in P3_ARMS_RIDGE]
+    units += [f"mlp__{arm}__{pool}" for arm in P3_ARMS_MLP for pool in P3_POOLINGS]
+    units.append("aux")
+    return units
+
+
+def _p3_unit_json(args, unit: str) -> Path:
+    return args.out_eval / "sae_perfeature" / f"unit_{unit}.json"
+
+
+def _p3_prep(args):
+    """Shared P3 preprocessing: store load, feature restriction, row registry,
+    split positions. Each fan-out child recomputes this (CPU-only, minutes) rather
+    than shipping the ~30-60 GB densified matrices across processes; the arms'
+    densified designs are built lazily per unit (_p3_design/_p3_targets)."""
     parts = _load_store(args)
     idx = np.load(args.scratch / "split_indices.npz")
-    X = np.load(args.scratch / "X.npy", mmap_mode="r")
-    Y = np.load(args.scratch / "Y.npy", mmap_mode="r")
     import issue1482_sae as S
 
     dict_size = S.DICT_SIZE
@@ -1147,7 +1208,6 @@ def phase_p3(args) -> None:
     logger.info(
         "[p3] F_out=%d F_in=%d (floor=%d over n_fit=%d)", len(f_out), len(f_in), floor, n_fit
     )
-
     # row registry: matrix rows = sae_fit ++ sae_val ++ holdout (in that order)
     order = np.concatenate([idx["sae_fit"], idx["sae_val"], idx["holdout"]])
     have = set()
@@ -1160,103 +1220,171 @@ def phase_p3(args) -> None:
     va = np.asarray([row_pos[int(r)] for r in idx["sae_val"] if int(r) in row_pos], dtype=np.int64)
     te = np.asarray([row_pos[int(r)] for r in idx["holdout"] if int(r) in row_pos], dtype=np.int64)
     assert len(tr) and len(va) and len(te), (len(tr), len(va), len(te))
+    return argparse.Namespace(
+        parts=parts,
+        f_out=f_out,
+        f_in=f_in,
+        out_counts=out_counts,
+        n_fit=n_fit,
+        floor=floor,
+        order=order,
+        row_pos=row_pos,
+        n_rows=n_rows,
+        tr=tr,
+        va=va,
+        te=te,
+    )
 
-    targets = {
-        "mean": _densify(parts, "ans_idx", "idx_off", "ans_mean", f_out, n_rows, row_pos),
-        "max": _densify(parts, "ans_idx", "idx_off", "ans_max", f_out, n_rows, row_pos),
-        "frac": _densify(parts, "ans_idx", "idx_off", "ans_frac", f_out, n_rows, row_pos),
+
+def _p3_targets(prep, pools: tuple[str, ...]) -> dict[str, np.ndarray]:
+    """Densify ONLY the requested answer-side pooling targets (lazy per unit)."""
+    key = {"mean": "ans_mean", "max": "ans_max", "frac": "ans_frac"}
+    return {
+        p: _densify(prep.parts, "ans_idx", "idx_off", key[p], prep.f_out, prep.n_rows, prep.row_pos)
+        for p in pools
     }
-    psi_mean = _densify(parts, "psi_idx", "psi_off", "psi_mean", f_in, n_rows, row_pos)
-    psi_last = _densify(parts, "psil_idx", "psil_off", "psil_val", f_in, n_rows, row_pos)
-    Z_ctx = np.concatenate([psi_mean, psi_last], axis=1)
-    del psi_mean, psi_last
-    Z_dense = np.asarray(X[order], dtype=np.float32)
-    h_prefix = np.concatenate([p["h_prefix"] for p in parts]).astype(np.float32)
-    hp_rows = np.concatenate([p["row_idx"] for p in parts])
-    hp = np.zeros((n_rows, 3584), dtype=np.float32)
-    for r, v in zip(hp_rows, h_prefix, strict=True):
-        pos = row_pos.get(int(r))
-        if pos is not None:
-            hp[pos] = v
 
+
+def _p3_design(args, prep, arm: str) -> np.ndarray:
+    """Design matrix Z for one P3 arm (lazy per unit)."""
+    if arm == "sae_ctx":
+        psi_mean = _densify(
+            prep.parts, "psi_idx", "psi_off", "psi_mean", prep.f_in, prep.n_rows, prep.row_pos
+        )
+        psi_last = _densify(
+            prep.parts, "psil_idx", "psil_off", "psil_val", prep.f_in, prep.n_rows, prep.row_pos
+        )
+        return np.concatenate([psi_mean, psi_last], axis=1)
+    if arm == "sae_dense_in":
+        X = np.load(args.scratch / "X.npy", mmap_mode="r")
+        return np.asarray(X[prep.order], dtype=np.float32)
+    if arm == "sae_prefix_null":
+        h_prefix = np.concatenate([p["h_prefix"] for p in prep.parts]).astype(np.float32)
+        hp_rows = np.concatenate([p["row_idx"] for p in prep.parts])
+        hp = np.zeros((prep.n_rows, 3584), dtype=np.float32)
+        for r, v in zip(hp_rows, h_prefix, strict=True):
+            pos = prep.row_pos.get(int(r))
+            if pos is not None:
+                hp[pos] = v
+        return hp
+    raise ValueError(arm)
+
+
+def _p3_unit_ridge(args, prep, arm: str) -> None:
+    """ONE arm's shared-Gram multi-target ridge + per-feature reads + split-half."""
+    dev = torch.device(args.device)
     pf_dir = args.out_eval / "sae_perfeature"
     pf_dir.mkdir(parents=True, exist_ok=True)
-    block = N1M.RIDGE_BLOCK
+    pools = ("mean",) if arm == "sae_prefix_null" else P3_POOLINGS
+    tgt = _p3_targets(prep, pools)
+    Z = _p3_design(args, prep, arm)
+    te = prep.te
+    # split-half halves: seeded permutation BEFORE halving (corpus-blocked manifest
+    # order — see _splithalf_perm; concern p3-rank-stats-corpus-order)
+    perm = _splithalf_perm(len(te))
+    ia, ib = perm[: len(te) // 2], perm[len(te) // 2 :]
+    half_a, half_b = te[ia], te[ib]
+    preds = _shared_gram_ridge_multi(
+        Z, tgt, prep.tr, prep.va, te, N1M.LAMBDAS_N1M, dev, N1M.RIDGE_BLOCK
+    )
+    arm_doc = {}
+    for pool_name, (pt, meta) in preds.items():
+        pf = _per_feature_metrics(pt, tgt[pool_name][te])
+        pooled_r2 = PR._pooled_r2(pt, tgt[pool_name][te])
+        # split-half rank stability of the per-feature R2 ranking (midrank ties)
+        pa = _per_feature_metrics(pt[ia], tgt[pool_name][half_a])
+        pb = _per_feature_metrics(pt[ib], tgt[pool_name][half_b])
+        ok = np.isfinite(pa["r2"]) & np.isfinite(pb["r2"])
+        if ok.sum() >= 3:
+            ra = _midrank(pa["r2"][ok][:, None])[:, 0]
+            rb = _midrank(pb["r2"][ok][:, None])[:, 0]
+            stab = float(np.corrcoef(ra, rb)[0, 1])
+        else:
+            stab = float("nan")
+        np.savez(
+            pf_dir / f"{arm}__{pool_name}__ridge.npz",
+            feat_ids=prep.f_out,
+            r2=pf["r2"],
+            spearman=pf["spearman"],
+            activity=prep.out_counts[prep.f_out] / max(1, prep.n_fit),
+        )
+        arm_doc[f"{pool_name}__ridge"] = {
+            "pooled_r2": float(pooled_r2),
+            **meta,
+            "splithalf_rank_stability": stab,
+            "splithalf_permutation_seed": SPLIT_SEED_1482,
+            "n_feat_finite": int(np.isfinite(pf["r2"]).sum()),
+        }
+        logger.info("[p3] %s/%s ridge pooled R2=%.4f", arm, pool_name, pooled_r2)
+    _write_json(
+        _p3_unit_json(args, f"ridge__{arm}"),
+        {
+            "arm": arm,
+            "arm_doc": arm_doc,
+            "scalars": {
+                "f_out": len(prep.f_out),
+                "f_in": len(prep.f_in),
+                "activity_floor": prep.floor,
+                "n_fit": len(prep.tr),
+                "n_val": len(prep.va),
+                "n_holdout": len(te),
+            },
+        },
+    )
+
+
+def _p3_unit_mlp(args, prep, arm: str, pool: str) -> None:
+    """ONE (arm, pooling) MLP fit + per-feature reads."""
+    dev = torch.device(args.device)
+    pf_dir = args.out_eval / "sae_perfeature"
+    pf_dir.mkdir(parents=True, exist_ok=True)
+    tgt = _p3_targets(prep, (pool,))[pool]
+    Z = _p3_design(args, prep, arm)
     ns_mlp = dict(
         width=N1M.MLP_W_PROTOCOL,
         lr=3e-4,
         max_epochs=3 if args.smoke else F.MLP_MAX_EPOCHS,
-        batch=min(N1M.MLP_BATCH, max(8, len(tr))),
+        batch=min(N1M.MLP_BATCH, max(8, len(prep.tr))),
         seed=args.seed,
         dev=dev,
     )
-    summary: dict = {
-        "f_out": len(f_out),
-        "f_in": len(f_in),
-        "activity_floor": floor,
-        "n_fit": len(tr),
-        "n_val": len(va),
-        "n_holdout": len(te),
-        "arms": {},
-    }
-    half_a, half_b = te[: len(te) // 2], te[len(te) // 2 :]
-    for arm, Z in (("sae_ctx", Z_ctx), ("sae_dense_in", Z_dense), ("sae_prefix_null", hp)):
-        tgt = targets if arm != "sae_prefix_null" else {"mean": targets["mean"]}
-        preds = _shared_gram_ridge_multi(Z, tgt, tr, va, te, N1M.LAMBDAS_N1M, dev, block)
-        arm_doc = {}
-        for pool_name, (pt, meta) in preds.items():
-            pf = _per_feature_metrics(pt, tgt[pool_name][te])
-            pooled_r2 = PR._pooled_r2(pt, tgt[pool_name][te])
-            # split-half rank stability of the per-feature R2 ranking
-            pa = _per_feature_metrics(pt[: len(half_a)], tgt[pool_name][half_a])
-            pb = _per_feature_metrics(pt[len(half_a) :], tgt[pool_name][half_b])
-            ok = np.isfinite(pa["r2"]) & np.isfinite(pb["r2"])
-            if ok.sum() >= 3:
-                ra = np.argsort(np.argsort(pa["r2"][ok]))
-                rb = np.argsort(np.argsort(pb["r2"][ok]))
-                stab = float(np.corrcoef(ra, rb)[0, 1])
-            else:
-                stab = float("nan")
-            np.savez(
-                pf_dir / f"{arm}__{pool_name}__ridge.npz",
-                feat_ids=f_out,
-                r2=pf["r2"],
-                spearman=pf["spearman"],
-                activity=out_counts[f_out] / max(1, n_fit),
-            )
-            arm_doc[f"{pool_name}__ridge"] = {
-                "pooled_r2": float(pooled_r2),
-                **meta,
-                "splithalf_rank_stability": stab,
-                "n_feat_finite": int(np.isfinite(pf["r2"]).sum()),
-            }
-            logger.info("[p3] %s/%s ridge pooled R2=%.4f", arm, pool_name, pooled_r2)
-        if arm in ("sae_ctx", "sae_dense_in"):
-            for pool_name in tgt:
-                pt, meta = N1M._fit_mlp_minibatch(Z, tgt[pool_name], tr, te, **ns_mlp)
-                pf = _per_feature_metrics(pt, tgt[pool_name][te])
-                np.savez(
-                    pf_dir / f"{arm}__{pool_name}__mlp.npz",
-                    feat_ids=f_out,
-                    r2=pf["r2"],
-                    spearman=pf["spearman"],
-                    activity=out_counts[f_out] / max(1, n_fit),
-                )
-                arm_doc[f"{pool_name}__mlp"] = {
-                    "pooled_r2": float(PR._pooled_r2(pt, tgt[pool_name][te])),
-                    "epochs_ran": meta["epochs_ran"],
-                }
-                logger.info(
-                    "[p3] %s/%s mlp pooled R2=%.4f",
-                    arm,
-                    pool_name,
-                    arm_doc[f"{pool_name}__mlp"]["pooled_r2"],
-                )
-        summary["arms"][arm] = arm_doc
+    pt, meta = N1M._fit_mlp_minibatch(Z, tgt, prep.tr, prep.te, **ns_mlp)
+    pf = _per_feature_metrics(pt, tgt[prep.te])
+    np.savez(
+        pf_dir / f"{arm}__{pool}__mlp.npz",
+        feat_ids=prep.f_out,
+        r2=pf["r2"],
+        spearman=pf["spearman"],
+        activity=prep.out_counts[prep.f_out] / max(1, prep.n_fit),
+    )
+    pooled = float(PR._pooled_r2(pt, tgt[prep.te]))
+    _write_json(
+        _p3_unit_json(args, f"mlp__{arm}__{pool}"),
+        {
+            "arm": arm,
+            "arm_doc": {f"{pool}__mlp": {"pooled_r2": pooled, "epochs_ran": meta["epochs_ran"]}},
+        },
+    )
+    logger.info("[p3] %s/%s mlp pooled R2=%.4f", arm, pool, pooled)
+
+
+def _p3_unit_aux(args, prep) -> None:
+    """Prefix-null dense map + encode-the-prediction + per-direction PCA read."""
+    import issue1482_sae as S
+
+    dev = torch.device(args.device)
+    pf_dir = args.out_eval / "sae_perfeature"
+    pf_dir.mkdir(parents=True, exist_ok=True)
+    Y = np.load(args.scratch / "Y.npy", mmap_mode="r")
+    block = N1M.RIDGE_BLOCK
+    doc: dict = {}
     # prefix-null DENSE map: h_prefix -> v(x) at subsample scale (registered null)
-    Yd = np.asarray(Y[order], dtype=np.float32)
-    pred_null, _meta_null = N1M.fit_ridge(hp, Yd, tr, va, te, N1M.LAMBDAS_N1M, dev, block)
-    summary["prefix_dense_to_vx_r2"] = float(PR._pooled_r2(pred_null, Yd[te]))
+    hp = _p3_design(args, prep, "sae_prefix_null")
+    Yd = np.asarray(Y[prep.order], dtype=np.float32)
+    pred_null, _meta_null = N1M.fit_ridge(
+        hp, Yd, prep.tr, prep.va, prep.te, N1M.LAMBDAS_N1M, dev, block
+    )
+    doc["prefix_dense_to_vx_r2"] = float(PR._pooled_r2(pred_null, Yd[prep.te]))
     # encode-the-prediction (off-distribution secondary; labeled): dense-map preds vs truth
     fitness = json.loads((args.out_eval / "sae_fitness.json").read_text())
     k = int(fitness["chosen_k"])
@@ -1267,21 +1395,23 @@ def phase_p3(args) -> None:
             args.out_eval / "percontext" / f"refit_holdout__{pred_name}__seed{args.seed}.npz"
         )
         rows_h = npz["holdout_rows"]
-        pos = np.asarray([row_pos[int(r)] for r in rows_h if int(r) in row_pos], dtype=np.int64)
-        keep = np.asarray([i for i, r in enumerate(rows_h) if int(r) in row_pos], dtype=np.int64)
+        pos = np.asarray(
+            [prep.row_pos[int(r)] for r in rows_h if int(r) in prep.row_pos], dtype=np.int64
+        )
+        keep = np.asarray([i for i, r in enumerate(rows_h) if int(r) in prep.row_pos], np.int64)
         vhat = torch.tensor(npz["holdout_pred16"][keep].astype(np.float32))
         vtrue = torch.tensor(np.asarray(Y[rows_h[keep]], dtype=np.float32))
-        f_hat = sae.encode(vhat).cpu().numpy()[:, f_out]
-        f_true = sae.encode(vtrue).cpu().numpy()[:, f_out]
+        f_hat = sae.encode(vhat).cpu().numpy()[:, prep.f_out]
+        f_true = sae.encode(vtrue).cpu().numpy()[:, prep.f_out]
         pf = _per_feature_metrics(f_hat, f_true)
         np.savez(
             pf_dir / f"encode_pred__{pred_name}.npz",
-            feat_ids=f_out,
+            feat_ids=prep.f_out,
             r2=pf["r2"],
             spearman=pf["spearman"],
         )
         ep[pred_name] = {"n": len(pos), "n_feat_finite": int(np.isfinite(pf["r2"]).sum())}
-    summary["encode_the_prediction"] = {
+    doc["encode_the_prediction"] = {
         "note": "off-distribution SAE-of-mean transform applied EQUALLY "
         "to v_hat and v (labeled secondary)",
         **ep,
@@ -1308,9 +1438,7 @@ def phase_p3(args) -> None:
         rows_h = npz["holdout_rows"]
         vt = np.asarray(Y[rows_h], dtype=np.float64)
         vp = npz["holdout_pred16"].astype(np.float64)
-        proj_t = vt @ top
-        proj_p = vp @ top
-        pf = _per_feature_metrics(proj_p, proj_t)
+        pf = _per_feature_metrics(vp @ top, vt @ top)
         perdir[pred_name] = pf["r2"].tolist()
     _write_json(
         args.out_eval / "perdirection_pca.json",
@@ -1319,8 +1447,55 @@ def phase_p3(args) -> None:
             "per_direction_r2": perdir,
         },
     )
+    _write_json(_p3_unit_json(args, "aux"), doc)
+
+
+def _p3_run_unit(args) -> None:
+    """ONE P3 unit child (CVD-pinned per slot by _run_children in the launcher env)."""
+    unit = args.p3_unit
+    assert unit in p3_unit_specs(), unit
+    prep = _p3_prep(args)
+    if unit == "aux":
+        _p3_unit_aux(args, prep)
+    elif unit.startswith("ridge__"):
+        _p3_unit_ridge(args, prep, unit.removeprefix("ridge__"))
+    else:
+        _, arm, pool = unit.split("__")
+        _p3_unit_mlp(args, prep, arm, pool)
+
+
+def phase_p3(args) -> None:
+    if args.p3_unit:  # child mode: one unit, no phase sentinel (parent owns it)
+        _p3_run_unit(args)
+        return
+    C.phase("p3")
+    pf_dir = args.out_eval / "sae_perfeature"
+    pf_dir.mkdir(parents=True, exist_ok=True)
+    units = p3_unit_specs()
+    todo = [u for u in units if not _p3_unit_json(args, u).exists()]
+    logger.info("[p3] %d/%d units to run (re-shard-safe unit-JSON skip)", len(todo), len(units))
+    child_flags = _child_flags(args)
+    _run_children(
+        [{"tag": f"p3_{u}", "cmd": ["--phase", "p3", "--p3-unit", u, *child_flags]} for u in todo],
+        args,
+        "p3",
+    )
+    # aggregate unit docs -> summary.json (same shape as the pre-shard output)
+    summary: dict = {"arms": {}, "splithalf_permutation_seed": SPLIT_SEED_1482}
+    for u in units:
+        doc = json.loads(_p3_unit_json(args, u).read_text())
+        if u == "aux":
+            summary["prefix_dense_to_vx_r2"] = doc["prefix_dense_to_vx_r2"]
+            summary["encode_the_prediction"] = doc["encode_the_prediction"]
+            continue
+        summary["arms"].setdefault(doc["arm"], {}).update(doc["arm_doc"])
+        for k, v in doc.get("scalars", {}).items():
+            summary.setdefault(k, v)
     _write_json(pf_dir / "summary.json", summary)
-    _interp_digest(args, parts, f_out, out_counts, n_fit, row_pos, order)
+    prep = _p3_prep(args)  # parent-side prep (CPU-only) for the interp digest
+    _interp_digest(
+        args, prep.parts, prep.f_out, prep.out_counts, prep.n_fit, prep.row_pos, prep.order
+    )
     _phase_sentinel("p3", "p3 done (SAE fits + per-feature reads)")
 
 
@@ -1485,8 +1660,9 @@ def _results_sentinel(args, t_start: float) -> None:
         "plan_deviations": split.get("plan_deviations", []),
     }
     path = logs_dir / f"issue-{TASK_ID}-results.json"
-    with open(path, "w") as f:
-        json.dump(payload, f, indent=2)
+    # atomic (tmp + os.replace): a poller read mid-write must never parse garbage
+    # (pod-side-reporting convention; the .json.tmp name is outside the poller glob)
+    C.write_json_atomic(path, payload)
     logger.info("Wrote results sentinel %s", path)
 
 
@@ -1571,8 +1747,14 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
         "Qwen2 over the REAL vocab instead of the 7B weights (#906 tiny-real pattern). "
         "G2/FVE values are then structural-only; gates are smoke-demoted anyway.",
     )
-    ap.add_argument("--n-gpus", type=int, default=0, help="0 = detect via nvidia-smi")
+    ap.add_argument(
+        "--n-gpus",
+        type=int,
+        default=0,
+        help="0 = detect via nvidia-smi; on CPU, >0 = parallel un-pinned worker slots",
+    )
     ap.add_argument("--fit-id", default=None, help="(p1-fit child)")
+    ap.add_argument("--p3-unit", default=None, help="(p3 child) one unit from p3_unit_specs()")
     ap.add_argument("--worker", type=int, default=0)
     ap.add_argument("--n-workers", type=int, default=1)
     ap.add_argument("--gpu-id", type=int, default=None, help="informational; CVD pins the device")

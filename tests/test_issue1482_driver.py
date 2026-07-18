@@ -223,6 +223,67 @@ def test_per_feature_metrics_match_naive_loop():
         assert abs(pf["spearman"][j] - rho) < 1e-9
 
 
+def test_per_feature_metrics_tied_values_midrank():
+    """Sparse (~95% exact-zero) targets: Spearman must use MIDRANK (average) tie
+    semantics — matches scipy.stats.spearmanr; the round-1 ordinal double-argsort
+    ranks diverge on exactly this fixture (concern p3-rank-stats-corpus-order)."""
+    from scipy.stats import spearmanr
+
+    rng = np.random.default_rng(5)
+    t = rng.standard_normal((60, 4))
+    t[rng.random((60, 4)) < 0.95] = 0.0  # sparse-target tie mass
+    p = t + 0.5 * rng.standard_normal((60, 4))
+    p[rng.random((60, 4)) < 0.5] = 0.0  # ties in the predictions too
+    pf = D._per_feature_metrics(p, t)
+    for j in range(4):
+        rho = spearmanr(p[:, j], t[:, j]).statistic
+        assert abs(pf["spearman"][j] - rho) < 1e-9, j
+    # the ordinal double-argsort recipe (pre-fix) DIVERGES on this fixture
+    rp = np.argsort(np.argsort(p, axis=0), axis=0).astype(np.float64)
+    rt = np.argsort(np.argsort(t, axis=0), axis=0).astype(np.float64)
+    rp -= rp.mean(0)
+    rt -= rt.mean(0)
+    ordinal = (rp * rt).sum(0) / np.sqrt((rp**2).sum(0) * (rt**2).sum(0))
+    assert np.max(np.abs(ordinal - pf["spearman"])) > 1e-6
+    # midrank helper == scipy rankdata('average'), incl. all-tied and unique columns
+    from scipy.stats import rankdata
+
+    a = np.column_stack([np.zeros(9), np.arange(9.0), np.repeat([1.0, 2.0, 3.0], 3)])
+    got = D._midrank(a)
+    for j in range(a.shape[1]):
+        assert np.allclose(got[:, j], rankdata(a[:, j], method="average")), j
+
+
+def test_splithalf_perm_mixes_corpus_blocked_order():
+    """Corpus-blocked holdout order (lmsys block ++ wildchat block): the seeded
+    permutation must make BOTH halves corpus-mixed — the round-1 sorted-order
+    midpoint halving gave a ~pure-lmsys half vs a ~mostly-wildchat half
+    (a corpus-transfer read, not a stability read)."""
+    n = 1000
+    frac_wc = 0.451  # parent manifest wildchat fraction (lmsys_frac ~ 0.549)
+    prov = np.zeros(n, dtype=np.int8)
+    prov[int(n * (1 - frac_wc)) :] = 1  # BLOCKED: all lmsys first, then all wildchat
+    assert prov[: n // 2].mean() == 0.0  # the round-1 defect: unpermuted half A is pure
+    perm = D._splithalf_perm(n)
+    a, b = prov[perm[: n // 2]], prov[perm[n // 2 :]]
+    assert abs(float(a.mean()) - frac_wc) < 0.05
+    assert abs(float(b.mean()) - frac_wc) < 0.05
+    assert np.array_equal(perm, D._splithalf_perm(n))  # deterministic (recorded seed)
+    assert np.array_equal(np.sort(perm), np.arange(n))  # a true permutation
+
+
+def test_p3_unit_registry_shape():
+    units = D.p3_unit_specs()
+    assert len(units) == len(set(units)) == 10
+    assert sum(u.startswith("ridge__") for u in units) == 3
+    assert sum(u.startswith("mlp__") for u in units) == 6
+    assert "aux" in units
+    for u in units:  # every unit resolves in the child dispatcher's parser
+        if u.startswith("mlp__"):
+            _, arm, pool = u.split("__")
+            assert arm in D.P3_ARMS_MLP and pool in D.P3_POOLINGS
+
+
 # ── store round-trip + SAE pure helpers ──────────────────────────────────────────
 
 
@@ -262,9 +323,13 @@ def test_analysis_stats_edge_cases():
     p = A._perm_pvals(nerr, [np.zeros(30, bool)], 20, 0)
     assert np.isnan(p[0])
     assert A._bh_fdr([float("nan")]) == [False]
-    assert (
-        A._bh_fdr([0.001, 0.5, float("nan")])[0] is True or A._bh_fdr([0.001, 0.5, float("nan")])[0]
-    )
+    # real property: only the small p survives BH at q=0.05 over m=2 finite ps
+    assert A._bh_fdr([0.001, 0.5, float("nan")]) == [True, False, False]
+    # kappa gate: NaN / missing / low kappa all demote (instrument-failure); healthy passes
+    assert A._kappa_gate(float("nan")) is not None
+    assert A._kappa_gate(None) is not None
+    assert A._kappa_gate(0.55) is not None
+    assert A._kappa_gate(0.72) is None
     # kappa: degenerate + perfect
     assert np.isnan(A._cohens_kappa(["a"], ["a"]))
     assert A._cohens_kappa(["a", "b", "a", "b"], ["a", "b", "a", "b"]) == pytest.approx(1.0)
@@ -283,3 +348,58 @@ def test_analysis_stats_edge_cases():
     # inverted quantile CI -> clamped non-negative offsets (gotchas #547/#1335)
     lo, hi = A._errbars([1.0], [1.1], [0.9])
     assert (lo >= 0).all() and (hi >= 0).all()
+
+
+def test_n_ans_per_row_nan_count_and_floor(tmp_path):
+    """_n_ans_for_rows: missing rows -> per-row NaN (counted), never an
+    all-or-nothing None drop; >5% missing fails loud; no shards -> None."""
+    import issue1482_analysis as A
+
+    store = tmp_path / "sae_pooled"
+    ns = SimpleNamespace(store=store)
+    assert A._n_ans_for_rows(ns, np.arange(3)) is None  # no shards at all
+    store.mkdir()
+    np.savez(
+        store / "pooled_000.npz",
+        row_idx=np.arange(20, dtype=np.int64),
+        n_ans=np.arange(20, dtype=np.int64) + 10,
+    )
+    rows = np.arange(21)  # row 20 missing: 1/21 = 4.8% <= 5% -> NaN, not a drop
+    v = A._n_ans_for_rows(ns, rows)
+    assert v is not None and len(v) == 21
+    assert np.isnan(v[20]) and int(np.isnan(v).sum()) == 1
+    assert v[0] == 10.0 and v[19] == 29.0
+    with pytest.raises(RuntimeError, match="> 5%"):  # 2/12 = 17% missing -> fail loud
+        A._n_ans_for_rows(ns, np.asarray([*range(10), 40, 41]))
+
+
+def test_collect_texts_chunk_checkpoint_resume(tmp_path, monkeypatch):
+    """_collect_texts: per-chunk JSONL checkpoint (chunk_done AFTER the chunk's
+    rows) + resume that skips already-cached chunks entirely."""
+    import issue1482_analysis as A
+
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    np.save(scratch / "row_ci.npy", np.array([100, 101, 102]))
+    np.save(scratch / "prov.npy", np.array([0, 1, 0], dtype=np.int8))
+    calls: list[str] = []
+    rows_by_chunk = {
+        "c0": [(0, 100, "p0", "r0")],
+        "c1": [(1, 101, "p1", "r1"), (2, 102, "p2", "r2")],
+    }
+
+    def fake_iter(_dns, names, _needed):
+        for nm in names:
+            calls.append(nm)
+            yield nm, rows_by_chunk[nm]
+
+    monkeypatch.setattr(A.D, "_raw_chunk_names", lambda _dns: ["c0", "c1"])
+    monkeypatch.setattr(A.D, "_iter_needed_rows", fake_iter)
+    ns = SimpleNamespace(scratch=scratch, max_chunks=0)
+    rows = np.array([0, 1, 2])
+    out1 = A._collect_texts(ns, rows)
+    assert set(out1) == {100, 101, 102} and calls == ["c0", "c1"]
+    assert out1[101] == (1, "p1", "r1", "wildchat")
+    out2 = A._collect_texts(ns, rows)  # resume: both chunks cached -> zero re-fetch
+    assert calls == ["c0", "c1"]
+    assert out2 == out1
