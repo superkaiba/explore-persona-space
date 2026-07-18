@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1072.md](https://github.com/superkaiba/explore-persona-space/blob/20eea53177038b1caefeb4e7594d82fee4573216/docs/methodology/issue_1072.md) · [gist](https://gist.github.com/superkaiba/fbc77e46cad929ae4e2734e2522fe2ff)
+
 ## Takeaways
 
 - **At layer 26 the realized next token's logit-lens direction carries 2.4% of the own-answer prediction advantage; the 3,583-dimensional orthogonal complement carries 95.1% — the 1-D output-token-commitment account is falsified.**
