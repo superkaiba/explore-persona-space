@@ -3843,8 +3843,8 @@
     "1493": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1493",
-      "status": "reviewing",
+      "path": "tasks/completed/1493",
+      "status": "completed",
       "title": "daily-fix: extend squash-first merge routing to experiments"
     },
     "1494": {
