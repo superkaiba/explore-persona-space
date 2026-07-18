@@ -216,7 +216,7 @@ def test_dual_reference_seed_compare_fixture(tmp_path):
         reference_summary_2=None,
         data_dir=tmp_path / "empty_data",
     )
-    with pytest.raises(AssertionError, match="missing endpoint rollouts"):
+    with pytest.raises(AssertionError, match="missing r7_endpoint rollouts"):
         f1335.build_seed_comparison(args_no_rollouts, ["base"], smoke=False)
 
 

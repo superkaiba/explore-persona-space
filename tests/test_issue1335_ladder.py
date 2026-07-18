@@ -55,10 +55,12 @@ def tokenizer():
 
 
 def test_registry_invariants():
-    assert len(r1335.RUNGS) == 11
+    # 11 ladder rungs + the 3 onpolicy-assistant-label cells (plan v7 §4.2).
+    assert len(r1335.RUNGS) == 14
     assert set(r1335.TF_RUNGS) == {"r2_tf", "s1_assistant_label", "s2a_familiar", "s2b_novel"}
     # base-prime flag identical (and absent — the v3 prefill recipe) across
-    # every fiction-render base cell incl. r4 (plan §4.2 pin).
+    # every fiction-render base cell incl. r4 (plan §4.2 pin) AND the r7_op_*
+    # label cells (plan v7: assert_base_prime_uniform extends over them).
     assert r1335.assert_base_prime_uniform() is False
     assert set(r1335.FICTION_RENDER_RUNGS) == {
         "r4_fictionframe",
@@ -67,6 +69,9 @@ def test_registry_invariants():
         "s1_assistant_label",
         "s2a_familiar",
         "s2b_novel",
+        "r7_op_assistant",
+        "r7_op_wren",
+        "r7_op_wren46",
     }
 
 

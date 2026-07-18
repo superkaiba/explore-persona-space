@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "git_commit": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+    "timestamp": "2026-07-18T10:31:20Z",
+    "seed": 0,
+    "n": 3462,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r7_op_assistant",
+  "render_config_hash": "474260b3eb30fef3",
+  "code_sha": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+  "rung": "r7_op_assistant",
+  "model_kind": "base",
+  "headline_layer": 19,
+  "r2_correct": 0.4078138830638919,
+  "r2_swap": 0.2720305492416496,
+  "delta_r2_char": 0.13578333382224228,
+  "delta_ci_lo": 0.12736278667267156,
+  "delta_ci_hi": 0.14480795691447915,
+  "n_rows": 3462,
+  "n_groups": 300,
+  "n_boot": 1000,
+  "paired_group_bootstrap": true
+}
