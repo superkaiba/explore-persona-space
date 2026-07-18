@@ -15,6 +15,7 @@ linear-vs-nonlinear gap decomposition, and the hero figures.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -109,17 +110,73 @@ def _validate_label(parsed: object) -> dict | None:
 
 
 def _collect_texts(args, rows: np.ndarray) -> dict[int, tuple[int, str, str, str]]:
-    """ci -> (row_idx, prompt, response, corpus) for the given rows (digest-only)."""
+    """ci -> (row_idx, prompt, response, corpus) for the given rows (digest-only:
+    text is cached to SCRATCH — gitignored, never eval_results — and never logged).
+
+    Per-chunk checkpoint + resume (external-stream rule): the ~1,936-chunk re-fetch
+    is 30-60 min network-bound, so each chunk's kept rows append to a JSONL cache
+    (fingerprint-keyed on the row set + max_chunks) with a chunk_done marker written
+    AFTER the chunk's rows; a crash costs at most one in-flight chunk."""
     row_ci = np.load(args.scratch / "row_ci.npy")
     prov = np.load(args.scratch / "prov.npy")
     needed_ci = {int(row_ci[r]): int(r) for r in rows}
     assert -1 not in needed_ci, "judge rows must be NEW rows (text-resolvable)"
     dns = argparse.Namespace(scratch=args.scratch, max_chunks=args.max_chunks)
+    cache_dir = args.scratch / "judge_text_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fp = hashlib.sha256(
+        json.dumps(
+            {"rows": sorted(int(r) for r in rows), "max_chunks": int(args.max_chunks)}
+        ).encode()
+    ).hexdigest()[:16]
+    cache = cache_dir / f"texts_{fp}.jsonl"
     out: dict[int, tuple[int, str, str, str]] = {}
-    for _name, keep in D._iter_needed_rows(dns, D._raw_chunk_names(dns), needed_ci):
-        for row_idx, ci, prompt, response in keep:
-            corpus = "wildchat" if prov[row_idx] else "lmsys"
-            out[ci] = (row_idx, prompt, response, corpus)
+    done_chunks: set[str] = set()
+    if cache.exists():
+        lines = [ln for ln in cache.read_text(encoding="utf-8").split("\n") if ln.strip()]
+        for i, ln in enumerate(lines):
+            try:
+                rec = json.loads(ln)
+            except ValueError:
+                if i == len(lines) - 1:  # truncated tail from a crash mid-append
+                    logger.warning("[collect] dropping truncated cache tail line")
+                    break
+                raise  # a malformed MIDDLE line is corruption — fail loud
+            if rec.get("kind") == "chunk_done":
+                done_chunks.add(rec["chunk"])
+            else:
+                out[int(rec["ci"])] = (
+                    int(rec["row"]),
+                    rec["prompt"],
+                    rec["response"],
+                    rec["corpus"],
+                )
+    names = D._raw_chunk_names(dns)
+    pending = [nm for nm in names if nm not in done_chunks]
+    if done_chunks:
+        logger.info("[collect] resume: %d/%d chunks cached", len(names) - len(pending), len(names))
+    with cache.open("a", encoding="utf-8") as fh:
+        for name in pending:
+            # one chunk per call so EVERY processed chunk gets its done marker
+            # (D._iter_needed_rows yields only chunks with kept rows)
+            for _nm, keep in D._iter_needed_rows(dns, [name], needed_ci):
+                for row_idx, ci, prompt, response in keep:
+                    corpus = "wildchat" if prov[row_idx] else "lmsys"
+                    out[int(ci)] = (int(row_idx), prompt, response, corpus)
+                    fh.write(
+                        json.dumps(
+                            {
+                                "ci": int(ci),
+                                "row": int(row_idx),
+                                "prompt": prompt,
+                                "response": response,
+                                "corpus": corpus,
+                            }
+                        )
+                        + "\n"
+                    )
+            fh.write(json.dumps({"kind": "chunk_done", "chunk": name}) + "\n")
+            fh.flush()
     missing = len(needed_ci) - len(out)
     assert missing == 0, f"{missing} judge rows had no raw-chunk text"
     return out
@@ -216,6 +273,17 @@ def phase_judge(args) -> None:
         drops,
         {k: round(v["kappa"], 3) if v["kappa"] == v["kappa"] else None for k, v in kappa.items()},
     )
+
+
+def _kappa_gate(kap) -> str | None:
+    """Instrument-failure reason when the test-retest kappa cannot support a
+    verdict: NaN/missing kappa is an UNMEASURED instrument (demote — never pass),
+    kappa < 0.6 is a failed instrument. None = instrument OK."""
+    if kap is None or not np.isfinite(kap):
+        return f"language test-retest kappa unmeasured/non-finite ({kap})"
+    if kap < 0.6:
+        return f"language test-retest kappa {kap:.3f} < 0.6"
+    return None
 
 
 def _cohens_kappa(a: list[str], b: list[str]) -> float:
@@ -424,10 +492,10 @@ def phase_analysis(args) -> None:  # noqa: C901 — one linear P6 pass (tables +
             verdict = "Falsified"
         else:
             verdict = "Inconclusive"
-        kap = kappa.get("language", {}).get("kappa")
-        if kap is not None and np.isfinite(kap) and kap < 0.6:
+        reason = _kappa_gate(kappa.get("language", {}).get("kappa"))
+        if reason is not None:  # NaN/missing kappa demotes too (instrument-failure)
             verdict = "Inconclusive"
-            h1["instrument_failure"] = f"language test-retest kappa {kap:.3f} < 0.6"
+            h1["instrument_failure"] = reason
         h1.update(
             {
                 "delta_nerr": delta,
@@ -457,8 +525,9 @@ def phase_analysis(args) -> None:  # noqa: C901 — one linear P6 pass (tables +
     contrasts.append(("answer_is_refusal:yes+partial", have & np.isin(ansref, ["yes", "partial"])))
     contrasts.append(("corpus:wildchat", corpus == "wildchat"))
     n_ans = _n_ans_for_rows(args, rows)
+    n_ans_missing = int(np.isnan(n_ans).sum()) if n_ans is not None else None
     if n_ans is not None:
-        qs = np.quantile(n_ans, [0.25, 0.5, 0.75])
+        qs = np.nanquantile(n_ans, [0.25, 0.5, 0.75])  # NaN rows fall out of every quartile mask
         for i, (a, b) in enumerate([(0, qs[0]), (qs[0], qs[1]), (qs[1], qs[2]), (qs[2], np.inf)]):
             contrasts.append((f"answer_len_q{i + 1}", (n_ans > a) & (n_ans <= b)))
     masks = [m for _, m in contrasts]
@@ -488,6 +557,9 @@ def phase_analysis(args) -> None:  # noqa: C901 — one linear P6 pass (tables +
             "n_perm": args.n_boot,
             "per_field_kappa": kappa,
             "drops": labels_doc["drops"],
+            # per-row n_ans coverage (None = no store staged; rows over the 5%
+            # floor fail loud inside _n_ans_for_rows)
+            "n_ans_missing": n_ans_missing,
         },
     )
 
@@ -615,7 +687,12 @@ def phase_analysis(args) -> None:  # noqa: C901 — one linear P6 pass (tables +
 
 
 def _n_ans_for_rows(args, rows: np.ndarray) -> np.ndarray | None:
-    """Answer token counts per holdout row from the pooled store shards."""
+    """Answer token counts per holdout row from the pooled store shards.
+
+    Per-row: a missing row -> NaN (counted + reported by the caller), never an
+    all-or-nothing None drop of the planned length contrasts; fail-loud when
+    >5% of rows are missing (a systematic store/split mismatch, not a stray
+    empty-response tokenization drop). No shards at all -> None (no store)."""
     shards = sorted(args.store.glob("pooled_*.npz"))
     if not shards:
         return None
@@ -624,9 +701,17 @@ def _n_ans_for_rows(args, rows: np.ndarray) -> np.ndarray | None:
         z = np.load(p)
         for r, na in zip(z["row_idx"], z["n_ans"], strict=True):
             m[int(r)] = int(na)
-    if not all(int(r) in m for r in rows):
-        return None
-    return np.asarray([m[int(r)] for r in rows], dtype=np.int64)
+    vals = np.asarray([float(m.get(int(r), np.nan)) for r in rows], dtype=np.float64)
+    n_missing = int(np.isnan(vals).sum())
+    if n_missing:
+        frac = n_missing / max(1, len(rows))
+        if frac > 0.05:
+            raise RuntimeError(
+                f"_n_ans_for_rows: {n_missing}/{len(rows)} holdout rows missing from the "
+                f"pooled store ({frac:.1%} > 5%) — store/split mismatch, not a stray drop"
+            )
+        logger.warning("[p6] n_ans missing for %d/%d holdout rows (NaN)", n_missing, len(rows))
+    return vals
 
 
 def main() -> int:
