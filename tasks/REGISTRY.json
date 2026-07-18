@@ -1699,8 +1699,8 @@
     "1218": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1218",
-      "status": "running",
+      "path": "tasks/reviewing/1218",
+      "status": "reviewing",
       "title": "daily-held: Gate spawn_session dispatch paths on auth-outage"
     },
     "1219": {
