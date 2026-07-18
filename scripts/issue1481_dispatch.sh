@@ -7,9 +7,9 @@
 #   uv run python scripts/dispatch_issue.py launch --issue 1481 --intent lora-7b \
 #     --backend gcp --gpus 8 --repo-branch issue-1481 \
 #     --workload-cmd "bash scripts/issue1481_dispatch.sh impolite"
-#   (and: sycophancy | casual-s137; marker-a | marker-b once
-#    scripts/issue1481_marker.py lands — deferred, see task concern
-#    marker-dispatcher-missing)
+#   (and: sycophancy | casual-s137 | marker-a | marker-b — the marker A4/A5
+#    groups route to scripts/issue1481_marker.py, which fans 24 cells per
+#    group across every visible GPU via 1-GPU self-invocation units)
 #
 # Phase 0 (VM, 0 GPU, BEFORE any Phase-A dispatch):
 #   uv run python scripts/issue1481_worker.py --full --phase mixes
@@ -47,9 +47,8 @@ case "$GROUP" in
     uv run python scripts/issue1481_worker.py --full --phase base-arms "$@"
     ;;
   marker-a | marker-b)
-    echo "[i1481] marker dispatches need scripts/issue1481_marker.py (deferred — task" \
-      "concern marker-dispatcher-missing); refusing" >&2
-    exit 3
+    echo "[phase=i1481_dispatch_${GROUP//-/_}]"
+    uv run python scripts/issue1481_marker.py --full --group "$GROUP" --seeds 42,137 "$@"
     ;;
   *)
     echo "unknown dispatch group: $GROUP" >&2
