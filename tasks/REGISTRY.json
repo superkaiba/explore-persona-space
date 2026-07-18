@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1499,
+  "highest_id": 1500,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3902,6 +3902,13 @@
       "path": "tasks/completed/150",
       "status": "completed",
       "title": "Add CoT to ARC C and misalignment and refusal and sycophancy"
+    },
+    "1500": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1500",
+      "status": "proposed",
+      "title": "daily-fix: mechanical inline payload lint gate pre-push"
     },
     "151": {
       "has_clean_result": false,
