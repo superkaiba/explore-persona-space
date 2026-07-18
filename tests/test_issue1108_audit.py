@@ -337,31 +337,84 @@ class TestScanCommits:
         _commit("c_fold2", "2026-07-17T14:34:00", "Upload folder using huggingface_hub"),
         _commit("c_file", "2026-07-16T09:00:00", "Upload x.bin with huggingface_hub"),
         _commit("c_other", "2026-07-10T12:00:00", "task #900: bookkeeping"),
+        # IN the since window but PRE-rejection (round-2 code-review Major):
+        # between the 2026-07-06 window start and the 2026-07-07 anchor —
+        # must count in window stats, NEVER in post-rejection stats:
+        _commit("c_prereject_fold", "2026-07-06T18:31:44", "Upload folder using huggingface_hub"),
+        # ON the anchor day itself — excluded by the conservative whole-day
+        # bound (day > REJECTION_DATE_ISO), regardless of clock time:
+        _commit("c_anchorday_fold", "2026-07-07T12:00:00", "Upload folder using huggingface_hub"),
         # OUTSIDE the since window — must be excluded from windowed counts:
         _commit("c_old", "2026-07-01T00:00:00", "Upload folder using huggingface_hub"),
     )
 
     def test_scan_commits_first_nonprobe_upload(self):
         out = A.scan_commits(_StubApi(self.FIXTURE), A.MODEL_REPO, since=date(2026, 7, 6))
-        assert out["n_commits_full_history"] == 7
-        assert out["n_commits_scanned"] == 6  # c_old excluded by the window
+        assert out["n_commits_full_history"] == 9
+        assert out["n_commits_scanned"] == 8  # c_old excluded by the window
         # probe exclusion: probe titles never count as uploads
         assert out["n_probe"] == 1
         assert out["n_probe_cleanup"] == 1
-        assert out["n_upload"] == 3
+        assert out["n_upload"] == 5
         assert out["n_other"] == 1
-        assert out["n_folder_push"] == 2
-        # chronologically EARLIEST upload-class commit in the window
+        assert out["n_folder_push"] == 4
+        # chronologically EARLIEST upload-class commit in the window — the
+        # PRE-rejection 2026-07-06 commit (the honest window-context read)
         first = out["first_nonprobe_upload"]
-        assert first["commit_id"] == "c_file"
-        assert first["date_utc"] == "2026-07-16T09:00:00Z"
-        assert first["title"] == "Upload x.bin with huggingface_hub"
-        assert out["per_day_upload_counts"] == {"2026-07-16": 1, "2026-07-17": 2}
+        assert first["commit_id"] == "c_prereject_fold"
+        assert first["date_utc"] == "2026-07-06T18:31:44Z"
+        assert first["title"] == "Upload folder using huggingface_hub"
+        assert out["per_day_upload_counts"] == {
+            "2026-07-06": 1,
+            "2026-07-07": 1,
+            "2026-07-16": 1,
+            "2026-07-17": 2,
+        }
+
+    def test_post_rejection_stats_exclude_pre_anchor_window_commits(self):
+        """Round-2 code-review Major pin: window commits dated between the
+        scan-window start (2026-07-06) and the rejection anchor — INCLUDING a
+        commit on the anchor day itself — are EXCLUDED from every quantity
+        labeled post-rejection (conservative whole-day bound,
+        day > REJECTION_DATE_ISO)."""
+        out = A.scan_commits(_StubApi(self.FIXTURE), A.MODEL_REPO, since=date(2026, 7, 6))
+        # window folder-pushes include c_prereject_fold + c_anchorday_fold...
+        assert out["n_folder_push"] == 4
+        # ...post-rejection folder-pushes exclude BOTH:
+        assert out["n_folder_push_post_rejection"] == 2
+        # first POST-REJECTION upload is c_file (2026-07-16), NOT the
+        # window-earliest pre-rejection 2026-07-06 exhibit:
+        first_post = out["first_nonprobe_upload_post_rejection"]
+        assert first_post["commit_id"] == "c_file"
+        assert first_post["date_utc"] == "2026-07-16T09:00:00Z"
+        assert first_post["commit_id"] != out["first_nonprobe_upload"]["commit_id"]
+        assert "day > 2026-07-07" in out["post_rejection_bound"]
+
+    def test_post_rejection_boundary_strictly_after_anchor_day(self):
+        """The bound is STRICT: anchor-day commit excluded (even 23:59), the
+        first day-after commit included and selected as first-post-rejection."""
+        commits = (
+            _commit("c_on_anchor", "2026-07-07T23:59:00", "Upload folder using huggingface_hub"),
+            _commit("c_after", "2026-07-08T00:49:35", "Upload x.bin with huggingface_hub"),
+        )
+        out = A.summarize_commits(commits)
+        assert out["n_folder_push"] == 1
+        assert out["n_folder_push_post_rejection"] == 0  # c_on_anchor excluded
+        assert out["first_nonprobe_upload"]["commit_id"] == "c_on_anchor"
+        assert out["first_nonprobe_upload_post_rejection"]["commit_id"] == "c_after"
+
+    def test_post_rejection_first_upload_none_when_no_post_commits(self):
+        commits = (_commit("c_pre", "2026-07-06T10:00:00", "Upload folder using huggingface_hub"),)
+        out = A.summarize_commits(commits)
+        assert out["first_nonprobe_upload"] is not None
+        assert out["first_nonprobe_upload_post_rejection"] is None
+        assert out["n_folder_push_post_rejection"] == 0
 
     def test_full_history_scan_with_era_cutover(self):
         out = A.scan_commits(_StubApi(self.FIXTURE), A.OVERFLOW_REPO, era_cutover=date(2026, 7, 7))
-        assert out["n_commits_scanned"] == 7
-        assert out["n_commits_on_or_before_cutover"] == 1  # c_old only
+        assert out["n_commits_scanned"] == 9
+        # c_old + c_prereject_fold + c_anchorday_fold (cutover day inclusive)
+        assert out["n_commits_on_or_before_cutover"] == 3
         assert out["n_commits_after_cutover"] == 6
 
 
@@ -391,6 +444,75 @@ class TestOverflowEra:
             A.FileEntry("OVERFLOW_POINTER.json", 1, 0),
         ]
         assert A.find_overflow_pointer_prefixes(entries) == ["adapters/i1090_c5"]
+
+
+from huggingface_hub import hf_hub_download as _REAL_HF_HUB_DOWNLOAD
+
+
+class TestParseOverflowPointers:
+    """Round-2 code-review Minors: parse_overflow_pointers' REAL body executes
+    end-to-end — retry_transient, json parsing, and filesystem reads run for
+    real; only the network boundary (hf_hub_download) is faked, autospec'd
+    against the installed huggingface_hub signature by construction (the real
+    function is captured at module import, before any test patches it)."""
+
+    def _run(self, tmp_path, monkeypatch, contents: dict[str, str], max_downloads: int = 10):
+        from unittest import mock
+
+        import huggingface_hub
+
+        files: dict[str, Path] = {}
+        for i, (prefix, raw) in enumerate(contents.items()):
+            p = tmp_path / f"ptr{i}.json"
+            p.write_text(raw, encoding="utf-8")
+            files[f"{prefix}/{A.OVERFLOW_POINTER_BASENAME}"] = p
+        fake_dl = mock.create_autospec(
+            _REAL_HF_HUB_DOWNLOAD,
+            side_effect=lambda repo_id, filename, **kw: str(files[filename]),
+        )
+        monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_dl)
+        api = SimpleNamespace(token=None)
+        return A.parse_overflow_pointers(api, list(contents), max_downloads), fake_dl
+
+    def test_valid_nondict_collision_and_malformed_rows(self, tmp_path, monkeypatch):
+        contents = {
+            # (1) a valid pointer (the real writer's payload keys, hub.py):
+            "adapters/a": (
+                '{"overflow_repo": "o/r", "path_in_repo": "adapters/a",'
+                ' "ts": "t", "used_tb": 10.2, "ceiling_tb": 10.0}'
+            ),
+            # (2) valid JSON that is NOT an object:
+            "adapters/b": "[1, 2, 3]",
+            # (3) a payload carrying its own "prefix" key (collision):
+            "adapters/c": '{"prefix": "payload-claimed-prefix", "overflow_repo": "o/r"}',
+            # (4) malformed JSON (the pre-existing parse_error arm):
+            "adapters/d": "{not json",
+        }
+        out, _ = self._run(tmp_path, monkeypatch, contents)
+        assert len(out) == 4
+        rows = {r["prefix"]: r for r in out}
+        # (1) merged payload; prefix = the canonical-walk prefix; no error
+        assert rows["adapters/a"]["overflow_repo"] == "o/r"
+        assert rows["adapters/a"]["used_tb"] == 10.2
+        assert "parse_error" not in rows["adapters/a"]
+        # (2) non-dict payload -> explicit labeled parse_error row, no crash
+        assert rows["adapters/b"]["parse_error"] == "non-dict JSON payload: list"
+        # (3) collision: canonical prefix wins; payload's value preserved
+        # under payload_prefix (labeled, never silently clobbered)
+        assert rows["adapters/c"]["prefix"] == "adapters/c"
+        assert rows["adapters/c"]["payload_prefix"] == "payload-claimed-prefix"
+        assert rows["adapters/c"]["overflow_repo"] == "o/r"
+        # (4) malformed JSON -> explicit parse_error row
+        assert rows["adapters/d"]["parse_error"].startswith("JSONDecodeError:")
+
+    def test_download_cap_parses_only_up_to_max(self, tmp_path, monkeypatch):
+        contents = {"adapters/a": "{}", "adapters/b": "{}", "adapters/c": "{}"}
+        out, fake_dl = self._run(tmp_path, monkeypatch, contents, max_downloads=2)
+        assert [r["prefix"] for r in out] == ["adapters/a", "adapters/b"]
+        assert fake_dl.call_count == 2
+        out0, fake0 = self._run(tmp_path, monkeypatch, contents, max_downloads=0)
+        assert out0 == []
+        assert fake0.call_count == 0
 
 
 class TestLfsRollup:
@@ -444,19 +566,28 @@ def _fixture_audit() -> dict:
     """Minimal-but-complete audit dict for render_softened_options."""
     commits = {
         "since": "2026-07-06",
-        "n_commits_scanned": 6,
+        "n_commits_scanned": 7,
         "n_probe": 1,
         "n_probe_cleanup": 1,
-        "n_upload": 3,
+        "n_upload": 4,
         "n_other": 1,
-        "n_folder_push": 2,
+        # window vs post-rejection DELIBERATELY differ (3 vs 2, c_prewin vs
+        # c_file) so the rendering test can tell which one each label reads:
+        "n_folder_push": 3,
         "upload_count_label": "LOWER BOUND — title-classifier based",
         "first_nonprobe_upload": {
+            "commit_id": "c_prewin",
+            "date_utc": "2026-07-06T18:31:44Z",
+            "title": "Upload folder using huggingface_hub",
+        },
+        "post_rejection_bound": "commit day > 2026-07-07 (conservative whole-day)",
+        "n_folder_push_post_rejection": 2,
+        "first_nonprobe_upload_post_rejection": {
             "commit_id": "c_file",
             "date_utc": "2026-07-16T09:00:00Z",
             "title": "Upload x.bin with huggingface_hub",
         },
-        "per_day_upload_counts": {"2026-07-16": 1, "2026-07-17": 2},
+        "per_day_upload_counts": {"2026-07-06": 1, "2026-07-16": 1, "2026-07-17": 2},
         "net_growth_vs_rejection_anchor": 17_000,
     }
     c1_row = {
@@ -495,7 +626,7 @@ def _fixture_audit() -> dict:
             "lfs_bytes_freed": 0,
             "run_time_count": 117_050,
             "net_growth_since_rejection": 17_000,
-            "n_upload_commits_since": 3,
+            "n_upload_commits_since": 4,
             "upload_count_label": "LOWER BOUND",
             "n_other_commits_since": 1,
             "ongoing_cost_note": "overflow artifacts are PRIVATE and pointer-mediated",
@@ -598,6 +729,27 @@ class TestSoftenedOptionsRendering:
         assert c2_sec.index("selection-blind UPPER BOUND") < cmd_pos
         assert c2_sec.index(A.KEEP_RULE_CAVEAT) < cmd_pos
         assert c2_sec.index(A.USER_MUST_VERIFY_LINE) < cmd_pos
+
+    def test_post_rejection_lines_use_anchor_scoped_stats(self):
+        """Round-2 code-review Major pin (renderer side): every quantity the
+        report labels post-rejection reads the anchor-scoped stats; the wider
+        scan-window stats stay under honest "since"/"window (context)" labels
+        (fixture: window folder-pushes 3 / post-rejection 2; window-first
+        c_prewin / post-rejection-first c_file)."""
+        text = A.render_softened_options(_fixture_audit())
+        # decisive fact (i) = the POST-REJECTION count, window count beside it
+        assert (
+            "Decisive fact (i): **2** post-rejection\n"
+            "  (day > 2026-07-07) commit(s) are FOLDER pushes" in text
+        )
+        assert "; 3 across the full scan window\n  since 2026-07-06." in text
+        # the "first post-rejection" exhibit is the post-anchor commit...
+        assert (
+            "- First post-rejection (day > 2026-07-07) non-probe upload commit:\n"
+            '  `c_file` (2026-07-16T09:00:00Z) — "Upload x.bin with huggingface_hub".' in text
+        )
+        # ...and the pre-rejection window-earliest is context-labeled only
+        assert "scan window (context only — may predate the\n  rejection): `c_prewin`" in text
 
     def test_status_wording_never_categorical(self):
         """Acceptance #3 wording: 'not enforced at the current count/shape as

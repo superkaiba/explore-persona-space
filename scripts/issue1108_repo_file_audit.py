@@ -57,6 +57,17 @@ C5_PUSH_FILES = 107  # #1090's rejected c5 ladder push (one cell: checkpoints 2-
 # rejection (#1090's c5 push bounced with the repo at 100,050 files). The
 # run-time count minus this anchor is the NET GROWTH the limit-status evidence
 # quotes (decisive fact ii: count-increasing bulk pushes land).
+#
+# POST-REJECTION boundary (round-2 code-review Major): the #1090 rejection
+# landed 2026-07-07 ~09:43Z (task #1141 origin_prompt). Every quantity labeled
+# "post-rejection" — summarize_commits' `n_folder_push_post_rejection` /
+# `first_nonprobe_upload_post_rejection` AND build_recommendation_draft's
+# `n_upload_commits_post_rejection` — uses the CONSERVATIVE whole-day bound
+# `commit day > REJECTION_DATE_ISO` (i.e. 2026-07-08 UTC onwards), applied
+# consistently. A commit dated 2026-07-07 itself (before OR after 09:43Z) is
+# EXCLUDED: this can only UNDERCOUNT post-rejection activity, never mislabel a
+# pre-rejection commit as post-rejection evidence. The wider --commits-since
+# window remains for honestly-labeled "since <date>" CONTEXT counts only.
 REJECTION_ANCHOR_FILES = 100_050
 REJECTION_DATE_ISO = "2026-07-07"
 
@@ -397,12 +408,21 @@ def summarize_commits(commits, *, since: date | None = None, era_cutover: date |
     record, #1141 §4.2 item 3 mechanism i). Returns per-class counts, the
     chronologically EARLIEST upload-class commit in the window
     (``first_nonprobe_upload``), per-day upload counts, and the folder-push
-    count (decisive fact i: a folder push is a count-increasing bulk push).
+    count (decisive fact i: a folder push is a count-increasing bulk push) —
+    plus the POST-REJECTION-scoped variants ``n_folder_push_post_rejection`` /
+    ``first_nonprobe_upload_post_rejection``, keyed on ``commit day >
+    REJECTION_DATE_ISO`` (the documented conservative whole-day bound; see the
+    constant's comment). The window stats stay honestly "since"-labeled
+    context; anything rendered under a "post-rejection" label reads the
+    post-rejection variants (round-2 code-review Major).
     """
+    rejection_day = date.fromisoformat(REJECTION_DATE_ISO)
     n = {"probe": 0, "probe-cleanup": 0, "upload": 0, "other": 0}
     n_folder_push = 0
+    n_folder_push_post = 0
     per_day: dict[str, int] = {}
     first_upload = None  # (created_at, record)
+    first_upload_post = None  # (created_at, record), post-rejection only
     n_pre = n_post = 0
     n_scanned = 0
     for c in commits:
@@ -418,12 +438,29 @@ def summarize_commits(commits, *, since: date | None = None, era_cutover: date |
             else:
                 n_post += 1
         if cls == "upload":
+            post_rejection = day > rejection_day
             if c.title.strip().startswith("Upload folder"):
                 n_folder_push += 1
+                if post_rejection:
+                    n_folder_push_post += 1
             key = day.isoformat()
             per_day[key] = per_day.get(key, 0) + 1
             if first_upload is None or c.created_at < first_upload[0]:
                 first_upload = (c.created_at, c)
+            if post_rejection and (
+                first_upload_post is None or c.created_at < first_upload_post[0]
+            ):
+                first_upload_post = (c.created_at, c)
+
+    def _upload_record(pair):
+        if pair is None:
+            return None
+        return {
+            "commit_id": pair[1].commit_id,
+            "date_utc": pair[0].strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "title": pair[1].title,
+        }
+
     out: dict = {
         "since": since.isoformat() if since is not None else None,
         "n_commits_scanned": n_scanned,
@@ -436,15 +473,13 @@ def summarize_commits(commits, *, since: date | None = None, era_cutover: date |
             "LOWER BOUND — title-classifier based (custom-titled uploads land "
             "in n_other, reported beside it)"
         ),
-        "first_nonprobe_upload": (
-            {
-                "commit_id": first_upload[1].commit_id,
-                "date_utc": first_upload[0].strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "title": first_upload[1].title,
-            }
-            if first_upload is not None
-            else None
-        ),
+        "first_nonprobe_upload": _upload_record(first_upload),
+        # Post-rejection-scoped variants (round-2 code-review Major): keyed on
+        # commit day > REJECTION_DATE_ISO — the documented conservative
+        # whole-day bound (see the constant's comment block).
+        "post_rejection_bound": f"commit day > {REJECTION_DATE_ISO} (conservative whole-day)",
+        "n_folder_push_post_rejection": n_folder_push_post,
+        "first_nonprobe_upload_post_rejection": _upload_record(first_upload_post),
         "per_day_upload_counts": dict(sorted(per_day.items())),
     }
     if era_cutover is not None:
@@ -801,8 +836,12 @@ def parse_overflow_pointers(api, prefixes: list[str], max_downloads: int) -> lis
     ``OVERFLOW_POINTER.json`` breadcrumbs for corroboration (#1141 §4.2
     item 4). Option-(b) migration destinations derive from the OVERFLOW PATHS
     themselves (both routing eras preserve ``path_in_repo``); pointers
-    corroborate only. A malformed pointer is recorded as an explicit
-    ``parse_error`` row — never silently skipped."""
+    corroborate only. A malformed pointer (invalid JSON, undecodable bytes, or
+    a valid-JSON NON-DICT payload) is recorded as an explicit ``parse_error``
+    row — never silently skipped, never a crash. The row's ``prefix`` key is
+    always the canonical-walk prefix; a payload carrying its own ``prefix``
+    key is relocated to ``payload_prefix`` (labeled, never silently
+    clobbered)."""
     from huggingface_hub import hf_hub_download
 
     from explore_persona_space.orchestrate.hub import retry_transient
@@ -818,9 +857,22 @@ def parse_overflow_pointers(api, prefixes: list[str], max_downloads: int) -> lis
         )
         try:
             payload = json.loads(Path(local).read_text(encoding="utf-8"))
-            parsed.append({"prefix": prefix, **payload})
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             parsed.append({"prefix": prefix, "parse_error": f"{type(exc).__name__}: {exc}"})
+            continue
+        if not isinstance(payload, dict):
+            parsed.append(
+                {
+                    "prefix": prefix,
+                    "parse_error": f"non-dict JSON payload: {type(payload).__name__}",
+                }
+            )
+            continue
+        row = dict(payload)
+        if "prefix" in row:
+            row["payload_prefix"] = row.pop("prefix")
+        row["prefix"] = prefix
+        parsed.append(row)
     return parsed
 
 
@@ -1644,11 +1696,13 @@ def render_softened_options(audit: dict) -> str:
     era = b["by_era"]
     floor = canon["enumeration"]["floor_anchor"]
 
-    first = cs.get("first_nonprobe_upload")
-    first_line = (
-        f'`{first["commit_id"]}` ({first["date_utc"]}) — "{first["title"]}"'
-        if first
-        else "NONE FOUND in the scan window"
+    def _upload_line(rec, none_label):
+        return f'`{rec["commit_id"]}` ({rec["date_utc"]}) — "{rec["title"]}"' if rec else none_label
+
+    first_line = _upload_line(cs.get("first_nonprobe_upload"), "NONE FOUND in the scan window")
+    first_post_line = _upload_line(
+        cs.get("first_nonprobe_upload_post_rejection"),
+        f"NONE FOUND after {REJECTION_DATE_ISO}",
     )
     if rec["branch"] == "accepting":
         status_line = (
@@ -1711,9 +1765,14 @@ upload_folder(folder_path=f"{{local}}/{C1_TREE}", path_in_repo="{C1_TREE}",
 - Commit scan since {cs["since"]}: **{cs["n_upload"]} non-probe upload commits**
   ({cs["upload_count_label"]}; n_other = {cs["n_other"]} beside it;
   n_probe = {cs["n_probe"]}, n_probe_cleanup = {cs["n_probe_cleanup"]}).
-- First non-probe upload commit in the window: {first_line}.
-- Decisive fact (i): **{cs["n_folder_push"]}** post-rejection commit(s) are FOLDER
-  pushes (title "{FOLDER_PUSH_TITLE}").
+- First upload commit in the scan window (context only — may predate the
+  rejection): {first_line}.
+- First post-rejection (day > {REJECTION_DATE_ISO}) non-probe upload commit:
+  {first_post_line}.
+- Decisive fact (i): **{cs["n_folder_push_post_rejection"]}** post-rejection
+  (day > {REJECTION_DATE_ISO}) commit(s) are FOLDER pushes (title
+  "{FOLDER_PUSH_TITLE}"); {cs["n_folder_push"]} across the full scan window
+  since {cs["since"]}.
 - Decisive fact (ii): net growth vs the {REJECTION_DATE_ISO} rejection anchor
   ({REJECTION_ANCHOR_FILES:,} files): **{cs["net_growth_vs_rejection_anchor"]:+,}** —
   count-increasing bulk pushes land.
