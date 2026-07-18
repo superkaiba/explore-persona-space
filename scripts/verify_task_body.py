@@ -8748,6 +8748,8 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # design. Trailing negative lookahead: a paren immediately followed by an
 # HF markdown link is Pattern B's paren-before-link shape — D declines
 # rather than extracting a second, differently-scoped claim.
+# Slashless sibling (check 40 ONLY, #1487): _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE
+# (defined in the check-40 block) — Pattern D itself is deliberately untouched.
 _BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
     r"[ \t]{0,2}"
@@ -9575,6 +9577,25 @@ _UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
 # RELATIVE sub-path claim; bound like the Pattern-D binder (same line,
 # bracket-free gap <= _SUBPATH_CLAIM_MAX_GAP).
 _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
+# Slashless sibling of _BACKTICK_SUBPATH_COUNT_PAREN_RE (#1487, the #1345
+# `analysis_tensors/turnstore` (10 files) footer shape): same paren/count/
+# noun/lookahead shape VERBATIM, but the token does NOT end in "/". A
+# slashless token has no intrinsic directory signature, so the gatherer
+# admits it ONLY under the strong G4 arms (own issue<N>_ prefix, or a
+# binding backtick parent anchor) — never the weak same-line HF cue — and
+# declines dotted-final-segment tokens (check 32's FILE territory).
+# Consumed ONLY by _gather_hf_unpinned_count_claims; check 30 Pattern D is
+# deliberately untouched (pinned-adjacent slashless claims stay out of
+# BOTH checks' scope — see the gatherer docstring).
+_BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE = re.compile(
+    r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{0,119}[A-Za-z0-9_\-])`"
+    r"[ \t]{0,2}"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
+    r"[^()]{0,200}\)"
+    r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
+    re.IGNORECASE,
+)
 # Per-body cap on unique main-revision count probes (same worst-case
 # per-probe arithmetic as _HF_COUNT_MAX_PROBES: ~22.5 s worst case each;
 # unpinned claims are rare, so 4 suffices — past-cap claims keep their
@@ -9596,20 +9617,33 @@ def _hf_hub_importable() -> bool:
 
 def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str | None]]:
     """Extract ``(claimed_count, noun, token, resolved_prefix_or_None)``
-    tuples for Pattern-D-shaped backtick ``dir/`` + count-paren claims whose
-    pinned-link binder returned None — the UNPINNED residue of check 30's
-    Pattern D — HF-context-gated (check 40, #1433; the #1345 footer shape).
+    tuples for backtick subpath + count-paren claims whose pinned-link
+    binder returned None — the UNPINNED residue of check 30's Pattern D
+    shape — HF-context-gated (check 40, #1433; the #1345 footer shape;
+    slashless tokens added by #1487).
 
     Gates, ALL required to fire (precision over recall; WARN-only):
 
-    - **G1 shape:** an ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused
-      VERBATIM from check 30 Pattern D (trailing-slash dir token,
-      count-opening paren, ``per <word>`` distributive decline,
-      not-Pattern-B trailing lookahead), over the fence-stripped body.
-    - **G2 residue:** ``_nearest_preceding_pinned_tree_link(...)`` is None.
-      Pinned-adjacent matches belong to check 30 Pattern D — the two sets
-      partition the D-shape matches by construction, so no claim is ever
-      double-WARNed.
+    - **G1 shape**, one of TWO regexes: (a) an
+      ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused VERBATIM from
+      check 30 Pattern D (trailing-slash dir token, count-opening paren,
+      ``per <word>`` distributive decline, not-Pattern-B trailing
+      lookahead); or (b) a slashless-sibling
+      ``_BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE`` match (#1487 — same
+      paren/count/noun/lookahead tail, token NOT ending in ``/``). Both run
+      over the fence-stripped body, merged in body order. Slashless-ONLY
+      declines (no directory signature to lean on): a DOTTED final segment
+      (a FILE claim — check 32's territory) and any dot-/empty path
+      segment (``.``/``..``/``//``/leading ``/`` — would join to a
+      nonexistent probe path).
+    - **G2 residue (BOTH shapes):**
+      ``_nearest_preceding_pinned_tree_link(...)`` is None. Pinned-adjacent
+      SLASHED matches belong to check 30 Pattern D — the two sets partition
+      the D-shape matches by construction, so no claim is ever
+      double-WARNed. A pinned-adjacent SLASHLESS claim stays out of BOTH
+      checks' scope (a stated bound, unchanged from pre-#1487: no false
+      missing-pin WARN when the pin is present; its count is simply not
+      verified).
     - **G3 not git/local:** the token's first path segment is nonempty
       (declines absolute ``/workspace/...`` forms) and not in
       ``_GIT_SIDE_ROOTS``.
@@ -9617,29 +9651,52 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
       layout), OR a preceding ``issue<N>_.../`` backtick parent anchor binds
       (same line, no ``[``/``]`` in the gap, gap <=
       ``_SUBPATH_CLAIM_MAX_GAP`` — the Pattern-D binder's constraints), OR
-      ``_HF_CUE_RE`` hits in the same-line
-      <=``_UNPINNED_CUE_WINDOW``-char look-back window.
+      — SLASHED shape ONLY — ``_HF_CUE_RE`` hits in the same-line
+      <=``_UNPINNED_CUE_WINDOW``-char look-back window. Slashless tokens
+      require one of the two STRONG arms (own prefix / parent anchor) and
+      never ride the weak cue (#1487 D2), so a slashless claim always
+      arrives with ``resolved`` non-None.
 
     ``resolved_prefix``: the token itself (slash-stripped) when
     issue-prefixed; ``<parent>/<token>`` when a parent anchor bound; else
-    None (the claim WARNs as missing-pin, unresolvable — ZERO probes).
+    None (the claim WARNs as missing-pin, unresolvable — ZERO probes;
+    reachable for the slashed shape only, per G4).
     Dedup on (count, noun-singular, token).
 
     Known recall sacrifices (each avoids a concrete false-positive class):
-    a dir token WITHOUT the trailing slash (#1345's own sibling claim
-    ``raw_completions/stories`` (16 files)); bare-number parens (``(26)``);
-    count-in-prose without a paren; a legacy underscore-form HF prefix
-    (``issue_568/...``) that neither the cue nor a parent anchor rescues.
+    a slashless token with NEITHER an ``issue<N>_`` prefix NOR a binding
+    parent anchor (cue-only slashless declines by design — no directory
+    signature); a slashless dotted-final-segment token (check 32's FILE
+    territory); bare-number parens (``(26)`` — RETAINED by #1487 D3, a
+    stated deviation from that task Goal's letter: the count-noun is the
+    strongest precision token in the whole check-30/40 family, and a bare
+    ``(N)`` beside a backtick token is routinely a row count / N= /
+    footnote — e.g. #1345's own ``analysis_tensors/preds_cache`` (8), the
+    declared residual miss); count-in-prose without a paren; a legacy
+    underscore-form HF prefix (``issue_568/...``) that neither the cue nor
+    a parent anchor rescues.
     """
     stripped = _strip_fenced_blocks(body)
     link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
     parent_matches = list(_BACKTICK_ISSUE_PARENT_RE.finditer(stripped))
     out: list[tuple[int, str, str, str | None]] = []
     seen: set[tuple[int, str, str]] = set()
-    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):
+    d_matches = [(m, False) for m in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped)]
+    sl_matches = [(m, True) for m in _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE.finditer(stripped)]
+    for dm, slashless in sorted(d_matches + sl_matches, key=lambda t: t[0].start()):
         if _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches) is not None:
-            continue  # G2: pinned-adjacent — check 30 Pattern D's territory
+            # G2 (both shapes): pinned-adjacent. Slashed = check 30 Pattern
+            # D's territory (partition preserved); slashless stays out of
+            # BOTH checks' scope (no false missing-pin WARN — the pin IS
+            # present; a stated bound, see the docstring).
+            continue
         token = dm.group("sub")
+        if slashless:
+            segs = token.split("/")
+            if "." in segs[-1]:
+                continue  # dotted FINAL segment = FILE claim (check 32's territory)
+            if any(s in ("", ".", "..") for s in segs):
+                continue  # dot-/empty segments would join to a nonexistent probe path
         first_seg = token.split("/", 1)[0]
         if not first_seg or first_seg in _GIT_SIDE_ROOTS:
             continue  # G3: git/local path, never an HF data-repo prefix
@@ -9665,6 +9722,8 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
                         p for p in (parent.group("parent").strip("/"), token.strip("/")) if p
                     )
         if resolved is None:
+            if slashless:
+                continue  # STRONG arms only for slashless — no HF-cue fallback (#1487 D2)
             window = stripped[max(0, dm.start() - _UNPINNED_CUE_WINDOW) : dm.start()]
             window = window.rsplit("\n", 1)[-1]  # same-line look-back only
             if _HF_CUE_RE.search(window) is None:
@@ -9688,7 +9747,11 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
     pinned tree link binding on the line (the nearest preceding pinned link
     is declined by the Pattern-D gap guards — intervening brackets + a
     >400-char gap), so checks 30/32 — both pin-adjacent by construction —
-    silently dropped the claim (#1433).
+    silently dropped the claim (#1433). #1487 extends the extraction to
+    SLASHLESS subpath tokens (#1345's ``analysis_tensors/turnstore`` (10
+    files) under an unlinked backtick ``issue<N>_.../`` parent prefix),
+    strong-arm-gated; a pinned-adjacent slashless claim stays out of BOTH
+    checks' scope (see ``_gather_hf_unpinned_count_claims``).
 
     Semantics:
 

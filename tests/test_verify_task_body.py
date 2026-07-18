@@ -3718,12 +3718,24 @@ _HF_40_NAME = "backtick HF-path count claims carry an adjacent pinned /tree link
 
 # The verbatim #1345 footer sentence (body.md L189, the incident shape):
 # `rejudge/` (2 files) extracts via the `issue1345_framing/...` parent
-# anchor + the "HF" cue; `raw_completions/stories` (16 files) is the
-# documented no-trailing-slash recall sacrifice.
+# anchor + the "HF" cue; `raw_completions/stories` (16 files) — no trailing
+# slash — was the documented recall sacrifice until #1487's slashless arm
+# and now extracts via the same parent anchor.
 _I1345_UNPINNED_LINE = (
     "Round data on HF under `issue1345_framing/assistant_named_story/` — "
     "`raw_completions/stories` (16 files) and `rejudge/` (2 files), verified live via "
     "scoped `list_repo_tree` (stories at data-repo revision `debcdda045`)."
+)
+
+# The TRUE verbatim pre-patch #1345 story-slot-ablation footer clause —
+# provenance: `git show 003078e125:tasks/followups_running/1345/body.md`
+# (the shape check 40 silently passed pre-#1487): a SLASHLESS subpath
+# token under the unlinked backtick parent prefix, plus a bare-paren `(8)`
+# sibling claim in the same clause (the declared #1487 D3 residual).
+_I1345_SLOT_ABLATION_LINE = (
+    "Round data on HF under `issue1345_framing/story_slot_ablation/` — verified live via "
+    "scoped listing: `analysis_tensors/turnstore` (10 files), `analysis_tensors/preds_cache` "
+    "(8)."
 )
 
 
@@ -3732,13 +3744,22 @@ def test_hf_unpinned_count_claim_warns_missing_pin_1345_shape(monkeypatch):
     #1345 footer sentence produces a check-40 WARN naming the missing pin,
     the `rejudge/` token, and the resolved 2-file count at `main`; overall
     ok STAYS True (WARN never blocks); the probe URL carries the `main`
-    revision (plan assumption 3, mechanically closed)."""
+    revision (plan assumption 3, mechanically closed). Since #1487 the
+    slashless `raw_completions/stories` sibling ALSO extracts — the stub
+    carries its 16 files so BOTH claims read count-consistent (exercising
+    the two-probe path)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
     calls: list = []
     entries = [
         {"path": "issue1345_framing", "type": "directory"},
         {"path": "issue1345_framing/assistant_named_story/rejudge/r0.json", "type": "file"},
         {"path": "issue1345_framing/assistant_named_story/rejudge/r1.json", "type": "file"},
+    ] + [
+        {
+            "path": f"issue1345_framing/assistant_named_story/raw_completions/stories/s{i}.json",
+            "type": "file",
+        }
+        for i in range(16)
     ]
     _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
     body = (
@@ -3752,8 +3773,10 @@ def test_hf_unpinned_count_claim_warns_missing_pin_1345_shape(monkeypatch):
     r = by_name[_HF_40_NAME]
     assert r.passed and r.is_warn
     assert "rejudge" in r.detail
+    assert "raw_completions/stories" in r.detail  # the #1487 slashless arm
     assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
-    assert "2 file(s)" in r.detail and "count consistent" in r.detail
+    assert "2 file(s)" in r.detail and "16 file(s)" in r.detail
+    assert r.detail.count("count consistent") == 2
     assert ok  # WARN never flips overall ok
     # The count probe resolves against the data repo at the moving ref
     # `main` — `_hf_tree_url` interpolates the branch name opaquely.
@@ -3898,17 +3921,24 @@ def test_hf_unpinned_probe_failure_keeps_missing_pin_warn(monkeypatch):
 def test_hf_unpinned_claim_extractor_shapes():
     """Pure extractor (no monkeypatch, no network): resolution arms +
     declines. An issue-prefixed token resolves to itself; the #1345 line
-    yields exactly ONE claim resolved via the parent-anchor join
-    (`raw_completions/stories` — no trailing slash — is the documented
-    recall sacrifice); a cue-only claim extracts unresolvable (None);
-    declines cover the paren-then-HF-link Pattern-B lookahead, fenced code
-    blocks, the distributive `per <word>` qualifier, and dot-segments."""
+    yields TWO claims resolved via the parent-anchor join — the slashless
+    `raw_completions/stories` (the pre-#1487 recall sacrifice, now covered)
+    in body order before `rejudge/`; a cue-only claim extracts unresolvable
+    (None); declines cover the paren-then-HF-link Pattern-B lookahead,
+    fenced code blocks, the distributive `per <word>` qualifier, and
+    dot-segments."""
     gather = verify_task_body._gather_hf_unpinned_count_claims
     assert gather("Uploaded `issue70_abc/raw/` (3 files).") == [
         (3, "files", "issue70_abc/raw/", "issue70_abc/raw")
     ]
     assert gather(_I1345_UNPINNED_LINE) == [
-        (2, "files", "rejudge/", "issue1345_framing/assistant_named_story/rejudge")
+        (
+            16,
+            "files",
+            "raw_completions/stories",
+            "issue1345_framing/assistant_named_story/raw_completions/stories",
+        ),
+        (2, "files", "rejudge/", "issue1345_framing/assistant_named_story/rejudge"),
     ]
     assert gather("Uploaded to the HF data repo: `mystery/` (3 files).") == [
         (3, "files", "mystery/", None)
@@ -3958,6 +3988,135 @@ def test_hf_unpinned_no_failing_checkresult_in_source():
                     assert not (isinstance(kw.value, ast.Constant) and kw.value.value is False), (
                         f"{fn.__name__} constructs CheckResult(passed=False)"
                     )
+
+
+def test_hf_unpinned_slashless_subpath_1345_turnstore_shape(monkeypatch):
+    """THE #1487 regression fixture + durability pin: the TRUE verbatim
+    pre-patch #1345 story-slot-ablation footer clause
+    (`_I1345_SLOT_ABLATION_LINE`) produces a check-40 WARN naming the
+    slashless `analysis_tensors/turnstore` token, the missing pin, and the
+    resolved 10-file count at `main`; overall ok STAYS True. EXACTLY ONE
+    claim extracts — the bare-paren `analysis_tensors/preds_cache` (8)
+    sibling in the SAME clause does NOT (the #1487 D3 declared residual:
+    bare-`(N)` counts stay excluded, a stated deviation from the task
+    Goal's letter)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    assert verify_task_body._gather_hf_unpinned_count_claims(_I1345_SLOT_ABLATION_LINE) == [
+        (
+            10,
+            "files",
+            "analysis_tensors/turnstore",
+            "issue1345_framing/story_slot_ablation/analysis_tensors/turnstore",
+        )
+    ]
+    entries = [
+        # The directory row satisfies check 23's needle probe for the
+        # `_hf_body` feedface link (the sibling 1345-shape test's shape).
+        {"path": "issue1345_framing", "type": "directory"},
+    ] + [
+        {
+            "path": f"issue1345_framing/story_slot_ablation/analysis_tensors/turnstore/t{i}.pt",
+            "type": "file",
+        }
+        for i in range(10)
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = (
+        _hf_body(f"{_I931_REPO}/tree/feedface/issue1345_framing")
+        + "\n"
+        + _I1345_SLOT_ABLATION_LINE
+        + "\n"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_HF_40_NAME]
+    assert r.passed and r.is_warn
+    assert "analysis_tensors/turnstore" in r.detail
+    assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
+    assert "10 file(s)" in r.detail and "count consistent" in r.detail
+    assert "preds_cache" not in r.detail  # D3: the bare-paren `(8)` claim never extracts
+    assert ok  # WARN never flips overall ok
+
+
+def test_hf_unpinned_slashless_extractor_gating():
+    """Pure extractor (no monkeypatch, no network), the #1487 slashless
+    arm: STRONG-arm-only G4 — an issue-prefixed slashless token resolves to
+    itself; a parent-anchored slashless token (incl. the riskiest
+    single-segment form) resolves via the join; a cue-only slashless token
+    DECLINES (no weak HF-cue arm, unlike the slashed shape); dotted final
+    segments (check 32's FILE territory), git-side first segments (G3),
+    and dot-segment paths decline."""
+    gather = verify_task_body._gather_hf_unpinned_count_claims
+    # (a) own issue<N>_ prefix — resolves to itself (already slash-free).
+    assert gather("Uploaded `issue70_abc/raw` (3 files).") == [
+        (3, "files", "issue70_abc/raw", "issue70_abc/raw")
+    ]
+    # (a') single-segment slashless under a binding parent anchor — the
+    # riskiest-FP form, deliberately pinned as EXTRACTING with the parent
+    # join (#1487 §13 amendment 2; the kill-criterion ≥1-`/` fallback would
+    # flip this to a decline and record the narrowing in the docstring).
+    assert gather("HF under `issue5_x/` — `turnstore` (10 files) verified.") == [
+        (10, "files", "turnstore", "issue5_x/turnstore")
+    ]
+    declines = [
+        # (b) cue-only slashless: the weak HF-cue arm never admits slashless.
+        "Uploaded to the HF data repo: `mystery` (3 files).",
+        # (c) dotted FINAL segment = a FILE claim (check 32's territory),
+        # even under a binding parent anchor.
+        "HF under `issue5_x/` — `analysis/pooled.pt` (3 files) verified.",
+        # (d) git-side first segment under an HF parent anchor on the same
+        # line — G3 applies to the slashless shape too.
+        "HF under `issue9_y/` — `eval_results/issue_9` (34 files) in git.",
+        # (e) dot-segment paths would join to a nonexistent probe path (the
+        # leading form is regex-declined; the mid form is gate-declined).
+        "HF under `issue5_x/` — `../x` (2 files) relative.",
+        "HF under `issue5_x/` — `issue5_x/../y` (2 files) relative.",
+    ]
+    for body in declines:
+        assert gather(body) == [], body
+
+
+def test_hf_unpinned_slashless_pinned_adjacent_declines():
+    """A PINNED-adjacent slashless claim stays out of BOTH checks' scope
+    (the stated #1487 bound): check 40's gatherer declines it (G2 — no
+    false missing-pin WARN when the pin IS present) AND check 30's gatherer
+    still requires the trailing slash (Pattern D byte-unchanged — the cheap
+    check-30-unchanged guard). Pure extractor split: zero probes (autouse
+    guard enforces)."""
+    line = (
+        f"Footer: [issue1112 data]({_I931_REPO}/tree/{_I931_SHA}/issue1112_x) — "
+        "`raw_completions` (7,165 files: shards)"
+    )
+    assert verify_task_body._gather_hf_unpinned_count_claims(line) == []
+    assert verify_task_body._gather_hf_count_claims(line) == []
+    r = verify_task_body.check_hf_unpinned_count_claims(line)
+    assert r.passed and not r.is_warn
+    assert "no unpinned" in r.detail
+
+
+def test_hf_unpinned_slashless_multi_item_list():
+    """#1487 design question 4 (§4.4): ONE parent anchor + a comma list of
+    claims (one slashed, two slashless) — every item binds to the anchor
+    within the 400-char bracket-free gap (earlier items' backticks/parens
+    ride in the gap; they are not decline characters); an intervening
+    markdown link before a later item breaks binding for it (bracket rule —
+    conservative decline; slashless has no cue fallback to fall through
+    to)."""
+    gather = verify_task_body._gather_hf_unpinned_count_claims
+    line = "Data under `issue7_p/` — `a/` (1 file), `b/c` (2 files), `d` (3 files)."
+    assert gather(line) == [
+        (1, "file", "a/", "issue7_p/a"),
+        (2, "files", "b/c", "issue7_p/b/c"),
+        (3, "files", "d", "issue7_p/d"),
+    ]
+    line2 = (
+        "Data under `issue7_p/` — `a/` (1 file), `b/c` (2 files), "
+        "[meta](https://example.com/x) and `d` (3 files)."
+    )
+    assert gather(line2) == [
+        (1, "file", "a/", "issue7_p/a"),
+        (2, "files", "b/c", "issue7_p/b/c"),
+    ]
 
 
 # ─── `_hf_tree_pages`: the shared bounded pagination generator (#1186) ─────
