@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1509,
+  "highest_id": 1510,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3979,6 +3979,13 @@
       "path": "tasks/on_hold/151",
       "status": "on_hold",
       "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling \u2014 not EM-specific"
+    },
+    "1510": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1510",
+      "status": "proposed",
+      "title": "workflow-fix: check 31 FAILs prose-named unembedded per-unit companions sans exemption"
     },
     "152": {
       "has_clean_result": false,
