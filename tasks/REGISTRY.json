@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1495,
+  "highest_id": 1496,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3860,6 +3860,13 @@
       "path": "tasks/proposed/1495",
       "status": "proposed",
       "title": "daily-fix: bracket CLAUDE.md pgrep ownership exemplar"
+    },
+    "1496": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1496",
+      "status": "proposed",
+      "title": "daily-fix: 9c selector rules-to-prose-pin-test mapping"
     },
     "15": {
       "has_clean_result": false,
