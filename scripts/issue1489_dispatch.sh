@@ -40,8 +40,17 @@ COND="$OUT/conditions"
 SMOKE_COND="$SMOKE_OUT/conditions"
 
 sentinel() {  # sentinel <phase> <note>
+  # poll_pipeline sentinel contract (pod-side-reporting.md): every payload
+  # carries _SENTINEL_REQUIRED_KEYS (sentinel_schema_version/kind/version) —
+  # a bare {phase, note} JSON is skipped WITHOUT rename and warn-spams every
+  # tick. Terminal phase "done" writes kind epm:results (epm:smoke-result on
+  # a smoke-only run; #1095 re-derives colliding versions drain-side) and
+  # embeds the P3 reproducibility card when present; every other phase
+  # (incl. "failed") is an epoch-stamped epm:progress sentinel. One-way
+  # write-once: fresh filename per write, atomic tmp+replace.
   uv run python - "$1" "$2" <<'PY'
-import datetime, json, os, sys
+import datetime, json, os, subprocess, sys, time
+
 phase, note = sys.argv[1], sys.argv[2]
 d = "/workspace/logs"
 try:
@@ -50,15 +59,48 @@ try:
 except OSError:
     d = os.path.join(os.environ.get("REPO_ROOT", "."), "data/issue_1489/logs")
     os.makedirs(d, exist_ok=True)
-payload = {
+terminal = phase == "done"
+smoke = "smoke" in note.lower()
+kind = ("epm:smoke-result" if smoke else "epm:results") if terminal else "epm:progress"
+try:
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=False,
+        cwd=os.environ.get("REPO_ROOT", "."),
+    ).stdout.strip()
+except OSError:
+    sha = ""
+body = {
     "issue": 1489,
     "phase": phase,
     "note": note,
+    "final_commit_sha": sha,
     "timestamp": datetime.datetime.utcnow().isoformat(),
 }
-with open(os.path.join(d, "issue-1489-results.json"), "w") as f:
+card_path = os.path.join(
+    os.environ.get("REPO_ROOT", "."), "data/issue_1489/distill/reproducibility_card.json"
+)
+if terminal and os.path.exists(card_path):
+    try:
+        body["reproducibility_card"] = json.load(open(card_path))
+    except (OSError, json.JSONDecodeError) as exc:
+        body["reproducibility_card_error"] = f"{type(exc).__name__}: {exc}"
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": kind,
+    "version": 1,
+    "task_id": 1489,
+    "by": "issue1489_dispatch",
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    "note": json.dumps(body, default=str),
+}
+slug = kind.replace(":", "_")
+path = os.path.join(d, f"issue-1489-{slug}-{int(time.time() * 1000)}.json")
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
     json.dump(payload, f, indent=2)
-print(f"[sentinel] {phase}: {note}", flush=True)
+os.replace(tmp, path)
+print(f"[sentinel] {phase}: {note} -> {path}", flush=True)
 PY
 }
 

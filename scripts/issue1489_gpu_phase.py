@@ -842,27 +842,47 @@ def _git_sha() -> str:
 
 
 def _write_sentinel(args: argparse.Namespace, phase: str, note: str = "") -> None:
-    """Pod-side sentinel for poll_pipeline.py (no task.py shellouts ever)."""
+    """Pod-side progress sentinel for poll_pipeline.py (no task.py shellouts ever).
+
+    Conforms to ``poll_pipeline._SENTINEL_REQUIRED_KEYS`` (sentinel_schema_version
+    / kind / version) — a bare ``{phase, note}`` payload is skipped WITHOUT rename
+    and warn-spams every poller tick. One-way write-once channel: each write gets
+    a fresh epoch-stamped filename (never rewritten in place; the drain renames
+    to ``.processed``). The dispatcher's terminal ``epm:results`` sentinel is
+    owned by issue1489_dispatch.sh, not this helper.
+    """
     sentinel_dir = Path("/workspace/logs")
     try:
         sentinel_dir.mkdir(parents=True, exist_ok=True)
+        (sentinel_dir / ".probe").write_text("")
     except OSError:
         sentinel_dir = Path(args.out) / "logs"
         sentinel_dir.mkdir(parents=True, exist_ok=True)
-    payload = {
+    body = {
         "issue": 1489,
         "phase": phase,
         "out": args.out,
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "note": note,
     }
-    path = sentinel_dir / "issue-1489-gpu-phase.json"
+    payload = {
+        "sentinel_schema_version": 1,
+        "kind": "epm:progress",
+        "version": 1,
+        "task_id": 1489,
+        "by": "issue1489_gpu_phase",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "note": json.dumps(body, default=str),
+    }
+    path = sentinel_dir / f"issue-1489-epm_progress-{int(time.time() * 1000)}.json"
     try:
-        path.write_text(json.dumps(payload, indent=2))
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, indent=2))
+        os.replace(tmp, path)
     except OSError:
         fallback = Path(args.out) / "logs"
         fallback.mkdir(parents=True, exist_ok=True)
-        path = fallback / "issue-1489-gpu-phase.json"
+        path = fallback / path.name
         path.write_text(json.dumps(payload, indent=2))
     logger.info("[sentinel] wrote %s (phase=%s)", path, phase)
 
@@ -1009,10 +1029,12 @@ def _upload_distill_checkpoints(args: argparse.Namespace) -> None:
     from explore_persona_space.orchestrate import hub
 
     out_dir = Path(args.out)
+    cards: dict[str, list[str]] = {}
     for run_out in sorted((out_dir / "distill").glob("*")):
         if not (run_out / "train_meta.json").exists():
             continue
         slug = run_out.name
+        adapter_paths: list[str] = []
         for k, ckpt in enumerate(_checkpoint_dirs(run_out), start=1):
             url = hub._upload(
                 ckpt,
@@ -1022,7 +1044,37 @@ def _upload_distill_checkpoints(args: argparse.Namespace) -> None:
             )
             if not url:
                 raise RuntimeError(f"checkpoint upload returned no path: {slug} ckpt{k}")
+            adapter_paths.append(f"issue1489_distill/{slug}/ckpt{k}")
+        cards[slug] = adapter_paths
         logger.info("[distill] uploaded %s checkpoint ladder", slug)
+    _write_reproducibility_card(out_dir, cards)
+
+
+def _write_reproducibility_card(out_dir: Path, cards: dict[str, list[str]]) -> None:
+    """Persist the epm:results reproducibility_card (pod-side-reporting.md).
+
+    The dispatcher's terminal results sentinel embeds this file so the
+    upload-verifier resolves adapter + WandB rows mechanically. wandb_entity is
+    read from the live SDK (never hand-typed; the #597 stale-literal trap).
+    """
+    entity = ""
+    try:
+        import wandb
+
+        entity = wandb.Api().default_entity or ""
+    except Exception as exc:  # noqa: BLE001 — card stays usable without entity
+        logger.warning("[card] wandb entity unresolved (%s); field omitted", exc)
+    card = {
+        "hf_model_repo": HF_MODEL_REPO,
+        "adapter_paths": sorted(p for paths in cards.values() for p in paths),
+        "wandb_project": os.environ.get("WANDB_PROJECT", "issue1489"),
+        "wandb_run_names": [f"issue1489_distill_{slug}" for slug in sorted(cards)],
+        **({"wandb_entity": entity} if entity else {}),
+    }
+    path = out_dir / "distill" / "reproducibility_card.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(card, indent=2))
+    logger.info("[card] wrote %s (%d adapters)", path, len(card["adapter_paths"]))
 
 
 def phase_dose_probes(args: argparse.Namespace, manifest: list[dict]) -> None:
@@ -1282,6 +1334,9 @@ def build_argparser() -> argparse.ArgumentParser:
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # One WandB project for every issue-1489 training phase (distill + ft) so the
+    # reproducibility card's wandb_project matches the live runs (#608 convention).
+    os.environ.setdefault("WANDB_PROJECT", "issue1489")
     args = build_argparser().parse_args()
     if args.phase == "verify_imports":
         verify_imports()

@@ -664,6 +664,13 @@ def _mlp_companion(args, summaries_dir: Path, layer: int, arm: str) -> dict:
         n = n_common
         idx = rng.choice(X.shape[0], size=n, replace=False)
         Xs, Ysub = X[idx].astype(np.float64), Y[idx].astype(np.float64)
+        # Input-PCA to rank<=n is LOSSLESS here (pool rows span <=n dims; ridge
+        # predictions are span-invariant by the representer theorem and the MLP
+        # first layer absorbs the rotation) and cuts the fold-batched MLP weight
+        # ensemble from d_in=3584 to <=n dims (#722 input-PCA lineage; the ambient
+        # ensemble at d_in=3584 hit 23.7 GB RSS -> earlyoom on 2026-07-17).
+        mu_x, v_x = _pca_basis(Xs, min(n, Xs.shape[1]))
+        Xs = (Xs - mu_x) @ v_x
         mu, v = _pca_basis(Ysub, PCA_K)
         Yk = ((Ysub - mu) @ v).astype(np.float32)
         row_sets[name] = (Xs.astype(np.float32), Yk)
