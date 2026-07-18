@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1485,
+  "highest_id": 1486,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3780,6 +3780,13 @@
       "path": "tasks/planning/1485",
       "status": "planning",
       "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
+    },
+    "1486": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/on_hold/1486",
+      "status": "on_hold",
+      "title": "ruff residual burn-down: ~33 errors + 17 format-dirty files (post-#1023 scoping)"
     },
     "149": {
       "has_clean_result": false,
