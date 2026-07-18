@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "git_commit": "46ca73b3b0be33a65594315b77a8583305100199",
+    "timestamp": "2026-07-18T00:56:36Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "code_sha": "46ca73b3b0be33a65594315b77a8583305100199",
+  "gen_seed": 44,
+  "headline_layer": 19,
+  "models_compared": [
+    "base"
+  ],
+  "reference": {
+    "path": "eval_results/issue_1335/ladder_summary.json",
+    "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "note": "committed seed-42 run (GEN_SEED 42, the #825/#1310 convention)"
+  },
+  "per_model": {
+    "base": {
+      "kept_personas": [
+        "Wren",
+        "HELIOS",
+        "Dana",
+        "Vex"
+      ],
+      "fiction_yield": {
+        "Wren": {
+          "n": 1591,
+          "kept": true,
+          "floor": 1060
+        },
+        "HELIOS": {
+          "n": 1449,
+          "kept": true,
+          "floor": 1060
+        },
+        "Dana": {
+          "n": 1561,
+          "kept": true,
+          "floor": 1060
+        },
+        "Vex": {
+          "n": 1572,
+          "kept": true,
+          "floor": 1060
+        }
+      },
+      "collapse_audit": {
+        "rollouts": "data/issue_1335_seed44/generation/r7_endpoint/base_gen.jsonl",
+        "dialogue_min_tokens": 4,
+        "n_lines": 7200,
+        "under_floor_lines": 1027,
+        "under_floor_pct": 14.26,
+        "under_floor_per_slot": {
+          "slot1": 29,
+          "slot2": 735,
+          "slot3": 120,
+          "slot4": 1,
+          "slot5": 142
+        },
+        "under_floor_per_persona": {
+          "Dana": 239,
+          "HELIOS": 351,
+          "Vex": 228,
+          "Wren": 209
+        },
+        "slot4_lines": 1200,
+        "slot4_exact_agree": 0,
+        "slot4_exact_agree_per_persona": {}
+      },
+      "rung_values_matched_ctx": {
+        "r1_qa_oneline": 0.35278671931968486,
+        "r3_persona": 0.389995134173095,
+        "r4_fictionframe": 0.22749670921057943,
+        "r7_endpoint_mean": 0.38191456365708953,
+        "r7_endpoint_per_persona": {
+          "Wren": 0.43474977561902756,
+          "HELIOS": 0.3330399195979299,
+          "Dana": 0.3961764712082661,
+          "Vex": 0.3636920882031348
+        }
+      },
+      "gap_G": {
+        "value": -0.029127844337404674,
+        "ci_lo": -0.047153970902875555,
+        "ci_hi": -0.008207035721450505,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "framing": {
+        "value": 0.16249842496251557,
+        "ci_lo": 0.14065616299919873,
+        "ci_hi": 0.18209099397819908,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "seed42_reference": {
+        "gap_G": {
+          "value": 0.0048106715477469475,
+          "ci_lo": -0.012311987711779045,
+          "ci_hi": 0.021058659620929978,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.1310784678848242,
+          "ci_lo": 0.11166877000138223,
+          "ci_hi": 0.15011659117120885,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "cross_seed": {
+        "gap_G": {
+          "value": -0.03393851588515162,
+          "ci_lo": -0.05958253986458084,
+          "ci_hi": -0.008294491905722397,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": false,
+          "ref_in_new_ci": false
+        },
+        "framing": {
+          "value": 0.03141995707769138,
+          "ci_lo": 0.0031574369717043034,
+          "ci_hi": 0.05968247718367846,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": false,
+          "ref_in_new_ci": false
+        }
+      },
+      "reference_2": {
+        "gap_G": {
+          "value": 0.09905166025810402,
+          "ci_lo": 0.08169013130788398,
+          "ci_hi": 0.11519173685759869,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.1568219661257355,
+          "ci_lo": 0.1384827743027181,
+          "ci_hi": 0.17485296800489392,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "cross_seed_2": {
+        "gap_G": {
+          "value": -0.1281795045955087,
+          "ci_lo": -0.15386618078392786,
+          "ci_hi": -0.10249282840708954,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": false,
+          "ref_in_new_ci": false
+        },
+        "framing": {
+          "value": 0.005676458836780057,
+          "ci_lo": -0.021889989103569988,
+          "ci_hi": 0.0332429067771301,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": true,
+          "ref_in_new_ci": true
+        }
+      }
+    }
+  },
+  "smoke": false,
+  "scope_note": "declared model-subset round: only models_compared were run this round (absent models are absent-because-not-run, not missing data)",
+  "reference_2": {
+    "path": "eval_results/issue_1335/seed43-gap-rungs/seed_comparison.json",
+    "code_sha": "4fc950e83e265522d34ef981d9f43b441ceb6a39",
+    "gen_seed": 43,
+    "note": "second committed reference (dual-reference seed compare)"
+  }
+}

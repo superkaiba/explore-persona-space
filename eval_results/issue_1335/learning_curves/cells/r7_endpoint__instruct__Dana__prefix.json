@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "git_commit": "54302a73db2254fee318ac92ec9d442af8b489d3",
+    "timestamp": "2026-07-18T04:12:56Z",
+    "seed": 1335,
+    "n": 1739,
+    "script": "scripts/issue1335_learning_curves.py",
+    "issue": 1335,
+    "analysis": "learning_curves"
+  },
+  "cell_id": "r7_endpoint__instruct__Dana__prefix",
+  "rung": "r7_endpoint",
+  "rung_label": "fiction endpoint",
+  "family": "fiction",
+  "model": "instruct",
+  "arm": "prefix",
+  "arm_x_key": "x_prefixmean",
+  "arm_note": "prefix arm",
+  "persona": "Dana",
+  "headline_layer": 19,
+  "generation_seed": 42,
+  "lambda_selection": "inner-group-cv",
+  "n_total": 1739,
+  "test_n": 341,
+  "test_group_count": 60,
+  "pool_n": 1398,
+  "n_test_folds": 5,
+  "test_split_seed": 1335,
+  "grid": [
+    200,
+    400,
+    800,
+    1200,
+    1600
+  ],
+  "effective_n_train": [
+    200,
+    400,
+    800,
+    1200,
+    1398
+  ],
+  "n_draws": 5,
+  "points": [
+    {
+      "n_train": 200,
+      "draw": 0,
+      "realized_n": 200,
+      "r2": 0.13286540439534644,
+      "lambda": 10000.0,
+      "subsample_seed": 1355000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 1,
+      "realized_n": 200,
+      "r2": 0.14230601602439807,
+      "lambda": 10000.0,
+      "subsample_seed": 1355001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 2,
+      "realized_n": 200,
+      "r2": 0.14372438776086993,
+      "lambda": 10000.0,
+      "subsample_seed": 1355002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 3,
+      "realized_n": 200,
+      "r2": 0.1440582109282147,
+      "lambda": 10000.0,
+      "subsample_seed": 1355003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 200,
+      "draw": 4,
+      "realized_n": 200,
+      "r2": 0.11895396223661181,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1355004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 0,
+      "realized_n": 400,
+      "r2": 0.18229863221814935,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 1,
+      "realized_n": 400,
+      "r2": 0.17892985853548227,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 2,
+      "realized_n": 400,
+      "r2": 0.18541987595797293,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 3,
+      "realized_n": 400,
+      "r2": 0.19074189621030568,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 400,
+      "draw": 4,
+      "realized_n": 400,
+      "r2": 0.19910312746456682,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1375004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 0,
+      "realized_n": 800,
+      "r2": 0.23216043344442872,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 1,
+      "realized_n": 800,
+      "r2": 0.2306501836996342,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 2,
+      "realized_n": 800,
+      "r2": 0.22599799029071443,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 3,
+      "realized_n": 800,
+      "r2": 0.222348738685608,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 800,
+      "draw": 4,
+      "realized_n": 800,
+      "r2": 0.22694937017184014,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1415004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 0,
+      "realized_n": 1200,
+      "r2": 0.2419216651051077,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455000,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 1,
+      "realized_n": 1200,
+      "r2": 0.24530978639613987,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455001,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 2,
+      "realized_n": 1200,
+      "r2": 0.24467267660400738,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455002,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 3,
+      "realized_n": 1200,
+      "r2": 0.24560085686382493,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455003,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1200,
+      "draw": 4,
+      "realized_n": 1200,
+      "r2": 0.24175276623912934,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1455004,
+      "is_full_pool": false
+    },
+    {
+      "n_train": 1398,
+      "draw": 0,
+      "realized_n": 1398,
+      "r2": 0.24750095512035042,
+      "lambda": 3162.2776601683795,
+      "subsample_seed": 1474800,
+      "is_full_pool": true
+    }
+  ]
+}

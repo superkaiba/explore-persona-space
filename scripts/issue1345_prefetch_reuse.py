@@ -63,12 +63,14 @@ STAGE_MAX_WORKERS = 6  # gotchas.md: <=6-thread hf_hub_download pool on the data
 STALE_STAGE_MAX_AGE_S = 3600  # leftover staging dirs older than this are reaped
 
 
-def _list_reuse_files(smoke: bool) -> list[tuple[str, int]]:
+def _list_reuse_files(smoke: bool, stems: tuple[str, ...] = c.REUSE_STEMS) -> list[tuple[str, int]]:
     """(path_in_repo, size) for every reuse file at the pinned revision.
 
-    Scoped listing + filter to the four r1/r2 stems (the story stems under the
-    same prefix are NOT reused — the story corpus is regenerated). Production
-    asserts the full 80-file set; smoke keeps shard000 (+ sidecar) per stem.
+    Scoped listing + filter to the requested r1/r2 ``stems`` (default: all
+    four; the slot-ablation round stages instruct_chat_s ONLY — plan v10 §4,
+    ~23 GB not ~87 GB; the story stems under the same prefix are NOT reused —
+    the story corpus is regenerated/reused separately). Production asserts
+    the full 20-files-per-stem set; smoke keeps shard000 (+ sidecar) per stem.
     """
     from huggingface_hub import HfApi
 
@@ -79,7 +81,7 @@ def _list_reuse_files(smoke: bool) -> list[tuple[str, int]]:
         # Materialize INSIDE the retry — list_repo_tree is a LAZY generator and
         # raises at iteration time (gotchas.md, #779).
         lambda: list(
-            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient with in-retry materialization (lazy generator; #779)
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient, in-retry list() (#779)
             api.list_repo_tree(
                 c.HF_DATA_REPO,
                 path_in_repo=c.REUSE_TENSOR_PREFIX,
@@ -91,10 +93,10 @@ def _list_reuse_files(smoke: bool) -> list[tuple[str, int]]:
         what=f"list_repo_tree({c.REUSE_TENSOR_PREFIX}@{c.REUSE_REV})",
     )
     files: list[tuple[str, int]] = []
-    per_stem: dict[str, int] = dict.fromkeys(c.REUSE_STEMS, 0)
+    per_stem: dict[str, int] = dict.fromkeys(stems, 0)
     for e in entries:
         base = e.path.rsplit("/", 1)[-1]
-        for stem in c.REUSE_STEMS:
+        for stem in stems:
             if base.startswith(f"{stem}_shard") and (
                 base.endswith(".pt") or base.endswith(".json")
             ):
@@ -166,14 +168,14 @@ def _stage_files(files: list[tuple[str, int]], dest_dir: Path) -> dict:
     return counts
 
 
-def _verify_stem_keys(turnstore_dir: Path) -> list[str]:
+def _verify_stem_keys(turnstore_dir: Path, stems: tuple[str, ...] = c.REUSE_STEMS) -> list[str]:
     """Run the mechanized realized-keys probe per staged stem (plan §10 c30).
 
     Shells the canonical CLI so the recorded PASS lines match the card's
     command shape; exit!=0 fails the phase loud (missing keys / unreadable).
     """
     lines = []
-    for stem in c.REUSE_STEMS:
+    for stem in stems:
         shard0 = turnstore_dir / f"{stem}_shard000.pt"
         assert shard0.exists(), f"staged shard missing for keys probe: {shard0}"
         proc = subprocess.run(
@@ -204,14 +206,24 @@ def main() -> None:
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--matched-dir", type=Path, default=c.MATCHED_DIR)
     ap.add_argument("--smoke", action="store_true", help="shard000 (+ sidecar) per stem only")
+    ap.add_argument(
+        "--stems",
+        default=",".join(c.REUSE_STEMS),
+        help="comma subset of the reuse stems to stage (default: all four; the "
+        "slot-ablation round passes instruct_chat_s only — plan v10 §4)",
+    )
     args = ap.parse_args()
 
+    stems = tuple(s for s in args.stems.split(",") if s)
+    assert stems and set(stems) <= set(c.REUSE_STEMS), (
+        f"unknown --stems entries: {sorted(set(stems) - set(c.REUSE_STEMS))}"
+    )
     t0 = time.time()
-    files = _list_reuse_files(args.smoke)
+    files = _list_reuse_files(args.smoke, stems)
     total_gb = sum(s for _, s in files) / 1e9
     print(
         f"[prefetch_reuse] {len(files)} files / {total_gb:.2f} GB across "
-        f"{len(c.REUSE_STEMS)} stems @ {c.REUSE_REV[:10]} (smoke={args.smoke})",
+        f"{len(stems)} stem(s) @ {c.REUSE_REV[:10]} (smoke={args.smoke})",
         flush=True,
     )
     counts = _stage_files(files, args.turnstore_dir)
@@ -242,13 +254,14 @@ def main() -> None:
         shutil.rmtree(stage_dir, ignore_errors=True)
     print(f"[prefetch_reuse] matched-n allowlist -> {parent_matched}", flush=True)
 
-    keys_lines = _verify_stem_keys(args.turnstore_dir)
+    keys_lines = _verify_stem_keys(args.turnstore_dir, stems)
 
     manifest = {
         "metadata": c.metadata(0, len(files), "scripts/issue1345_prefetch_reuse.py"),
         "reuse_revision": c.REUSE_REV,
         "reuse_prefix": c.REUSE_TENSOR_PREFIX,
         "matched_path": c.REUSE_MATCHED_PATH,
+        "stems": list(stems),
         "smoke": bool(args.smoke),
         "n_files": len(files),
         "total_gb_listed": total_gb,

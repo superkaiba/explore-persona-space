@@ -1,0 +1,158 @@
+{
+  "commit": "3a6ae30312",
+  "created": "2026-07-18T00:53:15Z",
+  "figsize": [
+    13.2,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Monitoring correlation r (with judge score)": 0.7592700278999972,
+      "error": 0.058049273662565515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Monitoring correlation r (with judge score)": 0.7741656872855981,
+      "error": 0.05460407278044854,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "prefix-end\n(pre-query)",
+      "Monitoring correlation r (with judge score)": 0.665071002058869,
+      "error": 0.09126198095525917,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "averaged-context\n(48 q)",
+      "Monitoring correlation r (with judge score)": 0.03683248536964268,
+      "error": 0.1521552576704837,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Monitoring correlation r (with judge score)": -0.7142103097022202,
+      "error": 0.07404504990101712,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Monitoring correlation r (with judge score)": -0.704932509274403,
+      "error": 0.08035643797094405,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Monitoring correlation r (with judge score)": 0.8878730633333515,
+      "error": 0.03625716611513419,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Monitoring correlation r (with judge score)": 0.8866189910617008,
+      "error": 0.03386896058051109,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "prefix-end\n(pre-query)",
+      "Monitoring correlation r (with judge score)": -0.4300467129306446,
+      "error": 0.15950283105412597,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "averaged-context\n(48 q)",
+      "Monitoring correlation r (with judge score)": -0.21372741000367013,
+      "error": 0.16380512536780656,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.26,
+      "Monitoring correlation r (with judge score)": 0.8479041335885555,
+      "error": 0.04804348144305476,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.26,
+      "Monitoring correlation r (with judge score)": 0.8502735756349422,
+      "error": 0.04140842353190077,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy \u2014 three readout constructions",
+        "ylabel": "Monitoring correlation r (with judge score)",
+        "legend_labels": [
+          "supervised ridge",
+          "raw r_B projection",
+          "map-mediated"
+        ],
+        "xticklabels": [
+          "prefix-end\n(pre-query)",
+          "averaged-context\n(48 q)"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Hallucination \u2014 three readout constructions",
+        "ylabel": "Monitoring correlation r (with judge score)",
+        "legend_labels": [
+          "supervised ridge",
+          "raw r_B projection",
+          "map-mediated"
+        ],
+        "xticklabels": [
+          "prefix-end\n(pre-query)",
+          "averaged-context\n(48 q)"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "supervised ridge",
+      "raw r_B projection",
+      "map-mediated"
+    ]
+  }
+}

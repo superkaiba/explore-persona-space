@@ -1,0 +1,546 @@
+{
+  "commit": "4ad9618bc6",
+  "created": "2026-07-17T22:27:10Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.014371119237050044,
+      "error": 0.024206844480235353,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.025087135197114682,
+      "error": 0.02822948498366462,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.06817569110604424,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.0021079900457339207,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11462106922600457,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.10967062048163367,
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.029684234815464117,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.03265922077705585,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0920898580214341,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.04455402457652502,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.009530623093127022,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.010902098741269795,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0783123487820899,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.029730823283558916,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.054555800764411536,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.06446785350080275,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.027366274987709244,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.013727917805030354,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11271578847355111,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.02288924065255371,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06863875803135427,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.01895894125826414,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01848508127407711,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.05984819966066768,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0968453415519292,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.06838407242814126,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01844118907163883,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.13691230914326702,
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09211716748915173,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.06757662725492153,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0688201996761364,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.016108249903732275,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10570420873519568,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.10849671915335879,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10558915400579781,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.08018970754365018,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0029893567477722316,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.01421317423516777,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0042334514429035325,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.028039543658108346,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09259563009244598,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.07392509041917716,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.022731479400179846,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.07634872306474616,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.071349695183651,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.04621488094678583,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09102924148233178,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.11749521318063916,
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.011942778075073573,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.08753350885323707,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07973076484478636,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.03895621230045021,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0015927880018173496,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.062432770797645754,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.058201357146004995,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.14966790559390108,
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.060903937957159454,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.07059066445331208,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08049174668107795,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.026031531056883717,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09172673529517572,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.07926950893311135,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06018752353334622,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.03566794746087265,
+      "label": "mean=0.014\n95%CI\u00b10.024",
+      "series": "LMSYS pool-only map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8852271743855389,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.00018817265034554165,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0681238912504665,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.09848417516279862,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9189196793899284,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.043476356021986406,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9148610592336819,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.04987460208019323,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0699341050374214,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.018898497270342207,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0808752572524523,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.0456307620680364,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1060113960480917,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.04780583410353345,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1191546621040411,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.01082064801286342,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.061772754874845,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.005385117973734532,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0718033438435188,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.004162770511160985,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0529465649525562,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.0766203878696986,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9561907024981702,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.07014517796064701,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0820455721761797,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.16405098767655868,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9118892479586699,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.1383485338162146,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9945755531966441,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.009872484531753933,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9145813621195024,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.10500580692615313,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9113076410972621,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.15045887099494082,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9343118919362465,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.028343249397581816,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0801269370337834,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.06294304766139514,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.890552990774147,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.12719775348016582,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0538265952046408,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.052180316606772026,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0382830187758538,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.03510929835443033,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8927506343915393,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.10539145984411524,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0948346952087595,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.10947624601464667,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9058870358432742,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.0092842290189048,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.092960782332077,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.07442055634132061,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9725569057097156,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.1769938897427542,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0869876924409476,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.04737033197990703,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1082300673979184,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.014407647453080985,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9258102654827329,
+      "per-pair d = drop_ext_plain \u2212 drop_own": -0.10618986951527942,
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1016062671630749,
+      "per-pair d = drop_ext_plain \u2212 drop_own": 0.064768672165195,
+      "label": "mean=0.025\n95%CI\u00b10.028",
+      "series": "LMSYS + 440 injected map (31 pairs)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Underlying 31 china per-pair d values (raw data behind the mean contrast)",
+        "ylabel": "per-pair d = drop_ext_plain \u2212 drop_own",
+        "legend_labels": [
+          "LMSYS pool-only map (31 pairs)",
+          "LMSYS + 440 injected map (31 pairs)"
+        ],
+        "annotations": [
+          "mean=0.014\n95%CI\u00b10.024",
+          "mean=0.025\n95%CI\u00b10.028"
+        ],
+        "xticklabels": [
+          "pool-only",
+          "augmented (+440)"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS pool-only map (31 pairs)",
+      "LMSYS + 440 injected map (31 pairs)"
+    ]
+  }
+}

@@ -1,0 +1,449 @@
+{
+  "commit": "4eecdb789a",
+  "created": "2026-07-17T23:47:05Z",
+  "figsize": [
+    7.5,
+    4.6
+  ],
+  "points": [
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.030278814322177584,
+      "error": 0.005216111656786565,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.046964694493202036,
+      "error": 0.00476220911786588,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.07092837074059555,
+      "error": 0.004443132572980346,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08058998350387431,
+      "error": 0.0029116666517562395,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09825267474624041,
+      "error": 0.0027066138119930805,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10797913202913696,
+      "error": 0.0007885957687605305,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.11275113996762014,
+      "error": 0.0,
+      "series": "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.030157088394659193,
+      "error": 0.005216111656786565,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.046529253898258745,
+      "error": 0.00476220911786588,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.06429392297970467,
+      "error": 0.004443132572980346,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08041374321123831,
+      "error": 0.0029116666517562395,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09467124520357093,
+      "error": 0.0027066138119930805,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10108110074628834,
+      "error": 0.0007885957687605305,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10516946555854638,
+      "error": 0.0,
+      "series": "ext (Claude-written) \u2014 LMSYS subsample",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Training-pool size N (contexts)": 2357.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.15646361800021713,
+      "series": "own, +440 domain-matched injected",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Training-pool size N (contexts)": 2357.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.13573886090089088,
+      "series": "ext, +440 domain-matched injected",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.11275113996762014,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10516946555854638,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.030278814322177584,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.046964694493202036,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.07092837074059555,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08058998350387431,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09825267474624041,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10797913202913696,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.11275113996762014,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.022723588682135074,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.03919526603218808,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.06515133259302913,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.07597639430752544,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09520341363790641,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10680191814578752,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.11275113996762014,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.037834039962220095,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.054734122954215994,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.07670540888816196,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08520357270022318,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10130193585457442,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10915634591248641,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.11275113996762014,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.030157088394659193,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.046529253898258745,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.06429392297970467,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08041374321123831,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09467124520357093,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10108110074628834,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10516946555854638,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.024940976737872628,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.041767044780392865,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.05985079040672432,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.07750207655948207,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.09196463139157784,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10029250497752781,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10516946555854638,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training-pool size N (contexts)": 64.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.03537320005144576,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 128.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.051291463016124625,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 256.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.06873705555268501,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 512.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.08332540986299455,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 1024.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.097377859015564,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 1536.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10186969651504887,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training-pool size N (contexts)": 1917.0,
+      "Held-out R\u00b2 on fixed 78 in-domain check contexts": 0.10516946555854638,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "LEG 1 \u2014 R\u00b2(N) scaling of the context\u2192answer map (L20)",
+        "xlabel": "Training-pool size N (contexts)",
+        "ylabel": "Held-out R\u00b2 on fixed 78 in-domain check contexts",
+        "legend_labels": [
+          "own, +440 domain-matched injected",
+          "ext, +440 domain-matched injected",
+          "own (on-policy Qwen) \u2014 LMSYS subsample",
+          "ext (Claude-written) \u2014 LMSYS subsample"
+        ],
+        "annotations": [
+          "frozen-\u03bb committed anchors (\u00d7)",
+          "top-decade slope (own) = 0.0149 R\u00b2/doubling\nhalf-pool own R\u00b2=0.081 \u2192 full=0.113"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      }
+    ],
+    "series": [
+      "own (on-policy Qwen) \u2014 LMSYS subsample",
+      "ext (Claude-written) \u2014 LMSYS subsample",
+      "own, +440 domain-matched injected",
+      "ext, +440 domain-matched injected"
+    ]
+  }
+}

@@ -28,9 +28,16 @@
 # sets these; unset = the byte-identical parent ladder run):
 #   I1335_GEN_RUNGS / I1335_TF_RUNGS / I1335_ALL_RUNGS  space-separated rung
 #       subsets (set-but-empty = an EMPTY set, e.g. I1335_TF_RUNGS="")
+#   I1335_MODELS  space-separated model subset (base|instruct; unset = both —
+#       existing callers byte-unchanged; seed44-base-rungs sets "base")
 #   I1335_SUMMARY_MODE  ladder (default: --summary + gates + figures) |
-#       seed-compare (--seed-compare vs $I1335_REFERENCE_SUMMARY; no gates,
-#       no figures)
+#       seed-compare (--seed-compare vs $I1335_REFERENCE_SUMMARY; optional
+#       second reference via $I1335_REFERENCE_SUMMARY_2; no gates, no figures) |
+#       label-compare (onpolicy-assistant-label round, plan v7: --label-compare
+#       -> label_comparison.json; the pairwise/placement matched refits run
+#       INSIDE that mode, so the standalone p3_matched phase is skipped; label
+#       figure via issue1335_fig_label.py instead of the ladder figures; no
+#       gates, no verdict lattice)
 #   I1335_SMOKE_ROOT    scratch root for the smoke pipeline
 #   EPM_I1335_GEN_SEED / EPM_I1335_HF_PREFIX  consumed inside the python
 #       scripts (issue1335_render_rungs.py module constants)
@@ -86,15 +93,36 @@ if [ "${I1335_ALL_RUNGS+set}" = "set" ]; then
 else
   ALL_RUNGS=(r0_qa_full r1_qa_oneline r2_tf r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint s1_assistant_label s2a_familiar s2b_novel)
 fi
-MODELS=(base instruct)
+# models-knob-begin (model-subset override; unset = both — default byte-identical)
+if [ "${I1335_MODELS+set}" = "set" ]; then
+  read -r -a MODELS <<< "$I1335_MODELS"
+else
+  MODELS=(base instruct)
+fi
+if [ "${#MODELS[@]}" -eq 0 ]; then
+  echo "[i1335-run] FATAL: I1335_MODELS is set but empty — need >=1 of base|instruct" >&2
+  exit 5
+fi
+for m in "${MODELS[@]}"; do
+  case "$m" in base|instruct) ;; *)
+    echo "[i1335-run] FATAL: unknown model in I1335_MODELS: '$m' (base|instruct)" >&2
+    exit 5
+    ;;
+  esac
+done
+MODELS_CSV=$(IFS=,; echo "${MODELS[*]}")
+# models-knob-end
 SUMMARY_MODE="${I1335_SUMMARY_MODE:-ladder}"
-case "$SUMMARY_MODE" in ladder|seed-compare) ;; *)
-  echo "[i1335-run] FATAL: I1335_SUMMARY_MODE must be ladder|seed-compare, got: $SUMMARY_MODE" >&2
+case "$SUMMARY_MODE" in ladder|seed-compare|label-compare) ;; *)
+  echo "[i1335-run] FATAL: I1335_SUMMARY_MODE must be ladder|seed-compare|label-compare," \
+       "got: $SUMMARY_MODE" >&2
   exit 5
   ;;
 esac
 if [ "$SUMMARY_MODE" = "seed-compare" ]; then
   SUMMARY_JSON="seed_comparison.json"
+elif [ "$SUMMARY_MODE" = "label-compare" ]; then
+  SUMMARY_JSON="label_comparison.json"
 else
   SUMMARY_JSON="ladder_summary.json"
 fi
@@ -127,6 +155,11 @@ digest = {
     "gen_seed": summary.get("gen_seed"),
     "cross_seed": {m: v.get("cross_seed") for m, v in summary.get("per_model", {}).items()},
     "verdicts": {m: v.get("verdict") for m, v in summary.get("per_model", {}).items()},
+    # label-compare rounds only (None-valued elsewhere; guarded .get):
+    "label_deltas_full_n": {
+        m: v.get("deltas_full_n") for m, v in summary.get("per_model", {}).items()
+    },
+    "h0_b_hat": (summary.get("h0_pair_noise_band") or {}).get("b_hat"),
     "rung_values_matched_ctx": {
         m: v.get("rung_values_matched_ctx") for m, v in summary.get("per_model", {}).items()
     },
@@ -227,8 +260,17 @@ for slug in sys.argv[2:]:
 PY
 }
 
-run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
+run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode> [rung...]
+  # Optional trailing rung args narrow the lane to a rung SUBSET (the N-lane
+  # model x rung pool passes exactly one) — defaulting to the round globals,
+  # so every existing caller is byte-identical (plan v7 §4.2 item 5).
   local model="$1" data_dir="$2" out_dir="$3" mode="$4"
+  shift 4
+  local lane_gen_rungs=("${GEN_RUNGS[@]}") lane_all_rungs=("${ALL_RUNGS[@]}")
+  if [ "$#" -gt 0 ]; then
+    lane_gen_rungs=("$@")
+    lane_all_rungs=("$@")
+  fi
   local slice_args=() stub_args=() upload_args=() fit_args=() first_capture=1
   if [ "$mode" = "smoke" ]; then
     slice_args=(--n-questions 50 --n-scenarios 2)
@@ -264,7 +306,7 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
   local wiring_n=200
   if [ "$mode" = "smoke" ]; then wiring_n=8; fi
 
-  for rung in "${GEN_RUNGS[@]}"; do
+  for rung in "${lane_gen_rungs[@]}"; do
     uv run python scripts/issue1335_gen.py --rung "$rung" --model "$model" \
       --data-dir "$data_dir" "${slice_args[@]}" "${stub_args[@]}" "${upload_args[@]}" \
       "${gen_resume_args[@]}"
@@ -273,12 +315,16 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
     uv run python scripts/issue1335_render_rungs.py --tf-rerender --rung "$rung" \
       --model "$model" --data-dir "$data_dir"
   done
-  for rung in "${ALL_RUNGS[@]}"; do
+  for rung in "${lane_all_rungs[@]}"; do
     local extra=()
     if [ "$first_capture" = "1" ]; then extra+=(--equivalence-check); fi
-    if [ "$rung" = "r0_qa_full" ] || [ "$rung" = "r7_endpoint" ]; then
-      extra+=(--wiring-check "$wiring_n")
-    fi
+    case "$rung" in
+      # endpoint-family rungs: fresh own-vs-deranged NLL wiring gate (plan §7
+      # gate 1; the three r7_op_* label cells are endpoint-family — plan v7).
+      r0_qa_full|r7_endpoint|r7_op_assistant|r7_op_wren|r7_op_wren46)
+        extra+=(--wiring-check "$wiring_n")
+        ;;
+    esac
     uv run python scripts/issue1335_extract_store.py --rung "$rung" --model "$model" \
       --data-dir "$data_dir" --out-dir "$out_dir" --resume "${seed_args[@]}" \
       "${tiny_args[@]}" "${extra[@]}"
@@ -315,6 +361,65 @@ wait_lanes() {  # wait_lanes <pid_base> <pid_instruct> <log_base> <log_instruct>
   return "$rc"
 }
 
+run_lane_pool() {  # run_lane_pool <data_dir> <out_dir> <mode> <model:rung>...
+  # Work-conserving N-lane (model x rung) fan-out (plan v7 §4.2 item 5): the
+  # first NGPUS lanes launch CVD-pinned one per GPU; each subsequent lane
+  # launches on the first GPU whose lane exits (pid-wait pool). Lane bodies
+  # are run_model_lane narrowed to one rung — the SAME body, SAME width policy
+  # in smoke AND full (no smoke narrowing). A failed lane records rc and the
+  # pool keeps draining the remaining shared-nothing lanes before returning it.
+  local data_dir="$1" out_dir="$2" mode="$3"
+  shift 3
+  local specs=("$@") rc=0 si=0 hb=0
+  local n_specs=${#specs[@]}
+  local -a gpu_pid gpu_log gpu_spec
+  local g
+  for ((g = 0; g < NGPUS; g++)); do gpu_pid[g]=""; gpu_log[g]=""; gpu_spec[g]=""; done
+  log "lane pool: $n_specs lanes over $NGPUS GPUs (mode=$mode)"
+  while :; do
+    for ((g = 0; g < NGPUS && si < n_specs; g++)); do
+      if [ -z "${gpu_pid[g]}" ]; then
+        local spec="${specs[$si]}" model rung lg
+        model="${spec%%:*}"
+        rung="${spec#*:}"
+        lg="$LOG_DIR/issue-${ISSUE}-${mode}-lane-${model}-${rung}.log"
+        log "lane $((si + 1))/$n_specs launch: model=$model rung=$rung gpu=$g -> $lg"
+        ( export CUDA_VISIBLE_DEVICES="$g"; run_model_lane "$model" "$data_dir" "$out_dir" "$mode" "$rung" ) >"$lg" 2>&1 &
+        gpu_pid[g]=$!
+        gpu_log[g]="$lg"
+        gpu_spec[g]="$spec"
+        si=$((si + 1))
+      fi
+    done
+    local busy=0
+    for ((g = 0; g < NGPUS; g++)); do
+      if [ -n "${gpu_pid[g]}" ]; then busy=1; fi
+    done
+    if [ "$busy" = "0" ] && [ "$si" -ge "$n_specs" ]; then break; fi
+    sleep "${POOL_POLL_S:-30}"
+    hb=$((hb + 1))
+    for ((g = 0; g < NGPUS; g++)); do
+      local pid="${gpu_pid[g]}"
+      if [ -z "$pid" ]; then continue; fi
+      if ! kill -0 "$pid" 2>/dev/null; then
+        local lane_rc=0
+        wait "$pid" || lane_rc=$?
+        if [ "$lane_rc" -ne 0 ]; then
+          log "LANE FAILED rc=$lane_rc (${gpu_spec[g]}) — tail of ${gpu_log[g]}:"
+          tail -n 40 "${gpu_log[g]}" || true
+          rc=$lane_rc
+        else
+          log "lane done: ${gpu_spec[g]} (gpu=$g freed)"
+        fi
+        gpu_pid[g]=""
+      elif [ $((hb % 4)) = 0 ]; then
+        log "lane heartbeat ${gpu_spec[g]}: $(tail -n 1 "${gpu_log[g]}" 2>/dev/null | cut -c1-160)"
+      fi
+    done
+  done
+  return "$rc"
+}
+
 run_pipeline() {  # run_pipeline <mode: smoke|full>
   local mode="$1" data_dir out_dir fig_dir
   local smoke_root="${I1335_SMOKE_ROOT:-/tmp/issue-1335-smoke}"
@@ -333,7 +438,21 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
   fi
 
   echo "[phase=p1_p3_lanes_${mode}]"
-  if [ "$NGPUS" -ge 2 ]; then
+  # Lane dispatch (widest first; SAME branch taken in smoke AND full — no
+  # smoke-vs-full width narrowing):
+  #   NGPUS >= 3, both models, gen-only rungs  -> N-lane (model x rung) pool
+  #       over all NGPUS GPUs (plan v7 §4.2 item 5; 6 lanes this round)
+  #   NGPUS >= 2, both models                  -> the committed 2-model-lane
+  #       shard (each model-lane runs its rungs sequentially)
+  #   otherwise                                -> the committed serial loop
+  if [ "$NGPUS" -ge 3 ] && [ "${MODELS[*]}" = "base instruct" ] \
+     && [ "${#TF_RUNGS[@]}" -eq 0 ] && [ "${GEN_RUNGS[*]}" = "${ALL_RUNGS[*]}" ]; then
+    local specs=()
+    for rung in "${ALL_RUNGS[@]}"; do
+      for model in "${MODELS[@]}"; do specs+=("$model:$rung"); done
+    done
+    run_lane_pool "$data_dir" "$out_dir" "$mode" "${specs[@]}"
+  elif [ "$NGPUS" -ge 2 ] && [ "${MODELS[*]}" = "base instruct" ]; then
     local lb="$LOG_DIR/issue-${ISSUE}-${mode}-base.log" li="$LOG_DIR/issue-${ISSUE}-${mode}-instruct.log"
     ( export CUDA_VISIBLE_DEVICES=0; run_model_lane base "$data_dir" "$out_dir" "$mode" ) >"$lb" 2>&1 &
     local pid_b=$!
@@ -346,13 +465,18 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
     done
   fi
 
-  echo "[phase=p3_matched_${mode}]"
   local fit_common=(--data-dir "$data_dir" --out-dir "$out_dir" --resume)
   local stage_args=()
   if [ "$SKIP_UPLOAD" != "1" ] && [ "$mode" != "smoke" ]; then stage_args=(--stage-from-hub); fi
   local smoke_args=()
   if [ "$mode" = "smoke" ]; then smoke_args=(--smoke); fi
-  if [ "$NGPUS" -ge 2 ]; then
+  if [ "$SUMMARY_MODE" = "label-compare" ]; then
+    # label-compare rounds skip the standalone global-n_min matched battery:
+    # the pairwise + placement matched refits run INSIDE --label-compare with
+    # their own per-model n targets (plan v7 §4.2 item 4 / pipeline P4).
+    log "p3_matched skipped (label-compare: matched refits run inside --label-compare)"
+  elif [ "$NGPUS" -ge 2 ] && [ "${MODELS[*]}" = "base instruct" ]; then
+    echo "[phase=p3_matched_${mode}]"
     local mb="$LOG_DIR/issue-${ISSUE}-${mode}-matched-base.log"
     local mi="$LOG_DIR/issue-${ISSUE}-${mode}-matched-instruct.log"
     ( export CUDA_VISIBLE_DEVICES=0; uv run python scripts/issue1335_fit.py --matched-n \
@@ -363,7 +487,8 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
     local pid_i=$!
     wait_lanes "$pid_b" "$pid_i" "$mb" "$mi"
   else
-    uv run python scripts/issue1335_fit.py --matched-n --models base,instruct \
+    echo "[phase=p3_matched_${mode}]"
+    uv run python scripts/issue1335_fit.py --matched-n --models "$MODELS_CSV" \
       "${fit_common[@]}" "${stage_args[@]}" "${smoke_args[@]}"
   fi
   # NOTE: matched-n --models base and --models instruct each compute n_min from
@@ -372,17 +497,34 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
 
   echo "[phase=p3_summary_${mode}]"
   if [ "$SUMMARY_MODE" = "seed-compare" ]; then
-    uv run python scripts/issue1335_fit.py --seed-compare --models base,instruct \
+    local ref2_args=()
+    if [ -n "${I1335_REFERENCE_SUMMARY_2:-}" ]; then
+      ref2_args=(--reference-summary-2 "$I1335_REFERENCE_SUMMARY_2")
+    fi
+    uv run python scripts/issue1335_fit.py --seed-compare --models "$MODELS_CSV" \
       --data-dir "$data_dir" --out-dir "$out_dir" \
       --reference-summary "${I1335_REFERENCE_SUMMARY:-eval_results/issue_1335/ladder_summary.json}" \
+      "${ref2_args[@]}" "${smoke_args[@]}"
+  elif [ "$SUMMARY_MODE" = "label-compare" ]; then
+    # P4: restage stores -> pairwise/placement matched refits + combined-store
+    # swap + collapse audits + H0 band -> label_comparison.json (plan v7 §4.2).
+    # The committed read-only references resolve under the REPO eval root, not
+    # this round's out_dir (which is a fresh path-segregated directory).
+    uv run python scripts/issue1335_fit.py --label-compare --models "$MODELS_CSV" \
+      "${fit_common[@]}" "${stage_args[@]}" \
+      --reference-summary "${I1335_REFERENCE_SUMMARY:-eval_results/issue_1335/ladder_summary.json}" \
+      --committed-eval-root "${I1335_COMMITTED_EVAL_ROOT:-eval_results/issue_1335}" \
       "${smoke_args[@]}"
   else
-    uv run python scripts/issue1335_fit.py --summary --models base,instruct \
+    uv run python scripts/issue1335_fit.py --summary --models "$MODELS_CSV" \
       --data-dir "$data_dir" --out-dir "$out_dir" "${smoke_args[@]}"
   fi
 
   if [ "$SUMMARY_MODE" = "seed-compare" ]; then
     log "figures skipped (seed-compare round: comparison JSON is the deliverable)"
+  elif [ "$SUMMARY_MODE" = "label-compare" ]; then
+    echo "[phase=p4_figures_${mode}]"
+    uv run python scripts/issue1335_fig_label.py --out-dir "$out_dir" --fig-dir "$fig_dir"
   else
     echo "[phase=p4_figures_${mode}]"
     uv run python scripts/issue1335_figures.py --out-dir "$out_dir" --fig-dir "$fig_dir"
@@ -432,8 +574,11 @@ main() {
   # batched null path, inner-group-cv x custom-grid cross product fail-loud)
   # -> 8cf88202ef (#1310 focused-maps: main gained the shared batched lineage
   # this branch already carries + the new GCV_DOF_CAP dof-cap fix — folded
-  # into both scan paths here, default None byte-preserving; r9 port 2).
-  local port_pin=8cf88202ef
+  # into both scan paths here, default None byte-preserving; r9 port 2)
+  # -> fbdda9b0fc (#1335's OWN seed43-round merge to main, PR #1227: main's
+  # copy is now blob-identical to this branch's — af5d0a111c on both sides;
+  # seed44 round pin advance, no port needed).
+  local port_pin=fbdda9b0fc
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched

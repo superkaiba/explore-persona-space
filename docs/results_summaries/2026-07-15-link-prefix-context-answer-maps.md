@@ -1,5 +1,7 @@
 # Result: Link between prefix -> answer and context -> answer map
 
+> Terminology: `docs/glossary_context_answer_map.md`. Note: § Methodology below writes $v_P$ for the prefix-END activation; the glossary's $v_P$ is the query-average of context vectors. This doc's own Result 7 establishes these are distinct objects — qualify which is meant.
+
 ## Motivation
 
 - We've found a linear mapping from prefix vector to answer summary and a mapping from single context vector to single answer summary

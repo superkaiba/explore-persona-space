@@ -1,0 +1,52 @@
+{
+  "commit": "185a6bd8ee",
+  "created": "2026-07-18T11:10:36Z",
+  "figsize": [
+    13.5,
+    5.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "generated line length (words)",
+        "annotations": [
+          "mean 20.8",
+          "mean 12.6",
+          "mean 12.3"
+        ],
+        "xticklabels": [
+          "Assistant lead",
+          "Wren lead (seed 45)",
+          "Wren lead (seed 46)"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "annotations": [
+          "mean 12.4",
+          "mean 12.8",
+          "mean 12.5"
+        ],
+        "xticklabels": [
+          "Assistant lead",
+          "Wren lead (seed 45)",
+          "Wren lead (seed 46)"
+        ]
+      }
+    ]
+  }
+}

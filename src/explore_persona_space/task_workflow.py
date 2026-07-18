@@ -1050,6 +1050,9 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
     Read-only: no mutation, no commit. The cheap pre-filter (``kind`` / status /
     title) reads the REGISTRY snapshot; the ``tags`` / Provenance check reads the
     task's ``body.md`` (tags are not denormalized into the registry).
+    Advisory complement on the same open population:
+    :func:`open_workflow_fix_siblings` (#1502) SURFACES overlapping open
+    siblings this exact-match predicate deliberately does not block.
     """
     reg = _load_registry()
     for tid_str, entry in reg.get("tasks", {}).items():
@@ -1196,7 +1199,80 @@ def _wf_fix_title_tokens(title: str) -> set[str]:
     return out
 
 
-def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
+def informative_title_tokens(text: str) -> set[str]:
+    """Public reuse surface for the #1446 informative-token tokenizer (#1483).
+
+    Same normalization as the widened-pass title arm (_wf_fix_title_tokens):
+    lowercase, WF_FIX_TITLE_PREFIXES channel prefixes stripped, split on
+    non-word chars keeping -/_ inside tokens, edge -/_ stripped, len >= 4,
+    minus _WF_FIX_TITLE_STOPWORDS. Applies to any short text (titles, bug
+    one-liners), not only titles.
+    """
+    return _wf_fix_title_tokens(text)
+
+
+def _wf_fix_sibling_arms(
+    title: str,
+    task_dir: Path,
+    cand_targets: set[str],
+    cand_tokens: set[str],
+) -> tuple[list[str], set[str]]:
+    """Shared per-task arm-matcher for the closed (#1399/#1446) and open
+    (#1502) sibling scans. Returns ``(matched, task_targets)``:
+
+    - PREFIXED titles (``WF_FIX_TITLE_PREFIXES``): ``'target'`` (candidate
+      path tokens intersect the task's anchored ``workflow_fix_target:`` line
+      tokens; ``task_targets`` = the task's OWN target tokens) and
+      ``'title:<tokens>'`` (>=1 shared informative token).
+    - PLAIN titles: ``'infra-title:<tokens>'`` (>=
+      ``_WF_FIX_PLAIN_TITLE_MIN_SHARED`` shared tokens) and ``'infra-target'``
+      (a candidate FULL path token as a body substring; ``task_targets`` =
+      the candidate tokens actually FOUND).
+
+    Body reads happen only when ``cand_targets`` is non-empty; ``(OSError,
+    ValueError)`` on the body read fail-soft to ``body = ""`` (the target
+    arms are then silently unavailable). Window / population gating stays in
+    the CALLERS — the closed scan's #1446 §4.1(c) gating order (prefixed:
+    arms before window; widened: window before body read) is theirs to
+    preserve.
+    """
+    matched: list[str] = []
+    task_targets: set[str] = set()
+    shared = cand_tokens & _wf_fix_title_tokens(title)
+    if title.startswith(WF_FIX_TITLE_PREFIXES):
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (OSError, ValueError):
+                # widened per fact-check 2026-07-17: a non-FNF OSError from
+                # read_text() escaped the old (FileNotFoundError, ValueError)
+                # tuple
+                body = ""  # fail-soft: target arm silently unavailable
+            for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                task_targets |= _wf_fix_target_tokens(m.group(1))
+            if cand_targets & task_targets:
+                matched.append("target")
+        if shared:
+            matched.append("title:" + ",".join(sorted(shared)))
+    else:
+        if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
+            matched.append("infra-title:" + ",".join(sorted(shared)))
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (OSError, ValueError):
+                # same widened catch tuple as the prefixed branch above
+                body = ""  # fail-soft: target arm silently unavailable
+            # Full candidate path token as a body substring (NOT the
+            # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
+            # while full paths measured 0-6; glob tokens stay opaque).
+            task_targets = {t for t in cand_targets if t in body}
+            if task_targets:
+                matched.append("infra-target")
+    return matched, task_targets
+
+
+def recent_closed_workflow_fix_tasks(
     target_file: str | None,
     candidate_title: str | None = None,
     *,
@@ -1287,25 +1363,12 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
         except (FileNotFoundError, ValueError):
             # Non-numeric registry key or missing folder: skip this entry.
             continue
-        matched: list[str] = []
-        task_targets: set[str] = set()
+        # Arm semantics live in the shared _wf_fix_sibling_arms helper (#1502);
+        # the WINDOW checks stay HERE, in the #1446 §4.1(c) gating order.
         if prefixed:
-            # ── Prefixed pass: #1399 logic, output-identical except the
-            # declared catch-tuple widening below ──
-            if cand_targets:
-                try:
-                    _, body = _read_body(task_dir / "body.md")
-                except (OSError, ValueError):
-                    # widened per fact-check 2026-07-17: a non-FNF OSError
-                    # from read_text() escaped the old
-                    # (FileNotFoundError, ValueError) tuple
-                    body = ""  # fail-soft: target arm silently unavailable
-                for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
-                    task_targets |= _wf_fix_target_tokens(m.group(1))
-                if cand_targets & task_targets:
-                    matched.append("target")
-            if shared:
-                matched.append("title:" + ",".join(sorted(shared)))
+            # ── Prefixed pass: #1399 logic — arms (incl. any body read)
+            # BEFORE the window check ──
+            matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
             if not matched:
                 continue
             closed = _wf_fix_closed_at(task_dir)
@@ -1319,20 +1382,7 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
             closed = _wf_fix_closed_at(task_dir)
             if closed is None or closed < cutoff or closed > now:
                 continue
-            if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
-                matched.append("infra-title:" + ",".join(sorted(shared)))
-            if cand_targets:
-                try:
-                    _, body = _read_body(task_dir / "body.md")
-                except (OSError, ValueError):
-                    # same widened catch tuple as the prefixed pass above
-                    body = ""  # fail-soft: target arm silently unavailable
-                # Full candidate path token as a body substring (NOT the
-                # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
-                # while full paths measured 0-6; glob tokens stay opaque).
-                task_targets = {t for t in cand_targets if t in body}
-                if task_targets:
-                    matched.append("infra-target")
+            matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
             if not matched:
                 continue
         hits.append(
@@ -1346,6 +1396,75 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
             }
         )
     hits.sort(key=lambda h: h["closed_at"], reverse=True)
+    return hits
+
+
+def open_workflow_fix_siblings(
+    target_file: str | None,
+    candidate_title: str | None = None,
+    *,
+    include_plain_infra: bool = True,
+) -> list[dict[str, Any]]:
+    """OPEN infra siblings overlapping the candidate (#1502) — the advisory
+    complement of :func:`is_open_workflow_fix_task` on the SAME population:
+    that predicate BLOCKS exact-``(target_file, fingerprint)`` duplicates;
+    this helper only SURFACES overlapping open siblings for the filer to
+    eyeball (a DISTINCT bug on the same hot file still files by design — the
+    #678 A1 grain is unchanged). Population: ``kind == infra`` AND status in
+    ``_WF_FIX_NONTERMINAL`` (the dedup predicate's own open set). No time
+    window: an open sibling is a live collision risk regardless of filing age
+    (a long-parked ``on_hold`` duplicate is exactly what a filer wants to
+    see), and the open population is small (34 open infra tasks vs 1440
+    registry entries, measured 2026-07-18). Arms + per-population bars are
+    the closed enumerator's, via :func:`_wf_fix_sibling_arms`.
+
+    Returns ``[{'id', 'title', 'status', 'target', 'matched'}, ...]`` sorted
+    by id DESC (ids are allocation-ordered, so id DESC = most recently filed
+    first — the open-population analogue of the closed pass's closed_at DESC
+    recency ordering; open rows carry NO ``closed_at``). Read-only: no
+    mutation, no commit, no lock; per-task failures (missing folder,
+    non-numeric registry key) skip that task.
+    """
+    cand_targets = _wf_fix_target_tokens(target_file) if target_file else set()
+    cand_tokens = _wf_fix_title_tokens(candidate_title) if candidate_title else set()
+    if not cand_targets and not cand_tokens:
+        return []
+    hits: list[dict[str, Any]] = []
+    for tid_str, entry in _load_registry().get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
+            continue
+        title = str(entry.get("title", ""))
+        prefixed = title.startswith(WF_FIX_TITLE_PREFIXES)
+        if not prefixed and not include_plain_infra:
+            continue
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if not prefixed and len(shared) < _WF_FIX_PLAIN_TITLE_MIN_SHARED and not cand_targets:
+            # Registry-only precheck: no plain-infra arm can possibly fire —
+            # skip before any per-task file read (mirror of the closed pass).
+            continue
+        if prefixed and not shared and not cand_targets:
+            continue  # no prefixed arm can fire either
+        try:
+            tid = int(tid_str)
+            task_dir = find_task_path(tid)
+        except (FileNotFoundError, ValueError):
+            # Non-numeric registry key or missing folder: skip this entry.
+            continue
+        matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
+        if not matched:
+            continue
+        hits.append(
+            {
+                "id": tid,
+                "title": title,
+                "status": entry.get("status"),
+                "target": ", ".join(sorted(task_targets)) or None,
+                "matched": matched,
+            }
+        )
+    hits.sort(key=lambda h: h["id"], reverse=True)
     return hits
 
 
@@ -3756,6 +3875,36 @@ def get_task(task_id: int) -> dict[str, Any]:
         "frontmatter": fm,
         "body": body,
     }
+
+
+# The issue-wide pod-teardown shield tag (CLAUDE.md § Pods; #1485).
+KEEP_RUNNING_TAG = "keep-running"
+
+
+def keep_running_tag_state(task_id: int) -> bool | None:
+    """Tri-state read of the issue-wide teardown shield (#1485).
+
+    True  -> task read OK and the ``keep-running`` tag is present.
+    False -> task read OK and the tag is absent, OR the task does not
+             exist (registry miss / ad-hoc pod: nothing to shield).
+    None  -> the read ERRORED (branch-guard RuntimeError, corrupt
+             frontmatter ValueError, StaleTaskPathError registry
+             corruption, other OSError) - the tag state is UNKNOWABLE.
+             Callers on a DESTRUCTIVE path treat None as "do not
+             destroy" (the _wedge_keep_running 'unknown' posture).
+    """
+    # Exception ordering is load-bearing: StaleTaskPathError subclasses
+    # FileNotFoundError, which subclasses OSError — catch narrowest first.
+    try:
+        task = get_task(int(task_id))
+    except StaleTaskPathError:
+        return None  # multi-hit registry corruption: unknowable
+    except FileNotFoundError:
+        return False  # no task => no tag; ad-hoc pods stay terminable
+    except (RuntimeError, ValueError, OSError):
+        return None
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and KEEP_RUNNING_TAG in tags
 
 
 # ─── Events ─────────────────────────────────────────────────────────────────
@@ -6725,6 +6874,7 @@ __all__ = [
     "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "HUSK_REAP_TERMINAL_STATUSES",
+    "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6757,6 +6907,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "keep_running_tag_state",
     "latest_event",
     "list_by_status",
     "list_comments",

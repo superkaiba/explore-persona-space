@@ -12,11 +12,13 @@ existence. A pod is:
 - **active**: ``RUNNING`` AND managed-name (the lifecycle owns it).
 - **orphan-running**: ``RUNNING`` AND non-managed-name. GPU charges accruing
   without lifecycle tracking — surface loudly.
-- **stale**: ``EXITED`` for longer than ``--max-exited-hours`` (default 24h).
-  Volume disk charges accruing for paused state. Candidate for termination.
+- **stale**: ``EXITED`` for longer than ``--max-exited-hours`` (default 24h)
+  AND positively confirmed as EPS-owned (#1404, extended to all names by
+  #1471). Volume disk charges accruing for paused state. Candidate for
+  termination.
 - **unmanaged-exited**: ``EXITED`` past the threshold BUT NOT positively
-  confirmed as EPS-owned (managed-name pods only — the RunPod account is
-  team-shared, so a non-EPS pod may carry the ``pod-`` prefix; #1404).
+  confirmed as EPS-owned — ANY name, managed ``pod-`` prefix or not (the
+  RunPod account is team-shared; #1404/#1471).
   Report-only; NEVER consumed by ``--terminate-stale``.
 - **kept-exited**: ``EXITED`` but the owning task (resolved from the managed
   pod name ``pod-<N>`` / ``epm-issue-<N>``) carries the ``keep-running`` tag —
@@ -51,7 +53,9 @@ Exit codes::
 
 (The report-only flag classes deliberately do NOT affect the exit code —
 ``cron_pod_audit.sh`` treats the log as the audit trail and an idle CPU
-phase is not an audit failure.)
+phase is not an audit failure. ``unmanaged-exited`` likewise never trips
+exit 2: an odd-named, evidence-less ``EXITED``>threshold pod surfaces
+report-only with exit 0 — #1471.)
 
 The ``--terminate-stale`` flag terminates every pod in the ``stale`` bucket
 after a y/N confirmation (suppress with ``--yes``). ``orphan-running`` pods
@@ -218,7 +222,8 @@ def _is_eps_owned(p: PodInfo, pod_id: str) -> bool:
     ``--terminate-stale``. The bias is deliberate: a false keep costs
     nothing (report-only bucket); a false terminate destroys a volume
     irreversibly — the RunPod account is TEAM-SHARED, so a non-EPS pod may
-    carry the managed ``pod-`` prefix.
+    carry ANY name, the managed ``pod-`` prefix included; as of #1471 this
+    gate applies to every EXITED pod past the threshold regardless of name.
     """
     name = p.name or ""
 
@@ -388,16 +393,17 @@ def classify(
                 bucket = "kept-exited"
                 kept_for = issue
             elif age is not None and age >= max_exited_hours:
-                # #1404 ownership gate: only pods POSITIVELY confirmed as
-                # EPS-owned may reach the auto-terminate 'stale' bucket. The
-                # RunPod account is team-shared, so a non-EPS pod can carry
-                # the managed 'pod-' prefix; terminating it would destroy a
-                # teammate's volume irreversibly. Non-managed names keep the
-                # pre-#1404 behavior (no name-collision hazard there).
-                if _is_managed_name(p.name or "") and not _is_eps_owned(p, p.pod_id or ""):
-                    bucket = "unmanaged-exited"
-                else:
-                    bucket = "stale"
+                # #1404 ownership gate, extended to ALL names (#1471): a pod
+                # may reach the auto-terminate 'stale' bucket ONLY when
+                # POSITIVELY confirmed as EPS-owned. The RunPod account is
+                # team-shared — a non-EPS pod may carry ANY name, managed
+                # 'pod-' prefix or not; terminating it would destroy a
+                # teammate's volume irreversibly. EPS-owned odd-named pods
+                # (dispatcher-created) still auto-reap via ownership signals
+                # 2 (pods_ephemeral.json sidecar) and 3 (task references).
+                # Fail-toward-keep: a false keep = small volume-storage cost
+                # + a loud daily report row; a false terminate = irreversible.
+                bucket = "stale" if _is_eps_owned(p, p.pod_id or "") else "unmanaged-exited"
             else:
                 bucket = "fresh-exited"
             # Report-only parked-task flag: the stopped volume keeps billing
@@ -505,9 +511,9 @@ def render_report(rows: list[Classification]) -> str:
     if unmanaged_exited:
         lines.append("")
         lines.append("── unmanaged-exited (report-only; NEVER auto-terminated) ──")
-        lines.append("  EXITED past the threshold but NOT positively confirmed as EPS-owned. The")
-        lines.append("  RunPod account is TEAM-SHARED: non-EPS pods may carry the managed pod-")
-        lines.append("  prefix. Do NOT terminate without confirming ownership with Thomas.")
+        lines.append("  EXITED past the threshold but NOT positively confirmed as EPS-owned —")
+        lines.append("  any name, managed pod- prefix or not (the RunPod account is TEAM-SHARED).")
+        lines.append("  Do NOT terminate without confirming ownership with Thomas.")
         for r in unmanaged_exited:
             age = f"{r.age_hours:.1f}h" if r.age_hours is not None else "?"
             gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else "?"

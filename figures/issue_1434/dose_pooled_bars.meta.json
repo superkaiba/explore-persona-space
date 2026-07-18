@@ -1,0 +1,72 @@
+{
+  "commit": "a145ef3058",
+  "created": "2026-07-17T19:38:52Z",
+  "figsize": [
+    10.0,
+    5.0
+  ],
+  "points": [
+    {
+      "category": "matched-high\npo@25 (existing verdict arm)",
+      "pooled non-source judged casual-register rate": 0.764,
+      "error": 0.037132209510832626,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "matched-high\ncon@45 (new matched-high arm)",
+      "pooled non-source judged casual-register rate": 0.3184584178498986,
+      "error": 0.04098967189194269,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "near-matched-low\npo@10 (new near-matched-low arm)",
+      "pooled non-source judged casual-register rate": 0.6292585170340681,
+      "error": 0.04222886333389553,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "near-matched-low\ncon@25 (existing verdict arm)",
+      "pooled non-source judged casual-register rate": 0.4785276073619632,
+      "error": 0.04410366483836306,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "shared base panel",
+      "pooled non-source judged casual-register rate": 0.002,
+      "error": 0.005443932718805332,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "dose-matched pooled leakage per bracket (Wilson 95% CIs)",
+        "ylabel": "pooled non-source judged casual-register rate",
+        "xticklabels": [
+          "matched-high\npo@25 (existing verdict arm)",
+          "matched-high\ncon@45 (new matched-high arm)",
+          "near-matched-low\npo@10 (new near-matched-low arm)",
+          "near-matched-low\ncon@25 (existing verdict arm)",
+          "shared base panel"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

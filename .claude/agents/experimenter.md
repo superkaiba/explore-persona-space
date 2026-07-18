@@ -308,7 +308,7 @@ authoritative recipe is agent memory
    # (a) Inspect the lock + any live git process.
    ssh_execute(server="epm-issue-<N>",
                command="cd /workspace/explore-persona-space && \
-                        ls -la .git/index.lock; pgrep -af git")
+                        ls -la .git/index.lock; pgrep -ax git")
    # (b) Remove the lock ONLY when it is PRESENT, its mtime is OLD, and
    #     pgrep shows NO live git proc (a live git is doing legitimate
    #     work — WAIT, do not remove the lock), then re-pull:
@@ -637,7 +637,7 @@ authoritative recipe is agent memory
    ssh_execute(server="epm-issue-<N>",
                command="nvidia-smi --query-compute-apps=pid,used_memory --format=csv; \
                         nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; \
-                        pgrep -af EngineCore")
+                        pgrep -af 'EngineCor[e]'")
    ```
    If any compute-app PIDs or EngineCore processes survive from a prior
    run, kill them (`kill <pids>`, then `kill -9` survivors), re-run the

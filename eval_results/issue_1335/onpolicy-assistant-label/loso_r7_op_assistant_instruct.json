@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "git_commit": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+    "timestamp": "2026-07-18T09:40:13Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r7_op_assistant",
+  "render_config_hash": "474260b3eb30fef3",
+  "code_sha": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+  "rung": "r7_op_assistant",
+  "model_kind": "instruct",
+  "headline_layer": 19,
+  "per_unit": {
+    "Assistant": {
+      "n": 1800,
+      "n_settings": 20,
+      "r2_headline_loso": 0.2801163274695875
+    }
+  }
+}

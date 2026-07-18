@@ -219,6 +219,40 @@ RUNGS: dict[str, dict] = {
         "tf_source": "r7_endpoint",
         "base_prime": False,
     },
+    # onpolicy-assistant-label round (plan v7 §4.2): the generative label cell +
+    # its within-run controls. r7_endpoint recipe verbatim EXCEPT the persona
+    # panel (single lead; Wren's description reused verbatim under both names)
+    # and, for r7_op_wren46 only, the generation seed (the within-run same-name
+    # replicate — the direct generation-draw H0 pair; per-slot sampling seed
+    # becomes gen_seed_override+slot for that rung alone).
+    "r7_op_assistant": {
+        "family": "fiction",
+        "gen": "op",
+        "foils": "battery",
+        "group": "scene",
+        "tf_source": None,
+        "base_prime": False,
+        "personas": {QA_LABEL: c1310.PERSONAS[RENAMED_LABEL]},
+    },
+    "r7_op_wren": {
+        "family": "fiction",
+        "gen": "op",
+        "foils": "battery",
+        "group": "scene",
+        "tf_source": None,
+        "base_prime": False,
+        "personas": {RENAMED_LABEL: c1310.PERSONAS[RENAMED_LABEL]},
+    },
+    "r7_op_wren46": {
+        "family": "fiction",
+        "gen": "op",
+        "foils": "battery",
+        "group": "scene",
+        "tf_source": None,
+        "base_prime": False,
+        "personas": {RENAMED_LABEL: c1310.PERSONAS[RENAMED_LABEL]},
+        "gen_seed_override": 46,
+    },
 }
 RUNG_ORDER = tuple(RUNGS)
 QA_RUNGS = tuple(s for s, c in RUNGS.items() if c["family"] == "qa")
@@ -237,6 +271,37 @@ def assert_base_prime_uniform() -> bool:
     return next(iter(flags.values()))
 
 
+def personas_for_rung(slug: str) -> dict[str, str]:
+    """Lead-persona panel for one rung: the rung's own ``personas`` override
+    when present (the r7_op_* label cells), else the committed #1310 4-persona
+    panel — so every existing rung renders byte-identically (the
+    render_config_hash("r7_endpoint") stability invariant, smoke-asserted).
+    In-process label asserts (plan v7 §4.2 item 1) run on the override branch:
+    a lead label must be disjoint from the foil names and render the committed
+    line-start cue form ``<label>:`` exactly (no colon/whitespace inside)."""
+    cfg = RUNGS[slug]
+    override = cfg.get("personas")
+    if override is None:
+        return dict(c1310.PERSONAS)
+    for label in override:
+        assert label not in c1310.FOIL_NAMES, (
+            f"{slug}: lead label {label!r} collides with a #1310 foil name"
+        )
+        assert label and ":" not in label and label.strip() == label, (
+            f"{slug}: lead label {label!r} would not render the committed cue "
+            f"form {label + ':'!r} at line start"
+        )
+    return dict(override)
+
+
+def gen_seed_for_rung(slug: str) -> int:
+    """Effective generation seed for one rung: ``gen_seed_override`` when the
+    rung declares it (r7_op_wren46 — the within-run replicate H0 pair), else
+    the run-global GEN_SEED (all existing rungs unchanged). The per-slot vLLM
+    sampling seed is gen_seed_for_rung(slug) + slot."""
+    return int(RUNGS[slug].get("gen_seed_override", GEN_SEED))
+
+
 # ---------------------------------------------------------------------------
 # Fingerprints (c24 resume provenance)
 # ---------------------------------------------------------------------------
@@ -251,7 +316,10 @@ def rung_render_config(slug: str) -> dict:
         "rung_slug": slug,
         "rung_cfg": {k: v for k, v in cfg.items()},
         "model_ids": dict(MODEL_IDS),
-        "gen_seed": GEN_SEED,
+        # Effective seed (== GEN_SEED for every rung without an override, so
+        # existing rungs' hashes are byte-stable; the r7_op_wren46 override
+        # keys its own fingerprint lineage).
+        "gen_seed": gen_seed_for_rung(slug),
         "temperature": c1310.GEN_TEMPERATURE,
         "top_p": c1310.GEN_TOP_P,
         "context_cap_tokens": CONTEXT_CAP_TOKENS,
@@ -281,7 +349,7 @@ def rung_render_config(slug: str) -> dict:
                 "slots": c1310.PREFILL_SLOTS,
                 "max_tokens": ONELINE_MAX_TOKENS,
                 "stop": ONELINE_STOP,
-                "personas": dict(c1310.PERSONAS),
+                "personas": personas_for_rung(slug),
                 "foil_names": list(c1310.FOIL_NAMES),
                 "foil_lines": list(c1310._FOIL_LINES),
             }
@@ -433,14 +501,19 @@ def fiction_prefix(
     body: str,
     foils: list[str],
     label_override: str | None = None,
+    persona_desc: str | None = None,
 ) -> str:
     """Full prefill prompt (header [+ chat template on instruct] + body + cue).
 
     Byte-identical to ``issue1310_prefill.build_prefix`` when foils == the
-    battery foils and label_override is None (the r7 endpoint-parity contract).
+    battery foils and label_override/persona_desc are None (the r7
+    endpoint-parity contract). persona_desc routes rung-override panels
+    (personas_for_rung) — e.g. the r7_op_assistant lead, absent from
+    c1310.PERSONAS — through the identical render.
     """
     label = label_override or persona
-    header = fiction_header_text(scenario, label, c1310.PERSONAS[persona], foils, model_kind)
+    desc = c1310.PERSONAS[persona] if persona_desc is None else persona_desc
+    header = fiction_header_text(scenario, label, desc, foils, model_kind)
     if model_kind == "instruct":
         templated = tokenizer.apply_chat_template(
             [{"role": "user", "content": header}], tokenize=False, add_generation_prompt=True

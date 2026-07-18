@@ -8,13 +8,14 @@
 #   - EXITED pods older than 24h are auto-terminated (volume disk charges) —
 #     UNLESS the owning task (from the pod-<N> / epm-issue-<N> name) carries
 #     the keep-running tag; those are reported as kept-exited, never killed.
-#   - The auto-terminate is positively OWNERSHIP-GATED (#1404): the RunPod
-#     account is team-shared, so a non-EPS pod may legitimately carry the
-#     managed pod- prefix. _is_eps_owned (pod_audit.py) must confirm EPS
-#     ownership via any one of: issue in tasks/REGISTRY.json, pod in the
-#     pods_ephemeral.json sidecar, or task references (fail-toward-keep).
-#     EXITED pods NOT positively EPS-owned are surfaced report-only as
-#     unmanaged-exited — NEVER auto-terminated.
+#   - The auto-terminate is positively OWNERSHIP-GATED (#1404, extended to
+#     all names by #1471): the RunPod account is team-shared, so a non-EPS
+#     pod may legitimately carry the managed pod- prefix; the gate applies
+#     to every EXITED pod regardless of name. _is_eps_owned (pod_audit.py)
+#     must confirm EPS ownership via any one of: issue in
+#     tasks/REGISTRY.json, pod in the pods_ephemeral.json sidecar, or task
+#     references (fail-toward-keep). EXITED pods NOT positively EPS-owned
+#     are surfaced report-only as unmanaged-exited — NEVER auto-terminated.
 #   - RUNNING pods with non-canonical names are surfaced in the log but NOT
 #     auto-terminated (could be a real in-flight workload).
 #   - Two REPORT-ONLY flags are surfaced in the log (never auto-acted on,

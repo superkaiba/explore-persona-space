@@ -500,10 +500,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 - **check 28** (`check_figure_label_codes`, WARN): rendered figure text read
   from each inline same-repo sha-pinned figure's sibling `.meta.json` (parsed
   via `_read_figure_meta_json`, check 26's reader) must not carry opaque
-  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`) or
+  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`),
   regime-code slugs (snake tokens >=3 segments or digit-bearing:
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
-  like `log_prob` stay allowed). Plain-English condition names are the
+  like `log_prob` stay allowed), bare hypothesis codes (`H3` — single
+  digit, case-sensitive, so `H100`/`H200` never match), or slot-family
+  codes (`f16`/`l16` only, #1072). Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
   pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
@@ -560,7 +562,13 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (`[summary store](…/tree/<sha>/…) (52 files)`, the #1005 footer shape —
   ANY distributive `per <word>` qualifier declines, and a paren
   immediately followed by an HF markdown link is Pattern B's
-  paren-before-link shape: E declines, B wins, #1422))
+  paren-before-link shape: E declines, B wins, #1422); or, at ANY position
+  inside that same paren-after-link, a count immediately followed (one
+  optional `,` / `:` / dash separator) by the phrase
+  `listing (re-)?verified` (`…; logs — 44 files, listing verified live at
+  write time`, the #1072 footer shape — files-only, `;` never crossed,
+  same B-adjacency decline as E, #1505; the paren-body bound is 600 chars,
+  widened from 300 for #1072's corrected 309-char paren))
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -583,7 +591,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   row where the scoped tree holds 7,165 files + 207 folders (#1143);
   task #1005's footer claimed 51/15 in bare trailing parens right after
   its pinned links where the pinned trees hold 52/17 — no pattern reached
-  the count-opening paren-after-link position (#1422).
+  the count-opening paren-after-link position (#1422); task #1072 shipped
+  "44 files, listing verified live at write time" mid-paren after an
+  em-dash where the pinned tree holds 40 files + 4 folders (the
+  folder-inflation signature), and its corrected 309-char paren exceeded
+  the old 300-char paren-body bound (#1505).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -802,6 +814,22 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   footer claimed `rejudge/` (2 files) with no pinned link binding on the
   line — the nearest preceding pinned link is declined by the Pattern-D
   gap guards — so checks 30/32 silently dropped it (#1433).
+
+- **check 41** (`check_figure_sidecar_coverage`, WARN, generation-agnostic):
+  every same-repo sha-pinned embedded figure should carry a sibling
+  `.meta.json` sidecar at the cited sha — the sidecar is what the
+  figure-text checks (24 staleness / 28 opaque codes / 33 prose numerics /
+  34 beat claims) read, and a sidecar-less figure silently skips ALL of
+  them (the check-24 fail-soft convention), shrinking coverage to
+  whichever figures happen to carry sidecars. ONE WARN per body naming
+  the sidecar-less figures (basenames, first 3 + count). Existence-only
+  probe (`git cat-file -e` via `_git_object_exists`); the PNG must itself
+  resolve at the cited sha (else defer to check 22); WARN never FAIL
+  (plain `fig.savefig` figures never get a sidecar — check 28 residual
+  (i) — so a FAIL would retroactively block grandfathered bodies at
+  promote-time re-verify). Incident #1434: 3 of 12 embedded figures had
+  no sidecar; slug tick labels passed the mechanical gate until
+  clean-result-critique round 3 (#1478).
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -7291,6 +7319,20 @@ _LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
 #     all-alpha metric / persona names like `log_prob` are legitimate labels).
 _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 
+# (c) bare hypothesis codes (`H3`) — plan-registered hypothesis slots
+#     rendered into figure text (#1072: panel title "… (H3)"). SINGLE digit
+#     + case-sensitive by design: `H100`/`H200` GPU names (3 digits) and
+#     `H20` (2 digits, also a GPU name) never match; lowercase `h3` is not
+#     the project's hypothesis-code convention and stays clean.
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d\b")
+
+# (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
+#     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
+#     NOT generalized to `[fl]\d+` — `F1` (metric), `l2`/`L2` (norm) are
+#     legitimate rendered labels; lowercase-only, and `bf16`/`fp16` dtype
+#     spellings never match (no word boundary before the `f`).
+_SLOT_FAMILY_RE = re.compile(r"\b[fl]16\b")
+
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
 # Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
@@ -7301,16 +7343,21 @@ _PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
 
 
 def _opaque_code_tokens(text: str) -> list[str]:
-    """Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
+    r"""Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed. PATH-SHAPED strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from BOTH token scans (pins AND snakes);
+    allowed; bare hypothesis codes (`H3` — `\bH\d\b`, single digit,
+    case-sensitive) and slot-family codes (`f16`/`l16` only). PATH-SHAPED
+    strings (whitespace-free with a path separator —
+    file paths, URLs) are exempt from ALL FOUR token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
-    words skipped for both token classes. De-duped case-insensitively,
-    order kept.
+    words skipped for every token class — the exemption is load-bearing
+    only for BOUNDARY-TERMINATED tokens inside path words
+    (`figures/issue_1072/H3.png`, `see figures/a/f16.png`); a `_`-suffixed
+    token inside a path word (`H3_panel.png`) is already cleaned by the
+    regex boundary itself. De-duped case-insensitively, order kept.
     """
     hits: list[str] = []
     if not _PATH_SHAPED_RE.match(text.strip()):
@@ -7336,6 +7383,15 @@ def _opaque_code_tokens(text: str) -> list[str]:
             if _only_in_path_words(tok):
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
+                hits.append(tok)
+        # Hypothesis-code + slot-family classes (#1072) reuse the SAME
+        # per-word path exemption the pin/snake classes get, so a
+        # boundary-terminated token inside a path word stays provenance.
+        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE):
+            for m in regex.finditer(text):
+                tok = m.group(0)
+                if _only_in_path_words(tok):
+                    continue
                 hits.append(tok)
     seen: set[str] = set()
     out: list[str] = []
@@ -7375,14 +7431,23 @@ def _iter_meta_label_values(obj: object) -> list[str]:
 
 def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
-    must not carry opaque config-code tokens — ``@L<digits>`` layer pins or
-    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``). Plain-English
+    must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
+    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
+    codes (``H3``), or slot-family codes (``f16``/``l16``). Plain-English
     condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
     #920: ``winning_cell_scatter.png`` reached the 9a-bis gate titled
     ``ctx_blk_max@L12 x ans_uhdr_max@L12`` after three review passes each
-    deferred it as a cosmetic nit.
+    deferred it as a cosmetic nit. Incident #1072: the panel title
+    ``Parallel share of the gap by depth (H3)`` and the xlabel
+    ``answer position t (f16 slots)`` passed check 28 clean and were caught
+    only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
+    mechanized here as the hypothesis-code + slot-family classes. The
+    "code-span contexts" exclusion in the originating diff sketch is a
+    documented NO-OP on this channel: sidecar strings are matplotlib
+    rendered text serialized to JSON (never markdown), so backtick code
+    spans cannot occur and no backtick logic is implemented.
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -7400,14 +7465,14 @@ def check_figure_label_codes(body: str) -> CheckResult:
     PNG-pixel text stays the multimodal critics' substantive read; (ii) a
     bare slug used as a whitespace-free column KEY is unscanned (tick labels
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
-    key names); (iii) a slug or ``@L`` pin inside a path-shaped word (or a
-    whole path-shaped string) is exempt — the path exemption covers BOTH
-    token classes. WARN,
+    key names); (iii) a token inside a path-shaped word (or a
+    whole path-shaped string) is exempt — the path exemption covers ALL
+    FOUR token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
     convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
     offline / no figures / no scannable same-repo sidecar.
     """
-    label = "figure text opaque config codes (slug / @L-pin tokens)"
+    label = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
@@ -8613,7 +8678,18 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # trailing parens — `[summary store + manifest](…/tree/<sha>/…) (51
 # files)` — where the pinned trees hold 52/17: a count-OPENING paren
 # right after the link that matches no anchored phrase; Pattern E closes
-# that gap (#1422).
+# that gap (#1422). #1072's footer then carried `(analysis_tensors: …;
+# logs — 44 files, listing verified live at write time)` right after its
+# pinned link — "44 files" mid-paren after an em-dash, where the pinned
+# tree holds 40 files + 4 directory entries (44 = 40+4, the
+# folder-inflation signature again): C's phrase anchors miss ("listing
+# verified live at write time" ≠ "at the pinned revision") and E's
+# .match() fails (the paren opens "analysis_tensors:"). Its CORRECTED
+# footer ("40 files, listing re-verified live at write time …") runs a
+# 309-char paren body, over the old 300-char _HF_LINKTEXT_THEN_PAREN_RE
+# bound, so even that count-OPENING claim went unextracted. Pattern F
+# (the listing-verified phrase anchor) + the 600-char paren-body bound
+# close both gaps (#1505).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -8660,7 +8736,13 @@ _COUNT_PAREN_LINK_RE = re.compile(
 # sacrifice.
 _HF_LINKTEXT_THEN_PAREN_RE = re.compile(
     r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
-    r"[ \t]{0,2}\((?P<paren>[^()]{1,300})\)"
+    # Paren-body bound 600 (#1505, widened from 300): #1072's corrected
+    # footer paren measures 309 chars, so its count-OPENING claim missed
+    # the old bound entirely; ~2x margin mirrors Pattern D's
+    # qualifier-bound sizing (#1143: 200 vs live 85). Still bounded — a
+    # cap keeps pathological single-line scans cheap (the
+    # _SUBPATH_CLAIM_MAX_GAP rationale).
+    r"[ \t]{0,2}\((?P<paren>[^()]{1,600})\)"
 )
 # Phrase-anchored count claims INSIDE the paren (any position — the phrase,
 # not the position, is the precision anchor; #833's count sits after an `=`).
@@ -8679,11 +8761,27 @@ _FILES_AT_PINNED_REV_RE = re.compile(
     r"at\s+the\s+pinned\s+revision\b",
     re.IGNORECASE,
 )
+# Pattern F (#1505, the #1072 footer shape): a count-noun ANYWHERE inside the
+# paren immediately AFTER the pinned link whose count is immediately followed
+# (one optional , : en-/em-dash / hyphen separator) by the listing-verification
+# phrase — `…; logs — 44 files, listing verified live at write time` /
+# `(40 files, listing re-verified live at write time via `list_repo_tree` …)`.
+# The PHRASE, not the position, is the precision anchor (Pattern C philosophy):
+# a sub-scoped clause count ("analysis_tensors: 16 files; …") carries no such
+# phrase. files-only (C parity); `;` deliberately NOT in the separator class
+# (a claim never binds across a clause boundary); per-`<word>` distributive
+# counts are excluded by adjacency (the phrase must directly follow `files`).
+_FILES_LISTING_VERIFIED_RE = re.compile(
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?"
+    r"\s{0,2}[,:–—-]?\s{0,2}"
+    r"listing\s+(?:re-?)?verified\b",
+    re.IGNORECASE,
+)
 # Pattern E (#1005, the trailing-parenthetical footer shape): the paren
 # immediately AFTER the pinned link OPENS with the count-noun —
 # `[summary store + manifest](…/tree/<sha>/…) (52 files)`. Applied via
 # .match() on the paren body captured by _HF_LINKTEXT_THEN_PAREN_RE, so the
-# same-line separator ([ \t]{0,2}) and [^()]{1,300} paren-body bounds are
+# same-line separator ([ \t]{0,2}) and [^()]{1,600} paren-body bounds are
 # inherited from that iterator. Wide distributive decline like Pattern D:
 # ANY "per <word>" qualifier declines — "per namespace" belongs to the #833
 # per-namespace leg; "per adapter"/"per seed" (#460 class) have per-unit
@@ -8732,6 +8830,8 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # design. Trailing negative lookahead: a paren immediately followed by an
 # HF markdown link is Pattern B's paren-before-link shape — D declines
 # rather than extracting a second, differently-scoped claim.
+# Slashless sibling (check 40 ONLY, #1487): _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE
+# (defined in the check-40 block) — Pattern D itself is deliberately untouched.
 _BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
     r"[ \t]{0,2}"
@@ -8808,7 +8908,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Five conservative positions (precision over recall — a missed claim
+    Six conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -8853,6 +8953,23 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       see the E-specific sacrifices below). An at-pinned-revision paren
       fires BOTH C and E with identical args — the shared ``seen`` key
       collapses them to one tuple.
+    - **Pattern F (listing-verified phrase, #1505)** — a count-noun at ANY
+      position inside the paren immediately AFTER the link whose count is
+      immediately followed (one optional ``,`` / ``:`` / en-/em-dash /
+      hyphen separator) by the phrase ``listing (re-)?verified``
+      (``…; logs — 44 files, listing verified live at write time``, the
+      #1072 footer shape). The PHRASE, not the position, is the precision
+      anchor (Pattern C's design philosophy, #1088): a verification-of-
+      listing phrase is pragmatically a whole-prefix claim, while a
+      sub-scoped clause count ("analysis_tensors: 16 files; …") carries
+      no such phrase and stays invisible. files-only (C parity — the noun
+      is hard-coded ``"files"``); per-``<word>`` distributive counts are
+      excluded by ADJACENCY (the phrase must directly follow ``files``,
+      so "files per namespace, listing verified" cannot match — C's
+      mutual-exclusion-by-adjacency argument); same B-adjacency decline
+      as Pattern E (#1422 parity). A count-OPENING listing-verified paren
+      (the corrected #1072 footer) fires E AND F with identical args —
+      the shared ``seen`` key collapses them to one tuple.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
     prose counts near BARE (non-markdown) HF URLs; prose counts AFTER the
@@ -8878,7 +8995,27 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     (``_HF_LINK_FOLLOWS_PAREN_RE`` — B wins; its whitespace separators
     span newlines, so a paren at end-of-line followed by a NEXT-LINE HF
     markdown link also declines — a conservative recall residue, a
-    declined claim, never a wrong one). Lookahead ASYMMETRY (deliberate):
+    declined claim, never a wrong one). Pattern-F-specific sacrifices: a
+    shards-with-phrase claim ("16 shards, listing verified" — files-only,
+    C parity; unseen in the wild); a "verified" phrase without "listing"
+    ("44 files, verified at write time" — too weak an anchor); a
+    clause-crossing claim (``;`` is deliberately NOT in the separator
+    class, so "16 files; listing verified" never binds across the clause
+    boundary); a phrase-anchored count in a paren immediately followed by
+    an HF markdown link (F declines, #1422 parity — a deliberate
+    divergence from C, which predates #1422 and is grandfathered without
+    the decline); a phrase-anchored count after a sub-scoped ``word:``
+    clause marker in the SAME clause is a RESIDUAL accepted precision
+    risk (the phrase pragmatically refers to the linked listing —
+    identical in kind to C's accepted residual); SENTENCE-position counts
+    outside the paren (the "/sentence" half of the #1505 Goal — live
+    example: #560's "— 98 files, listing verified via the Hub API" in
+    sentence position) and hyphenated count-adjective forms ("59-file
+    listing") stay unextracted — the prose-count false-positive surface
+    is too large (the "180 of 197 valid quotes" class named in Pattern
+    A's doc); #555's paren-before-link shape that does NOT open with the
+    count-noun (so Pattern B cannot fire) is likewise a NAMED documented
+    miss. Lookahead ASYMMETRY (deliberate):
     Patterns D and E decline ANY distributive ``per <word>`` qualifier
     while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
@@ -8928,17 +9065,31 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
         _add(pm.group("count"), pm.group("noun"), pm.group("url"))
-    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Patterns C + E: paren after link
+    # Patterns C + E + F: paren after link
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):
         for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):  # C (pinned-revision)
             _add(cm.group("count"), "files", lm.group("url"))
-        # Pattern E (#1005): the paren OPENS with the count-noun — .match()
-        # gives B/D-parity anchor semantics ("( 52 files)" with a leading
-        # space deliberately does not match, a documented recall sacrifice).
-        # An at-pinned-revision paren fires BOTH C and E with identical
-        # _add args — the shared `seen` key collapses them to one tuple.
-        em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
-        if em is not None and _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is None:
-            _add(em.group("count"), em.group("noun"), lm.group("url"))
+        # B-adjacency decline shared by E and F (#1422): a paren immediately
+        # followed by an HF markdown link is Pattern B's paren-before-link
+        # shape — B may extract the paren-OPENING count with the FOLLOWING
+        # link's scope, so E and F both decline. C predates #1422 and keeps
+        # its grandfathered no-decline position (deliberate divergence).
+        followed = _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is not None
+        if not followed:
+            # Pattern F (#1505): phrase-anchored listing-verified count at
+            # ANY position inside the paren — noun hard-coded "files" like C.
+            for cm in _FILES_LISTING_VERIFIED_RE.finditer(lm.group("paren")):
+                _add(cm.group("count"), "files", lm.group("url"))
+            # Pattern E (#1005): the paren OPENS with the count-noun — .match()
+            # gives B/D-parity anchor semantics ("( 52 files)" with a leading
+            # space deliberately does not match, a documented recall sacrifice).
+            # An at-pinned-revision paren fires BOTH C and E with identical
+            # _add args — the shared `seen` key collapses them to one tuple;
+            # a count-OPENING listing-verified paren (the corrected #1072
+            # footer) fires E AND F and collapses the same way.
+            em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
+            if em is not None:
+                _add(em.group("count"), em.group("noun"), lm.group("url"))
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
@@ -9167,7 +9318,10 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     ``dir/`` sub-path + count-opening paren bound to the nearest preceding
     pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
     #1112 footer shape) / Pattern E a paren immediately AFTER the link
-    that OPENS with the count-noun (#1422, the #1005 footer shape); see
+    that OPENS with the count-noun (#1422, the #1005 footer shape) /
+    Pattern F a count at ANY position in the paren AFTER the link whose
+    count is immediately followed by the phrase ``listing (re-)?verified``
+    (#1505, the #1072 footer shape); see
     its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
@@ -9559,6 +9713,25 @@ _UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
 # RELATIVE sub-path claim; bound like the Pattern-D binder (same line,
 # bracket-free gap <= _SUBPATH_CLAIM_MAX_GAP).
 _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
+# Slashless sibling of _BACKTICK_SUBPATH_COUNT_PAREN_RE (#1487, the #1345
+# `analysis_tensors/turnstore` (10 files) footer shape): same paren/count/
+# noun/lookahead shape VERBATIM, but the token does NOT end in "/". A
+# slashless token has no intrinsic directory signature, so the gatherer
+# admits it ONLY under the strong G4 arms (own issue<N>_ prefix, or a
+# binding backtick parent anchor) — never the weak same-line HF cue — and
+# declines dotted-final-segment tokens (check 32's FILE territory).
+# Consumed ONLY by _gather_hf_unpinned_count_claims; check 30 Pattern D is
+# deliberately untouched (pinned-adjacent slashless claims stay out of
+# BOTH checks' scope — see the gatherer docstring).
+_BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE = re.compile(
+    r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{0,119}[A-Za-z0-9_\-])`"
+    r"[ \t]{0,2}"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
+    r"[^()]{0,200}\)"
+    r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
+    re.IGNORECASE,
+)
 # Per-body cap on unique main-revision count probes (same worst-case
 # per-probe arithmetic as _HF_COUNT_MAX_PROBES: ~22.5 s worst case each;
 # unpinned claims are rare, so 4 suffices — past-cap claims keep their
@@ -9580,20 +9753,33 @@ def _hf_hub_importable() -> bool:
 
 def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str | None]]:
     """Extract ``(claimed_count, noun, token, resolved_prefix_or_None)``
-    tuples for Pattern-D-shaped backtick ``dir/`` + count-paren claims whose
-    pinned-link binder returned None — the UNPINNED residue of check 30's
-    Pattern D — HF-context-gated (check 40, #1433; the #1345 footer shape).
+    tuples for backtick subpath + count-paren claims whose pinned-link
+    binder returned None — the UNPINNED residue of check 30's Pattern D
+    shape — HF-context-gated (check 40, #1433; the #1345 footer shape;
+    slashless tokens added by #1487).
 
     Gates, ALL required to fire (precision over recall; WARN-only):
 
-    - **G1 shape:** an ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused
-      VERBATIM from check 30 Pattern D (trailing-slash dir token,
-      count-opening paren, ``per <word>`` distributive decline,
-      not-Pattern-B trailing lookahead), over the fence-stripped body.
-    - **G2 residue:** ``_nearest_preceding_pinned_tree_link(...)`` is None.
-      Pinned-adjacent matches belong to check 30 Pattern D — the two sets
-      partition the D-shape matches by construction, so no claim is ever
-      double-WARNed.
+    - **G1 shape**, one of TWO regexes: (a) an
+      ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused VERBATIM from
+      check 30 Pattern D (trailing-slash dir token, count-opening paren,
+      ``per <word>`` distributive decline, not-Pattern-B trailing
+      lookahead); or (b) a slashless-sibling
+      ``_BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE`` match (#1487 — same
+      paren/count/noun/lookahead tail, token NOT ending in ``/``). Both run
+      over the fence-stripped body, merged in body order. Slashless-ONLY
+      declines (no directory signature to lean on): a DOTTED final segment
+      (a FILE claim — check 32's territory) and any dot-/empty path
+      segment (``.``/``..``/``//``/leading ``/`` — would join to a
+      nonexistent probe path).
+    - **G2 residue (BOTH shapes):**
+      ``_nearest_preceding_pinned_tree_link(...)`` is None. Pinned-adjacent
+      SLASHED matches belong to check 30 Pattern D — the two sets partition
+      the D-shape matches by construction, so no claim is ever
+      double-WARNed. A pinned-adjacent SLASHLESS claim stays out of BOTH
+      checks' scope (a stated bound, unchanged from pre-#1487: no false
+      missing-pin WARN when the pin is present; its count is simply not
+      verified).
     - **G3 not git/local:** the token's first path segment is nonempty
       (declines absolute ``/workspace/...`` forms) and not in
       ``_GIT_SIDE_ROOTS``.
@@ -9601,29 +9787,52 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
       layout), OR a preceding ``issue<N>_.../`` backtick parent anchor binds
       (same line, no ``[``/``]`` in the gap, gap <=
       ``_SUBPATH_CLAIM_MAX_GAP`` — the Pattern-D binder's constraints), OR
-      ``_HF_CUE_RE`` hits in the same-line
-      <=``_UNPINNED_CUE_WINDOW``-char look-back window.
+      — SLASHED shape ONLY — ``_HF_CUE_RE`` hits in the same-line
+      <=``_UNPINNED_CUE_WINDOW``-char look-back window. Slashless tokens
+      require one of the two STRONG arms (own prefix / parent anchor) and
+      never ride the weak cue (#1487 D2), so a slashless claim always
+      arrives with ``resolved`` non-None.
 
     ``resolved_prefix``: the token itself (slash-stripped) when
     issue-prefixed; ``<parent>/<token>`` when a parent anchor bound; else
-    None (the claim WARNs as missing-pin, unresolvable — ZERO probes).
+    None (the claim WARNs as missing-pin, unresolvable — ZERO probes;
+    reachable for the slashed shape only, per G4).
     Dedup on (count, noun-singular, token).
 
     Known recall sacrifices (each avoids a concrete false-positive class):
-    a dir token WITHOUT the trailing slash (#1345's own sibling claim
-    ``raw_completions/stories`` (16 files)); bare-number parens (``(26)``);
-    count-in-prose without a paren; a legacy underscore-form HF prefix
-    (``issue_568/...``) that neither the cue nor a parent anchor rescues.
+    a slashless token with NEITHER an ``issue<N>_`` prefix NOR a binding
+    parent anchor (cue-only slashless declines by design — no directory
+    signature); a slashless dotted-final-segment token (check 32's FILE
+    territory); bare-number parens (``(26)`` — RETAINED by #1487 D3, a
+    stated deviation from that task Goal's letter: the count-noun is the
+    strongest precision token in the whole check-30/40 family, and a bare
+    ``(N)`` beside a backtick token is routinely a row count / N= /
+    footnote — e.g. #1345's own ``analysis_tensors/preds_cache`` (8), the
+    declared residual miss); count-in-prose without a paren; a legacy
+    underscore-form HF prefix (``issue_568/...``) that neither the cue nor
+    a parent anchor rescues.
     """
     stripped = _strip_fenced_blocks(body)
     link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
     parent_matches = list(_BACKTICK_ISSUE_PARENT_RE.finditer(stripped))
     out: list[tuple[int, str, str, str | None]] = []
     seen: set[tuple[int, str, str]] = set()
-    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):
+    d_matches = [(m, False) for m in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped)]
+    sl_matches = [(m, True) for m in _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE.finditer(stripped)]
+    for dm, slashless in sorted(d_matches + sl_matches, key=lambda t: t[0].start()):
         if _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches) is not None:
-            continue  # G2: pinned-adjacent — check 30 Pattern D's territory
+            # G2 (both shapes): pinned-adjacent. Slashed = check 30 Pattern
+            # D's territory (partition preserved); slashless stays out of
+            # BOTH checks' scope (no false missing-pin WARN — the pin IS
+            # present; a stated bound, see the docstring).
+            continue
         token = dm.group("sub")
+        if slashless:
+            segs = token.split("/")
+            if "." in segs[-1]:
+                continue  # dotted FINAL segment = FILE claim (check 32's territory)
+            if any(s in ("", ".", "..") for s in segs):
+                continue  # dot-/empty segments would join to a nonexistent probe path
         first_seg = token.split("/", 1)[0]
         if not first_seg or first_seg in _GIT_SIDE_ROOTS:
             continue  # G3: git/local path, never an HF data-repo prefix
@@ -9649,6 +9858,8 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
                         p for p in (parent.group("parent").strip("/"), token.strip("/")) if p
                     )
         if resolved is None:
+            if slashless:
+                continue  # STRONG arms only for slashless — no HF-cue fallback (#1487 D2)
             window = stripped[max(0, dm.start() - _UNPINNED_CUE_WINDOW) : dm.start()]
             window = window.rsplit("\n", 1)[-1]  # same-line look-back only
             if _HF_CUE_RE.search(window) is None:
@@ -9672,7 +9883,11 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
     pinned tree link binding on the line (the nearest preceding pinned link
     is declined by the Pattern-D gap guards — intervening brackets + a
     >400-char gap), so checks 30/32 — both pin-adjacent by construction —
-    silently dropped the claim (#1433).
+    silently dropped the claim (#1433). #1487 extends the extraction to
+    SLASHLESS subpath tokens (#1345's ``analysis_tensors/turnstore`` (10
+    files) under an unlinked backtick ``issue<N>_.../`` parent prefix),
+    strong-arm-gated; a pinned-adjacent slashless claim stays out of BOTH
+    checks' scope (see ``_gather_hf_unpinned_count_claims``).
 
     Semantics:
 
@@ -9774,6 +9989,89 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
             msg += " (resolved at `main`, which is unpinned and may have moved since the claim)"
             warn_lines.append(msg)
     return CheckResult(name, True, "; ".join(warn_lines), is_warn=True)
+
+
+# ─── Check 41: sidecar-less embedded figures (coverage WARN) — #1434/#1478 ──
+#
+# Checks 24/28/33/34 all fail-soft skip a figure whose sibling `.meta.json`
+# does not resolve at the cited sha (the check-24 convention), so a
+# sidecar-less figure silently bypasses every figure-text check with no
+# surface (incident #1434: 3 of 12 embedded figures had no sidecar; slug
+# tick labels passed the mechanical gate and the clean-result-critic caught
+# them only at round 3). Check 41 makes the coverage gap visible: ONE WARN
+# per body naming the sidecar-less figures. Existence-only probe
+# (`git cat-file -e` via `_git_object_exists`) — never reads content, so an
+# existing-but-unparsable sidecar stays the siblings' fail-soft residual.
+
+
+def check_figure_sidecar_coverage(body: str) -> CheckResult:
+    """Check 41 (WARN, generation-agnostic): every same-repo sha-pinned
+    embedded figure should carry a sibling ``.meta.json`` sidecar at the
+    cited sha — the sidecar is what checks 24/28/33/34 read, and a figure
+    without one silently skips ALL of them (the check-24 fail-soft
+    convention), shrinking figure-text coverage to whichever figures happen
+    to carry sidecars (incident #1434). WARN, never FAIL: plain
+    ``fig.savefig`` scripts never write a sidecar (check 28's documented
+    residual (i)), so a retroactive FAIL would block promote-time
+    re-verifies of grandfathered bodies; the multimodal critics keep the
+    substantive PNG-pixel read either way. Scope gates per figure: only
+    same-repo sha-pinned raw-GitHub URLs; the PNG itself must resolve at
+    the cited sha (``_git_object_exists`` == 'pass' — an unresolvable sha /
+    absent PNG defers to check 22, no double-report). NO-OP PASS when: no
+    scan section, no inline figures, the repo cannot be resolved (offline /
+    ``--body-stdin``), or no figure passes the scope gates. Existence probes
+    only — two ``_git_object_exists`` invocations (up to four bounded
+    subprocess spawns) per unique figure URL, no ``git show`` content read.
+    """
+    label = "figure sidecar coverage (sidecar-less embedded figures)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    missing: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        checked += 1
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status == "fail":
+            missing.append(fig_path.rsplit("/", 1)[-1])
+    if missing:
+        missing = list(dict.fromkeys(missing))
+        preview = ", ".join(f"`{b}`" for b in missing[:3]) + (" …" if len(missing) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"figure-text checks (24/28/33/34) skipped {len(missing)} sidecar-less "
+            f"figure(s) of {checked} same-repo embedded: {preview} — regenerate via "
+            "savefig_paper (writes the sidecar), or acknowledge in body",
+            is_warn=True,
+        )
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned figures to check")
+    return CheckResult(
+        label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
 
 
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
@@ -11946,6 +12244,9 @@ CHECKS = [
     # check 40 (WARN, generation-agnostic) — unpinned backtick HF-path count claims
     # flag the missing /tree/<sha> pin + best-effort resolve at main (#1433, #1345):
     check_hf_unpinned_count_claims,
+    # check 41 (WARN, generation-agnostic) — sidecar-less embedded figures:
+    # names the figures checks 24/28/33/34 silently skipped (#1478; incident #1434):
+    check_figure_sidecar_coverage,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

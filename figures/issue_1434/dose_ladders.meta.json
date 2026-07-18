@@ -1,0 +1,421 @@
+{
+  "commit": "a145ef3058",
+  "created": "2026-07-17T19:38:52Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.6,
+      "series": "con verdict arm (existing)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.86,
+      "series": "con matched-high (new)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.0,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.01,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.19,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.35,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.6,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.87,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.87,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.86,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.92,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.94,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.93,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.94,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.81,
+      "series": "po verdict arm (existing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.49,
+      "series": "po near-matched-low (new)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.0,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.03,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.27,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.43,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.81,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.96,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.94,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.97,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.97,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.98,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.98,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.97,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.99,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.97,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.99,
+      "series": "lr 1e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.01,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.49,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.93,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.99,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.97,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.98,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.96,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.99,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.99,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.99,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.99,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.98,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 49,
+  "text": {
+    "suptitle": "persona dose ladders \u2014 the four panel rungs marked",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "contrastive persona",
+        "xlabel": "optimizer step",
+        "ylabel": "Tier-1 judged rate",
+        "legend_labels": [
+          "band 0.60-0.85",
+          "lr 1e-5",
+          "con verdict arm (existing)",
+          "con matched-high (new)"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "positive-only persona",
+        "xlabel": "optimizer step",
+        "legend_labels": [
+          "band 0.60-0.85",
+          "lr 1e-5",
+          "lr 3e-5",
+          "po verdict arm (existing)",
+          "po near-matched-low (new)"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ],
+    "series": [
+      "lr 1e-5",
+      "con verdict arm (existing)",
+      "con matched-high (new)",
+      "lr 3e-5",
+      "po verdict arm (existing)",
+      "po near-matched-low (new)"
+    ]
+  }
+}

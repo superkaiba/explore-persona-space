@@ -1,0 +1,835 @@
+{
+  "commit": "f69b4ba077",
+  "created": "2026-07-18T04:12:36Z",
+  "figsize": [
+    10.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.12,
+      "error": 0.061835201497428105,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.61,
+      "error": 0.09536358707084441,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.2727272727272727,
+      "error": 0.09715523467256745,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.4725274725274725,
+      "error": 0.10082618581848951,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.97,
+      "error": 0.09266540833729664,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.5555555555555556,
+      "error": 0.09671027237573118,
+      "series": "casual organism \u2014 Persona (software engineer) (committed)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.59,
+      "error": 0.061835201497428105,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.25,
+      "error": 0.09536358707084441,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.02040816326530612,
+      "error": 0.09715523467256745,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.0967741935483871,
+      "error": 0.10082618581848951,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.98,
+      "error": 0.09266540833729664,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.71,
+      "error": 0.09671027237573118,
+      "series": "casual organism \u2014 Bare assistant (committed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.061835201497428105,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.09536358707084441,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.09715523467256745,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.10082618581848951,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.47,
+      "error": 0.09266540833729664,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.6868686868686869,
+      "error": 0.09671027237573118,
+      "series": "casual organism \u2014 WildChat prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.061835201497428105,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.08,
+      "error": 0.09536358707084441,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "error": 0.09715523467256745,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.030303030303030304,
+      "error": 0.10082618581848951,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 1.0,
+      "error": 0.09266540833729664,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.30303030303030304,
+      "error": 0.09671027237573118,
+      "series": "casual organism \u2014 ICL prefix (committed)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.08,
+      "error": 0.061835201497428105,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.6632653061224489,
+      "error": 0.09536358707084441,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.38,
+      "error": 0.09715523467256745,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.5257731958762887,
+      "error": 0.10082618581848951,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.69,
+      "error": 0.09266540833729664,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.37,
+      "error": 0.09671027237573118,
+      "series": "Installed impolite organism (unrelated behavior)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.12,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.61,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.2727272727272727,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.4725274725274725,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.97,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.5555555555555556,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.057796475511212794,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.5052762792091752,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.18639468722890434,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.366493303677645,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.9041127378041308,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.45067814699597186,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.19812268002908368,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.699832780680298,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.367711090263185,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.5741242145000025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.9897456617765851,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.6495409527278297,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.59,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.25,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.02040816326530612,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.0967741935483871,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.98,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.71,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.485261445318224,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.1667763367694185,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": -0.019434883270647966,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.03850159052184346,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.9177912204938173,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.6076867024708167,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.6813284290433533,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.3430464637007583,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.07138350826885075,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.17378835459540445,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.9944981477650318,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.7898529302601586,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.47,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.6868686868686869,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.3681501675963008,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.5831602921881309,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.03735453357396229,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.03735453357396229,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.5671131686275227,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.769793480226468,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.08,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.030303030303030304,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.30303030303030304,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.026312265799174506,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": -0.011725555068083773,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.9476814415300565,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.21328209085895045,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.14998266879403072,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.08533823116525735,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.3995144590281556,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.08,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.6632653061224489,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.38,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.5257731958762887,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.69,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.37,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.026312265799174506,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.5583728968573964,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.28359379244776173,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.4206043943703942,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.5868735512640829,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.2743759794972065,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "casual-register delta vs base (judged rate)": 0.14998266879403072,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "casual-register delta vs base (judged rate)": 0.7491000709990853,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "casual-register delta vs base (judged rate)": 0.47790426179289663,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "casual-register delta vs base (judged rate)": 0.6222567660073732,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "casual-register delta vs base (judged rate)": 0.7722043679386762,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "casual-register delta vs base (judged rate)": 0.46779652424866885,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 120,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "unrelated-organism control: casual delta per read context \u2014 verdict lattice: no_verdict_engagement_gate_failed (Newcombe 95% CIs)",
+        "ylabel": "casual-register delta vs base (judged rate)",
+        "legend_labels": [
+          "verdict ICL cell",
+          "casual organism \u2014 Persona (software engineer) (committed)",
+          "casual organism \u2014 Bare assistant (committed)",
+          "casual organism \u2014 WildChat prefix (committed)",
+          "casual organism \u2014 ICL prefix (committed)",
+          "Installed impolite organism (unrelated behavior)"
+        ],
+        "xticklabels": [
+          "Default assistant",
+          "Persona (software engineer)",
+          "Police officer",
+          "Philosopher",
+          "Two-shot ICL prefix",
+          "WildChat prefix"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "casual organism \u2014 Persona (software engineer) (committed)",
+      "casual organism \u2014 Bare assistant (committed)",
+      "casual organism \u2014 WildChat prefix (committed)",
+      "casual organism \u2014 ICL prefix (committed)",
+      "Installed impolite organism (unrelated behavior)"
+    ]
+  }
+}

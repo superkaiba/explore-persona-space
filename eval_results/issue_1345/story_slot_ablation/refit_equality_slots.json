@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "git_commit": "d9f8571f241f719550be2397bc268b9542c01791",
+    "timestamp": "2026-07-17T22:44:12Z",
+    "seed": 0,
+    "n": 3,
+    "script": "scripts/issue1345_slot_verdict.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "tolerance": 0.02,
+  "anchors": {
+    "R_instruct_r4slot_anchor_context": -0.3056,
+    "R_instruct_r4slot_prefix": -1.3714,
+    "R_instruct_r1_matched_context": 0.2426
+  },
+  "mode": "binding",
+  "results": {
+    "R_instruct_r4slot_anchor_context": {
+      "fresh_l19_r2": -0.3055801205963524,
+      "landed_l19_r2": -0.3055801205963524,
+      "abs_dev": 0.0,
+      "pass": true
+    },
+    "R_instruct_r4slot_prefix": {
+      "fresh_l19_r2": -1.3714195334282682,
+      "landed_l19_r2": -1.3714195334282682,
+      "abs_dev": 0.0,
+      "pass": true
+    },
+    "R_instruct_r1_matched_context": {
+      "fresh_l19_r2": 0.24258391652474653,
+      "landed_l19_r2": 0.24258391652474653,
+      "abs_dev": 0.0,
+      "pass": true
+    }
+  },
+  "pass": true
+}

@@ -113,6 +113,11 @@ class Rendered:
         format: ``"chat"`` or ``"naturalistic"``.
         conv_id: stable conversation identifier.
         meta: free-form extra metadata (source, filters applied, etc.).
+        pooled_spans: OPT-IN named mean-pool reads (#1345 slot ablation):
+            name -> half-open ``(start, end)`` token range whose PER-LAYER
+            MEAN hidden state is stored as an extra slot row APPENDED after
+            the single-position slots (extract_turnstore ``process_batch``).
+            Default empty == parent behavior byte-identical.
     """
 
     input_ids: list[int]
@@ -121,6 +126,7 @@ class Rendered:
     format: str
     conv_id: str
     meta: dict = field(default_factory=dict)
+    pooled_spans: dict[str, tuple[int, int]] = field(default_factory=dict)
 
 
 @dataclass

@@ -101,6 +101,8 @@ I then wanted to see whether post-training builds a new map or just re-expresses
 - This indicates the information to predict the instruct text is already present in the base model context vector
     - this gives some indication that post-training is only eliciting capabilities and not teaching new ones (at least the ones that are linearly predictable from the context vector)
 
+_Update (matched-capacity null round, 2026-07-17): the equality is not a fitting-capacity artifact. Two matched-capacity fitted nulls at layer 19 (identical ridge core, folds, and n=5,000) collapse far below the observed 0.673 — refitting the cross-model change-of-coordinates on shuffled correspondence gives held-out $R^2$ −0.002, and replacing the base operator with a spectrum-matched random operator (same singular values, random subspaces) gives −0.25 (base→instruct) / −0.47 (instruct→base). A 1,000-draw conversation-grouped bootstrap places the reparameterized composition at the own-map ceiling: base→instruct comp−ceiling Δ −0.0003 (95% CI [−0.0024, +0.0019], indistinguishable), instruct→base +0.0012 (95% CI [+0.0003, +0.0021], a marginal +0.001 $R^2$ above). See `scripts/issue825_reparam_matched_null.py`, `figures/issue_825/reparam_matched_null.png`._
+
 ### _Result 2.5: What is the reparameterized base map?_
 
 I then wanted to see if there is a difference between the reparameterized base map and the instruct map (just because they have the same predictive power doesn't mean they are the same)

@@ -153,6 +153,13 @@ Go through the week's transcripts in detail. Same goal and same signal classes
 as `/daily` — COVERAGE, not pattern-mining. Catch every distinct problem,
 confusion, or error, even one-offs. No recurrence requirement.
 
+The `/daily` evidence-counting discipline applies here verbatim: quantify
+an error/warn string by `tool_result` firing events only — recipe echoes
+(command text, quoted-recipe blocks, `toolUseResult` duplicates) and
+content-readback echoes (read/grep results, quoted subagent reports) are
+excluded — and state the counting method on any quantified claim (see
+`.claude/skills/daily/SKILL.md` § Problem sweep, #1484).
+
 Signals to hunt for (non-exhaustive — anything that went wrong counts):
 
 - **User corrections** — "no", "don't", "stop", "wrong", "not what I meant", or Thomas significantly rewriting / redoing an artifact.

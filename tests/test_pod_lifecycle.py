@@ -1124,6 +1124,246 @@ def test_terminate_parser_exposes_skip_upload_verify_flag():
 
 
 # ---------------------------------------------------------------------------
+# cmd_terminate — keep-running teardown shield (#1485)
+# ---------------------------------------------------------------------------
+
+
+def _stub_keep_running_state(monkeypatch, state) -> None:
+    """Monkeypatch task_workflow.keep_running_tag_state (imported lazily
+    inside ``_guard_keep_running_before_terminate``) to a fixed tri-state
+    value — the seam is the LIBRARY reader, so the guard's own routing
+    (refuse / proceed / force / dry-run) runs for real."""
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        lambda issue: state,
+    )
+
+
+def test_terminate_bare_refuses_on_keep_running_tag(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """DURABILITY PIN (#1485 acceptance criterion 1): the bare (issue-wide)
+    terminate REFUSES via SystemExit when the owning task carries the
+    keep-running tag — zero terminate_pod calls — and the message names all
+    three remedies (remove-tag / --name-suffix / --force-keep-running).
+    Incident 2026-07-17: pod-1345-onpolicy destroyed mid-launch by an
+    issue-wide sweep that never read the tag."""
+    pod_name = _register_pod_for_issue(600)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, True)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=600))
+
+    msg = str(exc.value)
+    assert "keep-running" in msg
+    assert "remove-tag 600 keep-running" in msg
+    assert "--name-suffix" in msg
+    assert "--force-keep-running" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called when the shield refuses"
+
+
+def test_terminate_name_suffix_allowed_despite_keep_running_tag(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 2: a surgical --name-suffix destroy is the
+    operator's explicit single-pod choice — never blocked by the tag. The
+    reader stub RAISES, pinning that the surgical path reads NO tag state at
+    all (the guard early-returns before any read)."""
+    _write_metadata_file(
+        {
+            "pod-601": _meta("pod-601", issue=601),
+            "pod-601-b": _meta("pod-601-b", issue=601, pod_id="live-suffix-b"),
+        }
+    )
+    stub_list_team_pods.return_value = [
+        _info("pod-601", pod_id="live-canonical"),
+        _info("pod-601-b", pod_id="live-suffix-b"),
+    ]
+
+    def boom(_issue):
+        raise AssertionError("keep-running state must not be read on the surgical path")
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        boom,
+    )
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=601, name_suffix="b"))
+
+    assert stub_terminate_pod == ["live-suffix-b"], (
+        f"surgical terminate must destroy ONLY pod-601-b; got {stub_terminate_pod}"
+    )
+
+
+@pytest.mark.parametrize("state", [True, None])
+def test_terminate_force_keep_running_overrides_with_warning(
+    state,
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 3: --force-keep-running proceeds with a
+    LOUD stderr warning — for BOTH the tag-present and the unreadable state
+    (the force check precedes the None refusal)."""
+    pod_name = _register_pod_for_issue(602)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, state)
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    ns = terminate_ns(issue=602)
+    ns.force_keep_running = True  # the fixture Namespace predates the flag
+    pod_lifecycle.cmd_terminate(ns)
+
+    err = capsys.readouterr().err
+    assert "--force-keep-running" in err
+    assert "DESPITE keep-running" in err
+    assert len(stub_terminate_pod) == 1, (
+        f"terminate must proceed under --force-keep-running (state={state!r})"
+    )
+
+
+def test_terminate_keep_running_unknown_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#1485 acceptance criterion 4 (fail-closed): an UNREADABLE tag state
+    (branch-guard RuntimeError, corrupt frontmatter, registry corruption —
+    the library reader returns None) refuses the irreversible bare terminate,
+    naming the override."""
+    pod_name = _register_pod_for_issue(603)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_keep_running_state(monkeypatch, None)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=603))
+
+    msg = str(exc.value)
+    assert "could not be read" in msg
+    assert "--force-keep-running" in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_keep_running_dry_run_notes_and_previews(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """Phase-2 Statistics Must-Fix (#1485): --dry-run previews and reads NO
+    task state — BOTH get_task and keep_running_tag_state are stubbed to
+    raise — while a generic would-check NOTE names what a real run would do.
+    The pre-existing pin test_terminate_dry_run_bypasses_guard stays green
+    unmodified; this test additionally pins the NOTE + the reader."""
+    pod_name = _register_pod_for_issue(604)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+
+    def should_not_read_task(_issue):
+        raise AssertionError("dry-run must not inspect task state")
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        should_not_read_task,
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.keep_running_tag_state",
+        should_not_read_task,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=604, dry_run=True))
+
+    err = capsys.readouterr().err
+    assert "keep-running tag" in err
+    assert "REFUSE this issue-wide terminate" in err
+    assert stub_terminate_pod == [], "dry-run must not call terminate_pod"
+
+
+def test_terminate_parser_exposes_force_keep_running_flag():
+    """Regression guard: the --force-keep-running flag exists on the
+    terminate subparser (and only defaults False)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["terminate", "--issue", "1", "--yes", "--force-keep-running"])
+    assert ns.force_keep_running is True
+
+    ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
+    assert ns2.force_keep_running is False
+
+
+def test_keep_running_tag_constant_matches_task_workflow():
+    """The pod_lifecycle module keeps its own lazy-import-independent copy of
+    the tag literal; pin it to the task_workflow canonical constant so the
+    two can never drift."""
+    import explore_persona_space.task_workflow as tw
+
+    assert pod_lifecycle._KEEP_RUNNING_TAG == tw.KEEP_RUNNING_TAG == "keep-running"
+
+
+def test_runpod_backend_teardown_composes_bare_terminate_no_force(monkeypatch):
+    """#1485 defense-in-depth pin (transitive inheritance): RunPodBackend.
+    teardown delegates to a ``pod_lifecycle.py terminate --issue N --yes``
+    SUBPROCESS in the BARE form — no --force-keep-running, no --name-suffix —
+    so the new keep-running guard binds in the child. (An in-process
+    monkeypatch cannot cross the subprocess boundary; the argv assertion is
+    the mechanizable form.)"""
+    from explore_persona_space.backends import runpod as rp
+    from explore_persona_space.backends.base import RunHandle
+
+    captured: list[list[str]] = []
+    monkeypatch.setattr(rp, "_run_pod_lifecycle_relay", lambda cmd, **k: captured.append(cmd))
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="job-1485",
+        pod_name="pod-1485",
+        scratch_dir="/workspace",
+        log_path="/log",
+        extra={"issue": 1485},
+    )
+    rp.RunPodBackend().teardown(handle)
+
+    assert len(captured) == 1
+    cmd = captured[0]
+    assert "terminate" in cmd
+    assert "--issue" in cmd and "1485" in cmd and "--yes" in cmd
+    assert "--force-keep-running" not in cmd
+    assert "--name-suffix" not in cmd
+
+
+# ---------------------------------------------------------------------------
 # cmd_terminate — live-API authority for pod_id (post-#475 hardening)
 # ---------------------------------------------------------------------------
 

@@ -1,0 +1,183 @@
+{
+  "commit": "38625f8dbc",
+  "created": "2026-07-18T00:15:31Z",
+  "figsize": [
+    12.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "transfer R\u00b2": -4.48715108932141,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "transfer R\u00b2": -3.3318249538434648,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "transfer R\u00b2": -2.2182084850161243,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "transfer R\u00b2": -2.38054991562656,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "transfer R\u00b2": -1.9388533775239978,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "transfer R\u00b2": -2.367550514800032,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "transfer R\u00b2": -1.571874076071528,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "transfer R\u00b2": -6.116414337790312,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "recovery R\u00b2": 0.6097956821773911,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "recovery R\u00b2": 0.6097951401117381,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "recovery R\u00b2": 0.6425929048797352,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "recovery R\u00b2": 0.6097951003959541,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "recovery R\u00b2": -0.18233555143866487,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "recovery R\u00b2": -0.2683562322272397,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "recovery R\u00b2": 0.09168491217878383,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "recovery R\u00b2": -0.13920493636509867,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.399,
+      "recovery R\u00b2": -0.03994829325437772,
+      "series": "shuffled-fit null (mean)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.019000000000000017,
+      "recovery R\u00b2": -0.03994829325437772,
+      "series": "shuffled-fit null (mean)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Naive transfer at layer 19",
+        "ylabel": "transfer R\u00b2",
+        "legend_labels": [
+          "chat map applied in story (naive)",
+          "story map applied in chat (naive)"
+        ],
+        "xticklabels": [
+          "end of question",
+          "pre-attribution",
+          "pre-answer",
+          "attribution mean-pool"
+        ],
+        "yticklabels": [
+          "\u22127",
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0"
+        ]
+      },
+      {
+        "title_left": "Reparameterization recovery at layer 19",
+        "ylabel": "recovery R\u00b2",
+        "legend_labels": [
+          "shuffled-fit null (mean)",
+          "slot operator moved into chat",
+          "chat operator moved into slot"
+        ],
+        "xticklabels": [
+          "end of question",
+          "pre-attribution",
+          "pre-answer",
+          "attribution mean-pool"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "chat map applied in story (naive)",
+      "story map applied in chat (naive)",
+      "shuffled-fit null (mean)",
+      "slot operator moved into chat",
+      "chat operator moved into slot"
+    ]
+  }
+}

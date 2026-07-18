@@ -2932,6 +2932,293 @@ def _runspec_from_gcp_handle(handle, issue):
     )
 
 
+# ─── #1490 provision-residue reclaim (the failover NoComputeAvailableError branch) ───
+
+#: Terminal reason for a failover whose failed RunPod provision left a live
+#: ``pod-<N>`` behind that could NOT be reclaimed or attributed (#1490).
+#: Deliberately NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS``
+#: (autonomous_session_watch.py) — a re-drivable label on a run whose pod
+#: bills unattended invites the capacity-retry churn (the #931 mislabel #954
+#: fixed for the workload-start case with ``runpod_workload_start_failed``),
+#: so this reason PARKS the task at ``blocked`` for a human.
+RUNPOD_PROVISION_LEAKED_REASON = "runpod_provision_leaked_pod"
+
+#: Provision-failure evidence markers for the #1490 TWO-SIGNAL terminate gate,
+#: grepped from the producers at implementation time. ``created-nothing`` =
+#: our provision provably created NO pod (a singleton new id under these
+#: shapes is a FOREIGN actor's pod — never terminate):
+#: - ``[wait-for-capacity] STILL-WAITING`` + ``EXIT_STILL_WAITING == 75``
+#:   (pod_lifecycle.py ``_emit_still_waiting_and_exit``, stderr+stdout — the
+#:   wait loop exhausted its budget BEFORE any create ran);
+#: - a no-capacity shape (``RunPodNoCapacityError`` / ``SUPPLY_CONSTRAINT``,
+#:   runpod_api.py — the create was refused, nothing exists).
+#: NOTE (r2, mixed-evidence): these markers can co-occur with a LATER create —
+#: the per-attempt wait-for-capacity heartbeat (pod_lifecycle.py ~L1154-1157)
+#: embeds the capacity exception text (``SUPPLY_CONSTRAINT``) on stderr, and
+#: the relay's 60-line tail keeps those lines when bootstrap fails early — so
+#: :func:`_classify_provision_failure` gives :data:`_CREATED_THEN_FAILED_MARKERS`
+#: PRECEDENCE (positive our-create evidence always wins).
+_CREATED_NOTHING_MARKERS: tuple[str, ...] = (
+    "STILL-WAITING",
+    "RunPodNoCapacityError",
+    "SUPPLY_CONSTRAINT",
+)
+
+#: The ``cmd_provision`` idempotency-refusal pair (pod_lifecycle.py
+#: ~L1903-1907): ``Pod <name> already exists (status=..., id=...).\nUse
+#: `pod.py resume --issue <N>...``` — refused BEFORE creating, so it is a
+#: ``created-nothing`` shape, matched CONJUNCTIVELY (BOTH fragments required;
+#: r2 sibling-B fix: a bare ``already exists`` substring also occurs in
+#: bootstrap stderr — e.g. git's ``destination path ... already exists and is
+#: not an empty directory`` — which must NOT read as created-nothing).
+#: NOTE: the refusal text prints to STDOUT, which the relay leaves INHERITED
+#: (only the stderr tail rides ``PodLifecycleProcessError``), so in production
+#: this shape usually classifies ``unknown`` → ``leaked`` (still never a
+#: terminate; the matcher fires when the text does reach the evidence, e.g.
+#: via a future relay change or a caller-composed message).
+_PROVISION_REFUSAL_MARKERS: tuple[str, ...] = (
+    "already exists",
+    "Use `pod.py resume",
+)
+
+#: ``created-then-failed`` = our provision CREATED a pod, then failed — the
+#: positive our-create evidence the terminate requires:
+#: - ``Bootstrap exited with code`` / ``Pod is up but not experiment-ready``
+#:   (pod_lifecycle.py ``cmd_provision`` bootstrap-failure exit, stderr — the
+#:   #1417 shape);
+#: - ``exposed no public SSH mapping`` (pod_lifecycle.py
+#:   ``_provision_wait_register_bootstrap`` — the pod exists and bills but
+#:   SSH never came up within the window, stderr).
+_CREATED_THEN_FAILED_MARKERS: tuple[str, ...] = (
+    "Bootstrap exited with code",
+    "Pod is up but not experiment-ready",
+    "exposed no public SSH mapping",
+)
+
+
+def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
+    """Live pod_ids whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+
+    The attribution probe for the #1490 provision-residue reclaim: called once
+    BEFORE the failover launch (the ``pre`` snapshot) and once in the
+    ``NoComputeAvailableError`` branch (the ``post`` snapshot). Returns
+    ``None`` on ANY API failure (probe-unknown; callers bias SAFE — an unknown
+    snapshot never licenses a terminate). One GraphQL list call per snapshot;
+    GCP→RunPod failovers are rare events. Post-probe listing lag (a
+    just-created pod missing from the team list) reads as no-residue — the
+    #1490 D2 watcher orphan arm catches that leak on a later tick.
+    """
+    try:
+        _ensure_scripts_dir_on_sys_path()
+        from runpod_api import list_team_pods  # lazy import (#770/#775 pattern)
+
+        name = f"pod-{int(issue)}"
+        return {p.pod_id for p in list_team_pods() if p.name == name}
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: provision-residue live-pod probe failed (%s: %s); "
+            "treating the snapshot as unknown (bias safe — no terminate)",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
+def _classify_provision_failure(evidence_text: str, returncode: int | None) -> str:
+    """Classify failover-provision-failure evidence (#1490 two-signal gate).
+
+    Returns ``"created-nothing"`` (our provision provably created NO pod),
+    ``"created-then-failed"`` (our provision created a pod, then failed —
+    the POSITIVE our-create evidence the terminate requires), or
+    ``"unknown"``. The ``created-then-failed`` markers take PRECEDENCE over
+    mixed evidence (r2 fix, concern
+    ``mixed-evidence-misroutes-residue-foreign-created``): a provision that
+    WAITED for capacity, then CREATED the pod, then failed bootstrap carries
+    BOTH families in the bounded stderr tail (the wait heartbeat embeds
+    ``SUPPLY_CONSTRAINT`` text), and the bootstrap/SSH markers only ever
+    appear when OUR create ran — so they always win, keeping the terminate
+    reachable for the genuine #1417 residue. ``returncode == 75`` is
+    ``EXIT_STILL_WAITING`` (pod_lifecycle.py — the exit-75 still-waiting
+    contract ``dispatch_issue._provision_still_waiting`` also reads; the
+    exit-75 path structurally precedes any create, so it cannot co-occur
+    with a real created-then-failed marker). The idempotency-refusal pair
+    is matched conjunctively (BOTH fragments) so a generic ``already
+    exists`` inside bootstrap stderr never reads as created-nothing.
+    """
+    text = evidence_text or ""
+    if any(marker in text for marker in _CREATED_THEN_FAILED_MARKERS):
+        return "created-then-failed"
+    if returncode == 75 or any(marker in text for marker in _CREATED_NOTHING_MARKERS):
+        return "created-nothing"
+    if all(marker in text for marker in _PROVISION_REFUSAL_MARKERS):
+        return "created-nothing"
+    return "unknown"
+
+
+def _terminate_error_is_pod_not_found(exc: Exception) -> bool:
+    """True when a failed ``terminate_pod`` means the pod is ALREADY GONE.
+
+    The RunPod GraphQL layer surfaces a terminate of a nonexistent pod id as a
+    ``RunPodError`` whose message carries the API's ``POD_NOT_FOUND`` error
+    code / a ``not found`` phrase INSIDE a GraphQL-errors payload (see
+    runpod_api.py — ``graphql()`` raises ``RunPodError(f"GraphQL errors:
+    {err_text}")`` with the errors JSON; the project's canonical shape is the
+    ``POD_NOT_FOUND`` extension code). A pod that is already gone is a
+    SUCCESSFUL reclaim (#1490 test 15 — no needless human park), not a leak.
+
+    r2 sibling-C fix: the phrase form REQUIRES the ``GraphQL errors`` context
+    — a bare lowercase ``not found`` also matches transport-shaped errors
+    (``RunPodError(f"HTTP 404 from RunPod: <html>Not Found...")``,
+    runpod_api.py ~L346 — a transient proxy blip), which must classify
+    ``leaked`` (fail direction: an unrecognized terminate error never reads
+    torn-down while the pod may still bill).
+    """
+    text = str(exc)
+    if "POD_NOT_FOUND" in text:
+        return True
+    return "GraphQL errors" in text and "not found" in text.lower()
+
+
+def _reclaim_failed_runpod_provision(
+    *,
+    issue: int,
+    pre_ids: set[str] | None,
+    evidence: tuple[str, int | None],
+    cause_label: str,
+    failover_tag: str,
+) -> dict:
+    """Best-effort reclaim of a pod the JUST-FAILED failover provision created (#1490).
+
+    Implements the plan-§3 v2 decision table over ``post − pre`` live-pod
+    set-difference AND the provision-failure evidence shape. The surgical
+    ``terminate_pod(pod_id)`` (the #770/#775 in-file precedent — pod-id
+    scoped, bypassing ``cmd_terminate``'s upload-verify + keep-running guards,
+    which would refuse for a just-provisioned never-ran pod) fires ONLY on the
+    TWO-SIGNAL gate: a SINGLETON new id AND positive ``created-then-failed``
+    evidence. Every ambiguous / created-nothing / unknown cell never
+    terminates. NEVER raises — an unexpected error degrades to
+    ``no-residue`` (today's exact re-drivable behavior).
+
+    Returns ``{"outcome": "no-residue" | "torn-down" | "pre-existing" |
+    "foreign-created" | "leaked", "pod_ids": [...], "detail": str}``.
+    ``leaked`` routes to the non-re-drivable
+    :data:`RUNPOD_PROVISION_LEAKED_REASON` terminal; every other outcome keeps
+    today's re-drivable ``no_compute_available``.
+    """
+    del cause_label, failover_tag  # display strings live on the terminal JSON
+    try:
+        post_ids = _live_runpod_ids_for_issue(issue)
+        if post_ids is None:
+            return {
+                "outcome": "no-residue",
+                "pod_ids": [],
+                "detail": (
+                    "post-provision live-pod probe failed — residue unknown; "
+                    "the watcher orphan-gcp-handle arm is the backstop"
+                ),
+            }
+        if not post_ids:
+            return {"outcome": "no-residue", "pod_ids": [], "detail": ""}
+        if pre_ids is None:
+            return {
+                "outcome": "leaked",
+                "pod_ids": sorted(post_ids),
+                "detail": (
+                    f"pre-provision probe failed; live pod(s) {sorted(post_ids)} cannot be "
+                    f"attributed to this failover — never terminate what we can't attribute"
+                ),
+            }
+        new_ids = post_ids - pre_ids
+        if not new_ids:
+            return {
+                "outcome": "pre-existing",
+                "pod_ids": sorted(post_ids),
+                "detail": f"live pod(s) {sorted(post_ids)} pre-existed this failover",
+            }
+        if len(new_ids) > 1:
+            return {
+                "outcome": "leaked",
+                "pod_ids": sorted(new_ids),
+                "detail": (
+                    f"{len(new_ids)} new pods {sorted(new_ids)} appeared during the failover "
+                    f"window — concurrent-creator ambiguity; never terminate"
+                ),
+            }
+        evidence_text, returncode = evidence
+        shape = _classify_provision_failure(evidence_text, returncode)
+        (pod_id,) = new_ids
+        if shape == "created-nothing":
+            return {
+                "outcome": "foreign-created",
+                "pod_ids": [pod_id],
+                "detail": (
+                    f"the provision failure shape proves OUR provision created no pod; "
+                    f"new pod {pod_id} belongs to another actor — never terminate (a "
+                    f"re-drive's provision idempotency-refuses on it safely)"
+                ),
+            }
+        if shape != "created-then-failed":
+            return {
+                "outcome": "leaked",
+                "pod_ids": [pod_id],
+                "detail": (
+                    f"provision-failure evidence is '{shape}' — cannot positively attribute "
+                    f"new pod {pod_id} to this failover's provision; never terminate on "
+                    f"ambiguity"
+                ),
+            }
+        # TWO-SIGNAL gate satisfied: singleton new id AND positive
+        # created-then-failed evidence. Surgical pod-id terminate.
+        try:
+            _ensure_scripts_dir_on_sys_path()
+            from runpod_api import terminate_pod  # lazy import (#770/#775 pattern)
+
+            terminate_pod(pod_id)
+        except Exception as exc:
+            if _terminate_error_is_pod_not_found(exc):
+                return {
+                    "outcome": "torn-down",
+                    "pod_ids": [pod_id],
+                    "detail": (
+                        f"provision-residue pod-{int(issue)} ({pod_id}) already gone at "
+                        f"terminate ({type(exc).__name__}) — nothing bills"
+                    ),
+                }
+            return {
+                "outcome": "leaked",
+                "pod_ids": [pod_id],
+                "detail": (
+                    f"terminate of provision-residue pod {pod_id} FAILED "
+                    f"({type(exc).__name__}: {exc})"
+                ),
+            }
+        logging.warning(
+            "backend_poll: terminated provision-residue RunPod pod-%d (%s) left by the "
+            "failed failover provision — billing stopped (#1490)",
+            int(issue),
+            pod_id,
+        )
+        return {
+            "outcome": "torn-down",
+            "pod_ids": [pod_id],
+            "detail": (
+                f"terminated provision-residue pod-{int(issue)} ({pod_id}; created-then-failed)"
+            ),
+        }
+    except Exception as exc:  # NEVER raises — degrade to today's exact behavior
+        logging.warning(
+            "backend_poll: provision-residue reclaim errored (%s: %s); degrading to the "
+            "re-drivable no_compute_available terminal",
+            type(exc).__name__,
+            exc,
+        )
+        return {
+            "outcome": "no-residue",
+            "pod_ids": [],
+            "detail": f"reclaim error ({type(exc).__name__}: {exc})",
+        }
+
+
 def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
     """A ``status='dead'`` / ``failure_class='infra'`` poll JSON keyed by ``reason``.
 
@@ -3280,6 +3567,12 @@ def _failover_gcp_to_runpod(
             )
 
     spec = _runspec_from_gcp_handle(handle, issue)
+    # #1490 pre-launch attribution snapshot: the live pod_ids named EXACTLY
+    # pod-<N> BEFORE the RunPod launch is attempted, so the
+    # NoComputeAvailableError branch below can tell a pod THIS failover's
+    # provision created (post − pre singleton) from a pre-existing one. None
+    # on probe failure (bias safe — an unknown baseline never terminates).
+    pre_provision_ids = _live_runpod_ids_for_issue(issue)
     workload_start_error: str | None = None
     try:
         route_result = failover_to_runpod_after_async_workload_crash(
@@ -3339,17 +3632,69 @@ def _failover_gcp_to_runpod(
         launched_handle = partial
         workload_start_error = str(exc)[:500]
         already_launched = False
-    except NoComputeAvailableError:
-        # RunPod truly unavailable: terminal infra JSON with
-        # reason=no_compute_available so the watcher's capacity-retry pass CAN
-        # re-drive once a lane frees. Sidecar left pointing at the GCP handle.
-        # No lease stamp here — nothing launched, so a later poll SHOULD retry.
+    except NoComputeAvailableError as exc:
+        # RunPod truly unavailable — but "unavailable" can be a LIE about the
+        # residue (#1490 / incident #1417): a provision that CREATED pod-<N>,
+        # then failed bootstrap/SSH, still surfaces here (the rung's generic
+        # branch re-raises NoComputeAvailableError), leaving an idle billing
+        # pod + a stale gcp sidecar behind a re-drivable terminal. Reclaim the
+        # residue transactionally: post-launch snapshot + the two-signal
+        # decision table (singleton new id AND positive created-then-failed
+        # evidence → surgical terminate; every other cell never terminates).
+        # The evidence is str(exc) — the rung embeds
+        # ``({type(exc).__name__}: {exc})`` — plus the __cause__ chain's
+        # returncode/stderr/output tails (PodLifecycleProcessError, the #1465
+        # stderr-tail carrier; the rung raises ``from exc``).
+        evidence_text = str(exc)
+        returncode: int | None = None
+        cause = exc.__cause__
+        if cause is not None:
+            rc = getattr(cause, "returncode", None)
+            returncode = rc if isinstance(rc, int) else None
+            for attr in ("stderr", "output"):
+                val = getattr(cause, attr, None)
+                if isinstance(val, str) and val:
+                    evidence_text += "\n" + val
+        reclaim = _reclaim_failed_runpod_provision(
+            issue=issue,
+            pre_ids=pre_provision_ids,
+            evidence=(evidence_text, returncode),
+            cause_label=cause_label,
+            failover_tag=failover_tag,
+        )
+        if reclaim["outcome"] == "leaked":
+            # A pod exists and bills but could not be reclaimed/attributed. Do
+            # NOT return the re-drivable no_compute_available (the #931/#954
+            # mislabel: the watcher's capacity-retry pass would re-drive while
+            # the pod bills). No lease stamp — the task parks at blocked on
+            # this non-re-drivable reason, so retry ticks are moot.
+            return _terminal_infra_json(
+                issue=issue,
+                sidecar=sidecar,
+                reason=RUNPOD_PROVISION_LEAKED_REASON,
+                log_tail=(
+                    f"{cause_label} on {handle.pod_name}; RunPod fallback launch FAILED and a "
+                    f"live pod-{issue} remains ({reclaim['detail']}); NOT watcher-re-drivable. "
+                    f"Recovery: inspect + `uv run python scripts/pod.py terminate --issue "
+                    f"{issue} --yes` (add --skip-upload-verify for a never-ran pod), then "
+                    f"re-dispatch ({failover_tag})"
+                ),
+            )
+        # no-residue / torn-down / pre-existing / foreign-created: today's
+        # re-drivable terminal, now safe (no unattended pod created by THIS
+        # failover is left billing; a foreign-created singleton belongs to
+        # another actor and a watcher re-drive's provision idempotency-refuses
+        # on it). No lease stamp here — nothing launched (or the residue is
+        # torn down), so a later poll SHOULD retry against a clean slate.
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
             reason="no_compute_available",
             log_tail=(
-                f"{cause_label} on {handle.pod_name}; RunPod also unavailable ({failover_tag})"
+                f"{cause_label} on {handle.pod_name}; RunPod also unavailable "
+                f"({failover_tag}; provision-residue: {reclaim['outcome']}"
+                + (f" — {reclaim['detail']}" if reclaim["detail"] else "")
+                + ")"
             ),
         )
 
