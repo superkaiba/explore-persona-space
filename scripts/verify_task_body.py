@@ -928,7 +928,7 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 - **check 46** (`check_hf_brace_expanded_path_claims`, WARN,
   generation-agnostic, #1520): backtick brace-expansion path tokens
   (`sampled_rollout/seed{42,137}/` — single-group comma alternation of
-  2–32 alternatives, or a numeric `{N..M}` range ≤32 wide; multi-group /
+  2-32 alternatives, or a numeric `{N..M}` range ≤32 wide; multi-group /
   nested / glob / range-in-alternation / ellipsis-segment tokens extract
   nothing) adjacent to a hex-pinned HF
   `/tree/<sha>` markdown link must resolve at that pin's revision: each
@@ -954,7 +954,7 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   the per-body `_HF_BRACE_MAX_PROBES` cap → `unverified` notes on a PASS
   line; present-in-partial passes, missing is never grounded on a
   partial listing. WARN never FAILs (no `passed=False` path). Named
-  recall sacrifices: multi-segment prefix–token overlap, `@ rev`-pinned
+  recall sacrifices: multi-segment prefix-token overlap, `@ rev`-pinned
   tokens (declined, not re-probed at that rev), pin-less brace tokens
   (check 44's footer territory), false claims sharing a window with
   disclaimer vocabulary, `/blob/` links, other hosts, moving refs.
@@ -11323,7 +11323,7 @@ def _expand_hf_brace_token(token: str) -> list[str]:
     no WARN — recall sacrifices, each named inline). Unlike check 43's
     `_expand_claim_token`, plain tokens do NOT pass through: this check
     is brace-REQUIRED (plain `dir/` tokens stay check 30/40/44
-    territory). Comma form → split alternatives (2–32 by regex
+    territory). Comma form → split alternatives (2-32 by regex
     construction); range form → `range(a, b+1)` gated by `b >= a` and
     width ≤ `_GH_BRACE_MAX_EXPANSIONS` (=32, the shared check-43 bound)."""
     m = _HF_BRACE_PATH_TOKEN_RE.match(token)
