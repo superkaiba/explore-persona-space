@@ -124,30 +124,38 @@ Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
 false zombie); the override never touches a `done` / `gate` / `dead`
 verdict.
 
-Namespace-informativeness gate (#864): the #826 assumption "hung <=>
-stale logs" lapses when a HEALTHY workload legitimately silences its
-logs longer than the stall window (#813: a ~29-min CPU-bound NPZ
-compression stretch on a host-PID-namespace pod false-fired the
-override twice, 2026-07-02). The probe therefore also counts
-``GPU_PIDS_TOTAL`` / ``GPU_PIDS_RESOLVABLE`` over all compute-apps PIDs
-and, only when a zombie candidate exists, ``NVIDIA_UVM_LIVE_HOLDERS`` —
-live container processes holding a fd whose symlink target is EXACTLY
+Namespace-informativeness gate (#864, discriminator redesigned #1216):
+the #826 assumption "hung <=> stale logs" lapses when a HEALTHY
+workload legitimately silences its logs longer than the stall window
+(#813: a ~29-min CPU-bound NPZ compression stretch on a
+host-PID-namespace pod false-fired the override twice, 2026-07-02).
+The probe therefore also counts ``GPU_PIDS_TOTAL`` /
+``GPU_PIDS_RESOLVABLE`` over all compute-apps PIDs and, only when a
+zombie candidate exists, ``NVIDIA_UVM_LIVE_HOLDERS`` — live container
+processes holding a fd whose symlink target is EXACTLY
 ``/dev/nvidia-uvm`` (a live CUDA compute context; ``/dev/nvidia-uvm-
-tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count). When
-``total > 0 AND resolvable == 0 AND uvm_holders > 0`` the
+tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count) — plus (#1216)
+``NVIDIA_UVM_ALLOC_HOLDERS``, the subset of those holders whose
+``/proc/<pid>/maps`` carries a per-GPU ``/dev/nvidia[0-9]``
+device-node mapping (allocation evidence a live CUDA worker has and a
+bare-cuInit coordinator lacks). When
+``total > 0 AND resolvable == 0 AND alloc_holders > 0`` the
 dead-in-/proc signature is a PID-namespace artifact — the flagged PIDs
-ARE live workers seen under host ids — and the override is vetoed
-regardless of log staleness (streak reset, like the fresh-log veto).
-Every other combination (any count unknown, ``resolvable > 0``,
-``uvm == 0``) falls through to the #826 logic UNCHANGED, so the genuine
-#664 total collapse (zero live uvm holders) still fires and every
-degraded-probe read fails toward current behavior. Gated by
-``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env ``EPM_ZOMBIE_NAMESPACE_VETO``,
-read at module import — restart a live poller for an ops flip); ships
-default-OFF per the #864 pre-merge live-pod gate, which found a
-cuInit'd parent/coordinator (``issue813_dispatch.py``) holding exact
-uvm while absent from compute-apps — a holder class that would veto a
-TOTAL collapse (matched pods included) if the veto were armed.
+ARE live allocation-evidenced workers seen under host ids — and the
+override is vetoed regardless of log staleness (streak reset, like the
+fresh-log veto); the LIVE-holder count stays a forensic read. Every
+other combination (any count unknown, ``resolvable > 0``,
+``alloc == 0``) falls through to the #826 logic UNCHANGED, so the
+genuine #664 total collapse (zero allocation-evidenced holders —
+allocation-free coordinator/debug survivors included, the #864 §7 /
+#1216 finding) still fires and every degraded-probe read fails toward
+current behavior. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env
+``EPM_ZOMBIE_NAMESPACE_VETO``, read at module import — restart a live
+poller for an ops flip); ships default-OFF pending the #1216 live-pod
+gate disposition (the #864 gate found a cuInit'd-but-allocation-free
+parent/coordinator, ``issue813_dispatch.py``, holding exact uvm while
+absent from compute-apps — the holder class the allocation
+discriminator excludes).
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -1491,25 +1499,36 @@ def _ssh_probe(
     # case. Fail-safe: nvidia-smi missing / erroring emits an empty list
     # (never a false zombie), same posture as the util probe.
     #
-    # Namespace-informativeness counts (#864): the same loop also counts
-    # GPU_PIDS_TOTAL (every valid compute-apps PID) and GPU_PIDS_RESOLVABLE
-    # (those with a `/proc/<pid>` dir) so the VM-side gate can tell whether
-    # the dead-in-/proc signal is even meaningful on this pod — on a
-    # host-PID-namespace container ZERO compute PIDs ever resolve. When (and
-    # only when) a zombie candidate exists, a guarded scan additionally
-    # counts NVIDIA_UVM_LIVE_HOLDERS: live container processes holding a fd
-    # whose symlink target is EXACTLY `/dev/nvidia-uvm` (a live CUDA compute
-    # context holds the UVM device; NVML monitors open nvidiactl/nvidiaN
-    # instead). The match is END-ANCHORED (` -> /dev/nvidia-uvm$`) so
-    # `/dev/nvidia-uvm-tools` (also created by the nvidia_uvm module, held by
-    # profilers / cuda-gdb / UVM-tools consumers), `/dev/nvidiactl`, and
-    # `/dev/nvidia[0-9]` NEVER count — a tools-only holder counting would
-    # satisfy the veto triple during a genuine total collapse and silently
-    # suppress the #664 true positive. Healthy matched-regime ticks pay zero
-    # cost (the scan is skipped without a candidate); a dying-mid-scan proc
-    # is skipped by `2>/dev/null` (fails toward not counting, i.e. toward
-    # the #826 fall-through). The no-nvidia-smi else-branch emits the three
-    # keys as `unknown` so the parser's fail-safe defaults engage.
+    # Namespace-informativeness counts (#864, discriminator redesigned
+    # #1216): the same loop also counts GPU_PIDS_TOTAL (every valid
+    # compute-apps PID) and GPU_PIDS_RESOLVABLE (those with a `/proc/<pid>`
+    # dir) so the VM-side gate can tell whether the dead-in-/proc signal is
+    # even meaningful on this pod — on a host-PID-namespace container ZERO
+    # compute PIDs ever resolve. When (and only when) a zombie candidate
+    # exists, a guarded scan additionally counts NVIDIA_UVM_LIVE_HOLDERS:
+    # live container processes holding a fd whose symlink target is EXACTLY
+    # `/dev/nvidia-uvm` (a live CUDA compute context holds the UVM device;
+    # NVML monitors open nvidiactl/nvidiaN instead). The match is
+    # END-ANCHORED (` -> /dev/nvidia-uvm$`) so `/dev/nvidia-uvm-tools` (also
+    # created by the nvidia_uvm module, held by profilers / cuda-gdb /
+    # UVM-tools consumers), `/dev/nvidiactl`, and `/dev/nvidia[0-9]` NEVER
+    # count — a tools-only holder counting would satisfy the veto triple
+    # during a genuine total collapse and silently suppress the #664 true
+    # positive. Per MATCHED holder the scan additionally counts
+    # NVIDIA_UVM_ALLOC_HOLDERS (#1216): holders whose `/proc/<pid>/maps`
+    # carries a per-GPU device-node mapping (` /dev/nvidia[0-9]`, the
+    # presumptive S2 allocation-evidence signal — context creation maps
+    # per-GPU device regions; a bare-cuInit coordinator holds the uvm fd
+    # but maps no per-GPU node, the #864 §7 disqualifier). The leading
+    # space anchors the path start and the digit-after-`nvidia` requirement
+    # excludes `-uvm` / `ctl` / `-tools` / `-caps`. The VETO predicate keys
+    # on the ALLOC count; the LIVE-holder count stays a forensic read.
+    # Healthy matched-regime ticks pay zero cost (the scan is skipped
+    # without a candidate); an unreadable / dying-mid-scan proc is skipped
+    # by `2>/dev/null` (fails toward not counting — a lower alloc count
+    # means LESS suppression, i.e. toward the #826 fall-through). The
+    # no-nvidia-smi else-branch emits the four keys as `unknown` so the
+    # parser's fail-safe defaults engage.
     gpu_probe = (
         "if command -v nvidia-smi >/dev/null 2>&1; then "
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
@@ -1531,12 +1550,15 @@ def _ssh_probe(
         "$(nvidia-smi --query-compute-apps=pid,used_memory "
         "  --format=csv,noheader,nounits 2>/dev/null)\n"
         "EOF\n"
-        "  UVM_HOLDERS=unknown; "
+        "  UVM_HOLDERS=unknown; UVM_ALLOC_HOLDERS=unknown; "
         '  if [ -n "$ZOMBIE" ]; then '
-        "    UVM_HOLDERS=0; "
+        "    UVM_HOLDERS=0; UVM_ALLOC_HOLDERS=0; "
         "    for p in /proc/[0-9]*; do "
         '      if ls -l "$p/fd" 2>/dev/null | grep -q " -> /dev/nvidia-uvm$"; then '
         "        UVM_HOLDERS=$((UVM_HOLDERS+1)); "
+        '        if grep -qm1 " /dev/nvidia[0-9]" "$p/maps" 2>/dev/null; then '
+        "          UVM_ALLOC_HOLDERS=$((UVM_ALLOC_HOLDERS+1)); "
+        "        fi; "
         "      fi; "
         "    done; "
         "  fi; "
@@ -1544,9 +1566,11 @@ def _ssh_probe(
         '  echo "GPU_PIDS_TOTAL=$GPU_PIDS_TOTAL"; '
         '  echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"; '
         '  echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"; '
+        '  echo "NVIDIA_UVM_ALLOC_HOLDERS=$UVM_ALLOC_HOLDERS"; '
         'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; '
         'echo "GPU_PIDS_TOTAL=unknown"; echo "GPU_PIDS_RESOLVABLE=unknown"; '
-        'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; fi; '
+        'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; '
+        'echo "NVIDIA_UVM_ALLOC_HOLDERS=unknown"; fi; '
     )
     # Session CPU probe (#518): cumulative CPU seconds summed across
     # every process sharing the launcher PID's session id (SID). The
@@ -1713,6 +1737,7 @@ def _ssh_probe(
             "gpu_pids_total": "unknown",
             "gpu_pids_resolvable": "unknown",
             "nvidia_uvm_live_holders": "unknown",
+            "nvidia_uvm_alloc_holders": "unknown",
             "session_cpu_secs": "unknown",
             "session_pcpu_total": "unknown",
             "results_sentinel_present": "0",
@@ -1741,6 +1766,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "GPU_PIDS_TOTAL",
     "GPU_PIDS_RESOLVABLE",
     "NVIDIA_UVM_LIVE_HOLDERS",
+    "NVIDIA_UVM_ALLOC_HOLDERS",
     "SESSION_CPU_SECS",
     "SESSION_PCPU_TOTAL",
     "RESULTS_SENTINEL_PRESENT",
@@ -1774,6 +1800,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "gpu_pids_total": "unknown",
         "gpu_pids_resolvable": "unknown",
         "nvidia_uvm_live_holders": "unknown",
+        "nvidia_uvm_alloc_holders": "unknown",
         "session_cpu_secs": "unknown",
         "session_pcpu_total": "unknown",
         "results_sentinel_present": "0",
@@ -4203,6 +4230,7 @@ def _apply_zombie_override(
     gpu_pids_total: int | None = None,
     gpu_pids_resolvable: int | None = None,
     uvm_live_holders: int | None = None,
+    uvm_alloc_holders: int | None = None,
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
     session_pcpu_cores: float | None = None,
@@ -4317,7 +4345,8 @@ def _apply_zombie_override(
     defaults to ``None`` (the #1033 inert-default pattern), so every
     pre-#1477 caller and test is byte-unchanged.
 
-    Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
+    Namespace-informativeness gate (#864, discriminator redesigned #1216;
+    FIRST branch): the #826 stale-log
     veto lapses when a HEALTHY workload legitimately silences its logs
     longer than the stall window (#813: a ~29-min CPU-bound NPZ-compression
     stretch false-fired the override twice while ``cpu_advancing`` was true
@@ -4325,36 +4354,49 @@ def _apply_zombie_override(
     host-namespace PIDs). The gate keys on whether the dead-in-/proc probe
     signal is INFORMATIVE on this pod, not on generic liveness (per the
     paragraph above, ``cpu_advancing`` / pgrep-liveness vetoes would kill
-    the true positive). Truth table over the #864 probe counts
-    (veto = suppress + streak reset; fall-through = the #826 logic below,
-    unchanged)::
+    the true positive). Since #1216 the third conjunct is
+    ALLOCATION-EVIDENCED holders (``uvm_alloc_holders`` — exact-uvm fd
+    holders whose ``/proc/<pid>/maps`` carries a per-GPU
+    ``/dev/nvidia[0-9]`` device-node mapping), NOT bare
+    ``uvm_live_holders`` (kept as a forensic-only, ``None``-tolerant
+    parameter for the WARNING line): a bare-cuInit coordinator / SSH debug
+    session holds the uvm fd with no allocation and must not suppress a
+    genuine total collapse (the #864 §7 disqualifier). Truth table over
+    the probe counts (veto = suppress + streak reset; fall-through = the
+    #826 logic below, unchanged)::
 
-        total  resolvable  uvm_holders  ->  action
-        >0     0           >0               VETO (regime X: live workers
-                                            under host ids; #813/#816)
-        >0     0           0                fall through (#664 total
-                                            collapse — no live CUDA holder)
-        >0     >0          any              fall through (namespace
-                                            informative; flagged PIDs are
-                                            genuinely reaped)
-        unknown/0  any     any              fall through (degraded probe)
-        >0     0           unknown          fall through (UVM scan failed)
+        total  resolvable  alloc_holders  ->  action
+        >0     0           >=1               VETO (live allocation-evidenced
+                                             CUDA procs under host ids;
+                                             #813/#816)
+        >0     0           0                 fall through (#664 total
+                                             collapse — incl. allocation-free
+                                             coordinator/debug survivors, the
+                                             #864 §7 / #1216 finding)
+        >0     >0          any               fall through (namespace
+                                             informative; flagged PIDs are
+                                             genuinely reaped)
+        unknown/0  any     any               fall through (degraded probe)
+        >0     0           unknown           fall through (per-holder scan
+                                             failed)
 
     Every degraded read fails toward CURRENT (#826) behavior — never toward
     more false positives, never toward disabled TP detection. Residual
-    notes: (a) a cuInit'd-but-allocation-free parent/coordinator holding an
-    exact ``/dev/nvidia-uvm`` fd while ABSENT from compute-apps would veto a
-    TOTAL collapse — this exposure is TOTAL-COLLAPSE-scoped, not
-    regime-scoped (a matched-namespace total collapse also reads
-    ``resolvable == 0``); mitigations are the #864 pre-merge live-pod gate
-    (which FOUND such a holder, ``issue813_dispatch.py``, hence the
-    shipped default-OFF) and the ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch.
-    A live NON-workload CUDA process (e.g. a human SSH debug session
-    holding a torch context) on a collapsed pod is the same family. Only a
-    PARTIAL death on a matched pod (``resolvable > 0``, row 3) is immune.
+    notes: (a) NARROWED (#1216): an allocation-free cuInit'd survivor (a
+    dispatch coordinator, a bare-cuInit SSH debug session) no longer
+    suppresses — pre-#1216 it would veto a TOTAL collapse (the exposure is
+    TOTAL-COLLAPSE-scoped, not regime-scoped: a matched-namespace total
+    collapse also reads ``resolvable == 0``). An allocation-HOLDING
+    non-workload process (a debug session that materialized tensors) on a
+    collapsed mismatched-namespace pod still suppresses — accepted
+    residual, backstopped by the GPU-idle advisory/escalation tiers
+    (#518/#537/#664), the #873 phase-ETA tripwires, and the
+    ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch. Only a PARTIAL death on a
+    matched pod (``resolvable > 0``, row 3) is immune.
     (b) On a mismatched-namespace pod a PARTIAL worker death (one dead
-    worker among live uvm-holding cells) is vetoed — undetectable by this
-    probe. Not a regression in *correct* detection: the /proc signal
+    worker among live allocation-holding cells) is vetoed — undetectable
+    by this probe by construction. Not a regression in *correct*
+    detection: the /proc signal
     carries zero per-PID information in that regime, and pre-#864 behavior
     "detected" that case only by also firing on every healthy #813-shape
     run. The GPU-idle advisory/escalation tiers (#518/#537/#664) and the
@@ -4365,7 +4407,20 @@ def _apply_zombie_override(
     matching BOTH this gate and the #826 fresh-log veto — or the #951
     material-CPU veto — the namespace WARNING fires first (outcome
     identical — ``running``, streak 0; only the forensic log line
-    differs).
+    differs). (e) TWO-SIDED driver dependence (#1216, NEW): the
+    allocation-evidence signal is driver-behavior-dependent (gate-verified
+    on the driver version recorded in the #1216 gate record; RunPod host
+    drivers vary under the pinned container image). Signal-LOSS drift (a
+    driver stops exposing device-node maps for live workers):
+    ``alloc_holders`` reads 0 and the veto stops suppressing — a return of
+    pre-#864 FALSE STALL FLAGS on mismatched-namespace pods (loud,
+    operator-visible WARNING + stall routing). Signal-GAIN drift (a driver
+    exposes device-node maps for allocation-free survivors):
+    ``alloc_holders > 0`` on a collapsed pod means TP suppression — this
+    lands in the already-accepted residual-(a)/(b) family with the same
+    backstops, and is auditable per event via the WARNING's
+    total/uvm/alloc counts. The fail-direction map is two-sided by design
+    — never the one-sided "never TP suppression" claim.
     """
     stall_reason: str | None = None
     zombie_streak = 0
@@ -4375,28 +4430,33 @@ def _apply_zombie_override(
             and gpu_pids_total is not None
             and gpu_pids_total > 0
             and gpu_pids_resolvable == 0
-            and uvm_live_holders is not None
-            and uvm_live_holders > 0
+            and uvm_alloc_holders is not None
+            and uvm_alloc_holders > 0
         ):
-            # #864: the dead-in-/proc signature is a PID-namespace artifact,
-            # not a death signal — nvidia-smi reports host-namespace PIDs
-            # that resolve in the container /proc for ZERO compute apps,
-            # while live in-container processes hold /dev/nvidia-uvm (a live
-            # CUDA compute context). The flagged "zombies" ARE those live
+            # #864/#1216: the dead-in-/proc signature is a PID-namespace
+            # artifact, not a death signal — nvidia-smi reports
+            # host-namespace PIDs that resolve in the container /proc for
+            # ZERO compute apps, while live in-container processes hold
+            # /dev/nvidia-uvm WITH per-GPU device-node maps (allocation
+            # evidence: a live CUDA worker maps /dev/nvidia[0-9] regions; a
+            # bare-cuInit coordinator does not — the #864 §7 disqualifier).
+            # The flagged "zombies" ARE those allocation-evidenced live
             # workers seen under host ids (#813: a healthy 29-min CPU-bound
             # quiet stretch outlived the #826 stale-log veto). Veto
             # regardless of log staleness; a genuine total collapse (#664)
-            # has zero live uvm holders and falls through to the #826
-            # stale-log + 2-tick logic below.
+            # has zero allocation-evidenced holders — allocation-free
+            # coordinator/debug survivors included — and falls through to
+            # the #826 stale-log + 2-tick logic below.
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
                 "artifact: 0/%d compute PIDs resolve in the container /proc while "
-                "%d live container process(es) hold /dev/nvidia-uvm — vetoing "
-                "(#813/#864), not flagging",
+                "%s live container process(es) hold /dev/nvidia-uvm, %d with "
+                "device-allocation evidence — vetoing (#813/#864/#1216), not flagging",
                 pod,
                 ",".join(zombie_gpu_pids),
                 gpu_pids_total,
-                uvm_live_holders,
+                "?" if uvm_live_holders is None else uvm_live_holders,
+                uvm_alloc_holders,
             )
             return status, stall_reason, cpu_override_active, 0
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
@@ -4950,6 +5010,7 @@ def poll_once(
         gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
         gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
         uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+        uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
         session_cpu_rate_cores=session_cpu_rate,
         output_mtime_ago=output_mtime_ago,
         session_pcpu_cores=session_pcpu_cores,
