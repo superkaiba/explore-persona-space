@@ -13170,7 +13170,7 @@ def _warn_acknowledgment_text(body: str) -> str | None:
     paras: list[str] = []
     cur: list[str] = []
     in_fence = False
-    for line in body.splitlines() + [""]:
+    for line in [*body.splitlines(), ""]:
         s = line.strip()
         if s.startswith("```") or s.startswith("~~~"):
             in_fence = not in_fence
@@ -13182,7 +13182,7 @@ def _warn_acknowledgment_text(body: str) -> str | None:
             continue
         if cur:
             para = " ".join(cur)
-            low = re.sub(r"[-‐-―]", " ", para.lower())
+            low = re.sub(r"[-\u2010-\u2015]", " ", para.lower())
             if "acknowledg" in low and _V4_WARN_ACK_FAMILY_RE.search(low):
                 paras.append(low)
             cur = []
