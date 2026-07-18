@@ -1196,6 +1196,18 @@ def _wf_fix_title_tokens(title: str) -> set[str]:
     return out
 
 
+def informative_title_tokens(text: str) -> set[str]:
+    """Public reuse surface for the #1446 informative-token tokenizer (#1483).
+
+    Same normalization as the widened-pass title arm (_wf_fix_title_tokens):
+    lowercase, WF_FIX_TITLE_PREFIXES channel prefixes stripped, split on
+    non-word chars keeping -/_ inside tokens, edge -/_ stripped, len >= 4,
+    minus _WF_FIX_TITLE_STOPWORDS. Applies to any short text (titles, bug
+    one-liners), not only titles.
+    """
+    return _wf_fix_title_tokens(text)
+
+
 def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
     target_file: str | None,
     candidate_title: str | None = None,
