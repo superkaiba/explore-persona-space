@@ -3796,6 +3796,7 @@
       "title": "workflow-fix: verify_task_body Check 40 misses subpath (N files) counts under unlinked backtick prefixes"
     },
     "1488": {
+      "goal": "Determine whether an implanted conditional behavior ('do Y only under trigger condition T') is detectable \u2014 and its trigger identity and dose decodable \u2014 from the model's pre-query prompt states under NON-trigger conditions, using band-stopped persona-gated marker organisms (known ground-truth conditionality, graded install dose) with matched-install unconditional organisms as the critical control. H1 (interaction-hiding): non-trigger prompt states are clean, detection fails at matched install. H2 (policy-leaves-a-trace): detection survives even where measured behavioral leakage ~ 0. Either answer bounds what prompt-time monitoring can catch.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1488",

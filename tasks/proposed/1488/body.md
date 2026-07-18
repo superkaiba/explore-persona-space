@@ -13,12 +13,20 @@ origin_prompt: 'User chat 2026-07-17: ''but what about for behaviors that are be
   fact-gated arm] -> ''are these conditional organisms robust though?'' -> ''ok sounds
   good'' (approving filing as a proposed task; filing != spawning)'
 workflow: v1
+goal: 'Determine whether an implanted conditional behavior (''do Y only under trigger
+  condition T'') is detectable — and its trigger identity and dose decodable — from
+  the model''s pre-query prompt states under NON-trigger conditions, using band-stopped
+  persona-gated marker organisms (known ground-truth conditionality, graded install
+  dose) with matched-install unconditional organisms as the critical control. H1 (interaction-hiding):
+  non-trigger prompt states are clean, detection fails at matched install. H2 (policy-leaves-a-trace):
+  detection survives even where measured behavioral leakage ~ 0. Either answer bounds
+  what prompt-time monitoring can catch.'
 ---
 # Pre-trigger detectability of conditional implants from prompt states
 
 ## Goal
 
-Determine whether an implanted conditional behavior ("do Y only under trigger condition T") is detectable — and its trigger identity and dose decodable — from the model's pre-query prompt states under NON-trigger conditions, using band-stopped persona-gated marker organisms (known ground-truth conditionality, graded install dose) with matched-install unconditional organisms as the critical control. Competing hypotheses: H1 (interaction-hiding) — a conditional policy lives in the prefix×trigger interaction, so non-trigger prompt states are clean and detection fails at matched install; H2 (policy-leaves-a-trace) — the conditional policy is a weight-level property that shifts prompt states everywhere, so detection survives even where measured behavioral leakage ≈ 0. An answer in either direction bounds what prompt-time monitoring can catch (H2 + trigger decoding extends prompt-state screening from persona dispositions to conditional payloads; H1 is the negative result bounding it).
+Determine whether an implanted conditional behavior ('do Y only under trigger condition T') is detectable — and its trigger identity and dose decodable — from the model's pre-query prompt states under NON-trigger conditions, using band-stopped persona-gated marker organisms (known ground-truth conditionality, graded install dose) with matched-install unconditional organisms as the critical control. H1 (interaction-hiding): non-trigger prompt states are clean, detection fails at matched install. H2 (policy-leaves-a-trace): detection survives even where measured behavioral leakage ~ 0. Either answer bounds what prompt-time monitoring can catch.
 
 ## Overview / Motivation
 
