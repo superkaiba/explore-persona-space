@@ -524,8 +524,8 @@
     "1066": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1066",
-      "status": "planning",
+      "path": "tasks/approved/1066",
+      "status": "approved",
       "title": "daily-held: settle #779-line mapping terminology + writeup b"
     },
     "1067": {
