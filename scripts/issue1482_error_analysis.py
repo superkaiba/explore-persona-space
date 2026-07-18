@@ -26,6 +26,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -889,7 +890,16 @@ def _raw_chunk_names(args) -> list[str]:
     from explore_persona_space.orchestrate import hub
 
     files = hub.list_hf_files_under_path(HfApi(), C.HF_DATA_REPO, RAW_PREFIX, repo_type="dataset")
-    names = sorted(p.rsplit("/", 1)[-1] for p in files if p.endswith(".json"))
+    # ONLY rollout chunk files (shardNN_chunkNNNN.json). The prefix ALSO holds
+    # per-shard bookkeeping files (shardNN_skipped.json — the parent's 156
+    # over-length-skip records), which are valid JSON WITHOUT a "rows" key and
+    # crashed p2 worker w3 with KeyError('rows') when swept into the chunk
+    # enumeration (attempt 5, 2026-07-18). Row alignment is ci-explicit, so
+    # excluding non-chunk files is side-effect-free.
+    _chunk_re = re.compile(r"^shard\d+_chunk\d+\.json$")
+    names = sorted(
+        n for n in (q.rsplit("/", 1)[-1] for q in files) if _chunk_re.match(n)
+    )
     if args.max_chunks > 0:
         names = names[: args.max_chunks]
     return names
