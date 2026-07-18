@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1488,
+  "highest_id": 1489,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3802,6 +3802,14 @@
       "path": "tasks/proposed/1488",
       "status": "proposed",
       "title": "Pre-trigger detectability of conditional implants from prompt states (band-stopped marker organisms, prefix-end + context arms)"
+    },
+    "1489": {
+      "goal": "Characterize how the pre-generation context\u2192answer-state transport map h (c(x)\u2192v(x); ridge primary, MLP secondary) changes when contexts are augmented with facts, instructions, personas, and formatting constraints \u2014 distinguishing movement within a fixed map from changes of the map (5\u00d75 transport-transfer matrix), testing additivity/effective-rank of augmentation deltas, testing whether relevance gating is captured linearly \u2014 and whether delivering the same information in-weights via dose-matched context distillation produces the same per-example answer-state shift, preserves relevance gating, and leaves the pre-finetuning map valid on the finetuned model.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1489",
+      "status": "proposed",
+      "title": "Context-augmentation effects on the context\u2192answer-state transport map + dose-matched context-distillation in-weights comparison"
     },
     "149": {
       "has_clean_result": false,
