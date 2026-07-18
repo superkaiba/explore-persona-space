@@ -41,7 +41,12 @@ Exit codes
 
 * ``0`` — launch/finalize succeeded. ``stdout`` carries one JSON line
   with the resolved outcome (``chosen_kind`` / ``handle_sidecar_path``
-  / ``failure_class`` / ``status``).
+  / ``failure_class`` / ``status``). On the ``finalize`` path rc 0 may
+  ALSO carry ``phase: teardown_skipped`` + ``reason:
+  keep_running_tag_present`` (#1485): the owning task holds the
+  ``keep-running`` teardown shield, so the backend is left ALIVE and
+  the sidecar KEPT — machine consumers discriminate on the JSON
+  ``phase`` field, never on rc alone.
 * ``2`` — router terminal (``NoComputeAvailableError`` /
   ``WorkloadSurfacedError`` / ``GcpAttemptCapExceededError`` /
   ``ManualAttentionRequiredError``). ``stdout`` carries the
@@ -69,7 +74,10 @@ Exit codes
   exited 3 on a fully verified run, forcing a raw ``pod.py
   terminate`` bypass that skipped the Mn4.3 sidecar retirement). With
   neither a declaration nor agent PASS evidence the exit stays 3 with
-  ``reason: confirm_artifacts_no_declaration``.
+  ``reason: confirm_artifacts_no_declaration``. Exit 3 ALSO covers
+  ``reason: keep_running_tag_unreadable`` (#1485): the keep-running
+  tag state could not be read, so teardown is SKIPPED fail-closed
+  (sidecar kept; fix the task read and re-run finalize).
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
   ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
@@ -1857,6 +1865,22 @@ def _upload_verification_currency_blocker(issue: int) -> dict | None:
         return None
 
 
+def _keep_running_tag_state_safe(issue: int) -> bool | None:
+    """Lazy-import wrapper over ``task_workflow.keep_running_tag_state`` (#1485).
+
+    Same lazy-import posture as :func:`_agent_upload_verification_passed` /
+    :func:`_upload_verification_currency_blocker`. ImportError → ``None``
+    (unknowable), which the finalize caller treats as fail-CLOSED: a skipped
+    teardown is re-runnable, a wrongly-destroyed shielded pod is not. The
+    tri-state read semantics (True/False/None) live in the library helper.
+    """
+    try:
+        from explore_persona_space.task_workflow import keep_running_tag_state
+    except ImportError:
+        return None
+    return keep_running_tag_state(int(issue))
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -1869,6 +1893,17 @@ def _cmd_finalize(
     the same handle; this CLI is the complementary MECHANICAL gate
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
+
+    Keep-running teardown shield (#1485): BEFORE every other gate, the
+    owning task's ``keep-running`` tag is read tri-state
+    (:func:`_keep_running_tag_state_safe`). Tag present → rc 0 with
+    ``phase: teardown_skipped`` / ``reason: keep_running_tag_present``
+    (backend left alive, sidecar KEPT — the shield working as designed);
+    tag unreadable → rc 3 with ``reason: keep_running_tag_unreadable``
+    (fail-closed; teardown skipped, sidecar kept, re-runnable).
+    ``--skip-confirm-artifacts`` does NOT bypass this check; there is
+    deliberately NO force flag on finalize — the remedy is
+    ``task.py remove-tag <N> keep-running`` + re-run.
 
     Verifier-currency gate (#1026): BEFORE ``fetch_results``, ONE top gate
     (:func:`_upload_verification_currency_blocker`) requires the
@@ -1934,6 +1969,53 @@ def _cmd_finalize(
     handle = read_handle_sidecar(Path(sidecar))
     deps = backends_factory()
     backend = _resolve_backend_for_handle(handle, deps)
+
+    # ── #1485 keep-running teardown shield (issue-wide, CLAUDE.md § Pods) ──
+    # Checked BEFORE every other gate: if the tag holds, finalize must not
+    # tear down regardless of artifact state, and the artifact gates exist
+    # only to GATE teardown (Step 8's upload-verifier agent owns standalone
+    # verification). --skip-confirm-artifacts deliberately does NOT bypass
+    # this (incident 2026-07-17: a finalize retry destroyed the parallel
+    # pod-1345-onpolicy mid-launch). Sidecar KEPT on both skip paths: the
+    # pod stays alive, so the handle must survive for the eventual real
+    # finalize after `task.py remove-tag <N> keep-running`.
+    keep_running = _keep_running_tag_state_safe(args.issue)
+    if keep_running is True:
+        body = {
+            "ok": True,
+            "issue": int(args.issue),
+            "phase": "teardown_skipped",
+            "reason": "keep_running_tag_present",
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+            "detail": (
+                "task carries the keep-running tag - teardown SKIPPED, "
+                "backend left alive, sidecar kept. Recover: "
+                f"`task.py remove-tag {int(args.issue)} keep-running` "
+                "then re-run finalize."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 0
+    if keep_running is None:
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "phase": "teardown_skipped",
+            "reason": "keep_running_tag_unreadable",
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+            "detail": (
+                "keep-running tag state could not be read - teardown "
+                "SKIPPED (fail-closed: destroying a possibly-shielded "
+                "run is unrecoverable; a skipped teardown is re-runnable). "
+                f"Fix the task read (task.py view {int(args.issue)}) "
+                "and re-run finalize."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 3
+    # ─────────────────────────────────────────────────────────────────────
 
     # ── #1026 verifier-currency gate (uniform: ALL paths) ────────────────
     # Teardown requires the upload-verification evidence to be a CURRENT

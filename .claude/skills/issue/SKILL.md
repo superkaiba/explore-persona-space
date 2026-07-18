@@ -5543,7 +5543,12 @@ URLs.
   clusters; RunPod only on an explicit `backend: runpod`). If the task has `parent_id`, terminate
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
-  follow-up work in the same session.
+  follow-up work in the same session. (Mechanically enforced as of
+  #1485: `pod.py terminate --issue N` bare form REFUSES on the tag —
+  surgical `--name-suffix` destroys stay allowed, `--force-keep-running`
+  is the deliberate operator override — and `dispatch_issue.py finalize`
+  skips its teardown leg with rc 0 / `phase: teardown_skipped`; remedy:
+  `task.py remove-tag <N> keep-running`, then re-run.)
 
   **VM download-cache cleanup (post-#disk-100pct).** The experiment
   downloaded its source data from HF into VM-local caches under
