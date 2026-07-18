@@ -136,9 +136,11 @@ processes holding a fd whose symlink target is EXACTLY
 ``/dev/nvidia-uvm`` (a live CUDA compute context; ``/dev/nvidia-uvm-
 tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count) — plus (#1216)
 ``NVIDIA_UVM_ALLOC_HOLDERS``, the subset of those holders whose
-``/proc/<pid>/maps`` carries a per-GPU ``/dev/nvidia[0-9]``
-device-node mapping (allocation evidence a live CUDA worker has and a
-bare-cuInit coordinator lacks). When
+``/proc/<pid>/maps`` carries an end-anchored file-backed
+``/dev/nvidia-uvm`` entry (UVM regions are ALLOCATION-time mmaps —
+evidence a live CUDA worker has and a bare-cuInit coordinator lacks;
+per-GPU ``/dev/nvidia[0-9]`` device-node maps are INIT-time on the
+gate driver and were disqualified, #1216 §7-A). When
 ``total > 0 AND resolvable == 0 AND alloc_holders > 0`` the
 dead-in-/proc signature is a PID-namespace artifact — the flagged PIDs
 ARE live allocation-evidenced workers seen under host ids — and the
@@ -151,11 +153,18 @@ allocation-free coordinator/debug survivors included, the #864 §7 /
 #1216 finding) still fires and every degraded-probe read fails toward
 current behavior. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env
 ``EPM_ZOMBIE_NAMESPACE_VETO``, read at module import — restart a live
-poller for an ops flip); ships default-OFF pending the #1216 live-pod
-gate disposition (the #864 gate found a cuInit'd-but-allocation-free
-parent/coordinator, ``issue813_dispatch.py``, holding exact uvm while
-absent from compute-apps — the holder class the allocation
-discriminator excludes).
+poller for an ops flip); ships default-ON per the #1216 §7 live-pod
+gate (2026-07-18, disposition D1; entire evidence base is driver
+580.126.09 — the flag comment carries the gate record). The
+fail-direction map is TWO-SIDED and driver/runtime-allocator-dependent:
+signal-LOSS drift (a stack where live workers lack the uvm maps entry)
+returns pre-#864 loud false stall flags; signal-GAIN drift (a driver
+mapping uvm at init for allocation-free procs) is
+residual-(a)/(b)-family TP masking with the same backstops — details
+in ``_apply_zombie_override`` residual (e). Veto candidacy also
+requires a zombie candidate holding >= ``ZOMBIE_GPU_MEM_MIN_MIB``
+(1024 MiB), structurally coupling candidacy to live allocations (the
+sub-floor freed-worker sticky holder drops out of scope).
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -628,18 +637,42 @@ ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
 
 # #864: kill-switch for the namespace-informativeness veto on the zombie-GPU
 # override. "0" disables the veto entirely (pure #826 behavior) — an ops
-# escape hatch if the UVM-holder correspondence ever masks a true positive in
-# the field. NOTE: read at module import — a live poller needs a restart for
-# an ops flip to take effect. DEFAULT "0" (veto inert-but-ready) per the #864
-# §7 pre-merge live-pod gate (2026-07-02, disposition 2): the negative-
-# direction check on pod-813 found a cuInit'd-but-allocation-free
-# parent/coordinator (issue813_dispatch.py) holding an EXACT /dev/nvidia-uvm
-# fd while ABSENT from compute-apps (5 exact-uvm holders vs 4 compute apps) —
-# a holder class that would veto a genuine TOTAL collapse (TP suppression)
-# if the veto were armed. Flipping to "1" after a clean both-directions
-# re-check is a one-literal follow-up; the probe counts + gate + tests land
-# either way.
-ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "0") != "0"
+# escape hatch if the allocation-evidence correspondence ever masks a true
+# positive in the field. NOTE: read at module import — a live poller needs a
+# restart for an ops flip to take effect (semantics unchanged by #1216).
+# DEFAULT "1" (veto armed) per the #1216 §7 pre-merge live-pod gate
+# (pod-1216, 1x H100, mismatched PID namespace; gate date 2026-07-18,
+# disposition D1 under the AMENDED plan §7-A rung-4 pick rule):
+#   - Signal literal: S3-standalone — an end-anchored file-backed
+#     " /dev/nvidia-uvm$" entry in /proc/<pid>/maps (UVM regions are
+#     ALLOCATION-time mmaps). Picked at rung 4 after the registered
+#     S2 -> S1 -> (S2 or S3) rungs ALL failed Pass 1: bare cuInit maps
+#     INIT-time write-only /dev/nvidia3 device-node regions on this driver,
+#     so coordinators read S2=2 / S1=4-7 — a Pass-1 pick-rule
+#     disqualification of S2, NOT a registered-then-overridden D2.
+#   - Measured per-shape S3 counts (2 repeats, byte-identical): torch
+#     workers / mp-child / allocating bystander / vLLM EngineCore / the
+#     real #1345 production worker (read-only fleet probe, same driver)
+#     all = 1; ctypes-cuInit + torch.cuda.init coordinators / mp-parent /
+#     vLLM APIServer all = 0.
+#   - Pass-2 verbatim-heredoc confirmation (ZOMBIE seeded to force the
+#     scan): positive UVM_HOLDERS=3 / ALLOC_HOLDERS=2 (exact expectation);
+#     negative (workers SIGKILLed + reaped, bare-cuInit survivor only)
+#     UVM=1 / ALLOC=0 — the veto correctly disarms on the coordinator-only
+#     collapse; bystander ALLOC=1 (residual-(a) boundary, expected).
+#   - vLLM 0.11.0 tree classification (pre/post-kill): EngineCore S3=1 at
+#     25,490 MiB; APIServer S3=0; post-SIGKILL clean tree exit, no
+#     orphaned allocation left in compute-apps.
+#   - Sticky-probe boundary (non-disposition-bearing): the uvm maps entry
+#     is has-EVER-allocated-sticky — a live freed former worker keeps
+#     S3=1, but its compute-apps row dropped to 518 MiB, BELOW the
+#     1024 MiB ZOMBIE_GPU_MEM_MIN_MIB zombie floor, so floor-coupling
+#     bounds that boundary (see residual (e)).
+#   - SINGLE-DRIVER caveat: the ENTIRE evidence base (pod-1216 + the
+#     read-only pod-1345 probe) is driver 580.126.09; the two-sided drift
+#     map lives in residual (e) of the module / _apply_zombie_override
+#     docstrings.
+ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "1") != "0"
 
 # #951: material-compute liveness veto on the #664/#826 zombie-GPU override.
 # A workload session burning >= this many CPU cores (delta cumulative session
@@ -4357,8 +4390,11 @@ def _apply_zombie_override(
     paragraph above, ``cpu_advancing`` / pgrep-liveness vetoes would kill
     the true positive). Since #1216 the third conjunct is
     ALLOCATION-EVIDENCED holders (``uvm_alloc_holders`` — exact-uvm fd
-    holders whose ``/proc/<pid>/maps`` carries a per-GPU
-    ``/dev/nvidia[0-9]`` device-node mapping), NOT bare
+    holders whose ``/proc/<pid>/maps`` carries an end-anchored
+    file-backed ``/dev/nvidia-uvm`` entry: UVM regions are
+    ALLOCATION-time mmaps, unlike the INIT-time per-GPU
+    ``/dev/nvidia[0-9]`` device-node maps the #1216 §7 gate
+    disqualified), NOT bare
     ``uvm_live_holders`` (kept as a forensic-only, ``None``-tolerant
     parameter for the WARNING line): a bare-cuInit coordinator / SSH debug
     session holds the uvm fd with no allocation and must not suppress a
@@ -4408,20 +4444,28 @@ def _apply_zombie_override(
     matching BOTH this gate and the #826 fresh-log veto — or the #951
     material-CPU veto — the namespace WARNING fires first (outcome
     identical — ``running``, streak 0; only the forensic log line
-    differs). (e) TWO-SIDED driver dependence (#1216, NEW): the
-    allocation-evidence signal is driver-behavior-dependent (gate-verified
-    on the driver version recorded in the #1216 gate record; RunPod host
-    drivers vary under the pinned container image). Signal-LOSS drift (a
-    driver stops exposing device-node maps for live workers):
-    ``alloc_holders`` reads 0 and the veto stops suppressing — a return of
-    pre-#864 FALSE STALL FLAGS on mismatched-namespace pods (loud,
-    operator-visible WARNING + stall routing). Signal-GAIN drift (a driver
-    exposes device-node maps for allocation-free survivors):
+    differs). (e) TWO-SIDED driver dependence (#1216): the
+    allocation-evidence signal (the end-anchored ``/dev/nvidia-uvm`` maps
+    entry) is driver/runtime-allocator-dependent — gate-verified ONLY on
+    driver 580.126.09 (pod-1216 + the read-only pod-1345 probe; RunPod
+    host drivers vary under the pinned container image). Signal-LOSS
+    drift (a stack where live workers LACK the uvm maps entry — a driver
+    or allocator that stops file-backing UVM regions): ``alloc_holders``
+    reads 0 and the veto stops suppressing — a return of pre-#864 FALSE
+    STALL FLAGS on mismatched-namespace pods (loud, operator-visible
+    WARNING + stall routing). Signal-GAIN drift (a driver mapping
+    ``/dev/nvidia-uvm`` at INIT for allocation-free procs):
     ``alloc_holders > 0`` on a collapsed pod means TP suppression — this
     lands in the already-accepted residual-(a)/(b) family with the same
-    backstops, and is auditable per event via the WARNING's
+    backstops (GPU-idle advisory/escalation, #873 ETA tripwires,
+    kill-switch), and is auditable per event via the WARNING's
     total/uvm/alloc counts. The fail-direction map is two-sided by design
-    — never the one-sided "never TP suppression" claim.
+    — never the one-sided "never TP suppression" claim. Floor-coupling
+    bound: veto candidacy requires a zombie candidate holding
+    >= ``ZOMBIE_GPU_MEM_MIN_MIB`` (1024 MiB) in compute-apps, which
+    structurally couples candidacy to live allocations — the sticky
+    sub-floor freed-worker state (S3=1 at 518 MiB in the gate's sticky
+    probe) drops out of scope.
     """
     stall_reason: str | None = None
     zombie_streak = 0
@@ -4438,9 +4482,12 @@ def _apply_zombie_override(
             # artifact, not a death signal — nvidia-smi reports
             # host-namespace PIDs that resolve in the container /proc for
             # ZERO compute apps, while live in-container processes hold
-            # /dev/nvidia-uvm WITH per-GPU device-node maps (allocation
-            # evidence: a live CUDA worker maps /dev/nvidia[0-9] regions; a
-            # bare-cuInit coordinator does not — the #864 §7 disqualifier).
+            # /dev/nvidia-uvm fds WITH file-backed /dev/nvidia-uvm maps
+            # entries (allocation evidence: UVM regions are mmap'd at
+            # ALLOCATION time — a live CUDA worker has >=1, a bare-cuInit
+            # coordinator has 0; INIT-time /dev/nvidia[0-9] device-node
+            # maps were the #1216 §7 S2 disqualifier and are NOT the
+            # signal).
             # The flagged "zombies" ARE those allocation-evidenced live
             # workers seen under host ids (#813: a healthy 29-min CPU-bound
             # quiet stretch outlived the #826 stale-log veto). Veto
