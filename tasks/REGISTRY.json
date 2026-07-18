@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1520,
+  "highest_id": 1521,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4064,6 +4064,13 @@
       "path": "tasks/proposed/1520",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body brace-expanded HF path resolution against adjacent /tree pins"
+    },
+    "1521": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1521",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body Context-row provenance vs epm:followup-scope cross-check"
     },
     "153": {
       "has_clean_result": false,
