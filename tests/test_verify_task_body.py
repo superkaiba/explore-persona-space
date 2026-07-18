@@ -180,13 +180,18 @@ def test_good_body_passes_all():
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
     # `check_hf_unpinned_count_claims` (#1433), and check 41
-    # `check_figure_sidecar_coverage` (#1478) ride CHECKS; 36/37/39
+    # `check_figure_sidecar_coverage` (#1478), check 42
+    # `check_body_artifact_urls_exist` (#1507 — grandfathered-WARN tier
+    # here, and GOOD_BODY's only same-repo URL lives in the footer so it
+    # PASSes vacuously), and check 43
+    # `check_github_tree_adjacent_file_claims` (#1507 — vacuous PASS, no
+    # git-tree-adjacent claims) ride CHECKS; 36/37/39
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 55
+    assert len(results) == 57
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -5576,17 +5581,19 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 55 results (2 prepended + CHECKS[1:]=42 +
+    So `verify_text` returns 57 results (2 prepended + CHECKS[1:]=44 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 43 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 45 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
     `Disclosure: N of M` count reconciliation, #1421 — check 40
-    `check_hf_unpinned_count_claims` (#1433) — and check 41
-    `check_figure_sidecar_coverage` (#1478) ride CHECKS).
+    `check_hf_unpinned_count_claims` (#1433) — check 41
+    `check_figure_sidecar_coverage` (#1478) — and checks 42
+    `check_body_artifact_urls_exist` + 43
+    `check_github_tree_adjacent_file_claims` (#1507) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 43
+    assert len(verify_task_body.CHECKS) == 45
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -11095,11 +11102,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (43 as of
-    check 41, #1478; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (45 as of
+    checks 42/43, #1507; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 43
+    assert len(verify_task_body.CHECKS) == 45
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13863,3 +13870,420 @@ def test_h1_title_sync_sentinel_only_in_fence_skips():
     res = _results_by_name(results)[_H1_SYNC_NAME]
     assert res.passed and res.is_warn is False, res.render()
     assert "not a sentinelled" in res.detail
+
+
+# ─── Checks 42 + 43: body-wide git-URL existence + git-tree backtick claims ─
+#
+# Incident task #1072 r2 (#1507): two GitHub blob links in the `## Methodology`
+# Sample `<details>` blocks 404'd (gitignored `.npz`, never committed), and the
+# footer `Artifacts:` parenthetical claimed `per_context_stats_1072_fold{0..4}.npz`
+# inside the pinned `eval_results/issue_1072` git tree, which lacks them —
+# check 8b (footer-only) and check 32 (HF /tree-only) both PASSed the body.
+# Check 42 probes same-repo blob/tree URLs body-wide (FAIL on v4, WARN on
+# grandfathered); check 43 is the WARN-only git twin of check 32.
+
+_GH_REPO = "https://github.com/superkaiba/explore-persona-space"
+
+_BODYWIDE_NAME = "Body-wide same-repo artifact URLs exist"
+_GH_TREE_NAME = "GitHub-tree-adjacent backtick file claims exist in the pinned tree"
+
+
+def _gh_blob_url(sha, path):
+    """Same-repo /blob/<sha>/<path> HTML URL (check 42/43 fixtures)."""
+    return f"{_GH_REPO}/blob/{sha}/{path}"
+
+
+def _gh_tree_url(sha, path):
+    """Same-repo /tree/<sha>/<path> HTML URL (check 42/43 fixtures)."""
+    return f"{_GH_REPO}/tree/{sha}/{path}"
+
+
+def _make_repo_with_issue1072_tree(tmp_path):
+    """Throwaway git repo whose HEAD commit carries the #1072 incident tree
+    shape — `eval_results/issue_1072/` with the committed JSONs
+    (`stats_component.json`, `supplementary_reads.json`,
+    `battery_1072_fold0..4.json`, `capture_gates.json`,
+    `stage_manifest.json`) but NO `.npz` (gitignored in the incident, never
+    committed); returns (repo_path, head_sha)."""
+    repo = tmp_path / "i1072repo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    d = repo / "eval_results" / "issue_1072"
+    d.mkdir(parents=True)
+    fnames = ["stats_component.json", "supplementary_reads.json"]
+    fnames += [f"battery_1072_fold{i}.json" for i in range(5)]
+    fnames += ["capture_gates.json", "stage_manifest.json"]
+    for fname in fnames:
+        (d / fname).write_text("{}\n")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "add issue_1072 eval JSONs (no .npz)")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+# The VERBATIM #1072 r2 PRE-FIX footer Artifacts fragment (recover via
+# `git show 12663c2e47:tasks/interpreting/1072/body.md`, footer, grep
+# `per_context_stats`; the incident sha 1f19deacf… is swapped for the fixture
+# repo's sha at use time — the _I952_R1_LINE convention): the paren after the
+# pinned eval_results tree link claims the five gitignored `.npz` via a
+# brace range — the must-WARN check-43 fixture.
+_I1072_PREFIX_ARTIFACTS_LINE = (
+    "Artifacts: [`eval_results/issue_1072/`]({tree_url}) "
+    "(`stats_component.json`, `supplementary_reads.json`, "
+    "`battery_1072_fold{{0..4}}.json`, `per_context_stats_1072_fold{{0..4}}.npz`, "
+    "`capture_gates.json`, `stage_manifest.json`, pilot gates)"
+)
+
+# The VERBATIM CURRENT #1072 footer Artifacts fragment (recover from
+# `tasks/followups_running/1072/body.md`, footer Artifacts clause, ~line 173;
+# sha swapped to the fixture sha): same `{0..4}.npz` backtick tokens inside
+# the qualifying paren, but as an explicit "gitignored … HF eval_results
+# mirror only" DISCLAIMER — the must-NOT-warn check-43 fixture (AC10).
+_I1072_CURRENT_ARTIFACTS_LINE = (
+    "Artifacts: [`eval_results/issue_1072/`]({tree_url}) "
+    "(11 JSONs: `stats_component.json`, `supplementary_reads.json`, "
+    "`battery_1072_fold{{0..4}}.json`, `capture_gates.json`, "
+    "`stage_manifest.json`, pilot gates; the 5 "
+    "`per_context_stats_1072_fold{{0..4}}.npz` are gitignored and live on the "
+    "HF eval_results mirror only)"
+)
+
+# The VERBATIM #1072 r2 Methodology Sample `<details>` shape (recover via
+# `git show 12663c2e47:tasks/interpreting/1072/body.md`, Sample-slot
+# `<details>` blocks at body offsets ~81/~97; blob-link sha swapped to the
+# fixture sha): the 404 blob link lives INSIDE the dropdown — the check-42
+# details-are-probed fixture (AC1/AC4; the durability pin).
+_I1072_DETAILS_BLOCK = """<details>
+<summary>Worked example — matched context 408, layer 26, mean remainder cell, fold 4</summary>
+
+1 of 3,188 rows — a random sample (numpy seed 42); full arrays:
+[`per_context_stats_1072_fold4.npz`]({blob_url}) plus folds 0-3 in the same
+directory, mirrored on the HF data repo (footer).
+
+</details>"""
+
+
+_V4_RESULTS_PROSE_ANCHOR = (
+    "The 17-pt lift holds at every seed; "
+    "the smallest within-condition gap between seeds is 1.2 pts."
+)
+
+
+def test_bodywide_url_missing_path_fails_v4(tmp_path, monkeypatch):
+    """AC1 — a v4 body citing a same-repo blob URL whose sha resolves locally
+    but whose path is absent from that tree FAILs check 42 (detail names the
+    path + sha[:8]) and flips verify_text ok=False."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    dead = _gh_blob_url(sha, "eval_results/issue_1072/per_context_stats_1072_fold4.npz")
+    body = _V4_GOOD_BODY.replace(
+        _V4_RESULTS_PROSE_ANCHOR,
+        f"Full arrays: [`per_context_stats_1072_fold4.npz`]({dead}).",
+    )
+    assert body != _V4_GOOD_BODY  # anchor still present in the fixture
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    r = _results_by_name(results)[_BODYWIDE_NAME]
+    assert not r.passed
+    assert "per_context_stats_1072_fold4.npz" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_bodywide_details_urls_are_probed(tmp_path, monkeypatch):
+    """AC1/AC4 (durability pin) — the VERBATIM #1072 Sample-slot shape: the
+    dead blob link sits INSIDE a `<details>` block and is still probed (the
+    25300695e4 details exemption covers wording discipline only) → check-42
+    FAIL on a v4 body."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    dead = _gh_blob_url(sha, "eval_results/issue_1072/per_context_stats_1072_fold4.npz")
+    details = _I1072_DETAILS_BLOCK.format(blob_url=dead)
+    body = _V4_GOOD_BODY.replace(_V4_RESULTS_PROSE_ANCHOR, details)
+    assert body != _V4_GOOD_BODY
+    r = verify_task_body.check_body_artifact_urls_exist(body)
+    assert not r.passed
+    assert "per_context_stats_1072_fold4.npz" in r.detail and sha[:8] in r.detail
+    ok, _results = verify_task_body.verify_text(body)
+    assert not ok
+
+
+def test_bodywide_url_present_passes(tmp_path, monkeypatch):
+    """AC3 — a resolving non-footer same-repo URL PASSes with the counted
+    `1 URL(s)` detail (pins the non-vacuous probe path — NOT the no-URLs
+    vacuous PASS) and no `unverified` note."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    live = _gh_blob_url(sha, "eval_results/issue_1072/stats_component.json")
+    body = f"Stats live at [`stats_component.json`]({live}).\n"
+    r = verify_task_body.check_body_artifact_urls_exist(body)
+    assert r.passed and not r.is_warn, r.detail
+    assert "1 URL(s)" in r.detail
+    assert "unverified" not in r.detail
+
+
+def test_bodywide_fenced_and_blockquoted_urls_not_probed(tmp_path, monkeypatch):
+    """AC4 (#959) — a dead same-repo URL inside a ``` fence AND on a `>`
+    blockquote line is never gathered → vacuous PASS, no FAIL."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    dead = _gh_blob_url(sha, "eval_results/issue_1072/missing.npz")
+    body = f"```\ncurl {dead}\n```\n\n> Originating prompt cites {dead} verbatim.\n"
+    assert verify_task_body._gather_body_artifact_urls(body) == []
+    r = verify_task_body.check_body_artifact_urls_exist(body)
+    assert r.passed and not r.is_warn
+    assert "no non-footer" in r.detail
+
+
+def test_bodywide_grandfathered_v3_warns_not_fails(tmp_path, monkeypatch):
+    """AC5 (forward-only) — the same dead URL under a v3 sentinel (and a v2
+    variant) yields passed=True + is_warn=True with a grandfathered detail;
+    a fully-passing v3 integration body keeps verify_text ok=True."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    dead = _gh_blob_url(sha, "eval_results/issue_1072/missing_fold9.npz")
+    para = f"Full arrays: [`missing_fold9.npz`]({dead})."
+    for sentinel in ("<!-- clean-result-v3 -->", "<!-- clean-result-v2 -->"):
+        r = verify_task_body.check_body_artifact_urls_exist(f"{sentinel}\n\n{para}\n")
+        assert r.passed and r.is_warn, r.render()
+        assert "grandfathered" in r.detail and "missing_fold9.npz" in r.detail
+    # Integration: the v3 good body + the dead URL stays overall ok=True.
+    body = _V3_GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed; "
+        "the smallest within-condition gap between seeds is 1.2 pts.",
+        para,
+    )
+    assert body != _V3_GOOD_BODY
+    ok, results = verify_task_body.verify_text(body)
+    rr = _results_by_name(results)[_BODYWIDE_NAME]
+    assert rr.passed and rr.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_bodywide_skips_footer_urls_owned_by_8b(tmp_path, monkeypatch):
+    """AC6 — a dead URL that appears ONLY in the v4 footer is reported by
+    check 8b and set-difference-skipped by check 42 (no double-report)."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _V4_GOOD_BODY.replace(
+        f"{_GH_REPO}/blob/0123456789abcdef/scripts/run.py",
+        _gh_blob_url(sha, "eval_results/issue_1072/missing.npz"),
+    )
+    assert body != _V4_GOOD_BODY
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility artifact URLs exist"].passed  # 8b owns it
+    r42 = by_name[_BODYWIDE_NAME]
+    assert r42.passed and "no non-footer" in r42.detail  # 42 skips it
+
+
+def test_bodywide_unknown_sha_head_fallback(monkeypatch):
+    """AC7/AC8 — sha unknown to the local object DB: an HTTP-HEAD 404 FAILs
+    (v4); a None probe (offline) is an `unverified` PASS-note, never a
+    FAIL. Never relies on live HTTP — `_http_head_status` is stubbed (the
+    conftest EPM_VERIFY_BODY_NO_HTTP=1 fence covers un-stubbed paths)."""
+    dead = _gh_blob_url("0123456789abcdef", "eval_results/issue_1072/missing.npz")
+    body = f"<!-- clean-result-v4 -->\n\nFull arrays: [`missing.npz`]({dead}).\n"
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 404)
+    r = verify_task_body.check_body_artifact_urls_exist(body)
+    assert not r.passed
+    assert "404" in r.detail
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: None)
+    r2 = verify_task_body.check_body_artifact_urls_exist(body)
+    assert r2.passed and not r2.is_warn
+    assert "unverified" in r2.detail
+
+
+def test_bodywide_head_cap_bounds_probes(monkeypatch):
+    """AC7 — 10 unknown-sha URLs against a counting `_http_head_status` stub:
+    at most _BODYWIDE_HEAD_CAP (8) HEADs issue; past-cap URLs surface as
+    `per-body HEAD cap` unverified notes on a PASS line."""
+    calls: list[str] = []
+
+    def counting_head(url, timeout=5.0):
+        calls.append(url)
+        return None
+
+    monkeypatch.setattr(verify_task_body, "_http_head_status", counting_head)
+    lines = [
+        f"See [`f{i}.json`]({_gh_blob_url('0123456789abcdef', f'eval_results/issue_1072/f{i}.json')})."
+        for i in range(10)
+    ]
+    body = "<!-- clean-result-v4 -->\n\n" + "\n".join(lines) + "\n"
+    r = verify_task_body.check_body_artifact_urls_exist(body)
+    assert len(calls) == verify_task_body._BODYWIDE_HEAD_CAP == 8
+    assert r.passed
+    assert "per-body HEAD cap" in r.detail
+
+
+def test_bodywide_other_repo_and_trailing_quote():
+    """Gatherer scope — other-repo github URLs are never gathered (existence
+    undecidable locally); a legacy `href="…"` fragment's trailing quote is
+    stripped so the probe sees the clean URL (D8)."""
+    other = "https://github.com/otherowner/otherrepo/blob/0123456789abcdef/x.json"
+    ours = f"{_GH_REPO}/blob/0123456789abcdef/scripts/run.py"
+    body = f'See {other} and <a href="{ours}">entry script</a>.\n'
+    assert verify_task_body._gather_body_artifact_urls(body) == [ours]
+
+
+def test_gh_tree_adjacent_claim_missing_warns_1072_shape(tmp_path, monkeypatch):
+    """AC2 — the VERBATIM #1072 pre-fix Artifacts line (sha swapped to the
+    fixture sha) against a tree carrying the JSONs but not the `.npz` →
+    check-43 WARN naming the expanded missing basenames + prefix + sha[:8] +
+    the PAREN shape tag; the present JSONs are never reported."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = _I1072_PREFIX_ARTIFACTS_LINE.format(
+        tree_url=_gh_tree_url(sha, "eval_results/issue_1072")
+    )
+    r = verify_task_body.check_github_tree_adjacent_file_claims(line)
+    assert r.passed and r.is_warn
+    assert r.render().startswith("  [WARN]")
+    for i in range(5):
+        assert f"per_context_stats_1072_fold{i}.npz" in r.detail
+    assert "eval_results/issue_1072" in r.detail and sha[:8] in r.detail
+    assert "shape: PAREN" in r.detail
+    # Present files are never reported missing.
+    assert "claims `stats_component.json`" not in r.detail
+    assert "claims `battery_1072_fold0.json`" not in r.detail
+
+
+def test_gh_tree_adjacent_claim_present_passes(tmp_path, monkeypatch):
+    """AC3 — every claimed basename (incl. the brace expansions) is a tree
+    member → clean PASS, no WARN, no `unverified` note."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"Artifacts: [`eval_results/issue_1072/`]({_gh_tree_url(sha, 'eval_results/issue_1072')}) "
+        "(`stats_component.json`, `battery_1072_fold{0..4}.json`)"
+    )
+    r = verify_task_body.check_github_tree_adjacent_file_claims(line)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "6 adjacent file claim(s) against 1 pinned git tree(s)" in r.detail
+
+
+def test_gh_tree_blob_and_hf_links_out_of_scope():
+    """Partition — claims adjacent to same-repo `/blob/` links (8b/42 probe
+    the URL itself), HF `/tree/` links (check 32's territory), and
+    other-repo github links extract ZERO check-43 claims."""
+    blob_path = "eval_results/issue_1072/per_context_stats_1072_fold4.npz"
+    bodies = [
+        f"Full arrays: [`per_context_stats_1072_fold4.npz`]({_gh_blob_url('0123456789abcdef', blob_path)})",
+        "Mirror: [`stats_component.json`](https://huggingface.co/datasets/o/r/tree/abc1234def/dir/)",
+        "Other: [`x.json`](https://github.com/otherowner/otherrepo/tree/0123456789abcdef/dir) (`y.json`)",
+    ]
+    for body in bodies:
+        assert verify_task_body._gather_gh_tree_adjacent_file_claims(body) == [], body
+
+
+def test_gh_tree_unknown_sha_unverified(tmp_path, monkeypatch):
+    """AC8 — an unresolvable sha (unknown / shallow) is an `unverified`
+    PASS-note, never a WARN (a partial/absent listing must never ground a
+    WARN); zero network involved."""
+    repo, _sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"Artifacts: [`eval_results/issue_1072/`]"
+        f"({_gh_tree_url('beefcafe1234', 'eval_results/issue_1072')}) "
+        "(`stats_component.json`)"
+    )
+    r = verify_task_body.check_github_tree_adjacent_file_claims(line)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" in r.detail
+    assert "did not resolve" in r.detail
+
+
+def test_gh_tree_warn_never_fails(tmp_path, monkeypatch):
+    """AC5 — check 43 has NO passed=False code path: the missing-claim case
+    keeps passed=True (is_warn=True), and a grandfathered v2 integration
+    body carrying BOTH new shapes (dead non-footer URL + missing tree claim)
+    keeps verify_text ok=True (42 WARNs on v2; 43 WARNs by design)."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    missing_line = _I1072_PREFIX_ARTIFACTS_LINE.format(
+        tree_url=_gh_tree_url(sha, "eval_results/issue_1072")
+    )
+    r = verify_task_body.check_github_tree_adjacent_file_claims(missing_line)
+    assert r.passed is True and r.is_warn is True
+    dead = _gh_blob_url(sha, "eval_results/issue_1072/missing.npz")
+    body = _V2_GOOD_BODY.replace(
+        "0.81 — no regression at 25% mixing.",
+        f"0.81 — no regression at 25% mixing.\n\n{missing_line} "
+        f"Dead sample link: [`missing.npz`]({dead}).",
+    )
+    assert body != _V2_GOOD_BODY
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_BODYWIDE_NAME].passed and by_name[_BODYWIDE_NAME].is_warn
+    assert by_name[_GH_TREE_NAME].passed and by_name[_GH_TREE_NAME].is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_expand_claim_token_bounds():
+    """D5 — bounded numeric brace expansion: `{0..4}` → 5 names; an
+    over-wide or inverted range expands to [] (no probe, no WARN); comma
+    alternation and nested braces stay plain tokens the filename whitelist
+    then rejects."""
+    assert verify_task_body._expand_claim_token("battery_1072_fold{0..4}.json") == [
+        f"battery_1072_fold{i}.json" for i in range(5)
+    ]
+    assert verify_task_body._expand_claim_token("x{0..4000}.npz") == []
+    assert verify_task_body._expand_claim_token("x{4..0}.npz") == []
+    for token in ("x{a,b}.npz", "x{0..{1..2}}.npz"):
+        assert verify_task_body._expand_claim_token(token) == [token]
+        assert not verify_task_body._HF_ADJ_FILENAME_RE.match(token)
+    assert verify_task_body._expand_claim_token("stats_component.json") == ["stats_component.json"]
+
+
+def test_gh_tree_disclaimer_suppresses_warn(tmp_path, monkeypatch):
+    """AC10 (D10) — the VERBATIM CURRENT #1072 footer line: the `{0..4}.npz`
+    tokens sit inside the qualifying paren as an explicit "gitignored … HF
+    eval_results mirror only" DISCLAIMER → zero claims gathered, clean PASS
+    against a tree lacking the `.npz`. P2: deleting the disclaimer substring
+    from the SAME line re-yields gathered claims + a WARN (pins D10 as live
+    code, not dead code)."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = _I1072_CURRENT_ARTIFACTS_LINE.format(
+        tree_url=_gh_tree_url(sha, "eval_results/issue_1072")
+    )
+    assert verify_task_body._gather_gh_tree_adjacent_file_claims(line) == []
+    r = verify_task_body.check_github_tree_adjacent_file_claims(line)
+    assert r.passed and not r.is_warn, r.detail
+    undisclaimed = line.replace(" are gitignored and live on the HF eval_results mirror only", "")
+    assert undisclaimed != line
+    claims = verify_task_body._gather_gh_tree_adjacent_file_claims(undisclaimed)
+    assert any(c[2] == "per_context_stats_1072_fold0.npz" for c in claims)
+    r2 = verify_task_body.check_github_tree_adjacent_file_claims(undisclaimed)
+    assert r2.passed and r2.is_warn
+    assert "per_context_stats_1072_fold0.npz" in r2.detail
+
+
+def test_gh_tree_ancestor_entries_not_members(tmp_path):
+    """Fact-check A8 (P8) — `git ls-tree -r -t -- <prefix>` also emits the
+    prefix's ANCESTOR tree entries (`eval_results`) and the prefix itself
+    (`issue_1072`); the UNDER-prefix filter (`p.startswith(prefix + "/")`)
+    excludes both, so an ancestor/prefix dir basename never counts as a
+    member (a bare `p != prefix` would keep the ancestors as spurious
+    WARN-suppressing members)."""
+    repo, sha = _make_repo_with_issue1072_tree(tmp_path)
+    status, basenames, note = verify_task_body._git_tree_basenames(
+        repo, sha, "eval_results/issue_1072"
+    )
+    assert status == "ok", note
+    assert "eval_results" not in basenames
+    assert "issue_1072" not in basenames
+    assert "stats_component.json" in basenames
+    assert "battery_1072_fold4.json" in basenames
