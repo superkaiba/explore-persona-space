@@ -4236,8 +4236,8 @@
     "1543": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1543",
-      "status": "reviewing",
+      "path": "tasks/completed/1543",
+      "status": "completed",
       "title": "workflow-fix: staging probe per source-family+consumer"
     },
     "1544": {
