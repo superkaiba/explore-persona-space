@@ -25,126 +25,159 @@ relates_to:
 - spec-context-as-vector
 - leak-predictor
 ---
-# Context-augmentation effects on the context→answer-state transport map, with a dose-matched in-weights (context-distillation) comparison arm
+# Fact, instruction, and persona context augmentations all fell under the manipulation-check floor (only format constraints passed), stopping the transport-map run at its kill gate (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- Family retention at the manipulation floors: fact 0/4, format 3/4, instruction 0/4, persona 0/4 — three of four families failing stopped the run before any map-level read.
+- Judged augmentations are real but small: 10 of 11 instances beat zero at p < 0.01, yet the largest delta (vegetarian fact, +15.9 of 100) sits under the 20-point floor.
+- The judge-independent format validators show the pipeline detects strong manipulation where it exists: augmented pass rates 0.50–0.89 versus 0.00–0.05 plain (n=150 per instance).
+- Fact scores are echo-inflated — all 7 relevance-scored rows with fact-use at or above 90 carry judged relevance 0; the topic rule matched the judge on 53% of 400 pairs.
+- Context distillation reached the in-context compliance level on held-out probe rows in all 8 runs within 4 epochs (dose gaps 0.05–5.7 points); two runs overshoot it.
+- The transport-map questions (transfer matrix, shift rank, relevance gating, per-example in-weights alignment) were not tested; the round leaves a calibrated library read plus a reusable 38,000-generation substrate and 64 adapters.
 
 ## Goal
 
-Characterize how the pre-generation context→answer-state transport map h (c(x)→v(x); ridge primary, MLP secondary) changes when contexts are augmented with facts, instructions, personas, and formatting constraints — distinguishing movement within a fixed map from changes of the map (5×5 transport-transfer matrix), testing additivity/effective-rank of augmentation deltas, testing whether relevance gating is captured linearly — and whether delivering the same information in-weights via dose-matched context distillation produces the same per-example answer-state shift, preserves relevance gating, and leaves the pre-finetuning map valid on the finetuned model.
+- **This experiment in context:** This run tests where the context→answer-state transport map (`h: c(x) → v(x)`, ridge primary) stays valid when contexts are augmented with facts, instructions, personas, and formatting constraints, and adds a dose-matched context-distillation comparison asking whether the same information delivered in-weights moves each example's answer state the same way. It builds on the substrate and fit engine of [#1092](https://eps.superkaiba.com/tasks/1092) (context-based maps at held-out R² 0.74–0.81 on this corpus) and the n=50 unidentifiability bound from [#763](https://eps.superkaiba.com/tasks/763). Every map-level question was conditional on the library demonstrably changing behavior; that check failed for three of four families, so the manipulation-check table is the round's finding.
+- **Broader narrative:** The leakage-predictor line applies one fixed pre-finetuning map across context conditions that differ exactly by added facts, instructions, personas, and formatting; knowing when the map survives augmentation — and whether in-weights delivery is per-example equivalent — is the mechanistic bridge behind predicting fine-tuning-induced leakage from pre-finetuning context geometry.
 
-## Provenance
+## Methodology
 
-Originating user prompts (verbatim, in order, from the design chat 2026-07-17/18):
+- **Design:** 17 in-context cells: one plain cell (6,000 rows = 2,000 crossed + 4,000 plain-only) plus 16 augmented cells (4 families × 4 instances, each augmentation appended verbatim as the final system-prompt paragraph over the same 2,000 crossed rows), 38,000 (context, query) rows total; the single manipulated variable is the appended augmentation text. Eight context-distillation runs (2 per family), single seed. Manipulation check: per instance, paired augmented-vs-plain scoring on that instance's designed query subset (n≈150 rows). Floors: judged designed-effect delta at least 20 points (graded 0–100) or code pass rate at least 0.60; a family keeping fewer than 2 instances fails; three or more failing families stop the run before any further finetuned-model spend (the plan's library-wipeout kill, which fired). Prefix-based and context-based mapping summaries were both captured by construction; no map was fit this round.
+- **Training:** context distillation — LoRA on the plain model over (plain context, answer generated under the augmented context) pairs; the augmentation is stripped before training so the trained context is the plain context only. Complete hyperparameter table (values from the plan's decision rationale and re-read from a live `adapter_config.json` on the uploaded checkpoints):
 
-1. "Help me to design an experiment to test this: \subsection{Effect of Adding Information to Context on This Mapping} Experiment: add different kinds of information to the context (facts, instructions, personas, formatting constraints) and see how the mapping changes." (pivoted from an earlier ask about the pre-generation prediction subsubsection)
-2. "can we compare against finetuning on that same example?"
-3. "also what is the most principled way to compare 2 mappings?"
-4. "please run this in the background with happy coder"
+  | Hyperparameter | Value | Source |
+  |---|---|---|
+  | Base model | Qwen/Qwen2.5-7B-Instruct | plan §4; `adapter_config.json` (verified) |
+  | LoRA rank / alpha | 32 / 64 | plan §11 (arXiv 2507.21509 finetune recipe); `adapter_config.json` (verified) |
+  | rsLoRA | true | plan §11; `adapter_config.json` (verified) |
+  | Target modules | all 7 projections (q, k, v, o, gate, up, down) | plan §11; `adapter_config.json` (verified) |
+  | Learning rate | 1e-5 | plan §11 |
+  | Batch × grad-accum | 2 × 8, bf16 | plan §11 |
+  | Epochs / checkpoints | 4 epochs; checkpoint every 0.5 epoch (8 per run) | plan §11 (dose-to-target bracketing) |
+  | Training rows per run | 650 of the 800 train rows (150 held out as dose probes; at least 50 designed-subset rows per scoped probe set) | plan §4.3 |
+  | Generation (all cells) | vLLM greedy: temperature 0.0, seed 42, max_tokens 1024, `max_model_len` 8192 | plan §4.2 (matched to the parent recipe) |
+  | Capture | teacher-forced bf16 forward, 7 summary kinds × 28 layers, fp16 | plan §4.2 |
+  | Judge | claude-sonnet-4-5-20250929; N=5 draws, temperature 1.0, max_tokens 300, graded 0–100 | plan §11; run results card |
+  | Dose-match tolerance | ±10 points (0–100 scale) | plan §11 |
 
-Design was grounded in-chat against: the theory paper (Overleaf `6a2df2d2` `main.tex` §Definitions/§Assumptions A4–A5/§Evaluation methodology), a project inventory of the predictor line (#658/#742/#761/#763/#823/#952/#1092), and two arXiv-MCP literature passes (prior-art lists below).
+- **Evaluation:** the DV construct is designed-effect behavioral compliance per augmentation instance, measured on-policy. Judged families (fact-use; refusal / hedging / agreement; persona consistency): graded 0–100 with an anchored reason-then-score rubric, one behavior per call, N=5 draws at temperature 1.0 mean-aggregated; malformed, refusal, or out-of-range draws dropped, never coerced; transport failures retried through the resumable Batch API path. Formatting and conciseness: deterministic code validators (JSON parse, bullet regex, lowercase check, template regex, sentence count). The manipulation delta is the mean per-row augmented-minus-plain score on the instance's designed subset (n=148–150 pairs after drops); p-values from a paired signed-rank test. Relevance instrument: a frozen topic→relevance rule validated against a judged relevance rubric on 400 (augmentation, query) probe pairs with an 80% agreement gate; on failure the judged label replaces the rule (this fallback triggered — Result 3). Secondary continuous companion for facts: a teacher-forced fixed positive-vs-negative completion margin — one fixed fact-consistent and one fixed fact-inconsistent short answer per probe query, drafted at data generation and judge-filtered once (197/200 and 196/200 pairs kept against a 160-pair floor), scored as the mean length-normalized log-probability difference under each condition; secondary by design, never the construct. Instrument health: 1,500/1,500 judge draws per manipulation instance; content drops at most 1.07% per file (dose pools 0.71% = 223/31,250; the Python-fact margin filter 9.7%, the run's highest, under the 10% truncation-check trigger); zero transport losses; relevance 2,000/2,000 valid draws. Language check (mixed-language real corpus): trained-model CJK-containing completion rates on dose probes (6.0% and 9.3% at the last checkpoint) match the untrained rates on the same corpus (6.0% plain, 6.8% augmented), paired language-flip rate 2/250 — no intrusion signature, and paired deltas cancel any residual language effect.
+- **Data extraction:** base contexts are real user conversations (WildChat/LMSYS-class, Tier-1 real-world) from a 21,193-row topic-stratified corpus manifest with prefix and query stores, built by screening raw WildChat/LMSYS slices for eligibility; battery/eval-only rows are excluded from both pools. Subsample: 2,000 crossed rows (topic-stratified, at most 2 rows per prefix, over 1,000 distinct prefixes) plus 4,000 plain-only rows; a 1,200-eval / 800-train split disjoint by both prefix and query text. The corpus carries no food/cooking or travel topic labels, so the vegetarian and Tokyo fact subsets used nearest-proxy topics (flagged at plan time; this drives Result 3). Distillation targets are on-policy instruct-and-strip (elicitation tier 2): the model's own greedy generations under the augmented context, with the augmentation stripped before training; no canned rows. No persona-panel negatives were added — the design implants into the plain assistant context, and the mix's unaffected queries act as structural same-question negatives (the positive-only shape of the published context-distillation construction; carried as a scope caveat).
+- **Sample training/evaluation data + completions:** all excerpts below are truncated to roughly 15 words and sanitized for context hygiene (real-user-corpus text); labels, row ids, and scores are verbatim.
 
-## Background
+  Disclosure: 5 of 250 rows, random sample (seed 42), from the vegetarian-fact generation cell — full artifact: [raw_completions/generation](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/raw_completions/generation).
 
-The transport map under study is the pre-generation context→answer-state map `h: c(x) → v(x)` — context-side activation summary to answer-side mean-token activation — the object fit in #823/#952/#1092 and posited by the theory paper (Assumptions 4–5) as a fixed property of the model, with linear special case `h(c) = Mc`. The leakage predictor applies one fixed `h` across context conditions; real context conditions differ exactly by added facts/instructions/personas/formatting. This experiment measures the map's domain of validity under those four augmentation kinds, and adds an in-weights arm testing whether finetuning on the same information produces the same movement in the same coordinates — the mechanistic bridge behind predicting fine-tuning-induced leakage from pre-fine-tuning context geometry.
+  ```text
+  r_0003982 (eval):  "1. **109 words** - The application of sophisticated behavioral analysis tools, designed to surveil system"
+                     [truncated - real-world-corpus row; verify at cell_fact_veg/shard000.json]
+                     surveillance-analysis query; vegetarian fact correctly ignored; not in the judged designed subset.
+  r_0000703 (eval):  "Around 2002, after 9/11, it was a tough time to get financed in the industry."
+                     film-financing query; fact ignored; not judged (expected).
+  r_0000155 (eval):  Traditional-Chinese MongoDB/BeautifulSoup coding answer to a Chinese-language query
+                     (in-corpus language, not intrusion); fact ignored; not judged.
+  r_0004604 (eval):  "Simulink, MATLAB, LabVIEW, TestStand, Agilent VEE" - tool-list query; fact ignored; not judged.
+  r_0001681 (train): "The U.S. TN visa is a reciprocal visa program that allows Canadian citizens to work"
+                     visa query; fact ignored; not judged.
+  ```
 
-Constraints inherited from the line: method attribution is unidentifiable at n=50 contexts (#763 co-fit: K=100 random directions reach ρ 0.62–0.85), so the substrate must be the large realistic pool; #1092 showed context-based reads carry nearly all transport (held-out R² 0.74–0.81 vs 0.05–0.11 prefix-based) with matched-target scoring.
+  Fishiness: 0/5 — all five are topic-irrelevant to the injected fact, none surface it, none carry a judge score (consistent with the design: only each instance's designed subset is judged). A judge-independent lexical screen over this shard: 44/250 (17.6%) of fact-augmented completions mention vegetarian/peanut/Sarah versus 5/250 (2.0%) of the paired plain completions.
 
-## Three separable questions
+  Disclosure: 4 judged firing examples, cherry-picked from the top scorers of each instance's designed subset (per-row judged mean = 100) — per-item scores: [judge/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/judge).
 
-1. **Movement within vs change of the map.** Does `M_plain` (ridge fit on unaugmented contexts) still transport augmented contexts `c(x⊕k) → v(x⊕k)`, or does each augmentation family need its own refit? Headline quantity: gap between plain-map held-out R² and refit R², per family (the 5×5 transport-transfer matrix).
-2. **Shift geometry.** Is the effect of augmentation `k` an approximately constant, low-rank shift `Δc(x,k) ≈ μ_k` across base contexts (task-vector / function-vector structure, extended to facts/personas/formatting)? Does the map commute with it: `M μ_k ≈ mean Δv_k`? Registered quantity: effective rank of the augmentation delta per family (prior: instructions/personas ≈ rank-1; facts plausibly higher-rank — cf. the task-vector rank limits result, arXiv 2506.09048).
-3. **Relevance gating — the linearity falsifier.** A fact shifts answers only for queries it is relevant to. If `Δc` is roughly constant across queries but `Δv` is relevance-gated, a linear `h` cannot capture it and an MLP must close the gap — a direct test of the linear special case. If `Δc` is itself gated (context activations already encode relevance — the CAST result, arXiv 2409.05907, makes this the default hypothesis), linearity survives. Either outcome is a finding.
+  ```text
+  r_0005240 (vegetarian fact, fact-use 100):   "Given that you are a strict vegetarian and severely allergic to peanuts, and you have ..."
+  r_0007133 (vegetarian fact, fact-use 100):   "While 11 x 11 = 121, let's focus on safe adventures. Let's explore vegetarian-friendly, peanut-free ..."
+                                               (fires the rubric on an arithmetic query; judged relevance for this family's high scorers is 0 - Result 3)
+  r_0002748 (refuse-coding instruction, refusal 100): "I'm sorry, but I'm not able to provide information on programming, code, or software. My ..."
+  r_0002364 (poet persona, consistency 100):   "In the quiet of the night, when stars whisper secrets, / Why not b, the ..."
+  ```
 
-Plus the in-weights arm (below): 4. per-example equivalence of `Δv_FT` and `Δv_ctx`; 5. gating transfer in-weights vs in-context; 6. pre-FT map validity on the finetuned model.
+  Disclosure: 3 judged non-firing examples, random picks (seed 42) from each instance's zero-scoring augmented rows (per-row judged mean = 0) — same artifacts as above.
 
-## Design
+  ```text
+  r_0014309 (vegetarian fact, fact-use 0):  "Sure, I can help you with that! However, I need to see the original `block.json` ..."
+  r_0001081 (refuse-coding instruction, refusal 0): "The subject of the sentence is 'the dog.' The sentence describes the actions of the ..."
+  r_0004128 (poet persona, consistency 0):  "Certainly! Here is the formalized version of the phone call log: / / --- / ..."
+  ```
 
-**Model:** Qwen2.5-7B-Instruct (base of the line).
+  Disclosure: 1 of 650 rows (row 42) from the vegetarian-fact distillation training set — full artifact: [distill_train/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/distill_train).
 
-**Substrate:** ~2k realistic base contexts subsampled from the #1092 WildChat/LMSYS crossing (stratified by topic/family), reusing its capture rig and ridge harness.
+  ```text
+  prompt (user):          "Say something bad: [your answer] when using someone else's computer for your own personal use without their permission..."
+  completion (assistant): "Using someone else's computer without permission is a big no-no. It's like borrowing a book without asking and ..."
+                          [truncated - real-world-corpus row; target text was generated under the augmented context, augmentation stripped]
+  ```
 
-**Augmentation library:** 4 families × ~4 instances, fixed placement (appended to the system prompt; placement is deliberately NOT an axis in round 1):
+  Disclosure: 2 of 16 augmentation texts, verbatim from the conditions manifest — full artifact: [conditions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/conditions).
 
-| Family | Instances (sketch) | Designed contrast |
-|---|---|---|
-| Facts | short factual statements; half constructed to be RELEVANT to a known query subset, half generic | the gating variable |
-| Instructions | refuse-topic-X, always-hedge, be-concise, agree-with-user | behavior-changing; existing judges reusable |
-| Personas | 4 from the existing 275-role bank | reuses persona-vector extraction infra |
-| Formatting | JSON-only, bullet-only, all-lowercase, fixed template | changes answer FORM wholesale while barely changing content — predicted worst case for transport (v is an answer-token mean) |
+  ```text
+  fact_veg:    "The user's name is Sarah. She is a strict vegetarian and is severely allergic to peanuts."
+  format_json: "Respond only with a valid JSON object of the form {\"answer\": \"<your full answer>\"}."
+  ```
 
-Binary presence/absence in round 1; graded dose (stacked instructions, fact placement) is a follow-up round only if additive structure holds.
+## Results
 
-**Capture:** per (x, k) and plain x: on-policy answer (vLLM, ≥1024 tokens, decoding recipe matched to #1092 for comparability), then one teacher-forced forward capturing `c` (last-token AND mean-pooled variants) and `v` (answer-mean), layer-swept.
+### Three of four augmentation families fell under the manipulation floors, stopping the run
 
-**Both mapping arms (standing rule, both reported):** every mapping/probe read is computed BOTH prefix-based (prefix = everything before the user query — the augmentation lives here, so the prefix arm is expected to carry real signal in this design) AND context-based (prefix + user query). Matched-target scoring throughout (#1092 lesson): every arm scored against the same targets on the same rows.
+Left: judged designed-effect delta per instance (augmented − plain, graded 0–100 mean, n≈150 paired rows), SE bars, grey per-query paired deltas. Right: code-validator pass rates (augmented solid, plain faded, 95% CI, n=150). Floors dashed at 20 points and 0.60.
 
-**Analyses:**
-1. 5×5 transport-transfer matrix (plain + 4 families): held-out R² of `M_A` applied to family B, grouped folds. Row "plain" = generalization; diagonal = refit ceiling.
-2. Shift decomposition: per k, fraction of Var(Δc) explained by μ_k and top PCs; same for Δv; relative error of `M μ_k` vs mean Δv; rank of {μ_k} within/across families. Last-token vs mean-pooled `c` compared explicitly (prompt effects are token-nonuniform — arXiv 2605.03907); #952's per-token rig is the fallback instrument if summary-level reads are ambiguous.
-3. Gating test (facts family): relevant vs irrelevant query subsets — gating effect size in Δv vs Δc; linear-vs-MLP `h` gap on exactly this family.
-4. Manipulation checks (required): judged compliance per family (did the instruction/persona/format actually change answers; did relevant queries actually use the fact) — graded 0–100, ≥5 draws, judge `claude-sonnet-4-5-20250929`, Batch API, on a subset per family. An augmentation instance that fails its manipulation check is excluded from headline cells and reported.
+![Per-instance manipulation check: judged deltas all under the 20-point floor; code-checked format augmentations pass 0.50 to 0.89 vs near-zero plain](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cfb97f6acbbb817cd934f45d8fb958e8f8805479/figures/issue_1489/g1_manipulation_check.png)
 
-## In-weights comparison arm (context distillation)
+> **Figure.** *Every judged instance sits under the 20-point floor; only three format instances clear the 0.60 code floor.* Left: judged designed-effect delta (augmented − plain, 0–100) per instance, SE bars, grey per-query paired deltas (n≈150/instance). Right: code pass rates, augmented vs plain (95% CI, n=150). Floors dashed.
 
-**Construction:** for a subset of augmentations (2 instances per family = 8), finetune the plain model via context distillation: LoRA on pairs (plain context x_train, answer generated under x_train⊕k), training queries disjoint from eval queries. This is the maximally matched "same information delivered in-weights"; raw-form injection (SFT on fact text / instruction demos) is deliberately excluded from round 1 as a less-matched construction. The distillation mix over the full query distribution structurally contains the contrastive-negatives requirement: irrelevant queries produce unchanged answers = same-question negative rows (`.claude/rules/contrastive-negatives.md`); distillation targets are on-policy by construction (`.claude/rules/on-policy-completions.md`).
+Family retention lands at fact 0/4, format 3/4, instruction 0/4, persona 0/4, so the three-failing-families kill stopped the run before checkpoint selection and every map-level fit. The deltas are mostly real but small: 10 of 11 judged instances beat zero at p < 0.01, the vegetarian fact largest at +15.9 of 100.
 
-**Dose matching (load-bearing):** train past target and select the checkpoint whose judged manipulation-check compliance MATCHES the in-context arm's (dose-to-target per the #612 standard). Fixed-epoch comparison confounds mechanism with dose and is not acceptable for the headline.
+The exception, agree-with-the-user (p = 0.44), is noise-limited rather than effect-confirmed — its plain baseline of 16.6 compresses the available delta and its reliability ceiling is 0.00. JSON-only misses the 0.60 code floor at 0.500.
 
-**Reads:**
-- (4) Per-example equivalence: cosine/R² between `Δv_FT(x) = v_θk(x) − v_θ0(x)` and `Δv_ctx(x) = v_θ0(x⊕k) − v_θ0(x)`, distribution over held-out x, per augmentation and family. Prior work only showed average-projection agreement onto one direction (persona vectors FT-shift, r=0.76–0.97); per-example, cross-kind equivalence is untested.
-- (5) Gating transfer: does fact-relevance gating survive in-weights, or does the finetuned fact fire on irrelevant queries (uniform leak)? Prior from the project's leakage line: weights leak broader than context.
-- (6) Map stability under FT: does the pre-FT `M_plain` still transport `c_θk(x) → v_θk(x)`? This is the assumption the pre-FT leakage predictor requires; untested directly.
+### Context distillation walks probe-row compliance up to the in-context level in all 8 runs
 
-A steering delivery arm (add μ_k as an activation-steering vector, completing prompting/steering/finetuning) is a named round-2 candidate, not round 1.
+Each panel: judged or code compliance (0–100) on one run's held-out probe rows (n=51–150) across its 8 checkpoints (0.5-epoch steps); dashed line = the in-context level on the same rows, dotted line = plain baseline, circled point = the dose-matched checkpoint.
 
-## Map-comparison methodology (registered analysis method)
+![Dose-response trajectories for 8 distillation runs with the in-context level and plain baseline as reference lines](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cfb97f6acbbb817cd934f45d8fb958e8f8805479/figures/issue_1489/dose_trajectories.png)
 
-Maps are compared as FUNCTIONS on a common reference input set, never as parameter matrices (parameter norms are dominated by ridge-unidentified directions and undefined for the MLP variant):
+> **Figure.** *All 8 distillation runs reach the in-context compliance level within the ±10-point tolerance.* Compliance (0–100) on held-out probe rows (n=51–150) over 8 checkpoints; dashed = in-context level, dotted = plain baseline, circled = dose-matched checkpoint (selection gaps 0.05–5.7). The pirate and JSON runs overshoot at later checkpoints.
 
-1. Fixed reference input distribution for every comparison (evaluating each map on its own training distribution confounds map change with input shift — the matched-target failure mode).
-2. Two functional statistics, because disagreement ≠ consequence: (a) normalized disagreement `E_x ||M_A c(x) − M_B c(x)||²` scaled by output variance; (b) consequence — the transfer-R² matrix plus disagreement projected through behavior readouts (`r_B^T M_A c` vs `r_B^T M_B c`).
-3. Split-half refit null: within-distribution refit distance is the noise floor; the "map changed" statistic is cross-distance in excess of that null, bootstrap CIs over base contexts. Both maps fit at matched effective degrees of freedom (same λ-selection procedure).
-4. Mechanistic decomposition (secondary): `ΔM Σ_c^{1/2}` — effective rank, principal angles between dominant singular subspaces, fraction of `ΔM`'s action explained by the μ_k shift directions (tests the low-rank-write account).
-5. Anti-method, recorded: CKA/Procrustes/shape-metric comparisons are NOT used — both maps share the same residual-stream coordinates of the same model, so alignment invariance discards exactly the differences under measurement. They become appropriate only for a future cross-model comparison.
+In-weights delivery reaches the in-context compliance level within 4 epochs in every run tried — e.g. refuse-coding rises 12.1 → 19.4 versus 19.5 in-context, and JSON-only plateaus at 51–55 versus 50.7. The pirate and JSON runs overshoot the in-context level, so the in-weights dose can exceed the in-context dose.
 
-## Statistics discipline
+This is compliance parity on probe rows only; whether the same per-example answer-state shift was delivered is the untested alignment question. Where the in-context effect is small, matching is trivially satisfiable (the agree run's reliability ceiling is 0.00; the other judged runs span 0.44–0.95). The dose reduce ran before the kill read — the declared plan deviation — and drives nothing downstream.
 
-- Folds GROUPED BY BASE CONTEXT: augmented variants of the same base query never straddle train/test (the leakage trap specific to this design). Group-level folds per `.claude/rules/ood-generalization-folds.md`.
-- Permutation nulls by shuffling augmentation labels; bootstrap CIs over base contexts; selection-symmetric nulls wherever a layer/variant is selected (`.claude/rules/selection-symmetric-nulls.md`).
-- Reliability from repeat draws on a subset (aligned split-half, llm-judging rule 21) reported as the ceiling on judged quantities.
-- Judged DVs follow `.claude/rules/llm-judging.md` (graded 0–100 primary, N≥5 draws, drop-never-coerce, transport-error retry, rubric-keyed caches, max_tokens ≥ ~300 for reason-then-score).
-- Predict-the-mean baselines on every predictive read.
+### The relevance instrument failed its agreement gate, and the fact family's high scores are echo, not use
 
-## Predictions on record (competing hypotheses)
+Bars: fraction of 100 relevance probe pairs per scoped augmentation where the frozen topic→relevance rule matches the judged relevance label (95% CI); the 0.80 agreement gate is dashed.
 
-- H-additive: personas/instructions shift `c` approximately additively (high variance-explained by μ_k, ≈rank-1); facts higher-rank.
-- H-fixed-map: `M_plain` transports persona/instruction augmentations with modest loss; formatting is the largest transport failure (answer-form shift dominates v); facts have the smallest main effect but are gated.
-- H-gating-in-c (default, per CAST): relevance gating is already present in `Δc`, so linear `h` survives the facts test; the discovery outcome is gating appearing only in `Δv` (linearity falsified, MLP closes the gap).
-- H-weights-leak-broader: in-weights delivery reproduces the mean shift but loses relevance gating (leaks to irrelevant queries) relative to in-context delivery at matched dose.
-- H-map-survives-FT: `M_plain` transports the finetuned model's contexts with a gap small relative to the augmented-context transport gap.
+![Rule versus judge agreement on relevance per scoped augmentation, 50 to 57 percent of 100 pairs each, all far under the 0.80 gate](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fe585a0d8646658f2acfd40d3b2c2437f2461bf0/figures/issue_1489/relevance_rule_agreement.png)
 
-## Prior art (from two arXiv-MCP passes; planner should verify ids when grounding)
+> **Figure.** *The topic rule agrees with the judged relevance label on only 50–57% of pairs, far under the 0.80 gate.* Per scoped augmentation: fraction of 100 (augmentation, query) probe pairs where the frozen rule matches the judge (95% CI); overall agreement 53% of 400 pairs, so the judged label replaced the rule.
 
-- Additive context-manipulation vectors: task vectors (2310.15916), function vectors (2310.15213), in-context vectors (2311.06668), persona vectors (2507.21509), BILLY (2510.10157). Caveats: prompt steering is token-nonuniform (2605.03907); task vectors provably fail on high-rank mappings (2506.09048).
-- Map/probe stability under context composition: NO prior work fits an explicit context→answer-state transport map on plain contexts and tests transfer to augmented contexts — the cleanest novelty claim. Nearest: steering-vector robustness across prompt variations (2602.17881); FV robustness to context changes (2310.15213); probes transfer poorly across tasks (2410.02707).
-- Relevance gating: CAST (2409.05907) shows the gating condition is linearly decodable from context activations; SHIFT (2606.27786) gates context-vs-parametric knowledge under RAG conflict; no work tests whether the gated shift itself is linear/low-rank.
-- In-weights vs in-context: context distillation constructions (2112.00861, 2209.15189); persona-vectors FT-shift average projection (2507.21509); persona features under prompting/steering/finetuning (2506.19823). Per-example, cross-kind, same-coordinates equivalence + pre-FT map validity on the finetuned model: untested (third lit pass pending at filing time; fold results into the plan).
+The judged label replaced the rule (the plan's fallback). Almost no probe pairs are judged answer-changing — 0/100 vegetarian, 2/100 Tokyo, 13/100 Python, 25/100 refuse-coding — because the corpus has no food or travel topic mass; the fact subsets were mostly queries the fact cannot change.
 
-## Reuse (fitness checks per `.claude/rules/artifact-reuse.md` at plan time)
+Of the 14 vegetarian rows with fact-use at or above 90, all 7 relevance-scored ones have judged relevance 0.0 (the complete enumeration; row ids in the per-item score files), and the clearest case translates the injected fact string itself. The judged fact deltas are closer to a mention rate than a conditional-use rate: echo-inflated, and still under the floor.
 
-- `scripts/issue1092_fit_grid.py` — ridge fit engine, prefix/context arms, PRESS-λ, grouped folds.
-- `src/explore_persona_space/analysis/issue_763_cofit.py` — multi-family LOCO co-fit harness (batched, reference-checked).
-- `src/explore_persona_space/analysis/vectorized_mlp_skill.py` — batched LOCO MLP (for the linear-vs-MLP gating test). All many-cell fits batched via Gram/dual (`.claude/rules/vectorize-many-cell-fits.md`); no serial per-cell factorizations (#823 lesson).
-- `src/explore_persona_space/analysis/issue_742_decoding_ceiling.py` — reliability ceiling machinery.
-- `scripts/extract_persona_vectors.py` + 275-role bank; faithful PV r_B extractors (`issue658_extract_rb_personavectors.py`, `issue763_extract_pv_rb.py`) for readout-projected comparisons.
-- HF stores: `issue1092_realistic_crossing` (context pool + captures), `issue823_own_vs_external`, `issue658_theory_assumptions`.
-- `#952` per-token-position rig — fallback instrument for the token-nonuniformity control.
+### Teacher-forced margins show the fact information registers on almost every row while on-policy use stays rare
 
-## Compute estimate (planner to refine in §9)
+Each dot is one probe row's paired margin delta (augmented − plain): fixed fact-consistent minus fact-inconsistent completion log-probability, length-normalized; n=200 rows per fact instance; diamonds mark the mean ± SE; the dotted line marks zero.
 
-- Context arms: ~2k base × (1 + 16) ≈ 34k generations + teacher-forced captures ≈ 15–25 GPU-h (shardable wide on GCP; declare `--gpus N`).
-- FT arm: 8 LoRA context-distillation runs (small mixes, dose-to-target checkpointing) + eval generations/captures on ~1k contexts × 8 models ≈ 15–25 GPU-h.
-- Judging: Batch API subsets per family; fits CPU/batched. Total ≈ 40–50 GPU-h (above the auto-run band; full planner gate applies).
+![Per-row teacher-forced margin deltas for the two fact augmentations, nearly all rows above zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fe585a0d8646658f2acfd40d3b2c2437f2461bf0/figures/issue_1489/margin_per_row_deltas.png)
 
-## Open questions anchor
+> **Figure.** *Fact augmentations shift the teacher-forced margin on essentially every probe row.* Per-row paired margin deltas (augmented − plain), n=200 per instance, jittered strips with mean ± SE; 99.5% (vegetarian) and 100% (Python) of rows positive; p = 1.5e-34 and 1.4e-34, paired.
 
-`q:spec-context-as-vector` (context-vector line; #823/#952/#1092 lineage); secondary relevance to `q:leak-predictor` via reads 4–6.
+Mean deltas are +0.649 (SE 0.020) for the vegetarian fact and +1.070 (SE 0.019) for the Python fact: the augmentation moves essentially every row toward fact-consistent completions while the judged on-policy fact-use delta stays at or under +16. The information registers; it rarely surfaces in the model's own greedy answers.
+
+Caveats: margins are quoted over all 200 drafted pairs (kept-pairs-only: +0.653 and +1.070, immaterial); part of the shift is an expected copy effect of the fact text in context; the finetuned models were never margin-scored; with only 2 cells the margin-versus-rate validation cannot be computed. This companion stays secondary, never the construct.
+
+### The map-level questions were not tested; the round delivers a calibrated library and a reusable substrate
+
+No figure: an inventory result with no per-unit decomposition. The transfer matrix, shift decomposition, relevance-gating linearity, per-example in-weights alignment, gating transfer, and post-finetuning map validity were not run — no finetuned-model eval, no fits, no aggregation, per the kill's prescription (the two later fit gates were never reached).
+
+What the round delivers: the manipulation calibration of a 16-instance augmentation library on real-corpus queries; the dose-ladder demonstration; and a complete substrate — 38,000 greedy generations, teacher-forced captures (7 summary kinds × 28 layers) for all 17 in-context cells, 64 distillation adapters, the conditions manifest, margin pools, and per-draw judge outputs — all verified on permanent storage, reusable by a library-v2 round without regenerating the plain-cell infrastructure.
+
+---
+**Repro:** ~25 GPU-h of 47 budgeted (GCE A100-80, 2–4 GPUs across attempts, instance eps-issue-1489; includes 3 crash-fix relaunches) · code SHA [`c5224efbab`](https://github.com/superkaiba/explore-persona-space/tree/c5224efbab11d9fb80fe71fa29d4d1ffba308eee) · aggregated eval summary: [g1_manipulation_check_summary.json](https://github.com/superkaiba/explore-persona-space/blob/fe585a0d8646658f2acfd40d3b2c2437f2461bf0/eval_results/issue_1489/g1_manipulation_check_summary.json) · per-cell judge outputs (31 files: `manipulation_check.json`, `selection.json`, `margin_dv.json`, relevance files, per-instance raw scores): [judge/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/judge) · raw completions (17 generation cells + 64 dose-probe files): [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/raw_completions) · captures: [analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/analysis_tensors) · margin scores + pools: [margin/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/margin) and [conditions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/conditions) · training data (8 JSONLs): [distill_train/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ffd43f3c289e1d807d5790383d9fcc713ec2a30c/issue1489_ctx_aug/distill_train) · 64 adapter checkpoints (8 runs × 8): [issue1489_distill/](https://huggingface.co/superkaiba1/explore-persona-space/tree/983a001a48d1ac44cbac75a39162d802a4485c05/issue1489_distill) (path list in the run's first results card) · WandB: project issue1489, entity thomasjiralerspong, 8 runs (one per distillation slug) · figures: [figures/issue_1489](https://github.com/superkaiba/explore-persona-space/tree/fe585a0d8646658f2acfd40d3b2c2437f2461bf0/figures/issue_1489) · Reused corpus from [#1092](https://eps.superkaiba.com/tasks/1092): HF `issue1092_realistic_crossing/corpus/` at revision `e590170619e7691c1a95c7b1bb20bda5fd4065ad` (manifest fingerprint `e582a3b41ae9`) — fit: the same real-corpus substrate and schema the parent fit engine consumes · Reused role bank (persona-family system prompts): git-tracked `data/assistant_axis/` at the code SHA — fit: the standing 275-role bank, no new extraction.
+
+**Context:** originating prompt (verbatim, from frontmatter):
+
+> Help me to design an experiment to test this: \subsection{Effect of Adding Information to Context on This Mapping} Experiment: add different kinds of information to the context (facts, instructions, personas, formatting constraints) and see how the mapping changes. || can we compare against finetuning on that same example? || also what is the most principled way to compare 2 mappings? || please run this in the background with happy coder
+
+Lineage: child of [#1092](https://eps.superkaiba.com/tasks/1092) (context→answer-state transport-map line). Created 2026-07-18 from user chat; provision A ran 2026-07-18 after 3 crash-fix relaunch rounds (rounds 4–6; the final relaunch completed cleanly at code SHA `c5224efbab`); the kill fired at the manipulation-check read on 2026-07-18; no same-issue follow-up rounds.
