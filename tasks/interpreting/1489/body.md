@@ -5,7 +5,7 @@ title: Fact, instruction, and persona context augmentations all fell under the m
 kind: experiment
 tags: []
 created_at: '2026-07-18T01:29:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1092
 origin_prompt: 'Help me to design an experiment to test this: \subsection{Effect of
   Adding Information to Context on This Mapping} Experiment: add different kinds of
