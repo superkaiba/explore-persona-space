@@ -85,6 +85,7 @@ def _download_pools(cache_dir: Path) -> list[Path]:
     api = HfApi()
     paths: list[str] = []
     for sub in ("panel", "base_arms"):
+        # HUB_VERIFY_RETRY_EXEMPT: frozen #1481 repro script; one-shot scoped listing (#1552)
         for t in api.list_repo_tree(
             DATA_REPO, f"{PREFIX}/raw_completions/{sub}", repo_type="dataset", recursive=True
         ):

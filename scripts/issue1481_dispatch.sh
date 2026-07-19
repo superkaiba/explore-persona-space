@@ -56,4 +56,8 @@ case "$GROUP" in
     ;;
 esac
 
-echo "[phase=done]"
+# Standalone-lane dispatcher terminal (load-bearing for poll_pipeline.py when this
+# script runs as the MAIN dispatcher — never remove/reword). When invoked as a child
+# by issue1481_phasec.sh (:43/:49, stdout into phasec's main log), phasec emits its
+# own terminal at its line 52; waived per #1552.
+echo "[phase=done]"  # noqa: phase-done-reserved (standalone-lane terminal; see above)
