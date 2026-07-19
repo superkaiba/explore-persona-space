@@ -1442,8 +1442,11 @@ so this step does not bind there), verify the report's
 
 - **Presence / format (mechanical).** `(c) How to verify` carries a
   `Gate-scope check` line with the contract fields: selector `n_tests` +
-  resolved base, locally-run files, pin-sweep fragments → hits, deferred
-  invariant-only count. ABSENT entirely — and the marker `ts` is ≥ 2026-07-15 (the #1305 duty
+  resolved base, locally-run files, pin-sweep fragments →
+  hit count + verbatim deduplicated hit-file list, deferred
+  invariant-only count (a count-only / glob-family pin-sweep field with
+  no hit-file list is the present-but-terse case below, never absence).
+  ABSENT entirely — and the marker `ts` is ≥ 2026-07-15 (the #1305 duty
   landed on main 2026-07-14; an older round's absence is at most a
   CONCERNS): Critical tagged `marker-shape`, and the blocker body
   MUST name `Gate-scope check` (the orchestrator's Step 5c-bis strip is
@@ -1474,7 +1477,10 @@ so this step does not bind there), verify the report's
   exact copy-pasteable command (a NOT-RUN hit listed without its command
   is additionally a CONCERNS). A report listing a NOT-RUN pin-hit as a
   routine deferral — no command, no discharge path — gets the same Major;
-  never a wave-through.
+  never a wave-through. (iii) Diff the claimed hit-file list against your
+  own sweep's hits — a hit file absent from the claimed list is a Minor
+  `substantive` (sweep-completeness; the #1494 round-1 shape: 7 omitted
+  hit files), escalating per (ii) when it is also NOT-RUN.
 
 ### Step 5: Security Sweep
 
