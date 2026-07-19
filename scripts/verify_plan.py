@@ -91,17 +91,24 @@ Check catalog (id — classification — kind scope)
       criterion baseline
   c39 off-pod phase             WARN-only, conditional    experiment only
       declaration
+  c40 header version label vs   WARN-only, conditional    all kinds
+      persisted filename
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39) also SKIP when their content trigger does not fire.
+37, 38, 39, 40) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
 the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
 bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
+Check 40 also runs outside ``verify_plan_text()`` — it compares the first
+heading's self-declared ``# Plan v<X>`` label against the persisted
+``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
+the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
+draft).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -6410,6 +6417,45 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+_C40_FILENAME_RE = re.compile(r"v(\d+)\.md")  # fullmatch on plan_path.resolve().name
+_C40_HEADER_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")  # on the first heading's TEXT
+
+
+def check_header_version_vs_filename(plan: str, *, plan_path: Path) -> CheckResult:
+    """WARN when the plan's first heading self-declares ``Plan v<X>`` and the
+    persisted filename is ``v{K}.md`` with X != K (#1482: '# Plan v4' rode
+    v5.md + v6.md unnoticed). Version-neutral titles PASS (the sanctioned
+    escape); a non-``v{K}.md`` filename SKIPs (nothing to compare). The
+    filename is read via ``plan_path.resolve()`` so a ``plans/plan.md``
+    symlink invocation compares against the real ``v{K}.md`` target.
+    WARN-only, all kinds."""
+    cid = "c40_header_version_vs_filename"
+    name = "header self-declared version matches persisted filename"
+    m_file = _C40_FILENAME_RE.fullmatch(plan_path.resolve().name)
+    if not m_file:
+        return _skip(cid, name, "filename carries no v{K}.md version (draft / standalone plan)")
+    _, body = split_frontmatter(plan)
+    heads = _headings(body)
+    if not heads:
+        return _skip(cid, name, "no headings in plan")
+    m_head = _C40_HEADER_RE.match(heads[0].text)
+    if not m_head:
+        return _pass(cid, name, "header is version-neutral — no self-declared version")
+    x, k = int(m_head.group(1)), int(m_file.group(1))
+    if x == k:
+        return _pass(cid, name, f"header v{x} matches persisted {plan_path.resolve().name}")
+    return _warn(
+        cid,
+        name,
+        f"header self-declares v{x} but the persisted file is {plan_path.resolve().name} — "
+        f"stale version label (#1482: '# Plan v4' rode v5+v6 unnoticed); retitle the header "
+        f"to v{k} or make it version-neutral ('# Plan (amendment) — …' / "
+        f"'# Plan — Issue #<N>: …')",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6582,6 +6628,9 @@ def main() -> int:
                 "no task context (--plan-file mode; goal history requires --issue)",
             )
         )
+    # Check 40 (header version label vs persisted filename) also runs outside
+    # verify_plan_text() — it needs plan_path, defined in BOTH modes.
+    results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
     overall = all(r.passed for r in results)
 
     if args.json:
