@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,15 +7,16 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These eleven recipes are the planner-specific §9 sizing blocks — five relocated
+These twelve recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
 store-heavy / IO-heavy phase recipe (#910, from incident #813), the
 CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
 per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823), the
 external-stream floor presumption (#1092 — present since #1092, first counted
 here), the dose-ladder checkpoint-retention default (#1133, from incident
-#1112), and the out-root mount-binding contract (#1414, from incident
-#1333). The planner
+#1112), the out-root mount-binding contract (#1414, from incident
+#1333), and the fan-out end-of-run accumulation rule (#1541, from
+incident #1481). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -71,7 +72,10 @@ probes — the run died at the quota; the fix was atomic merge-read-delete
 per probe). This is a plan-time storage-budget check, NOT a mid-run gate.
 Per-rung checkpoint LADDERS additionally carry the retention DEFAULT of the
 next block — for a ladder phase, a keep-all-rungs bound that happens to fit
-the planned quota is no longer sufficient on its own.
+the planned quota is no longer sufficient on its own. And an N-cell fan-out
+that RETAINS each cell's outputs after the cell completes additionally
+carries the fan-out end-of-run accumulation block below — a transient
+high-water bound alone misses monotone retained accumulation (#1481).
 
 
 **Dose-ladder / multi-rung checkpoint retention — keep the dose-selected +
@@ -131,6 +135,48 @@ whose compute-sizing sections state no retention vocabulary (escape:
 stated policy stays with this lens.
 
 
+**Fan-out end-of-run accumulated footprint — size the boot disk to the SUM
+of every cell's RETAINED outputs at end-of-run, or declare a driver-side
+between-phase reap.** The merge-disk block bounds coexisting TRANSIENTS
+during iteration and the ladder block bounds per-rung retention WITHIN one
+training run; neither covers an N-cell fan-out (N training runs / cells on
+one provision, sequential or GPU-sharded) whose driver KEEPS each cell's
+outputs locally after the cell completes — adapters, per-run checkpoints
+(incl. optimizer state), trainer logs. Retained per-cell outputs accumulate
+MONOTONICALLY across cells, so the §9 disk row for such a phase MUST size
+the boot disk to `Σ over cells of retained_gb_per_cell + the transient
+high-water mark` at END-of-run — `retained_gb_per_cell` grounded on what
+the trainer ACTUALLY writes (weights + optimizer state; the ladder block's
+`per_rung_gb` precedent: #1112 planned ~15 GB/rung, realized up to ~28 GB)
+— and DECLARE that summed footprint in the launch flags (`--boot-disk-gb`,
+the ladder keep-all exception's duty, arming the #1118 volume-threading /
+typed refusal on a lane failover). A §9 estimate assuming single-cell /
+steady-state retention on a multi-cell fan-out, with NEITHER the summed
+sizing NOR a declared reap, is a REVISE. ALTERNATIVE: bound the
+accumulation instead — the plan declares a between-phase reap of each
+cell's CONSUMED outputs wired into the DRIVER (delete a cell's local
+outputs once uploaded to the Hub, or once covered by a plan §10
+`discarded_artifacts:` entry; `store/` + `eval_results/` never touched —
+the Upload Policy upload-before-delete invariant unchanged). Tooling
+honesty: `scripts/clean_experiment_downloads.py --incremental` reaps
+`hf_dl`/`g*_dl` DOWNLOAD caches only, NEVER per-cell training OUTPUTS —
+the reap is driver code the plan names (canonical shape: a per-cell
+post-upload delete in the driver loop), not an existing shared helper.
+Incident #1481 (2026-07-18, three GCE lanes dead the same day): marker-b
+completed ALL 24 training cells and uploaded 48/48 adapters to HF, then
+the per-phase `_assert_headroom` re-check raised "47.5 GB free < required
+60.0 GB" on the 200 GB boot disk — rc=1, clean poweroff; the impolite lane
+died the same way ~8h in (`issue1481_worker.py` had NO per-run checkpoint
+cleanup). Every cell's outputs were ALREADY on the Hub — local deletion
+was legal throughout; the gap was §9 sizing + driver cleanup, never
+upload policy. Critic enforcement:
+Methodology lens item 16 FAN-OUT ACCUMULATION EXTENSION
+(`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop in
+v1 of this block (a c33 trigger-regex change mandates a full
+persisted-plan corpus re-scan per its calibration contract — the
+mount-binding block's v1 posture is the precedent).
+
+
 **Out-root mount binding — every §9 disk estimate for an out-root NAMES the
 target filesystem/mount, and the workload preamble asserts headroom against
 the mount the out-root ACTUALLY resolves to.** A GB estimate alone does not
@@ -176,8 +222,9 @@ out-root under `/workspace` + per-phase headroom asserts, commit
    check path; it does NOT cover an out-root on a different filesystem —
    that gap is exactly #1333.
 
-Siblings: the merge-disk budget + ladder-retention blocks above size WHAT
-accumulates; this block binds WHERE it lands and adds the per-phase runtime
+Siblings: the merge-disk budget + ladder-retention + fan-out accumulation
+blocks above size WHAT accumulates; this block binds WHERE it lands and
+adds the per-phase runtime
 assert. The ≥5 GB inline-staging clause (CLAUDE.md compute-character
 pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.

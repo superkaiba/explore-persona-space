@@ -362,7 +362,7 @@ nohup claude --resume auto-runner &
 tail -f .claude/cache/auto-experiment-runner.log
 
 # Stop gracefully (lets current experiment finish)
-kill -TERM $(pgrep -f "claude.*auto-runner")
+kill -TERM $(pgrep -f "claude.*auto-runne[r]")
 
 # Morning review: scan what was done
 cat .claude/cache/auto-experiment-runner.log

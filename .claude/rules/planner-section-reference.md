@@ -288,11 +288,11 @@ primary_deliverable:
 Rules:
 
 - **One row per primary DV the §6 evaluation table names.** Secondary / exploratory artifacts (per-step trajectory logs, per-seed scratch, debug dumps) do NOT belong here — they keep the existing "ship-everything-via-§8-active-discovery" path. This section is exclusively for the artifacts whose absence would make the experiment Goal-incomplete.
-- **The `glob` must be enumerable on the pod via `find` / `ls`.** Hub URLs, WandB run paths, and committed-git paths do NOT belong here — those are downstream destinations the existing Step 8 rows + Step 2.5 phantom-URL gate already cover. This section is the on-pod source-of-truth glob the verifier inspects BEFORE artifacts move anywhere.
+- **The `glob` must be enumerable on the pod via `find` / `ls`** — EXCEPT a row wholly produced by a §9-declared off-pod phase, which is enumerated at that phase's declared dest (or deferred post-termination) per upload-verifier Step 2.7's declared-off-pod sub-rule (#1535). Hub URLs, WandB run paths, and committed-git paths do NOT belong here — those are downstream destinations the existing Step 8 rows + Step 2.5 phantom-URL gate already cover. This section is the on-pod source-of-truth glob the verifier inspects BEFORE artifacts move anywhere.
 - **Mirror the DV name verbatim from §6** so the verifier's FAIL message names a DV a reader recognizes.
 - **Exemption — `kind: analysis | infra | batch | survey`** tasks may write `primary_deliverable: []` (an empty list under the fenced block) with a one-line justification under it (e.g. "N/A — analysis task; no on-pod primary artifact"). The verifier WARNs (not FAILs) on a wholly-missing section so legacy plans drafted before this rule continue to ship.
 
-The upload-verifier reads this block at Step 8 and, for every row, runs an on-pod `find <glob>` (or equivalent enumeration via `mcp__ssh__ssh_execute`); a row whose glob enumerates zero files FAILs the gate with blocker tag `primary-deliverable-missing`. On that blocker SKILL.md Step 8 KEEPS THE POD ALIVE and auto-recovers — it loops back to the run phase to re-drive the missing deliverable on the still-alive pod (the /issue skill stays autonomous; only the generic `workflow.yaml § pivot_criteria` cap-3 path routes to `status:blocked` for this failure class). See `.claude/agents/upload-verifier.md` § Step 2.7 and `.claude/skills/issue/SKILL.md` Step 8.
+The upload-verifier reads this block at Step 8 and, for every row, runs an on-pod `find <glob>` (or equivalent enumeration via `mcp__ssh__ssh_execute`); a row whose glob enumerates zero files FAILs the gate with blocker tag `primary-deliverable-missing` — EXCEPT a row wholly produced by a §9-declared off-pod phase, which is enumerated at that phase's declared dest (or deferred post-termination) per upload-verifier Step 2.7's declared-off-pod sub-rule (#1535). On that blocker SKILL.md Step 8 KEEPS THE POD ALIVE and auto-recovers — it loops back to the run phase to re-drive the missing deliverable on the still-alive pod (the /issue skill stays autonomous; only the generic `workflow.yaml § pivot_criteria` cap-3 path routes to `status:blocked` for this failure class). See `.claude/agents/upload-verifier.md` § Step 2.7 and `.claude/skills/issue/SKILL.md` Step 8.
 
 ## 7. Decision Gates
 
@@ -492,6 +492,90 @@ recorded a negative finding).
 table (no GPU-bound components). For those, write "N/A — no
 compute-bound components" and move on.
 
+### Off-pod phase declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535)
+
+REQUIRED only when the plan has a pod/backend dispatch AND ≥1 subsequent
+off-pod phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
+analysis phase). Pod-free plans and single-machine runs OMIT this block
+entirely — no boilerplate, no escape line needed. Two incidents it closes:
+#1482 (the off-pod P5 judge died at VM launch loading pod-only
+`scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
+set — the pod was already terminated; recovery needed a sha-anchored
+reconstruction) and #1426 (a planned VM-side phase FAILed the verifier's
+initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
+the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
+for the same phase — live precedent for the deferral grammar this block
+mechanizes). This is the plan-time mechanization of the `gotchas.md`
+off-pod upload-set bullet (#1526, rules (i)-(iv)).
+
+Render as a fenced YAML block, one entry per off-pod phase:
+
+```yaml
+off_pod_phases:
+  - phase: <verbatim §9 phase name, e.g. "P5 judge (VM, post-termination)">
+    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api
+    reads:
+      - path: <path the off-pod loader opens/fetches>
+        produced_by: <producing phase, e.g. "P4 (pod)">
+        source: hf-data-repo | git-issue-branch | vm-resident-by-construction
+    outputs:
+      - path: <path/glob the phase writes, e.g. eval_results/issue_<N>/judge/*.json>
+        dest: git-issue-branch | hf-data-repo | vm-working-tree
+```
+
+Rules:
+
+- **Every `reads[].path` must resolve at a permanent source the off-pod
+  machine can fetch** — an HF data-repo path, a git-issue-branch path, or
+  `vm-resident-by-construction` with a one-line basis (e.g. "arrives with
+  the git clone"). A read that exists only as pod-side scratch is a design
+  defect: add it to the producing phase's upload set (KB–tens-of-MB scratch
+  metadata — split indices, provenance arrays, configs — uploads
+  UNCONDITIONALLY; the large-tensor discard economy never applies to it).
+- **`outputs[]` is scoped to files the declared off-pod phase ITSELF
+  writes** — it must NOT sweep in any pod-side phase's deliverables (no
+  over-broad globs like `eval_results/issue_<N>/**` when a pod phase also
+  writes under that tree). Prefer the EXACT glob string of the matching
+  §6.5 row (or an explicit back-reference to it). An over-broad output
+  glob would wrongly divert a pod-side deliverable away from the #519
+  pod-side gate — the verifier's tie-break (Step 2.7) fails toward the
+  gate on any partial or uncertain coverage.
+- **The declaration is what the upload-verifier consumes**: Step 2.8 gates
+  every `reads[].path` at the cheap-fix window (pod still alive; FAIL with
+  the exact upload command), and Step 2.7 enumerates a declared phase's
+  OUTPUTS at the declared `dest` — or records them deferred when the phase
+  is sequenced after pod termination — instead of FAILing on pod-absence.
+- **Derive `reads[]` from the off-pod loader's ACTUAL open/fetch set**
+  (its argument list + `open()`/`snapshot_download` calls), not from
+  memory of the design — an omitted read reproduces #1482 despite the
+  block; state the derivation basis in one line when the loader exists at
+  plan time.
+- **§6.5 interaction:** a `primary_deliverable:` row produced by a declared
+  off-pod phase is enumerated at that phase's declared `dest` (Step 2.7
+  sub-rule), not on the pod; keep the §6.5 row — the block does not
+  replace it.
+- **Escape:** a plan whose prose trips the off-pod vocabulary check
+  (`verify_plan.py` c39) but genuinely has no off-pod phase declares the
+  standalone line `N/A — no off-pod phase`.
+
+Worked example (#1482's design, as it should have been declared):
+
+```yaml
+off_pod_phases:
+  - phase: P5 judge (VM, after pod termination)
+    runs_on: vm
+    reads:
+      - path: issue1482_sae_perfe/analysis_tensors/scratch/split_indices.npz
+        produced_by: P4 (pod)
+        source: hf-data-repo
+      - path: eval_results/issue_1482/p4_summary.json
+        produced_by: P4 (pod)
+        source: git-issue-branch
+    outputs:
+      - path: eval_results/issue_1482/judge/*.json
+        dest: git-issue-branch
+```
+
 ## 10. Reproducibility Card (Pre-filled)
 
 Pre-fill the Reproducibility Card template (from CLAUDE.md) with all KNOWN values. Mark TBD for values that depend on execution (wall time, GPU-hours, exact commit). The experimenter fills in TBDs after running. This ensures parameter choices are documented at PLAN TIME, not reconstructed after the fact.
@@ -536,6 +620,16 @@ the `git log --oneline origin/main..origin/issue-<M> -- <module>` outcome
 (empty, or each unmerged commit ported / declared not-needed by SHA) and the
 realized-vs-corpus count reconciliation (equal, or the named filter explaining
 the shortfall) (#1345).
+
+**Validity-domain transfer (checklist item (l)) is recorded here too.** When
+the plan reuses a fit/analysis INSTRUMENT on a data regime that differs from
+the parent's (subsets, judge-filters, a different n-vs-d balance), this card
+carries the item-(l) validity-domain record — the boundary the instrument's
+own docs declare (docstring / comment / module constant, line-cited), the new
+regime read against it (e.g. per-fold n_train vs d), and the engaged
+mitigation or the stated justification for not engaging it. Escape:
+`N/A — no fit/analysis instrument reused` or `no declared validity
+boundaries`.
 
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the

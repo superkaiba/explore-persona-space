@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(k) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), the staged-layout consumer-open probe (#928), and parent-lineage coherence (#1345), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(l) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), the staged-layout consumer-open probe (#928), and parent-lineage coherence (#1345), and instrument validity-domain transfer (#1417), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(k)
+# Trained-artifact (and code) reuse — the fitness check (a)-(l)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(k); this file is the full checklist AND, as of
+summary naming checks (a)-(l); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -221,21 +221,48 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the mapped set lacks the consumer's entry file (manifest/config) or the
   mapping collides — never a "successful" stage into a doomed consumer init;
   **(3)** BEFORE any production run, a **1-file staging probe +
-  consumer-open**: stage the artifact's ENTRY file (KB-scale) through the
-  REAL staging code path at the pinned revision, then run the consumer's
-  entry-point open/init (or its manifest-read; pre-seed blob files as dummies
-  at their mapped paths where full init requires them) against the staged
-  root. A synthetic-fixture smoke that writes the LOCAL layout directly never
-  exercises the staging phase and does NOT satisfy this leg (the cross-phase
-  data-contract smoke class, #518); the end-to-end smoke must exercise the
-  real staging path. Full 4-point implementation recipe (pure mapping fn,
-  fail-loud entry check, regression test through the producer's REAL Hub path
-  shapes, dummy-seeded real-Hub confirm):
+  consumer-open, ONCE PER (reused source-family × staged consumer) pair**:
+  for EACH pair where a consumer reads a family's staged tree, stage that
+  family's ENTRY file (KB-scale) through the REAL staging code path — the
+  SAME staging helper the production phase uses for that pair — at the
+  pinned revision, then run that consumer's entry-point open/init (or its
+  manifest-read; pre-seed blob files as dummies at their mapped paths where
+  full init requires them) against the staged root. A "reused
+  source-family" is a distinct reused artifact group staged through its own
+  source path/prefix (e.g. a `datagen/` bucket vs a `datagen_topup/`
+  sidecar bucket); a "staged consumer" is a distinct consumer entry-point
+  open/init reading a staged tree — INCLUDING a LATER phase that re-reads
+  the staged layout, not only the first reader. The probe matrix is the set
+  of (family, consumer) pairs actually read — per PAIR, not families +
+  consumers additively. A single global probe on one family/consumer does
+  NOT satisfy this leg when the plan stages ≥2 families or ≥2 consumers
+  (#1481, two same-day staged-layout crashes: (1) the second-family
+  layout-divergence incident — the phase0-mixes 404, failure marker
+  2026-07-18T06:15:45Z: the SECOND source-family (c3) kept its `cn.jsonl`
+  sidecar under `datagen_topup/` while the worker assumed the first
+  family's `datagen/` layout, after family 1's 4/4 mixes derived cleanly;
+  catchable by a compliant per-cell leg-(ii) check AND by a per-family
+  probe — the per-pair probe is a second line of defense here, not the
+  sole guard; and (2) the pure staged-layout exemplar — the 20:45Z
+  relaunch death, re-diagnosed 21:07:04Z as the `phase_reread` crash: a
+  LATER phase re-read a checkpoint staged via `hub.stage_hub_prefix`,
+  whose verbatim prefix mirror lands files at `dest/<repo-rel path>` while
+  the consumer opened `dest/` directly, and the green tiny-real smoke had
+  staged per-file via `stage_hub_file` to the exact consumer path — a
+  different helper than production, validating nothing about the
+  production mirror layout). A synthetic-fixture smoke that writes the
+  LOCAL layout directly never exercises the staging phase and does NOT
+  satisfy this leg (the cross-phase data-contract smoke class, #518); the
+  end-to-end smoke must exercise the real staging path — per pair, through
+  the production helper for that pair. Full 4-point implementation recipe
+  (pure mapping fn, fail-loud entry check, regression test through the
+  producer's REAL Hub path shapes, dummy-seeded real-Hub confirm):
   `.claude/agent-memory/experiment-implementer/feedback_hub_prefix_mirror_vs_consumer_layout.md`.
   **N/A escape:** reuse with NO staging transformation — the consumer opens
   the file(s) at the exact fetch destination(s), no layout mapping —
-  satisfies leg (iv) trivially; record "no staging transformation" in the
-  reuse map. (Incident #928, att-20260704-120700: the Hub stored all 51 store
+  satisfies leg (iv) trivially for that (family, consumer) pair; record
+  "no staging transformation" in the reuse map. (Incident #928,
+  att-20260704-120700: the Hub stored all 51 store
   files FLAT under `.../store/percq_summaries/` — the extractor uploaded
   `manifest.json` INSIDE that folder — while `Store(store_dir)` reads
   `<store>/manifest.json`; `stage_store` mirrored the Hub prefix verbatim,
@@ -445,8 +472,38 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the opposite direction: the consistency-checker's "Reused code module
   reachable on `main`" row (#595) verifies the module EXISTS on main;
   leg A verifies main's copy is CURRENT vs the parent branch.)
+- **(l) Validity-domain transfer (reused fit/analysis INSTRUMENTS; N/A when
+  no fit/analysis code artifact is reused, or the instrument's docs declare
+  no validity boundaries).** Before reusing a fit/analysis INSTRUMENT (the
+  same code class item (i) governs for throughput: a ridge/GCV fitter, a
+  probe trainer, a statistical battery) on a NEW consumption regime, READ
+  the instrument's own docs/comments/module constants for DECLARED validity
+  boundaries and registered mitigations — n-vs-d regime notes, dof caps,
+  selection fallbacks (e.g. a module-global knob like `GCV_DOF_CAP`, an
+  alternative selection mode like `lambda_selection="inner-group-cv"`) —
+  and CHECK the new regime against each boundary: per-fold n_train vs d, a
+  subset/filter that shrinks n below a documented bound, a
+  correlation-structure shift a comment names. Crossing a declared boundary
+  REQUIRES engaging the instrument's registered mitigation — or a stated
+  justification for not engaging it — named in the plan (§4/§11) next to
+  the reuse record. Scope split vs item (b): (b) asks whether the reused
+  ARTIFACT is in a valid measurement regime for the new QUESTION
+  (DV/question-scoped); (l) asks whether the new DATA REGIME crosses a
+  boundary the reused CODE itself declares (instrument-doc-scoped) — #1417
+  passed (a)/(b)/(i)/(k) and still shipped a voided verdict layer because
+  no item asked the instrument-doc question. (Incident #1417 × fit825,
+  2026-07-18: the frozen `scripts/issue825_fit_cells.py` ridge instrument
+  documents — from the #1335 incident — that GCV lambda selection collapses
+  at the grid-min lambda when the fold Gram can near-interpolate
+  (n_tr < D), and registers two mitigations in its own module comments/constants
+  (`GCV_DOF_CAP` (e.g. 0.9; default None), `lambda_selection="inner-group-cv"`, lines ~66–91);
+  #1417 reused it on judge-filtered row subsets (per-fold n_train < d=3584)
+  with neither mitigation engaged — held-out R² −0.6…−1.5 on exactly those
+  subsets where supersets and matched-n subsamples fit at +0.3…+0.65,
+  voiding the run's map-identity verdict layer, found only by the analyzer
+  post-run.)
 
-A failing check other than (i)/(h)(iv)/(k) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k)/(l) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
@@ -454,7 +511,11 @@ local-rel fn + fail-loud entry-file check), then reuse; a failing
 parent-lineage check (k) → port the unmerged parent-branch fix (or declare
 it not-needed against the cited commit SHAs) and name the filter explaining
 any count shortfall, then reuse — regenerate only when the shortfall traces
-to a genuine defect in the artifact itself. Say why in the plan either way.
+to a genuine defect in the artifact itself; a failing validity-domain check
+(l) → engage the instrument's registered mitigation (or state the
+justification), then reuse — never a silent retrain: the instrument is
+sound, the CONSUMPTION REGIME crossed its declared boundary. Say why in the
+plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 

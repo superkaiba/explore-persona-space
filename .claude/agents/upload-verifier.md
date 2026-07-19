@@ -54,7 +54,8 @@ budgeted IN FORM:
   raw-completion file — `jq` the keys/fields you need; single rows by Grep +
   line offset.
 - **Verification never requires paging artifact content.** Plan §6.5/§10 by
-  grepping those headings; HF existence via
+  grepping those headings + the §9 `off_pod_phases:` fenced block (#1535);
+  HF existence via
   `huggingface_hub.list_repo_files` listings; eval JSONs via `jq`
   keys/length.
 - **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
@@ -408,6 +409,41 @@ clean-result layer — Step 2.7's job is to catch the wholly-missing
 primary-DV class while the pod is still cheap to rescue, not to replicate
 the downstream coverage audit.
 
+**Declared off-pod outputs (#1426, #1535).** When the plan's §9
+`off_pod_phases:` block declares a phase whose `outputs[].path` matches a
+§6.5 row's glob (read the two blocks together), do NOT enumerate that row
+on the pod — a legitimately VM-side / off-pod phase produces it off-pod,
+and a pod-side `find` reads a structurally-false zero (incident #1426: a
+planned VM-side phase FAILed the initial r1 BY CONSTRUCTION, burning an
+auto-recover + re-verify round; the follow-up round's verifier improvised
+"DEFERRED + gap-listed" rows for the same phase — the precedent this rule
+formalizes). **Tie-break — fail toward the gate:** redirect/defer a §6.5
+row ONLY when its glob is WHOLLY produced by the declared off-pod phase —
+prefer an EXACT glob-string match between the §6.5 row and the declared
+`outputs[].path` (or an explicit back-reference). PARTIAL or UNCERTAIN
+coverage (an over-broad declared glob sweeping a tree a pod-side phase
+also writes) → the pod-side verdict rule above applies byte-identical;
+never let a broad off-pod output glob divert an on-pod deliverable away
+from the #519 gate. For a wholly-matched row, enumerate at the declared
+`dest` instead: `vm-working-tree` via a local `find`, `git-issue-branch`
+via `git ls-tree -r --name-only origin/issue-<N> -- <path>`,
+`hf-data-repo` via `huggingface_hub.list_repo_files` — the surrounding
+≥1-file-PASS / zero-FAIL verdict rule still governs AT THAT DEST (an
+already-run off-pod phase with zero files at its declared dest FAILs this
+row exactly as a pod-side zero would). If the phase is sequenced AFTER
+pod termination and has not yet run, record the row
+`deferred — declared off-pod phase runs post-termination; NOT yet
+verified` and PASS the pod-side gate for that row — the deferral is
+never narrated as PASS-verified; its coverage transfers to the
+downstream planned-vs-actual layer (`verify_task_body.py` check 11b +
+the clean-result planned-vs-actual lens), and the Step 2.8 reads arm —
+which MUST PASS before the pod dies — guarantees the deferred phase's
+inputs are at permanent sources, so a silently-failed deferred phase is
+cheaply re-runnable by construction (no data loss). Rows NOT wholly
+covered by a declared phase's outputs keep the pod-side verdict rule
+above byte-identical — this sub-rule never weakens the #519 gate for
+on-pod deliverables.
+
 On any `primary-deliverable-missing` row, the overall verdict is FAIL
 regardless of which other rows passed. List every missing row in the
 verdict body's "Missing / required action" bulleted list, naming the
@@ -420,7 +456,7 @@ park-and-wait for the operator. The /issue skill stays autonomous and
 the generic `pivot_criteria` cap-3 path is the only route to
 `status:blocked` for this failure class.
 
-### Step 2.8 — Plan-referenced analysis inputs (#521)
+### Step 2.8 — Plan-referenced analysis inputs + off-pod phase reads (#521, #1535)
 
 **New as of #521.** A plan's analysis / negative-control sections often
 name intermediate artifacts as DOWNSTREAM INPUTS — per-cell shift tensors
@@ -446,6 +482,23 @@ For each:
   command. This is the cheap-fix window — the artifact still exists.
 - **Named by the plan but nowhere on the pod** → fold into the Step 2.7
   reasoning (the producing phase may have been silently skipped).
+
+**Off-pod phase reads (#1482/#1526/#1535).** The plan §9 `off_pod_phases:`
+block is a FIRST-CLASS source of plan-named downstream inputs: for each
+declared phase, verify every `reads[].path` under the SAME verdict rule
+above — reachable at its declared `source` (HF / git / VM-resident with the
+stated basis) → PASS recording the URL/basis; on the pod but not uploaded →
+FAIL with the exact upload command (the cheap-fix window — this is the
+#1482 class caught while the pod is alive); named but nowhere → fold into
+the Step 2.7 reasoning. This closes the un-plan-named-reads residual the
+`gotchas.md` off-pod bullet documents (#1482: pod-only scratch `.npz`
+never in the P4 upload set killed the off-pod P5 judge at VM launch,
+after termination). A plan whose §9 names an off-pod / VM-side phase in
+prose but carries NO `off_pod_phases:` block → emit a WARN row
+`off-pod-phase-spec-absent` and PASS this arm (legacy plans predating
+#1535; do not hard-FAIL — the Step 2.7 grammar's backwards-compatibility
+precedent). No off-pod phase named anywhere → the existing
+"N/A — plan names no analysis-input artifacts" row already covers it.
 
 If the plan's analysis / control sections name no downstream artifact
 inputs, record `N/A — plan names no analysis-input artifacts` in the
@@ -681,8 +734,8 @@ against permanent storage.
 | Local weights + merged dirs cleaned | Yes | PASS | safetensors count = 0, merged/ count = 0 |
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
-| Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
-| Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts |
+| Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block); a row covered by a declared §9 off_pod_phases output enumerates at the declared off-pod dest or defers post-termination — never a pod-side zero-FAIL (#1426) |
+| Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / WARN / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts; §9 off_pod_phases reads[] rows verified identically (#1535); WARN off-pod-phase-spec-absent when §9 prose names an off-pod phase with no block |
 | Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
 | Model-generation text persisted (Step 3 generation-discard gate, #779) | Yes (if a stage produced generations) | PASS / FAIL / WARN | Every generation-producing stage persists its rollout text under `raw_completions/<stage>/`; a drop FAILs — undeclared → `generation-discarded-undeclared`; "declared" via a text-naming `discarded_artifacts:` entry → `generation-discard-declared-invalid`. Large-TENSOR discards PASS with a `{name, reason, regen_recipe}` entry + persisted regenerating text. WARN `generation-discard-spec-absent` for a legacy plan predating the §10 slot capability that also has a generation-discard |
 

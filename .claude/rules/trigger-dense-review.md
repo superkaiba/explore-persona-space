@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + revision-round brief composition (findings by reference, #1413). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -7,11 +7,14 @@ paths:
 
 # Trigger-dense artifact review — reference, don't quote; verdict before summary
 
-**Fires when:** a code-reviewer, reconciler, or any review-role subagent's
-artifact under review is TRIGGER-DENSE — its own vocabulary can trip the
-content filter when repeated in generated text — or the ORCHESTRATOR
-composes a revision-round / bounce / reconcile brief from findings-bearing
-verdicts on such a round (§ Revision-round briefs). Recognition heuristic
+**Fires when:** a code-reviewer, reconciler, fact-checker, or any
+review-/verification-role subagent's artifact under review is
+TRIGGER-DENSE — its own vocabulary can trip the content filter when
+repeated in generated text — or the ORCHESTRATOR composes a FIRST-PASS
+fact-check / critique / plan-review brief whose TARGET files are such
+artifacts (§ First-pass briefs, #1503), or composes a revision-round /
+bounce / reconcile brief from findings-bearing verdicts on such a round
+(§ Revision-round briefs, #1413). Recognition heuristic
 (any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
@@ -101,6 +104,34 @@ characterize a disputed quote, paraphrase it abstractly. Marker mode: post
 `epm:review-reconcile` before any closing chat text (discipline 2); the
 closing text itself is discipline-4-minimal.
 
+## First-pass briefs (composition-side, #1503)
+
+Fires for the ORCHESTRATOR composing any FIRST-PASS subagent brief whose
+TARGET files include a trigger-dense artifact per the recognition
+heuristic above — the Phase-1.5 fact-checker brief, the Phase-2 critic
+and consistency-checker briefs, a plan-review or first code-review
+brief. No verdict exists yet, so § Revision-round briefs cannot fire;
+the duties attach to the brief itself:
+
+1. Name the guard-surface target files by PATH (plus the specific claims
+   or assumptions to check against them) — never inline their content
+   into the brief (discipline 1 governs the form).
+2. Instruct windowed reads: grep for the anchor first, then Read
+   ≤~120-line windows (discipline 3); where the orchestrator can,
+   pre-materialize excerpt files and name them + a read budget (the
+   issue-SKILL Step 5a pattern).
+3. Instruct the subagent to return findings by reference — disciplines 1
+   and 4 bind its output from the first spawn.
+4. Keep the brief's own text in neutral gate vocabulary (CLAUDE.md
+   § Spurious usage-policy refusals, rung (e)).
+
+Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
+READ discipline previously attached only to review roles and revision
+briefs — first-pass fact-checkers/critics paged whole guard files and
+were filter-killed before any recovery rung fired (2026-07-17: 4 kills
+across #1436/#1443 — fact-checker ×2, Alternatives critic ×2 — ~35+ min
+recovered via rung (b2)).
+
 ## Revision-round briefs (composition-side, #1413)
 
 Fires for the ORCHESTRATOR composing any follow-on brief from
@@ -141,7 +172,9 @@ kills + ~2.7h orchestrator wedge), #1092 (implementer refusal kills;
 orchestrator rung b2), #866 (bank-text paging kills), #1090
 (refusal-truncated Agent spawns), #1152 (a findings recap in a reviewer's
 return text wedged the parent orchestrator — discipline 4), #1413 (a
-revision brief inlining a round's findings text — § Revision-round briefs).
+revision brief inlining a round's findings text — § Revision-round briefs),
+#1436/#1443 (4 first-pass kills on guard-surface targets — § First-pass
+briefs, #1503).
 Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
@@ -151,4 +184,6 @@ pre-materialization);
 (orchestrator-side posting path, #1275);
 `.claude/skills/adversarial-planner/SKILL.md` Phase 3 +
 `.claude/skills/issue/SKILL.md` Step 5d (revision-brief composition
-pointers, #1413).
+pointers, #1413);
+`.claude/skills/adversarial-planner/SKILL.md` Phase 1.5 + Phase 2
+(first-pass brief-composition pointers, #1503).
