@@ -4180,8 +4180,8 @@
     "1536": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1536",
-      "status": "approved",
+      "path": "tasks/running/1536",
+      "status": "running",
       "title": "daily-fix: fail-fast SFT prompt/completion type assert"
     },
     "1537": {
