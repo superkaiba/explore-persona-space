@@ -366,3 +366,15 @@ def test_stage_pilot_store_stages_only_covering_shards(tmp_path, monkeypatch):
 
     with pytest.raises(AssertionError, match="no shard covers"):
         pg.stage_pilot_store(tmp_path / "data2", model, cell, {"never-present"})
+
+
+# ---------------------------------------------------------------------------
+# run.sh figures guard (plan v6 §4.2 item 4: figures skipped in refit AND
+# milder modes — else the milder production phase C regenerates + pushes the
+# committed published v1 figures/issue_1417/* from the v1 root; review v5)
+# ---------------------------------------------------------------------------
+def test_run_sh_figures_guard_covers_refit_and_milder():
+    lines = (REPO_ROOT / "scripts" / "issue1417_run.sh").read_text().splitlines()
+    idx = next(i for i, ln in enumerate(lines) if "[phase=pc_figures]" in ln)
+    guard = lines[idx - 1]
+    assert '"$REFIT" != "1"' in guard and '"$MILDER" != "1"' in guard, guard

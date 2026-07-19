@@ -777,11 +777,11 @@ main() {
       echo "[phase=pc_summary]"
       uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" \
         --out-dir "${BAT_OUT_DIR:-$OUT_DIR}" "${refit_args[@]}"
-      if [ "$REFIT" != "1" ]; then
+      if [ "$REFIT" != "1" ] && [ "$MILDER" != "1" ]; then
         echo "[phase=pc_figures]"
         uv run python scripts/issue1417_figures.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR"
       else
-        log "figures skipped in refit mode (analyzer regenerates from refit JSONs)"
+        log "figures skipped in refit/milder mode (analyzer regenerates from the round's JSONs)"
       fi
       echo "[phase=pc_finalize]"
       commit_and_push_results
