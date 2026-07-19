@@ -45,11 +45,11 @@ relates_to:
 ## Takeaways
 
 - Non-English contexts are predicted better than English (normalized error 0.274 vs 0.291, CI95 −0.022 to −0.013), falsifying the planned direction; the sign survives raw error, intrusion exclusion, and corpus transfer.
-- Per-language spread is ten times the binary gap: German 0.236 to Arabic 0.420; Chinese carries a third of the non-English arm; no train-frequency gradient across 17 languages (Spearman −0.08).
-- Task type separates at least as cleanly: translation 0.337, NSFW 0.325, and harmful-request 0.314 worst; small talk 0.235 best; all 15 exploratory contrasts pass BH-FDR at q=0.05.
-- The nonlinear map wins on 90.7% of contexts, less concentrated than seed noise; the gap grows fourfold toward low-variance answer directions (0.035 to 0.138), MLP better on all 256.
-- Which answer-side SAE features are predictable is an answer-side property (Spearman 0.93 across input representations); rare features worst (median R² 0.091 to 0.266 by activity decile); SAE→SAE nonlinear fits diverged.
-- One sampled answer per context leaves an answer-entropy alternative for the language mechanism (a resampling probe is the follow-up); the criterion verdict itself is unaffected.
+- Per-language spread is ten times the binary gap: German 0.236 to Arabic 0.420; Chinese carries a third of the non-English arm; train frequency shows no detectable gradient (Spearman −0.08, n=17).
+- Task type separates at least as cleanly: translation 0.337, NSFW 0.325, harmful-request 0.314, roleplay 0.310 worst; small talk 0.235 best; all 15 exploratory contrasts pass BH-FDR at q=0.05.
+- The nonlinear map wins on 90.7% of contexts, with the gap less concentrated than seed noise; it grows fourfold toward low-variance directions (0.035 to 0.138), MLP better on all 256.
+- Which answer-side SAE features are predictable is an answer-side property (Spearman 0.93, two input representations); rare features worst (median R² 0.091 to 0.266 by activity decile); SAE→SAE nonlinear fits diverged.
+- One sampled answer per context leaves an answer-entropy alternative for the language mechanism (a resampling probe is the follow-up); the criterion was registered on measured error, so its verdict stands.
 
 ## Goal
 
@@ -115,7 +115,7 @@ Plotted: mean normalized prediction error per judge-labeled category on the fres
 
 All 15 exploratory category contrasts clear BH-FDR at q=0.05 (10,000-draw permutation p), and task type spreads more widely than language: translation 0.337, NSFW 0.325, harmful requests 0.314, roleplay 0.310 at the top; small talk 0.235 and creative writing 0.257 at the bottom.
 
-Two ranks are normalization-sensitive: small talk has the largest answer spread (denominator 2,008) with above-average raw error, so its best rank is partly normalization-assisted; coding is the mirror image. Refusal-adjacent requests read 0.320 vs 0.282 elsewhere, and their penalty is largest in the longest answer stratum — not a short-answer artifact.
+Two ranks are normalization-sensitive: small talk has the largest answer spread (denominator 2,008) with above-average raw error, so its best rank is partly normalization-assisted; coding is the mirror image. Refusal-adjacent requests read 0.320 vs 0.282 elsewhere, and their penalty is largest in the longest answer stratum, which argues against a short-answer artifact.
 
 ### Non-English contexts are predicted better than English, falsifying the planned direction of the language contrast
 
@@ -125,9 +125,9 @@ Plotted: per-language mean normalized error against that language's holdout coun
 
 > **Figure.** *Most non-English languages cluster below English; Arabic and Polish are the exceptions.* Each point is one language (17 of 51 detected have n ≥ 30); x = labeled holdout contexts in that language (log scale), y = mean normalized error ± 95% CI. English (n = 13,106) is the rightmost point.
 
-The planned contrast Δ = mean nerr(non-English) − mean nerr(English) is −0.0175 (CI95 −0.0221 to −0.0129; n = 6,861 vs 13,106) — wholly below zero, the falsification outcome. Raw squared error agrees (−28.1, CI95 −35.0 to −20.9) and arm denominators match to 0.08%, but the uncentered cosine flips by a sliver (0.9555 vs 0.9572): the advantage lives in squared error, not angular alignment.
+The planned contrast Δ = mean nerr(non-English) − mean nerr(English) is −0.0175 (CI95 −0.0221 to −0.0129; n = 6,861 vs 13,106); the CI sits entirely below zero, so the planned direction is falsified. Raw squared error agrees (−28.1, CI95 −35.0 to −20.9) and arm denominators match to 0.08%. The uncentered cosine flips by a sliver (0.9555 vs 0.9572); the advantage shows up in squared error but does not extend to angular alignment.
 
-The binary split hides most of the structure — German 0.236, Chinese 0.249, French 0.257 against Arabic 0.420, Polish 0.376, Farsi 0.336 — ten times the binary gap, with Chinese a third of the non-English arm. Train frequency shows no gradient: Spearman(per-language n, error) = −0.08 (p = 0.75, 17 languages); the rarer arm is predicted better, opposite the underrepresentation account.
+The binary split hides most of the structure: per-language means run from German at 0.236 to Arabic at 0.420, ten times the binary gap. Chinese (0.249) and French (0.257) sit near the German end; Polish (0.376) and Farsi (0.336) near the Arabic end, with Arabic worst by a wide margin. Chinese alone carries a third of the non-English arm. Train frequency shows no detectable gradient (Spearman(per-language n, error) = −0.08, p = 0.75); at 17 languages this is underpowered, absence of evidence only, though the sign still cuts against the underrepresentation account: the rarer arm is predicted better.
 
 ### The language advantage survives corpus transfer and intrusion exclusion; its mechanism is unresolved
 
@@ -139,9 +139,9 @@ Plotted: mean normalized holdout error for four cells — mixed vs LMSYS-only tr
 
 Fitting only LMSYS costs nothing in-corpus (0.290 vs 0.293) but +0.061 on WildChat (0.337 vs 0.276).
 
-The language read is not within-corpus structure: under the transfer fold Δ stays −0.0149 (CI95 −0.0196 to −0.0102). Script intrusion does not carry it either: 226 of 13,106 English-arm answers show strict CJK intrusion (1.7%; Cyrillic adds 41), and intruded rows are predicted worse (0.392 vs 0.290), yet excluding them leaves Δ = −0.0157; the 2,874 CJK-bearing non-English completions are expected script, not intrusion.
+Under the transfer fold Δ stays −0.0149 (CI95 −0.0196 to −0.0102), so the language read is not within-corpus structure. Script intrusion does not carry it either: 226 of 13,106 English-arm answers show strict CJK intrusion (1.7%; Cyrillic adds 41), and intruded rows are predicted worse (0.392 vs 0.290), yet excluding them leaves Δ = −0.0157. The 2,874 CJK-bearing non-English completions are in their expected script and were kept.
 
-The mechanism stays open: with one sampled answer per context, each arm's error includes an answer-sampling-variance floor, so English prompts eliciting higher-entropy answers could produce part of the gap; no arm this round separates the accounts.
+The mechanism stays open. With one sampled answer per context, each arm's error includes an answer-sampling-variance floor, so English prompts eliciting higher-entropy answers could produce part of the gap; no arm this round separates the accounts. The registered criterion is defined over measured prediction error, so the falsification verdict does not depend on which account holds.
 
 ### Nonlinearity's advantage is broad across contexts and stable across seeds and widths
 
@@ -151,9 +151,9 @@ Plotted: per-context normalized error under the ridge (x) against the width-8,19
 
 > **Figure.** *Most contexts sit on the ridge-worse side of the diagonal: the nonlinear map is better almost everywhere.* Paired per-context errors, ridge vs MLP (width 8,192, seed 0), n = 20,000 holdout contexts; both fitters score the same sampled answer, so the pairing removes answer-entropy differences.
 
-The MLP improves 90.7% of contexts (mean gap 0.0547 normalized-error units). The gap is structure, not seed noise: its per-context ranking replicates across MLP seeds (Pearson r = 0.915; top-decile context-set overlap 80.4%, Jaccard 0.672) and across widths (the width-32,768 fitter is better on 88.4% of contexts, gap correlation 0.90). It is also not category-targeted — per-category mean gap is nearly flat, 0.045 (small talk) to 0.073 (NSFW).
+The MLP improves 90.7% of contexts (mean gap 0.0547 normalized-error units). Seed noise does not reproduce this pattern: the per-context ranking replicates across MLP seeds (Pearson r = 0.915; top-decile context-set overlap 80.4%, Jaccard 0.672) and across widths (the width-32,768 fitter is better on 88.4% of contexts, gap correlation 0.90). Per-category mean gap is nearly flat, 0.045 (small talk) to 0.073 (NSFW), so no single category drives it.
 
-### The per-context gap is less concentrated than pure MLP seed noise — help everywhere, no rescued tail
+### The per-context gap is less concentrated than pure MLP seed noise
 
 Plotted: cumulative share of total |gap| against the fraction of holdout contexts sorted by |gap| (a Lorenz-style curve), with the MLP seed-to-seed difference as the noise reference and the uniform line.
 
@@ -161,7 +161,7 @@ Plotted: cumulative share of total |gap| against the fraction of holdout context
 
 > **Figure.** *The gap curve sits closer to uniform than the seed-noise reference.* Cumulative |gap| share vs context fraction, n = 20,000. Curves: the ridge-vs-MLP gap, the MLP seed-to-seed difference (noise reference), and the perfectly-uniform line.
 
-The top decile of |gap| carries 30.1% of the total — less concentrated than the pure seed-noise reference (38.5%) — while the total gap mass is 4.0 times the seed-noise total (1,237 vs 308). Nonlinearity buys a small improvement almost everywhere rather than rescuing a failing tail; among the competing hypotheses, this favors "spread across contexts" over "concentrated in tail contexts."
+The top decile of |gap| carries 30.1% of the total, below the pure seed-noise reference (38.5%), while the total gap mass is 4.0 times the seed-noise total (1,237 vs 308). Nonlinearity buys a small improvement almost everywhere rather than rescuing a failing tail. Of the competing hypotheses, this supports spread-across-contexts over concentrated-in-tail-contexts.
 
 ### In representation space the gap is structured: it grows about fourfold toward low-variance directions of the answer state
 
@@ -171,9 +171,9 @@ Plotted: per-direction held-out R² for ridge and MLP across the top-256 PCA dir
 
 > **Figure.** *The ridge-vs-MLP gap widens steadily toward low-variance PCA directions.* Same holdout predictions as the per-context read, projected onto the top-256 train-covariance PCA directions of `v(x)`. Left: per-direction R², ridge vs MLP. Right: their gap, with means over the four rank bands.
 
-Band means over ranks 1–16/17–64/65–128/129–256: ridge 0.865/0.707/0.562/0.416, MLP 0.900/0.786/0.677/0.554, gap 0.035/0.079/0.116/0.138 — rising monotonically across the four bands (3.9× top-to-bottom; correlation with rank 0.87 Pearson, 0.91 Spearman), noisy per direction (122 of 255 adjacent steps decrease). The MLP wins on all 256 directions (min gap +0.017).
+Band means over ranks 1–16/17–64/65–128/129–256: ridge 0.865/0.707/0.562/0.416, MLP 0.900/0.786/0.677/0.554, gap 0.035/0.079/0.116/0.138. The gap rises monotonically across the four bands, 3.9× top to bottom (correlation with rank: 0.87 Pearson, 0.91 Spearman), though the per-direction series is noisy (122 of 255 adjacent steps decrease). The MLP wins on all 256 directions (min gap +0.017).
 
-The dominant directions are nearly as linear as they look; what nonlinearity buys, nearly everywhere, is low-variance fine structure. Caveats: one MLP seed (seed 0) at the direction level — the seed-stability read is per-context — and low-variance directions are also where ridge shrinkage bites hardest, so nonlinear structure versus a less-shrunk linear map is not separated here.
+The dominant directions are close to linear. Most of the nonlinear advantage sits in low-variance fine structure. Caveats: one MLP seed (seed 0) at the direction level (the seed-stability read is per-context), and low-variance directions are also where ridge shrinkage bites hardest, so nonlinear structure versus a less-shrunk linear map is not separated here.
 
 ### Which answer-side SAE features are predictable is an answer-side property, and rare features are worst-predicted
 
@@ -183,7 +183,7 @@ Plotted: per-feature held-out R² (clipped at −1) against feature activity (fr
 
 > **Figure.** *Rare answer-side features are worst-predicted; the decile median rises with activity.* Context-features → answer-features ridge map (mean pooling), 20k holdout. One point per answer-side SAE feature; line: median R² per activity decile; marked points: the 30 worst-predicted features.
 
-Median per-feature R² rises near-monotonically with activity — 0.091 (lowest decile) to 0.266 (top; one dip, 0.1058→0.1050) — and the share below zero falls from 16.5% to 1.6%; the overall median is only ~0.13, so the pooled 0.690 rides on high-variance features.
+Median per-feature R² rises near-monotonically with activity, from 0.091 (lowest decile) to 0.266 (top; one dip, 0.1058→0.1050), and the share below zero falls from 16.5% to 1.6%. The overall median is only ~0.13, so the pooled R² of 0.690 rides on high-variance features.
 
 Which features are predictable barely depends on the input representation (Spearman 0.93 between the context-features and dense-input ridge rankings): failures are answer-side properties. Worst-tail exhibits cluster on task formats, and 290 above-median-activity features still read below zero — but negative held-out R² can arise mechanically for heavy-tailed features; a shuffle-null follow-up adjudicates.
 
