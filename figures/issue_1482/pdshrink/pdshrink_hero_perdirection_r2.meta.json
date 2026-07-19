@@ -1,0 +1,5429 @@
+{
+  "commit": "f9085be7b",
+  "created": "2026-07-19T21:50:28Z",
+  "figsize": [
+    9.2,
+    5.6
+  ],
+  "points": [
+    {
+      "answer-PCA direction rank (by training variance)": 1.0,
+      "held-out per-direction R\u00b2": 0.9056762299182103,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 2.0,
+      "held-out per-direction R\u00b2": 0.9046309128547272,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 3.0,
+      "held-out per-direction R\u00b2": 0.884466209792956,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 4.0,
+      "held-out per-direction R\u00b2": 0.9255990262864124,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 5.0,
+      "held-out per-direction R\u00b2": 0.909819252161306,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 6.0,
+      "held-out per-direction R\u00b2": 0.8928831078931014,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 7.0,
+      "held-out per-direction R\u00b2": 0.8864595469668324,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 8.0,
+      "held-out per-direction R\u00b2": 0.8827306607575239,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 9.0,
+      "held-out per-direction R\u00b2": 0.8505590223374062,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 10.0,
+      "held-out per-direction R\u00b2": 0.8675645728798911,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 11.0,
+      "held-out per-direction R\u00b2": 0.866033779809483,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 12.0,
+      "held-out per-direction R\u00b2": 0.8410148018680101,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 13.0,
+      "held-out per-direction R\u00b2": 0.801312315628332,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 14.0,
+      "held-out per-direction R\u00b2": 0.814243027113434,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 15.0,
+      "held-out per-direction R\u00b2": 0.7755712629126058,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 16.0,
+      "held-out per-direction R\u00b2": 0.8241042697120657,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 17.0,
+      "held-out per-direction R\u00b2": 0.8392087569738748,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 18.0,
+      "held-out per-direction R\u00b2": 0.844770872297391,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 19.0,
+      "held-out per-direction R\u00b2": 0.7770324531237552,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 20.0,
+      "held-out per-direction R\u00b2": 0.7897797275196896,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 21.0,
+      "held-out per-direction R\u00b2": 0.7904882000559305,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 22.0,
+      "held-out per-direction R\u00b2": 0.7954587954184097,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 23.0,
+      "held-out per-direction R\u00b2": 0.7688389733990527,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 24.0,
+      "held-out per-direction R\u00b2": 0.7641929168508286,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 25.0,
+      "held-out per-direction R\u00b2": 0.7270937168649172,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 26.0,
+      "held-out per-direction R\u00b2": 0.7597559244355631,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 27.0,
+      "held-out per-direction R\u00b2": 0.7493504378592852,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 28.0,
+      "held-out per-direction R\u00b2": 0.7522553084359458,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 29.0,
+      "held-out per-direction R\u00b2": 0.7323086597441969,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 30.0,
+      "held-out per-direction R\u00b2": 0.7118302799169585,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 31.0,
+      "held-out per-direction R\u00b2": 0.7663757493240531,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 32.0,
+      "held-out per-direction R\u00b2": 0.7561032179065378,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 33.0,
+      "held-out per-direction R\u00b2": 0.671706035088586,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 34.0,
+      "held-out per-direction R\u00b2": 0.7246197050330598,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 35.0,
+      "held-out per-direction R\u00b2": 0.6795392182316744,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 36.0,
+      "held-out per-direction R\u00b2": 0.6920825812619469,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 37.0,
+      "held-out per-direction R\u00b2": 0.7254862628116949,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 38.0,
+      "held-out per-direction R\u00b2": 0.6972509939266442,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 39.0,
+      "held-out per-direction R\u00b2": 0.7340927575567323,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 40.0,
+      "held-out per-direction R\u00b2": 0.702648362722553,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 41.0,
+      "held-out per-direction R\u00b2": 0.6667741419719093,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 42.0,
+      "held-out per-direction R\u00b2": 0.6827540054326312,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 43.0,
+      "held-out per-direction R\u00b2": 0.6723785962292721,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 44.0,
+      "held-out per-direction R\u00b2": 0.7268613548466742,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 45.0,
+      "held-out per-direction R\u00b2": 0.7124785229760857,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 46.0,
+      "held-out per-direction R\u00b2": 0.6584566482331795,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 47.0,
+      "held-out per-direction R\u00b2": 0.6758810975345169,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 48.0,
+      "held-out per-direction R\u00b2": 0.703147022491801,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 49.0,
+      "held-out per-direction R\u00b2": 0.6688316100632343,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 50.0,
+      "held-out per-direction R\u00b2": 0.7171187813014595,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 51.0,
+      "held-out per-direction R\u00b2": 0.7445561358251557,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 52.0,
+      "held-out per-direction R\u00b2": 0.6626826544614906,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 53.0,
+      "held-out per-direction R\u00b2": 0.6733465693003757,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 54.0,
+      "held-out per-direction R\u00b2": 0.6627143087830929,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 55.0,
+      "held-out per-direction R\u00b2": 0.6786892656581953,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 56.0,
+      "held-out per-direction R\u00b2": 0.6087398121600461,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 57.0,
+      "held-out per-direction R\u00b2": 0.6361887887687421,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 58.0,
+      "held-out per-direction R\u00b2": 0.6365557230318069,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 59.0,
+      "held-out per-direction R\u00b2": 0.6399983084369136,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 60.0,
+      "held-out per-direction R\u00b2": 0.6400279749430992,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 61.0,
+      "held-out per-direction R\u00b2": 0.6209102759648455,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 62.0,
+      "held-out per-direction R\u00b2": 0.6410864780381643,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 63.0,
+      "held-out per-direction R\u00b2": 0.5962212493497709,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 64.0,
+      "held-out per-direction R\u00b2": 0.667091901669419,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 65.0,
+      "held-out per-direction R\u00b2": 0.6559630707040941,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 66.0,
+      "held-out per-direction R\u00b2": 0.6360503008983616,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 67.0,
+      "held-out per-direction R\u00b2": 0.6224804300105535,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 68.0,
+      "held-out per-direction R\u00b2": 0.6403849786330267,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 69.0,
+      "held-out per-direction R\u00b2": 0.607794622440919,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 70.0,
+      "held-out per-direction R\u00b2": 0.65092001397887,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 71.0,
+      "held-out per-direction R\u00b2": 0.6297326174355785,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 72.0,
+      "held-out per-direction R\u00b2": 0.640124324370179,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 73.0,
+      "held-out per-direction R\u00b2": 0.607226722909529,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 74.0,
+      "held-out per-direction R\u00b2": 0.576364559554237,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 75.0,
+      "held-out per-direction R\u00b2": 0.5850400799576739,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 76.0,
+      "held-out per-direction R\u00b2": 0.5707884876120091,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 77.0,
+      "held-out per-direction R\u00b2": 0.5693117007386701,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 78.0,
+      "held-out per-direction R\u00b2": 0.6543496810517926,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 79.0,
+      "held-out per-direction R\u00b2": 0.5896548762097019,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 80.0,
+      "held-out per-direction R\u00b2": 0.6068191979842974,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 81.0,
+      "held-out per-direction R\u00b2": 0.6781114881889361,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 82.0,
+      "held-out per-direction R\u00b2": 0.589244180176083,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 83.0,
+      "held-out per-direction R\u00b2": 0.6109054960593228,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 84.0,
+      "held-out per-direction R\u00b2": 0.5637566721467873,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 85.0,
+      "held-out per-direction R\u00b2": 0.5689377357878024,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 86.0,
+      "held-out per-direction R\u00b2": 0.575650574468989,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 87.0,
+      "held-out per-direction R\u00b2": 0.6238020218221919,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 88.0,
+      "held-out per-direction R\u00b2": 0.5622903285146907,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 89.0,
+      "held-out per-direction R\u00b2": 0.5562447114564931,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 90.0,
+      "held-out per-direction R\u00b2": 0.5134995339566669,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 91.0,
+      "held-out per-direction R\u00b2": 0.579854333596775,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 92.0,
+      "held-out per-direction R\u00b2": 0.596752832715191,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 93.0,
+      "held-out per-direction R\u00b2": 0.5960770614007512,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 94.0,
+      "held-out per-direction R\u00b2": 0.5566094949867411,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 95.0,
+      "held-out per-direction R\u00b2": 0.5913798708919132,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 96.0,
+      "held-out per-direction R\u00b2": 0.5666193990298367,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 97.0,
+      "held-out per-direction R\u00b2": 0.5487211764428606,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 98.0,
+      "held-out per-direction R\u00b2": 0.5390563176420013,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 99.0,
+      "held-out per-direction R\u00b2": 0.6095890262518937,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 100.0,
+      "held-out per-direction R\u00b2": 0.5145748912576964,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 101.0,
+      "held-out per-direction R\u00b2": 0.5660266837983755,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 102.0,
+      "held-out per-direction R\u00b2": 0.5213665325428106,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 103.0,
+      "held-out per-direction R\u00b2": 0.5578343516912004,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 104.0,
+      "held-out per-direction R\u00b2": 0.5386549462975596,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 105.0,
+      "held-out per-direction R\u00b2": 0.5652314252522603,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 106.0,
+      "held-out per-direction R\u00b2": 0.5230030857703416,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 107.0,
+      "held-out per-direction R\u00b2": 0.5410157519499852,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 108.0,
+      "held-out per-direction R\u00b2": 0.5150204088755185,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 109.0,
+      "held-out per-direction R\u00b2": 0.49288697488056665,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 110.0,
+      "held-out per-direction R\u00b2": 0.4967551427278073,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 111.0,
+      "held-out per-direction R\u00b2": 0.530368151727795,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 112.0,
+      "held-out per-direction R\u00b2": 0.5093443995165576,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 113.0,
+      "held-out per-direction R\u00b2": 0.5175635333508224,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 114.0,
+      "held-out per-direction R\u00b2": 0.5100919150544115,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 115.0,
+      "held-out per-direction R\u00b2": 0.4898591821870557,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 116.0,
+      "held-out per-direction R\u00b2": 0.5340083325867433,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 117.0,
+      "held-out per-direction R\u00b2": 0.513712818589696,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 118.0,
+      "held-out per-direction R\u00b2": 0.5374120516252634,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 119.0,
+      "held-out per-direction R\u00b2": 0.5175444717357867,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 120.0,
+      "held-out per-direction R\u00b2": 0.5231402551216289,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 121.0,
+      "held-out per-direction R\u00b2": 0.5178047866306763,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 122.0,
+      "held-out per-direction R\u00b2": 0.5191997781053278,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 123.0,
+      "held-out per-direction R\u00b2": 0.5065082327931807,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 124.0,
+      "held-out per-direction R\u00b2": 0.5011484532966861,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 125.0,
+      "held-out per-direction R\u00b2": 0.48801816512035545,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 126.0,
+      "held-out per-direction R\u00b2": 0.49968081948050236,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 127.0,
+      "held-out per-direction R\u00b2": 0.5147305641071172,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 128.0,
+      "held-out per-direction R\u00b2": 0.5059244007382624,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 129.0,
+      "held-out per-direction R\u00b2": 0.4896163458402355,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 130.0,
+      "held-out per-direction R\u00b2": 0.49462189289453207,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 131.0,
+      "held-out per-direction R\u00b2": 0.507313096538466,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 132.0,
+      "held-out per-direction R\u00b2": 0.49153553450547827,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 133.0,
+      "held-out per-direction R\u00b2": 0.4796332415390836,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 134.0,
+      "held-out per-direction R\u00b2": 0.44554290149339026,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 135.0,
+      "held-out per-direction R\u00b2": 0.49869476820547276,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 136.0,
+      "held-out per-direction R\u00b2": 0.47286819353051857,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 137.0,
+      "held-out per-direction R\u00b2": 0.5105433979821581,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 138.0,
+      "held-out per-direction R\u00b2": 0.4856410471132099,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 139.0,
+      "held-out per-direction R\u00b2": 0.5378654219835197,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 140.0,
+      "held-out per-direction R\u00b2": 0.47227707504605954,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 141.0,
+      "held-out per-direction R\u00b2": 0.5024876679971337,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 142.0,
+      "held-out per-direction R\u00b2": 0.4792134925123277,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 143.0,
+      "held-out per-direction R\u00b2": 0.44569437923736155,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 144.0,
+      "held-out per-direction R\u00b2": 0.47423844480079047,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 145.0,
+      "held-out per-direction R\u00b2": 0.5099700532761984,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 146.0,
+      "held-out per-direction R\u00b2": 0.4516836728295025,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 147.0,
+      "held-out per-direction R\u00b2": 0.46785485072242683,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 148.0,
+      "held-out per-direction R\u00b2": 0.4610784359002703,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 149.0,
+      "held-out per-direction R\u00b2": 0.4671865513958384,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 150.0,
+      "held-out per-direction R\u00b2": 0.4553122211250713,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 151.0,
+      "held-out per-direction R\u00b2": 0.4665045944361944,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 152.0,
+      "held-out per-direction R\u00b2": 0.4650213524298794,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 153.0,
+      "held-out per-direction R\u00b2": 0.4732125274434503,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 154.0,
+      "held-out per-direction R\u00b2": 0.4434396238116991,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 155.0,
+      "held-out per-direction R\u00b2": 0.4839557051757736,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 156.0,
+      "held-out per-direction R\u00b2": 0.46745475887706156,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 157.0,
+      "held-out per-direction R\u00b2": 0.4598979852216868,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 158.0,
+      "held-out per-direction R\u00b2": 0.44578918661353717,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 159.0,
+      "held-out per-direction R\u00b2": 0.4201316131958863,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 160.0,
+      "held-out per-direction R\u00b2": 0.4533787385040092,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 161.0,
+      "held-out per-direction R\u00b2": 0.4653801695566544,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 162.0,
+      "held-out per-direction R\u00b2": 0.45318076056343326,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 163.0,
+      "held-out per-direction R\u00b2": 0.4283567307008268,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 164.0,
+      "held-out per-direction R\u00b2": 0.46308437756696375,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 165.0,
+      "held-out per-direction R\u00b2": 0.45765854269448447,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 166.0,
+      "held-out per-direction R\u00b2": 0.4601715733241274,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 167.0,
+      "held-out per-direction R\u00b2": 0.44765665941903365,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 168.0,
+      "held-out per-direction R\u00b2": 0.45044775682766436,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 169.0,
+      "held-out per-direction R\u00b2": 0.4152576228739121,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 170.0,
+      "held-out per-direction R\u00b2": 0.4360396332229646,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 171.0,
+      "held-out per-direction R\u00b2": 0.4353068959782136,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 172.0,
+      "held-out per-direction R\u00b2": 0.4181405645268258,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 173.0,
+      "held-out per-direction R\u00b2": 0.43749903532501155,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 174.0,
+      "held-out per-direction R\u00b2": 0.4548848339845666,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 175.0,
+      "held-out per-direction R\u00b2": 0.4157439090192049,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 176.0,
+      "held-out per-direction R\u00b2": 0.43630671316429603,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 177.0,
+      "held-out per-direction R\u00b2": 0.4473736392148996,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 178.0,
+      "held-out per-direction R\u00b2": 0.44713858852964283,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 179.0,
+      "held-out per-direction R\u00b2": 0.42142584669299255,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 180.0,
+      "held-out per-direction R\u00b2": 0.42917162834063094,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 181.0,
+      "held-out per-direction R\u00b2": 0.41469791732681727,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 182.0,
+      "held-out per-direction R\u00b2": 0.42907145530224633,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 183.0,
+      "held-out per-direction R\u00b2": 0.4157349482056638,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 184.0,
+      "held-out per-direction R\u00b2": 0.42761307690913797,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 185.0,
+      "held-out per-direction R\u00b2": 0.39131852401048417,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 186.0,
+      "held-out per-direction R\u00b2": 0.41896458457838215,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 187.0,
+      "held-out per-direction R\u00b2": 0.40920719742022227,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 188.0,
+      "held-out per-direction R\u00b2": 0.3991368508223978,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 189.0,
+      "held-out per-direction R\u00b2": 0.4265496490664069,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 190.0,
+      "held-out per-direction R\u00b2": 0.42219741467514416,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 191.0,
+      "held-out per-direction R\u00b2": 0.41518834125699067,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 192.0,
+      "held-out per-direction R\u00b2": 0.38969220404067395,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 193.0,
+      "held-out per-direction R\u00b2": 0.40602980412213385,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 194.0,
+      "held-out per-direction R\u00b2": 0.37474045743236406,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 195.0,
+      "held-out per-direction R\u00b2": 0.4229361760425462,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 196.0,
+      "held-out per-direction R\u00b2": 0.4075247681396381,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 197.0,
+      "held-out per-direction R\u00b2": 0.3942564823780963,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 198.0,
+      "held-out per-direction R\u00b2": 0.40044774002859573,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 199.0,
+      "held-out per-direction R\u00b2": 0.3931712892592776,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 200.0,
+      "held-out per-direction R\u00b2": 0.42282574912072246,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 201.0,
+      "held-out per-direction R\u00b2": 0.4061501797137681,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 202.0,
+      "held-out per-direction R\u00b2": 0.4043116346122081,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 203.0,
+      "held-out per-direction R\u00b2": 0.3991370705927998,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 204.0,
+      "held-out per-direction R\u00b2": 0.41393153180470565,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 205.0,
+      "held-out per-direction R\u00b2": 0.3838079968623581,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 206.0,
+      "held-out per-direction R\u00b2": 0.4003589856273805,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 207.0,
+      "held-out per-direction R\u00b2": 0.39103670878986696,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 208.0,
+      "held-out per-direction R\u00b2": 0.40422913189416465,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 209.0,
+      "held-out per-direction R\u00b2": 0.3900349163776524,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 210.0,
+      "held-out per-direction R\u00b2": 0.40670237171194845,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 211.0,
+      "held-out per-direction R\u00b2": 0.40675431824389796,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 212.0,
+      "held-out per-direction R\u00b2": 0.38902026536969225,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 213.0,
+      "held-out per-direction R\u00b2": 0.3833577034327206,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 214.0,
+      "held-out per-direction R\u00b2": 0.38040132251101577,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 215.0,
+      "held-out per-direction R\u00b2": 0.3904983035718983,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 216.0,
+      "held-out per-direction R\u00b2": 0.39840186301839553,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 217.0,
+      "held-out per-direction R\u00b2": 0.37809540313413914,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 218.0,
+      "held-out per-direction R\u00b2": 0.3893294793186375,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 219.0,
+      "held-out per-direction R\u00b2": 0.3882129606083564,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 220.0,
+      "held-out per-direction R\u00b2": 0.39710669258805253,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 221.0,
+      "held-out per-direction R\u00b2": 0.3788838050030391,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 222.0,
+      "held-out per-direction R\u00b2": 0.39965063059361694,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 223.0,
+      "held-out per-direction R\u00b2": 0.3815619092058212,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 224.0,
+      "held-out per-direction R\u00b2": 0.4003890214116522,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 225.0,
+      "held-out per-direction R\u00b2": 0.3898786728041824,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 226.0,
+      "held-out per-direction R\u00b2": 0.37216583188254104,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 227.0,
+      "held-out per-direction R\u00b2": 0.3660665679878665,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 228.0,
+      "held-out per-direction R\u00b2": 0.3917469717448323,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 229.0,
+      "held-out per-direction R\u00b2": 0.3829576876124565,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 230.0,
+      "held-out per-direction R\u00b2": 0.36068579375000687,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 231.0,
+      "held-out per-direction R\u00b2": 0.34346444591076253,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 232.0,
+      "held-out per-direction R\u00b2": 0.3821829315260701,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 233.0,
+      "held-out per-direction R\u00b2": 0.3856869802624724,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 234.0,
+      "held-out per-direction R\u00b2": 0.36040785366014294,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 235.0,
+      "held-out per-direction R\u00b2": 0.35256246951948866,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 236.0,
+      "held-out per-direction R\u00b2": 0.36009973276242124,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 237.0,
+      "held-out per-direction R\u00b2": 0.36964974204418866,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 238.0,
+      "held-out per-direction R\u00b2": 0.34570512036482237,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 239.0,
+      "held-out per-direction R\u00b2": 0.37404711247223854,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 240.0,
+      "held-out per-direction R\u00b2": 0.35652767526345364,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 241.0,
+      "held-out per-direction R\u00b2": 0.36435153047965263,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 242.0,
+      "held-out per-direction R\u00b2": 0.359910673746379,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 243.0,
+      "held-out per-direction R\u00b2": 0.383054312105078,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 244.0,
+      "held-out per-direction R\u00b2": 0.35723928040444874,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 245.0,
+      "held-out per-direction R\u00b2": 0.34861679670859214,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 246.0,
+      "held-out per-direction R\u00b2": 0.3766883730269902,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 247.0,
+      "held-out per-direction R\u00b2": 0.3604165608821157,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 248.0,
+      "held-out per-direction R\u00b2": 0.3697123231336146,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 249.0,
+      "held-out per-direction R\u00b2": 0.3626418066562387,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 250.0,
+      "held-out per-direction R\u00b2": 0.3534607059278785,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 251.0,
+      "held-out per-direction R\u00b2": 0.35067623538550263,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 252.0,
+      "held-out per-direction R\u00b2": 0.3341010922239641,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 253.0,
+      "held-out per-direction R\u00b2": 0.3586624403054448,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 254.0,
+      "held-out per-direction R\u00b2": 0.34322223991971035,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 255.0,
+      "held-out per-direction R\u00b2": 0.3635900101677454,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 256.0,
+      "held-out per-direction R\u00b2": 0.3337100346547647,
+      "series": "ridge, one shared regularizer (committed)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 1.0,
+      "held-out per-direction R\u00b2": 0.9056824096968787,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 2.0,
+      "held-out per-direction R\u00b2": 0.9046310009092199,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 3.0,
+      "held-out per-direction R\u00b2": 0.8844666674840997,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 4.0,
+      "held-out per-direction R\u00b2": 0.9255980993170481,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 5.0,
+      "held-out per-direction R\u00b2": 0.9096769790226363,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 6.0,
+      "held-out per-direction R\u00b2": 0.8928836738696193,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 7.0,
+      "held-out per-direction R\u00b2": 0.8848183473172493,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 8.0,
+      "held-out per-direction R\u00b2": 0.8822820085929359,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 9.0,
+      "held-out per-direction R\u00b2": 0.8505583346751888,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 10.0,
+      "held-out per-direction R\u00b2": 0.8675630850164954,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 11.0,
+      "held-out per-direction R\u00b2": 0.8660322317308906,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 12.0,
+      "held-out per-direction R\u00b2": 0.8403760362112511,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 13.0,
+      "held-out per-direction R\u00b2": 0.7981778296632343,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 14.0,
+      "held-out per-direction R\u00b2": 0.8141800973203782,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 15.0,
+      "held-out per-direction R\u00b2": 0.7755707414124162,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 16.0,
+      "held-out per-direction R\u00b2": 0.8241092016226608,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 17.0,
+      "held-out per-direction R\u00b2": 0.8392094975843061,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 18.0,
+      "held-out per-direction R\u00b2": 0.8447735293660485,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 19.0,
+      "held-out per-direction R\u00b2": 0.7770830289958659,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 20.0,
+      "held-out per-direction R\u00b2": 0.7897810760312045,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 21.0,
+      "held-out per-direction R\u00b2": 0.7871112099708912,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 22.0,
+      "held-out per-direction R\u00b2": 0.7954609444012197,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 23.0,
+      "held-out per-direction R\u00b2": 0.7688399044458712,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 24.0,
+      "held-out per-direction R\u00b2": 0.7641897701681839,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 25.0,
+      "held-out per-direction R\u00b2": 0.7270945858030564,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 26.0,
+      "held-out per-direction R\u00b2": 0.7549874136012442,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 27.0,
+      "held-out per-direction R\u00b2": 0.7484218054229987,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 28.0,
+      "held-out per-direction R\u00b2": 0.7522419453708457,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 29.0,
+      "held-out per-direction R\u00b2": 0.7323070857577079,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 30.0,
+      "held-out per-direction R\u00b2": 0.7112006447855577,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 31.0,
+      "held-out per-direction R\u00b2": 0.7663767378652361,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 32.0,
+      "held-out per-direction R\u00b2": 0.7560995766277855,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 33.0,
+      "held-out per-direction R\u00b2": 0.6717058594134424,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 34.0,
+      "held-out per-direction R\u00b2": 0.7232858728043923,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 35.0,
+      "held-out per-direction R\u00b2": 0.6792642982468129,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 36.0,
+      "held-out per-direction R\u00b2": 0.6920825054906273,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 37.0,
+      "held-out per-direction R\u00b2": 0.7254870856258258,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 38.0,
+      "held-out per-direction R\u00b2": 0.6972539832848406,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 39.0,
+      "held-out per-direction R\u00b2": 0.7340954257836889,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 40.0,
+      "held-out per-direction R\u00b2": 0.6977341449330823,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 41.0,
+      "held-out per-direction R\u00b2": 0.6667582952389363,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 42.0,
+      "held-out per-direction R\u00b2": 0.6827503730882117,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 43.0,
+      "held-out per-direction R\u00b2": 0.6723768320233285,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 44.0,
+      "held-out per-direction R\u00b2": 0.7268559996319255,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 45.0,
+      "held-out per-direction R\u00b2": 0.712282309207865,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 46.0,
+      "held-out per-direction R\u00b2": 0.6584564202509967,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 47.0,
+      "held-out per-direction R\u00b2": 0.6758776017728074,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 48.0,
+      "held-out per-direction R\u00b2": 0.6973872926437825,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 49.0,
+      "held-out per-direction R\u00b2": 0.6688413873558672,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 50.0,
+      "held-out per-direction R\u00b2": 0.71712068093405,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 51.0,
+      "held-out per-direction R\u00b2": 0.7445554179262517,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 52.0,
+      "held-out per-direction R\u00b2": 0.6627391069637685,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 53.0,
+      "held-out per-direction R\u00b2": 0.6733463189752856,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 54.0,
+      "held-out per-direction R\u00b2": 0.6616269834902984,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 55.0,
+      "held-out per-direction R\u00b2": 0.6786913903093156,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 56.0,
+      "held-out per-direction R\u00b2": 0.6087530964310284,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 57.0,
+      "held-out per-direction R\u00b2": 0.6361886002936612,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 58.0,
+      "held-out per-direction R\u00b2": 0.6367156953591442,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 59.0,
+      "held-out per-direction R\u00b2": 0.6400478563377068,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 60.0,
+      "held-out per-direction R\u00b2": 0.6400274131836801,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 61.0,
+      "held-out per-direction R\u00b2": 0.6209116842232405,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 62.0,
+      "held-out per-direction R\u00b2": 0.6410862801572015,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 63.0,
+      "held-out per-direction R\u00b2": 0.5887671713046789,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 64.0,
+      "held-out per-direction R\u00b2": 0.6666006155564681,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 65.0,
+      "held-out per-direction R\u00b2": 0.6559652640944545,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 66.0,
+      "held-out per-direction R\u00b2": 0.636045616769899,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 67.0,
+      "held-out per-direction R\u00b2": 0.6224793121835073,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 68.0,
+      "held-out per-direction R\u00b2": 0.6402024328192011,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 69.0,
+      "held-out per-direction R\u00b2": 0.6077937158048785,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 70.0,
+      "held-out per-direction R\u00b2": 0.6509273549398169,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 71.0,
+      "held-out per-direction R\u00b2": 0.6297263575787166,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 72.0,
+      "held-out per-direction R\u00b2": 0.6331405602644162,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 73.0,
+      "held-out per-direction R\u00b2": 0.6073050380405434,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 74.0,
+      "held-out per-direction R\u00b2": 0.5763643333068578,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 75.0,
+      "held-out per-direction R\u00b2": 0.5850477010660551,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 76.0,
+      "held-out per-direction R\u00b2": 0.5707745144093644,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 77.0,
+      "held-out per-direction R\u00b2": 0.5636870041940372,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 78.0,
+      "held-out per-direction R\u00b2": 0.6532877779788624,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 79.0,
+      "held-out per-direction R\u00b2": 0.5896438020167727,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 80.0,
+      "held-out per-direction R\u00b2": 0.606818045847403,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 81.0,
+      "held-out per-direction R\u00b2": 0.6781104317616105,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 82.0,
+      "held-out per-direction R\u00b2": 0.5892432645573416,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 83.0,
+      "held-out per-direction R\u00b2": 0.6108739642293921,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 84.0,
+      "held-out per-direction R\u00b2": 0.5637588420829464,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 85.0,
+      "held-out per-direction R\u00b2": 0.5689354512104721,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 86.0,
+      "held-out per-direction R\u00b2": 0.5756498989614847,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 87.0,
+      "held-out per-direction R\u00b2": 0.6238026284133802,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 88.0,
+      "held-out per-direction R\u00b2": 0.5620339736339695,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 89.0,
+      "held-out per-direction R\u00b2": 0.554557767825495,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 90.0,
+      "held-out per-direction R\u00b2": 0.5134972172136495,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 91.0,
+      "held-out per-direction R\u00b2": 0.5799553793480516,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 92.0,
+      "held-out per-direction R\u00b2": 0.5967531085006813,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 93.0,
+      "held-out per-direction R\u00b2": 0.5960773549707002,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 94.0,
+      "held-out per-direction R\u00b2": 0.55660539347275,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 95.0,
+      "held-out per-direction R\u00b2": 0.5914331312580403,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 96.0,
+      "held-out per-direction R\u00b2": 0.5666612227238852,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 97.0,
+      "held-out per-direction R\u00b2": 0.5487232962202622,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 98.0,
+      "held-out per-direction R\u00b2": 0.5390583743082324,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 99.0,
+      "held-out per-direction R\u00b2": 0.6095867645200848,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 100.0,
+      "held-out per-direction R\u00b2": 0.5145721518327792,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 101.0,
+      "held-out per-direction R\u00b2": 0.5660228025948367,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 102.0,
+      "held-out per-direction R\u00b2": 0.5213934029804774,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 103.0,
+      "held-out per-direction R\u00b2": 0.5578436886464279,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 104.0,
+      "held-out per-direction R\u00b2": 0.5384790512508768,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 105.0,
+      "held-out per-direction R\u00b2": 0.5647279991425038,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 106.0,
+      "held-out per-direction R\u00b2": 0.5230060830834473,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 107.0,
+      "held-out per-direction R\u00b2": 0.5412831542493464,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 108.0,
+      "held-out per-direction R\u00b2": 0.5144821129183884,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 109.0,
+      "held-out per-direction R\u00b2": 0.4864815856810768,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 110.0,
+      "held-out per-direction R\u00b2": 0.4967529655955075,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 111.0,
+      "held-out per-direction R\u00b2": 0.5302602184041385,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 112.0,
+      "held-out per-direction R\u00b2": 0.5093446516869675,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 113.0,
+      "held-out per-direction R\u00b2": 0.5175661612366298,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 114.0,
+      "held-out per-direction R\u00b2": 0.5100796198436228,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 115.0,
+      "held-out per-direction R\u00b2": 0.48984398300161736,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 116.0,
+      "held-out per-direction R\u00b2": 0.534002253171495,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 117.0,
+      "held-out per-direction R\u00b2": 0.513718206006205,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 118.0,
+      "held-out per-direction R\u00b2": 0.537208338154932,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 119.0,
+      "held-out per-direction R\u00b2": 0.5089140356716604,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 120.0,
+      "held-out per-direction R\u00b2": 0.5231420223181242,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 121.0,
+      "held-out per-direction R\u00b2": 0.5178046693671084,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 122.0,
+      "held-out per-direction R\u00b2": 0.5185271423076774,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 123.0,
+      "held-out per-direction R\u00b2": 0.5064934310121889,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 124.0,
+      "held-out per-direction R\u00b2": 0.5010804120814696,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 125.0,
+      "held-out per-direction R\u00b2": 0.488014098807118,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 126.0,
+      "held-out per-direction R\u00b2": 0.4996795505637144,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 127.0,
+      "held-out per-direction R\u00b2": 0.5134262154534086,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 128.0,
+      "held-out per-direction R\u00b2": 0.5045651551789183,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 129.0,
+      "held-out per-direction R\u00b2": 0.48961579134262045,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 130.0,
+      "held-out per-direction R\u00b2": 0.49462644514234966,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 131.0,
+      "held-out per-direction R\u00b2": 0.5073156106259179,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 132.0,
+      "held-out per-direction R\u00b2": 0.49153327557029036,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 133.0,
+      "held-out per-direction R\u00b2": 0.47963224271692595,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 134.0,
+      "held-out per-direction R\u00b2": 0.4455465431277317,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 135.0,
+      "held-out per-direction R\u00b2": 0.4986908561063418,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 136.0,
+      "held-out per-direction R\u00b2": 0.47251623655186614,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 137.0,
+      "held-out per-direction R\u00b2": 0.5107154732557545,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 138.0,
+      "held-out per-direction R\u00b2": 0.4857685460389576,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 139.0,
+      "held-out per-direction R\u00b2": 0.5377525287304405,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 140.0,
+      "held-out per-direction R\u00b2": 0.47010371307360066,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 141.0,
+      "held-out per-direction R\u00b2": 0.5024787312906298,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 142.0,
+      "held-out per-direction R\u00b2": 0.47921837408814105,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 143.0,
+      "held-out per-direction R\u00b2": 0.435451186817834,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 144.0,
+      "held-out per-direction R\u00b2": 0.47429538268791027,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 145.0,
+      "held-out per-direction R\u00b2": 0.49984071055453205,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 146.0,
+      "held-out per-direction R\u00b2": 0.4512950725557423,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 147.0,
+      "held-out per-direction R\u00b2": 0.46785277465487696,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 148.0,
+      "held-out per-direction R\u00b2": 0.4610789802322782,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 149.0,
+      "held-out per-direction R\u00b2": 0.4664299635293212,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 150.0,
+      "held-out per-direction R\u00b2": 0.45399036927738523,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 151.0,
+      "held-out per-direction R\u00b2": 0.4665027103007806,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 152.0,
+      "held-out per-direction R\u00b2": 0.4650371382316699,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 153.0,
+      "held-out per-direction R\u00b2": 0.47320741845070313,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 154.0,
+      "held-out per-direction R\u00b2": 0.4330233556229057,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 155.0,
+      "held-out per-direction R\u00b2": 0.48395555506800014,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 156.0,
+      "held-out per-direction R\u00b2": 0.46745742544740454,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 157.0,
+      "held-out per-direction R\u00b2": 0.45793441807794644,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 158.0,
+      "held-out per-direction R\u00b2": 0.44579355252198094,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 159.0,
+      "held-out per-direction R\u00b2": 0.4201294845773609,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 160.0,
+      "held-out per-direction R\u00b2": 0.45337688157508627,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 161.0,
+      "held-out per-direction R\u00b2": 0.46538014199445776,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 162.0,
+      "held-out per-direction R\u00b2": 0.45318303087008294,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 163.0,
+      "held-out per-direction R\u00b2": 0.41969151841480445,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 164.0,
+      "held-out per-direction R\u00b2": 0.46308688709614176,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 165.0,
+      "held-out per-direction R\u00b2": 0.4560213598175046,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 166.0,
+      "held-out per-direction R\u00b2": 0.460185245503982,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 167.0,
+      "held-out per-direction R\u00b2": 0.4476593633871141,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 168.0,
+      "held-out per-direction R\u00b2": 0.4504458679257577,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 169.0,
+      "held-out per-direction R\u00b2": 0.4150370368485148,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 170.0,
+      "held-out per-direction R\u00b2": 0.43603890175054505,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 171.0,
+      "held-out per-direction R\u00b2": 0.43530056224902114,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 172.0,
+      "held-out per-direction R\u00b2": 0.41013640015050945,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 173.0,
+      "held-out per-direction R\u00b2": 0.43639453765229874,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 174.0,
+      "held-out per-direction R\u00b2": 0.4528189261701844,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 175.0,
+      "held-out per-direction R\u00b2": 0.4157431287476617,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 176.0,
+      "held-out per-direction R\u00b2": 0.43631406687879903,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 177.0,
+      "held-out per-direction R\u00b2": 0.4461207252517245,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 178.0,
+      "held-out per-direction R\u00b2": 0.44703505775165575,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 179.0,
+      "held-out per-direction R\u00b2": 0.42051789029567344,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 180.0,
+      "held-out per-direction R\u00b2": 0.4291742260929796,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 181.0,
+      "held-out per-direction R\u00b2": 0.4147484018489235,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 182.0,
+      "held-out per-direction R\u00b2": 0.4290716199375397,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 183.0,
+      "held-out per-direction R\u00b2": 0.4157371213958936,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 184.0,
+      "held-out per-direction R\u00b2": 0.4276081957973741,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 185.0,
+      "held-out per-direction R\u00b2": 0.3902153094877948,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 186.0,
+      "held-out per-direction R\u00b2": 0.41156428349473173,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 187.0,
+      "held-out per-direction R\u00b2": 0.40735021254337955,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 188.0,
+      "held-out per-direction R\u00b2": 0.39777247062027266,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 189.0,
+      "held-out per-direction R\u00b2": 0.41854715247720387,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 190.0,
+      "held-out per-direction R\u00b2": 0.42219852653451284,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 191.0,
+      "held-out per-direction R\u00b2": 0.415202135337295,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 192.0,
+      "held-out per-direction R\u00b2": 0.38981818126912415,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 193.0,
+      "held-out per-direction R\u00b2": 0.40603399511863103,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 194.0,
+      "held-out per-direction R\u00b2": 0.37465292423722285,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 195.0,
+      "held-out per-direction R\u00b2": 0.42293435132661716,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 196.0,
+      "held-out per-direction R\u00b2": 0.40752849561894355,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 197.0,
+      "held-out per-direction R\u00b2": 0.3942670874473563,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 198.0,
+      "held-out per-direction R\u00b2": 0.3990536560281508,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 199.0,
+      "held-out per-direction R\u00b2": 0.3931717986886216,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 200.0,
+      "held-out per-direction R\u00b2": 0.42282800941431187,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 201.0,
+      "held-out per-direction R\u00b2": 0.40570072132103663,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 202.0,
+      "held-out per-direction R\u00b2": 0.4043062758783763,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 203.0,
+      "held-out per-direction R\u00b2": 0.39914131127719266,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 204.0,
+      "held-out per-direction R\u00b2": 0.41392623261465444,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 205.0,
+      "held-out per-direction R\u00b2": 0.3826483050735915,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 206.0,
+      "held-out per-direction R\u00b2": 0.4001279788500913,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 207.0,
+      "held-out per-direction R\u00b2": 0.39105074225239267,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 208.0,
+      "held-out per-direction R\u00b2": 0.4042288177259661,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 209.0,
+      "held-out per-direction R\u00b2": 0.39003087863053554,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 210.0,
+      "held-out per-direction R\u00b2": 0.4051528957656273,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 211.0,
+      "held-out per-direction R\u00b2": 0.405421278176616,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 212.0,
+      "held-out per-direction R\u00b2": 0.38701887101292964,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 213.0,
+      "held-out per-direction R\u00b2": 0.3833560346184556,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 214.0,
+      "held-out per-direction R\u00b2": 0.3804584710084007,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 215.0,
+      "held-out per-direction R\u00b2": 0.39050224409767487,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 216.0,
+      "held-out per-direction R\u00b2": 0.39862776235469766,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 217.0,
+      "held-out per-direction R\u00b2": 0.37809693784240817,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 218.0,
+      "held-out per-direction R\u00b2": 0.3893018897228657,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 219.0,
+      "held-out per-direction R\u00b2": 0.3882223296097582,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 220.0,
+      "held-out per-direction R\u00b2": 0.3971728944689813,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 221.0,
+      "held-out per-direction R\u00b2": 0.3769312911853786,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 222.0,
+      "held-out per-direction R\u00b2": 0.39964903197587265,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 223.0,
+      "held-out per-direction R\u00b2": 0.3811927382808623,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 224.0,
+      "held-out per-direction R\u00b2": 0.4003891728554041,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 225.0,
+      "held-out per-direction R\u00b2": 0.38987601617137735,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 226.0,
+      "held-out per-direction R\u00b2": 0.37056999383305955,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 227.0,
+      "held-out per-direction R\u00b2": 0.3661943940615342,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 228.0,
+      "held-out per-direction R\u00b2": 0.39175211400508314,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 229.0,
+      "held-out per-direction R\u00b2": 0.38296480313703285,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 230.0,
+      "held-out per-direction R\u00b2": 0.3587791868399821,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 231.0,
+      "held-out per-direction R\u00b2": 0.34346144775376164,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 232.0,
+      "held-out per-direction R\u00b2": 0.3821831812799761,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 233.0,
+      "held-out per-direction R\u00b2": 0.3856860241157435,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 234.0,
+      "held-out per-direction R\u00b2": 0.3604052123740593,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 235.0,
+      "held-out per-direction R\u00b2": 0.3525612325604922,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 236.0,
+      "held-out per-direction R\u00b2": 0.3586026172084432,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 237.0,
+      "held-out per-direction R\u00b2": 0.3696499786037858,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 238.0,
+      "held-out per-direction R\u00b2": 0.34570600471363444,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 239.0,
+      "held-out per-direction R\u00b2": 0.3740494745401175,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 240.0,
+      "held-out per-direction R\u00b2": 0.35565231121033203,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 241.0,
+      "held-out per-direction R\u00b2": 0.36431809805627824,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 242.0,
+      "held-out per-direction R\u00b2": 0.3599089302942182,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 243.0,
+      "held-out per-direction R\u00b2": 0.38305073293969705,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 244.0,
+      "held-out per-direction R\u00b2": 0.3573496719200695,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 245.0,
+      "held-out per-direction R\u00b2": 0.3466209543499583,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 246.0,
+      "held-out per-direction R\u00b2": 0.37668801839305266,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 247.0,
+      "held-out per-direction R\u00b2": 0.36041651909141537,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 248.0,
+      "held-out per-direction R\u00b2": 0.3411212568937714,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 249.0,
+      "held-out per-direction R\u00b2": 0.3624578709901586,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 250.0,
+      "held-out per-direction R\u00b2": 0.32848214886272253,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 251.0,
+      "held-out per-direction R\u00b2": 0.3507510792023846,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 252.0,
+      "held-out per-direction R\u00b2": 0.3341031097083319,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 253.0,
+      "held-out per-direction R\u00b2": 0.35052329291821516,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 254.0,
+      "held-out per-direction R\u00b2": 0.34322030610321475,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 255.0,
+      "held-out per-direction R\u00b2": 0.3635867155984187,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 256.0,
+      "held-out per-direction R\u00b2": 0.33371046197323095,
+      "series": "ridge, per-direction regularizer (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 1.0,
+      "held-out per-direction R\u00b2": 0.9306576450223716,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 2.0,
+      "held-out per-direction R\u00b2": 0.9246615248213081,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 3.0,
+      "held-out per-direction R\u00b2": 0.913593698641278,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 4.0,
+      "held-out per-direction R\u00b2": 0.9425511154846673,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 5.0,
+      "held-out per-direction R\u00b2": 0.9343747624483298,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 6.0,
+      "held-out per-direction R\u00b2": 0.9152386638324587,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 7.0,
+      "held-out per-direction R\u00b2": 0.9083797253936885,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 8.0,
+      "held-out per-direction R\u00b2": 0.9152260618969634,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 9.0,
+      "held-out per-direction R\u00b2": 0.8888241059151227,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 10.0,
+      "held-out per-direction R\u00b2": 0.8989408666237084,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 11.0,
+      "held-out per-direction R\u00b2": 0.9071318612451266,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 12.0,
+      "held-out per-direction R\u00b2": 0.8838004582070406,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 13.0,
+      "held-out per-direction R\u00b2": 0.8572257085661195,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 14.0,
+      "held-out per-direction R\u00b2": 0.8646747497279368,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 15.0,
+      "held-out per-direction R\u00b2": 0.8434720270523178,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 16.0,
+      "held-out per-direction R\u00b2": 0.8713876621868684,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 17.0,
+      "held-out per-direction R\u00b2": 0.8807042906802702,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 18.0,
+      "held-out per-direction R\u00b2": 0.885728736003085,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 19.0,
+      "held-out per-direction R\u00b2": 0.8427151261319168,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 20.0,
+      "held-out per-direction R\u00b2": 0.8410181736853137,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 21.0,
+      "held-out per-direction R\u00b2": 0.8456938897568708,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 22.0,
+      "held-out per-direction R\u00b2": 0.8541611563656666,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 23.0,
+      "held-out per-direction R\u00b2": 0.8305725318232395,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 24.0,
+      "held-out per-direction R\u00b2": 0.8283038918720542,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 25.0,
+      "held-out per-direction R\u00b2": 0.8031013153140953,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 26.0,
+      "held-out per-direction R\u00b2": 0.8262065501060627,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 27.0,
+      "held-out per-direction R\u00b2": 0.8181658209499363,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 28.0,
+      "held-out per-direction R\u00b2": 0.8256473373253111,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 29.0,
+      "held-out per-direction R\u00b2": 0.8049456125129917,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 30.0,
+      "held-out per-direction R\u00b2": 0.7818568010668635,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 31.0,
+      "held-out per-direction R\u00b2": 0.8311479986455035,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 32.0,
+      "held-out per-direction R\u00b2": 0.8148670375269118,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 33.0,
+      "held-out per-direction R\u00b2": 0.7569324942838764,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 34.0,
+      "held-out per-direction R\u00b2": 0.7988419199350946,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 35.0,
+      "held-out per-direction R\u00b2": 0.7593124607675099,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 36.0,
+      "held-out per-direction R\u00b2": 0.7788457522195237,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 37.0,
+      "held-out per-direction R\u00b2": 0.7926147436923223,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 38.0,
+      "held-out per-direction R\u00b2": 0.7747037818497906,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 39.0,
+      "held-out per-direction R\u00b2": 0.8072392409402026,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 40.0,
+      "held-out per-direction R\u00b2": 0.7772949733053401,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 41.0,
+      "held-out per-direction R\u00b2": 0.7551269627321556,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 42.0,
+      "held-out per-direction R\u00b2": 0.7647909543390732,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 43.0,
+      "held-out per-direction R\u00b2": 0.7627889829002645,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 44.0,
+      "held-out per-direction R\u00b2": 0.8046853967293027,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 45.0,
+      "held-out per-direction R\u00b2": 0.7994497848478884,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 46.0,
+      "held-out per-direction R\u00b2": 0.7419845809156393,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 47.0,
+      "held-out per-direction R\u00b2": 0.7597326461293793,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 48.0,
+      "held-out per-direction R\u00b2": 0.7803809869617504,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 49.0,
+      "held-out per-direction R\u00b2": 0.7589087523663365,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 50.0,
+      "held-out per-direction R\u00b2": 0.8036438966229109,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 51.0,
+      "held-out per-direction R\u00b2": 0.8192475223796643,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 52.0,
+      "held-out per-direction R\u00b2": 0.7509541180911128,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 53.0,
+      "held-out per-direction R\u00b2": 0.7663844449717472,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 54.0,
+      "held-out per-direction R\u00b2": 0.7498008850532136,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 55.0,
+      "held-out per-direction R\u00b2": 0.7694895845665524,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 56.0,
+      "held-out per-direction R\u00b2": 0.7085496841090944,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 57.0,
+      "held-out per-direction R\u00b2": 0.7351345277208907,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 58.0,
+      "held-out per-direction R\u00b2": 0.7305973835148023,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 59.0,
+      "held-out per-direction R\u00b2": 0.7378001508769949,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 60.0,
+      "held-out per-direction R\u00b2": 0.7345365192526856,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 61.0,
+      "held-out per-direction R\u00b2": 0.7226960404805661,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 62.0,
+      "held-out per-direction R\u00b2": 0.7330474124450433,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 63.0,
+      "held-out per-direction R\u00b2": 0.7072421316607336,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 64.0,
+      "held-out per-direction R\u00b2": 0.7624785847624216,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 65.0,
+      "held-out per-direction R\u00b2": 0.7457085447301557,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 66.0,
+      "held-out per-direction R\u00b2": 0.7264691293004781,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 67.0,
+      "held-out per-direction R\u00b2": 0.721160236155386,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 68.0,
+      "held-out per-direction R\u00b2": 0.7314420360526098,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 69.0,
+      "held-out per-direction R\u00b2": 0.7144907522321099,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 70.0,
+      "held-out per-direction R\u00b2": 0.7509640185363569,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 71.0,
+      "held-out per-direction R\u00b2": 0.7245651818879635,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 72.0,
+      "held-out per-direction R\u00b2": 0.7389159930338778,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 73.0,
+      "held-out per-direction R\u00b2": 0.7076558105313974,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 74.0,
+      "held-out per-direction R\u00b2": 0.6811992511385291,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 75.0,
+      "held-out per-direction R\u00b2": 0.6986305742615864,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 76.0,
+      "held-out per-direction R\u00b2": 0.6857569910491952,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 77.0,
+      "held-out per-direction R\u00b2": 0.6890855685617354,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 78.0,
+      "held-out per-direction R\u00b2": 0.7480175211652503,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 79.0,
+      "held-out per-direction R\u00b2": 0.7056243690413766,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 80.0,
+      "held-out per-direction R\u00b2": 0.7135457128500043,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 81.0,
+      "held-out per-direction R\u00b2": 0.7685419235240573,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 82.0,
+      "held-out per-direction R\u00b2": 0.7025513589192343,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 83.0,
+      "held-out per-direction R\u00b2": 0.7242375405088048,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 84.0,
+      "held-out per-direction R\u00b2": 0.6858835557055791,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 85.0,
+      "held-out per-direction R\u00b2": 0.6900735153073223,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 86.0,
+      "held-out per-direction R\u00b2": 0.6890527971637497,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 87.0,
+      "held-out per-direction R\u00b2": 0.7296333787361398,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 88.0,
+      "held-out per-direction R\u00b2": 0.6804021461408709,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 89.0,
+      "held-out per-direction R\u00b2": 0.666762702763184,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 90.0,
+      "held-out per-direction R\u00b2": 0.6327187595276493,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 91.0,
+      "held-out per-direction R\u00b2": 0.6958508479969658,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 92.0,
+      "held-out per-direction R\u00b2": 0.7047907297225869,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 93.0,
+      "held-out per-direction R\u00b2": 0.7013457579541877,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 94.0,
+      "held-out per-direction R\u00b2": 0.6644946621660414,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 95.0,
+      "held-out per-direction R\u00b2": 0.706197402078653,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 96.0,
+      "held-out per-direction R\u00b2": 0.6859993937416446,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 97.0,
+      "held-out per-direction R\u00b2": 0.6729342973785022,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 98.0,
+      "held-out per-direction R\u00b2": 0.6550479232382802,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 99.0,
+      "held-out per-direction R\u00b2": 0.7071261803427924,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 100.0,
+      "held-out per-direction R\u00b2": 0.6405251090797786,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 101.0,
+      "held-out per-direction R\u00b2": 0.6857992039734215,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 102.0,
+      "held-out per-direction R\u00b2": 0.6436666892194038,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 103.0,
+      "held-out per-direction R\u00b2": 0.6857787559877071,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 104.0,
+      "held-out per-direction R\u00b2": 0.6536847975899158,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 105.0,
+      "held-out per-direction R\u00b2": 0.6778306078910098,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 106.0,
+      "held-out per-direction R\u00b2": 0.6448534072621652,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 107.0,
+      "held-out per-direction R\u00b2": 0.6541848490354032,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 108.0,
+      "held-out per-direction R\u00b2": 0.6401232699454236,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 109.0,
+      "held-out per-direction R\u00b2": 0.6156034284985337,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 110.0,
+      "held-out per-direction R\u00b2": 0.6238474981050122,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 111.0,
+      "held-out per-direction R\u00b2": 0.6510151121643089,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 112.0,
+      "held-out per-direction R\u00b2": 0.6416368336938656,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 113.0,
+      "held-out per-direction R\u00b2": 0.6383189934942979,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 114.0,
+      "held-out per-direction R\u00b2": 0.6316927976187916,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 115.0,
+      "held-out per-direction R\u00b2": 0.6139810948578217,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 116.0,
+      "held-out per-direction R\u00b2": 0.6610338871109067,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 117.0,
+      "held-out per-direction R\u00b2": 0.6409147136302009,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 118.0,
+      "held-out per-direction R\u00b2": 0.669316260571928,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 119.0,
+      "held-out per-direction R\u00b2": 0.6520287724504232,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 120.0,
+      "held-out per-direction R\u00b2": 0.6401769859011952,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 121.0,
+      "held-out per-direction R\u00b2": 0.6419287756732655,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 122.0,
+      "held-out per-direction R\u00b2": 0.6446363484689301,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 123.0,
+      "held-out per-direction R\u00b2": 0.6300729844056122,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 124.0,
+      "held-out per-direction R\u00b2": 0.6410911222830818,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 125.0,
+      "held-out per-direction R\u00b2": 0.6263447590816342,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 126.0,
+      "held-out per-direction R\u00b2": 0.6355068275784472,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 127.0,
+      "held-out per-direction R\u00b2": 0.6572902730986178,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 128.0,
+      "held-out per-direction R\u00b2": 0.628106602947228,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 129.0,
+      "held-out per-direction R\u00b2": 0.6231846750181218,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 130.0,
+      "held-out per-direction R\u00b2": 0.622448405894714,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 131.0,
+      "held-out per-direction R\u00b2": 0.638761860232647,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 132.0,
+      "held-out per-direction R\u00b2": 0.6205797279040248,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 133.0,
+      "held-out per-direction R\u00b2": 0.6068995034120024,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 134.0,
+      "held-out per-direction R\u00b2": 0.5792581786230693,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 135.0,
+      "held-out per-direction R\u00b2": 0.6255097048504503,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 136.0,
+      "held-out per-direction R\u00b2": 0.6133693441490967,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 137.0,
+      "held-out per-direction R\u00b2": 0.6368006078228026,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 138.0,
+      "held-out per-direction R\u00b2": 0.6196988010929175,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 139.0,
+      "held-out per-direction R\u00b2": 0.6655528283222474,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 140.0,
+      "held-out per-direction R\u00b2": 0.5920867741679264,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 141.0,
+      "held-out per-direction R\u00b2": 0.6361604552560092,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 142.0,
+      "held-out per-direction R\u00b2": 0.6084000025353303,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 143.0,
+      "held-out per-direction R\u00b2": 0.5856030579110683,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 144.0,
+      "held-out per-direction R\u00b2": 0.6008894240866456,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 145.0,
+      "held-out per-direction R\u00b2": 0.6380123761136088,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 146.0,
+      "held-out per-direction R\u00b2": 0.5853325231000734,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 147.0,
+      "held-out per-direction R\u00b2": 0.607406046754892,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 148.0,
+      "held-out per-direction R\u00b2": 0.5877663317972854,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 149.0,
+      "held-out per-direction R\u00b2": 0.596102004531589,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 150.0,
+      "held-out per-direction R\u00b2": 0.5898629952568416,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 151.0,
+      "held-out per-direction R\u00b2": 0.6029319137956504,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 152.0,
+      "held-out per-direction R\u00b2": 0.6047271469181752,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 153.0,
+      "held-out per-direction R\u00b2": 0.6094617013066423,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 154.0,
+      "held-out per-direction R\u00b2": 0.5755176956198123,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 155.0,
+      "held-out per-direction R\u00b2": 0.6168597364720299,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 156.0,
+      "held-out per-direction R\u00b2": 0.5996189972836681,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 157.0,
+      "held-out per-direction R\u00b2": 0.5933527760445478,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 158.0,
+      "held-out per-direction R\u00b2": 0.5832800405956634,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 159.0,
+      "held-out per-direction R\u00b2": 0.5497995952375252,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 160.0,
+      "held-out per-direction R\u00b2": 0.5982247349948038,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 161.0,
+      "held-out per-direction R\u00b2": 0.6032873917258122,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 162.0,
+      "held-out per-direction R\u00b2": 0.5859650222979722,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 163.0,
+      "held-out per-direction R\u00b2": 0.5647814428260538,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 164.0,
+      "held-out per-direction R\u00b2": 0.5893002084084251,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 165.0,
+      "held-out per-direction R\u00b2": 0.5882322266344818,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 166.0,
+      "held-out per-direction R\u00b2": 0.6060820756277796,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 167.0,
+      "held-out per-direction R\u00b2": 0.5829092152415001,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 168.0,
+      "held-out per-direction R\u00b2": 0.5842701868155382,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 169.0,
+      "held-out per-direction R\u00b2": 0.5650133552483143,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 170.0,
+      "held-out per-direction R\u00b2": 0.5580492350222122,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 171.0,
+      "held-out per-direction R\u00b2": 0.576664456326115,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 172.0,
+      "held-out per-direction R\u00b2": 0.5636597329071305,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 173.0,
+      "held-out per-direction R\u00b2": 0.5795868249433953,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 174.0,
+      "held-out per-direction R\u00b2": 0.5908544278378911,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 175.0,
+      "held-out per-direction R\u00b2": 0.5480260280411674,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 176.0,
+      "held-out per-direction R\u00b2": 0.5763487787226667,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 177.0,
+      "held-out per-direction R\u00b2": 0.5761759270485333,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 178.0,
+      "held-out per-direction R\u00b2": 0.582508673513886,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 179.0,
+      "held-out per-direction R\u00b2": 0.5538064954599522,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 180.0,
+      "held-out per-direction R\u00b2": 0.5664796999826303,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 181.0,
+      "held-out per-direction R\u00b2": 0.5461876470911264,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 182.0,
+      "held-out per-direction R\u00b2": 0.5636890010955281,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 183.0,
+      "held-out per-direction R\u00b2": 0.5532730470799897,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 184.0,
+      "held-out per-direction R\u00b2": 0.5765941919456279,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 185.0,
+      "held-out per-direction R\u00b2": 0.5350046409935363,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 186.0,
+      "held-out per-direction R\u00b2": 0.5540964055137004,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 187.0,
+      "held-out per-direction R\u00b2": 0.5610917485254514,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 188.0,
+      "held-out per-direction R\u00b2": 0.5321287967632127,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 189.0,
+      "held-out per-direction R\u00b2": 0.5732990324387621,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 190.0,
+      "held-out per-direction R\u00b2": 0.557065846293201,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 191.0,
+      "held-out per-direction R\u00b2": 0.5494694110789822,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 192.0,
+      "held-out per-direction R\u00b2": 0.5355484318047428,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 193.0,
+      "held-out per-direction R\u00b2": 0.5478687046245743,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 194.0,
+      "held-out per-direction R\u00b2": 0.5177324624839377,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 195.0,
+      "held-out per-direction R\u00b2": 0.5537424661399227,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 196.0,
+      "held-out per-direction R\u00b2": 0.5346914045697189,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 197.0,
+      "held-out per-direction R\u00b2": 0.5423750746594262,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 198.0,
+      "held-out per-direction R\u00b2": 0.55568711836199,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 199.0,
+      "held-out per-direction R\u00b2": 0.5255568725533164,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 200.0,
+      "held-out per-direction R\u00b2": 0.5535609629288292,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 201.0,
+      "held-out per-direction R\u00b2": 0.5480743790553951,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 202.0,
+      "held-out per-direction R\u00b2": 0.5493118088386975,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 203.0,
+      "held-out per-direction R\u00b2": 0.5281256162161589,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 204.0,
+      "held-out per-direction R\u00b2": 0.55765194767801,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 205.0,
+      "held-out per-direction R\u00b2": 0.5352348836650135,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 206.0,
+      "held-out per-direction R\u00b2": 0.5393957966541207,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 207.0,
+      "held-out per-direction R\u00b2": 0.5277475085906658,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 208.0,
+      "held-out per-direction R\u00b2": 0.5379110177030143,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 209.0,
+      "held-out per-direction R\u00b2": 0.5324267893218785,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 210.0,
+      "held-out per-direction R\u00b2": 0.5312891671838125,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 211.0,
+      "held-out per-direction R\u00b2": 0.5387220618101922,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 212.0,
+      "held-out per-direction R\u00b2": 0.5367707496102401,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 213.0,
+      "held-out per-direction R\u00b2": 0.5281397015273159,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 214.0,
+      "held-out per-direction R\u00b2": 0.5205075864305236,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 215.0,
+      "held-out per-direction R\u00b2": 0.536452724457458,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 216.0,
+      "held-out per-direction R\u00b2": 0.5230678127893733,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 217.0,
+      "held-out per-direction R\u00b2": 0.5253530715685939,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 218.0,
+      "held-out per-direction R\u00b2": 0.5303698815965139,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 219.0,
+      "held-out per-direction R\u00b2": 0.5293207412663038,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 220.0,
+      "held-out per-direction R\u00b2": 0.5366830910829818,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 221.0,
+      "held-out per-direction R\u00b2": 0.5195091300112871,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 222.0,
+      "held-out per-direction R\u00b2": 0.5398454932690835,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 223.0,
+      "held-out per-direction R\u00b2": 0.5281208552097534,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 224.0,
+      "held-out per-direction R\u00b2": 0.5385744198712192,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 225.0,
+      "held-out per-direction R\u00b2": 0.5281647462892382,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 226.0,
+      "held-out per-direction R\u00b2": 0.5103886961975042,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 227.0,
+      "held-out per-direction R\u00b2": 0.5075781643108254,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 228.0,
+      "held-out per-direction R\u00b2": 0.53233689281697,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 229.0,
+      "held-out per-direction R\u00b2": 0.5188406036613527,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 230.0,
+      "held-out per-direction R\u00b2": 0.511176178471479,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 231.0,
+      "held-out per-direction R\u00b2": 0.48395316587564885,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 232.0,
+      "held-out per-direction R\u00b2": 0.5310312482336839,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 233.0,
+      "held-out per-direction R\u00b2": 0.5220301663683091,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 234.0,
+      "held-out per-direction R\u00b2": 0.5042815355248258,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 235.0,
+      "held-out per-direction R\u00b2": 0.49372066703410156,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 236.0,
+      "held-out per-direction R\u00b2": 0.509805511799056,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 237.0,
+      "held-out per-direction R\u00b2": 0.5112690932135316,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 238.0,
+      "held-out per-direction R\u00b2": 0.48549385187576655,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 239.0,
+      "held-out per-direction R\u00b2": 0.5204873319833085,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 240.0,
+      "held-out per-direction R\u00b2": 0.49746011226825393,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 241.0,
+      "held-out per-direction R\u00b2": 0.5017220907492157,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 242.0,
+      "held-out per-direction R\u00b2": 0.4980728675223052,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 243.0,
+      "held-out per-direction R\u00b2": 0.5333291867787748,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 244.0,
+      "held-out per-direction R\u00b2": 0.4928928944721295,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 245.0,
+      "held-out per-direction R\u00b2": 0.4873926405044616,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 246.0,
+      "held-out per-direction R\u00b2": 0.5078246324686273,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 247.0,
+      "held-out per-direction R\u00b2": 0.5025520205691077,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 248.0,
+      "held-out per-direction R\u00b2": 0.5167872753281342,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 249.0,
+      "held-out per-direction R\u00b2": 0.5009816414838909,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 250.0,
+      "held-out per-direction R\u00b2": 0.4939969313760121,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 251.0,
+      "held-out per-direction R\u00b2": 0.4937568985776022,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 252.0,
+      "held-out per-direction R\u00b2": 0.4728193405935889,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 253.0,
+      "held-out per-direction R\u00b2": 0.48903510701602404,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 254.0,
+      "held-out per-direction R\u00b2": 0.4837734222440091,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 255.0,
+      "held-out per-direction R\u00b2": 0.5032137630235074,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-PCA direction rank (by training variance)": 256.0,
+      "held-out per-direction R\u00b2": 0.47682611250414564,
+      "series": "MLP (committed)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 768,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "answer-PCA direction rank (by training variance)",
+        "ylabel": "held-out per-direction R\u00b2",
+        "legend_labels": [
+          "ridge, one shared regularizer (committed)",
+          "ridge, per-direction regularizer (this round)",
+          "MLP (committed)"
+        ],
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ],
+        "yticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "ridge, one shared regularizer (committed)",
+      "ridge, per-direction regularizer (this round)",
+      "MLP (committed)"
+    ]
+  }
+}

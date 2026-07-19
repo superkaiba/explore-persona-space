@@ -1,0 +1,60 @@
+{
+  "gate": "G1-pdshrink",
+  "split_sha_match": true,
+  "split_sha_compare": {
+    "train_full_sha256": {
+      "regenerated": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+      "committed": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481"
+    },
+    "holdout_sha256": {
+      "regenerated": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+      "committed": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622"
+    },
+    "pinned_val_sha256": {
+      "regenerated": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+      "committed": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
+    },
+    "pinned_test_sha256": {
+      "regenerated": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+      "committed": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+    }
+  },
+  "eigval_med_rel": 9.218197042908681e-14,
+  "ridge_med_abs_delta": 8.637535131583718e-14,
+  "ridge_spearman": 1.0,
+  "mlp_med_abs_delta": 8.909539772616881e-14,
+  "thresholds": {
+    "split_sha_match": true,
+    "eigval_med_rel": 0.001,
+    "ridge_med_abs_delta": 0.001,
+    "ridge_spearman": 0.999,
+    "mlp_med_abs_delta": 0.001
+  },
+  "lambda_parent": 0.001,
+  "lambda_grid_realized_len": 38,
+  "n_finite": {
+    "ridge_repro": 256,
+    "mlp_reread": 256,
+    "eigval_rel": 256
+  },
+  "reused_artifact_keys": {
+    "artifact": "/opt/eps/out_1482/percontext/refit_holdout__mlp_w8192__seed0.npz",
+    "keys_verified": [
+      "holdout_pred16",
+      "holdout_rows"
+    ],
+    "rows_aligned": true,
+    "sha256": "1ebacd3ab1fb4e8829bc5109f2a94eb6e960476cc9fba1aeaf0c419d7a2b2cae",
+    "bytes": 144161558,
+    "source": "hf"
+  },
+  "verdict": "PASS",
+  "smoke_demoted": false,
+  "metadata": {
+    "git_commit": "f9085be7bf5c151c84c462ecd23e795fea1a9f0b",
+    "timestamp_utc": "2026-07-19T21:46:53.939283Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
