@@ -21,7 +21,7 @@ relates_to:
 - leak-behavior-vs-marker
 - leak-argmax-vs-logprob
 ---
-# Matched-install contrastive containment is real but narrow: it generalizes past the trained negative panel only for impolite, and dissolves under install normalization for the marker (MODERATE confidence)
+# Matched-install contrastive containment is real but narrow: it generalizes past the trained negative panel only for impolite, and mostly dissolves under install normalization for the marker (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
