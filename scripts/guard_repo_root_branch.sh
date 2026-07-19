@@ -52,7 +52,14 @@
 # diverged-pod recovery, executed in the pod's own /workspace clone) is
 # WAIVED per-clause by the driver-loop ssh/grep waiver below, under its
 # fail-closed refusal ladder; grep/egrep/fgrep/rg pattern arguments get the
-# same waiver. A MULTI-STATEMENT SINGLE-QUOTED remote string in the canonical
+# same waiver — including (#1538) in pipeline-PRODUCER position, when every
+# downstream pipe-connected consumer clause is a VERIFIED read-only text
+# filter (the _pipe_chain_is_readonly_sink() walker: allowlisted stdin->
+# stdout words, no expansion / redirect / write-exec channel, chain ends on
+# a non-PIPE non-BG seam; the ssh arm's pipe refusal stays consumer-
+# independent). The grep-family waiver has never had a final-token /
+# trailing-argument condition — a trailing file path after the pattern is
+# waived by the base arm. A MULTI-STATEMENT SINGLE-QUOTED remote string in the canonical
 # shape — the quoted payload is the clause's FINAL token, and the whole
 # candidate passes the 8-arm refusal predicate of the
 # mask_ssh_payload_separators() pre-pass (#1413: clean tail, no quote or
@@ -310,12 +317,38 @@
 #       ssh clauses naming the shared-repo path in a covered spelling;
 #       here-string literals (`grep -q x <<<"...gated..."` — the R8b
 #       raw-scan-parity class — and ssh stdin here-strings); and ANY
-#       waived-word clause in pipeline-producer OR background position
+#       ssh/gcloud-arm clause in pipeline-producer OR background position
 #       (`ssh pod '...' | tail`, `ssh pod '...' &`, and `ssh pod '...'
 #       2>&1 ...` — the fd-dup's single & mis-splits as BG, hiding a
 #       following pipe from the lookahead, so BG refuses too — all stay
 #       blocked; remediation: `git -C /workspace/... <verb>` inside the
-#       remote string, which the pipe-blind `-C` waiver allows); and ANY
+#       remote string, which the pipe-blind `-C` waiver allows). The
+#       GREP-FAMILY pipeline-producer FP class is RETIRED for verified
+#       chains as of #1538: a grep/egrep/fgrep/rg pattern clause piped
+#       into a chain of allowlisted read-only text filters (head tail wc
+#       cat cut tr nl sort uniq grep egrep fgrep rg — the
+#       _pipe_chain_is_readonly_sink() walker; GP1-GP7) now waives.
+#       PRODUCER-vs-CONSUMER ASYMMETRY (deliberate, pre-existing on the
+#       producer side): the unpiped grep-family producer arm keeps its
+#       single --pre refusal (cond (5)) while walker CONSUMERS get the
+#       fuller per-word channel set (--pre/--hostname-bin/-z/--search-zip,
+#       sort -o/--output/--compress-program/-T/--temporary-directory,
+#       uniq positional output) — do NOT misread the walker's channel
+#       list as producer-side coverage. NEW residual FPs the walker
+#       deliberately keeps refusing (each pinned GPN*): the fd-dup
+#       mis-split `grep '<gated>' f 2>&1 | head` (GPN18), path-spelled /
+#       env-prefixed consumers (`/usr/bin/head` — GPN17), sed / awk /
+#       jq / pager consumers (GPN16/GPN21), trailing `&` chains (GPN11),
+#       quoted consumer args carrying a separator (the mis-split ends
+#       the walk early — fail-closed), quoted consumer command words
+#       (GPN23), and ANY `$` or ANY `#` anywhere in a consumer clause
+#       (GPN19/GPN20/GPN22 — a bare $VAR could carry a write/exec flag
+#       past the static scan, and a comment strip inside a REFUSAL scan
+#       would invert the fail-closed direction, so both refuse on the
+#       UNSTRIPPED text; a legitimately-commented or variable-
+#       parameterized read-only chain refuses and falls through to
+#       classification; remediation identical: drop the comment /
+#       variable or the pipe, or bound output with `grep -m N`); and ANY
 #       waived-word clause carrying a `>`/`>>` output redirect whose
 #       target is not exactly /dev/null (round-2 arm, cond (3b): closes
 #       the same-call write-then-execute channel `ssh h 'echo <gated>'
@@ -402,9 +435,10 @@
 #       (e) `git -c <k=v> -C <worktree> rebase ...` false-blocks (the
 #       per-clause waiver requires `-C` immediately after `git`) — identical
 #       parity with merge/reset today. (f) The new verbs activate gap
-#       (xiv)'s piped-grep FP class (`grep 'git rebase ...' file | head`
-#       blocks now that the loose gates match the verbs; the non-piped grep
-#       clause stays waived — RA17).
+#       (xiv)'s piped-grep FP class — NARROWED by #1538 to UNVERIFIABLE
+#       consumer chains only (`grep 'git rebase ...' file | head` now
+#       waives via the read-only-sink walker, GP5 pins the rebase-vocab
+#       idiom; the non-piped grep clause stays waived — RA17).
 # (xviii) (#1234) Revert/am residuals: (a) `git am --show-current-patch`
 #       (read-only) false-blocks — strict abort/quit-only parity with
 #       #1128/#1193 keeps the five fences auditable as one family; recovery
@@ -417,8 +451,10 @@
 #       `--no-pager`'s value); accepted accidents-not-adversaries FP class,
 #       bounce-only failure direction, pinned by one block test — are the
 #       raw-scan parity class shared with (xvii)(b). (c) The new verbs
-#       activate gap (xiv)'s piped-grep FP class (`grep 'git am ...' f |
-#       head` blocks; the non-piped grep clause stays waived — RVA15), and
+#       activate gap (xiv)'s piped-grep FP class — NARROWED by #1538 to
+#       UNVERIFIABLE consumer chains only (`grep 'git am ...' f | head`
+#       now waives via the read-only-sink walker; the non-piped grep
+#       clause stays waived — RVA15), and
 #       `git am --help` / `git revert --help` false-block ((xvii)(c)
 #       parity); remediation `man git-am` / `man git-revert`, which stay
 #       allowed (no `git ` + space bigram). (d) The parenthesized NO-ARG
@@ -973,6 +1009,65 @@ split_and_label() {
            END { if (have) print psep "\tEND\t" pline }'
 }
 
+# (#1538) TRUE iff every downstream pipe-connected clause after record $1
+# is a verified read-only text filter, and the chain terminates on a
+# non-PIPE, non-BG seam. Fail-closed: any unclassifiable shape -> 1.
+# Operates on the driver's buffered record arrays (_seps/_nextseps/_clauses,
+# file-global — populated just before the driver loop below).
+_pipe_chain_is_readonly_sink() {
+  local j=$(( $1 + 1 )) c
+  while :; do
+    [ "$j" -lt "$_nrec" ] || return 1        # trailing '|' / ran off records
+    [ "${_seps[$j]}" = PIPE ] || return 1    # defensive: seam must be PIPE
+    c=${_clauses[$j]}   # (#1538 v3) RAW clause text — deliberately NO comment
+    # strip: the driver-loop comment-tail strip INVERTS fail-closed direction
+    # inside a REFUSAL scan (deleting text can delete a refusal trigger — a
+    # quoted space-hash inside a consumer arg truncates the scanned text
+    # before a write/exec flag). Instead, ANY '#' in a consumer refuses
+    # outright. This also refuses comment-only consumers — a deliberate
+    # asymmetry vs the driver, which SKIPS a clause-initial comment: the
+    # walker refuses what the driver skips (fail-closed).
+    case "$c" in *'#'*) return 1 ;; esac
+    [ -n "$c" ] || return 1
+    # (a) clause-initial allowlisted read-only filter word (bare word only;
+    #     path-spelled /usr/bin/head, env-prefixed, or quoted words refuse)
+    echo "$c" | grep -qE '^(head|tail|wc|cat|cut|tr|nl|sort|uniq|grep|egrep|fgrep|rg)([[:space:]]|$)' || return 1
+    # (b) (#1538 v3) NO '$' of ANY kind in a consumer — command substitution,
+    #     brace expansion, AND bare $NAME (a variable can carry a write/exec
+    #     channel flag past the static (d) scan) — plus backtick / procsub /
+    #     here-string. Deliberate strict superset of the waiver's cond (3).
+    echo "$c" | grep -qE '\$|`|<\(|>\(|<<<' && return 1
+    # (c) cond-(3b) parity: no output redirect post-/dev/null-strip
+    echo "$c" | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' | grep -q '>' && return 1
+    # (d) per-word write/exec channels (VM --help scan, fact-check 2026-07-19)
+    if echo "$c" | grep -qE '^(grep|egrep|fgrep|rg)([[:space:]]|$)'; then
+      # --pre / --hostname-bin execute programs (rg); -z/--search-zip runs
+      # fixed-name decompressors (rg) — refused for the whole family
+      # (fail-closed; GNU grep's read-only -z --null-data is a rare-use FP).
+      # (#1538 v3) NO trailing anchor on the short-flag bundle — mirrors the
+      # sort branch — so a mid-bundle spelling (the gated letter followed by
+      # more bundled letters) still catches (GPN8e).
+      echo "$c" | grep -qE '(^|[[:space:]])(--(pre|hostname-bin)(=|[[:space:]])|-[A-Za-z]*z|--search-zip)' && return 1
+    elif echo "$c" | grep -qE '^sort([[:space:]]|$)'; then
+      # -o/--output writes a file with no '>' — incl. bundled (-ro) and
+      # glued (-o/tmp/x) short forms; --compress-program executes an
+      # arbitrary named program; -T/--temporary-directory writes spill
+      # files to an arbitrary dir (refused fail-closed)
+      echo "$c" | grep -qE '(^|[[:space:]])(-[A-Za-z]*[oT]|--output|--compress-program|--temporary-directory)' && return 1
+    elif echo "$c" | grep -qE '^uniq([[:space:]]|$)'; then
+      # uniq's SECOND positional arg is an OUTPUT file; piped usage needs
+      # no positional args -> refuse any non-option token (fail-closed;
+      # 'uniq -c' passes, 'uniq - /tmp/x' and 'uniq f.txt' refuse)
+      echo "$c" | sed -E 's/^uniq//' | tr -s '[:space:][:blank:]' '\n\n' | grep -qE '^[^-]' && return 1
+    fi
+    case "${_nextseps[$j]}" in
+      PIPE) j=$((j + 1)) ;;   # walk the next pipe stage
+      BG)   return 1 ;;       # fd-dup mis-split ('2>&1') / true background
+      *)    return 0 ;;       # END/SEQ/AND/OR/NL terminate the chain
+    esac
+  done
+}
+
 # Classify a SINGLE clause. Echoes the `blocked` reason (empty string = allow).
 # This is the pre-#804 whole-command detector body, applied per-clause: `$c`
 # holds one clause. The `[^;&|]*` anchors inside the detectors are no-ops
@@ -1264,7 +1359,23 @@ classify_clause() {
 scoped=0
 wt_bound=0
 blocked=""
-while IFS=$'\t' read -r sep nextsep clause; do
+# (#1538) Buffer the (sep, nextsep, clause) triples so the grep-family
+# pipe waiver can look ahead at downstream pipe-connected consumer
+# clauses (_pipe_chain_is_readonly_sink above). read -r keeps
+# trailing-field semantics: a clause containing a literal tab still
+# lands whole in _c (the last var takes the remainder). Loop BODY is
+# byte-identical to the former streaming `while read` form (`continue`/
+# `break` semantics preserved by `for`); under `set -u` an empty array
+# makes `"${!_clauses[@]}"` a no-op loop, matching the former
+# zero-record behavior.
+_seps=(); _nextseps=(); _clauses=()
+while IFS=$'\t' read -r _s _n _c; do
+  _seps+=("$_s"); _nextseps+=("$_n"); _clauses+=("$_c")
+done < <(split_and_label "$cmd")
+_nrec=${#_clauses[@]}
+
+for _idx in "${!_clauses[@]}"; do
+  sep=${_seps[$_idx]}; nextsep=${_nextseps[$_idx]}; clause=${_clauses[$_idx]}
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
   # only reliably scopes a following git clause when bash guarantees it ran
   # first (the && short-circuit). ; / || / | / & / a raw newline (NL) do NOT
@@ -1413,25 +1524,39 @@ while IFS=$'\t' read -r sep nextsep clause; do
   #       are NOT clause-initial matches and keep blocking (gap (xix)).
   #       Head-regex PARITY with the mask candidate head above is an
   #       invariant (drift is fail-closed — see the mask design comment).
-  #   (2) the clause is NOT in pipeline-producer / background position: its
-  #       FOLLOWING separator (the $nextsep field the splitter now emits)
-  #       is neither PIPE nor BG. PIPE: a waived producer's stdout can feed
-  #       a LOCAL shell consumer (`ssh host 'echo git reset --hard' | bash`,
+  #   (2) pipeline-producer / background position, PER SUB-ARM (#1538 —
+  #       formerly one shared consumer-independent refusal): the clause's
+  #       FOLLOWING separator (the $nextsep field the splitter emits) is
+  #       read against the arm's own policy. PIPE risk: a waived
+  #       producer's stdout can feed a LOCAL shell consumer
+  #       (`ssh host 'echo git reset --hard' | bash`,
   #       `grep 'git reset --hard' f | bash`) whose own clause carries no
   #       gated text and clears the loose gate — the round-1 Codex
-  #       methodology blocker. BG (implementation-round fail-closed
+  #       methodology blocker; any widening MUST therefore inspect the
+  #       downstream consumer chain (consumer-independent widening is
+  #       forbidden). SSH/GCLOUD arm: refuses BOTH PIPE and BG,
+  #       consumer-independently, UNCHANGED — a remote command's stdout
+  #       is arbitrary remote-generated text. GREP-FAMILY arm: nextsep
+  #       PIPE is waived IFF _pipe_chain_is_readonly_sink() POSITIVELY
+  #       verifies every downstream pipe-connected consumer (allowlisted
+  #       read-only filter word, no `$`/`#`/backtick/procsub/here-string,
+  #       no output redirect, no per-word write/exec channel flag, chain
+  #       terminating on a non-PIPE non-BG seam — fail-closed: anything
+  #       unverifiable falls through to classification); nextsep BG still
+  #       refuses unconditionally. BG (implementation-round fail-closed
   #       widening, live-probed): an fd-dup redirection's single `&`
   #       (`2>&1`) is mis-split as a BG separator by the raw sed pre-pass,
   #       so `ssh host '...' 2>&1 | bash` reports nextsep=BG on its
   #       producer clause — the PIPE hides one record downstream; refusing
   #       BG closes that hole, and a TRUE background producer
-  #       (`ssh pod '...' & ...`) costs only a residual FP. Refusing on ANY
-  #       following pipe/BG (consumer-independent) is strictly
-  #       status-quo-preserving: piped / `&`-carrying shapes are rc=2
-  #       today, so the refusal costs only the un-waived convenience
-  #       (`... | tail`, `... 2>&1`), documented as residual FPs in gap
-  #       (xiv) with the `git -C` remediation (which pipes fine — the -C
-  #       waiver is pipe-blind).
+  #       (`ssh pod '...' & ...`) costs only a residual FP. The ssh-arm
+  #       refusal + the grep-family BG refusal remain strictly
+  #       status-quo-preserving; the grep-family verified-PIPE branch is
+  #       a strict SUPERSET of the former allow set, confined to chains
+  #       the walker proves read-only (residual FPs + the
+  #       producer-vs-consumer channel-set asymmetry documented in gap
+  #       (xiv); the `git -C` remediation pipes fine — the -C waiver is
+  #       pipe-blind).
   #   (3) NO locally-executing expansion / redirection syntax anywhere in
   #       the clause: $( / ${ / backtick / <( / >( / <<< .
   #       `ssh host "$(git reset --hard)"` and `grep -f <(git clean -fd) x`
@@ -1510,28 +1635,38 @@ while IFS=$'\t' read -r sep nextsep clause; do
   # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
   # above already allows it), a pod-side script, or the SSH MCP.
   if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh[[:space:]]|(ssh|grep|egrep|fgrep|rg)[[:space:]])'; then
-    if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ] \
-       && ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
+    if ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
        && ! echo "$clause" \
             | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' \
             | grep -q '>'; then
       if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh|ssh)[[:space:]]'; then
-        if ! echo "$clause" | grep -qiE 'proxycommand|localcommand|knownhostscommand'; then
-          case "$clause" in
-            *"$REPO"*|*'$HOME/'"$REPO_BASE"*|*'~/'"$REPO_BASE"*) : ;;
-                              # shared-root spelling -> classify (blocks)
-            *) continue ;;    # remote-host git op -> waive this clause
-          esac
+        # ssh/gcloud arm: consumer-independent PIPE/BG refusal UNCHANGED —
+        # a remote command's stdout is arbitrary remote-generated text; the
+        # #1538 widening is grep-family only.
+        if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ]; then
+          if ! echo "$clause" | grep -qiE 'proxycommand|localcommand|knownhostscommand'; then
+            case "$clause" in
+              *"$REPO"*|*'$HOME/'"$REPO_BASE"*|*'~/'"$REPO_BASE"*) : ;;
+                                # shared-root spelling -> classify (blocks)
+              *) continue ;;    # remote-host git op -> waive this clause
+            esac
+          fi
         fi
       elif ! echo "$clause" | grep -qE '(^|[[:space:]])--pre(=|[[:space:]])'; then
-        continue              # read-only pattern argument -> waive this clause
+        if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ]; then
+          continue              # read-only pattern argument -> waive (unchanged)
+        elif [ "$nextsep" = PIPE ] && _pipe_chain_is_readonly_sink "$_idx"; then
+          continue              # (#1538) piped into a VERIFIED read-only
+                                # sink chain -> waive; anything the walker
+                                # cannot classify falls through -> classify
+        fi
       fi
     fi
   fi
 
   reason=$(classify_clause "$clause")
   if [ -n "$reason" ]; then blocked="$reason"; break; fi   # first block wins
-done < <(split_and_label "$cmd")
+done
 
 [ -n "$blocked" ] || exit 0
 
@@ -1550,6 +1685,7 @@ For marker-note text mentioning git commands, use --file <path.md> instead of --
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals).
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
+For a grep/rg PATTERN clause naming git verbs: the unpiped clause is waived, and piping into plain read-only text filters (head/tail/wc/cat/cut/tr/nl/sort/uniq/grep) is waived too (#1538) — so a residual block on a piped grep means the consumer chain was NOT verifiable (an off-allowlist / path-spelled / quoted consumer word, a redirect or write/exec flag, or any $ / # in a consumer clause); drop the pipe, remove the $/#/flag, or bound output with grep -m N instead.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2
 log_deny "$blocked" "$cmd" "${clause:-}"
 exit 2

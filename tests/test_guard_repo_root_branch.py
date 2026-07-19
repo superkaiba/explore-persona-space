@@ -1407,6 +1407,143 @@ def test_grep_pattern_clause_waiver_allows(cmd):
     assert _run(cmd) == 0
 
 
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # the REAL 2026-07-18T17:00:40Z incident command, verbatim from
+            # transcript 047b62be (rc=2 pre-fix; the motivating case)
+            'grep -n -m 3 -A 20 "test_worktree_revert_shapes_block\\[git reset --hard\\]"'
+            " /tmp/step9c-pytest-issue-1513.log | head -60",
+            id="GP1-piped_grep_head_real_incident",
+        ),
+        pytest.param(
+            # the FILED task-body shape (unpiped, trailing file) — already
+            # rc=0 on main; regression-pins the body's literal Goal claim
+            'grep -n -m 3 -A 20 "test_worktree_revert_shapes_block[git reset --hard]"'
+            " /tmp/step9c-pytest-issue-1513.log",
+            id="GP0-unpiped_trailing_file_filed_shape_pin",
+        ),
+        pytest.param("grep -rn 'git checkout -b' scripts/ | tail -20", id="GP2-piped_grep_tail"),
+        pytest.param("grep 'git clean -fd' notes.md | wc -l", id="GP3-piped_grep_wc"),
+        pytest.param(
+            "grep 'git reset --hard' f.log | grep -v test | head -5",
+            id="GP4-multistage_filter_chain",
+        ),
+        pytest.param(
+            "grep -o 'git rebase' run.log | sort | uniq -c", id="GP5-sort_uniq_count_idiom"
+        ),
+        pytest.param("rg 'git restore' .claude/rules/ | head -30", id="GP6-piped_rg_head"),
+        pytest.param(
+            "grep 'git reset --hard' f.log | head -60 && echo done",
+            id="GP7-chain_terminates_before_AND",
+        ),
+    ],
+)
+def test_grep_pipe_readonly_sink_chain_waived(cmd):
+    """(#1538) A grep-family pattern clause piped into a VERIFIED read-only sink
+    chain (allowlisted stdin->stdout text filters, no expansion / redirect /
+    write-exec channel, chain ends on a non-PIPE non-BG seam) is waived."""
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # (#1538) Adversarial consumer-chain shapes: the pipe widening must
+        # NOT waive any of these (all rc=2 both pre- and post-fix). Each pins
+        # one refusal arm of _pipe_chain_is_readonly_sink() (or an outer
+        # waiver arm the widening deliberately left untouched).
+        pytest.param("grep 'git reset --hard' f | bash", id="GPN1-pipe_to_shell"),
+        pytest.param("grep 'git reset --hard' f | head -1 | sh", id="GPN2-shell_at_second_stage"),
+        pytest.param("grep 'git reset --hard' f | xargs -I{} bash -c '{}'", id="GPN3-xargs_exec"),
+        pytest.param(
+            "grep 'git reset --hard' f | head -1 > /tmp/x.sh", id="GPN4-consumer_output_redirect"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | head -n $(cat n.txt)",
+            id="GPN5-consumer_command_substitution",
+        ),
+        pytest.param("grep 'git reset --hard' f | sort -o /tmp/x.sh", id="GPN6-sort_output_flag"),
+        pytest.param(
+            "grep 'git reset --hard' f | sort -ro /tmp/x.sh", id="GPN6b-sort_output_bundled_short"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort --compress-program=bash",
+            id="GPN6c-sort_compress_program_exec",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort -T /tmp/spill", id="GPN6d-sort_tempdir_spill_write"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | uniq - /tmp/x.sh", id="GPN7-uniq_positional_output"
+        ),
+        pytest.param("grep 'git reset --hard' f | rg --pre bash x", id="GPN8-rg_pre_consumer"),
+        pytest.param("grep 'git reset --hard' f | rg -z pattern", id="GPN8b-rg_search_zip_exec"),
+        pytest.param("grep 'git reset --hard' f | tee /tmp/x.sh", id="GPN9-tee_consumer"),
+        pytest.param(
+            "grep safe_pattern f | head -5 && git reset --hard",
+            id="GPN10-unquoted_verb_sibling_clause",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | head -60 &", id="GPN11-trailing_background_chain"
+        ),
+        pytest.param("grep 'git reset --hard' f | ", id="GPN12-trailing_empty_pipe"),
+        pytest.param(
+            "grep 'git reset --hard' <(cat f) | head", id="GPN13-producer_process_substitution"
+        ),
+        pytest.param("ssh pod-1 'git reset --hard' | head", id="GPN14-ssh_pipe_refusal_unchanged"),
+        pytest.param(
+            "grep 'git reset --hard' f > results.txt", id="GPN15-producer_redirect_after_pattern"
+        ),
+        pytest.param("grep 'git reset --hard' f | sed -n '1,5p'", id="GPN16-sed_excluded_consumer"),
+        pytest.param(
+            "grep 'git reset --hard' f | /usr/bin/head -5", id="GPN17-path_spelled_consumer"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f 2>&1 | head -5", id="GPN18-fd_dup_missplit_residual"
+        ),
+        # --- v3 additions (Phase-2 critique fold-in) ---
+        pytest.param(
+            "grep 'git reset --hard' f | sort --output /tmp/x.sh", id="GPN6e-sort_output_long_form"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort --temporary-directory=/tmp/spill",
+            id="GPN6f-sort_tempdir_long_form",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg --hostname-bin=bash pat",
+            id="GPN8c-rg_hostname_bin_consumer",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg --search-zip pat", id="GPN8d-rg_search_zip_long_form"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg -zi pat", id="GPN8e-rg_bundled_short_flag_mid_bundle"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort $SORT_FLAGS",
+            id="GPN19-consumer_bare_variable_expansion",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg 'x #' --pre bash y",
+            id="GPN20-consumer_quoted_hash_before_channel_flag",
+        ),
+        pytest.param("grep 'git reset --hard' f | awk '{print}'", id="GPN21-awk_excluded_consumer"),
+        pytest.param("grep 'git reset --hard' f | # count later", id="GPN22-comment_only_consumer"),
+        pytest.param("grep 'git reset --hard' f | \"head\" -5", id="GPN23-quoted_consumer_word"),
+    ],
+)
+def test_grep_pipe_unsafe_consumer_blocks(cmd):
+    """(#1538) Any pipe chain the read-only-sink walker cannot POSITIVELY verify
+    keeps blocking: shell/exec consumers, write channels (redirects + per-word
+    output/exec flags in every spelling), any '$' or '#' in a consumer clause,
+    off-allowlist / path-spelled / quoted consumer words, trailing BG or empty
+    pipe, producer-side procsub/redirect, and the (unwidened) ssh pipe arm."""
+    assert _run(cmd) == 2
+
+
 @on_main
 @pytest.mark.parametrize(
     "cmd",
