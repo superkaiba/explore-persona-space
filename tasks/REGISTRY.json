@@ -4313,8 +4313,8 @@
     "1553": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1553",
-      "status": "proposed",
+      "path": "tasks/planning/1553",
+      "status": "planning",
       "title": "workflow-fix: pre-reg audit never scans v4 ## Results prose"
     },
     "156": {
