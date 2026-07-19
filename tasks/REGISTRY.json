@@ -4194,8 +4194,8 @@
     "1538": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1538",
-      "status": "planning",
+      "path": "tasks/approved/1538",
+      "status": "approved",
       "title": "workflow-fix: guard grep-pattern literal false positive"
     },
     "1539": {
