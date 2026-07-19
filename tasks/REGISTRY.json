@@ -3758,7 +3758,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1482",
       "status": "followups_running",
-      "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (MODERATE confidence)"
+      "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (HIGH confidence)"
     },
     "1483": {
       "has_clean_result": false,

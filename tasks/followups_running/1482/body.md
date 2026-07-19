@@ -1,7 +1,7 @@
 ---
 title: 'The context→answer map''s error is category-structured: non-English contexts
   are predicted better than English, and the linear-vs-nonlinear gap concentrates
-  in low-variance answer directions (MODERATE confidence)'
+  in low-variance answer directions (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
