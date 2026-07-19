@@ -4152,8 +4152,8 @@
     "1532": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1532",
-      "status": "planning",
+      "path": "tasks/approved/1532",
+      "status": "approved",
       "title": "workflow-fix: restore ruff full-ruleset helper pin to green"
     },
     "1533": {
