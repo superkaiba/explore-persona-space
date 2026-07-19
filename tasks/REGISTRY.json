@@ -4222,8 +4222,8 @@
     "1541": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1541",
-      "status": "planning",
+      "path": "tasks/approved/1541",
+      "status": "approved",
       "title": "workflow-fix: size boot disk vs end-of-run accumulation"
     },
     "1542": {
