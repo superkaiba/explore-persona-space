@@ -73,5 +73,53 @@ leakage — best for the taught fact / marker, worst for **emergent misalignment
 sycophancy**, the behaviors the sibling papers (Persona Vectors; Persona Features
 Control EM) care about most.
 
+## New-organism consistency check (2026-07-19)
+
+Re-checked the assumptions on the NEWEST organism suite (single-behavior implants,
+matched-install, with a LoRA-vs-full-FT geometry arm): harmful-compliance #1074,
+sycophancy/impolite/formatting #1090, matched-install geometry #1112, impolite #1315,
+marker #1333, casual-style #1434, contrastive-containment #1481, context-vector
+causal steering #1415. Verdict: **consistent — no assumption flips REFUTED↔CONFIRMED**;
+the new suite sharpens the old story into a behavior-locality gradient and adds a
+shared-text/teacher-forced control that explains the one apparent divergence.
+
+- **A7 (read-out stability) — AGREES (replicated).** Sycophancy: mean-shift↔r_B cosine
+  −0.05 to +0.20 own-text, collapses into the chance band under shared text (#1112);
+  the fresh persona-vector projection anti-correlates with judged install (context-arm
+  rank ρ=−0.29, n=12, cluster interval below zero, #1090) — same sign as the old
+  −0.35/−0.41.
+- **A8 (source write ‖δ/‖r_B) — AGREES, with one apparent-divergence resolved.** No new
+  task recomputes cos(ŵ,δ); all use the ŵ‖r_B shortcut. Marker |cos|≈0.002–0.051
+  (#1333), sycophancy ≤0.20 (#1112) — both agree with the old ≈0. **Impolite looks
+  divergent** (own-text alignment 0.51–0.80, #1315) **but the shared-text re-capture
+  drops it to 0.07–0.33** — most of the alignment rides the model's own generated
+  text, not a stable write direction. Method (LoRA vs full-FT) and contrastive
+  negatives rotate the write essentially not at all.
+- **A9 (rank-one / clean signature) — AGREES on prefix spans; NEW graded finding on the
+  response span.** Prefix/context-span rank 1–13 across sycophancy/impolite/marker.
+  On the response span, own-text is diffuse everywhere, but the shared-text control
+  reveals a locality gradient: marker → rank 9 (≈rank-one), impolite → 18–29,
+  sycophancy → 27–35. Almost all the "diffuseness" the old line attributed to the write
+  is a property of measuring on own generated text.
+- **A10/A11 (gate) — STILL UNTESTED by this suite** (no new gate-predictor regression);
+  context strongly gates transfer qualitatively but nobody predicts the gate from base
+  geometry here.
+- **Behavioral translation — AGREES (behavior-dependent), with locality inverted from the
+  naive prior.** #1481: contrastive containment that survives dose-matching + generalizes
+  past the trained negatives holds only for **impolite** (+0.087 held-out); marker's
+  gap mostly dissolves under install-normalization; sycophancy's is not cluster-robust.
+  #1415 (causal steering) is the strongest NEW positive: geometry and behavior both peak
+  at layer 14 (+6.2 judged pts, 21% of the context-swap ceiling, 7× the layer-20 read,
+  2 seeds) — geometry→behavior IS real at the right layer — **yet the fitted linear
+  context→answer map predicts none of the realized shift at layer 20 (cosine 0.00,
+  16× magnitude over-prediction)**, so the correlational map used to operationalize
+  A10/A11-style predictability fails a causal test.
+
+**Cross-cutting caveat:** the entire new suite is single-seed, and several judged pools
+carry CJK/Chinese-token intrusion that makes some in-band PASS labels
+convention-dependent. Locality of the behavior (lexical marker → stylistic impolite →
+propositional sycophancy) modulates every geometric read-out — that heterogeneity is
+the main *new* result, not a fleet-wide inconsistency.
+
 _The paper's own section-by-section evidence is folded in once it is clonable
 (needs the project ID)._
