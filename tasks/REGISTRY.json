@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1545,
+  "highest_id": 1546,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4253,6 +4253,13 @@
       "path": "tasks/proposed/1545",
       "status": "proposed",
       "title": "workflow-fix: isolate root-guard self-test git state"
+    },
+    "1546": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1546",
+      "status": "proposed",
+      "title": "workflow-fix: digest crash-tails on orchestrator poll turns"
     },
     "155": {
       "has_clean_result": false,
