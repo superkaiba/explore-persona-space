@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1529,
+  "highest_id": 1530,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4134,6 +4134,13 @@
       "path": "tasks/on_hold/153",
       "status": "on_hold",
       "title": "Characterize persona drift as markov process/dynamical system"
+    },
+    "1530": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1530",
+      "status": "proposed",
+      "title": "workflow-fix: assert HEAD==main at task.py commit site"
     },
     "154": {
       "has_clean_result": false,
