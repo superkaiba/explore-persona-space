@@ -175,11 +175,18 @@ def resolve_artifact(args: argparse.Namespace) -> Path:
     load_dotenv()
     from huggingface_hub import hf_hub_download
 
-    local = hf_hub_download(
-        repo_id=args.hf_repo,
-        filename=args.hf_path,
-        repo_type=args.repo_type,
-        revision=args.revision,
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    # #1547: transient-429/5xx retry (hf_hub's native backoff never covers
+    # 429); non-transient errors (403/404-with-response) still raise first-try.
+    local = retry_transient(
+        lambda: hf_hub_download(
+            repo_id=args.hf_repo,
+            filename=args.hf_path,
+            repo_type=args.repo_type,
+            revision=args.revision,
+        ),
+        what=f"hf_hub_download({args.hf_repo}/{args.hf_path})",
     )
     return Path(local)
 

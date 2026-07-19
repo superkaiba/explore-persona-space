@@ -4650,7 +4650,15 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "                with open(cpath, 'w') as fh:\n"
         "                    fh.write(str(n + 1))\n"
         "                self._rec('folder_fail', path_in_repo=path_in_repo)\n"
-        "                raise RuntimeError('fake 504')\n"
+        "                err = RuntimeError('fake 504')\n"
+        "                ra = os.environ.get('FAKE_HUB_FAIL_RETRY_AFTER')\n"
+        "                if ra:\n"
+        "                    # #1547: optional Retry-After header on the raised error,\n"
+        "                    # so the heredoc's _backoff_s hint-honoring is testable.\n"
+        "                    class _Resp:\n"
+        "                        headers = {'Retry-After': ra}\n"
+        "                    err.response = _Resp()\n"
+        "                raise err\n"
         "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
         "        # relpath, with raw content for small files (else the size) so the\n"
         "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
@@ -5386,6 +5394,75 @@ def test_persist_heredoc_final_bundle_carries_timestamped_log_and_transcript(tmp
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert '_up_bundle(first_stage, "first", retry=True)' in script
     assert '_up_bundle(final_stage, "final", retry=False)' in script
+
+
+# ---------------------------------------------------------------------------
+# #1547 — crash-persist Retry-After-aware bounded backoff
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_persist_backoff_retry_after_shape() -> None:
+    """#1547 string coverage: the heredoc carries the hoisted `_backoff_s`
+    helper (numeric Retry-After honored, capped at
+    EPS_PERSIST_RETRY_MAX_BACKOFF_S), BOTH bounded-retry sleeps (_up_bundle +
+    the per-dir batch mirror) route through it, the pre-#1547 inline env
+    sleep is gone, and the #1151/#854 architecture is untouched (attempt
+    counts 2/1, `timeout 300`)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "def _backoff_s(exc):" in script
+    assert 'cap = _env_int("EPS_PERSIST_RETRY_MAX_BACKOFF_S", 60)' in script
+    assert '.get("Retry-After")' in script
+    # Both retry sites (first bundle + per-dir batch mirror) route through it.
+    assert script.count("_s = _backoff_s(exc)") == 2
+    # The pre-#1547 blind inline env sleep shape is GONE.
+    assert '_b = int(os.environ.get("EPS_PERSIST_RETRY_BACKOFF_S"' not in script
+    # Architecture unchanged: attempts 2 (retry=True) / 1 (final), 300s bound.
+    assert "attempts = 2 if retry else 1" in script
+    assert '_up_bundle(final_stage, "final", retry=False)' in script
+    assert "timeout 300" in script
+
+
+def test_persist_heredoc_retry_after_header_honored_and_capped(tmp_path) -> None:
+    """#1547 behavioral (executed heredoc): a failed first-bundle upload whose
+    error carries a numeric Retry-After header sleeps that hint (over the
+    zeroed env default), and a hint ABOVE a low-set
+    EPS_PERSIST_RETRY_MAX_BACKOFF_S clamps to the cap — the printed
+    `retry backoff <s>s` line is the deterministic observable."""
+    # Honored: env default 0, Retry-After 2 -> backoff 2.0s.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "honored",
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "1",
+            "FAKE_HUB_FAIL_RETRY_AFTER": "2",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 2.0s" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
+    # Capped (review directive: Retry-After ABOVE the low-set cap): hint 30,
+    # cap 1 -> backoff clamps to 1.0s, never the raw hint.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "capped",
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "1",
+            "FAKE_HUB_FAIL_RETRY_AFTER": "30",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+            "EPS_PERSIST_RETRY_MAX_BACKOFF_S": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 1.0s" in proc.stdout
+    assert "retry backoff 30" not in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
+    # No header -> env default (fail-open), unchanged from pre-#1547 behavior.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "no-header",
+        env_overrides={"FAKE_HUB_FOLDER_FAIL_TIMES": "1", "EPS_PERSIST_RETRY_BACKOFF_S": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 0.0s" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
 
 
 # ---------------------------------------------------------------------------

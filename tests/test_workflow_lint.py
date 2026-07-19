@@ -7856,3 +7856,176 @@ def test_check_skill_bang_backtick_bundled_in_no_flags():
     assert "or args.check_skill_bang_backtick" in src, (
         "--check-skill-bang-backtick is missing from the no_flags detection tuple"
     )
+
+
+# ---------------------------------------------------------------------------
+# --check-live-hf-retry-routing (#1547): bare live HF call sites
+# ---------------------------------------------------------------------------
+
+
+def _hf_routing_root(tmp_path: Path) -> Path:
+    """A minimal tmp repo root carrying the two scanned scope roots."""
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "src" / "explore_persona_space").mkdir(parents=True)
+    return tmp_path
+
+
+def test_check_live_hf_retry_routing_bare_call_flags(tmp_path):
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+    assert "live-hf-retry-routing" in errors[0]
+
+
+def test_check_live_hf_retry_routing_wrapped_call_passes(tmp_path):
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from explore_persona_space.orchestrate.hub import retry_transient\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return retry_transient(\n"
+        "        lambda: hf_hub_download('org/repo', 'a.bin'),\n"
+        "        what='hf_hub_download(org/repo/a.bin)',\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_multiline_call_with_trailing_what_passes(tmp_path):
+    """The wrap opens 1 line above the call; the `what=` descriptor kwarg sits
+    BELOW the +/-3 window and matches the call regex textually — the
+    `what=`-skip (wrap-idiom descriptor) keeps it from flagging."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from explore_persona_space.orchestrate.hub import retry_transient\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch(rel):\n"
+        "    return retry_transient(\n"
+        "        lambda: hf_hub_download(\n"
+        "            'org/repo',\n"
+        "            rel,\n"
+        "            repo_type='dataset',\n"
+        "            revision='main',\n"
+        "        ),\n"
+        "        what=f'hf_hub_download(org/repo/{rel})',\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_no_retry_waiver_passes(tmp_path):
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def probe():\n"
+        "    # NO_RETRY: deliberate existence probe; caller handles the error\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n"
+        "def probe2():\n"
+        "    return hf_hub_download('org/repo', 'b.bin')  # NO_RETRY: fail-fast by design\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_adjacent_wrap_does_not_launder_bare_sibling(tmp_path):
+    """#1547 review directive 2: two calls in one window, one wrapped one bare
+    — the bare one still flags (the wrap anchors to the CALL'S OWN
+    expression via the open-paren balance, never mere window proximity)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from explore_persona_space.orchestrate.hub import retry_transient\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    a = retry_transient(lambda: hf_hub_download('org/r', 'a'), what='x')\n"
+        "    b = hf_hub_download('org/r', 'b')\n"
+        "    return a, b\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:5" in errors[0]
+
+
+def test_check_live_hf_retry_routing_frozen_snapshot_skipped(tmp_path):
+    from workflow_lint import HF_ROUTING_FROZEN_SNAPSHOT, check_live_hf_retry_routing
+
+    frozen_member = "scripts/eval_issue562_panel.py"
+    assert frozen_member in HF_ROUTING_FROZEN_SNAPSHOT
+    root = _hf_routing_root(tmp_path)
+    (root / frozen_member).write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_pattern_string_and_generated_code_files_skipped(tmp_path):
+    """#1547 review directive 3: the check's own file + verify_plan.py
+    (pattern strings) and backends/gcp.py (generated pod-side heredoc
+    strings with their own bounded retry) are constant-excluded."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    bare = "x = api.upload_folder(folder_path='d', path_in_repo='p')\n"
+    (root / "scripts" / "workflow_lint.py").write_text(bare, encoding="utf-8")
+    (root / "scripts" / "verify_plan.py").write_text(bare, encoding="utf-8")
+    (root / "src" / "explore_persona_space" / "backends").mkdir(parents=True)
+    (root / "src" / "explore_persona_space" / "backends" / "gcp.py").write_text(
+        bare, encoding="utf-8"
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_live_tree_passes():
+    """Acceptance criterion 1 (#1547): the committed tree carries ZERO bare
+    live HF call sites — the leg-A routing left nothing un-routed, and the
+    frozen snapshot covers exactly the historical set. A NEW bare call in
+    live code fails this test (the JUDGE_PIN test_live_trees_pass idiom)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    assert check_live_hf_retry_routing() == []
+
+
+def test_workflow_lint_check_live_hf_retry_routing_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-live-hf-retry-routing")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-live-hf-retry-routing failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_live_hf_retry_routing_registered_in_no_flags_default_run():
+    """The check is bundled into the no-flags default run (#1547): the flag
+    is in the no_flags detection tuple AND dispatched on the no-flags
+    branch."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_live_hf_retry_routing or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_live_hf_retry_routing\(\)\)",
+        src,
+    ), "check_live_hf_retry_routing is not dispatched on the no-flags branch"
+    assert "or args.check_live_hf_retry_routing" in src, (
+        "--check-live-hf-retry-routing is missing from the no_flags detection tuple"
+    )
