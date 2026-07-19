@@ -823,6 +823,26 @@ def extract_filer_advisories(stderr: str) -> list[str]:
     return lines
 
 
+def _print_advisory_forward(slug: str, tid: int, advisories: list[str]) -> None:
+    """Re-print the captured filer advisory block on the DRIVER's stderr (#1529).
+
+    Verbatim, after the ``FILED`` stdout line, with an attributing lead line so a
+    multi-item manifest keeps blocks attributable (items process serially). No-op
+    when no advisory lines were captured — the no-advisory output stays byte-
+    identical to the pre-#1529 driver.
+    """
+    if not advisories:
+        return
+    print(
+        f"ADVISORY {slug} -> #{tid}: filer advisory output below (#1399/#1502 "
+        "sibling scan; if a listed sibling already covers this bug, verify then "
+        "archive the just-filed task and stop its spawned session — #1529)",
+        file=sys.stderr,
+    )
+    for ln in advisories:
+        print(ln, file=sys.stderr)
+
+
 def _slug_state(ledger: list[dict], slug: str, retry_errors: bool) -> str:
     """Classify a slug against the ledger: 'terminal' | 'retry-error' | 'in-flight' | 'fresh'."""
     rows = [r for r in ledger if r.get("slug") == slug]
@@ -1045,15 +1065,7 @@ def process_item(
             dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings, advisories)
         )
         print(f"FILED {slug} -> #{tid} (rc=0)")
-        if advisories:
-            print(
-                f"ADVISORY {slug} -> #{tid}: filer advisory output below (#1399/#1502 "
-                "sibling scan; if a listed sibling already covers this bug, verify then "
-                "archive the just-filed task and stop its spawned session — #1529)",
-                file=sys.stderr,
-            )
-            for ln in advisories:
-                print(ln, file=sys.stderr)
+        _print_advisory_forward(slug, tid, advisories)
         return "filed"
     # rc=0 with NO parseable id is classified ERROR `no-id-parsed`, NEVER a `filed` row
     # with a null id (a null-id filed row poisons the resume set + the daily-file record).
