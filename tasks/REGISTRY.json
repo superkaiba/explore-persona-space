@@ -4299,8 +4299,8 @@
     "1551": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1551",
-      "status": "proposed",
+      "path": "tasks/planning/1551",
+      "status": "planning",
       "title": "workflow-fix: verify_plan WARN when a named regression anchor is neither run nor gate-selected"
     },
     "156": {
