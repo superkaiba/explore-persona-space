@@ -55,6 +55,7 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -124,8 +125,14 @@ def fig_hero1_forest(analysis: dict, fig_dir: Path) -> None:
     ax.axvline(0.0, color="0.75", lw=0.8)
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=7)
-    ax.set_xlabel("D = positive-only − contrastive non-source rate")
-    ax.set_title("Content leakage contrast at matched install")
+    ax.set_xlabel("Content D (rate)", fontsize=8)
+    ax.set_title("Content D", fontsize=9, loc="center")
+    legend_handles = [
+        Line2D([], [], marker="o", ls="none", color=pal[0], label="dose-matched"),
+        Line2D([], [], marker="o", ls="none", color=pal[1], label="dose-unmatched"),
+        Line2D([], [], marker="D", ls="none", color="0.4", label="seed-discordant"),
+    ]
+    ax.legend(handles=legend_handles, fontsize=6, loc="lower right", frameon=False)
     if marker:
         axm = axes[0][1]
         mrows = []
@@ -159,8 +166,8 @@ def fig_hero1_forest(analysis: dict, fig_dir: Path) -> None:
         axm.axvline(0.0, color="0.75", lw=0.8)
         axm.set_yticks(my)
         axm.set_yticklabels(mlabels, fontsize=7)
-        axm.set_xlabel("Marker D (nats, question-cluster bootstrap 95%)")
-        axm.set_title("Marker leakage contrast")
+        axm.set_xlabel("Marker D (nats)", fontsize=8)
+        axm.set_title("Marker D", fontsize=9, loc="center")
     fig.tight_layout()
     savefig_paper(fig, "hero1_forest_matched_install", dir=fig_dir)
     plt.close(fig)
