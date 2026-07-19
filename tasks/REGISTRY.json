@@ -4215,8 +4215,8 @@
     "1540": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1540",
-      "status": "running",
+      "path": "tasks/reviewing/1540",
+      "status": "reviewing",
       "title": "workflow-fix: reconcile planned cells per lane completion"
     },
     "1541": {
