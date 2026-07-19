@@ -340,12 +340,20 @@ def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
 
 
 def _filed_ledger_row(
-    slug: str, tid: int, fp: str, item: dict, tail: str, sha_warnings: list[str]
+    slug: str,
+    tid: int,
+    fp: str,
+    item: dict,
+    tail: str,
+    sha_warnings: list[str],
+    advisories: list[str],
 ) -> dict:
     """Compose the terminal ``filed`` ledger row.
 
     Gains ``"sha_warnings": [tokens]`` only when the #1467 backstop annotated
-    non-resolving commit-context tokens (rows are free-form dicts — schema-safe).
+    non-resolving commit-context tokens, and ``"advisories": [lines]`` only when
+    the filer's #1399/#1502 sibling-advisory stderr was non-empty (#1529) —
+    both conditional (rows are free-form dicts — schema-safe).
     """
     row = {
         "slug": slug,
@@ -358,6 +366,8 @@ def _filed_ledger_row(
     }
     if sha_warnings:
         row["sha_warnings"] = sha_warnings
+    if advisories:
+        row["advisories"] = advisories
     return row
 
 
@@ -762,6 +772,77 @@ def parse_filed_id(stdout: str, stderr: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+# #1529: the filer's sibling-advisory stderr shapes (file_infra_task.py — the
+# `_advise_recent_closed_wf_fix_siblings` / `_advise_open_wf_fix_siblings` headers,
+# their `  #<id>` rows + `  ... and N more` overflow lines, and the fail-soft
+# `advisory leg failed` one-liners).
+_ADVISORY_HEADER_SUBSTR = "file_infra_task: ADVISORY"
+_ADVISORY_FAILSOFT_SUBSTR = "advisory leg failed"
+_ADVISORY_MAX_FWD_LINES = 40  # 2 headers + 2x10 rows + 2 overflow + fail-soft << 40
+_ADVISORY_MAX_FWD_CHARS = 4000
+
+
+def extract_filer_advisories(stderr: str) -> list[str]:
+    """Extract the #1399/#1502 sibling-advisory block lines from the FILER's stderr (#1529).
+
+    A block = one ``file_infra_task: ADVISORY — ...`` header plus its immediately
+    following row/overflow lines (``  #<id> ...`` / ``  ... and N more ...`` — the
+    only 2-space-indented shapes the advisory legs emit; the adjacent forwarded
+    ``  [task.py stderr] ...`` lines start ``  [`` and are excluded). Standalone
+    ``... advisory leg failed ...`` fail-soft one-liners are captured too (they tell
+    the consumer the scan did NOT run — absence of advisories is not evidence of
+    no siblings). Defensively capped; the cap appends an explicit marker line so
+    nothing is silently dropped.
+    """
+    lines: list[str] = []
+    in_block = False
+    for line in (stderr or "").splitlines():
+        if _ADVISORY_HEADER_SUBSTR in line:
+            lines.append(line.rstrip())
+            in_block = True
+        elif _ADVISORY_FAILSOFT_SUBSTR in line:
+            lines.append(line.rstrip())
+            in_block = False
+        elif in_block and (line.startswith("  #") or line.startswith("  ...")):
+            lines.append(line.rstrip())
+        else:
+            in_block = False
+    if (
+        len(lines) > _ADVISORY_MAX_FWD_LINES
+        or sum(len(ln) for ln in lines) > _ADVISORY_MAX_FWD_CHARS
+    ):
+        kept: list[str] = []
+        total = 0
+        for ln in lines[:_ADVISORY_MAX_FWD_LINES]:
+            if total + len(ln) > _ADVISORY_MAX_FWD_CHARS:
+                break
+            kept.append(ln)
+            total += len(ln)
+        kept.append(f"  ... advisory forward capped ({len(lines)} lines total, #1529)")
+        return kept
+    return lines
+
+
+def _print_advisory_forward(slug: str, tid: int, advisories: list[str]) -> None:
+    """Re-print the captured filer advisory block on the DRIVER's stderr (#1529).
+
+    Verbatim, after the ``FILED`` stdout line, with an attributing lead line so a
+    multi-item manifest keeps blocks attributable (items process serially). No-op
+    when no advisory lines were captured — the no-advisory output stays byte-
+    identical to the pre-#1529 driver.
+    """
+    if not advisories:
+        return
+    print(
+        f"ADVISORY {slug} -> #{tid}: filer advisory output below (#1399/#1502 "
+        "sibling scan; if a listed sibling already covers this bug, verify then "
+        "archive the just-filed task and stop its spawned session — #1529)",
+        file=sys.stderr,
+    )
+    for ln in advisories:
+        print(ln, file=sys.stderr)
+
+
 def _slug_state(ledger: list[dict], slug: str, retry_errors: bool) -> str:
     """Classify a slug against the ledger: 'terminal' | 'retry-error' | 'in-flight' | 'fresh'."""
     rows = [r for r in ledger if r.get("slug") == slug]
@@ -977,8 +1058,14 @@ def process_item(
     out = (proc.stdout + "\n" + proc.stderr).strip()
     tid = parse_filed_id(proc.stdout, proc.stderr)
     if proc.returncode == 0 and tid is not None:
-        append_row(dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings))
+        # #1529: forward + persist the filer's #1399/#1502 sibling advisories — computed
+        # INSIDE the success branch (error/timeout/dedup paths stay byte-unchanged).
+        advisories = extract_filer_advisories(proc.stderr)
+        append_row(
+            dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings, advisories)
+        )
         print(f"FILED {slug} -> #{tid} (rc=0)")
+        _print_advisory_forward(slug, tid, advisories)
         return "filed"
     # rc=0 with NO parseable id is classified ERROR `no-id-parsed`, NEVER a `filed` row
     # with a null id (a null-id filed row poisons the resume set + the daily-file record).
