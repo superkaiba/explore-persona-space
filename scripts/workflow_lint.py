@@ -8400,7 +8400,11 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
     ``(returncode, stderr)``. ``cwd`` is pinned to the hook's own repo root
     (``hook.parent.parent``) so repo-state-consulting detectors give
     deterministic-by-construction verdicts when the lint runs from a
-    worktree (#1176 round-1 Methodology c1)."""
+    worktree (#1176 round-1 Methodology c1). ``EPM_GUARD_DENY_SIDECAR`` is
+    pinned to ``/dev/null`` so lint-driven hook executions (self-test probes
+    + the per-fence scan loop) never append synthetic deny rows to the
+    production deny-event sidecar (#1528); the pin is env-only and cannot
+    change the rc-0/2 verdict this check reads."""
     payload = json.dumps({"tool_input": {"command": command}})
     proc = subprocess.run(
         ["bash", str(hook)],
@@ -8409,6 +8413,7 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
         text=True,
         timeout=_ROOT_GUARD_TIMEOUT_S,
         cwd=str(hook.parent.parent),
+        env={**os.environ, "EPM_GUARD_DENY_SIDECAR": "/dev/null"},
     )
     return proc.returncode, proc.stderr
 

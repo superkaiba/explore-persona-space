@@ -57,6 +57,8 @@ keeps today's blocked disposition (GN-series pins).
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 import uuid
 from pathlib import Path
@@ -72,16 +74,39 @@ SCRIPT = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
 # canonical checkout, NOT this worktree.
 REPO = Path("/home/thomasjiralerspong/explore-persona-space")
 
+# Deny-event sidecar (#1528): the guard's default sidecar path lives under the
+# CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO). The harness
+# pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds of deny
+# cases never create/append the production sidecar; the snapshot below backs
+# the end-of-module production-protection test.
+_PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
+_PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
 
-def _run(cmd: str) -> int:
-    """Feed ``cmd`` to the guard via PreToolUse JSON; return its exit code."""
+
+def _run_full(cmd: str, *, sidecar: str | None = None) -> subprocess.CompletedProcess[str]:
+    """Feed ``cmd`` to the guard via PreToolUse JSON; return the full result.
+
+    ``sidecar`` pins ``EPM_GUARD_DENY_SIDECAR`` for the subprocess; the
+    ``/dev/null`` default sinks every deny row so existing tests never touch
+    the production sidecar (#1528). Appending to ``/dev/null`` succeeds
+    silently and ``mkdir -p /dev`` no-ops, so exit-code behavior is unchanged.
+    """
     payload = json.dumps({"tool_input": {"command": cmd}})
-    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True).returncode
+    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
+    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True, env=env)
 
 
-def _run_raw(payload: str) -> int:
+def _run(cmd: str, *, sidecar: str | None = None) -> int:
+    """Feed ``cmd`` to the guard via PreToolUse JSON; return its exit code."""
+    return _run_full(cmd, sidecar=sidecar).returncode
+
+
+def _run_raw(payload: str, *, sidecar: str | None = None) -> int:
     """Feed a raw (possibly malformed) stdin payload; return the exit code."""
-    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True).returncode
+    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
+    return subprocess.run(
+        [str(SCRIPT)], input=payload, text=True, capture_output=True, env=env
+    ).returncode
 
 
 def _git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -2443,3 +2468,139 @@ def test_gcloud_waiver_fail_closed_blocks(cmd):
     today-blocked disposition the additive-only claim quantifies over.
     """
     assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# Deny-event sidecar (#1528) — one best-effort JSON row per deny.
+#
+# Row schema: {ts, guard:"repo_root_branch", arm, len, head, clause_head};
+# heads are printable-ASCII, masked (opaque runs >=20 -> 4-char prefix + ***)
+# BEFORE the 120-char truncate. The append must NEVER change deny/allow, exit
+# codes, or the stderr message. Every test pins EPM_GUARD_DENY_SIDECAR via the
+# harness `sidecar` kwarg; deny-side cases are @on_main (the guard's on-main
+# gate exits 0 off-main, so neither the deny nor the row fires there).
+# Templates reuse the file's existing blocked shapes (branch-switch fence /
+# merge fence M1) — no new gated literals.
+# ---------------------------------------------------------------------------
+
+_SIDECAR_KEYS = {"ts", "guard", "arm", "len", "head", "clause_head"}
+_TS_RE = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"
+_SIDECAR_BLOCKED_SWITCH = "git switch fix/foo"  # from test_branch_creation_and_switch_still_block
+_SIDECAR_BLOCKED_MERGE = "git merge issue-123"  # from test_merge_shapes_block (M1)
+
+
+@on_main
+def test_deny_writes_sidecar_row(tmp_path):
+    """T1: a denied command appends exactly one valid JSON row (full schema)."""
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    lines = sidecar.read_text().splitlines()
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert set(row) == _SIDECAR_KEYS
+    assert row["guard"] == "repo_root_branch"
+    assert row["arm"]
+    assert row["len"] == len(_SIDECAR_BLOCKED_SWITCH)
+    assert re.fullmatch(_TS_RE, row["ts"])
+
+
+@on_main
+def test_deny_sidecar_arm_with_parens_valid_json(tmp_path):
+    """T2: an arm label carrying spaces + parentheses still yields valid JSON."""
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_MERGE, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    row = json.loads(sidecar.read_text().splitlines()[0])
+    assert "(" in row["arm"]
+
+
+def test_allow_writes_no_sidecar_row(tmp_path):
+    """T3: an allowed command writes nothing (sidecar file not created)."""
+    sidecar = tmp_path / "deny.jsonl"
+    assert _run("git status", sidecar=str(sidecar)) == 0
+    assert not sidecar.exists()
+
+
+@on_main
+def test_sidecar_write_failure_preserves_deny_exit(tmp_path):
+    """T4: a failed sidecar append leaves exit 2 + the BLOCKED stderr intact.
+
+    The sidecar's parent is pointed at a regular FILE so both ``mkdir -p`` and
+    the append fail regardless of uid (root ignores a chmod-0500 dir; a
+    file-as-parent fails for root too). A writable re-run in the same test
+    confirms the row WOULD have been written — isolating the failure to the
+    write, not the deny logic.
+    """
+    blocker = tmp_path / "blocker"
+    blocker.write_text("")
+    bad_sidecar = blocker / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(bad_sidecar))
+    assert proc.returncode == 2
+    assert "BLOCKED:" in proc.stderr
+    assert not bad_sidecar.exists()
+    ok_sidecar = tmp_path / "deny.jsonl"
+    proc2 = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(ok_sidecar))
+    assert proc2.returncode == 2
+    assert len(ok_sidecar.read_text().splitlines()) == 1
+
+
+@on_main
+def test_sidecar_head_bounded_no_full_command(tmp_path):
+    """T5: no full command text in the row; heads are <=120 chars; len exact."""
+    cmd = _SIDECAR_BLOCKED_SWITCH + " # " + "pad " * 60
+    assert len(cmd) > 240
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(cmd, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    raw = sidecar.read_text()
+    assert cmd not in raw
+    row = json.loads(raw.splitlines()[0])
+    assert len(row["head"]) <= 120
+    assert len(row["clause_head"]) <= 120
+    assert row["len"] == len(cmd)
+
+
+@on_main
+def test_sidecar_secret_shaped_token_masked(tmp_path):
+    """T6: a secret-shaped token (hf_ + 34 alnum) never survives into the row.
+
+    Variant (a): token inside the first 120 chars (env-assignment prefix
+    before the git verb) — masked to a 4-char prefix + ``***``.
+    Variant (b): token straddling the 120-char truncation boundary — masking
+    runs BEFORE the truncate, so no >=8-char fragment may survive either.
+    """
+    token = "hf_" + "A1b2C3d4" * 4 + "Zz"
+    assert len(token) == 37
+    cmd = f"HF_TOKEN={token} {_SIDECAR_BLOCKED_SWITCH}"
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(cmd, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    raw = sidecar.read_text()
+    assert token not in raw
+    row = json.loads(raw.splitlines()[0])
+    assert "***" in row["head"]
+
+    prefix = _SIDECAR_BLOCKED_SWITCH + " # " + "pad " * 21
+    cmd2 = prefix + token
+    assert len(prefix) < 120 < len(cmd2)
+    sidecar2 = tmp_path / "deny2.jsonl"
+    proc2 = _run_full(cmd2, sidecar=str(sidecar2))
+    assert proc2.returncode == 2
+    raw2 = sidecar2.read_text()
+    for i in range(len(token) - 7):
+        assert token[i : i + 8] not in raw2
+
+
+def test_zz_production_sidecar_untouched_by_suite():
+    """The suite must never create/append the PRODUCTION deny sidecar (#1528).
+
+    The harness pins EPM_GUARD_DENY_SIDECAR (default ``/dev/null``) on every
+    guard invocation; this end-of-module check compares the production
+    sidecar's size/absence against the module-import snapshot. Runs LAST in
+    file order by position. Known caveat: a concurrent REAL deny in another
+    session appending mid-run would false-fail this — denies are rare
+    exception events, accepted.
+    """
+    current = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
+    assert current == _PROD_SIDECAR_SIZE_AT_IMPORT
