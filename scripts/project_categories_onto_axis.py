@@ -29,6 +29,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+from explore_persona_space.utils import seed_everything
+
 os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 # Load HF token from environment or .env file
