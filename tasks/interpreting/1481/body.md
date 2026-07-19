@@ -1,6 +1,7 @@
 ---
-title: Matched-recipe contrastive vs positive-only across casual style, impolite,
-  sycophancy, and marker on the 4 factory contexts
+title: 'Matched-install contrastive containment is real but narrow: it generalizes
+  past the trained negative panel only for impolite, and dissolves under install normalization
+  for the marker (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-17T22:08:29Z'
