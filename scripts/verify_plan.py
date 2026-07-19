@@ -6476,6 +6476,24 @@ def _c40_line_triggers(line: str) -> bool:
     return False
 
 
+def _c40_anchors(plan: str) -> set[str]:
+    """Normalized anchor test paths from non-fenced, locally-un-negated
+    trigger lines (a bare ``test_x.py`` normalizes to ``tests/test_x.py``;
+    ``::node`` ids never enter the capture — the match ends at ``.py``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    anchors: set[str] = set()
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or not _c40_line_triggers(line):
+            continue
+        for m in _C40_TESTPATH_RE.finditer(line):
+            path = m.group(1)
+            if not path.startswith("tests/"):
+                path = f"tests/{path}"
+            anchors.add(path)
+    return anchors
+
+
 # Touched-file derivation: RAW scan (fences INCLUDED — scope lists and
 # commands legitimately live in fences/tables; the c11 raw-scan doctrine).
 # tests/ paths are deliberately EXCLUDED: every named anchor is itself a
@@ -6598,19 +6616,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
             "kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch "
             "(workflow-fix) shape",
         )
-    lines = plan.splitlines()
-    mask = _fence_mask(lines)
-    anchors: set[str] = set()
-    for line, fenced in zip(lines, mask, strict=True):
-        if fenced:
-            continue
-        if not _c40_line_triggers(line):
-            continue
-        for m in _C40_TESTPATH_RE.finditer(line):
-            path = m.group(1)
-            if not path.startswith("tests/"):
-                path = f"tests/{path}"
-            anchors.add(path)
+    anchors = _c40_anchors(plan)
     if not anchors:
         return _skip(
             cid,
