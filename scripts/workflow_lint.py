@@ -614,6 +614,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from collections import Counter
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -8316,6 +8317,72 @@ _ROOT_GUARD_SELFTEST_BLOCKED = "git checkout -b __workflow_lint_root_guard_selft
 _ROOT_GUARD_SELFTEST_BENIGN = "echo workflow-lint root-guard selftest"
 
 
+def _root_guard_git_env(git_fixture: Path) -> dict[str, str]:
+    """Subprocess env for root-guard hook probes: every ambient ``GIT_*``
+    var is SCRUBBED (a git-hook / pre-commit caller exports GIT_DIR /
+    GIT_INDEX_FILE — a latent leak the old ``{**os.environ, ...}`` merge
+    passed straight into the hook), then git resolution is PINNED to the
+    throwaway on-main fixture: GIT_DIR/GIT_WORK_TREE take precedence over
+    the hook's hardcoded ``git -C "$REPO"`` discovery (verified 2026-07-19
+    on git 2.34.1), so the hook's on-main gate (``rev-parse --abbrev-ref
+    HEAD`` + ``[ "$cur" = main ] || exit 0``, hook L1675-76) + checkout
+    classifier (``show-ref``/``rev-parse --verify``/``cat-file -e``, hook
+    L1324-1328) read the FIXTURE, never the shared root — a concurrent
+    shared-root git op can no longer flip probe verdicts (#1545; incident
+    #1506: 13 spurious self-test failures).
+    ``EPM_GUARD_DENY_SIDECAR`` pin unchanged (#1528)."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_DIR"] = str(git_fixture / ".git")
+    env["GIT_WORK_TREE"] = str(git_fixture)
+    env["EPM_GUARD_DENY_SIDECAR"] = "/dev/null"
+    return env
+
+
+def _build_root_guard_fixture(tmp: Path) -> None:
+    """``git init`` a minimal always-on-``main`` fixture in ``tmp``: branch
+    ``main``, ONE empty-tree commit. The empty tree means the hook's
+    ``cat-file -e "HEAD:$arg"`` probe can never resolve a doc example
+    against the fixture, and ``show-ref``/``rev-parse`` resolve strictly
+    LESS than the real repo (only ``main``/``HEAD``/the fixture sha) — so
+    the fixture cannot mint a NEW block verdict (2026-07-19 audit: 0/54
+    live fence-verdict changes vs ambient). Identity via ``-c`` flags so
+    no global git config is required. Raises on failure (caller converts
+    to ONE loud lint error — fail loud, never a silent skip)."""
+    scrub = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    # Isolate user/system git config for the BUILD too: an ambient
+    # commit.gpgsign=true or template/hooks setting in the real global
+    # config would fail the empty-commit build (Alternatives critic, v3).
+    scrub["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    scrub["GIT_CONFIG_NOSYSTEM"] = "1"
+    common = dict(
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=_ROOT_GUARD_TIMEOUT_S,
+        env=scrub,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(tmp)], **common)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(tmp),
+            "-c",
+            "user.name=workflow-lint",
+            "-c",
+            "user.email=workflow-lint@localhost",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "root-guard probe fixture",
+        ],
+        **common,
+    )
+
+
 def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     """Yield ``(opener_lineno_1based, preceding_nonblank_line, block_text)``
     for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``.
@@ -8394,7 +8461,7 @@ def _root_guard_fence_exempt(prev_line: str) -> bool:
     return bool(reason)
 
 
-def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
+def _run_root_guard(hook: Path, command: str, git_fixture: Path) -> tuple[int, str]:
     """Feed ``command`` to the live PreToolUse hook exactly as the harness
     does — stdin JSON ``{"tool_input": {"command": ...}}`` — and return
     ``(returncode, stderr)``. ``cwd`` is pinned to the hook's own repo root
@@ -8404,7 +8471,10 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
     pinned to ``/dev/null`` so lint-driven hook executions (self-test probes
     + the per-fence scan loop) never append synthetic deny rows to the
     production deny-event sidecar (#1528); the pin is env-only and cannot
-    change the rc-0/2 verdict this check reads."""
+    change the rc-0/2 verdict this check reads. The subprocess env comes
+    from :func:`_root_guard_git_env` — ambient ``GIT_*`` scrubbed, git
+    resolution pinned to ``git_fixture`` (a required parameter so every
+    probe call site goes through the fixture; #1545)."""
     payload = json.dumps({"tool_input": {"command": command}})
     proc = subprocess.run(
         ["bash", str(hook)],
@@ -8413,7 +8483,7 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
         text=True,
         timeout=_ROOT_GUARD_TIMEOUT_S,
         cwd=str(hook.parent.parent),
-        env={**os.environ, "EPM_GUARD_DENY_SIDECAR": "/dev/null"},
+        env=_root_guard_git_env(git_fixture),
     )
     return proc.returncode, proc.stderr
 
@@ -8503,22 +8573,35 @@ def check_git_recipes_root_guard(
         block-as-pasted, while the doc tells the session to run the command
         uncommented;
     (d) placeholder-substitution false-PASS direction — the hook's checkout
-        classifier consults LIVE repo state (``show-ref``/``rev-parse``/path
-        existence), so an unresolvable ``<branch>``/``$VAR`` argument keeps
-        ALLOW at lint time but can BLOCK after a session substitutes a real
-        value.
+        classifier resolves ``show-ref``/``rev-parse``/``cat-file`` against
+        the throwaway on-main FIXTURE at lint time (plus the hook's
+        real-filesystem ``[ -e ]`` probe), so an unresolvable
+        ``<branch>``/``$VAR`` argument keeps ALLOW at lint time but can
+        BLOCK after a session substitutes a real value (conclusion
+        unchanged by the #1545 fixture pin).
 
     Prose/comment scanning is deliberately REJECTED for v1 (prose quotes
     gated verbs constantly — the regex siblings' restricted scope exists
     precisely because of prose false positives); the runtime hook + the
     reviewer execute-the-hook practice remain the guard there.
 
-    REPO-STATE FLAP ATTRIBUTION: a ``git checkout <example-name>`` fence can
-    FLIP verdict when a branch / tracked path of that name appears or
-    disappears (the hook consults ``show-ref``/``rev-parse``/path
-    existence). If the live-tree test starts flapping on unrelated diffs,
-    check repo state FIRST — distinct from hook-evolution flap (a new
-    detector), which names the new BLOCKED line in the error.
+    REPO-STATE FLAP ATTRIBUTION: git-state resolution is PINNED to a
+    throwaway on-main fixture (:func:`_root_guard_git_env` /
+    :func:`_build_root_guard_fixture`, #1545), so a concurrent shared-root
+    git op (a rebase transiently detaching HEAD — incident #1506, 13
+    spurious self-test failures) can no longer flip probe verdicts. The
+    REMAINING state-consulting reads are the hook's REAL-FILESYSTEM
+    existence probe (``[ -e "$REPO/$arg" ]``, hook L1328) and doc-content
+    changes: a ``git checkout <example-name>`` fence can still FLIP
+    verdict when a tracked path/file of that name appears or disappears
+    on disk. If the live-tree test starts flapping on unrelated diffs,
+    check THAT path-existence state first (the pre-registered remedy if
+    the ``[ -e ]`` path ever flaps is probe serialization on a dedicated
+    lock — plan #1545 K1) — distinct from hook-evolution flap (a new
+    detector), which names the new BLOCKED line in the error. Post-fix, a
+    recurring "blocked-probe rc=0" self-test failure is NO LONGER
+    attributable to concurrent git state — attribute to a jq/exec
+    transient first (the hook's stdin parse fail-softs to exit 0).
 
     Scope: agents + skills via the worktree-safe :func:`_iter_ask_target_files`
     house helper, PLUS ``.claude/rules/*.md`` + ``CLAUDE.md`` under the same
@@ -8537,77 +8620,88 @@ def check_git_recipes_root_guard(
             f"{hook}: root-guard hook script missing — "
             f"check-git-recipes-root-guard cannot run (FAIL, not skip)"
         ]
-    try:
-        rc_pos, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BLOCKED)
-        rc_neg, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BENIGN)
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        return [f"{hook}: root-guard self-test crashed ({exc}) — check cannot run"]
-    if rc_pos != 2 or rc_neg != 0:
-        return [
-            f"{hook}: root-guard self-test failed (blocked-probe rc={rc_pos}, "
-            f"expected 2; benign-probe rc={rc_neg}, expected 0). Likely jq "
-            f"missing (the hook's stdin parse fail-softs to exit 0) or a hook "
-            f"regression — the check refuses to run against a fail-open or "
-            f"fail-closed hook."
-        ]
-    # (2) Enumerate targets: agents + skills via the worktree-safe house
-    # helper, plus rules/*.md + CLAUDE.md under the same other-worktree
-    # exclusion.
-    targets = _root_guard_target_files(root)
-    # (3) Collect git-bearing bash fences (perf gate: the `git` literal is a
-    # NECESSARY condition for every hook detector — see docstring; drops
-    # 103 -> ~23 fences on issue/SKILL.md alone).
-    work: list[tuple[Path, int, str]] = []
-    for p in targets:
+    with tempfile.TemporaryDirectory(prefix="wl_rootguard_fixture_") as td:
+        fixture = Path(td)
         try:
-            text = p.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        for lineno, prev_line, block in _iter_bash_fences(text):
-            if "git" not in block:
-                continue
-            if _root_guard_fence_exempt(prev_line):
-                continue
-            work.append((p, lineno, block))
-
-    # (4) Execute the hook per block, in parallel; deterministic ordering.
-    def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
-        p, lineno, block = item
+            _build_root_guard_fixture(fixture)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            return [
+                f"{hook}: root-guard git fixture build failed ({exc}) — "
+                f"check cannot run (FAIL, not skip)"
+            ]
         try:
-            rc, stderr = _run_root_guard(hook, block)
+            rc_pos, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BLOCKED, fixture)
+            rc_neg, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BENIGN, fixture)
         except (subprocess.TimeoutExpired, OSError) as exc:
-            return (p, lineno, -1, f"hook invocation failed: {exc}")
-        return (p, lineno, rc, stderr)
+            return [f"{hook}: root-guard self-test crashed ({exc}) — check cannot run"]
+        if rc_pos != 2 or rc_neg != 0:
+            return [
+                f"{hook}: root-guard self-test failed (blocked-probe rc={rc_pos}, "
+                f"expected 2; benign-probe rc={rc_neg}, expected 0). Likely jq "
+                f"missing (the hook's stdin parse fail-softs to exit 0) or a hook "
+                f"regression — the check refuses to run against a fail-open or "
+                f"fail-closed hook."
+            ]
+        # (2) Enumerate targets: agents + skills via the worktree-safe house
+        # helper, plus rules/*.md + CLAUDE.md under the same other-worktree
+        # exclusion.
+        targets = _root_guard_target_files(root)
+        # (3) Collect git-bearing bash fences (perf gate: the `git` literal is a
+        # NECESSARY condition for every hook detector — see docstring; drops
+        # 103 -> ~23 fences on issue/SKILL.md alone).
+        work: list[tuple[Path, int, str]] = []
+        for p in targets:
+            try:
+                text = p.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for lineno, prev_line, block in _iter_bash_fences(text):
+                if "git" not in block:
+                    continue
+                if _root_guard_fence_exempt(prev_line):
+                    continue
+                work.append((p, lineno, block))
 
-    errors: list[str] = []
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        results = list(ex.map(_probe, work))
-    for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
-        if rc == 0:
-            continue
-        first = stderr.strip().split("\n")[0][:200]
-        if rc == 2:
-            errors.append(
-                f"{p}:{lineno}: bash recipe fence is BLOCKED by "
-                f"scripts/guard_repo_root_branch.sh — a session pasting this "
-                f"recipe into one Bash call dies at the PreToolUse gate "
-                f"(incident #1047: a cleanup recipe without a -C waiver "
-                f"survived plan review + 6 critics and was caught only by the "
-                f"reviewer executing the hook). Hook says: {first!r}. Fix the "
-                f"recipe (per-clause `git -C <path>` waiver / the sanctioned "
-                f"worktree or gh-pr-merge form), or — for a deliberate "
-                f"anti-pattern example or a pod-side recipe — add "
-                f"`<!-- {_ROOT_GUARD_EXEMPT_SENTINEL}: <reason> -->` on the "
-                f"line directly above the fence opener."
-            )
-        else:
-            errors.append(
-                f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
-                f"a NON-BLOCKING code under the PreToolUse contract (only rc "
-                f"0/2 are interpreted; rc=1/127/timeout signals a hook "
-                f"invocation or infrastructure error, not a pass) ({first!r})."
-            )
-    return errors
+        # (4) Execute the hook per block, in parallel; deterministic ordering.
+        # Probes share the fixture read-only across the ThreadPool (git reads
+        # are concurrent-safe).
+        def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
+            p, lineno, block = item
+            try:
+                rc, stderr = _run_root_guard(hook, block, fixture)
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                return (p, lineno, -1, f"hook invocation failed: {exc}")
+            return (p, lineno, rc, stderr)
+
+        errors: list[str] = []
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            results = list(ex.map(_probe, work))
+        for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
+            if rc == 0:
+                continue
+            first = stderr.strip().split("\n")[0][:200]
+            if rc == 2:
+                errors.append(
+                    f"{p}:{lineno}: bash recipe fence is BLOCKED by "
+                    f"scripts/guard_repo_root_branch.sh — a session pasting this "
+                    f"recipe into one Bash call dies at the PreToolUse gate "
+                    f"(incident #1047: a cleanup recipe without a -C waiver "
+                    f"survived plan review + 6 critics and was caught only by the "
+                    f"reviewer executing the hook). Hook says: {first!r}. Fix the "
+                    f"recipe (per-clause `git -C <path>` waiver / the sanctioned "
+                    f"worktree or gh-pr-merge form), or — for a deliberate "
+                    f"anti-pattern example or a pod-side recipe — add "
+                    f"`<!-- {_ROOT_GUARD_EXEMPT_SENTINEL}: <reason> -->` on the "
+                    f"line directly above the fence opener."
+                )
+            else:
+                errors.append(
+                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
+                    f"a NON-BLOCKING code under the PreToolUse contract (only rc "
+                    f"0/2 are interpreted; rc=1/127/timeout signals a hook "
+                    f"invocation or infrastructure error, not a pass) ({first!r})."
+                )
+        return errors
 
 
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:

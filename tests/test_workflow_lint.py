@@ -19,6 +19,7 @@ Also covers the ``--check-script-refs`` mode: every
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -37,6 +38,8 @@ if str(_SCRIPTS) not in sys.path:
 
 from workflow_lint import (  # noqa: E402
     _MARKER_RECIPE_PINS,
+    _ROOT_GUARD_HOOK,
+    _ROOT_GUARD_SELFTEST_BLOCKED,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     HUB_VERIFY_LEGACY_ALLOWLIST,
     SKILL_REF_ALLOWLIST,
@@ -45,6 +48,7 @@ from workflow_lint import (  # noqa: E402
     _iter_ask_target_files,
     _live_skill_names,
     _other_worktree_prefix,
+    _run_root_guard,
     _values_equal,
     check_agent_model_pins,
     check_asks,
@@ -7258,6 +7262,114 @@ def test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero():
         f"workflow_lint --check-git-recipes-root-guard failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+def _make_detached_repo(tmp_path: Path) -> Path:
+    """git init an on-main repo, one empty commit, then detach HEAD —
+    the git state a concurrent shared-root ``pull --rebase`` exposes
+    (#1506: the hook's on-main gate reads it as off-main)."""
+    repo = tmp_path / "ambient_detached"
+    scrub = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    scrub["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    scrub["GIT_CONFIG_NOSYSTEM"] = "1"
+    common: dict = dict(check=True, capture_output=True, text=True, env=scrub)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], **common)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=workflow-lint-test",
+            "-c",
+            "user.email=workflow-lint-test@localhost",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "detached-head probe fixture",
+        ],
+        **common,
+    )
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "--detach"], **common)
+    return repo
+
+
+def test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach(
+    tmp_path, monkeypatch
+):
+    """Regression #1545 (incident #1506): with ambient GIT_DIR/GIT_WORK_TREE
+    pointing at a DETACHED-HEAD repo — simulating, via env injection, the
+    off-main git state a concurrent shared-root rebase exposes, WITHOUT
+    touching the real root — the check stays deterministic: self-test
+    passes, a benign git-bearing fence lints clean. Pre-fix, the ambient
+    env leaked into the hook subprocess, the on-main gate read off-main,
+    the blocked probe returned rc 0, and the self-test failed loud (the
+    13-failure #1506 shape). Complementary pin:
+    ``test_root_guard_hook_fails_open_off_main_fixture`` asserts the
+    hook-side mechanism (off-main fail-open + GIT_DIR sensitivity); this
+    test asserts the check-side neutralization — the pair covers
+    complementary hook-stops-honoring-GIT_DIR states, so neither is
+    redundant with the other."""
+    ambient = _make_detached_repo(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(ambient / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(ambient))
+    _write_rg_skill(tmp_path, "x", '```bash\ngit -C "$WT" status\n```\n')
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_run_root_guard_pins_fixture_over_ambient_git_env(tmp_path, monkeypatch):
+    """Unit: ambient GIT_* scrubbed + fixture pinned — the blocked
+    self-test probe reads rc 2 against the LIVE hook even with a
+    detached-HEAD GIT_DIR in the ambient env."""
+    from workflow_lint import _build_root_guard_fixture
+
+    ambient = _make_detached_repo(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(ambient / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(ambient))
+    fixture = tmp_path / "fixture"
+    _build_root_guard_fixture(fixture)
+    rc, _ = _run_root_guard(_ROOT_GUARD_HOOK, _ROOT_GUARD_SELFTEST_BLOCKED, fixture)
+    assert rc == 2
+
+
+def test_root_guard_hook_fails_open_off_main_fixture(tmp_path):
+    """Mechanism pin (the committed reproduce-first demonstration): the
+    LIVE hook's on-main gate (``guard_repo_root_branch.sh``'s
+    ``rev-parse --abbrev-ref HEAD`` + ``[ "$cur" = main ] || exit 0``
+    gate) fail-opens off main — the blocked probe reads rc 0 when the
+    pinned git state is a detached-HEAD repo. This is the #1506 flap
+    mechanism; it ALSO fails loud if a future hook edit stops honoring
+    GIT_DIR (which would silently break this whole isolation).
+    Complementary pin:
+    ``test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach``
+    asserts the check-side neutralization; this test pins the hook-side
+    mechanism — the pair covers complementary
+    hook-stops-honoring-GIT_DIR states, so neither is redundant with the
+    other."""
+    detached = _make_detached_repo(tmp_path)
+    rc, _ = _run_root_guard(_ROOT_GUARD_HOOK, _ROOT_GUARD_SELFTEST_BLOCKED, detached)
+    assert rc == 0
+
+
+def test_check_git_recipes_root_guard_fixture_build_failure_fails_loud(tmp_path, monkeypatch):
+    """Must-Fix (Statistics critic, plan v3): a fixture-build failure must
+    surface as exactly ONE loud lint error — never a silent [] that
+    no-ops the whole check (the silent-under-enforcement class #1545
+    exists to close; a later refactor converting the except arm into a
+    silent return [] would otherwise leave all other tests green while
+    the check no-ops, _live_tree_passes passing vacuously)."""
+    import workflow_lint as wl
+
+    def _boom(tmp):
+        raise OSError("forced fixture-build failure (test)")
+
+    monkeypatch.setattr(wl, "_build_root_guard_fixture", _boom)
+    _write_rg_skill(tmp_path, "x", '```bash\ngit -C "$WT" status\n```\n')
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1 and "fixture build failed" in errors[0], errors
 
 
 # ---------------------------------------------------------------------------
