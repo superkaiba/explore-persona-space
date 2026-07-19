@@ -406,9 +406,14 @@ such corpora or banks:
    each call site's statically-known shape (positional count + keyword
    names as placeholder values; `bind_partial` when the call forwards
    `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
-   ValueError). Full recipe + worked example + incidents #606/#1332:
-   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
-   branches".
+   ValueError). Import + bind still do NOT run the branch's LOGIC: any
+   branch a `cfg.smoke`/`--smoke` fence makes unreachable by every smoke
+   gets a standalone 1-cell PRODUCTION-MODE probe that EXECUTES it before
+   dispatch, recorded under `## Smoke run` (#1481: a fenced-branch
+   `IsADirectoryError` crashed production twice — no smoke could verify
+   the r1 fix). Full recipe + worked examples + incidents
+   #606/#1332/#1481: `.claude/rules/gotchas.md` "Lazy imports inside
+   smoke-skipped branches" + its fenced-branch runtime-probe sibling.
 2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
