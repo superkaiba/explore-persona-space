@@ -306,7 +306,11 @@ Run the structural verifier against the plan version just persisted:
   repo-wide-command text quotes an incident or a sibling's criterion, not this
   plan's own gate; a plan whose own gate is genuinely unconditional instead
   names the plan-time baseline on the criterion line or scopes the
-  invocation).
+  invocation), and
+  `N/A — no off-pod phase` (check 39 — the off-pod / vm-side vocabulary is
+  incidental, not a real off-pod phase of this plan; a plan with a genuine
+  off-pod phase instead declares the fenced `off_pod_phases:` block —
+  planner-section-reference.md § 9).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
