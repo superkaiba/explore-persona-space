@@ -76,22 +76,29 @@ def main(argv: list[str] | None = None) -> int:
     set_paper_style("blog")
     pal = paper_palette(3)
     fig, axes = plt.subplots(1, 2, figsize=(8.0, 3.4), sharey=True)
+    # EOS-margin space FIRST — the plan §6 registered install-strength Read-2 surface
+    # (marker-leakage-measurement.md: transfer fractions in EOS-margin logit space,
+    # never raw log P); the log-prob companion is second.
     for ax, space, key in (
-        (axes[0], "log-prob space", "f_logp"),
-        (axes[1], "EOS-margin space", "f_margin"),
+        (axes[0], "EOS-margin space (registered Read 2)", "f_margin"),
+        (axes[1], "log-prob space", "f_logp"),
     ):
         for xi, ctx in enumerate(CTX_ORDER):
-            for regime, color, dx in (("con", pal[0], -0.12), ("po", pal[1], +0.12)):
+            for regime, color, dx, ha in (
+                ("con", pal[0], -0.12, "right"),
+                ("po", pal[1], +0.12, "left"),
+            ):
                 for arm in fr.values():
                     if arm["ctx"] != ctx or arm["regime"] != regime:
                         continue
                     ax.scatter([xi + dx], [arm[key]], color=color, s=30, zorder=3)
                     ax.text(
-                        xi + dx + 0.05,
+                        xi + dx + (0.05 if ha == "left" else -0.05),
                         arm[key],
                         f"s{arm['seed']}",
                         fontsize=5.5,
                         va="center",
+                        ha=ha,
                         color="0.35",
                     )
         ax.set_xticks(range(len(CTX_ORDER)))
@@ -105,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
             Line2D([], [], marker="o", ls="none", color=pal[1], label="positive-only"),
         ],
         fontsize=7,
-        loc="upper right",
+        loc="center",
         frameon=False,
     )
     fig.tight_layout()

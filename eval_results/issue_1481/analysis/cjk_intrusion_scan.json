@@ -1,0 +1,1090 @@
+{
+ "pools": {
+  "base_arms/cas/bare/tier2/completions__base__default.json": {
+   "intruded": 9,
+   "n": 200
+  },
+  "base_arms/cas/conv/tier2/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 11,
+   "n": 200
+  },
+  "base_arms/cas/icl/tier2/completions__base__icl_prefix_writing_style.json": {
+   "intruded": 9,
+   "n": 200
+  },
+  "base_arms/cas/panel/completions__base__default.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "base_arms/cas/panel/completions__base__icl_prefix_writing_style.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/cas/panel/completions__base__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "base_arms/cas/panel/completions__base__neg_sp_police.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/cas/panel/completions__base__persona_software_engineer.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "base_arms/cas/panel/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/cas/pers/tier2/completions__base__persona_software_engineer.json": {
+   "intruded": 9,
+   "n": 200
+  },
+  "base_arms/imp/bare/tier2/completions__base__default.json": {
+   "intruded": 4,
+   "n": 200
+  },
+  "base_arms/imp/conv/tier2/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 8,
+   "n": 200
+  },
+  "base_arms/imp/icl/tier2/completions__base__icl_prefix_impolite.json": {
+   "intruded": 7,
+   "n": 200
+  },
+  "base_arms/imp/panel/completions__base__default.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/imp/panel/completions__base__icl_prefix_impolite.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "base_arms/imp/panel/completions__base__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "base_arms/imp/panel/completions__base__neg_sp_police.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "base_arms/imp/panel/completions__base__persona_software_engineer.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/imp/panel/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "base_arms/imp/pers/tier2/completions__base__persona_software_engineer.json": {
+   "intruded": 10,
+   "n": 200
+  },
+  "base_arms/syc/bare/tier2/completions__base__default.json": {
+   "intruded": 2,
+   "n": 200
+  },
+  "base_arms/syc/conv/tier2/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 13,
+   "n": 200
+  },
+  "base_arms/syc/icl/tier2/completions__base__icl_prefix_sycophancy.json": {
+   "intruded": 1,
+   "n": 200
+  },
+  "base_arms/syc/panel/completions__base__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "base_arms/syc/panel/completions__base__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "base_arms/syc/panel/completions__base__neg_sp_ph4.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "base_arms/syc/panel/completions__base__neg_sp_police.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "base_arms/syc/panel/completions__base__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "base_arms/syc/panel/completions__base__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "base_arms/syc/pers/tier2/completions__base__persona_software_engineer.json": {
+   "intruded": 3,
+   "n": 200
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/cas-bare-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 15,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 14,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/cas-bare-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/cas-conv-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/cas-conv-po-lr3e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__default.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 15,
+   "n": 100
+  },
+  "panel/cas-icl-con-lr1e4-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 19,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 20,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/cas-icl-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/cas-pers-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__icl_prefix_writing_style.json": {
+   "intruded": 17,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 13,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/cas-pers-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__default.json": {
+   "intruded": 13,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 18,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 14,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 13,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__default.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-bare-con-lr3e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 14,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 15,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/imp-bare-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 8,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 13,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-conv-con-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/imp-conv-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__default.json": {
+   "intruded": 21,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 20,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 17,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e4-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-icl-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__default.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__default.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 14,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 15,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-icl-po-lr1e4-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__default.json": {
+   "intruded": 18,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 16,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 24,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 17,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 18,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__default.json": {
+   "intruded": 17,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 13,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 15,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 11,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 16,
+   "n": 100
+  },
+  "panel/imp-pers-con-lr3e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 14,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 12,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__icl_prefix_impolite.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/imp-pers-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/syc-bare-con-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-bare-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-con-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 7,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 6,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-conv-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 9,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-con-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 10,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-icl-po-lr3e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 4,
+   "n": 100
+  },
+  "panel/syc-pers-con-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__default.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__neg_sp_ph4.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__neg_sp_police.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__persona_software_engineer.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s137/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 5,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__default.json": {
+   "intruded": 3,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__icl_prefix_sycophancy.json": {
+   "intruded": 0,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__neg_sp_ph4.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__neg_sp_police.json": {
+   "intruded": 2,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__persona_software_engineer.json": {
+   "intruded": 1,
+   "n": 100
+  },
+  "panel/syc-pers-po-lr1e5-s42/completions__trained__wildchat_prefix_real545.json": {
+   "intruded": 5,
+   "n": 100
+  }
+ },
+ "summary": {
+  "n_completions": 28200,
+  "n_intruded": 1642,
+  "n_pools": 270,
+  "regex": "[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]"
+ }
+}
