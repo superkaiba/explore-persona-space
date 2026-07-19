@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1549,
+  "highest_id": 1550,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4288,6 +4288,13 @@
       "path": "tasks/on_hold/155",
       "status": "on_hold",
       "title": "Do capabilities survive through everything"
+    },
+    "1550": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1550",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARN when plan header version label mismatches persisted filename"
     },
     "156": {
       "has_clean_result": false,
