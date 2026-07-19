@@ -1,0 +1,218 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-writing_style-con",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "judge_max_tokens": 300,
+  "tier2_draws": 5,
+  "runs": {
+    "cas-pers-con-lr1e5-s137": {
+      "run_id": "cas-pers-con-lr1e5-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-pers-con-lr1e5-s137"
+    },
+    "cas-pers-con-lr3e5-s137": {
+      "run_id": "cas-pers-con-lr3e5-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-pers-con-lr3e5-s137"
+    },
+    "cas-pers-con-lr1e4-s137": {
+      "run_id": "cas-pers-con-lr1e4-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-pers-con-lr1e4-s137"
+    },
+    "cas-bare-con-lr1e5-s137": {
+      "run_id": "cas-bare-con-lr1e5-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-bare-con-lr1e5-s137"
+    },
+    "cas-bare-con-lr3e5-s137": {
+      "run_id": "cas-bare-con-lr3e5-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-bare-con-lr3e5-s137"
+    },
+    "cas-bare-con-lr1e4-s137": {
+      "run_id": "cas-bare-con-lr1e4-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-bare-con-lr1e4-s137"
+    },
+    "cas-conv-con-lr1e5-s137": {
+      "run_id": "cas-conv-con-lr1e5-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-conv-con-lr1e5-s137"
+    },
+    "cas-conv-con-lr3e5-s137": {
+      "run_id": "cas-conv-con-lr3e5-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-conv-con-lr3e5-s137"
+    },
+    "cas-conv-con-lr1e4-s137": {
+      "run_id": "cas-conv-con-lr1e4-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-conv-con-lr1e4-s137"
+    },
+    "cas-icl-con-lr1e5-s137": {
+      "run_id": "cas-icl-con-lr1e5-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-icl-con-lr1e5-s137"
+    },
+    "cas-icl-con-lr3e5-s137": {
+      "run_id": "cas-icl-con-lr3e5-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-icl-con-lr3e5-s137"
+    },
+    "cas-icl-con-lr1e4-s137": {
+      "run_id": "cas-icl-con-lr1e4-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {},
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/cas-icl-con-lr1e4-s137"
+    }
+  },
+  "cells": {
+    "cas-bare": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "cas-bare-con-lr1e5-s137": null,
+        "cas-bare-con-lr3e5-s137": null,
+        "cas-bare-con-lr1e4-s137": null
+      }
+    },
+    "cas-conv": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "cas-conv-con-lr1e5-s137": null,
+        "cas-conv-con-lr3e5-s137": null,
+        "cas-conv-con-lr1e4-s137": null
+      }
+    },
+    "cas-icl": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "cas-icl-con-lr1e5-s137": null,
+        "cas-icl-con-lr3e5-s137": null,
+        "cas-icl-con-lr1e4-s137": null
+      }
+    },
+    "cas-pers": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "cas-pers-con-lr1e5-s137": null,
+        "cas-pers-con-lr3e5-s137": null,
+        "cas-pers-con-lr1e4-s137": null
+      }
+    }
+  },
+  "git_commit": "4c016d85e9",
+  "created_utc": "2026-07-19T01:09:38Z",
+  "formatting_judged_reread_required": false
+}

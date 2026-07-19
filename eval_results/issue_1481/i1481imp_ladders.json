@@ -1,0 +1,452 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-impolite-con",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "judge_max_tokens": 300,
+  "tier2_draws": 5,
+  "runs": {
+    "imp-pers-con-lr1e5-s137": {
+      "run_id": "imp-pers-con-lr1e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-pers-con-lr1e5-s137"
+    },
+    "imp-pers-con-lr3e5-s137": {
+      "run_id": "imp-pers-con-lr3e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-pers-con-lr3e5-s137"
+    },
+    "imp-pers-con-lr1e4-s137": {
+      "run_id": "imp-pers-con-lr1e4-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-pers-con-lr1e4-s137"
+    },
+    "imp-bare-con-lr1e5-s137": {
+      "run_id": "imp-bare-con-lr1e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-bare-con-lr1e5-s137"
+    },
+    "imp-bare-con-lr3e5-s137": {
+      "run_id": "imp-bare-con-lr3e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-bare-con-lr3e5-s137"
+    },
+    "imp-bare-con-lr1e4-s137": {
+      "run_id": "imp-bare-con-lr1e4-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-bare-con-lr1e4-s137"
+    },
+    "imp-conv-con-lr1e5-s137": {
+      "run_id": "imp-conv-con-lr1e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-conv-con-lr1e5-s137"
+    },
+    "imp-conv-con-lr3e5-s137": {
+      "run_id": "imp-conv-con-lr3e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-conv-con-lr3e5-s137"
+    },
+    "imp-conv-con-lr1e4-s137": {
+      "run_id": "imp-conv-con-lr1e4-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-conv-con-lr1e4-s137"
+    },
+    "imp-icl-con-lr1e5-s42": {
+      "run_id": "imp-icl-con-lr1e5-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr1e5-s42"
+    },
+    "imp-icl-con-lr1e5-s137": {
+      "run_id": "imp-icl-con-lr1e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr1e5-s137"
+    },
+    "imp-icl-con-lr3e5-s42": {
+      "run_id": "imp-icl-con-lr3e5-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr3e5-s42"
+    },
+    "imp-icl-con-lr3e5-s137": {
+      "run_id": "imp-icl-con-lr3e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr3e5-s137"
+    },
+    "imp-icl-con-lr1e4-s42": {
+      "run_id": "imp-icl-con-lr1e4-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr1e4-s42"
+    },
+    "imp-icl-con-lr1e4-s137": {
+      "run_id": "imp-icl-con-lr1e4-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-icl-con-lr1e4-s137"
+    }
+  },
+  "cells": {
+    "imp-bare": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "imp-bare-con-lr1e5-s137": null,
+        "imp-bare-con-lr3e5-s137": null,
+        "imp-bare-con-lr1e4-s137": null
+      }
+    },
+    "imp-conv": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "imp-conv-con-lr1e5-s137": null,
+        "imp-conv-con-lr3e5-s137": null,
+        "imp-conv-con-lr1e4-s137": null
+      }
+    },
+    "imp-icl": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "imp-icl-con-lr1e5-s42": null,
+        "imp-icl-con-lr1e5-s137": null,
+        "imp-icl-con-lr3e5-s42": null,
+        "imp-icl-con-lr3e5-s137": null,
+        "imp-icl-con-lr1e4-s42": null,
+        "imp-icl-con-lr1e4-s137": null
+      }
+    },
+    "imp-pers": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "imp-pers-con-lr1e5-s137": null,
+        "imp-pers-con-lr3e5-s137": null,
+        "imp-pers-con-lr1e4-s137": null
+      }
+    }
+  },
+  "git_commit": "4c016d85e9",
+  "created_utc": "2026-07-19T01:08:04Z",
+  "formatting_judged_reread_required": false
+}

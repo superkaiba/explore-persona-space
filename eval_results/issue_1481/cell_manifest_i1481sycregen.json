@@ -1,0 +1,71 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-sycophancy-con-regen",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "git_commit": "09ce17a80",
+  "created_utc": "2026-07-19T00:00:08Z",
+  "runs": [
+    {
+      "run_id": "syc-pers-con-lr1e4-s42",
+      "cell_key": "syc-pers",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
+      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
+          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
+          "date": "2026-07-07T02:58:32+00:00"
+        },
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
+          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
+          "date": "2026-07-07T02:58:41+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T15:24:27-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-pers-con-sycophancy-claude.json",
+        "rate": 0.26,
+        "k": 52,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.20413736892786316,
+          0.32490871391293097
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "merged_from": [
+    "cell_manifest_i1481sycregen_s42.json"
+  ],
+  "merged_seeds": [
+    42
+  ],
+  "ts": "2026-07-19T01:29:23Z"
+}

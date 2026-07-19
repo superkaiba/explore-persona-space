@@ -1,0 +1,355 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-writing_style-po",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "git_commit": "971adb0f9",
+  "created_utc": "2026-07-18T11:27:14Z",
+  "runs": [
+    {
+      "run_id": "cas-pers-po-lr1e5-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-pers/mix/train_mix.jsonl": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-pers/mix/mix_meta.json": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-pers-po-lr3e5-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-pers/mix/train_mix.jsonl": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-pers/mix/mix_meta.json": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-pers-po-lr1e4-s137",
+      "cell_key": "cas-pers",
+      "behavior": "writing_style",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-pers/mix/train_mix.jsonl": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-pers/mix/mix_meta.json": {
+          "oid": "92c274fe37583bd78eef804b38b4bb6e8abda1de",
+          "date": "2026-07-17T13:32:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-bare-po-lr1e5-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-bare/mix/train_mix.jsonl": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        },
+        "issue1434_writingstyle/ws-po-bare/mix/mix_meta.json": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-bare-po-lr3e5-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-bare/mix/train_mix.jsonl": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        },
+        "issue1434_writingstyle/ws-po-bare/mix/mix_meta.json": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-bare-po-lr1e4-s137",
+      "cell_key": "cas-bare",
+      "behavior": "writing_style",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-bare/mix/train_mix.jsonl": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        },
+        "issue1434_writingstyle/ws-po-bare/mix/mix_meta.json": {
+          "oid": "cc0754d5c57074a334ebf5285a30712e9e1cc30f",
+          "date": "2026-07-17T13:32:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-conv-po-lr1e5-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-conv/mix/train_mix.jsonl": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        },
+        "issue1434_writingstyle/ws-po-conv/mix/mix_meta.json": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-conv-po-lr3e5-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-conv/mix/train_mix.jsonl": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        },
+        "issue1434_writingstyle/ws-po-conv/mix/mix_meta.json": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-conv-po-lr1e4-s137",
+      "cell_key": "cas-conv",
+      "behavior": "writing_style",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-conv/mix/train_mix.jsonl": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        },
+        "issue1434_writingstyle/ws-po-conv/mix/mix_meta.json": {
+          "oid": "bcd5e9de860235ed3cdcc4202e7372bf9c36a73a",
+          "date": "2026-07-17T13:32:56+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-icl-po-lr1e5-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-icl/mix/train_mix.jsonl": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-icl/mix/mix_meta.json": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-icl-po-lr3e5-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-icl/mix/train_mix.jsonl": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-icl/mix/mix_meta.json": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "cas-icl-po-lr1e4-s137",
+      "cell_key": "cas-icl",
+      "behavior": "writing_style",
+      "context_id": "icl_prefix_writing_style",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix",
+      "mix_layout": "i1434-mix-subdir",
+      "fu3_base_eval": "",
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1434_writingstyle/ws-po-icl/mix/train_mix.jsonl": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        },
+        "issue1434_writingstyle/ws-po-icl/mix/mix_meta.json": {
+          "oid": "f6c04f9fff0d006d4da8b044b18bc32334184327",
+          "date": "2026-07-17T13:33:11+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {},
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "merged_from": [
+    "cell_manifest_i1481caspo_s137.json"
+  ],
+  "merged_seeds": [
+    137
+  ],
+  "ts": "2026-07-19T01:10:10Z"
+}

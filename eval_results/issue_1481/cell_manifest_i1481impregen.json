@@ -1,0 +1,71 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-impolite-con-regen",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "git_commit": "09ce17a80",
+  "created_utc": "2026-07-18T22:41:45Z",
+  "runs": [
+    {
+      "run_id": "imp-bare-con-lr1e4-s42",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-bare-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl": {
+          "oid": "7d4b04cd7372a5cd3ed05cc0677bbbba9363de90",
+          "date": "2026-07-08T03:21:32+00:00"
+        },
+        "issue1090_fu3/C2-bare-con-impolite-claude/mix_meta.json": {
+          "oid": "da0659432b584ef60b92a5060999e844bdd88e5c",
+          "date": "2026-07-08T03:21:54+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T15:24:27-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "merged_from": [
+    "cell_manifest_i1481impregen_s42.json"
+  ],
+  "merged_seeds": [
+    42
+  ],
+  "ts": "2026-07-19T01:11:01Z"
+}

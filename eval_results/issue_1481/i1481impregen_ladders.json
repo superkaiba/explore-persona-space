@@ -1,0 +1,55 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-impolite-con-regen",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "judge_max_tokens": 300,
+  "tier2_draws": 5,
+  "runs": {
+    "imp-bare-con-lr1e4-s42": {
+      "run_id": "imp-bare-con-lr1e4-s42",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "base_tier2": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "status": "missing_artifacts",
+      "missing_reason": "no tree at superkaiba1/explore-persona-space-data/issue1481_conpos_grid/raw_completions/tier2/imp-bare-con-lr1e4-s42"
+    }
+  },
+  "cells": {
+    "imp-bare": {
+      "best_run": {
+        "max_tier1_rate": null,
+        "run_id": null,
+        "step": null
+      },
+      "U_band_floor_margin": null,
+      "V_030_margin": null,
+      "tier2_confirm": {
+        "imp-bare-con-lr1e4-s42": null
+      }
+    }
+  },
+  "git_commit": "4c016d85e9",
+  "created_utc": "2026-07-19T01:29:14Z",
+  "formatting_judged_reread_required": false
+}
