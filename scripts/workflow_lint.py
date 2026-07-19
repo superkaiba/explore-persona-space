@@ -457,6 +457,28 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-live-hf-retry-routing`` (also bundled into the no-flags default
+  run): walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on a bare (un-retried) HuggingFace
+  Hub call in LIVE code — ``hf_hub_download(`` / ``.upload_file(`` /
+  ``.upload_folder(`` / ``create_commit(`` / ``push_to_hub(`` with no
+  ``retry_transient`` / ``_retry_upload`` wrap ANCHORED to the call (same
+  line before the call, or opening within
+  :data:`HF_ROUTING_WRAP_WINDOW` lines above with the wrap expression still
+  open at the call line — a wrapped sibling never launders a bare call) and
+  no ``# NO_RETRY: <reason>`` waiver on the line or the line above.
+  hf_hub 0.36.2 natively retries only 500/502/503/504 on the download/LFS
+  paths and the commit API not at all, so a bare live site is a 429
+  single-point-of-failure (#1426/#1335, the 2026-07-18 storm). The 297
+  per-issue historical files present at #1547 implement time are
+  snapshot-exempt (:data:`HF_ROUTING_FROZEN_SNAPSHOT` — the routing
+  requirement attaches at REUSE time via artifact-reuse check (i)); NEWLY
+  written files, including new ``scripts/issue<N>_*.py`` drivers, ARE
+  scanned. ``scripts/workflow_lint.py`` / ``scripts/verify_plan.py``
+  (pattern strings) and ``backends/gcp.py`` (generated pod-side heredocs
+  with their own bounded retry) are constant-excluded. Bare
+  ``snapshot_download`` / ``list_repo_files`` sites are OUT of the predicate
+  by design (#1547).
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -7411,6 +7433,447 @@ def check_judge_model_pins(
     return errors
 
 
+# --- `--check-live-hf-retry-routing` (#1547): bare live HF call sites ------
+# huggingface_hub 0.36.2's native `http_backoff` retries only 500/502/503/504
+# (never 429) and covers only the download/LFS-PUT paths; the commit API
+# (`create_commit`, which `upload_file`/`upload_folder` route through) has NO
+# native retry at all — so every bare live call site is a 429
+# single-point-of-failure (three same-day 429 kills, 2026-07-18: the #1426
+# `upload_folder_scoped_verify` class, the #1335 `ensure_store_local` class,
+# and a crash-report download). LIVE code routes each call through
+# `hub.retry_transient` / `hub._retry_upload` (Retry-After-aware,
+# transient-only — a non-transient 403/permission/404-with-response error
+# still raises on the FIRST attempt) or carries an explicit
+# `# NO_RETRY: <reason>` waiver on the call line or the line above.
+HF_ROUTING_CALL_RE = re.compile(
+    r"\bhf_hub_download\s*\(|\.upload_file\s*\(|\.upload_folder\s*\("
+    r"|\bcreate_commit\s*\(|\bpush_to_hub\s*\("
+)
+HF_ROUTING_WRAP_RE = re.compile(r"\b(?:retry_transient|_retry_upload)\s*\(")
+# Lines ABOVE the call on which the wrap may open (the lambda-wrap shape).
+HF_ROUTING_WRAP_WINDOW = 3
+# Scope roots (repo-root-relative). tests/ is deliberately out of scope.
+HF_ROUTING_SCOPE_ROOTS = ("scripts", "src/explore_persona_space")
+# Files whose predicate matches are pattern STRINGS inside lint/verifier
+# checks, not call sites (self-exclusion by constant — #1547 review
+# directive 3).
+HF_ROUTING_PATTERN_STRING_FILES: frozenset[str] = frozenset(
+    {
+        "scripts/workflow_lint.py",
+        "scripts/verify_plan.py",
+    }
+)
+# Files whose predicate matches live inside GENERATED-CODE string constants
+# (the pod-side crash-persist heredocs in backends/gcp.py, which carry their
+# own bounded Retry-After-aware retry — #1547 leg C, pinned executable +
+# string-shape in tests/test_gcp_backend.py), not importable call sites.
+HF_ROUTING_GENERATED_CODE_FILES: frozenset[str] = frozenset(
+    {
+        "src/explore_persona_space/backends/gcp.py",
+    }
+)
+# SNAPSHOT allowlist of the per-issue historical files present at #1547
+# implement time (2026-07-19; the plan §10 audit grep over src/ + scripts/
+# minus the live set). These are frozen reproducibility artifacts: no
+# retro-fit churn — the routing requirement attaches at REUSE time via the
+# artifact-reuse throughput check (i) ("fix the SOURCE module, then reuse";
+# `.claude/rules/artifact-reuse.md`). NEWLY-written files — including new
+# `scripts/issue<N>_*.py` drivers — are NOT in this snapshot and ARE scanned
+# (the `JUDGE_PIN_LEGACY_ALLOWLIST` snapshot idiom: exempt today's tree
+# once, gate everything that lands after).
+HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
+    {
+        "scripts/_issue543_common.py",
+        "scripts/analyze_length_rate_296.py",
+        "scripts/analyze_length_rate_n48.py",
+        "scripts/archive/upload_and_clean.py",
+        "scripts/dispatch_neg_geometry_504.py",
+        "scripts/eval_issue562_panel.py",
+        "scripts/eval_marker_spread_source_only.py",
+        "scripts/fetch_issue506_phase1_dataset.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/generate_issue356_data.py",
+        "scripts/i460_phase23_train.py",
+        "scripts/i460_phase2_smoke_check.py",
+        "scripts/i460_phase4_eval.py",
+        "scripts/i474_phase1_load_R.py",
+        "scripts/i474_phase23_train.py",
+        "scripts/i474_phase2_smoke_check.py",
+        "scripts/i474_phase4_eval.py",
+        "scripts/i477_reval_confirm.py",
+        "scripts/i488_phase23_train.py",
+        "scripts/i488_phase2_smoke_calibrate.py",
+        "scripts/i488_phase4_eval_onpolicy.py",
+        "scripts/i504_make_figures.py",
+        "scripts/i504_reval_confirm.py",
+        "scripts/i504_round6_recompute_mean_centered.py",
+        "scripts/i549_audit_504.py",
+        "scripts/i556_pull_qbank.py",
+        "scripts/issue1005_cap16k_launch.py",
+        "scripts/issue1024_diagnose_parse_failures.py",
+        "scripts/issue1073_common.py",
+        "scripts/issue1073_greedy_cloud_distribution.py",
+        "scripts/issue1073_mlp_krr_fits.py",
+        "scripts/issue1074_aggregate.py",
+        "scripts/issue1074_generator_compare.py",
+        "scripts/issue1090_free_analysis.py",
+        "scripts/issue1090_fu1.py",
+        "scripts/issue1090_fu3_worker.py",
+        "scripts/issue1090_fu3_yield_replay.py",
+        "scripts/issue1090_fu4.py",
+        "scripts/issue1090_fu4_text_audit.py",
+        "scripts/issue1090_run.py",
+        "scripts/issue1092_bridge_refit.py",
+        "scripts/issue1092_build_corpus.py",
+        "scripts/issue1092_claude_text.py",
+        "scripts/issue1092_corpus_dashboard.py",
+        "scripts/issue1092_figures.py",
+        "scripts/issue1092_fit_grid.py",
+        "scripts/issue1092_gpu_phase.py",
+        "scripts/issue1092_inline_operator_stage.py",
+        "scripts/issue1092_p6_run.py",
+        "scripts/issue1092_read4c_repair.py",
+        "scripts/issue1092_transfer_probe.py",
+        "scripts/issue1108_repo_file_audit.py",
+        "scripts/issue1112_dispatch.py",
+        "scripts/issue1112_geometry.py",
+        "scripts/issue1310_agg_perfold.py",
+        "scripts/issue1310_dashboard_stories.py",
+        "scripts/issue1315_cjk_audit.py",
+        "scripts/issue1315_cjk_audit_rejudge.py",
+        "scripts/issue1315_dispatch.py",
+        "scripts/issue1315_geometry.py",
+        "scripts/issue1315_rejudge_529.py",
+        "scripts/issue1332_bank_build.py",
+        "scripts/issue1332_common.py",
+        "scripts/issue1332_gpu_phase.py",
+        "scripts/issue1332_lowdose_gpu.py",
+        "scripts/issue1332_lowdose_train.py",
+        "scripts/issue1333_dispatch.py",
+        "scripts/issue1333_geometry.py",
+        "scripts/issue1333_matched_reread_analysis.py",
+        "scripts/issue1335_extract_store.py",
+        "scripts/issue1335_fit.py",
+        "scripts/issue1335_gen.py",
+        "scripts/issue1335_refit_companions.py",
+        "scripts/issue1335_refit_r0_filters.py",
+        "scripts/issue1335_render_rungs.py",
+        "scripts/issue1336_dedup_sensitivity.py",
+        "scripts/issue1336_diagnose_g1.py",
+        "scripts/issue1336_extract_turnstore.py",
+        "scripts/issue1336_fit_cells.py",
+        "scripts/issue1336_gen_answers.py",
+        "scripts/issue1336_recal_verdict.py",
+        "scripts/issue1345_common.py",
+        "scripts/issue1345_framing_dashboard.py",
+        "scripts/issue1345_gen_stories.py",
+        "scripts/issue1345_prefetch_reuse.py",
+        "scripts/issue1415_disjoint_recount.py",
+        "scripts/issue1415_judge.py",
+        "scripts/issue1415_map_transport.py",
+        "scripts/issue1415_pair_bank.py",
+        "scripts/issue1415_run_phase1.py",
+        "scripts/issue1434_po_intrusion_audit.py",
+        "scripts/issue1481_borderline_bootstrap.py",
+        "scripts/issue1481_cjk_audit.py",
+        "scripts/issue1481_worker.py",
+        "scripts/issue1482_error_analysis.py",
+        "scripts/issue1482_sae.py",
+        "scripts/issue458_prep_datasets.py",
+        "scripts/issue509_baserate_covariate_earlylayer.py",
+        "scripts/issue509_bystander_bootstrap.py",
+        "scripts/issue509_pathb_fact_rerun.py",
+        "scripts/issue509_top2_scatter_figure.py",
+        "scripts/issue511_probe_count_sweep.py",
+        "scripts/issue527_dan_rank1_scalar_regression.py",
+        "scripts/issue530_logit_reval.py",
+        "scripts/issue531_logit_rescore.py",
+        "scripts/issue532_followup_logp_slot.py",
+        "scripts/issue532_predictor_stress.py",
+        "scripts/issue536_recompute_driver.py",
+        "scripts/issue540_jsrb_predictor.py",
+        "scripts/issue545_metric_race.py",
+        "scripts/issue545_sweep.py",
+        "scripts/issue545_train_cell.py",
+        "scripts/issue545_v2_comparison.py",
+        "scripts/issue552_cross_arm_analysis.py",
+        "scripts/issue559_base_prior_persona_panel.py",
+        "scripts/issue559_cross_behavior_self_scoring.py",
+        "scripts/issue559_disjoint_question_followup.py",
+        "scripts/issue560_crossrecipe_panel.py",
+        "scripts/issue588_smoke_artifact.py",
+        "scripts/issue594_analyze_context_geometry.py",
+        "scripts/issue594_extract_context_vectors.py",
+        "scripts/issue595_prefix_carrier.py",
+        "scripts/issue604_adapter_svd.py",
+        "scripts/issue604_analyze.py",
+        "scripts/issue604_extract_context_vectors.py",
+        "scripts/issue617_upload_corpus.py",
+        "scripts/issue621_checkpoint_ladder.py",
+        "scripts/issue623_persona_resolve.py",
+        "scripts/issue634_extract_behavior_vectors.py",
+        "scripts/issue634_joint_geometry.py",
+        "scripts/issue648_centered_vs_raw_predictive_skill.py",
+        "scripts/issue649_extract_panel_earlylayer.py",
+        "scripts/issue649_level_change_decomp.py",
+        "scripts/issue650_extract_context_bank.py",
+        "scripts/issue651_dispatch.py",
+        "scripts/issue651_drain_extracts.py",
+        "scripts/issue654_fetch_pinned_battery.py",
+        "scripts/issue658_common.py",
+        "scripts/issue658_extract_base_store.py",
+        "scripts/issue658_fit_predictors.py",
+        "scripts/issue658_inline_a3_5a_reduce.py",
+        "scripts/issue661_analysis.py",
+        "scripts/issue661_extract_directions.py",
+        "scripts/issue661_freeze_instructions.py",
+        "scripts/issue661_generate_arm_a.py",
+        "scripts/issue664_aggregate_gate.py",
+        "scripts/issue664_build_training_data.py",
+        "scripts/issue664_common.py",
+        "scripts/issue664_dispatch.py",
+        "scripts/issue666_load_store.py",
+        "scripts/issue667_alllayer_analysis.py",
+        "scripts/issue667_alllayer_dispatch.py",
+        "scripts/issue667_analysis.py",
+        "scripts/issue667_deltac_probe.py",
+        "scripts/issue667_dispatch.py",
+        "scripts/issue667_extract.py",
+        "scripts/issue667_figures.py",
+        "scripts/issue667_pertoken_context_dispatch.py",
+        "scripts/issue667_pertoken_dispatch.py",
+        "scripts/issue683_build_syco_c_bank.py",
+        "scripts/issue683_extract_dv_marker.py",
+        "scripts/issue683_extract_dv_sycophancy.py",
+        "scripts/issue683_extract_tcb.py",
+        "scripts/issue685_assistant_excluded_recompute.py",
+        "scripts/issue685_matched_position_u.py",
+        "scripts/issue722_extract_fact_rb.py",
+        "scripts/issue722_fit_M.py",
+        "scripts/issue722_load_activations.py",
+        "scripts/issue722_per_position_vC_skill.py",
+        "scripts/issue722_regen_ultrachat_generic.py",
+        "scripts/issue744_dump_and_stream.py",
+        "scripts/issue745_upload_engagement_smoke.py",
+        "scripts/issue763_build_probe_pools.py",
+        "scripts/issue763_cofit_predictors.py",
+        "scripts/issue763_cofit_upload.py",
+        "scripts/issue763_common.py",
+        "scripts/issue763_disclosure_flag_audit.py",
+        "scripts/issue763_extract_pv_rb.py",
+        "scripts/issue763_fit_predictors.py",
+        "scripts/issue763_judge_e0.py",
+        "scripts/issue763_stage_pools.py",
+        "scripts/issue763_upload.py",
+        "scripts/issue778_v2_prefetch.py",
+        "scripts/issue778_v2_upload.py",
+        "scripts/issue779_arm_headline_pod.py",
+        "scripts/issue779_batch2.py",
+        "scripts/issue779_capture_answer_summaries.py",
+        "scripts/issue779_capture_answer_summaries_pass2.py",
+        "scripts/issue779_collect.py",
+        "scripts/issue779_dashboard_completions.py",
+        "scripts/issue779_dashboard_corpora.py",
+        "scripts/issue779_edges.py",
+        "scripts/issue779_extract_rb.py",
+        "scripts/issue779_ffc_n1m_fits.py",
+        "scripts/issue779_ffc_n1m_generate_capture.py",
+        "scripts/issue779_ffc_n50k_fits.py",
+        "scripts/issue779_gen_behavior_corpus.py",
+        "scripts/issue779_pertoken_lmsys_analysis.py",
+        "scripts/issue779_pertoken_lmsys_capture.py",
+        "scripts/issue779_pertoken_vs_mean_variance.py",
+        "scripts/issue779_reliability_gen_capture.py",
+        "scripts/issue779_stage_pass2_vm.py",
+        "scripts/issue810_adhoc_crosslayer_pooled.py",
+        "scripts/issue810_adhoc_lofo_heatmaps.py",
+        "scripts/issue810_adhoc_var_vs_skill.py",
+        "scripts/issue810_batch_rejudge_highm.py",
+        "scripts/issue810_bootstrap_deltaskill.py",
+        "scripts/issue810_common.py",
+        "scripts/issue810_extract_positions.py",
+        "scripts/issue810_fa_refusal_diagnostics.py",
+        "scripts/issue810_fit_readout.py",
+        "scripts/issue810_fit_reconstruction.py",
+        "scripts/issue810_maxpool_censoring.py",
+        "scripts/issue811_mean_parity_check.py",
+        "scripts/issue811_offset_decomposition.py",
+        "scripts/issue811_upload_store.py",
+        "scripts/issue813_rank_spectrum.py",
+        "scripts/issue823_identity_baseline.py",
+        "scripts/issue825_crossmodel_map_transfer.py",
+        "scripts/issue825_dashboard_naturalistic.py",
+        "scripts/issue825_map_alignment.py",
+        "scripts/issue825_prestage_gen.py",
+        "scripts/issue825_reparam_directions.py",
+        "scripts/issue833_chain_rho_fixedtext.py",
+        "scripts/issue833_chain_rho_nonemit.py",
+        "scripts/issue833_extract_onpolicy.py",
+        "scripts/issue833_fit_onpolicy.py",
+        "scripts/issue841_common.py",
+        "scripts/issue841_scaling_capture.py",
+        "scripts/issue841_scaling_common.py",
+        "scripts/issue920_extract_summaries.py",
+        "scripts/issue920_gen_completions_b.py",
+        "scripts/issue920_nulls_figures.py",
+        "scripts/issue922_common.py",
+        "scripts/issue922_fixed_point_slow_modes.py",
+        "scripts/issue922_repair_provenance.py",
+        "scripts/issue922_slow_shell.py",
+        "scripts/issue923_build_inputs.py",
+        "scripts/issue923_reduce_spans.py",
+        "scripts/issue928_common.py",
+        "scripts/issue928_extract_thinking_store.py",
+        "scripts/issue928_mlp_indiv_control.py",
+        "scripts/issue931_author_blocked_folds.py",
+        "scripts/issue931_distance_covariate.py",
+        "scripts/issue931_fit_cells.py",
+        "scripts/issue931_power_curve_multi_seed.py",
+        "scripts/issue931_sep_to_chat_matched_control.py",
+        "scripts/issue952_bank_build.py",
+        "scripts/issue952_behavior_differs_subset.py",
+        "scripts/issue952_china_topup_gpu.py",
+        "scripts/issue952_divtrain_build.py",
+        "scripts/issue952_divtrain_gpu.py",
+        "scripts/issue952_noise_ceiling_gpu.py",
+        "scripts/issue952_refusal_sanity.py",
+        "scripts/issue958_carried_directions.py",
+        "scripts/issue958_common.py",
+        "scripts/issue958_dup_excluded_refit.py",
+        "scripts/issue958_fit_maps.py",
+        "scripts/issue958_long_k1_transfer_lclamp.py",
+        "scripts/issue_480/dispatch_marker_480.py",
+        "scripts/issue_480/i480_syco_geometry_controls.py",
+        "scripts/issue_552_prep_good_corpus.py",
+        "scripts/issue_597/analyze_titration_597.py",
+        "scripts/issue_597/dispatch_leakage_dynamics_597.py",
+        "scripts/issue_597/titration_svd_597.py",
+        "scripts/issue_642/i642_analyze.py",
+        "scripts/issue_642/i642_dispatch.py",
+        "scripts/issue_642/i642_v4_splice_canned_pool.py",
+        "scripts/issue_653/i653_postpod_bootstrap.py",
+        "scripts/make_issue516_figures.py",
+        "scripts/rollup_issue562_panel.py",
+        "scripts/run_dose_response_cell.py",
+        "scripts/run_experiment_444.py",
+        "scripts/run_issue650_preflight.py",
+        "scripts/run_issue650_train.py",
+        "src/explore_persona_space/analysis/issue685/signed_cosine.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/elicit_v2.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/gates.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_530/data_deps.py",
+        "src/explore_persona_space/experiments/i460_data.py",
+        "src/explore_persona_space/experiments/issue_1072/run_1072.py",
+        "src/explore_persona_space/experiments/issue_1072/run_1072_lowdim.py",
+        "src/explore_persona_space/experiments/issue_650/__init__.py",
+        "src/explore_persona_space/experiments/issue_651/__init__.py",
+        "src/explore_persona_space/experiments/issue_653/onpolicy_pool.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/issue_952/run_952.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/analyze_expanded.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/build_pv_centroids.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/dispatch.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py",
+        "src/explore_persona_space/experiments/marker_implant_480/build_training_pool.py",
+        "src/explore_persona_space/experiments/neg_setpoint_601/artifacts.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/panel_select.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/prefetch_inputs.py",
+    }
+)
+
+
+def _hf_routing_call_is_wrapped(lines: list[str], i: int, match_start: int) -> bool:
+    """True iff the HF call at ``lines[i][match_start:]`` rides a
+    ``retry_transient`` / ``_retry_upload`` wrap.
+
+    Anchors to the CALL'S OWN wrap, not mere window proximity (#1547 review
+    directive 2): a same-line wrap counts only when it opens BEFORE the call
+    (``retry_transient(lambda: api.upload_file(...))``); an above-line wrap
+    counts only while the expression it opened is still OPEN at line ``i`` —
+    the net ``(``-minus-``)`` balance of the lines from the wrap line through
+    ``i - 1`` stays positive — so a WRAPPED sibling call one line up can
+    never launder a bare call in the same window (a complete wrapped
+    statement nets to zero parens).
+    """
+    for m in HF_ROUTING_WRAP_RE.finditer(lines[i]):
+        if m.start() < match_start:
+            return True
+    bal = 0
+    for j in range(i - 1, max(-1, i - 1 - HF_ROUTING_WRAP_WINDOW), -1):
+        bal += lines[j].count("(") - lines[j].count(")")
+        if bal > 0 and HF_ROUTING_WRAP_RE.search(lines[j]):
+            return True
+    return False
+
+
+def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
+    """Walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py`` and
+    FAIL on a bare (un-retried) HuggingFace Hub mutation/download call in
+    LIVE code (#1547).
+
+    A non-comment line matching :data:`HF_ROUTING_CALL_RE`
+    (``hf_hub_download(`` / ``.upload_file(`` / ``.upload_folder(`` /
+    ``create_commit(`` / ``push_to_hub(``) flags UNLESS:
+
+    * the call rides ``retry_transient`` / ``_retry_upload`` — on the same
+      line (wrap opening BEFORE the call) or within
+      :data:`HF_ROUTING_WRAP_WINDOW` lines above with the wrap's expression
+      still open at the call line (:func:`_hf_routing_call_is_wrapped`); or
+    * a ``# NO_RETRY: <reason>`` waiver sits on the line or the line above; or
+    * the line is the wrap idiom's own ``what=`` descriptor kwarg
+      (``what=f"hf_hub_download({repo}/{path})"``); or
+    * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the 297 per-issue
+      historical files frozen at #1547 implement time — the routing
+      requirement attaches at REUSE time via artifact-reuse check (i)),
+      :data:`HF_ROUTING_PATTERN_STRING_FILES` (this file + verify_plan.py:
+      pattern strings, not calls), or
+      :data:`HF_ROUTING_GENERATED_CODE_FILES` (backends/gcp.py: pod-side
+      heredoc string constants carrying their own bounded retry — leg C).
+
+    Scope boundary (deliberate): bare ``snapshot_download`` /
+    ``list_repo_files`` sites are OUT of the predicate — a 429 there is not
+    a gap in THIS check (see `.claude/rules/upload-policy.md` § Fleet-shared
+    commit budget). ``repo_root`` is a unit-test override hook; production
+    callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for scope in HF_ROUTING_SCOPE_ROOTS:
+        base = root / scope
+        if not base.exists():
+            continue
+        for py in sorted(base.rglob("*.py")):
+            if not py.is_file() or "__pycache__" in py.parts:
+                continue
+            rel = py.relative_to(root).as_posix()
+            if (
+                rel in HF_ROUTING_FROZEN_SNAPSHOT
+                or rel in HF_ROUTING_PATTERN_STRING_FILES
+                or rel in HF_ROUTING_GENERATED_CODE_FILES
+            ):
+                continue
+            lines = py.read_text(encoding="utf-8").splitlines()
+            for i, line in enumerate(lines):
+                stripped = line.lstrip()
+                if stripped.startswith("#") or stripped.startswith("what="):
+                    continue
+                m = HF_ROUTING_CALL_RE.search(line)
+                if m is None:
+                    continue
+                if "# NO_RETRY:" in line or (i > 0 and "# NO_RETRY:" in lines[i - 1]):
+                    continue
+                if _hf_routing_call_is_wrapped(lines, i, m.start()):
+                    continue
+                errors.append(
+                    f"[live-hf-retry-routing] {rel}:{i + 1}: bare HF Hub "
+                    f"call in LIVE code — route through hub.retry_transient (or waive "
+                    f"with `# NO_RETRY: <reason>`): {stripped[:100]}"
+                )
+    return errors
+
+
 # --- `--check-phase-done-reserved` (#930): reserved `[phase=done]` token ----
 # The literal reserved token from .claude/rules/pod-side-reporting.md
 # requirement 1: `poll_pipeline.py` declares status="done" when the most
@@ -11370,6 +11833,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run (#765).",
     )
     parser.add_argument(
+        "--check-live-hf-retry-routing",
+        action="store_true",
+        help="Walk scripts/**/*.py + src/explore_persona_space/**/*.py and FAIL "
+        "on a bare (un-retried) HuggingFace Hub call in LIVE code: "
+        "hf_hub_download( / .upload_file( / .upload_folder( / create_commit( / "
+        "push_to_hub( with no retry_transient/_retry_upload wrap anchored to "
+        "the call and no '# NO_RETRY: <reason>' waiver. hf_hub 0.36.2 natively "
+        "retries only 500/502/503/504 on download/LFS paths and the commit API "
+        "not at all, so a bare live site is a 429 single-point-of-failure "
+        "(#1426/#1335, the 2026-07-18 storm). The ~297 per-issue historical "
+        "files frozen at #1547 implement time are snapshot-exempt "
+        "(HF_ROUTING_FROZEN_SNAPSHOT); NEW files are scanned. Bundled into the "
+        "no-flags default run (#1547).",
+    )
+    parser.add_argument(
         "--check-no-literal-round-marker-versions",
         action="store_true",
         help="FAIL on a literal 'v1' posting instruction for a round-versioned "
@@ -11595,6 +12073,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_asw_docstring_pass_count
         or args.check_marker_recipe_snippets
         or args.check_judge_model_pins
+        or args.check_live_hf_retry_routing
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_api_dispatch_routing
@@ -11726,6 +12205,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_marker_recipe_snippets())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
+    if args.check_live_hf_retry_routing or no_flags:
+        errors.extend(check_live_hf_retry_routing())
     if args.check_no_literal_round_marker_versions or no_flags:
         errors.extend(check_no_literal_round_marker_versions())
     if args.check_api_dispatch_routing or no_flags:
