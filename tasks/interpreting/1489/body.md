@@ -37,7 +37,7 @@ relates_to:
 - The judge-independent format validators show the pipeline detects strong manipulation where it exists: augmented pass rates 0.50–0.89 versus 0.00–0.05 plain (n=150 per instance).
 - Fact scores are echo-inflated — all 7 relevance-scored rows with fact-use at or above 90 carry judged relevance 0; the topic rule matched the judge on 53% of 400 pairs.
 - Context distillation reached the in-context compliance level on held-out probe rows in all 8 runs within 4 epochs (dose gaps 0.05–5.7 points); two runs overshoot it.
-- The transport-map questions (transfer matrix, shift rank, relevance gating, per-example in-weights alignment) were not tested; the round leaves a calibrated library read plus a reusable 38,000-generation substrate and 64 adapters.
+- The transport-map questions (transfer matrix, shift rank, relevance gating, per-example in-weights alignment) were not tested; the round leaves a measured manipulation-strength table (3 of 4 families under floor) plus a reusable 38,000-generation substrate and 64 adapters.
 
 ## Goal
 
@@ -132,7 +132,7 @@ Family retention lands at fact 0/4, format 3/4, instruction 0/4, persona 0/4, so
 
 The exception, agree-with-the-user (p = 0.44), is noise-limited rather than effect-confirmed — its plain baseline of 16.6 compresses the available delta and its reliability ceiling is 0.00. JSON-only misses the 0.60 code floor at 0.500.
 
-### Context distillation walks probe-row compliance up to the in-context level in all 8 runs
+### Context distillation reaches the in-context compliance level on held-out probe rows in all 8 runs
 
 Each panel: judged or code compliance (0–100) on one run's held-out probe rows (n=51–150) across its 8 checkpoints (0.5-epoch steps); dashed line = the in-context level on the same rows, dotted line = plain baseline, circled point = the dose-matched checkpoint.
 
@@ -152,11 +152,11 @@ Bars: fraction of 100 relevance probe pairs per scoped augmentation where the fr
 
 > **Figure.** *The topic rule agrees with the judged relevance label on only 50–57% of pairs, far under the 0.80 gate.* Per scoped augmentation: fraction of 100 (augmentation, query) probe pairs where the frozen rule matches the judge (95% CI); overall agreement 53% of 400 pairs, so the judged label replaced the rule.
 
-The judged label replaced the rule (the plan's fallback). Almost no probe pairs are judged answer-changing — 0/100 vegetarian, 2/100 Tokyo, 13/100 Python, 25/100 refuse-coding — because the corpus has no food or travel topic mass; the fact subsets were mostly queries the fact cannot change.
+The judged label replaced the rule (the plan's fallback). Almost no probe pairs are judged answer-changing — 0/100 vegetarian, 2/100 Tokyo, 13/100 Python, 25/100 refuse-coding. The judged label is itself unvalidated once the rule failed (nothing independent anchors it here), but the direction matches the corpus's topic composition: the fact subsets were mostly queries the fact cannot change.
 
 Of the 14 vegetarian rows with fact-use at or above 90, all 7 relevance-scored ones have judged relevance 0.0 (the complete enumeration; row ids in the per-item score files), and the clearest case translates the injected fact string itself. The judged fact deltas are closer to a mention rate than a conditional-use rate: echo-inflated, and still under the floor.
 
-### Teacher-forced margins show the fact information registers on almost every row while on-policy use stays rare
+### Teacher-forced margins shift toward fact-consistency on almost every row while on-policy fact use stays rare
 
 Each dot is one probe row's paired margin delta (augmented − plain): fixed fact-consistent minus fact-inconsistent completion log-probability, length-normalized; n=200 rows per fact instance; diamonds mark the mean ± SE; the dotted line marks zero.
 
@@ -164,13 +164,13 @@ Each dot is one probe row's paired margin delta (augmented − plain): fixed fac
 
 > **Figure.** *Fact augmentations shift the teacher-forced margin on essentially every probe row.* Per-row paired margin deltas (augmented − plain), n=200 per instance, jittered strips with mean ± SE; 99.5% (vegetarian) and 100% (Python) of rows positive; p = 1.5e-34 and 1.4e-34, paired.
 
-Mean deltas are +0.649 (SE 0.020) for the vegetarian fact and +1.070 (SE 0.019) for the Python fact: the augmentation moves essentially every row toward fact-consistent completions while the judged on-policy fact-use delta stays at or under +16. The information registers; it rarely surfaces in the model's own greedy answers.
+Mean deltas are +0.649 (SE 0.020) for the vegetarian fact and +1.070 (SE 0.019) for the Python fact: the augmentation shifts completion probabilities toward the fact-consistent answer on essentially every row, while the judged on-policy fact-use delta stays at or under +16. The fact reliably changes what the model assigns probability to; the model's own greedy answers rarely act on it.
 
 Caveats: margins are quoted over all 200 drafted pairs (kept-pairs-only: +0.653 and +1.070, immaterial); part of the shift is an expected copy effect of the fact text in context; the finetuned models were never margin-scored; with only 2 cells the margin-versus-rate validation cannot be computed. This companion stays secondary, never the construct.
 
-### The map-level questions were not tested; the round delivers a calibrated library and a reusable substrate
+### The map-level questions were not tested; the round delivers a measured manipulation-strength table and a reusable substrate
 
-No figure: an inventory result with no per-unit decomposition. The transfer matrix, shift decomposition, relevance-gating linearity, per-example in-weights alignment, gating transfer, and post-finetuning map validity were not run — no finetuned-model eval, no fits, no aggregation, per the kill's prescription (the two later fit gates were never reached).
+No figure: an inventory result with no per-unit decomposition. The transfer matrix, shift decomposition, relevance-gating linearity, per-example in-weights alignment, gating transfer, and post-finetuning map validity were not run — no finetuned-model eval and no fits or aggregation, per the kill's prescription (the two later fit gates were never reached).
 
 What the round delivers: the manipulation calibration of a 16-instance augmentation library on real-corpus queries; the dose-ladder demonstration; and a complete substrate — 38,000 greedy generations, teacher-forced captures (7 summary kinds × 28 layers) for all 17 in-context cells, 64 distillation adapters, the conditions manifest, margin pools, and per-draw judge outputs — all verified on permanent storage, reusable by a library-v2 round without regenerating the plain-cell infrastructure.
 
