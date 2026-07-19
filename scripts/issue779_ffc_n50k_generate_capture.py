@@ -615,12 +615,15 @@ def _smoke(args) -> int:
 
         return _gen
 
+    # HUB_VERIFY_RETRY_EXEMPT: self-test monkeypatch of the resume-index error paths — attribute reference only, no network call.
     orig_lrt = huggingface_hub.HfApi.list_repo_tree
     try:
+        # HUB_VERIFY_RETRY_EXEMPT: self-test monkeypatch of the resume-index error paths — attribute reference only, no network call.
         huggingface_hub.HfApi.list_repo_tree = _lazy_raise(EntryNotFoundError("missing prefix"))
         assert _remote_index("issue779_monitoring/does-not-exist/final_token_capture") == {}, (
             "EntryNotFoundError (first-run missing prefix) must yield an EMPTY resume index"
         )
+        # HUB_VERIFY_RETRY_EXEMPT: self-test monkeypatch of the resume-index error paths — attribute reference only, no network call.
         huggingface_hub.HfApi.list_repo_tree = _lazy_raise(RepositoryNotFoundError("repo gone"))
         try:
             _remote_index("issue779_monitoring/does-not-exist/raw_completions")
@@ -628,6 +631,7 @@ def _smoke(args) -> int:
         except RepositoryNotFoundError:
             pass
     finally:
+        # HUB_VERIFY_RETRY_EXEMPT: self-test monkeypatch of the resume-index error paths — attribute reference only, no network call.
         huggingface_hub.HfApi.list_repo_tree = orig_lrt
 
     logger.info(
