@@ -4089,8 +4089,8 @@
     "1524": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1524",
-      "status": "reviewing",
+      "path": "tasks/completed/1524",
+      "status": "completed",
       "title": "workflow-fix: verify_uploads merged card \u2014 prose pointer must not shadow a valid adapter_paths list"
     },
     "1525": {
