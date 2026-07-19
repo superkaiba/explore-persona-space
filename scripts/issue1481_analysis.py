@@ -1239,7 +1239,12 @@ def _margin_rate_validation(manifest: dict, content_root: Path | None) -> dict:
                     missing.append(arm_id)
                     continue
                 m = _read_json(mpath)
+                # fu4 margin.json carries margin_base/margin_trained/margin_delta;
+                # the #1434 validation pairs margin_delta (trained-base fixed-pool
+                # margin) with the Tier-1 rate (po_margin_validation.json note).
                 margin = m.get("margin") if isinstance(m, dict) else None
+                if margin is None and isinstance(m, dict):
+                    margin = m.get("margin_delta")
                 if margin is None:
                     margin = (
                         (m.get("tf_margin") or {}).get("margin") if isinstance(m, dict) else None

@@ -1,0 +1,135 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:20Z",
+  "figsize": [
+    3.6,
+    3.4
+  ],
+  "points": [
+    {
+      "D (seed 42)": 0.13048472505091652,
+      "D (seed 137)": 0.23657613168724279,
+      "series": "Casual style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "D (seed 42)": 0.017630522088353417,
+      "D (seed 137)": 0.011606425702811243,
+      "series": "Casual style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "D (seed 42)": -0.08233734939759035,
+      "D (seed 137)": -0.13352928078378978,
+      "series": "Casual style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "D (seed 42)": 0.2865409836065574,
+      "D (seed 137)": 0.23863548598210615,
+      "series": "Casual style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "D (seed 42)": 0.08085370741482967,
+      "D (seed 137)": 0.10170844707523702,
+      "series": "Impolite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "D (seed 42)": -0.05305367558888685,
+      "D (seed 137)": -0.03850411707190937,
+      "series": "Impolite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "D (seed 42)": 0.21443286573146292,
+      "D (seed 137)": 0.25593987975951904,
+      "series": "Impolite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "D (seed 42)": 0.30448484848484847,
+      "D (seed 137)": 0.27080080482897384,
+      "series": "Impolite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "D (seed 42)": 0.14652130790367957,
+      "D (seed 137)": 0.1441995101313739,
+      "series": "Sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "D (seed 42)": 0.01999999999999999,
+      "D (seed 137)": 0.031519038076152334,
+      "series": "Sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "D (seed 42)": 0.011999999999999955,
+      "D (seed 137)": 0.08157680823494379,
+      "series": "Sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "D (seed 42)": -0.05709311740890688,
+      "D (seed 137)": 0.13369308898922339,
+      "series": "Sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Run-level variance: per-seed D (edged = sign-discordant)",
+        "xlabel": "D (seed 42)",
+        "ylabel": "D (seed 137)",
+        "legend_labels": [
+          "Casual style",
+          "Impolite",
+          "Sycophancy"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "Casual style",
+      "Impolite",
+      "Sycophancy"
+    ]
+  }
+}

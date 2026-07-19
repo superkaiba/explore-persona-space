@@ -1,0 +1,55 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:18Z",
+  "figsize": [
+    10.9,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy \u2014 six-context panel rates",
+        "xticklabels": [
+          "syc-bare-con-lr1e5-s137",
+          "syc-bare-con-lr1e5-s42",
+          "syc-bare-po-lr1e5-s137",
+          "syc-bare-po-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-conv-con-lr1e5-s42",
+          "syc-conv-po-lr1e5-s137",
+          "syc-conv-po-lr1e5-s42",
+          "syc-icl-con-lr1e5-s137",
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-po-lr1e5-s137",
+          "syc-icl-po-lr3e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-pers-po-lr1e5-s137",
+          "syc-pers-po-lr1e5-s42",
+          "base"
+        ],
+        "yticklabels": [
+          "default",
+          "icl_prefix_sycophancy",
+          "neg_sp_ph4",
+          "neg_sp_police",
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      },
+      {
+        "ylabel": "judged rate",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:16Z",
+  "figsize": [
+    10.9,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Impolite \u2014 six-context panel rates",
+        "xticklabels": [
+          "imp-bare-con-lr3e5-s137",
+          "imp-bare-con-lr3e5-s42",
+          "imp-bare-po-lr1e5-s137",
+          "imp-bare-po-lr1e5-s42",
+          "imp-conv-con-lr1e5-s137",
+          "imp-conv-con-lr1e5-s42",
+          "imp-conv-po-lr1e5-s137",
+          "imp-conv-po-lr1e5-s42",
+          "imp-icl-con-lr1e4-s42",
+          "imp-icl-con-lr1e5-s137",
+          "imp-icl-po-lr1e4-s137",
+          "imp-icl-po-lr1e4-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-po-lr1e5-s137",
+          "imp-pers-po-lr1e5-s42",
+          "base"
+        ],
+        "yticklabels": [
+          "default",
+          "icl_prefix_impolite",
+          "neg_sp_ph4",
+          "neg_sp_police",
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      },
+      {
+        "ylabel": "judged rate",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

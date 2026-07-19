@@ -1,0 +1,353 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:13:57Z",
+  "figsize": [
+    8.0,
+    3.6
+  ],
+  "points": [
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.1836888433981576,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.014618473895582323,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.1036036036036036,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.2625836846020332,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.09129611539250093,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.04576714216242503,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.23523523523523523,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.2876612903225806,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.14535923239891568,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.025762762762762764,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.04672909382328222,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.03815082329815722,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.14007600873598694,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.012108527850809972,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.13205089398577766,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.22064442349589897,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.04930580778584802,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.07770179087360171,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.207519944516658,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.24829907131236637,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.1021408612587606,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.012214116439693674,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.0051453644525449385,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.004801366860536595,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.22631025390304058,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.04138773099812449,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.07562176935864577,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.303190990244785,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.13283994055435952,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": -0.013814421018909902,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.2637182732788165,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.3257669759777258,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.18781347573735968,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.06364445330901194,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.08808678477017134,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "D = positive-only \u2212 contrastive non-source rate": 0.08090926765684309,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 1.0683162307739256,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.3368837547302246,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.25264941215515135,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.6795442962646485,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.9129127295017242,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.25834614109992976,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.22684858512878417,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.5765280663967133,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 1.2480072047710415,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.4186825284957885,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.2774195175170898,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Marker D (nats, question-cluster bootstrap 95%)": 0.7760419304370879,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    }
+  ],
+  "n_series": 17,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Content leakage contrast at matched install",
+        "xlabel": "D = positive-only \u2212 contrastive non-source rate",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "Casual style / Bare",
+          "Casual style / WildChat prefix",
+          "Casual style / ICL prefix",
+          "Casual style / Persona",
+          "Impolite / Bare",
+          "Impolite / WildChat prefix",
+          "Impolite / ICL prefix",
+          "Impolite / Persona",
+          "Sycophancy / Bare",
+          "Sycophancy / WildChat prefix",
+          "Sycophancy / ICL prefix",
+          "Sycophancy / Persona"
+        ]
+      },
+      {
+        "title_left": "Marker leakage contrast",
+        "xlabel": "Marker D (nats, question-cluster bootstrap 95%)",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ],
+        "yticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ]
+      }
+    ]
+  }
+}
