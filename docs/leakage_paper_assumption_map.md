@@ -121,5 +121,37 @@ convention-dependent. Locality of the behavior (lexical marker → stylistic imp
 propositional sycophancy) modulates every geometric read-out — that heterogeneity is
 the main *new* result, not a fleet-wide inconsistency.
 
-_The paper's own section-by-section evidence is folded in once it is clonable
-(needs the project ID)._
+## The current paper: "Context Answer Mapping" (ICLR 2026)
+
+Cloned at `~/overleaf-6a59c927/main.tex` (project `6a59c927290f8b8b5eee0055`; authors
+Jiralerspong, Mukesh, Ackerman, Lu, Mossing). Its central object is the **context→answer
+activation map M_{C,A}** = the theory's **A4/A5**; A2/A3, A7/A8, A10/A11 are the
+"applications." As of 2026-07-19 the Results are a skeleton (most `% TODO`). Much of the
+evidence already exists in EPS issues — this maps each paper section to its assumption and
+the issue(s) that already bear on it, so the Results can be filled from existing artifacts.
+
+| Paper §(Results/Applications) | Claim | Assumption | Existing EPS evidence |
+|---|---|---|---|
+| Prefix→Answer (linear only when averaged over queries) | A4/A5 prefix arm | A4/A5 | #1092: prefix-alone R²=0.05–0.11 per-query; the query-bearing context carries transport |
+| Context→Answer (linear M_{C,A}) | core claim | A4/A5 | #722 R²=0.74–0.80 (peak L18); #1092 R²=0.74–0.81 |
+| Prefix + Query = Context relationship | decomposition | A4/A5 | #1092 (prefix vs context vs query decomposition) |
+| Evolves over context length | persona drift | — | Assistant Axis (Lu 2026); no EPS issue yet |
+| Nonlinear component (future work) | linear suffices at base | A4/A5 | #722: MLP/RBF add ~0 over linear at base |
+| What it's bad at predicting (SAE feats) | error analysis | A4/A5 | **untested** — new (SAE-feature residual analysis) |
+| Off-policy (holds if consistent origin) | robustness | A4/A5 | #823/#952: externally-written answers retain 91–98% R²; shuffled collapses to ~0; own-answer advantage small |
+| Base model (map exists pre-instruct) | base presence | A4/A5 | #722/#1092 run both base + instruct |
+| Chat template (not mediated) | mechanism | A4/A5 | **partly untested** — contrast w/ piggyback (Zhao 2026) |
+| Not present for other personas | assistant-unique | A4/A5 | **untested** — new |
+| Effect of adding info (fact/instr/persona/format) | map sensitivity | A4/A5 | #1489: only format constraints passed the manipulation-check floor; fact/instruction/persona fell below |
+| Effect of chain-of-thought | map + CoT | A4/A5 | **untested** — new |
+| Effect of finetuning on the map | map stability | A4/A5, A7 | #722 (clear only for taught fact); #1336 (RLVR adds no new map structure); #1112 |
+| App: predict context leakage | gate | A10/A11 | #667 base gate→realized gate ρ 0.46–0.59; #532 marker prior; conditional-misalignment = Kwon 2026 hidden-state |
+| App: predict behavior pre-generation | read-out | A2/A3 | #658/#761/#763 (A2 supported after fixes; A3 mostly refuted w/ faithful r_B) |
+| App: predict finetuning effect on behavior | behavior transfer | A7/A8 | #667 refuted (cos(ŵ,δ)≈0, readout partial ρ<0); #545 589-predictor race < 0.10 floor; #1481 |
+
+**Untested-but-in-paper (candidates to run):** SAE-feature error analysis, chat-template
+non-mediation as an isolated test, "not present for other personas," CoT effect,
+and A6 coherence (below). The rest of the paper's claims already have EPS evidence.
+
+_A6 (context coherence) is being run directly from persisted per-context stores (0-GPU);
+result folded in when it returns._
