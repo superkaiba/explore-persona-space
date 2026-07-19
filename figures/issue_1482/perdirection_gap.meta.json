@@ -1,0 +1,5459 @@
+{
+  "commit": "799f070ef6",
+  "created": "2026-07-19T03:11:37Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "PCA direction rank (1 = largest variance)": 1.0,
+      "held-out R\u00b2 per direction": 0.9056762299182103,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 2.0,
+      "held-out R\u00b2 per direction": 0.9046309128547272,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 3.0,
+      "held-out R\u00b2 per direction": 0.884466209792956,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 4.0,
+      "held-out R\u00b2 per direction": 0.9255990262864124,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 5.0,
+      "held-out R\u00b2 per direction": 0.909819252161306,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 6.0,
+      "held-out R\u00b2 per direction": 0.8928831078931014,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 7.0,
+      "held-out R\u00b2 per direction": 0.8864595469668324,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 8.0,
+      "held-out R\u00b2 per direction": 0.8827306607575239,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 9.0,
+      "held-out R\u00b2 per direction": 0.8505590223374062,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 10.0,
+      "held-out R\u00b2 per direction": 0.8675645728798911,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 11.0,
+      "held-out R\u00b2 per direction": 0.866033779809483,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 12.0,
+      "held-out R\u00b2 per direction": 0.8410148018680101,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 13.0,
+      "held-out R\u00b2 per direction": 0.801312315628332,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 14.0,
+      "held-out R\u00b2 per direction": 0.814243027113434,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 15.0,
+      "held-out R\u00b2 per direction": 0.7755712629126058,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 16.0,
+      "held-out R\u00b2 per direction": 0.8241042697120657,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 17.0,
+      "held-out R\u00b2 per direction": 0.8392087569738748,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 18.0,
+      "held-out R\u00b2 per direction": 0.844770872297391,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 19.0,
+      "held-out R\u00b2 per direction": 0.7770324531237552,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 20.0,
+      "held-out R\u00b2 per direction": 0.7897797275196896,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 21.0,
+      "held-out R\u00b2 per direction": 0.7904882000559305,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 22.0,
+      "held-out R\u00b2 per direction": 0.7954587954184097,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 23.0,
+      "held-out R\u00b2 per direction": 0.7688389733990527,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 24.0,
+      "held-out R\u00b2 per direction": 0.7641929168508286,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 25.0,
+      "held-out R\u00b2 per direction": 0.7270937168649172,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 26.0,
+      "held-out R\u00b2 per direction": 0.7597559244355631,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 27.0,
+      "held-out R\u00b2 per direction": 0.7493504378592852,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 28.0,
+      "held-out R\u00b2 per direction": 0.7522553084359458,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 29.0,
+      "held-out R\u00b2 per direction": 0.7323086597441969,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 30.0,
+      "held-out R\u00b2 per direction": 0.7118302799169585,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 31.0,
+      "held-out R\u00b2 per direction": 0.7663757493240531,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 32.0,
+      "held-out R\u00b2 per direction": 0.7561032179065378,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 33.0,
+      "held-out R\u00b2 per direction": 0.671706035088586,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 34.0,
+      "held-out R\u00b2 per direction": 0.7246197050330598,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 35.0,
+      "held-out R\u00b2 per direction": 0.6795392182316744,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 36.0,
+      "held-out R\u00b2 per direction": 0.6920825812619469,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 37.0,
+      "held-out R\u00b2 per direction": 0.7254862628116949,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 38.0,
+      "held-out R\u00b2 per direction": 0.6972509939266442,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 39.0,
+      "held-out R\u00b2 per direction": 0.7340927575567323,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 40.0,
+      "held-out R\u00b2 per direction": 0.702648362722553,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 41.0,
+      "held-out R\u00b2 per direction": 0.6667741419719093,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 42.0,
+      "held-out R\u00b2 per direction": 0.6827540054326312,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 43.0,
+      "held-out R\u00b2 per direction": 0.6723785962292721,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 44.0,
+      "held-out R\u00b2 per direction": 0.7268613548466742,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 45.0,
+      "held-out R\u00b2 per direction": 0.7124785229760857,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 46.0,
+      "held-out R\u00b2 per direction": 0.6584566482331795,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 47.0,
+      "held-out R\u00b2 per direction": 0.6758810975345169,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 48.0,
+      "held-out R\u00b2 per direction": 0.703147022491801,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 49.0,
+      "held-out R\u00b2 per direction": 0.6688316100632343,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 50.0,
+      "held-out R\u00b2 per direction": 0.7171187813014595,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 51.0,
+      "held-out R\u00b2 per direction": 0.7445561358251557,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 52.0,
+      "held-out R\u00b2 per direction": 0.6626826544614906,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 53.0,
+      "held-out R\u00b2 per direction": 0.6733465693003757,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 54.0,
+      "held-out R\u00b2 per direction": 0.6627143087830929,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 55.0,
+      "held-out R\u00b2 per direction": 0.6786892656581953,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 56.0,
+      "held-out R\u00b2 per direction": 0.6087398121600461,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 57.0,
+      "held-out R\u00b2 per direction": 0.6361887887687421,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 58.0,
+      "held-out R\u00b2 per direction": 0.6365557230318069,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 59.0,
+      "held-out R\u00b2 per direction": 0.6399983084369136,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 60.0,
+      "held-out R\u00b2 per direction": 0.6400279749430992,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 61.0,
+      "held-out R\u00b2 per direction": 0.6209102759648455,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 62.0,
+      "held-out R\u00b2 per direction": 0.6410864780381643,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 63.0,
+      "held-out R\u00b2 per direction": 0.5962212493497709,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 64.0,
+      "held-out R\u00b2 per direction": 0.667091901669419,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 65.0,
+      "held-out R\u00b2 per direction": 0.6559630707040941,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 66.0,
+      "held-out R\u00b2 per direction": 0.6360503008983616,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 67.0,
+      "held-out R\u00b2 per direction": 0.6224804300105535,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 68.0,
+      "held-out R\u00b2 per direction": 0.6403849786330267,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 69.0,
+      "held-out R\u00b2 per direction": 0.607794622440919,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 70.0,
+      "held-out R\u00b2 per direction": 0.65092001397887,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 71.0,
+      "held-out R\u00b2 per direction": 0.6297326174355785,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 72.0,
+      "held-out R\u00b2 per direction": 0.640124324370179,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 73.0,
+      "held-out R\u00b2 per direction": 0.607226722909529,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 74.0,
+      "held-out R\u00b2 per direction": 0.576364559554237,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 75.0,
+      "held-out R\u00b2 per direction": 0.5850400799576739,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 76.0,
+      "held-out R\u00b2 per direction": 0.5707884876120091,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 77.0,
+      "held-out R\u00b2 per direction": 0.5693117007386701,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 78.0,
+      "held-out R\u00b2 per direction": 0.6543496810517926,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 79.0,
+      "held-out R\u00b2 per direction": 0.5896548762097019,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 80.0,
+      "held-out R\u00b2 per direction": 0.6068191979842974,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 81.0,
+      "held-out R\u00b2 per direction": 0.6781114881889361,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 82.0,
+      "held-out R\u00b2 per direction": 0.589244180176083,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 83.0,
+      "held-out R\u00b2 per direction": 0.6109054960593228,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 84.0,
+      "held-out R\u00b2 per direction": 0.5637566721467873,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 85.0,
+      "held-out R\u00b2 per direction": 0.5689377357878024,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 86.0,
+      "held-out R\u00b2 per direction": 0.575650574468989,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 87.0,
+      "held-out R\u00b2 per direction": 0.6238020218221919,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 88.0,
+      "held-out R\u00b2 per direction": 0.5622903285146907,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 89.0,
+      "held-out R\u00b2 per direction": 0.5562447114564931,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 90.0,
+      "held-out R\u00b2 per direction": 0.5134995339566669,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 91.0,
+      "held-out R\u00b2 per direction": 0.579854333596775,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 92.0,
+      "held-out R\u00b2 per direction": 0.596752832715191,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 93.0,
+      "held-out R\u00b2 per direction": 0.5960770614007512,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 94.0,
+      "held-out R\u00b2 per direction": 0.5566094949867411,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 95.0,
+      "held-out R\u00b2 per direction": 0.5913798708919132,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 96.0,
+      "held-out R\u00b2 per direction": 0.5666193990298367,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 97.0,
+      "held-out R\u00b2 per direction": 0.5487211764428606,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 98.0,
+      "held-out R\u00b2 per direction": 0.5390563176420013,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 99.0,
+      "held-out R\u00b2 per direction": 0.6095890262518937,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 100.0,
+      "held-out R\u00b2 per direction": 0.5145748912576964,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 101.0,
+      "held-out R\u00b2 per direction": 0.5660266837983755,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 102.0,
+      "held-out R\u00b2 per direction": 0.5213665325428106,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 103.0,
+      "held-out R\u00b2 per direction": 0.5578343516912004,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 104.0,
+      "held-out R\u00b2 per direction": 0.5386549462975596,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 105.0,
+      "held-out R\u00b2 per direction": 0.5652314252522603,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 106.0,
+      "held-out R\u00b2 per direction": 0.5230030857703416,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 107.0,
+      "held-out R\u00b2 per direction": 0.5410157519499852,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 108.0,
+      "held-out R\u00b2 per direction": 0.5150204088755185,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 109.0,
+      "held-out R\u00b2 per direction": 0.49288697488056665,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 110.0,
+      "held-out R\u00b2 per direction": 0.4967551427278073,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 111.0,
+      "held-out R\u00b2 per direction": 0.530368151727795,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 112.0,
+      "held-out R\u00b2 per direction": 0.5093443995165576,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 113.0,
+      "held-out R\u00b2 per direction": 0.5175635333508224,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 114.0,
+      "held-out R\u00b2 per direction": 0.5100919150544115,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 115.0,
+      "held-out R\u00b2 per direction": 0.4898591821870557,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 116.0,
+      "held-out R\u00b2 per direction": 0.5340083325867433,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 117.0,
+      "held-out R\u00b2 per direction": 0.513712818589696,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 118.0,
+      "held-out R\u00b2 per direction": 0.5374120516252634,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 119.0,
+      "held-out R\u00b2 per direction": 0.5175444717357867,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 120.0,
+      "held-out R\u00b2 per direction": 0.5231402551216289,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 121.0,
+      "held-out R\u00b2 per direction": 0.5178047866306763,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 122.0,
+      "held-out R\u00b2 per direction": 0.5191997781053278,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 123.0,
+      "held-out R\u00b2 per direction": 0.5065082327931807,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 124.0,
+      "held-out R\u00b2 per direction": 0.5011484532966861,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 125.0,
+      "held-out R\u00b2 per direction": 0.48801816512035545,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 126.0,
+      "held-out R\u00b2 per direction": 0.49968081948050236,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 127.0,
+      "held-out R\u00b2 per direction": 0.5147305641071172,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 128.0,
+      "held-out R\u00b2 per direction": 0.5059244007382624,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 129.0,
+      "held-out R\u00b2 per direction": 0.4896163458402355,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 130.0,
+      "held-out R\u00b2 per direction": 0.49462189289453207,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 131.0,
+      "held-out R\u00b2 per direction": 0.507313096538466,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 132.0,
+      "held-out R\u00b2 per direction": 0.49153553450547827,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 133.0,
+      "held-out R\u00b2 per direction": 0.4796332415390836,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 134.0,
+      "held-out R\u00b2 per direction": 0.44554290149339026,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 135.0,
+      "held-out R\u00b2 per direction": 0.49869476820547276,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 136.0,
+      "held-out R\u00b2 per direction": 0.47286819353051857,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 137.0,
+      "held-out R\u00b2 per direction": 0.5105433979821581,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 138.0,
+      "held-out R\u00b2 per direction": 0.4856410471132099,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 139.0,
+      "held-out R\u00b2 per direction": 0.5378654219835197,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 140.0,
+      "held-out R\u00b2 per direction": 0.47227707504605954,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 141.0,
+      "held-out R\u00b2 per direction": 0.5024876679971337,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 142.0,
+      "held-out R\u00b2 per direction": 0.4792134925123277,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 143.0,
+      "held-out R\u00b2 per direction": 0.44569437923736155,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 144.0,
+      "held-out R\u00b2 per direction": 0.47423844480079047,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 145.0,
+      "held-out R\u00b2 per direction": 0.5099700532761984,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 146.0,
+      "held-out R\u00b2 per direction": 0.4516836728295025,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 147.0,
+      "held-out R\u00b2 per direction": 0.46785485072242683,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 148.0,
+      "held-out R\u00b2 per direction": 0.4610784359002703,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 149.0,
+      "held-out R\u00b2 per direction": 0.4671865513958384,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 150.0,
+      "held-out R\u00b2 per direction": 0.4553122211250713,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 151.0,
+      "held-out R\u00b2 per direction": 0.4665045944361944,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 152.0,
+      "held-out R\u00b2 per direction": 0.4650213524298794,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 153.0,
+      "held-out R\u00b2 per direction": 0.4732125274434503,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 154.0,
+      "held-out R\u00b2 per direction": 0.4434396238116991,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 155.0,
+      "held-out R\u00b2 per direction": 0.4839557051757736,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 156.0,
+      "held-out R\u00b2 per direction": 0.46745475887706156,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 157.0,
+      "held-out R\u00b2 per direction": 0.4598979852216868,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 158.0,
+      "held-out R\u00b2 per direction": 0.44578918661353717,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 159.0,
+      "held-out R\u00b2 per direction": 0.4201316131958863,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 160.0,
+      "held-out R\u00b2 per direction": 0.4533787385040092,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 161.0,
+      "held-out R\u00b2 per direction": 0.4653801695566544,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 162.0,
+      "held-out R\u00b2 per direction": 0.45318076056343326,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 163.0,
+      "held-out R\u00b2 per direction": 0.4283567307008268,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 164.0,
+      "held-out R\u00b2 per direction": 0.46308437756696375,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 165.0,
+      "held-out R\u00b2 per direction": 0.45765854269448447,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 166.0,
+      "held-out R\u00b2 per direction": 0.4601715733241274,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 167.0,
+      "held-out R\u00b2 per direction": 0.44765665941903365,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 168.0,
+      "held-out R\u00b2 per direction": 0.45044775682766436,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 169.0,
+      "held-out R\u00b2 per direction": 0.4152576228739121,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 170.0,
+      "held-out R\u00b2 per direction": 0.4360396332229646,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 171.0,
+      "held-out R\u00b2 per direction": 0.4353068959782136,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 172.0,
+      "held-out R\u00b2 per direction": 0.4181405645268258,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 173.0,
+      "held-out R\u00b2 per direction": 0.43749903532501155,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 174.0,
+      "held-out R\u00b2 per direction": 0.4548848339845666,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 175.0,
+      "held-out R\u00b2 per direction": 0.4157439090192049,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 176.0,
+      "held-out R\u00b2 per direction": 0.43630671316429603,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 177.0,
+      "held-out R\u00b2 per direction": 0.4473736392148996,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 178.0,
+      "held-out R\u00b2 per direction": 0.44713858852964283,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 179.0,
+      "held-out R\u00b2 per direction": 0.42142584669299255,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 180.0,
+      "held-out R\u00b2 per direction": 0.42917162834063094,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 181.0,
+      "held-out R\u00b2 per direction": 0.41469791732681727,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 182.0,
+      "held-out R\u00b2 per direction": 0.42907145530224633,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 183.0,
+      "held-out R\u00b2 per direction": 0.4157349482056638,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 184.0,
+      "held-out R\u00b2 per direction": 0.42761307690913797,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 185.0,
+      "held-out R\u00b2 per direction": 0.39131852401048417,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 186.0,
+      "held-out R\u00b2 per direction": 0.41896458457838215,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 187.0,
+      "held-out R\u00b2 per direction": 0.40920719742022227,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 188.0,
+      "held-out R\u00b2 per direction": 0.3991368508223978,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 189.0,
+      "held-out R\u00b2 per direction": 0.4265496490664069,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 190.0,
+      "held-out R\u00b2 per direction": 0.42219741467514416,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 191.0,
+      "held-out R\u00b2 per direction": 0.41518834125699067,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 192.0,
+      "held-out R\u00b2 per direction": 0.38969220404067395,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 193.0,
+      "held-out R\u00b2 per direction": 0.40602980412213385,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 194.0,
+      "held-out R\u00b2 per direction": 0.37474045743236406,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 195.0,
+      "held-out R\u00b2 per direction": 0.4229361760425462,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 196.0,
+      "held-out R\u00b2 per direction": 0.4075247681396381,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 197.0,
+      "held-out R\u00b2 per direction": 0.3942564823780963,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 198.0,
+      "held-out R\u00b2 per direction": 0.40044774002859573,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 199.0,
+      "held-out R\u00b2 per direction": 0.3931712892592776,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 200.0,
+      "held-out R\u00b2 per direction": 0.42282574912072246,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 201.0,
+      "held-out R\u00b2 per direction": 0.4061501797137681,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 202.0,
+      "held-out R\u00b2 per direction": 0.4043116346122081,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 203.0,
+      "held-out R\u00b2 per direction": 0.3991370705927998,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 204.0,
+      "held-out R\u00b2 per direction": 0.41393153180470565,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 205.0,
+      "held-out R\u00b2 per direction": 0.3838079968623581,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 206.0,
+      "held-out R\u00b2 per direction": 0.4003589856273805,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 207.0,
+      "held-out R\u00b2 per direction": 0.39103670878986696,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 208.0,
+      "held-out R\u00b2 per direction": 0.40422913189416465,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 209.0,
+      "held-out R\u00b2 per direction": 0.3900349163776524,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 210.0,
+      "held-out R\u00b2 per direction": 0.40670237171194845,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 211.0,
+      "held-out R\u00b2 per direction": 0.40675431824389796,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 212.0,
+      "held-out R\u00b2 per direction": 0.38902026536969225,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 213.0,
+      "held-out R\u00b2 per direction": 0.3833577034327206,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 214.0,
+      "held-out R\u00b2 per direction": 0.38040132251101577,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 215.0,
+      "held-out R\u00b2 per direction": 0.3904983035718983,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 216.0,
+      "held-out R\u00b2 per direction": 0.39840186301839553,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 217.0,
+      "held-out R\u00b2 per direction": 0.37809540313413914,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 218.0,
+      "held-out R\u00b2 per direction": 0.3893294793186375,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 219.0,
+      "held-out R\u00b2 per direction": 0.3882129606083564,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 220.0,
+      "held-out R\u00b2 per direction": 0.39710669258805253,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 221.0,
+      "held-out R\u00b2 per direction": 0.3788838050030391,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 222.0,
+      "held-out R\u00b2 per direction": 0.39965063059361694,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 223.0,
+      "held-out R\u00b2 per direction": 0.3815619092058212,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 224.0,
+      "held-out R\u00b2 per direction": 0.4003890214116522,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 225.0,
+      "held-out R\u00b2 per direction": 0.3898786728041824,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 226.0,
+      "held-out R\u00b2 per direction": 0.37216583188254104,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 227.0,
+      "held-out R\u00b2 per direction": 0.3660665679878665,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 228.0,
+      "held-out R\u00b2 per direction": 0.3917469717448323,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 229.0,
+      "held-out R\u00b2 per direction": 0.3829576876124565,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 230.0,
+      "held-out R\u00b2 per direction": 0.36068579375000687,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 231.0,
+      "held-out R\u00b2 per direction": 0.34346444591076253,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 232.0,
+      "held-out R\u00b2 per direction": 0.3821829315260701,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 233.0,
+      "held-out R\u00b2 per direction": 0.3856869802624724,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 234.0,
+      "held-out R\u00b2 per direction": 0.36040785366014294,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 235.0,
+      "held-out R\u00b2 per direction": 0.35256246951948866,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 236.0,
+      "held-out R\u00b2 per direction": 0.36009973276242124,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 237.0,
+      "held-out R\u00b2 per direction": 0.36964974204418866,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 238.0,
+      "held-out R\u00b2 per direction": 0.34570512036482237,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 239.0,
+      "held-out R\u00b2 per direction": 0.37404711247223854,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 240.0,
+      "held-out R\u00b2 per direction": 0.35652767526345364,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 241.0,
+      "held-out R\u00b2 per direction": 0.36435153047965263,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 242.0,
+      "held-out R\u00b2 per direction": 0.359910673746379,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 243.0,
+      "held-out R\u00b2 per direction": 0.383054312105078,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 244.0,
+      "held-out R\u00b2 per direction": 0.35723928040444874,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 245.0,
+      "held-out R\u00b2 per direction": 0.34861679670859214,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 246.0,
+      "held-out R\u00b2 per direction": 0.3766883730269902,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 247.0,
+      "held-out R\u00b2 per direction": 0.3604165608821157,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 248.0,
+      "held-out R\u00b2 per direction": 0.3697123231336146,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 249.0,
+      "held-out R\u00b2 per direction": 0.3626418066562387,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 250.0,
+      "held-out R\u00b2 per direction": 0.3534607059278785,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 251.0,
+      "held-out R\u00b2 per direction": 0.35067623538550263,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 252.0,
+      "held-out R\u00b2 per direction": 0.3341010922239641,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 253.0,
+      "held-out R\u00b2 per direction": 0.3586624403054448,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 254.0,
+      "held-out R\u00b2 per direction": 0.34322223991971035,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 255.0,
+      "held-out R\u00b2 per direction": 0.3635900101677454,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 256.0,
+      "held-out R\u00b2 per direction": 0.3337100346547647,
+      "series": "ridge (linear)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 1.0,
+      "held-out R\u00b2 per direction": 0.9306576450223716,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 2.0,
+      "held-out R\u00b2 per direction": 0.9246615248213081,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 3.0,
+      "held-out R\u00b2 per direction": 0.913593698641278,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 4.0,
+      "held-out R\u00b2 per direction": 0.9425511154846673,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 5.0,
+      "held-out R\u00b2 per direction": 0.9343747624483298,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 6.0,
+      "held-out R\u00b2 per direction": 0.9152386638324587,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 7.0,
+      "held-out R\u00b2 per direction": 0.9083797253936885,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 8.0,
+      "held-out R\u00b2 per direction": 0.9152260618969634,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 9.0,
+      "held-out R\u00b2 per direction": 0.8888241059151227,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 10.0,
+      "held-out R\u00b2 per direction": 0.8989408666237084,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 11.0,
+      "held-out R\u00b2 per direction": 0.9071318612451266,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 12.0,
+      "held-out R\u00b2 per direction": 0.8838004582070406,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 13.0,
+      "held-out R\u00b2 per direction": 0.8572257085661195,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 14.0,
+      "held-out R\u00b2 per direction": 0.8646747497279368,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 15.0,
+      "held-out R\u00b2 per direction": 0.8434720270523178,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 16.0,
+      "held-out R\u00b2 per direction": 0.8713876621868684,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 17.0,
+      "held-out R\u00b2 per direction": 0.8807042906802702,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 18.0,
+      "held-out R\u00b2 per direction": 0.885728736003085,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 19.0,
+      "held-out R\u00b2 per direction": 0.8427151261319168,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 20.0,
+      "held-out R\u00b2 per direction": 0.8410181736853137,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 21.0,
+      "held-out R\u00b2 per direction": 0.8456938897568708,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 22.0,
+      "held-out R\u00b2 per direction": 0.8541611563656666,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 23.0,
+      "held-out R\u00b2 per direction": 0.8305725318232395,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 24.0,
+      "held-out R\u00b2 per direction": 0.8283038918720542,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 25.0,
+      "held-out R\u00b2 per direction": 0.8031013153140953,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 26.0,
+      "held-out R\u00b2 per direction": 0.8262065501060627,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 27.0,
+      "held-out R\u00b2 per direction": 0.8181658209499363,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 28.0,
+      "held-out R\u00b2 per direction": 0.8256473373253111,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 29.0,
+      "held-out R\u00b2 per direction": 0.8049456125129917,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 30.0,
+      "held-out R\u00b2 per direction": 0.7818568010668635,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 31.0,
+      "held-out R\u00b2 per direction": 0.8311479986455035,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 32.0,
+      "held-out R\u00b2 per direction": 0.8148670375269118,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 33.0,
+      "held-out R\u00b2 per direction": 0.7569324942838764,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 34.0,
+      "held-out R\u00b2 per direction": 0.7988419199350946,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 35.0,
+      "held-out R\u00b2 per direction": 0.7593124607675099,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 36.0,
+      "held-out R\u00b2 per direction": 0.7788457522195237,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 37.0,
+      "held-out R\u00b2 per direction": 0.7926147436923223,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 38.0,
+      "held-out R\u00b2 per direction": 0.7747037818497906,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 39.0,
+      "held-out R\u00b2 per direction": 0.8072392409402026,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 40.0,
+      "held-out R\u00b2 per direction": 0.7772949733053401,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 41.0,
+      "held-out R\u00b2 per direction": 0.7551269627321556,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 42.0,
+      "held-out R\u00b2 per direction": 0.7647909543390732,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 43.0,
+      "held-out R\u00b2 per direction": 0.7627889829002645,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 44.0,
+      "held-out R\u00b2 per direction": 0.8046853967293027,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 45.0,
+      "held-out R\u00b2 per direction": 0.7994497848478884,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 46.0,
+      "held-out R\u00b2 per direction": 0.7419845809156393,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 47.0,
+      "held-out R\u00b2 per direction": 0.7597326461293793,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 48.0,
+      "held-out R\u00b2 per direction": 0.7803809869617504,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 49.0,
+      "held-out R\u00b2 per direction": 0.7589087523663365,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 50.0,
+      "held-out R\u00b2 per direction": 0.8036438966229109,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 51.0,
+      "held-out R\u00b2 per direction": 0.8192475223796643,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 52.0,
+      "held-out R\u00b2 per direction": 0.7509541180911128,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 53.0,
+      "held-out R\u00b2 per direction": 0.7663844449717472,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 54.0,
+      "held-out R\u00b2 per direction": 0.7498008850532136,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 55.0,
+      "held-out R\u00b2 per direction": 0.7694895845665524,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 56.0,
+      "held-out R\u00b2 per direction": 0.7085496841090944,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 57.0,
+      "held-out R\u00b2 per direction": 0.7351345277208907,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 58.0,
+      "held-out R\u00b2 per direction": 0.7305973835148023,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 59.0,
+      "held-out R\u00b2 per direction": 0.7378001508769949,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 60.0,
+      "held-out R\u00b2 per direction": 0.7345365192526856,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 61.0,
+      "held-out R\u00b2 per direction": 0.7226960404805661,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 62.0,
+      "held-out R\u00b2 per direction": 0.7330474124450433,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 63.0,
+      "held-out R\u00b2 per direction": 0.7072421316607336,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 64.0,
+      "held-out R\u00b2 per direction": 0.7624785847624216,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 65.0,
+      "held-out R\u00b2 per direction": 0.7457085447301557,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 66.0,
+      "held-out R\u00b2 per direction": 0.7264691293004781,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 67.0,
+      "held-out R\u00b2 per direction": 0.721160236155386,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 68.0,
+      "held-out R\u00b2 per direction": 0.7314420360526098,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 69.0,
+      "held-out R\u00b2 per direction": 0.7144907522321099,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 70.0,
+      "held-out R\u00b2 per direction": 0.7509640185363569,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 71.0,
+      "held-out R\u00b2 per direction": 0.7245651818879635,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 72.0,
+      "held-out R\u00b2 per direction": 0.7389159930338778,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 73.0,
+      "held-out R\u00b2 per direction": 0.7076558105313974,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 74.0,
+      "held-out R\u00b2 per direction": 0.6811992511385291,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 75.0,
+      "held-out R\u00b2 per direction": 0.6986305742615864,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 76.0,
+      "held-out R\u00b2 per direction": 0.6857569910491952,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 77.0,
+      "held-out R\u00b2 per direction": 0.6890855685617354,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 78.0,
+      "held-out R\u00b2 per direction": 0.7480175211652503,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 79.0,
+      "held-out R\u00b2 per direction": 0.7056243690413766,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 80.0,
+      "held-out R\u00b2 per direction": 0.7135457128500043,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 81.0,
+      "held-out R\u00b2 per direction": 0.7685419235240573,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 82.0,
+      "held-out R\u00b2 per direction": 0.7025513589192343,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 83.0,
+      "held-out R\u00b2 per direction": 0.7242375405088048,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 84.0,
+      "held-out R\u00b2 per direction": 0.6858835557055791,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 85.0,
+      "held-out R\u00b2 per direction": 0.6900735153073223,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 86.0,
+      "held-out R\u00b2 per direction": 0.6890527971637497,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 87.0,
+      "held-out R\u00b2 per direction": 0.7296333787361398,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 88.0,
+      "held-out R\u00b2 per direction": 0.6804021461408709,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 89.0,
+      "held-out R\u00b2 per direction": 0.666762702763184,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 90.0,
+      "held-out R\u00b2 per direction": 0.6327187595276493,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 91.0,
+      "held-out R\u00b2 per direction": 0.6958508479969658,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 92.0,
+      "held-out R\u00b2 per direction": 0.7047907297225869,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 93.0,
+      "held-out R\u00b2 per direction": 0.7013457579541877,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 94.0,
+      "held-out R\u00b2 per direction": 0.6644946621660414,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 95.0,
+      "held-out R\u00b2 per direction": 0.706197402078653,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 96.0,
+      "held-out R\u00b2 per direction": 0.6859993937416446,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 97.0,
+      "held-out R\u00b2 per direction": 0.6729342973785022,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 98.0,
+      "held-out R\u00b2 per direction": 0.6550479232382802,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 99.0,
+      "held-out R\u00b2 per direction": 0.7071261803427924,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 100.0,
+      "held-out R\u00b2 per direction": 0.6405251090797786,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 101.0,
+      "held-out R\u00b2 per direction": 0.6857992039734215,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 102.0,
+      "held-out R\u00b2 per direction": 0.6436666892194038,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 103.0,
+      "held-out R\u00b2 per direction": 0.6857787559877071,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 104.0,
+      "held-out R\u00b2 per direction": 0.6536847975899158,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 105.0,
+      "held-out R\u00b2 per direction": 0.6778306078910098,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 106.0,
+      "held-out R\u00b2 per direction": 0.6448534072621652,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 107.0,
+      "held-out R\u00b2 per direction": 0.6541848490354032,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 108.0,
+      "held-out R\u00b2 per direction": 0.6401232699454236,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 109.0,
+      "held-out R\u00b2 per direction": 0.6156034284985337,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 110.0,
+      "held-out R\u00b2 per direction": 0.6238474981050122,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 111.0,
+      "held-out R\u00b2 per direction": 0.6510151121643089,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 112.0,
+      "held-out R\u00b2 per direction": 0.6416368336938656,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 113.0,
+      "held-out R\u00b2 per direction": 0.6383189934942979,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 114.0,
+      "held-out R\u00b2 per direction": 0.6316927976187916,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 115.0,
+      "held-out R\u00b2 per direction": 0.6139810948578217,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 116.0,
+      "held-out R\u00b2 per direction": 0.6610338871109067,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 117.0,
+      "held-out R\u00b2 per direction": 0.6409147136302009,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 118.0,
+      "held-out R\u00b2 per direction": 0.669316260571928,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 119.0,
+      "held-out R\u00b2 per direction": 0.6520287724504232,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 120.0,
+      "held-out R\u00b2 per direction": 0.6401769859011952,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 121.0,
+      "held-out R\u00b2 per direction": 0.6419287756732655,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 122.0,
+      "held-out R\u00b2 per direction": 0.6446363484689301,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 123.0,
+      "held-out R\u00b2 per direction": 0.6300729844056122,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 124.0,
+      "held-out R\u00b2 per direction": 0.6410911222830818,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 125.0,
+      "held-out R\u00b2 per direction": 0.6263447590816342,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 126.0,
+      "held-out R\u00b2 per direction": 0.6355068275784472,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 127.0,
+      "held-out R\u00b2 per direction": 0.6572902730986178,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 128.0,
+      "held-out R\u00b2 per direction": 0.628106602947228,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 129.0,
+      "held-out R\u00b2 per direction": 0.6231846750181218,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 130.0,
+      "held-out R\u00b2 per direction": 0.622448405894714,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 131.0,
+      "held-out R\u00b2 per direction": 0.638761860232647,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 132.0,
+      "held-out R\u00b2 per direction": 0.6205797279040248,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 133.0,
+      "held-out R\u00b2 per direction": 0.6068995034120024,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 134.0,
+      "held-out R\u00b2 per direction": 0.5792581786230693,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 135.0,
+      "held-out R\u00b2 per direction": 0.6255097048504503,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 136.0,
+      "held-out R\u00b2 per direction": 0.6133693441490967,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 137.0,
+      "held-out R\u00b2 per direction": 0.6368006078228026,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 138.0,
+      "held-out R\u00b2 per direction": 0.6196988010929175,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 139.0,
+      "held-out R\u00b2 per direction": 0.6655528283222474,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 140.0,
+      "held-out R\u00b2 per direction": 0.5920867741679264,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 141.0,
+      "held-out R\u00b2 per direction": 0.6361604552560092,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 142.0,
+      "held-out R\u00b2 per direction": 0.6084000025353303,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 143.0,
+      "held-out R\u00b2 per direction": 0.5856030579110683,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 144.0,
+      "held-out R\u00b2 per direction": 0.6008894240866456,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 145.0,
+      "held-out R\u00b2 per direction": 0.6380123761136088,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 146.0,
+      "held-out R\u00b2 per direction": 0.5853325231000734,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 147.0,
+      "held-out R\u00b2 per direction": 0.607406046754892,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 148.0,
+      "held-out R\u00b2 per direction": 0.5877663317972854,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 149.0,
+      "held-out R\u00b2 per direction": 0.596102004531589,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 150.0,
+      "held-out R\u00b2 per direction": 0.5898629952568416,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 151.0,
+      "held-out R\u00b2 per direction": 0.6029319137956504,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 152.0,
+      "held-out R\u00b2 per direction": 0.6047271469181752,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 153.0,
+      "held-out R\u00b2 per direction": 0.6094617013066423,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 154.0,
+      "held-out R\u00b2 per direction": 0.5755176956198123,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 155.0,
+      "held-out R\u00b2 per direction": 0.6168597364720299,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 156.0,
+      "held-out R\u00b2 per direction": 0.5996189972836681,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 157.0,
+      "held-out R\u00b2 per direction": 0.5933527760445478,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 158.0,
+      "held-out R\u00b2 per direction": 0.5832800405956634,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 159.0,
+      "held-out R\u00b2 per direction": 0.5497995952375252,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 160.0,
+      "held-out R\u00b2 per direction": 0.5982247349948038,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 161.0,
+      "held-out R\u00b2 per direction": 0.6032873917258122,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 162.0,
+      "held-out R\u00b2 per direction": 0.5859650222979722,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 163.0,
+      "held-out R\u00b2 per direction": 0.5647814428260538,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 164.0,
+      "held-out R\u00b2 per direction": 0.5893002084084251,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 165.0,
+      "held-out R\u00b2 per direction": 0.5882322266344818,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 166.0,
+      "held-out R\u00b2 per direction": 0.6060820756277796,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 167.0,
+      "held-out R\u00b2 per direction": 0.5829092152415001,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 168.0,
+      "held-out R\u00b2 per direction": 0.5842701868155382,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 169.0,
+      "held-out R\u00b2 per direction": 0.5650133552483143,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 170.0,
+      "held-out R\u00b2 per direction": 0.5580492350222122,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 171.0,
+      "held-out R\u00b2 per direction": 0.576664456326115,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 172.0,
+      "held-out R\u00b2 per direction": 0.5636597329071305,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 173.0,
+      "held-out R\u00b2 per direction": 0.5795868249433953,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 174.0,
+      "held-out R\u00b2 per direction": 0.5908544278378911,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 175.0,
+      "held-out R\u00b2 per direction": 0.5480260280411674,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 176.0,
+      "held-out R\u00b2 per direction": 0.5763487787226667,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 177.0,
+      "held-out R\u00b2 per direction": 0.5761759270485333,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 178.0,
+      "held-out R\u00b2 per direction": 0.582508673513886,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 179.0,
+      "held-out R\u00b2 per direction": 0.5538064954599522,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 180.0,
+      "held-out R\u00b2 per direction": 0.5664796999826303,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 181.0,
+      "held-out R\u00b2 per direction": 0.5461876470911264,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 182.0,
+      "held-out R\u00b2 per direction": 0.5636890010955281,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 183.0,
+      "held-out R\u00b2 per direction": 0.5532730470799897,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 184.0,
+      "held-out R\u00b2 per direction": 0.5765941919456279,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 185.0,
+      "held-out R\u00b2 per direction": 0.5350046409935363,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 186.0,
+      "held-out R\u00b2 per direction": 0.5540964055137004,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 187.0,
+      "held-out R\u00b2 per direction": 0.5610917485254514,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 188.0,
+      "held-out R\u00b2 per direction": 0.5321287967632127,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 189.0,
+      "held-out R\u00b2 per direction": 0.5732990324387621,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 190.0,
+      "held-out R\u00b2 per direction": 0.557065846293201,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 191.0,
+      "held-out R\u00b2 per direction": 0.5494694110789822,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 192.0,
+      "held-out R\u00b2 per direction": 0.5355484318047428,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 193.0,
+      "held-out R\u00b2 per direction": 0.5478687046245743,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 194.0,
+      "held-out R\u00b2 per direction": 0.5177324624839377,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 195.0,
+      "held-out R\u00b2 per direction": 0.5537424661399227,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 196.0,
+      "held-out R\u00b2 per direction": 0.5346914045697189,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 197.0,
+      "held-out R\u00b2 per direction": 0.5423750746594262,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 198.0,
+      "held-out R\u00b2 per direction": 0.55568711836199,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 199.0,
+      "held-out R\u00b2 per direction": 0.5255568725533164,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 200.0,
+      "held-out R\u00b2 per direction": 0.5535609629288292,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 201.0,
+      "held-out R\u00b2 per direction": 0.5480743790553951,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 202.0,
+      "held-out R\u00b2 per direction": 0.5493118088386975,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 203.0,
+      "held-out R\u00b2 per direction": 0.5281256162161589,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 204.0,
+      "held-out R\u00b2 per direction": 0.55765194767801,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 205.0,
+      "held-out R\u00b2 per direction": 0.5352348836650135,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 206.0,
+      "held-out R\u00b2 per direction": 0.5393957966541207,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 207.0,
+      "held-out R\u00b2 per direction": 0.5277475085906658,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 208.0,
+      "held-out R\u00b2 per direction": 0.5379110177030143,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 209.0,
+      "held-out R\u00b2 per direction": 0.5324267893218785,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 210.0,
+      "held-out R\u00b2 per direction": 0.5312891671838125,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 211.0,
+      "held-out R\u00b2 per direction": 0.5387220618101922,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 212.0,
+      "held-out R\u00b2 per direction": 0.5367707496102401,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 213.0,
+      "held-out R\u00b2 per direction": 0.5281397015273159,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 214.0,
+      "held-out R\u00b2 per direction": 0.5205075864305236,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 215.0,
+      "held-out R\u00b2 per direction": 0.536452724457458,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 216.0,
+      "held-out R\u00b2 per direction": 0.5230678127893733,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 217.0,
+      "held-out R\u00b2 per direction": 0.5253530715685939,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 218.0,
+      "held-out R\u00b2 per direction": 0.5303698815965139,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 219.0,
+      "held-out R\u00b2 per direction": 0.5293207412663038,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 220.0,
+      "held-out R\u00b2 per direction": 0.5366830910829818,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 221.0,
+      "held-out R\u00b2 per direction": 0.5195091300112871,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 222.0,
+      "held-out R\u00b2 per direction": 0.5398454932690835,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 223.0,
+      "held-out R\u00b2 per direction": 0.5281208552097534,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 224.0,
+      "held-out R\u00b2 per direction": 0.5385744198712192,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 225.0,
+      "held-out R\u00b2 per direction": 0.5281647462892382,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 226.0,
+      "held-out R\u00b2 per direction": 0.5103886961975042,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 227.0,
+      "held-out R\u00b2 per direction": 0.5075781643108254,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 228.0,
+      "held-out R\u00b2 per direction": 0.53233689281697,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 229.0,
+      "held-out R\u00b2 per direction": 0.5188406036613527,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 230.0,
+      "held-out R\u00b2 per direction": 0.511176178471479,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 231.0,
+      "held-out R\u00b2 per direction": 0.48395316587564885,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 232.0,
+      "held-out R\u00b2 per direction": 0.5310312482336839,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 233.0,
+      "held-out R\u00b2 per direction": 0.5220301663683091,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 234.0,
+      "held-out R\u00b2 per direction": 0.5042815355248258,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 235.0,
+      "held-out R\u00b2 per direction": 0.49372066703410156,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 236.0,
+      "held-out R\u00b2 per direction": 0.509805511799056,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 237.0,
+      "held-out R\u00b2 per direction": 0.5112690932135316,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 238.0,
+      "held-out R\u00b2 per direction": 0.48549385187576655,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 239.0,
+      "held-out R\u00b2 per direction": 0.5204873319833085,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 240.0,
+      "held-out R\u00b2 per direction": 0.49746011226825393,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 241.0,
+      "held-out R\u00b2 per direction": 0.5017220907492157,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 242.0,
+      "held-out R\u00b2 per direction": 0.4980728675223052,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 243.0,
+      "held-out R\u00b2 per direction": 0.5333291867787748,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 244.0,
+      "held-out R\u00b2 per direction": 0.4928928944721295,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 245.0,
+      "held-out R\u00b2 per direction": 0.4873926405044616,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 246.0,
+      "held-out R\u00b2 per direction": 0.5078246324686273,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 247.0,
+      "held-out R\u00b2 per direction": 0.5025520205691077,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 248.0,
+      "held-out R\u00b2 per direction": 0.5167872753281342,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 249.0,
+      "held-out R\u00b2 per direction": 0.5009816414838909,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 250.0,
+      "held-out R\u00b2 per direction": 0.4939969313760121,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 251.0,
+      "held-out R\u00b2 per direction": 0.4937568985776022,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 252.0,
+      "held-out R\u00b2 per direction": 0.4728193405935889,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 253.0,
+      "held-out R\u00b2 per direction": 0.48903510701602404,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 254.0,
+      "held-out R\u00b2 per direction": 0.4837734222440091,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 255.0,
+      "held-out R\u00b2 per direction": 0.5032137630235074,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 256.0,
+      "held-out R\u00b2 per direction": 0.47682611250414564,
+      "series": "MLP (nonlinear)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 1.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.024981415104161298,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 2.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.020030611966580958,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 3.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.02912748884832206,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 4.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.01695208919825486,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 5.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.024555510287023852,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 6.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.02235555593935723,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 7.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.02192017842685612,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 8.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.032495401139439495,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 9.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.03826508357771652,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 10.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.03137629374381734,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 11.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.04109808143564353,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 12.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.04278565633903042,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 13.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.05591339293778741,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 14.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.050431722614502794,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 15.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06790076413971202,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 16.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.04728339247480262,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 17.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.04149553370639547,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 18.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.040957863705693986,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 19.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06568267300816155,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 20.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.05123844616562412,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 21.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.05520568970094031,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 22.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.05870236094725689,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 23.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06173355842418682,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 24.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06411097502122565,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 25.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07600759844917815,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 26.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06645062567049964,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 27.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06881538309065105,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 28.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07339202888936536,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 29.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07263695276879478,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 30.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07002652114990504,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 31.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.06477224932145043,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 32.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.058763819620374025,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 33.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08522645919529048,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 34.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07422221490203473,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 35.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07977324253583551,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 36.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.0867631709575768,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 37.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.0671284808806274,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 38.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07745278792314636,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 39.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.0731464833834703,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 40.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.0746466105827871,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 41.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08835282076024631,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 42.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08203694890644198,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 43.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09041038667099244,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 44.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07782404188262848,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 45.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08697126187180271,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 46.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08352793268245984,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 47.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08385154859486244,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 48.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07723396446994935,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 49.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09007714230310215,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 50.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08652511532145146,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 51.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.07469138655450858,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 52.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08827146362962224,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 53.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09303787567137145,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 54.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08708657627012073,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 55.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09080031890835705,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 56.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09980987194904822,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 57.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09894573895214864,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 58.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09404166048299545,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 59.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09780184244008128,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 60.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09450854430958644,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 61.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10178576451572063,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 62.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09196093440687902,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 63.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11102088231096263,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 64.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09538668309300258,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 65.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.08974547402606159,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 66.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09041882840211657,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 67.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09867980614483252,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 68.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09105705741958314,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 69.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10669612979119092,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 70.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10004400455748685,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 71.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09483256445238497,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 72.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09879166866369882,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 73.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10042908762186842,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 74.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10483469158429204,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 75.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11359049430391244,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 76.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11496850343718612,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 77.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11977386782306532,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 78.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09366784011345775,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 79.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11596949283167468,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 80.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10672651486570695,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 81.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09043043533512118,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 82.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11330717874315122,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 83.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11333204444948208,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 84.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12212688355879187,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 85.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12113577951951993,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 86.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11340222269476063,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 87.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10583135691394785,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 88.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11811181762618017,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 89.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11051799130669082,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 90.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11921922557098241,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 91.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11599651440019088,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 92.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10803789700739597,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 93.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.10526869655343651,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 94.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1078851671793003,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 95.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11481753118673976,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 96.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11937999471180794,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 97.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12421312093564163,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 98.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11599160559627886,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 99.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.09753715409089869,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 100.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12595021782208216,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 101.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11977252017504603,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 102.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12230015667659322,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 103.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12794440429650666,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 104.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11502985129235621,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 105.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11259918263874946,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 106.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12185032149182362,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 107.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.113169097085418,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 108.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1251028610699051,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 109.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12271645361796701,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 110.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12709235537720487,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 111.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1206469604365139,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 112.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13229243417730796,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 113.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12075546014347549,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 114.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12160088256438006,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 115.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.124121912670766,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 116.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12702555452416342,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 117.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12720189504050494,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 118.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13190420894666455,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 119.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13448430071463657,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 120.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.11703673077956633,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 121.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12412398904258914,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 122.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12543657036360234,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 123.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12356475161243152,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 124.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13994266898639574,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 125.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13832659396127878,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 126.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13582600809794487,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 127.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1425597089915006,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 128.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12218220220896558,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 129.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1335683291778863,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 130.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12782651300018189,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 131.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13144876369418101,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 132.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12904419339854656,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 133.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12726626187291878,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 134.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.133715277129679,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 135.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12681493664497756,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 136.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14050115061857815,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 137.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12625720984064448,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 138.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13405775397970765,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 139.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12768740633872766,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 140.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1198096991218669,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 141.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13367278725887544,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 142.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12918651002300263,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 143.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1399086786737067,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 144.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12665097928585511,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 145.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12804232283741046,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 146.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13364885027057094,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 147.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13955119603246513,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 148.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12668789589701512,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 149.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1289154531357506,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 150.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1345507741317703,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 151.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13642731935945596,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 152.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1397057944882958,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 153.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13624917386319202,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 154.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13207807180811315,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 155.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13290403129625628,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 156.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13216423840660652,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 157.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13345479082286105,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 158.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13749085398212624,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 159.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12966798204163887,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 160.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14484599649079455,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 161.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13790722216915785,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 162.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13278426173453894,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 163.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.136424712125227,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 164.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12621583084146137,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 165.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13057368393999735,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 166.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1459105023036522,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 167.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13525255582246642,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 168.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13382242998787386,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 169.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1497557323744022,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 170.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12200960179924758,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 171.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14135756034790137,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 172.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14551916838030465,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 173.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14208778961838375,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 174.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13596959385332452,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 175.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13228211902196252,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 176.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14004206555837062,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 177.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12880228783363368,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 178.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1353700849842432,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 179.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13238064876695965,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 180.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13730807164199932,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 181.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13148972976430917,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 182.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13461754579328178,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 183.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1375380988743259,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 184.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14898111503648992,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 185.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14368611698305211,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 186.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13513182093531828,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 187.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.15188455110522914,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 188.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13299194594081487,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 189.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1467493833723552,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 190.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13486843161805684,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 191.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1342810698219915,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 192.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1458562277640688,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 193.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1418389005024404,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 194.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1429920050515736,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 195.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13080629009737654,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 196.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12716663643008075,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 197.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14811859228132995,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 198.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1552393783333943,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 199.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13238558329403882,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 200.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1307352138081067,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 201.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14192419934162703,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 202.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14500017422648936,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 203.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12898854562335915,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 204.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1437204158733043,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 205.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.15142688680265537,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 206.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13903681102674026,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 207.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1367107998007988,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 208.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13368188580884965,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 209.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14239187294422606,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 210.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12458679547186402,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 211.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13196774356629426,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 212.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14775048424054782,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 213.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14478199809459535,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 214.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14010626391950787,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 215.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14595442088555965,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 216.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.12466594977097778,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 217.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14725766843445476,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 218.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1410404022778764,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 219.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14110778065794738,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 220.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1395763984949293,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 221.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14062532500824798,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 222.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14019486267546655,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 223.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14655894600393216,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 224.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.138185398459567,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 225.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13828607348505573,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 226.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1382228643149631,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 227.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14151159632295884,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 228.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14058992107213775,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 229.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13588291604889613,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 230.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.15049038472147214,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 231.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14048871996488632,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 232.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14884831670761378,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 233.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13634318610583673,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 234.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14387368186468286,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 235.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1411581975146129,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 236.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14970577903663473,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 237.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.141619351169343,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 238.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13978873151094418,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 239.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14644021951107,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 240.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1409324370048003,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 241.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13737056026956307,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 242.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1381621937759262,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 243.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.15027487467369682,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 244.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13565361406768073,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 245.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1387758437958695,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 246.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1311362594416371,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 247.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14213545968699204,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 248.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1470749521945196,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 249.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13833983482765222,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 250.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.1405362254481336,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 251.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14308066319209956,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 252.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13871824836962476,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 253.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.13037266671057923,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 254.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14055118232429875,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 255.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.139623752855762,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "PCA direction rank (1 = largest variance)": 256.0,
+      "R\u00b2 gap, MLP \u2212 ridge": 0.14311607784938096,
+      "series": "per-direction gap",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 768,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-direction predictability",
+        "xlabel": "PCA direction rank (1 = largest variance)",
+        "ylabel": "held-out R\u00b2 per direction",
+        "legend_labels": [
+          "ridge (linear)",
+          "MLP (nonlinear)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Linear-vs-nonlinear gap per direction",
+        "xlabel": "PCA direction rank (1 = largest variance)",
+        "ylabel": "R\u00b2 gap, MLP \u2212 ridge",
+        "legend_labels": [
+          "per-direction gap",
+          "band mean"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      }
+    ],
+    "series": [
+      "ridge (linear)",
+      "MLP (nonlinear)",
+      "per-direction gap",
+      "band mean"
+    ]
+  }
+}

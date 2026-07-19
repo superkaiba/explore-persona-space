@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1523,
+  "highest_id": 1526,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3257,7 +3257,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/1417",
       "status": "awaiting_promotion",
-      "title": "Ridge-regularization collapse on judge-filtered row subsets voids the framing-cell map-identity verdicts; the run's user-directedness headline is a denominator artifact (HIGH confidence)"
+      "title": "The shared context\u2192answer map survives rude, evasive, addressee-free, and AI-relay framings: it tracks generic query-answering structure, not helpful register or user-directedness (MODERATE confidence)"
     },
     "1418": {
       "has_clean_result": false,
@@ -3754,11 +3754,11 @@
     },
     "1482": {
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1482",
-      "status": "running",
-      "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
+      "path": "tasks/interpreting/1482",
+      "status": "interpreting",
+      "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (MODERATE confidence)"
     },
     "1483": {
       "has_clean_result": false,
@@ -3805,11 +3805,11 @@
     },
     "1489": {
       "goal": "Characterize how the pre-generation context\u2192answer-state transport map h (c(x)\u2192v(x); ridge primary, MLP secondary) changes when contexts are augmented with facts, instructions, personas, and formatting constraints \u2014 distinguishing movement within a fixed map from changes of the map (5\u00d75 transport-transfer matrix), testing additivity/effective-rank of augmentation deltas, testing whether relevance gating is captured linearly \u2014 and whether delivering the same information in-weights via dose-matched context distillation produces the same per-example answer-state shift, preserves relevance gating, and leaves the pre-finetuning map valid on the finetuned model.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/1489",
-      "status": "verifying",
-      "title": "Context-augmentation effects on the context\u2192answer-state transport map + dose-matched context-distillation in-weights comparison"
+      "path": "tasks/awaiting_promotion/1489",
+      "status": "awaiting_promotion",
+      "title": "Fact, instruction, and persona context augmentations all fell under the manipulation-check floor (only format constraints passed), stopping the transport-map run at its kill gate (HIGH confidence)"
     },
     "149": {
       "has_clean_result": false,
@@ -4082,9 +4082,30 @@
     "1523": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1523",
-      "status": "planning",
+      "path": "tasks/completed/1523",
+      "status": "completed",
       "title": "workflow-fix: check-20 WARN-acknowledgment must name each fired class"
+    },
+    "1524": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1524",
+      "status": "completed",
+      "title": "workflow-fix: verify_uploads merged card \u2014 prose pointer must not shadow a valid adapter_paths list"
+    },
+    "1525": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1525",
+      "status": "completed",
+      "title": "workflow-fix: sync_repo_root conflict-abort needs the full pointer-convergence defusal recipe"
+    },
+    "1526": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1526",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md bullet \u2014 off-pod phase reads vs upload manifest (cross-machine seam)"
     },
     "153": {
       "has_clean_result": false,

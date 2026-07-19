@@ -1,0 +1,114 @@
+{
+  "commit": "2883c0042e",
+  "created": "2026-07-19T02:46:21Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Mixed train,\nLMSYS holdout",
+      "mean normalized prediction error": 0.29338090268338857,
+      "error": 0.0029642643652887934,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Mixed train,\nWildChat holdout",
+      "mean normalized prediction error": 0.27590833503285767,
+      "error": 0.0031048319080924647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "LMSYS-only train,\nLMSYS holdout",
+      "mean normalized prediction error": 0.29039034817415327,
+      "error": 0.002977419712583973,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "LMSYS-only train,\nWildChat holdout",
+      "mean normalized prediction error": 0.33681063603551364,
+      "error": 0.0032630193001200736,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "mean normalized prediction error": 0.2904166383180998,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "mean normalized prediction error": 0.2728035031247652,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "mean normalized prediction error": 0.2874129284615693,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "mean normalized prediction error": 0.33354761673539357,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "mean normalized prediction error": 0.29634516704867736,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "mean normalized prediction error": 0.27901316694095013,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "mean normalized prediction error": 0.29336776788673724,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "mean normalized prediction error": 0.3400736553356337,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "mean normalized prediction error",
+        "xticklabels": [
+          "Mixed train,\nLMSYS holdout",
+          "Mixed train,\nWildChat holdout",
+          "LMSYS-only train,\nLMSYS holdout",
+          "LMSYS-only train,\nWildChat holdout"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ]
+  }
+}

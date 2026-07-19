@@ -193,6 +193,161 @@ class TestMergedResultsCard:
         card = verify_uploads.merged_results_card([{"kind": "epm:results", "note": _NOTE_608}])
         assert "_card_provenance" not in card
 
+    def test_prose_pointer_does_not_shadow_older_structural_adapter_paths(self):
+        """The #1489 repro: an epm:results v2 re-post whose adapter_paths is
+        a prose POINTER ("unchanged from epm:results v1 ...") is truthy and
+        used to win the newest-wins fold, shadowing v1's real 64-path LIST
+        and producing a false hf_model MISSING. The merge must bypass the
+        non-structural value in favor of the older structural declaration."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "2026-07-18T18:43:00Z",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"hf_model_repo": "superkaiba1/explore-persona-space", '
+                    '"adapter_paths": ["adapters/issue_1489/a/ckpt1", '
+                    '"adapters/issue_1489/a/ckpt2", "adapters/issue_1489/b/ckpt1"]}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "2026-07-18T22:56:00Z",
+                "note": (
+                    '{"reproducibility_card": {"adapter_paths": '
+                    '"unchanged from epm:results v1 (64 paths under adapters/issue_1489/)"}}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_paths"] == [
+            "adapters/issue_1489/a/ckpt1",
+            "adapters/issue_1489/a/ckpt2",
+            "adapters/issue_1489/b/ckpt1",
+        ]
+        assert "adapter_paths @ 2026-07-18T18:43:00Z" in card["_card_provenance"]
+        assert "bypassed" in card["_card_provenance"]
+
+    def test_prose_only_adapter_paths_still_reaches_prose_diagnostic(self):
+        """Last-resort semantics (design question 2): on a prose-ONLY history
+        (no marker ever declared a dict/list) the prose value must survive
+        the merge so the end-to-end path still produces the #612
+        producer-contract-violation row — a naive drop-the-prose merge would
+        degrade it to a generic MISSING."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"adapter_paths": "adapters/issue_612/all (16 adapters)"}}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_paths"] == "adapters/issue_612/all (16 adapters)"
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            side_effect=AssertionError("nothing checkable must be probed"),
+        ):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res is not None
+        assert res["status"] == "MISSING"
+        assert "producer-contract violation" in res["detail"]
+
+    def test_prose_pointer_wandb_run_names_falls_back_to_structural(self):
+        """The #1489 shadow mechanism is byte-identical for the contract
+        pair's other field: a newer prose wandb_run_names string defers to
+        an older per-cell dict."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"wandb_run_names": {"seed42": "run42", "seed137": "run137"}}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": '{"reproducibility_card": {"wandb_run_names": "unchanged from v1"}}',
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["wandb_run_names"] == {"seed42": "run42", "seed137": "run137"}
+        assert "wandb_run_names @ t0" in card["_card_provenance"]
+        assert "bypassed" in card["_card_provenance"]
+
+    def test_string_valued_fields_still_win_newest(self):
+        """The structural guard is FIELD-scoped: legitimately-string card
+        fields (hf_model_path, wandb_project, ...) keep plain newest-wins."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"hf_model_path": "old/path", "wandb_project": "old-project"}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"hf_model_path": "new/path", "wandb_project": "new-project"}}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["hf_model_path"] == "new/path"
+        assert card["wandb_project"] == "new-project"
+        assert "_card_provenance" not in card
+
+    def test_synthesized_hint_prose_wandb_run_names_defers_to_structural(self):
+        """A synthesized GCP-sentinel card CAN carry a non-structural
+        wandb_run_names: _PROVENANCE_HINT_KEYS includes it, so the top-level
+        hint carryover copies a payload-level prose string when per-cell
+        provenance yielded no run names. The merge defers that string to an
+        older card's structural per-cell dict."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": '{"reproducibility_card": {"wandb_run_names": {"seed42": "run42"}}}',
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": (
+                    '{"issue": 1524, "production_provenance": '
+                    '{"seed42": {"hf_adapter_subfolder": "issue_1524/a"}}, '
+                    '"wandb_run_names": "52 runs under project issue1524"}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_paths"] == {"seed42": "issue_1524/a"}
+        assert card["wandb_run_names"] == {"seed42": "run42"}
+        assert "wandb_run_names @ t0" in card["_card_provenance"]
+
+    def test_nonstructural_scalar_kept_as_last_resort(self):
+        """An int-valued structured field with no structural sibling anywhere
+        survives the merge unchanged (last resort, same as today's fold);
+        downstream ignores non-dict/list/str values → generic MISSING."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": '{"reproducibility_card": {"adapter_paths": 7}}',
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_paths"] == 7
+        assert "_card_provenance" not in card
+
 
 # ── _card_from_provenance (GCP-lane driver sentinels, #599) ───────────────────
 

@@ -9162,6 +9162,138 @@ def test_v4_takeaways_mixed_warn_and_fail_bullets_both_reported():
     assert "1 Takeaways bullet(s) exceed 30 words" in caps.detail
 
 
+# ─── check 20 (v4): WARN-acknowledgment coverage (#1523; incident #1417) ───
+#
+# A body that ships check-20 WARNs under an acknowledgment sentence must name
+# EACH fired WARN-tier class; a fired-but-unnamed class appends one more WARN
+# (never flips the verdict). Acknowledgment fixtures are appended AFTER the
+# footer (past `**Context:**`) so they perturb no prose count, and carry no
+# task refs / URLs (keeps the other checks inert).
+
+_V4_41_WORD_BULLET_BODY = _V4_GOOD_BODY.replace(
+    "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+    "- " + " ".join(["word"] * 41),
+)
+
+
+def test_v4_warn_ack_partial_coverage_warns():
+    """The #1417 shape: a 41-word bullet WARN fires while the acknowledgment
+    names only the per-result band — check 20 appends a coverage WARN naming
+    `Takeaways bullet-length` as unnamed; the overall verdict stays PASS."""
+    body = (
+        _V4_41_WORD_BULLET_BODY + "\nVerifier WARNs acknowledged: per-result prose sits in the "
+        "120–180-word band (deliberate).\n"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "does not name" in caps.detail
+    assert "Takeaways bullet-length" in caps.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_v4_warn_ack_fully_named_no_coverage_warn():
+    """Fired + fully named: the underlying 30-word WARN remains but NO
+    coverage message is appended."""
+    body = (
+        _V4_41_WORD_BULLET_BODY
+        + "\nVerifier WARNs acknowledged: one overlong Takeaways bullet is deliberate.\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "exceed 30 words" in caps.detail
+    assert "does not name" not in caps.detail
+
+
+def test_v4_warn_fired_no_ack_unchanged():
+    """Fired + no acknowledgment: behavior byte-compatible with today — the
+    cap WARN alone, no coverage message."""
+    _ok, results = verify_task_body.verify_text(_V4_41_WORD_BULLET_BODY)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "exceed 30 words" in caps.detail
+    assert "does not name" not in caps.detail
+
+
+def test_v4_ack_present_nothing_fired_no_warn():
+    """Acknowledgment present on a clean body (nothing fired): no new WARN."""
+    body = (
+        _V4_GOOD_BODY
+        + "\nVerifier WARNs acknowledged: none currently fire; kept for the template.\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and not caps.is_warn, caps.render()
+
+
+def test_v4_ack_inside_fence_not_detected():
+    """An acknowledgment sentence inside a code fence (e.g. quoted verifier
+    output) is NOT detected as an acknowledgment — no coverage message."""
+    body = (
+        _V4_41_WORD_BULLET_BODY
+        + "\n```\nVerifier WARNs acknowledged: per-result prose band (quoted).\n```\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "does not name" not in caps.detail
+
+
+def test_v4_fail_tier_excluded_from_ack_matching():
+    """A 100-word bullet is a FAIL-tier class (blocks regardless of
+    acknowledgment) and is EXCLUDED from coverage matching: with no WARN-tier
+    class fired, an acknowledgment naming nothing appends no coverage
+    message; the check still FAILs (unchanged)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 100),
+    ) + ("\nVerifier WARNs acknowledged: nothing specific.\n")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert not caps.passed
+    assert "does not name" not in caps.detail
+
+
+def test_v3_body_ack_coverage_not_applied():
+    """Forward-only: a v3 body with a 35-word bullet WARN and a PARTIAL
+    acknowledgment gains NO coverage message (`check_v3_word_caps` is
+    byte-untouched; the sub-check is v4-only)."""
+    body = _V3_GOOD_BODY.replace(
+        "- Secondary: capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.",
+        "- " + " ".join(["word"] * 35),
+    ) + (
+        "\nVerifier WARNs acknowledged: per-result prose sits in the "
+        "120–180-word band (deliberate).\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v3 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "exceed 30 words" in caps.detail
+    assert "does not name" not in caps.detail
+
+
+def test_v4_warn_ack_family_arm_detection():
+    """Pins the no-"warn" family-detection arm of `_V4_WARN_ACK_FAMILY_RE`
+    AND its interaction with per-class matching (the #922/#1315 in-wild
+    shape): an acknowledgment with NO "warn" token is still detected via the
+    conciseness-family arm, names total-prose but not the fired bullet class,
+    so the coverage WARN fires naming `Takeaways bullet-length`. Without this
+    row all sibling tests pass with the family arm mis-implemented, and the
+    corpus scan is structurally blind to a family-arm miss."""
+    body = (
+        _V4_41_WORD_BULLET_BODY
+        + "\nThe total-prose overage is acknowledged; the body deliberately "
+        "exceeds the budget.\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    caps = _results_by_name(results)["v4 conciseness caps"]
+    assert caps.passed and caps.is_warn
+    assert "does not name" in caps.detail
+    assert "Takeaways bullet-length" in caps.detail
+
+
 # ─── check 20 (v4): folded-round budget scaling (#921) ─────────────────────
 #
 # v4 bodies carry no `## What I ran` Rounds table, so the v3 round counter
