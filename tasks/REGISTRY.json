@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1542,
+  "highest_id": 1543,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4232,6 +4232,13 @@
       "path": "tasks/proposed/1542",
       "status": "proposed",
       "title": "workflow-fix: smoke must probe smoke-fenced branches"
+    },
+    "1543": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1543",
+      "status": "proposed",
+      "title": "workflow-fix: staging probe per source-family+consumer"
     },
     "155": {
       "has_clean_result": false,
