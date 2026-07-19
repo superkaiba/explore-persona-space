@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1552,
+  "highest_id": 1553,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4309,6 +4309,13 @@
       "path": "tasks/completed/1552",
       "status": "completed",
       "title": "clear pre-existing #1481 lint reds (hub-verify-retry + phase-done waivers)"
+    },
+    "1553": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1553",
+      "status": "proposed",
+      "title": "workflow-fix: pre-reg audit never scans v4 ## Results prose"
     },
     "156": {
       "has_clean_result": false,
