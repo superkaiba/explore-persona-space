@@ -1,0 +1,5 @@
+{
+ "caption": "Observed per-feature held-out R2 of the mean-pooling context-SAE to answer-SAE ridge (blue, 16,384 features) against the label-shuffle null (orange band: per-activity-decile pooled 2.5-97.5% quantiles over K=20 permuted fits at the same lambda=1e4). Green squares are observed decile medians. Points below the orange band are worse than the mechanical estimation-noise floor.",
+ "source_json": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1482/sae_perfeature/shuffle_null.json",
+ "git_commit": "1ad233fb0c0880785163355a904dba1e3b2dded4"
+}

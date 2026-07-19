@@ -1,0 +1,206 @@
+{
+ "goal": "shuffle-null estimation-noise floor for #1482 H2 per-feature R2",
+ "recipe": {
+  "unit": "sae_ctx / mean / ridge (parent P3)",
+  "lambda": 10000.0,
+  "k_draws": 20,
+  "seeds": [
+   1482000,
+   1482001,
+   1482002,
+   1482003,
+   1482004,
+   1482005,
+   1482006,
+   1482007,
+   1482008,
+   1482009,
+   1482010,
+   1482011,
+   1482012,
+   1482013,
+   1482014,
+   1482015,
+   1482016,
+   1482017,
+   1482018,
+   1482019
+  ],
+  "permutation": "Y rows within the 120k fit set; holdout untouched (true pairs)",
+  "n_fit": 120000,
+  "n_holdout": 20000,
+  "f_out": 16384,
+  "f_in": 8192,
+  "draw_arithmetic": "fp32 block-GEMMs, fp64 accumulate; fp64 gram+eigh"
+ },
+ "identity_gate": {
+  "identity_draw_seconds": 240.20103311538696,
+  "identity_pooled_r2": 0.6901407402684245,
+  "identity_vs_parent_abs_diff": {
+   "median": 1.5467825847159666e-05,
+   "q99": 0.00019673808981968577,
+   "max": 0.005415628949711482
+  },
+  "parent_pooled_r2": 0.6901409540488584
+ },
+ "adjudication": {
+  "a_obs_below_zero_total": 1327,
+  "a_obs_below_zero_within_band": 168,
+  "a_obs_below_zero_below_band": 128,
+  "a_obs_below_zero_above_band": 1031,
+  "b_per_decile": [
+   {
+    "decile": 0,
+    "n_features": 1639,
+    "activity_min": 0.08105833333333333,
+    "activity_max": 0.0904,
+    "obs_median_r2": 0.09066324660001512,
+    "obs_below_zero_share": 0.16473459426479561,
+    "null_below_zero_share": 0.999908480780964,
+    "null_q2p5": -0.13924436271190643,
+    "null_median": -0.07033102214336395,
+    "null_q97p5": -0.03670709952712059,
+    "obs_below_own_band_share": 0.013422818791946308
+   },
+   {
+    "decile": 1,
+    "n_features": 1638,
+    "activity_min": 0.09041666666666667,
+    "activity_max": 0.1012,
+    "obs_median_r2": 0.10580337188476191,
+    "obs_below_zero_share": 0.14835164835164835,
+    "null_below_zero_share": 0.9999389499389499,
+    "null_q2p5": -0.1286117285490036,
+    "null_median": -0.07019811868667603,
+    "null_q97p5": -0.03845956549048424,
+    "obs_below_own_band_share": 0.01098901098901099
+   },
+   {
+    "decile": 2,
+    "n_features": 1638,
+    "activity_min": 0.10120833333333333,
+    "activity_max": 0.11428333333333333,
+    "obs_median_r2": 0.10504350562257697,
+    "obs_below_zero_share": 0.12515262515262515,
+    "null_below_zero_share": 0.999969474969475,
+    "null_q2p5": -0.12807941436767578,
+    "null_median": -0.06961389631032944,
+    "null_q97p5": -0.03582582622766495,
+    "obs_below_own_band_share": 0.009768009768009768
+   },
+   {
+    "decile": 3,
+    "n_features": 1639,
+    "activity_min": 0.1143,
+    "activity_max": 0.130375,
+    "obs_median_r2": 0.10915022622938086,
+    "obs_below_zero_share": 0.10311165344722392,
+    "null_below_zero_share": 0.9999694935936546,
+    "null_q2p5": -0.1170695424079895,
+    "null_median": -0.06956829130649567,
+    "null_q97p5": -0.038177598267793655,
+    "obs_below_own_band_share": 0.012812690665039659
+   },
+   {
+    "decile": 4,
+    "n_features": 1638,
+    "activity_min": 0.13040833333333332,
+    "activity_max": 0.15073333333333333,
+    "obs_median_r2": 0.12288663799261706,
+    "obs_below_zero_share": 0.09157509157509157,
+    "null_below_zero_share": 1.0,
+    "null_q2p5": -0.11529090255498886,
+    "null_median": -0.0692392885684967,
+    "null_q97p5": -0.03999895974993706,
+    "obs_below_own_band_share": 0.009157509157509158
+   },
+   {
+    "decile": 5,
+    "n_features": 1638,
+    "activity_min": 0.15074166666666666,
+    "activity_max": 0.17775833333333332,
+    "obs_median_r2": 0.13696551926995754,
+    "obs_below_zero_share": 0.06288156288156288,
+    "null_below_zero_share": 0.9999389499389499,
+    "null_q2p5": -0.11059252917766571,
+    "null_median": -0.06889335811138153,
+    "null_q97p5": -0.03988026827573776,
+    "obs_below_own_band_share": 0.004884004884004884
+   },
+   {
+    "decile": 6,
+    "n_features": 1639,
+    "activity_min": 0.17780833333333335,
+    "activity_max": 0.21518333333333334,
+    "obs_median_r2": 0.15328389761494254,
+    "obs_below_zero_share": 0.04514948139109213,
+    "null_below_zero_share": 1.0,
+    "null_q2p5": -0.10852613300085068,
+    "null_median": -0.06891070306301117,
+    "null_q97p5": -0.04380723088979721,
+    "obs_below_own_band_share": 0.004270896888346553
+   },
+   {
+    "decile": 7,
+    "n_features": 1638,
+    "activity_min": 0.21521666666666667,
+    "activity_max": 0.2786666666666667,
+    "obs_median_r2": 0.1663810945959076,
+    "obs_below_zero_share": 0.028693528693528692,
+    "null_below_zero_share": 1.0,
+    "null_q2p5": -0.101116843521595,
+    "null_median": -0.06908321380615234,
+    "null_q97p5": -0.044877782464027405,
+    "obs_below_own_band_share": 0.005494505494505495
+   },
+   {
+    "decile": 8,
+    "n_features": 1638,
+    "activity_min": 0.2787,
+    "activity_max": 0.39824166666666666,
+    "obs_median_r2": 0.189543947380436,
+    "obs_below_zero_share": 0.023809523809523808,
+    "null_below_zero_share": 1.0,
+    "null_q2p5": -0.09641701728105545,
+    "null_median": -0.06903056800365448,
+    "null_q97p5": -0.04662740230560303,
+    "obs_below_own_band_share": 0.004273504273504274
+   },
+   {
+    "decile": 9,
+    "n_features": 1639,
+    "activity_min": 0.3984083333333333,
+    "activity_max": 1.0,
+    "obs_median_r2": 0.26627686272637197,
+    "obs_below_zero_share": 0.01647345942647956,
+    "null_below_zero_share": 1.0,
+    "null_q2p5": -0.0920620784163475,
+    "null_median": -0.06880924105644226,
+    "null_q97p5": -0.04884845018386841,
+    "obs_below_own_band_share": 0.003050640634533252
+   }
+  ],
+  "c_above_median_activity_negative_n": 290,
+  "c_of_those_below_own_null_q2p5": 36,
+  "all_features_below_band_share": 0.0078125,
+  "all_features_above_band_share": 0.98193359375,
+  "band_loo_calibration_below_rate": 0.0633514404296875
+ },
+ "caveats": [
+  "per-feature null band from K=20 draws is coarse: the leave-one-out calibration rate above is the honest false-positive rate of the 'below own q2.5' read (expected ~5-7% at K=20, not 2.5%)",
+  "per-decile pooled bands (~33k null values/decile) are the better-calibrated aggregate read"
+ ],
+ "inputs": {
+  "store": "/mnt/eps-data/thomasjiralerspong/issue1482_shuffnull/issue1482_error_analysis/analysis_tensors/sae_pooled",
+  "n_shards": 1920,
+  "scratch_split": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1482/data/issue_1482/scratch/split_indices.npz",
+  "parent_npz": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1482/eval_results/issue_1482/sae_perfeature/sae_ctx__mean__ridge.npz"
+ },
+ "metadata": {
+  "git_commit": "1ad233fb0c0880785163355a904dba1e3b2dded4",
+  "timestamp_utc": "2026-07-19T06:54:42Z",
+  "numpy": "2.2.6",
+  "peak_rss_gib": 14.526870727539062,
+  "wall_seconds": 6541.300284385681
+ }
+}
