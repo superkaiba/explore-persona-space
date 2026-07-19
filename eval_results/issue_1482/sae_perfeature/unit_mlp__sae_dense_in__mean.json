@@ -1,0 +1,16 @@
+{
+  "arm": "sae_dense_in",
+  "arm_doc": {
+    "mean__mlp": {
+      "pooled_r2": 0.7387111516996565,
+      "epochs_ran": 71
+    }
+  },
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-18T23:39:42.538005Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "2"
+  }
+}

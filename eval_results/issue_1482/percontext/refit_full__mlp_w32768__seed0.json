@@ -1,0 +1,41 @@
+{
+  "fit_id": "refit_full__mlp_w32768__seed0",
+  "condition": "refit_full",
+  "predictor": "mlp_w32768",
+  "seed": 0,
+  "n_train": 963444,
+  "wall_time_s": 2849.8,
+  "fit_meta": {
+    "width": 32768,
+    "lr": 0.0003,
+    "epochs_ran": 38,
+    "batch": 4096,
+    "best_val_mse": 0.08325187529342865,
+    "n_train": 963444,
+    "capacity_arm": true
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "test": {
+      "n": 1000,
+      "whole_map_r2": 0.8134194594608872,
+      "mean_cosine": 0.9654665667982313
+    },
+    "val": {
+      "n": 400,
+      "whole_map_r2": 0.8091986996703179,
+      "mean_cosine": 0.9654495127605804
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T07:41:54.606218Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "0"
+  }
+}

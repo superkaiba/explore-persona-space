@@ -1,0 +1,53 @@
+{
+  "fit_id": "refit_holdout__krr_nystrom__seed0",
+  "condition": "refit_holdout",
+  "predictor": "krr_nystrom",
+  "seed": 0,
+  "n_train": 943444,
+  "wall_time_s": 132.4,
+  "fit_meta": {
+    "n_train": 943444,
+    "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+    "m_centers": 16384,
+    "base_gamma": 0.00016770910554262942,
+    "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 0.00016770910554262942,
+      "lambda": 0.1,
+      "val_r2": 0.8053583610514492
+    },
+    "val_grid": [
+      {
+        "gamma_mult": 1.0,
+        "gamma": 0.00016770910554262942,
+        "lambda": 0.1,
+        "val_r2": 0.8053583610514492
+      },
+      {
+        "gamma_mult": 1.0,
+        "gamma": 0.00016770910554262942,
+        "lambda": 10.0,
+        "val_r2": 0.7801299430624085
+      }
+    ]
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "holdout": {
+      "n": 20000,
+      "whole_map_r2": 0.7750490954073334,
+      "mean_cosine": 0.9646017651012242
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T08:40:55.656046Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "1"
+  }
+}

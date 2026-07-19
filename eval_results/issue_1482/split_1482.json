@@ -1,0 +1,51 @@
+{
+  "orig_train_ids": 3600,
+  "n_new_captured": 959844,
+  "n_new_manifest": 960000,
+  "n_val": 400,
+  "n_test": 1000,
+  "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+  "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+  "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+  "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+  "layer": 19,
+  "n_total": 964844,
+  "realized_lmsys_frac_full_pool": 0.5492,
+  "holdout": {
+    "sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+    "n": 20000,
+    "n_lmsys": 10983,
+    "n_wildchat": 9017,
+    "rng_seed": 1482
+  },
+  "sae_fit": {
+    "sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+    "n": 120000,
+    "n_lmsys": 65899,
+    "n_wildchat": 54101
+  },
+  "sae_val": {
+    "sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9",
+    "n": 2000,
+    "n_lmsys": 1098,
+    "n_wildchat": 902
+  },
+  "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+  "regime": {
+    "smoke": false,
+    "max_chunks": 0,
+    "holdout_n": 20000,
+    "sae_n": 120000,
+    "sae_val_n": 2000
+  },
+  "plan_deviations": [
+    "SAE arm covers NEW-pool rows only (holdout + fit + sae_val): the pinned pass_b bundle carries no prompts/responses and round-1 raw_completions are not on HF, so pinned val/test (pass_b rows) have no reconstructable text; P3 lambda selection uses the sae_val carve instead of pinned val (concern sae-arm-passb-text)."
+  ],
+  "metadata": {
+    "git_commit": "ccb4de9abce47a57a48fca6aa5f9321b6151130c",
+    "timestamp_utc": "2026-07-18T18:56:47.510216Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
