@@ -4421,12 +4421,15 @@ def set_status(
                 [*(repo / s for s in specs), registry_path()],
                 f"task #{task_id}: {old_status} → {new_status}",
             )
-        except (subprocess.CalledProcessError, SequencerWaitTimeout):
+        except (subprocess.CalledProcessError, SequencerWaitTimeout, CommitHeadGuardError):
             # #1030 MF-1: a SequencerWaitTimeout raised from _git_commit's
             # merge wait gets the SAME "DURABLY APPLIED" recovery narration a
             # plain git failure gets, then re-raises as before. set_status is
             # deliberately NOT converted to deferred behavior (#898 raise +
-            # ghost-sweep semantics stay).
+            # ghost-sweep semantics stay). CommitHeadGuardError (#1530) joins
+            # the tuple so a pre-commit HEAD-guard trip in a status move gets
+            # the same durably-applied narration before re-raising (never
+            # deferred here — the raise IS the fail-loud contract).
             _log.error(
                 "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
                 "events.jsonl consistent at %s) but git failed before committing. "
@@ -6207,6 +6210,94 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
     return result
 
 
+class CommitHeadGuardError(RuntimeError):
+    """Pre-commit HEAD guard tripped on the PRIMARY checkout (#1530).
+
+    Raised by _assert_commit_head when the primary checkout's HEAD is not
+    attached to `main` at commit time. Deliberately a distinct class:
+    _commit_after_durable_append defers it (the append is durable in the
+    PRIMARY working tree by construction), while the routed-path guard
+    failure stays a plain RuntimeError (routed appends are NOT durable
+    against the managed worktree's reset --hard re-sync and must never
+    be deferred — see _commit_after_durable_append's contract).
+    """
+
+
+_COMMIT_HEAD_REPROBE_SLEEP_S = 0.5  # matches the resolver's #996 grace-probe cadence
+
+
+def _assert_commit_head(repo: Path, routed: bool, env: dict[str, str]) -> None:
+    """Hard pre-commit branch guard (#1530): verify, immediately before
+    ``git commit --only``, that the checkout we are about to commit in is in
+    the state the resolver promised. Primary: HEAD attached to ``main``.
+    Routed (``_task-main-pin``): HEAD DETACHED (the pin contract).
+
+    Primary mismatch: one 0.5s re-probe (transient checkout transit), then
+    ``invalidate_cache()`` — so the NEXT mutation in this process re-resolves
+    and auto-routes through the managed worktree — and raise
+    :class:`CommitHeadGuardError`. NEVER silently re-routes THIS commit
+    mid-mutation: the caller's append already landed in the PRIMARY working
+    tree, and the managed worktree's tree (reset to main) does not contain
+    it — committing there would commit a stale file state (data-losing).
+    Note: a concurrent root ``pull --rebase`` that keeps HEAD detached for
+    longer than the 0.5s re-probe can trip this guard — a benign deferral
+    (the forensic row names the detached state), useful for triage.
+
+    Routed mismatch (HEAD unexpectedly attached to a branch, or the probe
+    failed for a non-detached reason): plain ``RuntimeError`` immediately —
+    committing would move that branch AND the subsequent CAS would fail
+    messily; fail loud pre-commit instead.
+
+    Incident #1530 forensics: the 2026-07-18 stranding was NOT this window
+    (task.py committed correctly on main; a branch-side FF imported the
+    commits) — this guard closes the ADJACENT stale-(pid,cwd)-cache window
+    the #1100 landing check can only detect post-hoc.
+    """
+    for attempt in (1, 2):
+        sym = subprocess.run(
+            ["git", "-C", str(repo), "symbolic-ref", "--short", "HEAD"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        branch = sym.stdout.strip() if sym.returncode == 0 else None
+        if routed:
+            if branch is None and "not a symbolic ref" in (sym.stderr or "").lower():
+                return  # detached at the main pin — the expected routed state
+            if branch is not None:
+                raise RuntimeError(
+                    f"managed main-pin worktree {repo} has HEAD attached to {branch!r} "
+                    f"(expected DETACHED at the main tip); refusing to commit — a commit "
+                    f"here would advance {branch!r} and break the CAS advance-main "
+                    f"contract. Remove/re-create the managed worktree "
+                    f"(git worktree remove --force) and re-run."
+                )
+            raise RuntimeError(
+                f"managed main-pin worktree {repo}: the pre-commit HEAD probe failed for "
+                f"a non-detached reason (rc={sym.returncode}, "
+                f"stderr={(sym.stderr or '').strip()!r}); refusing to commit against an "
+                f"unverifiable HEAD state."
+            )
+        if branch == "main":
+            return
+        if attempt == 1:
+            time.sleep(_COMMIT_HEAD_REPROBE_SLEEP_S)
+            continue
+        invalidate_cache()  # next mutation re-resolves -> managed-worktree route
+        state = (
+            f"on branch {branch!r}" if branch else f"not attached ({(sym.stderr or '').strip()!r})"
+        )
+        raise CommitHeadGuardError(
+            f"refusing to commit task state: primary checkout {repo} HEAD is {state}, "
+            f"not 'main' — the commit would strand on a non-main ref (#1530). The "
+            f"append (if any) is durable in the working tree; the resolver cache was "
+            f"invalidated so the next mutation auto-routes through the managed "
+            f"main-pin worktree. Re-attach the primary to 'main' and investigate what "
+            f"moved its HEAD (repo-root HEAD reflog)."
+        )
+
+
 def _git_commit(paths: list[Path], message: str) -> None:
     """Stage the given paths and create a single commit. Optional push.
 
@@ -6238,6 +6329,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
     fatals rc=128 during one); a merge that STARTS between the probe and the
     commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
     partial-commit stderr signature.
+
+    Immediately before EACH ``git commit --only`` invocation (first attempt
+    AND the post-re-wait TOCTOU retry) the hard pre-commit HEAD guard
+    ``_assert_commit_head`` (#1530) verifies the checkout is in the state the
+    resolver promised — primary: HEAD attached to ``main``
+    (:class:`CommitHeadGuardError` on mismatch, deferrable for durable
+    appends); routed: HEAD detached (plain ``RuntimeError``, never deferred).
 
     After a successful commit (and, when routed, the CAS advance) a
     post-commit LANDING CHECK (#1100, ``_warn_if_commit_stranded``) verifies
@@ -6276,6 +6374,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
     # `main` to the new commit afterwards.
     old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
+    _assert_commit_head(repo, routed, env)  # hard HEAD guard (#1530), first attempt
     try:
         _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     except subprocess.CalledProcessError as e:
@@ -6289,6 +6388,9 @@ def _git_commit(paths: list[Path], message: str) -> None:
         if not _PARTIAL_COMMIT_SEQUENCER_RE.search(e.stderr or ""):
             raise
         _wait_for_sequencer_clear(repo)
+        # The re-wait can take long enough for checkout state to change —
+        # re-run the #1530 HEAD guard before the FINAL retry too.
+        _assert_commit_head(repo, routed, env)
         _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
@@ -6383,11 +6485,17 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     Deferral is NARROW by design (two independent layers, each sufficient
     for the routed CAS case, jointly sufficient for all routed cases):
 
-    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout)`` — NEVER
-      bare ``RuntimeError``: the routed post-commit CAS leg
-      (``_advance_main_ref`` → ``_git_quiet``) raises ``RuntimeError``, and
-      deferring THAT would report success for an append that never reached
-      canonical ``main``;
+    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout,
+      CommitHeadGuardError)`` — NEVER bare ``RuntimeError``: the routed
+      post-commit CAS leg (``_advance_main_ref`` → ``_git_quiet``) raises
+      ``RuntimeError``, and deferring THAT would report success for an
+      append that never reached canonical ``main``.
+      :class:`CommitHeadGuardError` (#1530) is primary-path-only by
+      construction (the routed HEAD-guard arm raises plain
+      ``RuntimeError``) and bypasses the routed re-check below via the
+      isinstance ordering — the guard already invalidated the resolver
+      cache, so a live ``repo_root()`` re-resolve would route to the
+      managed worktree and wrongly re-raise a deferrable primary failure;
     * NEVER defers in ROUTED mode: there the append lives only in the
       managed worktree's working tree, and the next resolver re-sync runs
       ``reset --hard main`` (``_ensure_managed_main_worktree``) whose safety
@@ -6406,8 +6514,15 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     try:
         _git_commit(paths, message)
         return True
-    except (subprocess.CalledProcessError, SequencerWaitTimeout) as e:
-        if _is_routed_root(repo_root()):
+    except (subprocess.CalledProcessError, SequencerWaitTimeout, CommitHeadGuardError) as e:
+        # CommitHeadGuardError fires ONLY on the primary path (the routed-path
+        # guard raises plain RuntimeError, which stays uncaught by design) and
+        # it invalidates the resolver cache BEFORE raising — so the
+        # _is_routed_root(repo_root()) re-check below would RE-RESOLVE, route
+        # to the managed worktree, and wrongly re-raise a deferrable
+        # primary-path failure. The append is durable in the PRIMARY working
+        # tree by construction for this class: defer directly.
+        if not isinstance(e, CommitHeadGuardError) and _is_routed_root(repo_root()):
             raise  # routed append is NOT durable against the reset --hard re-sync
         stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
         _log.error(

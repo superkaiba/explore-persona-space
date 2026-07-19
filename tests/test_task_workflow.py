@@ -4369,6 +4369,10 @@ def test_routed_cas_failure_after_commit_raises_no_deferred_row(fake_repo, monke
     exception ROUTING of the real routed branch, not git topology."""
     repo, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # #1530: the pre-commit HEAD guard requires a ROUTED root to be DETACHED
+    # (the managed-pin contract). Detach the fake repo so the forced-routed
+    # commit passes the guard and reaches the CAS leg under test.
+    subprocess.run(["git", "checkout", "-q", "--detach", "HEAD"], cwd=repo, check=True)
     monkeypatch.setattr(tw, "_is_routed_root", lambda root: True)
 
     def cas_crash(managed, old_sha, new_sha, env):
@@ -4524,8 +4528,21 @@ def _strand_repo(repo: Path) -> None:
     """Park the fake repo's checkout on a feature branch. The fixture's
     monkeypatched `repo_root` bypasses the branch-guard resolver, so a
     subsequent `_git_commit` lands OFF main — exactly the guard-escape class
-    the landing check (#1100) exists to catch."""
+    the landing check (#1100) exists to catch.
+
+    Since #1530 the commit-site HEAD guard (`_assert_commit_head`) REFUSES
+    this simulated state before the commit, so landing-check tests that need
+    the commit to actually LAND off-main bypass the guard surgically
+    (`_bypass_head_guard`) — the landing check remains the post-hoc backstop
+    for windows the guard cannot see (a HEAD move inside the guard→commit
+    gap), and that layer is what these tests pin."""
     subprocess.run(["git", "checkout", "-q", "-b", "issue-42"], cwd=repo, check=True)
+
+
+def _bypass_head_guard(monkeypatch, tw) -> None:
+    """No-op the #1530 pre-commit HEAD guard so a test can exercise the
+    POST-HOC #1100 landing-check layer on a deliberately-stranded commit."""
+    monkeypatch.setattr(tw, "_assert_commit_head", lambda repo, routed, env: None)
 
 
 def test_landing_check_silent_when_commit_reaches_main(fake_repo, caplog):
@@ -4542,12 +4559,13 @@ def test_landing_check_silent_when_commit_reaches_main(fake_repo, caplog):
     assert not tw.STRANDED_COMMITS_LOG.exists()
 
 
-def test_landing_check_warns_on_stranded_commit(fake_repo, caplog):
+def test_landing_check_warns_on_stranded_commit(fake_repo, monkeypatch, caplog):
     """AC-1: a commit unreachable from refs/heads/main → the mutation still
     succeeds, exactly ONE ERROR names the sha[:12] + the greppable phrase +
     the HEAD ref + the sidecar path, and exactly one `kind: stranded` row
     with the exact sidecar schema lands in the sidecar."""
     repo, tw = fake_repo
+    _bypass_head_guard(monkeypatch, tw)  # #1530: land the strand, test the backstop
     _strand_repo(repo)
     target = repo / "somefile.txt"
     target.write_text("x\n")
@@ -4593,6 +4611,7 @@ def test_landing_check_never_fails_the_mutation(fake_repo, monkeypatch, caplog):
     and _git_commit returns normally; a _run_git blow-up INSIDE the helper is
     swallowed too (returns None, never raises)."""
     repo, tw = fake_repo
+    _bypass_head_guard(monkeypatch, tw)  # #1530: land the strand, test the backstop
     _strand_repo(repo)
     target = repo / "somefile.txt"
     target.write_text("x\n")
@@ -4615,10 +4634,11 @@ def test_landing_check_never_fails_the_mutation(fake_repo, monkeypatch, caplog):
     assert tw._warn_if_commit_stranded("m", routed=False) is None  # no raise
 
 
-def test_landing_check_unverifiable_when_main_ref_missing(fake_repo):
+def test_landing_check_unverifiable_when_main_ref_missing(fake_repo, monkeypatch):
     """§1 item 4: a repo with no refs/heads/main at all → a
     `kind: unverifiable` row (probe rc != 1), never a crash."""
     repo, tw = fake_repo
+    _bypass_head_guard(monkeypatch, tw)  # #1530: HEAD on 'trunk' would refuse pre-commit
     subprocess.run(["git", "branch", "-m", "main", "trunk"], cwd=repo, check=True)
     target = repo / "somefile.txt"
     target.write_text("x\n")
@@ -4658,6 +4678,7 @@ def test_landing_check_disabled_via_env(fake_repo, monkeypatch, caplog):
     ERROR + no row on a stranded end-to-end commit, and the direct-call leg
     issues ZERO git subprocesses."""
     repo, tw = fake_repo
+    _bypass_head_guard(monkeypatch, tw)  # #1530: land the strand, test the backstop
     monkeypatch.setenv("EPM_TASKPY_LANDING_CHECK", "0")
     _strand_repo(repo)
     target = repo / "somefile.txt"
