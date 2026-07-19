@@ -173,7 +173,7 @@ Underlying data: per-context errors behind the four cells, cell means marked.
 
 ### The answer-sampling floor is higher for non-English contexts, so the floor-adjusted language advantage widens
 
-Plotted: per-arm decomposition of expected per-context error into map share plus answer-sampling floor, and the raw, floor, and adjusted non-English-minus-English contrasts with 95% bootstrap CIs; 2,000-context stratified subsample of the holdout; the plotted floor is the registered fresh-4 estimator (draws 43–46; the parent draw 42 completes the five-draw shadow).
+Plotted: per-arm decomposition of expected per-context error into map share plus answer-sampling floor, and the raw, floor, and adjusted non-English-minus-English contrasts with 95% bootstrap CIs; 2,000-context stratified subsample of the holdout; the plotted floor is the fresh-4 estimator (draws 43–46; the parent draw 42 completes the five-draw shadow).
 
 ![Per-arm error decomposition and the three language contrasts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1f0bc2a174d25188013d4b1813bb839077e9ab0b/figures/issue_1482/kresample/floor_decomposition_hero.png)
 
@@ -229,7 +229,7 @@ Plotted: per-direction held-out R² across the top-256 answer-PCA ranks — comm
 
 > **Figure.** *The per-direction-tuned ridge overlays the shared-regularizer ridge at every rank; the MLP stays above both.* Per-direction held-out R² vs answer-PCA rank (n = 20,000 holdout contexts); inset: band-mean MLP−ridge gaps under both regularizer conventions. λ selected per direction on the parent's pinned 400-row val over a 38-value grid.
 
-Per-direction tuning leaves the gap excess (band 129–256 minus band 1–16) at 0.1030 (CI95 0.1013 to 0.1046) against 0.1021 committed; the holdout-oracle λ — the ceiling of any grid-linear per-direction baseline — reads 0.1020, excluding selection noise. The outcome was analytically forced: against the smallest train-Gram eigenvalue (2,447) the parent λ of 0.001 implies shrinkage factors above 0.9999996 — the committed ridge was already numerically an unshrunk least-squares fit.
+Per-direction tuning leaves the gap excess (band 129–256 minus band 1–16) at 0.1030 (CI95 0.1013 to 0.1046) against 0.1021 committed; the holdout-oracle λ — the ceiling of any grid-linear per-direction baseline — reads 0.1020, excluding selection noise. The outcome was analytically forced: against the smallest train-Gram eigenvalue (2,447) the parent λ of 0.001 implies shrinkage factors at least 0.99999959 — the committed ridge was already numerically an unshrunk least-squares fit.
 
 Tuned band gaps 0.036/0.079/0.116/0.139 preserve the fourfold rise; the MLP stays better on all 256 directions. This closes the previous result's shrinkage caveat.
 
