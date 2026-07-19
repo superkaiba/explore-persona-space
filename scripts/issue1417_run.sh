@@ -92,7 +92,10 @@ SMOKE_JUDGE_DRAWS="${SMOKE_JUDGE_DRAWS:-2}"
 HF_PREFIX="issue1417_framing_cells"
 HF_REPO="superkaiba1/explore-persona-space-data"
 
-MODELS=(instruct pretrained)
+# Lane filter (per-lane pilot disposition, plan v7 §4.3): I1417_MODELS
+# space-separated override — e.g. "instruct" for a single-lane Phase C after
+# the other lane failed its pilot bars. Default: both lanes (v1/refit shape).
+MODELS=(${I1417_MODELS:-instruct pretrained})
 # Cell filter (plan §4.2 item 4a): ONE source for every phase's cell list —
 # the unit queue, the smoke judge --cells, and every fits/battery --cells.
 # Default = the five v1 cells (fits/battery filtered to these == the v1/refit
