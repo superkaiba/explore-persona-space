@@ -4,3 +4,4 @@
 {"ts": "2026-07-19T14:55:45Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-19T15:14:32Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v1. No goal-currency WARN; no overrides."}
 {"ts": "2026-07-19T15:26:47Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics."}
+{"ts": "2026-07-19T15:39:04Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS on plan v3, n_fail=0, n_warn=1 (c15_failloud_test_coverage — the fail-loud count-gate behavior IS pinned by fixture test 12's companion FAIL arm + test 14's exact-count pin; WARN acknowledged, no override needed)."}
