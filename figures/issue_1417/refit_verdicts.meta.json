@@ -1,0 +1,239 @@
+{
+  "commit": "49f44e361a",
+  "created": "2026-07-19T04:38:56Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.662143858515266,
+      "y": 4.17,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.37787860267506335,
+      "y": 3.83,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.5469475152997514,
+      "y": 3.17,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.14394296979381838,
+      "y": 2.83,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.5422836142093259,
+      "y": 2.17,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.12772433454295362,
+      "y": 1.83,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.5277011411164894,
+      "y": 1.17,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.3560424011580442,
+      "y": 0.83,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.6564371819284752,
+      "y": 0.17,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.3970158178222304,
+      "y": -0.17,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": -1.4809794981357092,
+      "y": 4.17,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.37787860267506335,
+      "y": 3.83,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.5460883631466313,
+      "y": 3.17,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": -0.002170746094595888,
+      "y": 2.83,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": -0.5854574712856693,
+      "y": 2.17,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.12772433454295362,
+      "y": 1.83,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.5164814450215096,
+      "y": 1.17,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.3560424011580442,
+      "y": 0.83,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": -1.204515097994467,
+      "y": 0.17,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out R\u00b2 at layer 19, judge-kept rows": 0.3970158178222304,
+      "y": -0.17,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "recovery fraction vs chat reference": 1.0015996161117162,
+      "y": 4.17,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "recovery fraction vs chat reference": 0.9073821869272604,
+      "y": 3.83,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "recovery fraction vs chat reference": 0.8769294795156217,
+      "y": 3.17,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "recovery fraction vs chat reference": 0.7091833136736139,
+      "y": 2.83,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "recovery fraction vs chat reference": 0.9118373224613772,
+      "y": 2.17,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "recovery fraction vs chat reference": 0.7256146697929345,
+      "y": 1.83,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "recovery fraction vs chat reference": 0.8724286080347741,
+      "y": 1.17,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "recovery fraction vs chat reference": 0.8733080547187771,
+      "y": 0.83,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "recovery fraction vs chat reference": 0.9999526358862545,
+      "y": 0.17,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "recovery fraction vs chat reference": 0.9118482904861339,
+      "y": -0.17,
+      "_kind": "errorbar",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Kept-row map fit: run 1 vs refit",
+        "xlabel": "held-out R\u00b2 at layer 19, judge-kept rows",
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "helpful-instruction control",
+          "rude-but-informative",
+          "evasive",
+          "addressee-free exposition",
+          "AI-relay addressee"
+        ]
+      },
+      {
+        "title_left": "Recovery fraction, refit (0.5 = boundary)",
+        "xlabel": "recovery fraction vs chat reference",
+        "legend_labels": [
+          "instruct, pure-GCV run",
+          "instruct, inner-CV refit",
+          "base, pure-GCV run",
+          "base, inner-CV refit"
+        ],
+        "xticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  }
+}
