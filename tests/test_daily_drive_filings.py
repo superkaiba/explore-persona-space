@@ -12,6 +12,9 @@ recovery that never fires in production).
 
 from __future__ import annotations
 
+import argparse
+import contextlib
+import io
 import json
 import subprocess
 import sys
@@ -26,6 +29,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import daily_drive_filings as ddf  # noqa: E402
+import file_infra_task as fit  # noqa: E402
 
 from explore_persona_space.task_workflow import wf_fix_fingerprint  # noqa: E402
 
@@ -46,6 +50,8 @@ else:
     snap.write_text("")
 with open(DIR / "filer_calls.jsonl", "a", encoding="utf-8") as fh:
     fh.write(json.dumps(sys.argv[1:]) + "\\n")
+for line in {stderr_lines!r}:
+    print(line, file=sys.stderr)
 fail_marker = {fail_marker!r}
 if fail_marker and any(fail_marker in a for a in sys.argv[1:]):
     print("stub filer exploded", file=sys.stderr)
@@ -63,8 +69,14 @@ def make_stub(
     exit_code: int = 0,
     fail_marker: str | None = None,
     name: str = "stub_filer.py",
+    stderr_lines: list[str] | None = None,
 ) -> str:
-    """Write a stub filer executable; return the --filer prefix string."""
+    """Write a stub filer executable; return the --filer prefix string.
+
+    ``stderr_lines`` (#1529) are printed to the stub's stderr BEFORE the stdout
+    line, mirroring the real filer's step-0 advisory ordering; the default (no
+    lines) keeps every pre-existing call site byte-identical.
+    """
     stub = tmp_path / name
     stub.write_text(
         STUB_TEMPLATE.format(
@@ -72,6 +84,7 @@ def make_stub(
             output_line=output_line,
             exit_code=exit_code,
             fail_marker=fail_marker,
+            stderr_lines=list(stderr_lines or []),
         ),
         encoding="utf-8",
     )
@@ -1214,3 +1227,212 @@ def test_route2_not_scanned_for_daily_held_overlap(tmp_path, tasks_root):
     assert [r["outcome"] for r in rows] == ["attempting", "filed"]
     assert not any(r["outcome"] == "already-tracked" for r in rows)
     assert len(filer_calls(d)) == 1
+
+
+# ── #1529: filer sibling-advisory forwarding + ledger persistence ───────────────
+
+
+def _emit_real_advisories(
+    monkeypatch,
+    *,
+    closed_hits: list[dict] | None = None,
+    open_hits: list[dict] | None = None,
+    closed_raises: bool = False,
+    open_raises: bool = False,
+) -> list[str]:
+    """Run the REAL file_infra_task advisory emitters; return their stderr lines.
+
+    Emitter-drift coupling (#1529): only the sibling ENUMERATORS are monkeypatched
+    (fakes mirroring the real signatures, at the task-scan boundary), so the
+    headers / rows / overflow / fail-soft lines are produced by the LIVE emitter
+    code — a format drift in file_infra_task.py breaks these tests instead of
+    silently regressing extraction to [].
+    """
+
+    def _closed(target, title, days=7.0):
+        if closed_raises:
+            raise RuntimeError("synthetic scan failure")
+        return list(closed_hits or [])
+
+    def _open(target, title):
+        if open_raises:
+            raise RuntimeError("synthetic scan failure")
+        return list(open_hits or [])
+
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", _closed)
+    monkeypatch.setattr(fit, "open_workflow_fix_siblings", _open)
+    args = argparse.Namespace(body=None, body_file=None, tag=["wf-fix"], title="workflow-fix: x")
+    buf = io.StringIO()
+    with contextlib.redirect_stderr(buf):
+        fit._advise_recent_closed_wf_fix_siblings(args)
+        fit._advise_open_wf_fix_siblings(args)
+    return [ln for ln in buf.getvalue().splitlines() if ln.strip()]
+
+
+def _closed_hit(tid: int, title: str = "workflow-fix: prior sibling") -> dict:
+    return {
+        "id": tid,
+        "status": "completed",
+        "closed_at": "2026-07-18T01:02:03+00:00",
+        "matched": ["target:daily_drive_filings"],
+        "title": title,
+    }
+
+
+def _open_hit(tid: int, title: str = "workflow-fix: open sibling") -> dict:
+    return {"id": tid, "status": "running", "matched": ["infra-title: advisory"], "title": title}
+
+
+def test_filed_row_and_stderr_carry_filer_advisories(tmp_path, tasks_root, monkeypatch, capsys):
+    # Fixture lines come from the REAL emitters: one closed-arm block (2 rows) +
+    # one open-arm block (1 row) — 2 headers + 3 rows.
+    fixture = _emit_real_advisories(
+        monkeypatch,
+        closed_hits=[_closed_hit(1500), _closed_hit(1501)],
+        open_hits=[_open_hit(1502)],
+    )
+    assert len(fixture) == 5
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d, stderr_lines=fixture))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    assert rows[1]["id"] == 1234
+    assert rows[1]["advisories"] == fixture
+    out, err = capsys.readouterr()
+    assert "FILED fix-a -> #1234 (rc=0)" in out
+    assert "ADVISORY fix-a -> #1234:" in err  # attributing lead line, after FILED
+    for ln in fixture:
+        assert ln in err  # verbatim re-print on the driver's own stderr
+
+
+def test_no_advisories_keeps_row_and_output_unchanged(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert rows[1]["outcome"] == "filed"
+    assert "advisories" not in rows[1]
+    # Exactly today's key set — the conditional field keeps no-advisory rows unchanged.
+    assert set(rows[1]) == {"slug", "outcome", "id", "rc", "fp", "route", "tail", "ts"}
+    out, err = capsys.readouterr()
+    assert "ADVISORY" not in out
+    assert "ADVISORY" not in err
+
+
+def test_extract_filer_advisories_predicate():
+    stderr = "\n".join(
+        [
+            "  #7 stray indented row with NO preceding header",
+            "WARNING fix-a: sha-verify scan skipped (OSError: boom)",
+            "file_infra_task: ADVISORY — 2 closed sibling task(s) overlap this filing:",
+            "  #1500  completed  closed 2026-07-18  [target:x]  workflow-fix: t",
+            "  ... and 3 more within the window",
+            "  [task.py stderr] forwarded child-stderr line (excluded; ends the block)",
+            "  #999  a row AFTER the forwarded line sits outside any block",
+            "file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:",
+            "  #1502  running  [infra-title: advisory]  workflow-fix: open sibling",
+            "plain filer chatter",
+            "file_infra_task: open-sibling advisory leg failed (RuntimeError('x'));"
+            " filing proceeds (#1502 fail-soft)",
+        ]
+    )
+    assert ddf.extract_filer_advisories(stderr) == [
+        "file_infra_task: ADVISORY — 2 closed sibling task(s) overlap this filing:",
+        "  #1500  completed  closed 2026-07-18  [target:x]  workflow-fix: t",
+        "  ... and 3 more within the window",
+        "file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:",
+        "  #1502  running  [infra-title: advisory]  workflow-fix: open sibling",
+        "file_infra_task: open-sibling advisory leg failed (RuntimeError('x'));"
+        " filing proceeds (#1502 fail-soft)",
+    ]
+    assert ddf.extract_filer_advisories("") == []
+
+
+def test_extract_filer_advisories_cap_appends_marker():
+    header = "file_infra_task: ADVISORY — synthetic oversize block:"
+    # Line-count cap: 45 short lines -> first 40 kept + explicit marker line.
+    got = ddf.extract_filer_advisories("\n".join([header, *(f"  #{i}  x" for i in range(44))]))
+    assert len(got) == ddf._ADVISORY_MAX_FWD_LINES + 1
+    assert got[0] == header
+    assert got[-1] == "  ... advisory forward capped (45 lines total, #1529)"
+    # Char-budget cap: few but huge lines -> truncated under the byte budget + marker.
+    long_rows = [f"  #{i}  " + "y" * 990 for i in range(5)]
+    got2 = ddf.extract_filer_advisories("\n".join([header, *long_rows]))
+    assert got2[-1].startswith("  ... advisory forward capped (6 lines total")
+    assert sum(len(ln) for ln in got2[:-1]) <= ddf._ADVISORY_MAX_FWD_CHARS
+
+
+def test_extractor_captures_every_real_emitter_line(monkeypatch):
+    # 12 closed hits (> _ADVISORY_MAX_ROWS = 10) exercise the real overflow line.
+    lines = _emit_real_advisories(
+        monkeypatch,
+        closed_hits=[_closed_hit(1400 + i) for i in range(12)],
+        open_hits=[_open_hit(1502)],
+    )
+    assert any(ln.startswith("  ... and 2 more") for ln in lines)  # overflow emitted
+    assert ddf.extract_filer_advisories("\n".join(lines)) == lines
+
+    # Fail-soft one-liners (the scan did NOT run) are captured too.
+    failsoft = _emit_real_advisories(monkeypatch, closed_raises=True, open_raises=True)
+    assert len(failsoft) == 2
+    assert all("advisory leg failed" in ln for ln in failsoft)
+    assert ddf.extract_filer_advisories("\n".join(failsoft)) == failsoft
+
+
+def test_ledger_with_advisories_resumes_and_recovers(tmp_path, tasks_root, capsys):
+    # (a) An advisories-bearing filed row is terminal on resume (field never consulted).
+    item_a = make_item("fix-a")
+    item_b = make_item("fix-b")
+    d = make_filings_dir(tmp_path, [item_a, item_b])
+    seed = {
+        "slug": "fix-a",
+        "outcome": "filed",
+        "id": 1044,
+        "rc": 0,
+        "route": 2,
+        "advisories": ["file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:"],
+    }
+    (d / "filed.jsonl").write_text(json.dumps(seed) + "\n", encoding="utf-8")
+    # (b) A trailing `attempting` row + matching synthetic task: _try_recovery still
+    # recovers with the new field present in the ledger (rows stay free-form dicts).
+    _seed_attempting(d, "fix-b", item_b, id_floor=100)
+    make_task(tasks_root, "proposed", 150, title=item_b["title"], tags=["daily-auto-filed"])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert "SKIP fix-a" in capsys.readouterr().out
+    last = ledger_rows(d)[-1]
+    assert last["slug"] == "fix-b" and last["outcome"] == "recovered" and last["id"] == 150
+    assert filer_calls(d) == []  # neither item reached the filer
+
+
+def test_error_path_does_not_gain_advisories(tmp_path, tasks_root, monkeypatch, capsys):
+    # Success-path-only scope pin: a failing filer that DID emit advisory stderr
+    # produces today's ERROR row byte-shape (no `advisories` key, no lead line).
+    fixture = _emit_real_advisories(monkeypatch, open_hits=[_open_hit(1502)])
+    assert fixture  # the stub really emits advisory stderr on this run
+    item = make_item("fix-a")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d, exit_code=1, stderr_lines=fixture))
+    assert rc == 1
+    err_row = ledger_rows(d)[-1]
+    assert err_row["outcome"] == "ERROR" and err_row["flag"] == "filer-failed"
+    assert err_row["rc"] == 1
+    assert "advisories" not in err_row
+    out, err = capsys.readouterr()
+    assert "ADVISORY fix-a" not in err  # no #1529 lead line on the error path
+    assert "ADVISORY fix-a" not in out
+
+
+def test_workflow_fix_rule_documents_advisory_forwarding():
+    # Doc pin (#1529 Durability pin): limitation (b) documents the /daily leg as
+    # CLOSED and no longer claims the advisory is discarded by the ~300-char tail.
+    rule = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(encoding="utf-8")
+    start = rule.index("Open-sibling arm")
+    end = rule.index("## Recursion guard")
+    section = rule[start:end]
+    assert "CLOSED (#1529)" in section
+    assert "`advisories`" in section
+    assert "persists only a ~300-char output tail" not in rule
