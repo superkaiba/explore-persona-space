@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1525,
+  "highest_id": 1526,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4099,6 +4099,13 @@
       "path": "tasks/reviewing/1525",
       "status": "reviewing",
       "title": "workflow-fix: sync_repo_root conflict-abort needs the full pointer-convergence defusal recipe"
+    },
+    "1526": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1526",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md bullet \u2014 off-pod phase reads vs upload manifest (cross-machine seam)"
     },
     "153": {
       "has_clean_result": false,
