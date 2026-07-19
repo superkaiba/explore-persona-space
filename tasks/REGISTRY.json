@@ -4173,8 +4173,8 @@
     "1535": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1535",
-      "status": "proposed",
+      "path": "tasks/planning/1535",
+      "status": "planning",
       "title": "workflow-fix: plans enumerate off-pod phase file reads"
     },
     "1536": {
