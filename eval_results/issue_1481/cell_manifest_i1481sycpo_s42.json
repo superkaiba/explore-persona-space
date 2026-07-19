@@ -1,6 +1,6 @@
 {
   "issue": 1090,
-  "round": "conpos-grid-sycophancy-con",
+  "round": "conpos-grid-sycophancy-po",
   "smoke": false,
   "band": [
     0.6,
@@ -19,26 +19,26 @@
   "judge_max_tokens": 300,
   "runs": [
     {
-      "run_id": "syc-pers-con-lr1e5-s137",
+      "run_id": "syc-pers-po-lr1e5-s42",
       "cell_key": "syc-pers",
       "behavior": "sycophancy",
       "context_id": "persona_software_engineer",
       "lr": 1e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
-      "mix_layout": "parent-mix-subdir",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
-      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
-      "n_rows": 80,
+      "train_mix_sha256": "9b679fa2f9f6853ac848dbea9b6d499d6bcd7d3dc4fdcaf2a66e86b0b6cd09d5",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
-          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
-          "date": "2026-07-07T02:58:32+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/train_mix.jsonl": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         },
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
-          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
-          "date": "2026-07-07T02:58:41+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/mix_meta.json": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -59,26 +59,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-pers-con-lr3e5-s137",
+      "run_id": "syc-pers-po-lr3e5-s42",
       "cell_key": "syc-pers",
       "behavior": "sycophancy",
       "context_id": "persona_software_engineer",
       "lr": 3e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
-      "mix_layout": "parent-mix-subdir",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
-      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
-      "n_rows": 80,
+      "train_mix_sha256": "9b679fa2f9f6853ac848dbea9b6d499d6bcd7d3dc4fdcaf2a66e86b0b6cd09d5",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
-          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
-          "date": "2026-07-07T02:58:32+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/train_mix.jsonl": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         },
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
-          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
-          "date": "2026-07-07T02:58:41+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/mix_meta.json": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -99,26 +99,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-pers-con-lr1e4-s137",
+      "run_id": "syc-pers-po-lr1e4-s42",
       "cell_key": "syc-pers",
       "behavior": "sycophancy",
       "context_id": "persona_software_engineer",
       "lr": 0.0001,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
-      "mix_layout": "parent-mix-subdir",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
-      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
-      "n_rows": 80,
+      "train_mix_sha256": "9b679fa2f9f6853ac848dbea9b6d499d6bcd7d3dc4fdcaf2a66e86b0b6cd09d5",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
-          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
-          "date": "2026-07-07T02:58:32+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/train_mix.jsonl": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         },
-        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
-          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
-          "date": "2026-07-07T02:58:41+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-pers/mix/mix_meta.json": {
+          "oid": "c3545bc182f2a3c8eb03c7094185c4d62d7fc61b",
+          "date": "2026-07-18T06:36:20+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -139,26 +139,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-bare-con-lr1e5-s137",
+      "run_id": "syc-bare-po-lr1e5-s42",
       "cell_key": "syc-bare",
       "behavior": "sycophancy",
       "context_id": "default",
       "lr": 1e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
-      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
-      "n_rows": 80,
+      "train_mix_sha256": "8510ec64cf576b8aa3ed63b302d87341dcf5fbf0a58e8a42d67b8b83572bc906",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
-          "date": "2026-07-08T03:44:01+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/train_mix.jsonl": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         },
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
-          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
-          "date": "2026-07-08T03:44:17+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/mix_meta.json": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -179,26 +179,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-bare-con-lr3e5-s137",
+      "run_id": "syc-bare-po-lr3e5-s42",
       "cell_key": "syc-bare",
       "behavior": "sycophancy",
       "context_id": "default",
       "lr": 3e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
-      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
-      "n_rows": 80,
+      "train_mix_sha256": "8510ec64cf576b8aa3ed63b302d87341dcf5fbf0a58e8a42d67b8b83572bc906",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
-          "date": "2026-07-08T03:44:01+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/train_mix.jsonl": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         },
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
-          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
-          "date": "2026-07-08T03:44:17+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/mix_meta.json": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -219,26 +219,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-bare-con-lr1e4-s137",
+      "run_id": "syc-bare-po-lr1e4-s42",
       "cell_key": "syc-bare",
       "behavior": "sycophancy",
       "context_id": "default",
       "lr": 0.0001,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
-      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
-      "n_rows": 80,
+      "train_mix_sha256": "8510ec64cf576b8aa3ed63b302d87341dcf5fbf0a58e8a42d67b8b83572bc906",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
-          "date": "2026-07-08T03:44:01+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/train_mix.jsonl": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         },
-        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
-          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
-          "date": "2026-07-08T03:44:17+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-bare/mix/mix_meta.json": {
+          "oid": "6d99528a0c8f63872c7fce31c9dd555f6748455c",
+          "date": "2026-07-18T06:36:53+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -259,26 +259,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-conv-con-lr1e5-s137",
+      "run_id": "syc-conv-po-lr1e5-s42",
       "cell_key": "syc-conv",
       "behavior": "sycophancy",
       "context_id": "wildchat_prefix_real545",
       "lr": 1e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
-      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
-      "n_rows": 80,
+      "train_mix_sha256": "8eecf4c858591b8b136a466a83d2bfdeacffd1e03b7b9c2020e09aa2a648027c",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
-          "date": "2026-07-08T03:31:08+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/train_mix.jsonl": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         },
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
-          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
-          "date": "2026-07-08T03:31:25+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/mix_meta.json": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -299,26 +299,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-conv-con-lr3e5-s137",
+      "run_id": "syc-conv-po-lr3e5-s42",
       "cell_key": "syc-conv",
       "behavior": "sycophancy",
       "context_id": "wildchat_prefix_real545",
       "lr": 3e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
-      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
-      "n_rows": 80,
+      "train_mix_sha256": "8eecf4c858591b8b136a466a83d2bfdeacffd1e03b7b9c2020e09aa2a648027c",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
-          "date": "2026-07-08T03:31:08+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/train_mix.jsonl": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         },
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
-          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
-          "date": "2026-07-08T03:31:25+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/mix_meta.json": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -339,26 +339,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-conv-con-lr1e4-s137",
+      "run_id": "syc-conv-po-lr1e4-s42",
       "cell_key": "syc-conv",
       "behavior": "sycophancy",
       "context_id": "wildchat_prefix_real545",
       "lr": 0.0001,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
-      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
-      "n_rows": 80,
+      "train_mix_sha256": "8eecf4c858591b8b136a466a83d2bfdeacffd1e03b7b9c2020e09aa2a648027c",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
-          "date": "2026-07-08T03:31:08+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/train_mix.jsonl": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         },
-        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
-          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
-          "date": "2026-07-08T03:31:25+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-conv/mix/mix_meta.json": {
+          "oid": "78fbff94c46c4cc87a558c1a6e78d718a1ab21de",
+          "date": "2026-07-18T06:37:19+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -379,26 +379,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-icl-con-lr1e5-s137",
+      "run_id": "syc-icl-po-lr1e5-s42",
       "cell_key": "syc-icl",
       "behavior": "sycophancy",
       "context_id": "icl_prefix_sycophancy",
       "lr": 1e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
-      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
-      "n_rows": 80,
+      "train_mix_sha256": "9c3df8f847df1f94998c3a7ecee580e328cad0e74f8411b85159369cd51d5d79",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
-          "date": "2026-07-08T03:51:35+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/train_mix.jsonl": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         },
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
-          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
-          "date": "2026-07-08T03:51:49+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/mix_meta.json": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -419,26 +419,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-icl-con-lr3e5-s137",
+      "run_id": "syc-icl-po-lr3e5-s42",
       "cell_key": "syc-icl",
       "behavior": "sycophancy",
       "context_id": "icl_prefix_sycophancy",
       "lr": 3e-05,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
-      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
-      "n_rows": 80,
+      "train_mix_sha256": "9c3df8f847df1f94998c3a7ecee580e328cad0e74f8411b85159369cd51d5d79",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
-          "date": "2026-07-08T03:51:35+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/train_mix.jsonl": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         },
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
-          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
-          "date": "2026-07-08T03:51:49+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/mix_meta.json": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -459,26 +459,26 @@
       "provenance_date_check": "skipped-shallow-clone"
     },
     {
-      "run_id": "syc-icl-con-lr1e4-s137",
+      "run_id": "syc-icl-po-lr1e4-s42",
       "cell_key": "syc-icl",
       "behavior": "sycophancy",
       "context_id": "icl_prefix_sycophancy",
       "lr": 0.0001,
       "lora_r": 32,
       "lora_alpha": 64,
-      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
-      "mix_layout": "fu3-flat",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
       "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
-      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
-      "n_rows": 80,
+      "train_mix_sha256": "9c3df8f847df1f94998c3a7ecee580e328cad0e74f8411b85159369cd51d5d79",
+      "n_rows": 60,
       "hub_provenance": {
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
-          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
-          "date": "2026-07-08T03:51:35+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/train_mix.jsonl": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         },
-        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
-          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
-          "date": "2026-07-08T03:51:49+00:00"
+        "issue1481_conpos_grid/po_mixes/syc-icl/mix/mix_meta.json": {
+          "oid": "f82d9cffd075e6a536917e779a89d921898318f7",
+          "date": "2026-07-18T06:37:49+00:00"
         }
       },
       "bank_git_date": "2026-07-18T01:52:59-07:00",
@@ -500,5 +500,5 @@
     }
   ],
   "git_commit": "971adb0f9",
-  "created_utc": "2026-07-18T11:01:49Z"
+  "created_utc": "2026-07-18T13:01:38Z"
 }
