@@ -4096,8 +4096,8 @@
     "1525": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1525",
-      "status": "reviewing",
+      "path": "tasks/completed/1525",
+      "status": "completed",
       "title": "workflow-fix: sync_repo_root conflict-abort needs the full pointer-convergence defusal recipe"
     },
     "1526": {
