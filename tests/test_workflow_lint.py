@@ -41,6 +41,7 @@ from workflow_lint import (  # noqa: E402
     HUB_VERIFY_LEGACY_ALLOWLIST,
     SKILL_REF_ALLOWLIST,
     SKILL_REF_FS_ROOTS,
+    UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
     _iter_ask_target_files,
     _live_skill_names,
@@ -82,6 +83,7 @@ from workflow_lint import (  # noqa: E402
     check_smoke_output_hygiene,
     check_stale_label_disposition_clause,
     check_upload_as_file,
+    check_upload_file_in_loop,
     check_upload_prefix_clobber,
     check_vm_thread_cap_guidance,
     check_wandb_required,
@@ -4167,6 +4169,342 @@ def test_workflow_lint_check_upload_prefix_clobber_cli_exits_zero():
         f"workflow_lint --check-upload-prefix-clobber failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+# ── --check-upload-file-in-loop (task #1544; incidents #664 / #658 r4 / #1481) ─
+# Each test writes a tiny fixture into ``tmp_path`` and calls
+# ``check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})``
+# unless it is exercising the committed allowlist / real tree.
+
+
+def test_check_upload_file_in_loop_fail_for_loop(tmp_path):
+    """§4.7 item 1 — FAIL: the #664/#1481 shape, an attribute-form
+    ``api.upload_file(...)`` inside a ``for`` loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        api.upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert ":6:" in errors[0], errors[0]
+    assert "inside a loop" in errors[0]
+    assert "upload_folder" in errors[0]
+
+
+def test_check_upload_file_in_loop_fail_bare_name_import(tmp_path):
+    """§4.7 item 2 — FAIL: a bare-name ``upload_file`` caller
+    (``from huggingface_hub import upload_file``) inside a loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_while_loop(tmp_path):
+    """§4.7 item 3 — FAIL: an ``upload_file`` call inside a ``while`` loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def drain(queue):\n"
+        "    while queue:\n"
+        "        f = queue.pop()\n"
+        '        upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_comprehension(tmp_path):
+    """§4.7 item 4 — FAIL: an ``upload_file`` call inside a list
+    comprehension (a loop in expression form)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        '    return [api.upload_file(path_or_fileobj=str(f), repo_id="r") for f in files]\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_nested_in_loop_if(tmp_path):
+    """§4.7 item 5 — FAIL: nesting under a non-loop statement (``if``)
+    inside a loop still flags (the run_experiment_444 shape)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        if f.exists():\n"
+        '            api.upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_bulk_upload_folder(tmp_path):
+    """§4.7 item 6 — PASS: the recommended fix shape, one loop-free
+    ``upload_folder`` bulk call."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (bulk upload_folder), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_single_call_no_loop(tmp_path):
+    """§4.7 item 7 — PASS: loop-free ``upload_file`` calls (one
+    module-level + one in-function) are legitimate single-file uploads."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        'upload_file(path_or_fileobj="a.json", path_in_repo="a.json", repo_id="r")\n\n'
+        "def push_one(p):\n"
+        '    upload_file(path_or_fileobj=str(p), path_in_repo=p.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no loop), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_def_inside_loop(tmp_path):
+    """§4.7 item 8 — PASS: a function *defined* in a loop resets the loop
+    context (its body executes elsewhere)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def build(xs):\n"
+        "    cbs = []\n"
+        "    for x in xs:\n"
+        "        def cb(p=x):\n"
+        '            api.upload_file(path_or_fileobj=str(p), repo_id="r")\n'
+        "        cbs.append(cb)\n"
+        "    return cbs\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (boundary reset), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_helper_called_from_loop(tmp_path):
+    """§4.7 item 9 — PASS: a module-level helper *called* from a loop is a
+    deliberate lexical false negative (no dataflow in v1)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def _push(f):\n"
+        '    api.upload_file(path_or_fileobj=str(f), repo_id="r")\n\n'
+        "def main(files):\n"
+        "    for f in files:\n"
+        "        _push(f)\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (lexical-only), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_waiver_same_line(tmp_path):
+    """§4.7 item 10a — PASS: a same-line ``# UPLOAD_LOOP_EXEMPT`` waiver
+    with a reason ≥ 10 chars silences the finding."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")'
+        "  # UPLOAD_LOOP_EXEMPT: bounded 2-file retry wrapper\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_waiver_previous_line(tmp_path):
+    """§4.7 item 10b — PASS: the waiver on the immediately preceding
+    non-blank line also silences."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        # UPLOAD_LOOP_EXEMPT: bounded 2-file retry wrapper\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (previous-line waiver), got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_waiver_reason_too_short(tmp_path):
+    """§4.7 item 11 — FAIL: a waiver with a < 10-char reason does NOT
+    silence (the reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        # UPLOAD_LOOP_EXEMPT: ok\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_injectable_allowlist(tmp_path):
+    """§4.7 item 12 — PASS: the injectable ``legacy_allowlist=`` dict
+    grandfathers a file by its walk-root-parent-relative posix path up to
+    the allowed site COUNT (the production path shape is
+    ``scripts/<name>.py``)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert errors == [], f"expected PASS (allowlisted {rel}: 1), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_upload_file_in_loop_fail_allowlist_count_exceeded(tmp_path):
+    """§4.7 item 12 companion — FAIL: a SECOND offending call in a file
+    grandfathered at count 1 reports (the count-gate pin: a new offense in
+    a grandfathered file surfaces instead of hiding behind the entry)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n\n'
+        "def push_more(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r2")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert len(errors) == 3, f"expected count-exceeded note + both findings, got: {errors}"
+    assert "exceed" in errors[0] and "grandfathered" in errors[0], errors[0]
+    assert "inside a loop" in errors[1] and "inside a loop" in errors[2]
+
+
+def test_check_upload_file_in_loop_live_tree_passes():
+    """§4.7 item 13 — the committed scripts/**/*.py tree must pass with the
+    committed allowlist (locks the grandfather set to today's tree). A NEW
+    in-loop per-file upload must batch into one upload_folder commit or
+    carry an UPLOAD_LOOP_EXEMPT waiver — never extend the allowlist."""
+    errors = check_upload_file_in_loop()
+    assert errors == [], (
+        "scripts/**/*.py has ungrandfathered per-file upload calls inside loops "
+        "(#664/#1481 storm class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_upload_file_in_loop_allowlist_load_bearing():
+    """§4.7 item 14 — anti-vacuity pin with EXACT per-file counts: with the
+    allowlist EMPTIED on the REAL tree, the findings grouped per file must
+    match the committed dict EXACTLY (same file set, same per-file counts) —
+    catches silent under-trigger, stale entries, AND a new offense netting
+    into a grandfathered file, in one assert."""
+    errors = check_upload_file_in_loop(legacy_allowlist={})
+    per_file: dict[str, int] = {}
+    for e in errors:
+        path = e.split(": ", 1)[0].rsplit(":", 1)[0]
+        per_file[path] = per_file.get(path, 0) + 1
+    assert UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST, "committed allowlist unexpectedly empty"
+    expected = {str(_REPO_ROOT / rel): n for rel, n in UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST.items()}
+    assert per_file == expected, (
+        "empty-allowlist findings do not match the committed allowlist dict "
+        "(stale entry, silent under-trigger, or a new offense in a grandfathered "
+        f"file).\nexpected: {expected}\ngot: {per_file}"
+    )
+
+
+def test_check_upload_file_in_loop_bundled_in_no_flags():
+    """§4.7 item 15 — NON-VACUOUS no-flags bundling pin: source-inspection
+    assert on the dispatch branch + the no_flags tuple membership
+    (exit-0-on-a-clean-tree is vacuous — it passes whether or not the
+    check is dispatched). House pattern:
+    test_check_upload_prefix_clobber_bundled_in_no_flags."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_upload_file_in_loop or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_upload_file_in_loop\(\)\)",
+        src,
+    ), "check_upload_file_in_loop is not dispatched on the no-flags branch"
+    assert "or args.check_upload_file_in_loop" in src, (
+        "--check-upload-file-in-loop is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_upload_file_in_loop_cli_exits_zero():
+    """§4.7 item 16 — the dedicated flag must exist and pass on the
+    committed tree (acceptance criterion 7)."""
+    result = _run("--check-upload-file-in-loop")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-file-in-loop failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_upload_file_in_loop_fail_hub_upload_as_file_true(tmp_path):
+    """§4.7 item 17 — FAIL (shape B): the literal #664 form,
+    ``hub._upload(f, ..., upload_as_file=True)`` inside a loop —
+    check_upload_as_file deliberately DEFERS explicit-kwarg calls, so this
+    check is the only static gate on the shape."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        hub._upload(f, repo_id="r", upload_as_file=True)\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "_upload(..., upload_as_file=True)" in errors[0], errors[0]
+
+
+def test_check_upload_file_in_loop_pass_hub_upload_single_file(tmp_path):
+    """§4.7 item 18 — PASS: one loop-free ``hub._upload(p,
+    upload_as_file=True)`` (the legitimate #595-guard single-file caller)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push_one(p):\n"
+        '    hub._upload(p, repo_id="r", upload_as_file=True)\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no loop), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_hub_upload_no_kwarg_in_loop(tmp_path):
+    """§4.7 item 19 — PASS: an in-loop ``_upload`` WITHOUT
+    ``upload_as_file=True`` is not this check's shape (a per-dir folder
+    loop is legitimate; the #595 runtime ValueError guard and
+    check_upload_as_file own the single-file forms)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(dirs):\n"
+        "    for d in dirs:\n"
+        '        hub._upload(d, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no upload_as_file=True kwarg), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_other_upload_names_in_loop(tmp_path):
+    """§4.7 item 20 — PASS: exact-name negative pin — ``upload_files`` /
+    ``api.upload_folder`` inside loops do NOT match."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "from mylib import upload_files\n\n"
+        "api = HfApi()\n"
+        "def push(files, dirs):\n"
+        "    for f in files:\n"
+        "        upload_files(f)\n"
+        "    for d in dirs:\n"
+        '        api.upload_folder(folder_path=str(d), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (exact-name only), got: {errors}"
 
 
 # ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
