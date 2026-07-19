@@ -4229,8 +4229,8 @@
     "1542": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1542",
-      "status": "running",
+      "path": "tasks/reviewing/1542",
+      "status": "reviewing",
       "title": "workflow-fix: smoke must probe smoke-fenced branches"
     },
     "1543": {
