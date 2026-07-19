@@ -125,7 +125,7 @@ Plotted: per-language mean normalized error against that language's holdout coun
 
 > **Figure.** *Most non-English languages cluster below English; Arabic and Polish are the exceptions.* Each point is one language (17 of 51 detected have n ≥ 30); x = labeled holdout contexts in that language (log scale), y = mean normalized error ± 95% CI. English (n = 13,106) is the rightmost point.
 
-The planned contrast Δ = mean nerr(non-English) − mean nerr(English) is −0.0175 (CI95 −0.0221 to −0.0129; n = 6,861 vs 13,106); the CI is entirely below zero, so the planned direction is falsified. Raw squared error agrees (−28.1, CI95 −35.0 to −20.9); arm denominators match to 0.08%. The uncentered cosine alone flips, by a sliver (0.9555 vs 0.9572).
+The planned contrast Δ = mean nerr(non-English) − mean nerr(English) is −0.0175 (CI95 −0.0221 to −0.0129; n = 6,861 vs 13,106); the CI is entirely below zero, so the planned direction is falsified. Raw squared error agrees (−28.1, CI95 −35.0 to −20.9); arm denominators match to 0.08%. Only the uncentered cosine flips (0.9555 vs 0.9572).
 
 The binary split hides most of the structure: per-language means run from German at 0.236 to Arabic at 0.420, ten times the binary gap. Chinese (0.249) and French (0.257) sit near the German end, Polish (0.376) and Farsi (0.336) near the Arabic end. Chinese alone carries a third of the non-English arm. Train frequency shows no detectable gradient (Spearman(per-language n, error) = −0.08, p = 0.75; underpowered at 17 languages), though the sign cuts against the underrepresentation account: the rarer arm is predicted better.
 
