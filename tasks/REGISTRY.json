@@ -4250,8 +4250,8 @@
     "1545": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1545",
-      "status": "proposed",
+      "path": "tasks/planning/1545",
+      "status": "planning",
       "title": "workflow-fix: isolate root-guard self-test git state"
     },
     "1546": {
