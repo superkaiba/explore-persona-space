@@ -4250,8 +4250,8 @@
     "1545": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1545",
-      "status": "approved",
+      "path": "tasks/running/1545",
+      "status": "running",
       "title": "workflow-fix: isolate root-guard self-test git state"
     },
     "1546": {
