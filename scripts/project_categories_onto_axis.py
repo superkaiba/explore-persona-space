@@ -76,10 +76,16 @@ def find_axis_path():
     # Try downloading — this is a dataset repo, not a model repo
     from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(
-        "lu-christina/assistant-axis-vectors",
-        "qwen-3-32b/assistant_axis.pt",
-        repo_type="dataset",
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    # #1547: transient-429/5xx retry (hf_hub's native backoff never covers 429).
+    path = retry_transient(
+        lambda: hf_hub_download(
+            "lu-christina/assistant-axis-vectors",
+            "qwen-3-32b/assistant_axis.pt",
+            repo_type="dataset",
+        ),
+        what="hf_hub_download(lu-christina/assistant-axis-vectors/qwen-3-32b/assistant_axis.pt)",
     )
     return path
 

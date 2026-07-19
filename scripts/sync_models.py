@@ -243,7 +243,7 @@ def cmd_pull(args):
     from huggingface_hub import HfApi, hf_hub_download
     from huggingface_hub.utils import filter_repo_objects
 
-    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete, retry_transient
 
     path_in_repo = args.pull.rstrip("/")
     dest = args.dest
@@ -269,12 +269,18 @@ def cmd_pull(args):
 
         print(f"Resolved {len(matched)} files under '{path_in_repo}'; downloading...")
         for filename in matched:
-            hf_hub_download(
-                repo_id=args.repo,
-                filename=filename,
-                repo_type="model",
-                local_dir=dest,
-                token=token,
+            # #1547: transient-429/5xx retry — hf_hub's native backoff never
+            # retries 429 (only 500/502/503/504), so a bare per-file call is a
+            # quota-storm single-point-of-failure on this many-file loop.
+            retry_transient(
+                lambda _f=filename: hf_hub_download(
+                    repo_id=args.repo,
+                    filename=_f,
+                    repo_type="model",
+                    local_dir=dest,
+                    token=token,
+                ),
+                what=f"hf_hub_download({args.repo}/{filename})",
             )
         print(f"Download complete: {Path(dest) / path_in_repo}")
     except SystemExit:

@@ -464,14 +464,22 @@ def upload_pdf(pdf: Path, issue: str, *, repo_id: str = HF_DATA_REPO) -> str:
     """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi()
     path_in_repo = f"papers/issue_{issue}/{pdf.name}"
-    commit = api.upload_file(
-        path_or_fileobj=str(pdf),
-        path_in_repo=path_in_repo,
-        repo_id=repo_id,
-        repo_type="dataset",
-        commit_message=f"paper PDF for issue #{issue}",
+    # #1547: the commit API has NO native retry in hf_hub 0.36.2 — a transient
+    # 429/5xx here killed paper builds on the first hit; ride the shared
+    # Retry-After-aware envelope (non-transient errors still raise first-try).
+    commit = retry_transient(
+        lambda: api.upload_file(
+            path_or_fileobj=str(pdf),
+            path_in_repo=path_in_repo,
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message=f"paper PDF for issue #{issue}",
+        ),
+        what=f"upload_file({repo_id}/{path_in_repo})",
     )
     # CommitInfo.oid is the commit sha of the dataset commit; pin the URL to it.
     rev = getattr(commit, "oid", None)

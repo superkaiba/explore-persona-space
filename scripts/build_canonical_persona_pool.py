@@ -276,14 +276,21 @@ def upload_file_to_hf(local_path: Path, path_in_repo: str) -> str:
         )
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi(token=token)
     full_path = f"{HF_PREFIX}/{path_in_repo}"
     api.create_repo(HF_DATA_REPO, repo_type="dataset", private=False, exist_ok=True)
-    api.upload_file(
-        path_or_fileobj=str(local_path),
-        repo_id=HF_DATA_REPO,
-        path_in_repo=full_path,
-        repo_type="dataset",
+    # #1547: the commit API has NO native retry in hf_hub 0.36.2 — ride the
+    # shared Retry-After-aware envelope (non-transient errors raise first-try).
+    retry_transient(
+        lambda: api.upload_file(
+            path_or_fileobj=str(local_path),
+            repo_id=HF_DATA_REPO,
+            path_in_repo=full_path,
+            repo_type="dataset",
+        ),
+        what=f"upload_file({HF_DATA_REPO}/{full_path})",
     )
     # Post-upload verify: ONE HEAD-shaped probe, never a repo listing (#920:
     # a full listing of the ~1M-file data repo wedges >600 s). This probe is
