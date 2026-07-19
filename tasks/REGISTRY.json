@@ -4243,8 +4243,8 @@
     "1544": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1544",
-      "status": "reviewing",
+      "path": "tasks/completed/1544",
+      "status": "completed",
       "title": "workflow-fix: lint upload_file-in-loop in issue drivers"
     },
     "1545": {
