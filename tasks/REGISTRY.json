@@ -4166,8 +4166,8 @@
     "1534": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1534",
-      "status": "planning",
+      "path": "tasks/approved/1534",
+      "status": "approved",
       "title": "workflow-fix: merge=union for eval_results/INDEX.md"
     },
     "1535": {
