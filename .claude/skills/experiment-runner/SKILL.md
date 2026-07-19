@@ -54,16 +54,19 @@ Before launching ANY training run:
 A run whose phases each download then consume inputs holds the PEAK of all
 phases' download caches at once if it only cleans at the end. To bound peak
 VM-disk footprint, call the incremental cleaner after a phase has CONSUMED its
-`hf_dl`/`g*_dl` download inputs and BEFORE the next phase downloads more:
+`hf_dl`/`g*_dl` download inputs, NO later phase or provision reads them, and
+BEFORE the next phase downloads more:
 
 ```bash
 uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
 ```
 
 Same safety contract as the end-of-run cleanup — `store/` + `eval_results/` are
-NEVER touched, only the re-downloadable caches (rebuilt on demand if a later
-phase needs them again); no terminal-status gate, since the run itself knows the
-phase is done. A CPU/analysis phase whose OWN local footprint exceeds ~50 GB
+NEVER touched, only the re-downloadable caches (rebuilt on demand ONLY via
+hub-download paths — a direct `open()` reader crashes; place the reap strictly
+after the cache's LAST consumer; #1489, see `.claude/rules/gotchas.md`); no
+terminal-status gate, since the run itself knows the phase is done. A
+CPU/analysis phase whose OWN local footprint exceeds ~50 GB
 must be routed off the VM at plan time (see CLAUDE.md § "CPU-only phases don't
 hold GPU pods") — the incremental cleaner bounds peak, it does not rescue a
 single oversized phase.

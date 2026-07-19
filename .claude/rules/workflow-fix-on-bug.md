@@ -579,6 +579,34 @@ that spots a just-merged duplicate in the list applies the post-hoc remedy:
 archive the just-filed task (`task.py set-status <id> archived`) and stop its
 spawned session (`spawn_session.py stop --session-id <sid>`).
 
+**Open-sibling arm (#1502 — same advisory contract).** The same filing-time
+advisory ALSO lists OPEN (non-terminal — the dedup predicate's own
+`_WF_FIX_NONTERMINAL` set) `kind: infra` siblings overlapping the candidate
+by the same arms (`task_workflow.open_workflow_fix_siblings`; prefixed:
+target-line token / ≥1 shared informative title token; plain infra: ≥2
+shared tokens or full-path body substring; no time window — an open sibling
+is live regardless of filing age; rows sorted most-recently-filed first,
+same 10-row cap). The exact-`(target_file, fingerprint)` OPEN dedup
+predicate is UNCHANGED — a distinct bug on the same file still files by
+design; the open rows exist so the filer can spot a same-bug-different-
+wording LIVE collision (the #678 grain's known blind spot: #1479 was
+filed+spawned while #1476's session was landing the same fix, and #1479's
+~2.3 h pipeline was discarded) and apply the remedy BEFORE the duplicate
+pipeline burns hours: verify the listed sibling actually covers this bug,
+then archive the just-filed task (`task.py set-status <id> archived`) and
+stop its spawned session. Known limitations: (a) a drive-by fix inside an
+unrelated open session — the literal #1476 mechanism, whose filed
+title/target/body shared nothing with the ratchet bug its session also
+fixed — is invisible to any filing-time overlap; the open arm covers the
+visibly-overlapping class only (the open transpose of #1350-vs-#1329).
+(b) Both advisory arms print to the FILER's stderr only: a watcher
+`proposed_infra_sweep` backstop dispatch (~10 min later) never sees them,
+and the /daily route-2 driver (`daily_drive_filings.py`) invokes the filer
+with `capture_output=True` and persists only a ~300-char output tail on a
+successful filing, so the advisory may not reach the /daily session either
+— the same accepted-limitation class as the #1399/#1173/#1283
+filer-stderr-only legs.
+
 ## Recursion guard
 
 A workflow-fix `/issue` session must NOT auto-file MORE workflow-fix

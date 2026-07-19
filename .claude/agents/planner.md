@@ -149,20 +149,22 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    genuinely new or changed values, not for values a sibling already settled.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then run the (a)–(k) fitness check on every candidate.** When a
+   training, then run the (a)–(l) fitness check on every candidate.** When a
    plan would reuse a prior HF adapter / checkpoint / training-mix /
    raw-completion bucket / eval JSON — or a parent's fit/analysis/upload-verify helper —
    instead of retraining, READ
    `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
    §10 / §11 — the search recipe, the Hub-API existence check, and the full
-   (a)–(k) fitness checklist live there; on a failed check other than (i)/(k) do
+   (a)–(l) fitness checklist live there; on a failed check other than (i)/(k)/(l) do
    NOT reuse
    (state which check failed in §12 Assumptions + name the rebuild plan); on a
    failed throughput check (i), fix the SOURCE module (batch / parametrize /
    scope it there — never a caller-side workaround), schedule that fix in the plan (own
    phase or companion task), then reuse; on a failed parent-lineage check (k),
    port the unmerged parent-branch fix (or declare it not-needed against the
-   cited diff), then reuse.
+   cited diff), then reuse; on a failed validity-domain check (l), engage the
+   instrument's registered mitigation (or state the justification) in the
+   plan, then reuse.
    (Relocated verbatim from this spec, #829.)
 
    **Live-sibling sweep — check CONCURRENT in-flight work before designing
@@ -454,7 +456,10 @@ provenance-coherence dates when a mutually-dependent artifact pair is reused
 (the item-(j) input-vs-capture `last_commit` comparison at the consumed
 revisions) · parent-lineage verdict when parent code / realized artifacts are
 reused (the item-(k) record: unmerged-branch diff outcome + realized-vs-corpus
-count reconciliation) · per-stage
+count reconciliation) · validity-domain verdict when a fit/analysis
+instrument is reused on a shifted data regime (the item-(l) record: the
+declared boundary, the new regime read against it, and the engaged
+mitigation or stated justification) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) · the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
