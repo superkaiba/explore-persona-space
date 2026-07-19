@@ -4292,8 +4292,8 @@
     "1550": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1550",
-      "status": "proposed",
+      "path": "tasks/planning/1550",
+      "status": "planning",
       "title": "workflow-fix: verify_plan WARN when plan header version label mismatches persisted filename"
     },
     "1551": {
