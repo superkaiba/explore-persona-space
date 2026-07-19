@@ -30,6 +30,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1489.md](https://github.com/superkaiba/explore-persona-space/blob/c1962d08651b17af66524bcff41baf6227c2849f/docs/methodology/issue_1489.md) · [gist](https://gist.github.com/superkaiba/167cddfb7981f5aa7e7c6ac45ea45be0)
+
 ## Takeaways
 
 - Family retention at the manipulation floors: fact 0/4, format 3/4, instruction 0/4, persona 0/4 — three of four families failing stopped the run before any map-level read.
