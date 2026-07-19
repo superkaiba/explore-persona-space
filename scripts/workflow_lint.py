@@ -134,6 +134,21 @@ Behaviours:
   ``PUSH_SWALLOW_LEGACY_ALLOWLIST``. Contract:
   ``.claude/rules/pod-side-reporting.md`` § Result-push verification
   contract (#1205).
+* ``--check-sh-function-rc-capture`` (also bundled into the no-flags
+  default run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  SAME-FILE bash function invoked via ``func || rc=$?`` / ``|| true`` /
+  ``|| :`` while the script runs under ``set -e`` — bash disables errexit
+  throughout the function BODY when the call sits in an ``||`` context,
+  so mid-function failures collapse to the last command's rc (#1426: a
+  Gate-1 terminal failure + a manifest SystemExit read as rc=0 and the
+  ``[phase=done]`` success sentinel fired). Single external-command
+  captures (``uv run python ... || rc=$?``) never match (the invocation
+  regex requires a collected same-file function name at command
+  position); ``set +e`` regions are unflagged (line-order state
+  tracking); quoted strings, definition lines, heredoc bodies, trailing
+  comments, and later ``;``-segments never match. Waive with
+  ``# RC_CAPTURE_EXEMPT: <reason>``. ShellCheck SC2310 is the broader
+  external analogue (#1516).
 * ``--check-grep-qv`` (also bundled into the no-flags default run): scan
   fenced code blocks in ``.claude/skills/**/SKILL.md`` +
   ``.claude/agents/*.md`` and logical lines of ``scripts/**/*.sh``, and
@@ -261,6 +276,29 @@ Behaviours:
   ``# UPLOAD_PREFIX_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
   finding's first physical line or the immediately preceding non-blank
   line (for an argparse-default finding, at the ``add_argument`` call).
+* ``--check-upload-file-in-loop`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any per-file upload call lexically inside a loop / comprehension —
+  shape A: an ``upload_file(...)`` call (attribute form or a bare
+  ``from huggingface_hub import upload_file`` name); shape B: an
+  ``_upload(...)`` call carrying an explicit ``upload_as_file=True``
+  constant kwarg (the literal #664 form, which
+  ``--check-upload-as-file`` deliberately DEFERS on explicit kwargs, so
+  nothing else flags it). Each per-file call is one Hub commit + a
+  server-side repo pre-check, so an N-file loop 504-storms on a large
+  repo (#664: a 1425-file loop held an 8xH200 idle for 12h, ~$530) and
+  trips the org-level ~2500-req/5-min 429 quota (#1481: ~1400 planned
+  per-file commits -> HF 429 storm); bulk uploads compose ONE
+  ``upload_folder`` commit. Loop context resets at function / lambda /
+  class boundaries (a helper *called* from a loop is a deliberate
+  lexical false negative). Waive a genuinely bounded loop (a retry
+  wrapper around ONE file, a fixed <=3-file list) with
+  ``# UPLOAD_LOOP_EXEMPT: <reason>`` (reason ≥ 10 chars) on the call's
+  first physical line or the immediately preceding non-blank line;
+  pre-existing sites are grandfathered with EXACT per-file site counts
+  in :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` (count-grain — a NEW
+  offense inside a grandfathered file surfaces instead of hiding;
+  never hand-extended).
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -1522,6 +1560,52 @@ HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "scripts/issue_642/i642_dispatch.py",  # 2 pre-#1190 direct sites; legacy experiment code
     }
 )
+
+
+# `--check-upload-file-in-loop` (#1544; incidents #664 / #658 r4 / #1481):
+# a per-file `upload_file` LOOP of N files = N commits + N server-side
+# pre-checks — 504-storms on a large repo (#664: 1425-file loop, 12h idle
+# 8xH200, ~$530) and trips the org-level ~2500-req/5-min 429 quota
+# (#1481: ~1400 planned per-file commits -> HF 429 storm). Bulk uploads
+# compose ONE upload_folder commit. Inline waiver for a genuinely bounded
+# loop (retry wrapper around a single file; a fixed <=3-item list). Reason
+# >= 10 chars, same convention as UPLOAD_AS_FILE_EXEMPT.
+UPLOAD_LOOP_WAIVER_RE = re.compile(r"#\s*UPLOAD_LOOP_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS = 10
+# Grandfathered pre-existing in-loop per-file-upload call sites (shape A:
+# upload_file; shape B: _upload(..., upload_as_file=True)) — legacy
+# EXPERIMENT code the workflow-fix scope bars #1544 from editing. Rebuilt
+# mechanically from the live tree (run the finished check with
+# legacy_allowlist={}) and pinned by tests/test_workflow_lint.py::
+# test_check_upload_file_in_loop_allowlist_load_bearing (EXACT per-file
+# site counts — a new offense in a grandfathered file breaks the pin). NOT
+# hand-extended: a NEW in-loop call must batch into one upload_folder
+# commit (or carry an UPLOAD_LOOP_EXEMPT waiver), never extend this set.
+# Dict: repo-root-relative posix path -> expected site count.
+UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST: dict[str, int] = {
+    # shape A — in-loop upload_file (6 sites / 5 files):
+    "scripts/issue661_freeze_instructions.py": 1,  # L252: 2-item tuple loop
+    "scripts/issue763_upload.py": 1,  # L153: 2-item list loop, deliberate non-LFS per-file
+    "scripts/issue952_noise_ceiling_gpu.py": 1,  # L422: 3-item list loop
+    "scripts/issue958_common.py": 1,  # L679: for-attempt retry wrapper, single probe file
+    "scripts/run_experiment_444.py": 2,  # L5532, L5557: per-cell + per-persona loops
+    # shape B — in-loop _upload(..., upload_as_file=True) (21 sites / 15 files):
+    "scripts/issue1112_dispatch.py": 2,  # L424, L1035
+    "scripts/issue1333_dispatch.py": 2,  # L1494, L1501
+    "scripts/issue1345_rejudge_malformed.py": 1,  # L381
+    "scripts/issue1417_gen.py": 1,  # L205
+    "scripts/issue1417_judge.py": 2,  # L554, L571
+    "scripts/issue1482_error_analysis.py": 1,  # L1886
+    "scripts/issue559_base_prior_persona_panel.py": 1,  # L831
+    "scripts/issue560_crossrecipe_panel.py": 1,  # L1011
+    "scripts/issue595_prefix_carrier.py": 1,  # L1312
+    "scripts/issue640_postfix_carrier.py": 1,  # L822
+    "scripts/issue664_dispatch.py": 3,  # L1844, L1924, L2003
+    "scripts/issue778_upload.py": 1,  # L113
+    "scripts/issue841_scaling_common.py": 2,  # L505, L516
+    "scripts/issue923_reduce_spans.py": 1,  # L339
+    "scripts/run_issue_360_target_logprobs.py": 1,  # L1669
+}
 
 
 # `--check-upload-prefix-clobber` (#1452 / incident #1005): reused #928
@@ -3515,6 +3599,241 @@ def check_push_failure_swallow(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# `--check-sh-function-rc-capture` (#1516; incident #1426): bash disables
+# errexit throughout a function BODY when the call sits in an `||` context,
+# so `func || rc=$?` / `func || true` collapses mid-function failures to the
+# last command's rc (usually 0) — #1426's `run_seed "$s" || rc=$?` let a
+# Gate-1 terminal failure + a manifest SystemExit proceed to `[phase=done]`.
+# ShellCheck SC2310 is the broader external analogue (also `if func`,
+# `while func`, `! func`, `func && x`); v1 deliberately matches the filed
+# incident class only (`|| rc=$?` / `|| true` on a same-file function).
+# Parse limitations degrade toward false NEGATIVES (same direction as
+# check_upload_or_true), with TWO named FP-side exceptions, both measured
+# harmless on the live tree (0 instances; the repo-tree-is-clean test + the
+# waiver contain them):
+# (a) pass-1 over-collection — the brace-optional def regex can collect bare
+#     zero-arg call lines inside heredoc python bodies (errs toward flagging);
+# (b) a case-arm PATTERN that equals a collected function name
+#     (`fname) cmd || true ;;`) matches the invocation regex at ^ and would
+#     flag.
+# The naive double-quote masking (no \" escape handling) can also mis-mask
+# exotic lines in either direction — see _rc_capture_mask_quotes.
+RC_CAPTURE_FUNC_DEF_RE = re.compile(
+    r"^\s*(?:function\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*\{?"  # name() {  /  name ()
+    r"|^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{"  # function name {   (paren-less)
+)
+RC_CAPTURE_SUPPRESS_RE = re.compile(r"\|\|\s*(?:[A-Za-z_][A-Za-z0-9_]*=\$\?|true\b|:(?=[\s;]|$))")
+# Three suppressor shapes (capture-SPELLING variants covered, not just the
+# filed `rc=$?`):
+#   (1) `|| <var>=$?` — ANY simple variable name (rc / status / ret / code /
+#       ...), not the literal `rc` only; the danger is the
+#       capture-and-continue shape, not the name.
+#   (2) `|| true\b` — the \b sits INSIDE the true branch only: `?` is a
+#       non-word char, so a trailing \b after the alternation would NEVER
+#       match `=$?` (a dead branch in the draft regex, corrected at plan
+#       fact-check; the corrected form matches all shapes and still returns
+#       0 live findings).
+#   (3) `|| :` — the colon builtin, an exact synonym of `|| true` (the
+#       lookahead bounds it to whitespace / `;` / EOL so `:=`-style text
+#       cannot match).
+# Deliberately NOT matched (documented residuals; see the check docstring):
+# `|| { rc=$?; ... }` brace-group capture (brace-group handlers are a
+# pervasive live fail-loud idiom — 20+ sites incl. a same-file-function call
+# at run_program_orchestrator.sh:86 — and covering them would threaten the
+# 0-findings bundling precondition), and quoted `|| rc="$?"` (quote masking
+# blanks the `"$?"` span BEFORE the suppressor scan, a masking-induced FN;
+# 0 live hits).
+RC_CAPTURE_WAIVER_RE = re.compile(r"#\s*RC_CAPTURE_EXEMPT\s*:\s*(.+?)\s*$")
+RC_CAPTURE_WAIVER_MIN_REASON_CHARS = 10
+# Initial errexit state per file: ON iff the shebang carries a short-option
+# cluster containing `e` (`#!/bin/bash -e` / `-eu`); otherwise OFF.
+RC_CAPTURE_SHEBANG_E_RE = re.compile(r"^#!\S+.*\s-[a-zA-Z]*e[a-zA-Z]*\b")
+
+
+def _rc_capture_set_e_transition(stripped: str) -> bool | None:
+    """Token-scan a logical shell line for a ``set -e`` / ``set +e``
+    errexit transition. Returns True (errexit ON), False (OFF), or None
+    (no transition — the line is not a ``set`` command, or carries no
+    e-bearing token). A short-option cluster containing ``e`` (``-e``,
+    ``-euo``, ``-eux``) turns errexit ON; the ``+`` cluster form turns it
+    OFF; the long forms ``-o errexit`` / ``+o errexit`` are covered for
+    completeness (0 live uses). The LAST matching token on the line wins.
+    This is LINE-ORDER state tracking (the ``check_piped_git_push``
+    ``pipefail_seen`` precedent), not file-level presence — 7 live scripts
+    toggle ``set +e`` mid-file, and under ``set +e`` the ``|| rc=$?``
+    pattern is not the footgun. Known coarseness: ``set -e`` inside a
+    function body or subshell is treated as a file-scope transition (no
+    scope tracking); it errs toward the state the author most recently
+    declared."""
+    tokens = [tok.rstrip(";") for tok in stripped.split()]
+    if not tokens or tokens[0] != "set":
+        return None
+    transition: bool | None = None
+    for i, tok in enumerate(tokens[1:], start=1):
+        nxt = tokens[i + 1] if i + 1 < len(tokens) else ""
+        if tok == "-o" and nxt == "errexit":
+            transition = True
+        elif tok == "+o" and nxt == "errexit":
+            transition = False
+        elif re.fullmatch(r"-[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = True
+        elif re.fullmatch(r"\+[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = False
+    return transition
+
+
+def _rc_capture_mask_quotes(s: str) -> str:
+    """Replace each single-quoted then double-quoted span with same-length
+    spaces, so quoted text (a remote command carrying ``|| true``, e.g. the
+    ``bootstrap_pod.sh`` ``ssh_cmd 'cd ... || true'`` shape) can never
+    satisfy the invocation or suppressor regexes, while character positions
+    stay aligned for the ``;``-segment guard. Single-quoted spans are
+    masked first (bash forbids escapes inside them, so that pass is exact);
+    the double-quote pass is naive about ``\\"`` escapes — a known
+    imperfection that can only mis-mask exotic lines, and any mis-mask
+    lands on the fail-toward-false-negative side in practice because the
+    flag additionally requires a collected same-file function name at
+    command position."""
+    s = re.sub(r"'[^']*'", lambda m: " " * len(m.group(0)), s)
+    return re.sub(r'"[^"]*"', lambda m: " " * len(m.group(0)), s)
+
+
+def check_sh_function_rc_capture(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any SAME-FILE
+    bash function invoked via ``func || rc=$?`` / ``|| true`` / ``|| :``
+    while the script runs under ``set -e``.
+
+    Rationale (#1516; incident #1426): bash disables errexit throughout a
+    function's BODY whenever the call appears in an ``||`` context, so a
+    dispatcher written in the house ``set -euo pipefail`` style loses
+    every implicit guard inside the function — a mid-function
+    ``SystemExit``, gate failure, or fit crash falls through and ``rc``
+    captures only the LAST command's exit code (usually 0). On #1426 this
+    let partial uploads and the ``[phase=done]`` success sentinel proceed
+    past a Gate-1 terminal failure. ShellCheck SC2310 is the broader
+    external analogue (optional/off-by-default even there); v1
+    deliberately matches the filed incident class only.
+
+    Detection, per logical line (backslash continuations merged, heredoc
+    bodies consumed via :func:`_iter_sh_logicals_with_heredocs`, trailing
+    comments stripped quote-aware via :func:`_strip_sh_trailing_comment`,
+    quotes masked via :func:`_rc_capture_mask_quotes`):
+
+    1. Pass 1 collects the file's own function names
+       (:data:`RC_CAPTURE_FUNC_DEF_RE`); no functions -> file skipped.
+    2. A collected name must sit at COMMAND POSITION (line start, or
+       after ``;`` ``&`` ``|`` ``(`` ``{`` or a ``then``/``do``/``else``
+       keyword) — this keeps single external-command captures
+       (``uv run python ... || rc=$?``, all current live captures)
+       unflagged: their first word is never a same-file function.
+    3. The suppressor (:data:`RC_CAPTURE_SUPPRESS_RE`) must follow the
+       invocation with no ``;`` between them (segment guard — a
+       suppressor on a LATER ``;``-segment belongs to that segment's own
+       command; ``&&`` chains deliberately stay in scope, since
+       ``cd x && func || rc=$?`` puts ``func`` in the ``||`` context).
+    4. Errexit state is tracked line-order
+       (:func:`_rc_capture_set_e_transition`; initial state from the
+       shebang, :data:`RC_CAPTURE_SHEBANG_E_RE`) — a hit inside a
+       ``set +e`` region does not flag (the function body never had
+       errexit protection there, so the author owns explicit error
+       handling; failing toward false-negative, the safe direction).
+    5. Definition lines are skipped (a definition is not an invocation —
+       kills the one-liner-def ``... || true; }`` shape; accepted FN: a
+       one-liner def whose BODY invokes another collected function with
+       ``|| true`` is skipped with it); ``#``-comment lines are skipped;
+       one error per logical line, first hit wins.
+    6. ``# RC_CAPTURE_EXEMPT: <reason>`` (reason >= 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Out-of-scope contexts (documented residuals — all the same bash
+    footgun; ShellCheck SC2310's broader scope is the named future
+    extension if the class recurs through one of them): ``if func`` /
+    ``while func`` / ``until func`` / ``! func`` / ``func && x``
+    suppressing contexts, ``var=$(func) || rc=$?`` assignment-hidden
+    substitutions, ``env VAR=1 func || true`` and bare assignment-prefix
+    forms (fname not at command position), cross-file sourced functions
+    (the collector is same-file by design, per the #1516 Goal),
+    ``func || { rc=$?; ... }`` brace-group capture, quoted
+    ``func || rc="$?"``, fail-loud handlers ``func || exit 1``, and
+    case-arm invocations ``pattern) func || true ;;``. ``.claude/hooks/``
+    is out of scope (0 of its 6 files use ``set -e`` — guards are
+    deliberately fail-open, so the class cannot fire there today).
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_push_failure_swallow``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        funcs: set[str] = set()
+        for line in lines:
+            def_match = RC_CAPTURE_FUNC_DEF_RE.match(line)
+            if def_match:
+                funcs.add(def_match.group(1) or def_match.group(2))
+        if not funcs:
+            continue
+        inv_re = re.compile(
+            r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*("
+            + "|".join(re.escape(f) for f in sorted(funcs))
+            + r")\b"
+        )
+        errexit_on = bool(lines) and bool(RC_CAPTURE_SHEBANG_E_RE.match(lines[0]))
+        for first, last, logical, _bodies in _iter_sh_logicals_with_heredocs(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            # Comment-strip BEFORE the transition scan: `set -uo pipefail  # NOT set -e`
+            # must not flip errexit ON from the comment's `-e` token (live shapes:
+            # i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30).
+            transition = _rc_capture_set_e_transition(_strip_sh_trailing_comment(stripped))
+            if transition is not None:
+                errexit_on = transition
+                continue
+            if not errexit_on:
+                continue
+            if RC_CAPTURE_FUNC_DEF_RE.match(logical):
+                continue
+            masked = _rc_capture_mask_quotes(_strip_sh_trailing_comment(logical))
+            for inv in inv_re.finditer(masked):
+                suppress = RC_CAPTURE_SUPPRESS_RE.search(masked, inv.end())
+                if suppress is None or ";" in masked[inv.end() : suppress.start()]:
+                    continue
+                if not _sh_waiver_present(
+                    lines,
+                    first,
+                    last,
+                    waiver_re=RC_CAPTURE_WAIVER_RE,
+                    min_reason_chars=RC_CAPTURE_WAIVER_MIN_REASON_CHARS,
+                ):
+                    fname = inv.group(1)
+                    errors.append(
+                        f"{sh}:{first + 1}: same-file bash function `{fname}` invoked "
+                        f"via `|| <var>=$?`/`|| true`/`|| :` under set -e — bash "
+                        f"disables errexit inside the function BODY in an `||` "
+                        f"context, so mid-function failures collapse to the last "
+                        f"command's rc (#1426: a Gate-1 terminal failure + a manifest "
+                        f"SystemExit read as rc=0 and `[phase=done]` fired). PRIMARY "
+                        f"remedies: harden the body's failure-prone steps with "
+                        f"explicit `|| exit`/`|| return $?`, or extract the body to a "
+                        f"child script (`bash x.sh || rc=$?` — a child process keeps "
+                        f"its own set -e; this is why single-external-command "
+                        f"captures are safe). NOTE: `set +e; {fname}; rc=$?; set -e` "
+                        f"bracketing alone does NOT restore body errexit — it has the "
+                        f"identical collapse semantics and must be paired with body "
+                        f"hardening. A genuinely-safe shape may be waived with "
+                        f"`# RC_CAPTURE_EXEMPT: <reason>` (#1516)."
+                    )
+                break  # one error per logical line, first hit wins
+    return errors
+
+
 # `--check-grep-qv` (#928 -> #1125): an rc-consumed quiet+invert grep trigger
 # is implementation-divergent — GNU grep exits 0 iff a line is SELECTED (with
 # -v, selected = non-matching), while ugrep 7.5.0 returns rc=1 in the same
@@ -3848,8 +4167,11 @@ def check_upload_or_true(
     Files whose repo-root-relative path is in
     :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
     (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
-    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
-    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?`` — whose
+    same-file-FUNCTION-invocation subclass is now covered by
+    :func:`check_sh_function_rc_capture` (#1516), the single-command
+    ``|| rc=$?`` shape remaining that check's residual — ``set +e``,
+    function-wrapped uploads, subshell-closing-paren swallows)
     are documented in the regex block above — every parse limitation
     degrades to a false NEGATIVE, never a false positive.
 
@@ -5092,6 +5414,197 @@ def check_hub_dir_filecount_guard(
                 f".claude/rules/gotchas.md 'HF Hub rejects any single repo directory "
                 f"holding >10000 files at COMMIT time'."
             )
+    return errors
+
+
+def _upload_loop_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_LOOP_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same placement semantics as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_LOOP_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_LOOP_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+_UPLOAD_LOOP_NODES = (ast.For, ast.AsyncFor, ast.While)
+_UPLOAD_LOOP_COMPS = (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+_UPLOAD_LOOP_BOUNDARIES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+
+
+def _iter_calls_in_loop_context(tree: ast.Module):
+    """Yield every ``ast.Call`` lexically inside a loop / comprehension.
+
+    Iterative explicit-stack walk (no recursion — ``run_experiment_444.py``
+    is 5.5k+ lines) carrying an ``in_loop`` bit per node: SET on entering a
+    loop / comprehension child, CLEARED on entering a def / class / lambda
+    boundary child (a function *defined* in a loop executes elsewhere, so
+    its body is not in-loop). Accepted imprecision: a call in a loop's
+    HEADER expression (``for x in upload_file(...)``) is treated as in-loop
+    even though the ``for``-iter form executes once — no such call exists
+    in the tree and the waiver covers the hypothetical."""
+    stack: list[tuple[ast.AST, bool]] = [(tree, False)]
+    while stack:
+        node, in_loop = stack.pop()
+        if in_loop and isinstance(node, ast.Call):
+            yield node
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, _UPLOAD_LOOP_BOUNDARIES):
+                stack.append((child, False))
+            elif isinstance(child, _UPLOAD_LOOP_NODES + _UPLOAD_LOOP_COMPS):
+                stack.append((child, True))
+            else:
+                stack.append((child, in_loop))
+
+
+def check_upload_file_in_loop(
+    *, scripts_dir: Path | None = None, legacy_allowlist: dict[str, int] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any per-file
+    upload call lexically inside a loop (#664 / #658-r4 / #1481 per-file
+    Hub-commit storm class).
+
+    Rationale: each per-file upload call composes ONE Hub commit and
+    triggers a server-side repo pre-check, so an N-file loop issues N
+    commits + N pre-checks — 504-storming on a large repo (#664: a
+    1425-file raw-completions loop ran 12h on an idle 8xH200, ~$530,
+    uploading only 264 files) and tripping the org-level ~2500-req/5-min
+    429 quota (#1481: a driver planned ~1400 per-file commits -> HF 429
+    storm). Bulk uploads compose ONE ``upload_folder`` commit
+    (``upload_raw_completions_to_data_repo()`` /
+    ``hub._upload_folder_filtered`` are the shared bulk paths). The prose
+    rule lived in ``.claude/rules/gotchas.md`` ("Per-file
+    ``HfApi.upload_file`` 504-storms on a LARGE repo") and failed to stop
+    #1481 through plan + implementation review; this check is the
+    mechanical gate.
+
+    Detection — an ``ast.Call`` lexically enclosed by ``For`` / ``AsyncFor``
+    / ``While`` / a comprehension (loop context RESET at function / lambda
+    / class boundaries; lexical only — a helper *called* from a loop is a
+    deliberate false negative, the task's fail-toward-false-negative
+    direction), matching EITHER shape:
+
+    * **shape A** — the callee is literally named ``upload_file``
+      (attribute form ``api.upload_file(`` or a bare
+      ``from huggingface_hub import upload_file`` name). Exact-name only:
+      ``upload_files`` / ``upload_folder`` / ``upload_file_to_hf`` do NOT
+      match. No local-``def upload_file`` carve-out (deliberate divergence
+      from :func:`check_hub_dir_filecount_guard`): a per-file wrapper
+      called in a loop still commits once per call — exactly the
+      anti-pattern — so it flags; a genuinely-batching wrapper takes the
+      waiver.
+    * **shape B** — the callee is literally named ``_upload`` AND the call
+      carries an explicit ``upload_as_file=True`` constant kwarg — the
+      literal #664 form (``for f in files: hub._upload(f,
+      upload_as_file=True)``). REQUIRED because
+      :func:`check_upload_as_file` deliberately DEFERS any ``_upload``
+      call with an explicit ``upload_as_file`` kwarg (the author's
+      file/folder declaration) and the #595 runtime guard *forces*
+      per-file callers onto exactly this kwarg — without shape B the most
+      probable future offender form passes every lint. An in-loop
+      ``_upload`` WITHOUT the kwarg is deliberately NOT matched (a per-dir
+      folder loop is legitimate; the single-file form crashes fail-loud on
+      the first file via the #595 ``ValueError``, and its static forms
+      belong to ``--check-upload-as-file``).
+
+    Pass conditions: a ``# UPLOAD_LOOP_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS` chars) on the call's first
+    physical line or the immediately preceding non-blank line; or the
+    file's findings are covered by the grandfather allowlist
+    :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` — COUNT-grain: a file's
+    findings are suppressed only while their count ≤ the grandfathered N;
+    an excess count reports ALL of the file's findings plus a
+    count-exceeded note (a NEW offense in a grandfathered file surfaces
+    instead of hiding behind the entry; known netting quirk — fixing one
+    old site while adding one new nets the same count — accepted, still
+    strictly stronger than the siblings' file-grain frozenset).
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None and the function walks the
+    canonical ``<repo_root>/scripts`` tree against the module allowlist.
+    Allowlist paths are computed relative to the WALK ROOT'S PARENT (so
+    production paths read ``scripts/<name>.py`` and tmp_path fixtures
+    resolve consistently). Bundled into the no-flags default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        rel = py.relative_to(root.parent).as_posix()
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        lines = text.splitlines()
+        file_findings: list[str] = []
+        for node in _iter_calls_in_loop_context(tree):
+            fn = node.func
+            fn_name = (
+                fn.attr
+                if isinstance(fn, ast.Attribute)
+                else (fn.id if isinstance(fn, ast.Name) else None)
+            )
+            is_shape_a = fn_name == "upload_file"
+            is_shape_b = fn_name == "_upload" and any(
+                kw.arg == "upload_as_file"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is True
+                for kw in node.keywords
+            )
+            if not (is_shape_a or is_shape_b):
+                continue
+            if _upload_loop_waiver_present(lines, node.lineno):
+                continue
+            shape = "upload_file(...)" if is_shape_a else "_upload(..., upload_as_file=True)"
+            file_findings.append(
+                f"{py}:{node.lineno}: {shape} "
+                f"call inside a loop — the per-file upload loop is the #664/#1481 "
+                f"storm anti-pattern (each call = one commit + a server-side repo "
+                f"pre-check; a 1425-file loop ran 12h/$530 idle in #664; ~1400 "
+                f"planned commits 429-stormed in #1481). Batch into ONE bulk "
+                f"commit: HfApi.upload_folder with allow_patterns, "
+                f"upload_raw_completions_to_data_repo(), or "
+                f"hub._upload_folder_filtered. A genuinely bounded loop (a retry "
+                f"wrapper around a SINGLE file, a fixed <=3-file list) may be "
+                f"waived with '# UPLOAD_LOOP_EXEMPT: <reason>' (reason >= "
+                f"{UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS} chars) on the call's first "
+                f"line or the previous non-blank line. See .claude/rules/gotchas.md "
+                f"'Per-file HfApi.upload_file 504-storms on a LARGE repo'."
+            )
+        # Grandfather gate: per-file COUNT vs the allowlist dict — findings
+        # suppressed only while count <= grandfathered N; an excess count
+        # reports ALL of the file's findings (a new offense in a
+        # grandfathered file surfaces instead of hiding behind the entry).
+        allowed = allow.get(rel, 0)
+        if len(file_findings) <= allowed:
+            continue
+        if allowed:
+            errors.append(
+                f"{py}: {len(file_findings)} in-loop per-file-upload finding(s) exceed "
+                f"the grandfathered count ({allowed}) in "
+                f"UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST — a NEW in-loop per-file upload "
+                f"was added to a grandfathered file; all of its findings are reported "
+                f"below. Batch the new upload into one upload_folder commit (or waive "
+                f"with '# UPLOAD_LOOP_EXEMPT: <reason>') — never extend the allowlist."
+            )
+        errors.extend(file_findings)
     return errors
 
 
@@ -8147,7 +8660,11 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
     ``(returncode, stderr)``. ``cwd`` is pinned to the hook's own repo root
     (``hook.parent.parent``) so repo-state-consulting detectors give
     deterministic-by-construction verdicts when the lint runs from a
-    worktree (#1176 round-1 Methodology c1)."""
+    worktree (#1176 round-1 Methodology c1). ``EPM_GUARD_DENY_SIDECAR`` is
+    pinned to ``/dev/null`` so lint-driven hook executions (self-test probes
+    + the per-fence scan loop) never append synthetic deny rows to the
+    production deny-event sidecar (#1528); the pin is env-only and cannot
+    change the rc-0/2 verdict this check reads."""
     payload = json.dumps({"tool_input": {"command": command}})
     proc = subprocess.run(
         ["bash", str(hook)],
@@ -8156,6 +8673,7 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
         text=True,
         timeout=_ROOT_GUARD_TIMEOUT_S,
         cwd=str(hook.parent.parent),
+        env={**os.environ, "EPM_GUARD_DENY_SIDECAR": "/dev/null"},
     )
     return proc.returncode, proc.stderr
 
@@ -9556,43 +10074,46 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1435 added the subprocess-per-phase dispatcher trigger (merged with
     # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
-    "gotchas": 800,
+    # #1492 added the SAE reference-eval token-pool trigger (row 776 B ->
+    # 862 B). Cap = measured + <=40.
+    # #1513 added the between-phase cache-reap trigger (merged with #1512's
+    # smoke-gate slice-arithmetic clause, +29 B and +27 B on the 862 B base;
+    # re-measured row 918 B). Cap = measured + <=40.
+    # #1526 added the off-pod-phase upload-set trigger (row 918 B -> 972 B).
+    # Cap = measured + <=40.
+    "gotchas": 1000,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
-# Growth ratchet (#1269, the #986 agent-spec grandfather pattern applied to
-# LESSONS.md's TOTAL size): the constant must HUG the measured size. Growing
-# the index requires raising this constant IN THE SAME DIFF (visible,
-# reviewed, and merge-conflicting for concurrent growers — the 07-10
-# silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
-# the index requires ratcheting it DOWN (banked slack defeats the mechanism).
-# Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
-# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
-# artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
-# ratchet = measured + ~34. #1396 grew the upload-policy row
-# (phase-sequencing trigger, store-before-long-fit #825): measured 6,147 B;
-# ratchet = measured + ~253 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1395
-# grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
-# batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
-# covers both concurrent growers).
-# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
-# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
-# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-# #1476 reworded the selection-symmetric-nulls row (bootstrap-CI
-# selection-inheritance trigger; row 278 B -> 278 B, net 0) and absorbed
-# the pre-existing committed overage (6,675 B vs ratchet 6,650 — the
-# #1462-era growth at 26d450bce8 landed without a raise): re-measured
-# total 6,675 B; ratchet 6800 (headroom ~125,
-# <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6800
-_LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
+# Non-row scaffolding budget (#1504). Growth control for the always-on index
+# is PER-CHANNEL, not a hand-bumped total:
+#   - rows: _LESSONS_ROW_MAX_BYTES / _LESSONS_ROW_GRANDFATHER_MAX_BYTES catch
+#     a bloated row at edit time in the grower's own tree (#1269), and index
+#     parity means a NEW row requires a reviewed .claude/rules/*.md;
+#   - non-row scaffolding (header prose, headings, blank lines, row newlines,
+#     anything the row grammar does not match): bounded by this FIXED budget;
+#   - aggregate: the _LESSONS_WARN_BYTES advisory band + _LESSONS_MAX_BYTES.
+# The former TOTAL growth ratchet (_LESSONS_RATCHET_BYTES, #1269) is RETIRED
+# (#1504): its same-diff constant bump made every concurrent LESSONS.md
+# growth a merge-conflict / trunk-red hazard — 2 Step-10d conflicts (#1335
+# PR #1227, #1435 PR #1188), 1 fleet-wide trunk red (#1462), 1 duplicate fix
+# pipeline (#1476/#1479) in ~48h — while per-row caps + parity already make
+# row growth deliberate. Residual: two individually-green concurrent growths
+# can sum past the 8000 cap post-merge, but every such residual-red scenario
+# has BOTH growers already inside the 7200 WARN band before pushing (for two
+# cap-sized 280-B rows the window opens at base >= ~7,440 > 7,200). Measured
+# non-row bytes at retirement: 546 (2026-07-18). 900 leaves headroom for a
+# deliberate header note. Raise ONLY for a deliberate header restructure —
+# NEVER for row growth (rows never count against this budget; pinned by
+# test_check_lessons_index_nonrow_ignores_row_bytes).
+_LESSONS_NONROW_MAX_BYTES = 900
 
 
-def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, growth ratchet, per-row caps + grandfather hygiene, #1269); extracting a branch would just relocate it
+def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, non-row budget, per-row caps + grandfather hygiene, #1269/#1504); extracting a branch would just relocate it
     *,
     repo_root: Path | None = None,
     warn_sink: list[str] | None = None,
-    ratchet_bytes: int | None = _LESSONS_RATCHET_BYTES,
+    nonrow_max_bytes: int | None = _LESSONS_NONROW_MAX_BYTES,
     row_max_bytes: int | None = _LESSONS_ROW_MAX_BYTES,
 ) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
@@ -9610,18 +10131,18 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
     under the cap emits an early-warning WARN — stderr-only / advisory, never
     a FAIL — so a near-cap landing is visible a few rows before the next
-    addition FAILs. #1269 adds the durable growth mechanisms: (e) the growth
-    RATCHET — total size over `_LESSONS_RATCHET_BYTES` FAILs (grow only via a
-    same-diff constant raise), a ratchet sitting more than
-    `_LESSONS_RATCHET_MAX_HEADROOM_BYTES` above the live size FAILs (banked
-    slack / stale ratchet — ratchet DOWN after a trim), and a ratchet above
-    `_LESSONS_MAX_BYTES` FAILs (config error — the ratchet can never
-    authorize crossing the cap); (f) PER-ROW caps — a row over
-    `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
+    addition FAILs; the cap FAIL and WARN both name the largest rows as
+    actionable trim targets (#1504); (e) the NON-ROW scaffolding budget
+    (#1504) — bytes the row grammar does not claim (header prose, headings,
+    blank lines, row newlines, malformed rows) over
+    `_LESSONS_NONROW_MAX_BYTES` FAIL; row growth NEVER counts against this
+    budget (the per-growth TOTAL ratchet is retired — see the
+    `_LESSONS_NONROW_MAX_BYTES` comment); (f) PER-ROW caps (#1269) — a row
+    over `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
     `_LESSONS_ROW_GRANDFATHER_MAX_BYTES` legacy exceptions under the same
     over-cap / excess-hug / obsolete-entry hygiene as the #986 agent-spec
     grandfather. `repo_root` is a unit-test override hook; production
-    callers pass None (canonical repo root). `ratchet_bytes` /
+    callers pass None (canonical repo root). `nonrow_max_bytes` /
     `row_max_bytes` are TEST-ONLY opt-outs (`None` disables that mode so a
     small synthetic fixture can isolate another failure mode); production
     callers never pass them. `warn_sink` mirrors
@@ -9647,6 +10168,17 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
         )
         return errors
     raw = lessons.read_bytes()
+    text = raw.decode("utf-8")
+    row_matches = list(_LESSONS_ROW_RE.finditer(text))
+    row_sizes = sorted(
+        ((len(m.group(0).encode("utf-8")), m.group("name")) for m in row_matches),
+        reverse=True,
+    )
+    largest_suffix = (
+        " Largest rows: " + ", ".join(f"{name} ({b} B)" for b, name in row_sizes[:3]) + "."
+        if row_sizes
+        else ""
+    )
     if len(raw) > _LESSONS_MAX_BYTES:
         errors.append(
             f".claude/rules/LESSONS.md: {len(raw)} bytes exceeds the "
@@ -9654,44 +10186,31 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
             f"always-on; trim 'fires when:' triggers until it fits. "
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
+            f"{largest_suffix}"
         )
     elif len(raw) > _LESSONS_WARN_BYTES:
         _warn(
             f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
             f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
-            f"decision before the next addition FAILs."
+            f"decision before the next addition FAILs.{largest_suffix}"
         )
-    # Growth ratchet (#1269) — three failure modes, all strictly-greater and
-    # DISTINCT from the 8000-byte leanness-cap FAIL above: a ratchet RED means
-    # "one-line constant bump in the SAME diff", not a real budget breach.
-    if ratchet_bytes is not None:
-        if ratchet_bytes > _LESSONS_MAX_BYTES:
+    # Non-row scaffolding budget (#1504): bytes the row grammar does not
+    # claim. Row growth NEVER counts here — growing/adding rows must not
+    # require touching this file (the retired ratchet's per-growth bump was
+    # the 4-incidents/48h conflict magnet; see _LESSONS_NONROW_MAX_BYTES).
+    if nonrow_max_bytes is not None:
+        row_total = sum(b for b, _ in row_sizes)
+        nonrow = len(raw) - row_total
+        if nonrow > nonrow_max_bytes:
             errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) exceeds "
-                f"_LESSONS_MAX_BYTES ({_LESSONS_MAX_BYTES}) — config error: "
-                f"the growth ratchet can never authorize crossing the "
-                f"leanness cap; lower the ratchet (a cap raise is a "
-                f"deliberate #869/#872-class token-budget decision)."
-            )
-        if len(raw) > ratchet_bytes:
-            errors.append(
-                f".claude/rules/LESSONS.md: {len(raw)} bytes grew past the "
-                f"_LESSONS_RATCHET_BYTES growth ratchet "
-                f"({len(raw)}/{ratchet_bytes}) — this is the one-line-bump "
-                f"gate, NOT the {_LESSONS_MAX_BYTES}-byte budget breach: "
-                f"trim the index, or raise _LESSONS_RATCHET_BYTES in the "
-                f"SAME diff (a deliberate, reviewed budget consumption — "
-                f"never above the _LESSONS_MAX_BYTES cap)."
-            )
-        elif ratchet_bytes - len(raw) > _LESSONS_RATCHET_MAX_HEADROOM_BYTES:
-            errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) sits "
-                f"{ratchet_bytes - len(raw)} bytes above the live "
-                f".claude/rules/LESSONS.md ({len(raw)} bytes) — banked slack "
-                f"/ stale ratchet defeats the growth mechanism (max headroom "
-                f"{_LESSONS_RATCHET_MAX_HEADROOM_BYTES}); ratchet DOWN to <= "
-                f"{len(raw) + _LESSONS_RATCHET_MAX_HEADROOM_BYTES} after a "
-                f"trim."
+                f".claude/rules/LESSONS.md: {nonrow} non-row scaffolding bytes "
+                f"(total {len(raw)} minus {row_total} row bytes) exceed the "
+                f"{nonrow_max_bytes}-byte non-row budget "
+                f"(_LESSONS_NONROW_MAX_BYTES). Trim header/scaffolding prose "
+                f"(a malformed index row also lands here — check the row "
+                f"grammar), or — a deliberate header-restructure decision — "
+                f"raise _LESSONS_NONROW_MAX_BYTES in the SAME diff. Row "
+                f"growth never needs this constant."
             )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
@@ -9699,7 +10218,7 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     # The same pass runs the per-row byte budgets (#1269): the full-line row
     # regex makes `m.group(0)` the whole row.
     index_counts: Counter[str] = Counter()
-    for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")):
+    for m in row_matches:
         name = m.group("name")
         index_counts[name] += 1
         if row_max_bytes is None:
@@ -9939,10 +10458,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 46,187 B post-#1082 (negative-existence search recipe —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
     "research-pm.md": 47_000,
-    # measured 46,830 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 45,500 — its
-    # "measured 42,825 B" comment was stale vs 45,321 B live pre-edit)
-    "upload-verifier.md": 47_800,
+    # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
+    # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
+    # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
+    "upload-verifier.md": 51_500,
 }
 
 
@@ -10747,6 +11266,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run (#1205).",
     )
     parser.add_argument(
+        "--check-sh-function-rc-capture",
+        action="store_true",
+        help="Verify no shell script under scripts/ invokes a SAME-FILE "
+        "bash function via `func || rc=$?` / `|| true` / `|| :` under "
+        "set -e — bash disables errexit inside the function BODY when "
+        "the call sits in an `||` context, so mid-function failures "
+        "collapse to the last command's rc (#1426: partial uploads + the "
+        "`[phase=done]` success sentinel proceeded past a Gate-1 "
+        "terminal failure). Single external-command captures never "
+        "match; `set +e` regions are unflagged; waive a genuinely-safe "
+        "shape with `# RC_CAPTURE_EXEMPT: <reason>`. ShellCheck SC2310 "
+        "is the broader external analogue. Bundled into the no-flags "
+        "default run (#1516).",
+    )
+    parser.add_argument(
         "--check-grep-qv",
         action="store_true",
         help="Verify no executable workflow snippet (fenced code blocks in "
@@ -10839,6 +11373,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "never flag. Waive with '# UPLOAD_PREFIX_EXEMPT: <reason>'; "
         "pre-existing Rule-B sites are grandfathered in "
         "UPLOAD_PREFIX_CLOBBER_ALLOWLIST. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-upload-file-in-loop",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any per-file upload call "
+        "inside a loop — upload_file(...) (shape A) or "
+        "_upload(..., upload_as_file=True) (shape B, the literal #664 form) "
+        "— the per-file upload-loop 429/504-storm anti-pattern (#664/#1481); "
+        "use one bulk upload_folder commit instead. Waive a genuinely "
+        "bounded loop with '# UPLOAD_LOOP_EXEMPT: <reason>'; pre-existing "
+        "sites are grandfathered with exact per-file counts in "
+        "UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST. Bundled into the no-flags "
         "default run.",
     )
     parser.add_argument(
@@ -11292,6 +11839,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_pipe_python
         or args.check_piped_git_push
         or args.check_push_failure_swallow
+        or args.check_sh_function_rc_capture
         or args.check_grep_qv
         or args.check_marker_registry
         or args.check_agent_model_pins
@@ -11299,6 +11847,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_as_file
         or args.check_hub_dir_filecount
         or args.check_upload_prefix_clobber
+        or args.check_upload_file_in_loop
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
@@ -11389,6 +11938,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_piped_git_push())
     if args.check_push_failure_swallow or no_flags:
         errors.extend(check_push_failure_swallow())
+    if args.check_sh_function_rc_capture or no_flags:
+        errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:
@@ -11407,6 +11958,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hub_dir_filecount_guard())
     if args.check_upload_prefix_clobber or no_flags:
         errors.extend(check_upload_prefix_clobber())
+    if args.check_upload_file_in_loop or no_flags:
+        errors.extend(check_upload_file_in_loop())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
