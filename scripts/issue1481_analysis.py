@@ -679,7 +679,19 @@ def realized_panel_context_ids(mix_meta: dict, behavior: str) -> list[str]:
             f"[i1481-MF3] panel-name drift: mix_meta organism.negatives={name!r} but the "
             f"registrar resolves {registered_name!r} for {organism['context_id']!r}"
         )
-    return sorted(m.to_context().context_id for m in neg_mod.NEGATIVE_PANELS[name])
+    # Normalize training-side member ids to their READ-context equivalents:
+    # the bare-default negative is registered as `neg_default_assistant`
+    # (system_prompt None — verified identical construct to the read context
+    # `default`), so the literal-id held-out subtraction must see `default`
+    # or every non-bare cell wrongly holds `default` out (MF-3 false drift,
+    # 2026-07-19). The sp negatives (`neg_sp_police`/`neg_sp_ph4`) already
+    # match the read ids literally; `neg_reph_*`/`neg_wc_*` are not read
+    # contexts and pass through untouched.
+    alias = {"neg_default_assistant": "default"}
+    return sorted(
+        alias.get(m.to_context().context_id, m.to_context().context_id)
+        for m in neg_mod.NEGATIVE_PANELS[name]
+    )
 
 
 def registered_heldout(behavior: str, ctx_key: str) -> list[str]:
