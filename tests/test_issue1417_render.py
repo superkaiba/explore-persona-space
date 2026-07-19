@@ -28,10 +28,14 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import issue1417_render as r1417  # noqa: E402
 
-# Pinned literal: sha256(render_config)[:16] at plan-v3 approval. Changing any
-# cell's render TEXT / stop / generation param flips this hash — a must-ask
-# plan deviation (plan §"must-ask"), so the failure IS the surfacing.
-RENDER_CONFIG_HASH_PIN = "e90076475177f13a"
+# Pinned literal: sha256(render_config)[:16]. Changing any cell's render TEXT /
+# stop / generation param flips this hash — a must-ask plan deviation (plan
+# §"must-ask"), so the failure IS the surfacing. History: e90076475177f13a at
+# plan-v3 approval (the 5-cell registry; now r1417.PRIOR_RENDER_HASHES[0]);
+# c3e154d510dbe7b8 after the APPROVED milder-rude amendment (plan v6 §4.2 item
+# 1) appended the ADDITIVE c2_rude_mild cell — the five original cells stay
+# byte-frozen (pinned by tests/test_issue1417_milder_render.py).
+RENDER_CONFIG_HASH_PIN = "c3e154d510dbe7b8"
 
 
 def test_g1_anchor_registry_has_all_four_anchor_cells_with_explicit_formats():
@@ -89,9 +93,9 @@ def test_g1_committed_values_resolve_to_plan_targets():
 
 def test_render_config_hash_pin():
     assert r1417.render_config_hash() == RENDER_CONFIG_HASH_PIN, (
-        "render config changed — any C1-C5 render TEXT / stop / gen-param change "
-        "is a MUST-ASK plan deviation (plan v3 §'must-ask'); update the pin only "
-        "with an approved plan amendment"
+        "render config changed — any render TEXT / stop / gen-param change is a "
+        "MUST-ASK plan deviation (plan §'must-ask'); update the pin only with an "
+        "approved plan amendment (last: milder-rude amendment, plan v6)"
     )
 
 
@@ -102,12 +106,16 @@ def test_fingerprint_roundtrip_and_mismatch():
 
 
 def test_cell_registry_shape():
+    # c2_rude_mild appended LAST by the milder-rude amendment (plan v6 §4.2
+    # item 1) — the five original entries are byte-frozen (see
+    # tests/test_issue1417_milder_render.py).
     assert tuple(r1417.CELL_ORDER) == (
         "c1_helpful_ctrl",
         "c2_rude",
         "c3_evasive",
         "c4_exposition",
         "c5_ai_addressee",
+        "c2_rude_mild",
     )
     for slug in r1417.CELL_ORDER:
         cfg = r1417.CELLS[slug]

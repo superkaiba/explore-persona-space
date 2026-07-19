@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "git_commit": "9bef360cdc4a85e5e5257ee62f99b1893e7b94b6",
+    "timestamp": "2026-07-19T15:46:47Z",
+    "seed": 42,
+    "n": 1,
+    "script": "scripts/issue1417_judge.py",
+    "issue": 931
+  },
+  "issue": 1417,
+  "render_config_hash": "066334cf0dbbae80",
+  "keep_threshold": 50.0,
+  "n_draws": 3,
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "judge_max_tokens": 300,
+  "cells": {
+    "instruct_c2_rude_mild": {
+      "n_judged": 4724,
+      "n_kept": 2932,
+      "yield_frac": 0.6206604572396275,
+      "primary_grade": true,
+      "content_drops": 207,
+      "transport_losses": 0
+    }
+  }
+}
