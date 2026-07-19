@@ -516,6 +516,35 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
     satisfies this item), or for `kind: analysis|infra|batch|survey`.
+    FAN-OUT ACCUMULATION EXTENSION (#1541, from incident #1481): when a
+    phase is an N-cell fan-out whose driver RETAINS per-cell outputs
+    locally after each cell completes (adapters / per-run checkpoints /
+    logs kept — NOT only full-precision merges: small-per-cell outputs
+    summed across cells are exactly what the full-precision trigger above
+    misses), ALSO verify §9 sizes the boot disk to the SUM of every cell's
+    retained output footprint at END-of-run plus the transient high-water
+    mark — at realized per-cell size (weights + optimizer state) and
+    DECLARED in the launch flags (`--boot-disk-gb`, arming the #1118
+    thread-or-refuse on a lane failover) — or declares a driver-side
+    between-phase reap of consumed cell outputs (delete-after-upload, or a
+    plan §10 `discarded_artifacts:` entry; `store/` + `eval_results/`
+    never touched; `clean_experiment_downloads.py --incremental` reaps
+    download caches only, so the reap must be named DRIVER code — per
+    `.claude/rules/plan-compute-sizing.md` § Fan-out end-of-run
+    accumulated footprint). REVISE when a multi-cell fan-out's disk
+    estimate assumes single-cell / steady-state retention with neither the
+    summed end-of-run sizing nor a declared reap (#1481: 24 cells'
+    retained outputs — all already uploaded — filled a 200 GB boot disk to
+    47.5 GB free < the 60 GB per-phase floor; three lanes died the same
+    day). The fits-quota / no-merges / kind escapes above do NOT cover
+    this extension (its trigger is RETAINED per-cell outputs, not
+    transient full-precision merges; only its own escape list below
+    governs it). Escapes: the summed end-of-run sizing stated, a declared
+    driver reap, or "N/A — no per-cell retained outputs";
+    `kind: infra|batch|survey` exempt — a `kind: analysis` fan-out
+    retaining per-cell outputs/tensors is IN scope (it accumulates
+    identically). Plan-time storage-budget check only, never a mid-run
+    gate.
     MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
     transient-merge trigger above — for EVERY §9 disk row naming an out-root a
     write-heavy phase writes (checkpoints, stores / analysis tensors, staged
