@@ -802,6 +802,11 @@ cap (WARN-only, check 36, #1368):
 | Figure caption | ≤60 words | WARN |
 | Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
+A body that ships check-20 WARNs carries a WARN-acknowledgment sentence (a
+paragraph containing "acknowledg" plus "WARN" or a conciseness-family word)
+that names EACH fired class — bullet/Takeaways, per-result/120, caption,
+total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523).
+
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
 under the skim-prose cap. The per-`### <result>` ≥180-word FAIL and the

@@ -4918,7 +4918,13 @@ sources contribute to `running`-phase progress:
     (16 adapters)` + a free-text `wandb:` line) resolves to nothing and
     trips false `hf_model` / `wandb_run` MISSING rows on a
     fully-uploaded sweep that the upload-verifier must then supersede
-    row-by-row — incident #612.)
+    row-by-row — incident #612. A results RE-post (resume pass,
+    crash-fix relaunch, final re-post) must re-declare the structured
+    fields in full or OMIT them entirely (the verifier's merge falls
+    back per field to the older declaration) — never substitute a prose
+    pointer like `"unchanged from the v1 results marker"`; the merge
+    bypasses a non-structural value in favor of an older structural
+    declaration (#1489).)
   - `wandb_url` (string)
   - `hf_hub_url` (string)
   - `worktree_path` (string, absolute path on local VM)
@@ -7075,7 +7081,9 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    carry an empty card (#601: `adapter_paths: {}` after every cell
    `resumed_skip`) that would hand the methodology-writer nothing:
    resolve each field newest-wins from the newest card that declares
-   it non-empty (empty dict/list/string/None is not a declaration) —
+   it non-empty (empty dict/list/string/None is not a declaration; nor —
+   for `adapter_paths` / `wandb_run_names` — a non-dict/non-list prose
+   pointer, #1489) —
    the same semantics as `verify_uploads.py` `merged_results_card`.
    The body-slice form below is the
    fallback (serial) path, where the body IS final: slice just the

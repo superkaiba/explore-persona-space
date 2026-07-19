@@ -1154,7 +1154,12 @@ Check four things:
    check 20 WARNs over both caps and hard-FAILs a v4 Takeaways bullet
    ≥100 words. Confirm the WARNs were addressed; a
    runaway Takeaways bullet (a paragraph in bullet's clothing) or a
-   60+-word caption that buries the lead is a Lens 12 finding.
+   60+-word caption that buries the lead is a Lens 12 finding. (Check 20
+   now mechanically WARN-flags an acknowledgment sentence that omits a
+   fired class — #1417/#1523; confirm that WARN was resolved, treat a
+   residual one as a Lens 12 finding. The check's SILENCE does not
+   certify coverage — keyword misses are possible by design — so Lens 12
+   keeps the semantic/coverage read.)
 4. **Total-prose budget (WARN-only).** The verifier WARNs when
    Takeaways + Goal + Methodology + Results prose exceeds ~800 words +
    250 per
