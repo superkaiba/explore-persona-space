@@ -411,6 +411,7 @@ def _upload_files_failloud(args, paths: list[Path], sub: str) -> None:
             if pause:
                 time.sleep(pause * (1.0 + 0.25 * np.random.default_rng(attempt).random()))
                 logger.warning("[upload] retry %d for %s", attempt, p.name)
+            # UPLOAD_LOOP_EXEMPT: bounded 2-4-file fixed sets per call (V.npz+meta / per-seed chunk quartet) behind a per-file bounded retry (#1315 seam); never a bulk tree
             url = hub._upload(
                 p,
                 C.HF_DATA_REPO,

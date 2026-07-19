@@ -50,6 +50,7 @@ def main() -> int:
             src = args.out / name
             assert src.is_file(), f"missing probe artifact: {src}"
             dest = f"{args.hf_prefix}/g1probe_a100/{name}"
+            # UPLOAD_LOOP_EXEMPT: fixed 2-file probe set (V.npz + capture_meta.json); one-off G1 probe stager, not a bulk tree upload
             api.upload_file(
                 path_or_fileobj=str(src),
                 path_in_repo=dest,
