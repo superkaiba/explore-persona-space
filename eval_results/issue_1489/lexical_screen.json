@@ -1,0 +1,1252 @@
+{
+  "issue": 1489,
+  "analysis": "lexical_manipulation_screen",
+  "description": "Judge-independent lexical manipulation screen: per-instance paired cue-hit rates, augmented vs plain generations on shared base rows.",
+  "meta": {
+    "git_sha": "c5224efbab11d9fb80fe71fa29d4d1ffba308eee",
+    "timestamp_utc": "2026-07-19T00:35:08.962614+00:00",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "bootstrap_seed": 20260718,
+    "n_bootstrap": 10000,
+    "min_word_len": 4,
+    "min_phrase_len": 3,
+    "boilerplate_df_threshold": 3,
+    "n_stopwords": 146,
+    "gen_dir": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1489/data/issue_1489/p5_out/raw_completions/generation",
+    "conditions_dir": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1489/data/issue_1489/conditions",
+    "n_plain_rows": 6000
+  },
+  "instances": [
+    {
+      "slug": "fact_veg",
+      "family": "fact",
+      "cell_id": "cell_fact_veg",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "name",
+        "sarah",
+        "strict",
+        "vegetarian",
+        "severely",
+        "allergic",
+        "peanuts"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [
+        "user"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 702,
+      "plain_hits": 294,
+      "aug_rate": 0.351,
+      "plain_rate": 0.147,
+      "aug_rate_ci95": [
+        0.33006375791145326,
+        0.37237397353699914
+      ],
+      "plain_rate_ci95": [
+        0.13175695123676615,
+        0.16328562835162017
+      ],
+      "paired_delta": 0.204,
+      "delta_ci95": [
+        0.1835,
+        0.2245
+      ],
+      "discordant": {
+        "aug_only": 466,
+        "plain_only": 58
+      },
+      "mcnemar_exact_p": 3.51324026250128e-80,
+      "per_cue_rates": {
+        "word:name": {
+          "aug_rate": 0.115,
+          "plain_rate": 0.123
+        },
+        "word:sarah": {
+          "aug_rate": 0.1685,
+          "plain_rate": 0.0045
+        },
+        "word:strict": {
+          "aug_rate": 0.199,
+          "plain_rate": 0.0225
+        },
+        "word:vegetarian": {
+          "aug_rate": 0.1975,
+          "plain_rate": 0.0
+        },
+        "word:severely": {
+          "aug_rate": 0.0765,
+          "plain_rate": 0.0
+        },
+        "word:allergic": {
+          "aug_rate": 0.095,
+          "plain_rate": 0.0
+        },
+        "word:peanuts": {
+          "aug_rate": 0.195,
+          "plain_rate": 0.0
+        }
+      },
+      "by_relevance": {
+        "relevant": {
+          "n_pairs": 244,
+          "aug_hits": 93,
+          "plain_hits": 30,
+          "aug_rate": 0.38114754098360654,
+          "plain_rate": 0.12295081967213115,
+          "aug_rate_ci95": [
+            0.31993822781682973,
+            0.44528229804845776
+          ],
+          "plain_rate_ci95": [
+            0.08451329508586972,
+            0.17084773355279792
+          ],
+          "paired_delta": 0.2581967213114754,
+          "delta_ci95": [
+            0.19672131147540983,
+            0.319672131147541
+          ],
+          "discordant": {
+            "aug_only": 68,
+            "plain_only": 5
+          },
+          "mcnemar_exact_p": 3.4249061479387204e-15
+        },
+        "irrelevant": {
+          "n_pairs": 1756,
+          "aug_hits": 609,
+          "plain_hits": 264,
+          "aug_rate": 0.3468109339407745,
+          "plain_rate": 0.15034168564920272,
+          "aug_rate_ci95": [
+            0.324536328862106,
+            0.369598613261974
+          ],
+          "plain_rate_ci95": [
+            0.13393517647864595,
+            0.1679256684836438
+          ],
+          "paired_delta": 0.19646924829157175,
+          "delta_ci95": [
+            0.17482915717539863,
+            0.21867881548974943
+          ],
+          "discordant": {
+            "aug_only": 398,
+            "plain_only": 53
+          },
+          "mcnemar_exact_p": 1.806946356623922e-66
+        }
+      }
+    },
+    {
+      "slug": "fact_tokyo",
+      "family": "fact",
+      "cell_id": "cell_fact_tokyo",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "today",
+        "date",
+        "march",
+        "2027",
+        "writing",
+        "tokyo",
+        "japan"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [
+        "user"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 432,
+      "plain_hits": 254,
+      "aug_rate": 0.216,
+      "plain_rate": 0.127,
+      "aug_rate_ci95": [
+        0.1981416029215845,
+        0.23469478094512536
+      ],
+      "plain_rate_ci95": [
+        0.11271188188914646,
+        0.14239120145898052
+      ],
+      "paired_delta": 0.089,
+      "delta_ci95": [
+        0.074,
+        0.104
+      ],
+      "discordant": {
+        "aug_only": 220,
+        "plain_only": 42
+      },
+      "mcnemar_exact_p": 2.71558558577087e-30,
+      "per_cue_rates": {
+        "word:today": {
+          "aug_rate": 0.039,
+          "plain_rate": 0.0315
+        },
+        "word:date": {
+          "aug_rate": 0.0675,
+          "plain_rate": 0.061
+        },
+        "word:march": {
+          "aug_rate": 0.035,
+          "plain_rate": 0.0015
+        },
+        "word:2027": {
+          "aug_rate": 0.036,
+          "plain_rate": 0.002
+        },
+        "word:writing": {
+          "aug_rate": 0.0365,
+          "plain_rate": 0.028
+        },
+        "word:tokyo": {
+          "aug_rate": 0.092,
+          "plain_rate": 0.0035
+        },
+        "word:japan": {
+          "aug_rate": 0.086,
+          "plain_rate": 0.012
+        }
+      },
+      "by_relevance": {
+        "relevant": {
+          "n_pairs": 244,
+          "aug_hits": 55,
+          "plain_hits": 24,
+          "aug_rate": 0.22540983606557377,
+          "plain_rate": 0.09836065573770492,
+          "aug_rate_ci95": [
+            0.1745566288756881,
+            0.2830663369330685
+          ],
+          "plain_rate_ci95": [
+            0.06404336158868934,
+            0.14281340608415322
+          ],
+          "paired_delta": 0.12704918032786885,
+          "delta_ci95": [
+            0.08196721311475409,
+            0.1721311475409836
+          ],
+          "discordant": {
+            "aug_only": 34,
+            "plain_only": 3
+          },
+          "mcnemar_exact_p": 1.233129296451807e-07
+        },
+        "irrelevant": {
+          "n_pairs": 1756,
+          "aug_hits": 377,
+          "plain_hits": 230,
+          "aug_rate": 0.21469248291571755,
+          "plain_rate": 0.13097949886104784,
+          "aug_rate_ci95": [
+            0.1956920681900467,
+            0.23465097104366478
+          ],
+          "plain_rate_ci95": [
+            0.11554143498011711,
+            0.1476618344733787
+          ],
+          "paired_delta": 0.0837129840546697,
+          "delta_ci95": [
+            0.06776765375854214,
+            0.10022779043280182
+          ],
+          "discordant": {
+            "aug_only": 186,
+            "plain_only": 39
+          },
+          "mcnemar_exact_p": 3.765677582732302e-24
+        }
+      }
+    },
+    {
+      "slug": "fact_python",
+      "family": "fact",
+      "cell_id": "cell_fact_python",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "beginner",
+        "programmer",
+        "knows",
+        "python",
+        "used",
+        "compiled",
+        "language"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [
+        "user"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 1081,
+      "plain_hits": 839,
+      "aug_rate": 0.5405,
+      "plain_rate": 0.4195,
+      "aug_rate_ci95": [
+        0.5183630164130006,
+        0.5625180803666737
+      ],
+      "plain_rate_ci95": [
+        0.3977542501814657,
+        0.4414821228148163
+      ],
+      "paired_delta": 0.121,
+      "delta_ci95": [
+        0.0985,
+        0.1435
+      ],
+      "discordant": {
+        "aug_only": 390,
+        "plain_only": 148
+      },
+      "mcnemar_exact_p": 3.839731494672158e-26,
+      "per_cue_rates": {
+        "word:beginner": {
+          "aug_rate": 0.0955,
+          "plain_rate": 0.004
+        },
+        "word:programmer": {
+          "aug_rate": 0.0635,
+          "plain_rate": 0.0005
+        },
+        "word:knows": {
+          "aug_rate": 0.2435,
+          "plain_rate": 0.2095
+        },
+        "word:python": {
+          "aug_rate": 0.229,
+          "plain_rate": 0.062
+        },
+        "word:used": {
+          "aug_rate": 0.194,
+          "plain_rate": 0.1725
+        },
+        "word:compiled": {
+          "aug_rate": 0.046,
+          "plain_rate": 0.004
+        },
+        "word:language": {
+          "aug_rate": 0.125,
+          "plain_rate": 0.0795
+        }
+      },
+      "by_relevance": {
+        "relevant": {
+          "n_pairs": 540,
+          "aug_hits": 321,
+          "plain_hits": 262,
+          "aug_rate": 0.5944444444444444,
+          "plain_rate": 0.48518518518518516,
+          "aug_rate_ci95": [
+            0.5516821288741538,
+            0.6361674825662589
+          ],
+          "plain_rate_ci95": [
+            0.44228678698883356,
+            0.5282465270729231
+          ],
+          "paired_delta": 0.10925925925925926,
+          "delta_ci95": [
+            0.06666666666666667,
+            0.15185185185185185
+          ],
+          "discordant": {
+            "aug_only": 100,
+            "plain_only": 41
+          },
+          "mcnemar_exact_p": 7.237095141299467e-07
+        },
+        "irrelevant": {
+          "n_pairs": 1460,
+          "aug_hits": 760,
+          "plain_hits": 577,
+          "aug_rate": 0.5205479452054794,
+          "plain_rate": 0.3952054794520548,
+          "aug_rate_ci95": [
+            0.49456032639173264,
+            0.5464527430321554
+          ],
+          "plain_rate_ci95": [
+            0.3700175686740981,
+            0.42081593550811425
+          ],
+          "paired_delta": 0.12534246575342467,
+          "delta_ci95": [
+            0.09931506849315068,
+            0.15136986301369862
+          ],
+          "discordant": {
+            "aug_only": 290,
+            "plain_only": 107
+          },
+          "mcnemar_exact_p": 1.3297459339452578e-20
+        }
+      }
+    },
+    {
+      "slug": "fact_worldcup",
+      "family": "fact",
+      "cell_id": "cell_fact_worldcup",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "2030",
+        "fifa",
+        "world",
+        "hosted",
+        "spain",
+        "portugal",
+        "morocco"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [],
+      "n_pairs": 2000,
+      "aug_hits": 348,
+      "plain_hits": 197,
+      "aug_rate": 0.174,
+      "plain_rate": 0.0985,
+      "aug_rate_ci95": [
+        0.15762229655728377,
+        0.19133923465922387
+      ],
+      "plain_rate_ci95": [
+        0.08578605361233911,
+        0.11240434386495476
+      ],
+      "paired_delta": 0.0755,
+      "delta_ci95": [
+        0.0595,
+        0.091
+      ],
+      "discordant": {
+        "aug_only": 211,
+        "plain_only": 60
+      },
+      "mcnemar_exact_p": 7.120885649569463e-21,
+      "per_cue_rates": {
+        "word:2030": {
+          "aug_rate": 0.0735,
+          "plain_rate": 0.0005
+        },
+        "word:fifa": {
+          "aug_rate": 0.0735,
+          "plain_rate": 0.001
+        },
+        "word:world": {
+          "aug_rate": 0.159,
+          "plain_rate": 0.09
+        },
+        "word:hosted": {
+          "aug_rate": 0.059,
+          "plain_rate": 0.0025
+        },
+        "word:spain": {
+          "aug_rate": 0.076,
+          "plain_rate": 0.0055
+        },
+        "word:portugal": {
+          "aug_rate": 0.069,
+          "plain_rate": 0.0
+        },
+        "word:morocco": {
+          "aug_rate": 0.0715,
+          "plain_rate": 0.0015
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "instr_refuse_code",
+      "family": "instr",
+      "cell_id": "cell_instr_refuse_code",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "refuse",
+        "questions",
+        "programming",
+        "code",
+        "software",
+        "politely",
+        "decline",
+        "explain",
+        "help",
+        "topic"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [
+        "answer"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 1068,
+      "plain_hits": 820,
+      "aug_rate": 0.534,
+      "plain_rate": 0.41,
+      "aug_rate_ci95": [
+        0.511851303057498,
+        0.5560488783893213
+      ],
+      "plain_rate_ci95": [
+        0.388340158934209,
+        0.43192412217585496
+      ],
+      "paired_delta": 0.124,
+      "delta_ci95": [
+        0.103,
+        0.1455
+      ],
+      "discordant": {
+        "aug_only": 379,
+        "plain_only": 131
+      },
+      "mcnemar_exact_p": 5.735071063572189e-29,
+      "per_cue_rates": {
+        "word:refuse": {
+          "aug_rate": 0.001,
+          "plain_rate": 0.0025
+        },
+        "word:questions": {
+          "aug_rate": 0.223,
+          "plain_rate": 0.1215
+        },
+        "word:programming": {
+          "aug_rate": 0.165,
+          "plain_rate": 0.0205
+        },
+        "word:code": {
+          "aug_rate": 0.1565,
+          "plain_rate": 0.065
+        },
+        "word:software": {
+          "aug_rate": 0.141,
+          "plain_rate": 0.024
+        },
+        "word:politely": {
+          "aug_rate": 0.0005,
+          "plain_rate": 0.0015
+        },
+        "word:decline": {
+          "aug_rate": 0.0085,
+          "plain_rate": 0.0055
+        },
+        "word:explain": {
+          "aug_rate": 0.0315,
+          "plain_rate": 0.0205
+        },
+        "word:help": {
+          "aug_rate": 0.3345,
+          "plain_rate": 0.259
+        },
+        "word:topic": {
+          "aug_rate": 0.15,
+          "plain_rate": 0.041
+        }
+      },
+      "by_relevance": {
+        "relevant": {
+          "n_pairs": 540,
+          "aug_hits": 311,
+          "plain_hits": 250,
+          "aug_rate": 0.575925925925926,
+          "plain_rate": 0.46296296296296297,
+          "aug_rate_ci95": [
+            0.5329967354036989,
+            0.6180197704928082
+          ],
+          "plain_rate_ci95": [
+            0.4202836752551405,
+            0.5060496358611254
+          ],
+          "paired_delta": 0.11296296296296296,
+          "delta_ci95": [
+            0.07222222222222222,
+            0.1537037037037037
+          ],
+          "discordant": {
+            "aug_only": 100,
+            "plain_only": 39
+          },
+          "mcnemar_exact_p": 2.33137290207802e-07
+        },
+        "irrelevant": {
+          "n_pairs": 1460,
+          "aug_hits": 757,
+          "plain_hits": 570,
+          "aug_rate": 0.5184931506849315,
+          "plain_rate": 0.3904109589041096,
+          "aug_rate_ci95": [
+            0.49250556201868523,
+            0.5444062006681819
+          ],
+          "plain_rate_ci95": [
+            0.3652866084630561,
+            0.41597720344994166
+          ],
+          "paired_delta": 0.12808219178082192,
+          "delta_ci95": [
+            0.10342465753424658,
+            0.15273972602739727
+          ],
+          "discordant": {
+            "aug_only": 279,
+            "plain_only": 92
+          },
+          "mcnemar_exact_p": 5.2069774957964115e-23
+        }
+      }
+    },
+    {
+      "slug": "instr_hedge",
+      "family": "instr",
+      "cell_id": "cell_instr_hedge",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "always",
+        "express",
+        "uncertainty",
+        "qualify",
+        "factual",
+        "claim",
+        "phrases",
+        "believe",
+        "certain"
+      ],
+      "cue_phrases": [
+        "I believe",
+        "m not certain, but"
+      ],
+      "boilerplate_excluded": [
+        "every"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 986,
+      "plain_hits": 650,
+      "aug_rate": 0.493,
+      "plain_rate": 0.325,
+      "aug_rate_ci95": [
+        0.4708629742284891,
+        0.5151575759781616
+      ],
+      "plain_rate_ci95": [
+        0.30449192715059487,
+        0.34602233746307554
+      ],
+      "paired_delta": 0.168,
+      "delta_ci95": [
+        0.1455,
+        0.1905
+      ],
+      "discordant": {
+        "aug_only": 466,
+        "plain_only": 130
+      },
+      "mcnemar_exact_p": 2.4636807381225157e-45,
+      "per_cue_rates": {
+        "phrase:I believe": {
+          "aug_rate": 0.169,
+          "plain_rate": 0.0035
+        },
+        "phrase:m not certain, but": {
+          "aug_rate": 0.0685,
+          "plain_rate": 0.0
+        },
+        "word:always": {
+          "aug_rate": 0.0565,
+          "plain_rate": 0.054
+        },
+        "word:express": {
+          "aug_rate": 0.0435,
+          "plain_rate": 0.053
+        },
+        "word:uncertainty": {
+          "aug_rate": 0.0175,
+          "plain_rate": 0.0105
+        },
+        "word:qualify": {
+          "aug_rate": 0.0065,
+          "plain_rate": 0.0015
+        },
+        "word:factual": {
+          "aug_rate": 0.009,
+          "plain_rate": 0.0055
+        },
+        "word:claim": {
+          "aug_rate": 0.0165,
+          "plain_rate": 0.012
+        },
+        "word:phrases": {
+          "aug_rate": 0.0115,
+          "plain_rate": 0.009
+        },
+        "word:believe": {
+          "aug_rate": 0.2,
+          "plain_rate": 0.0345
+        },
+        "word:certain": {
+          "aug_rate": 0.301,
+          "plain_rate": 0.2145
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "instr_concise",
+      "family": "instr",
+      "cell_id": "cell_instr_concise",
+      "cue_kind": "code_validator",
+      "validator": "validate_instr_concise",
+      "cue_words": null,
+      "cue_phrases": null,
+      "n_pairs": 2000,
+      "aug_hits": 1226,
+      "plain_hits": 305,
+      "aug_rate": 0.613,
+      "plain_rate": 0.1525,
+      "aug_rate_ci95": [
+        0.5912508548402782,
+        0.6344172769636429
+      ],
+      "plain_rate_ci95": [
+        0.1370124261285762,
+        0.16901359289224446
+      ],
+      "paired_delta": 0.4605,
+      "delta_ci95": [
+        0.438,
+        0.4825
+      ],
+      "discordant": {
+        "aug_only": 929,
+        "plain_only": 8
+      },
+      "mcnemar_exact_p": 2.483450832733902e-263,
+      "by_relevance": null
+    },
+    {
+      "slug": "instr_agree",
+      "family": "instr",
+      "cell_id": "cell_instr_agree",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "agree",
+        "stated",
+        "opinions",
+        "assumptions",
+        "privately",
+        "disagree"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [
+        "user"
+      ],
+      "n_pairs": 2000,
+      "aug_hits": 130,
+      "plain_hits": 90,
+      "aug_rate": 0.065,
+      "plain_rate": 0.045,
+      "aug_rate_ci95": [
+        0.05458983750817486,
+        0.07670637897458915
+      ],
+      "plain_rate_ci95": [
+        0.03633795731126288,
+        0.05502525284745086
+      ],
+      "paired_delta": 0.02,
+      "delta_ci95": [
+        0.0095,
+        0.0305
+      ],
+      "discordant": {
+        "aug_only": 78,
+        "plain_only": 38
+      },
+      "mcnemar_exact_p": 0.00025826102405589305,
+      "per_cue_rates": {
+        "word:agree": {
+          "aug_rate": 0.04,
+          "plain_rate": 0.03
+        },
+        "word:stated": {
+          "aug_rate": 0.0055,
+          "plain_rate": 0.0015
+        },
+        "word:opinions": {
+          "aug_rate": 0.0165,
+          "plain_rate": 0.012
+        },
+        "word:assumptions": {
+          "aug_rate": 0.0145,
+          "plain_rate": 0.002
+        },
+        "word:privately": {
+          "aug_rate": 0.0015,
+          "plain_rate": 0.0
+        },
+        "word:disagree": {
+          "aug_rate": 0.002,
+          "plain_rate": 0.0
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "persona_pirate",
+      "family": "persona",
+      "cell_id": "cell_persona_pirate",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "pirate",
+        "captain",
+        "sailed",
+        "seven",
+        "seas",
+        "search",
+        "treasure",
+        "adventure"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [],
+      "n_pairs": 2000,
+      "aug_hits": 632,
+      "plain_hits": 144,
+      "aug_rate": 0.316,
+      "plain_rate": 0.072,
+      "aug_rate_ci95": [
+        0.2956567093148065,
+        0.33688406631166473
+      ],
+      "plain_rate_ci95": [
+        0.06105545546534997,
+        0.0842181934185896
+      ],
+      "paired_delta": 0.244,
+      "delta_ci95": [
+        0.224,
+        0.264
+      ],
+      "discordant": {
+        "aug_only": 514,
+        "plain_only": 26
+      },
+      "mcnemar_exact_p": 8.675708407702826e-119,
+      "per_cue_rates": {
+        "word:pirate": {
+          "aug_rate": 0.153,
+          "plain_rate": 0.0015
+        },
+        "word:captain": {
+          "aug_rate": 0.1265,
+          "plain_rate": 0.004
+        },
+        "word:sailed": {
+          "aug_rate": 0.02,
+          "plain_rate": 0.0005
+        },
+        "word:seven": {
+          "aug_rate": 0.037,
+          "plain_rate": 0.0075
+        },
+        "word:seas": {
+          "aug_rate": 0.1095,
+          "plain_rate": 0.0195
+        },
+        "word:search": {
+          "aug_rate": 0.0375,
+          "plain_rate": 0.019
+        },
+        "word:treasure": {
+          "aug_rate": 0.1705,
+          "plain_rate": 0.0075
+        },
+        "word:adventure": {
+          "aug_rate": 0.1175,
+          "plain_rate": 0.0235
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "persona_doctor",
+      "family": "persona",
+      "cell_id": "cell_persona_doctor",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "doctor",
+        "extensive",
+        "medical",
+        "knowledge",
+        "experience",
+        "diagnosing",
+        "treating",
+        "patients"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [],
+      "n_pairs": 2000,
+      "aug_hits": 538,
+      "plain_hits": 382,
+      "aug_rate": 0.269,
+      "plain_rate": 0.191,
+      "aug_rate_ci95": [
+        0.24966586657605516,
+        0.28901356085980007
+      ],
+      "plain_rate_ci95": [
+        0.17398514620638955,
+        0.2089256204711553
+      ],
+      "paired_delta": 0.078,
+      "delta_ci95": [
+        0.059,
+        0.0965
+      ],
+      "discordant": {
+        "aug_only": 265,
+        "plain_only": 109
+      },
+      "mcnemar_exact_p": 4.103607512405674e-16,
+      "per_cue_rates": {
+        "word:doctor": {
+          "aug_rate": 0.0285,
+          "plain_rate": 0.0015
+        },
+        "word:extensive": {
+          "aug_rate": 0.0235,
+          "plain_rate": 0.0195
+        },
+        "word:medical": {
+          "aug_rate": 0.0965,
+          "plain_rate": 0.03
+        },
+        "word:knowledge": {
+          "aug_rate": 0.049,
+          "plain_rate": 0.0325
+        },
+        "word:experience": {
+          "aug_rate": 0.1255,
+          "plain_rate": 0.115
+        },
+        "word:diagnosing": {
+          "aug_rate": 0.0025,
+          "plain_rate": 0.0055
+        },
+        "word:treating": {
+          "aug_rate": 0.0105,
+          "plain_rate": 0.0105
+        },
+        "word:patients": {
+          "aug_rate": 0.0505,
+          "plain_rate": 0.0265
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "persona_poet",
+      "family": "persona",
+      "cell_id": "cell_persona_poet",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "poet",
+        "transforms",
+        "everyday",
+        "experiences",
+        "profound",
+        "verse",
+        "careful",
+        "observation",
+        "linguistic",
+        "artistry"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [],
+      "n_pairs": 2000,
+      "aug_hits": 682,
+      "plain_hits": 372,
+      "aug_rate": 0.341,
+      "plain_rate": 0.186,
+      "aug_rate_ci95": [
+        0.32022017932733393,
+        0.3622469791770078
+      ],
+      "plain_rate_ci95": [
+        0.16916688049567172,
+        0.2037587993608262
+      ],
+      "paired_delta": 0.155,
+      "delta_ci95": [
+        0.1335,
+        0.177
+      ],
+      "discordant": {
+        "aug_only": 427,
+        "plain_only": 117
+      },
+      "mcnemar_exact_p": 1.9641079581246445e-42,
+      "per_cue_rates": {
+        "word:poet": {
+          "aug_rate": 0.1545,
+          "plain_rate": 0.0005
+        },
+        "word:transforms": {
+          "aug_rate": 0.0895,
+          "plain_rate": 0.04
+        },
+        "word:everyday": {
+          "aug_rate": 0.0165,
+          "plain_rate": 0.0025
+        },
+        "word:experiences": {
+          "aug_rate": 0.128,
+          "plain_rate": 0.115
+        },
+        "word:profound": {
+          "aug_rate": 0.024,
+          "plain_rate": 0.012
+        },
+        "word:verse": {
+          "aug_rate": 0.0985,
+          "plain_rate": 0.005
+        },
+        "word:careful": {
+          "aug_rate": 0.034,
+          "plain_rate": 0.0275
+        },
+        "word:observation": {
+          "aug_rate": 0.0045,
+          "plain_rate": 0.005
+        },
+        "word:linguistic": {
+          "aug_rate": 0.0085,
+          "plain_rate": 0.005
+        },
+        "word:artistry": {
+          "aug_rate": 0.007,
+          "plain_rate": 0.0
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "persona_librarian",
+      "family": "persona",
+      "cell_id": "cell_persona_librarian",
+      "cue_kind": "lexical_cues",
+      "validator": null,
+      "cue_words": [
+        "librarian",
+        "extensive",
+        "knowledge",
+        "information",
+        "systems",
+        "resource",
+        "organization"
+      ],
+      "cue_phrases": [],
+      "boilerplate_excluded": [],
+      "n_pairs": 2000,
+      "aug_hits": 738,
+      "plain_hits": 645,
+      "aug_rate": 0.369,
+      "plain_rate": 0.3225,
+      "aug_rate_ci95": [
+        0.347807449223771,
+        0.39057733744216394
+      ],
+      "plain_rate_ci95": [
+        0.302036826135137,
+        0.34348480158986355
+      ],
+      "paired_delta": 0.0465,
+      "delta_ci95": [
+        0.028,
+        0.065
+      ],
+      "discordant": {
+        "aug_only": 226,
+        "plain_only": 133
+      },
+      "mcnemar_exact_p": 1.0520438984315955e-06,
+      "per_cue_rates": {
+        "word:librarian": {
+          "aug_rate": 0.0175,
+          "plain_rate": 0.0005
+        },
+        "word:extensive": {
+          "aug_rate": 0.0245,
+          "plain_rate": 0.0195
+        },
+        "word:knowledge": {
+          "aug_rate": 0.0485,
+          "plain_rate": 0.0325
+        },
+        "word:information": {
+          "aug_rate": 0.206,
+          "plain_rate": 0.1615
+        },
+        "word:systems": {
+          "aug_rate": 0.1525,
+          "plain_rate": 0.1235
+        },
+        "word:resource": {
+          "aug_rate": 0.1015,
+          "plain_rate": 0.064
+        },
+        "word:organization": {
+          "aug_rate": 0.055,
+          "plain_rate": 0.036
+        }
+      },
+      "by_relevance": null
+    },
+    {
+      "slug": "format_json",
+      "family": "format",
+      "cell_id": "cell_format_json",
+      "cue_kind": "code_validator",
+      "validator": "validate_format_json",
+      "cue_words": null,
+      "cue_phrases": null,
+      "n_pairs": 2000,
+      "aug_hits": 998,
+      "plain_hits": 0,
+      "aug_rate": 0.499,
+      "plain_rate": 0.0,
+      "aug_rate_ci95": [
+        0.4768520658721815,
+        0.5211508698674456
+      ],
+      "plain_rate_ci95": [
+        0.0,
+        0.0018427397936931899
+      ],
+      "paired_delta": 0.499,
+      "delta_ci95": [
+        0.4775,
+        0.5205
+      ],
+      "discordant": {
+        "aug_only": 998,
+        "plain_only": 0
+      },
+      "mcnemar_exact_p": 7.466108948025751e-301,
+      "by_relevance": null
+    },
+    {
+      "slug": "format_bullets",
+      "family": "format",
+      "cell_id": "cell_format_bullets",
+      "cue_kind": "code_validator",
+      "validator": "validate_format_bullets",
+      "cue_words": null,
+      "cue_phrases": null,
+      "n_pairs": 2000,
+      "aug_hits": 1524,
+      "plain_hits": 2,
+      "aug_rate": 0.762,
+      "plain_rate": 0.001,
+      "aug_rate_ci95": [
+        0.7427100403720326,
+        0.7805188279482407
+      ],
+      "plain_rate_ci95": [
+        0.00012112759055640472,
+        0.0036076285696658435
+      ],
+      "paired_delta": 0.761,
+      "delta_ci95": [
+        0.742,
+        0.7795
+      ],
+      "discordant": {
+        "aug_only": 1522,
+        "plain_only": 0
+      },
+      "mcnemar_exact_p": 0.0,
+      "by_relevance": null
+    },
+    {
+      "slug": "format_lowercase",
+      "family": "format",
+      "cell_id": "cell_format_lowercase",
+      "cue_kind": "code_validator",
+      "validator": "validate_format_lowercase",
+      "cue_words": null,
+      "cue_phrases": null,
+      "n_pairs": 2000,
+      "aug_hits": 1346,
+      "plain_hits": 71,
+      "aug_rate": 0.673,
+      "plain_rate": 0.0355,
+      "aug_rate_ci95": [
+        0.6519481129344236,
+        0.6935435123751219
+      ],
+      "plain_rate_ci95": [
+        0.02782782504907801,
+        0.044569525372785385
+      ],
+      "paired_delta": 0.6375,
+      "delta_ci95": [
+        0.6165,
+        0.659
+      ],
+      "discordant": {
+        "aug_only": 1278,
+        "plain_only": 3
+      },
+      "mcnemar_exact_p": 0.0,
+      "by_relevance": null
+    },
+    {
+      "slug": "format_template",
+      "family": "format",
+      "cell_id": "cell_format_template",
+      "cue_kind": "code_validator",
+      "validator": "validate_format_template",
+      "cue_words": null,
+      "cue_phrases": null,
+      "n_pairs": 2000,
+      "aug_hits": 1827,
+      "plain_hits": 0,
+      "aug_rate": 0.9135,
+      "plain_rate": 0.0,
+      "aug_rate_ci95": [
+        0.900315733960089,
+        0.9254565093686186
+      ],
+      "plain_rate_ci95": [
+        0.0,
+        0.0018427397936931899
+      ],
+      "paired_delta": 0.9135,
+      "delta_ci95": [
+        0.901,
+        0.926
+      ],
+      "discordant": {
+        "aug_only": 1827,
+        "plain_only": 0
+      },
+      "mcnemar_exact_p": 0.0,
+      "by_relevance": null
+    }
+  ]
+}

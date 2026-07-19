@@ -1,0 +1,501 @@
+"""CPU tiny-real regression tests for the #1489 P3 distill dataset -> TRL tokenize seam.
+
+Crash att-20260718-064815 (crash-fix round 4): ``build_distill_jsonl`` wrote
+``{"prompt": <message list>, "completion": <raw str>}`` — a MIXED schema that
+is undefined behavior in TRL 0.29: ``is_conversational()`` pops an ARBITRARY
+key from the ``{"prompt", "completion"}`` set (hash-order dependent), so the
+row can route to the plain-text ``tokenize_fn``, which requires ``str`` and
+raises ``ValueError: text input must be of type str ...`` at SFTTrainer init —
+killing the P3 finetune phase on the pod after P0-P2 were already spent.
+
+The fix matches the #778 recipe exactly (``scripts/issue778_finetune.py::
+_messages_to_prompt_completion``): CONVERSATIONAL prompt-completion — BOTH
+sides message-dict lists — so TRL builds the completion_mask from the
+chat-template prompt/completion boundary (answer-tokens-only loss).
+
+Two tests:
+
+1. ``test_build_distill_jsonl_conversational_schema`` — deterministic pre-fix
+   FAIL: every produced row must be conversational on BOTH keys (the pre-fix
+   str completion fails the ``completion`` leg regardless of set pop order),
+   and the fix-engaged log line is emitted.
+2. ``test_distill_train_seam_tiny_real`` — the produced JSONL drives the REAL
+   ``train_lora`` -> ``SFTTrainer.__init__`` -> ``_prepare_dataset`` ->
+   ``tokenize_fn`` seam on CPU (the exact production crash site): real Qwen
+   tokenizer, the REAL production ``_distill_train_cfg`` (only compute-scale
+   knobs replaced), a 2-layer real-vocab Qwen2 standing in for the 7B weights
+   (the #906 tiny-real pattern, tests/test_issue906_tiny_real_e2e.py).
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import dataclasses
+import json
+import logging
+import math
+import sys
+from pathlib import Path
+from unittest import mock
+
+import pytest
+import torch
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "scripts"))
+
+import issue1489_gpu_phase as gpu  # noqa: E402
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+SLUG = "fact_veg"  # the plan's smoke distill canary (_distill_slugs smoke subset)
+CELL = f"cell_{SLUG}"
+
+# 2-layer random-weights Qwen2 covering the REAL Qwen-2.5 token-id space —
+# only the WEIGHTS are fake; every token id the tokenizer emits is real.
+TINY_QWEN_KWARGS = dict(
+    vocab_size=151936,
+    hidden_size=16,
+    intermediate_size=32,
+    num_hidden_layers=2,
+    num_attention_heads=2,
+    num_key_value_heads=1,
+    max_position_embeddings=4096,
+    tie_word_embeddings=True,
+)
+
+
+@pytest.fixture(scope="module")
+def qwen_tok():
+    """The REAL Qwen tokenizer (same skip-on-offline contract as the #906 tests)."""
+    from transformers import AutoTokenizer
+
+    try:
+        return AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+    except OSError as e:  # offline CI without a cached tokenizer
+        pytest.skip(f"Qwen tokenizer unavailable (offline?): {e}")
+
+
+@pytest.fixture(scope="module")
+def tiny_qwen_state():
+    """Config + seeded state_dict; every from_pretrained gets a FRESH instance
+    (TRL/PEFT wrap models in place)."""
+    from transformers import Qwen2Config, Qwen2ForCausalLM
+
+    config = Qwen2Config(**TINY_QWEN_KWARGS)
+    torch.manual_seed(1489)
+    model = Qwen2ForCausalLM(config)
+    state = {k: v.clone() for k, v in model.state_dict().items()}
+    return config, state
+
+
+def _build_fixture(tmp_path: Path):
+    """Tiny REAL-shape corpus + conditions manifest + P1 gen shard for cell_fact_veg.
+
+    Mirrors the production shapes exactly: prefix/query stores keyed by ``id``,
+    manifest rows with row_id/base_row_id/cell_id/split/prefix_id/query_id, and
+    the gen-shard payload ``{"rows": [{row_id, base_row_id, completion}, ...]}``
+    that ``build_distill_jsonl`` consumes via ``gen_shard_path``.
+    """
+    corpus = tmp_path / "corpus"
+    corpus.mkdir(exist_ok=True)
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+
+    prefix_items = [
+        {
+            "id": "p_sys",
+            "prefix_turns": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Earlier question about food?"},
+                {"role": "assistant", "content": "Earlier answer."},
+            ],
+        },
+        {"id": "p_bare", "prefix_turns": []},  # bare context — valid empty prefix
+    ]
+    query_items = [
+        {"id": "q1", "text": "Is a tomato a vegetable?"},
+        {"id": "q2", "text": "Name a green vegetable."},
+    ]
+    (corpus / "prefix_store.jsonl").write_text(
+        "\n".join(json.dumps(x) for x in prefix_items) + "\n"
+    )
+    (corpus / "query_store.jsonl").write_text("\n".join(json.dumps(x) for x in query_items) + "\n")
+
+    manifest = [
+        {
+            "row_id": "r1",
+            "base_row_id": "b1",
+            "cell_id": CELL,
+            "split": "train",
+            "prefix_id": "p_sys",
+            "query_id": "q1",
+        },
+        {
+            "row_id": "r2",
+            "base_row_id": "b2",
+            "cell_id": CELL,
+            "split": "train",
+            "prefix_id": "p_bare",
+            "query_id": "q2",
+        },
+        {
+            "row_id": "r3",
+            "base_row_id": "b3",
+            "cell_id": CELL,
+            "split": "train",
+            "prefix_id": "p_sys",
+            "query_id": "q2",
+        },
+        {
+            "row_id": "r4",
+            "base_row_id": "b4",
+            "cell_id": CELL,
+            "split": "eval",
+            "prefix_id": "p_bare",
+            "query_id": "q1",
+        },
+    ]
+
+    shard = gpu.gen_shard_path(out, CELL, 0)
+    shard.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "rows": [
+            {
+                "row_id": r["row_id"],
+                "base_row_id": r["base_row_id"],
+                "completion": f"A short answer for {r['base_row_id']}.",
+            }
+            for r in manifest
+        ]
+    }
+    shard.write_text(json.dumps(payload))
+
+    args = argparse.Namespace(corpus_dir=str(corpus), out=str(out), smoke=True)
+    return args, manifest, out
+
+
+def test_build_distill_jsonl_conversational_schema(tmp_path, caplog):
+    """Every produced row is TRL-conversational on BOTH keys (fails pre-fix).
+
+    The pre-fix schema (`completion` a raw str) fails the completion-key leg
+    deterministically, independent of which key ``is_conversational`` happens
+    to pop from its key SET in this process.
+    """
+    from trl.data_utils import is_conversational
+
+    args, manifest, out = _build_fixture(tmp_path)
+    dest = out / "distill" / f"{SLUG}_train.jsonl"
+    with caplog.at_level(logging.INFO, logger="issue1489_gpu_phase"):
+        gpu.build_distill_jsonl(args, manifest, SLUG, dest)
+
+    produced = [json.loads(line) for line in dest.read_text().split("\n") if line.strip()]
+    assert len(produced) == 3, "train-split rows only (the eval row must be excluded)"
+
+    for row in produced:
+        assert set(row) == {"prompt", "completion"}
+        for key in ("prompt", "completion"):
+            val = row[key]
+            assert isinstance(val, list) and val, (key, type(val))
+            assert all(isinstance(m, dict) and {"role", "content"} <= set(m) for m in val), (
+                key,
+                val,
+            )
+            # Both keys pass TRL's check INDEPENDENTLY — is_conversational pops
+            # an arbitrary key, so per-key conversationality is the invariant.
+            assert is_conversational({key: val}), (key, val)
+        assert row["prompt"][-1]["role"] == "user"
+        assert row["completion"] == [
+            {"role": "assistant", "content": row["completion"][0]["content"]}
+        ]
+        assert row["completion"][0]["content"].startswith("A short answer for ")
+
+    # Fix-engaged signal: the relaunch's P3 log carries this exact line.
+    assert "dataset schema: conversational prompt/completion" in caplog.text
+
+
+@pytest.mark.slow
+def test_distill_train_seam_tiny_real(tmp_path, monkeypatch, qwen_tok, tiny_qwen_state):
+    """The produced JSONL survives the REAL train_lora -> SFTTrainer tokenize seam.
+
+    FAILS PRE-FIX (when the fetched example's popped key is `completion`):
+    TRL's tokenize_fn raises ``ValueError: text input must be of type str``
+    inside ``SFTTrainer.__init__`` — the exact att-20260718-064815 crash.
+    """
+    import transformers
+
+    from explore_persona_space.train.sft import train_lora
+
+    args, manifest, out = _build_fixture(tmp_path)
+    dest = out / "distill" / f"{SLUG}_train.jsonl"
+    gpu.build_distill_jsonl(args, manifest, SLUG, dest)
+    produced = [json.loads(line) for line in dest.read_text().split("\n") if line.strip()]
+
+    # TRL's own prefix-consistency property on the REAL Qwen render — the
+    # boundary the completion_only_loss mask is built from: tokenized prompt
+    # (add_generation_prompt=True) must prefix tokenized prompt+completion,
+    # with a non-empty completion segment.
+    for row in produced:
+        prompt_ids = qwen_tok.apply_chat_template(
+            row["prompt"], add_generation_prompt=True, tokenize=True
+        )
+        full_ids = qwen_tok.apply_chat_template(row["prompt"] + row["completion"], tokenize=True)
+        assert full_ids[: len(prompt_ids)] == prompt_ids, row["prompt"]
+        assert len(full_ids) > len(prompt_ids), "completion segment must be non-empty"
+
+    config, state = tiny_qwen_state
+
+    def fresh_tiny_model(*a, **k):
+        m = transformers.Qwen2ForCausalLM(config)
+        m.load_state_dict(state)
+        return m
+
+    monkeypatch.setattr(transformers.AutoModelForCausalLM, "from_pretrained", fresh_tiny_model)
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", lambda *a, **k: qwen_tok)
+    monkeypatch.setenv("WANDB_MODE", "disabled")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    monkeypatch.setenv("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+
+    # The REAL production config builder runs first (the #778 recipe fields,
+    # incl. completion_only_loss=True); only compute-SCALE knobs are replaced
+    # so 1 optimizer step on a 2-layer CPU model stands in for the GPU run.
+    cfg = gpu._distill_train_cfg(args, SLUG, n_rows=len(produced))
+    assert cfg.completion_only_loss is True  # #778 recipe pin
+    assert cfg.lr == pytest.approx(1e-5) and cfg.lora_r == 32 and cfg.lora_alpha == 64
+    cfg = dataclasses.replace(
+        cfg,
+        max_steps=1,
+        batch_size=1,
+        grad_accum=1,
+        bf16=False,  # TrainingArguments rejects bf16 on CPU-only machines
+        gradient_checkpointing=False,
+        dataloader_num_workers=0,
+        dataloader_persistent_workers=False,
+        logging_steps=1,
+        report_to="none",  # WANDB_INTENTIONALLY_DISABLED: offline CPU seam test
+    )
+
+    run_out = out / "distill" / SLUG
+    _out_dir, loss = train_lora(BASE_MODEL, str(dest), str(run_out), cfg=cfg)
+    assert isinstance(loss, float) and math.isfinite(loss)
+
+    # P3 -> P4 seam: the dose-ladder checkpoint enumeration finds the saved rung.
+    ckpts = gpu._checkpoint_dirs(run_out)
+    assert ckpts, "save_steps=1 + max_steps=1 must leave >=1 checkpoint-* dir"
+    assert (ckpts[0] / "adapter_config.json").is_file(), sorted(p.name for p in ckpts[0].iterdir())
+
+
+def test_distill_smoke_cfg_min_two_optimizer_steps():
+    """Smoke checkpoint-geometry pin (crash att-20260718-081159, round 5).
+
+    The realized smoke distill slice can be as small as n_rows=2; under the
+    production batch geometry (DISTILL_BATCH_SIZE x DISTILL_GRAD_ACCUM = 16
+    effective) that is 1 optimizer step per epoch, and the pre-fix smoke cfg
+    (epochs=1) produced exactly 1 checkpoint — tripping the dispatch schema
+    gate ``len(ckpts) >= 2`` and starving the dose_probes multi-LoRA path.
+
+    FAILS PRE-FIX at n_rows in {1, 2, 16}: epochs=1 x steps_per_epoch=1 = 1.
+    The smoke cfg must yield >=2 global optimizer steps (epochs x
+    steps_per_epoch) with save_steps=1 for ANY realized n_rows, while the
+    production batch geometry rides through the smoke cfg byte-untouched.
+    """
+    smoke_args = argparse.Namespace(smoke=True)
+    for n_rows in (1, 2, 3, 16, 17, 30):
+        cfg = gpu._distill_train_cfg(smoke_args, SLUG, n_rows=n_rows)
+        steps_per_epoch = gpu._distill_steps_per_epoch(n_rows)
+        assert cfg.save_steps == 1, n_rows
+        assert cfg.epochs * steps_per_epoch >= 2, (n_rows, cfg.epochs, steps_per_epoch)
+        # production batch geometry is NOT a smoke dial
+        assert cfg.batch_size == gpu.DISTILL_BATCH_SIZE, n_rows
+        assert cfg.grad_accum == gpu.DISTILL_GRAD_ACCUM, n_rows
+
+    # Production branch stays byte-untouched: epochs from DISTILL_EPOCHS,
+    # half-epoch checkpoint ladder.
+    prod_args = argparse.Namespace(smoke=False)
+    n_prod = 5000
+    prod_cfg = gpu._distill_train_cfg(prod_args, SLUG, n_rows=n_prod)
+    prod_steps = gpu._distill_steps_per_epoch(n_prod)
+    assert prod_cfg.epochs == gpu.DISTILL_EPOCHS
+    assert prod_cfg.save_steps == max(1, math.ceil(prod_steps / 2))
+
+
+@pytest.mark.slow
+def test_distill_smoke_geometry_two_checkpoints_tiny_real(
+    tmp_path, monkeypatch, qwen_tok, tiny_qwen_state
+):
+    """The FIXED smoke geometry produces >=2 checkpoint dirs through the REAL
+    Trainer (the att-20260718-081159 gate input), on CPU.
+
+    Unlike the seam test above, this leg keeps the smoke cfg's TRAINING
+    geometry UNMODIFIED (epochs from the fix, batch_size=2, grad_accum=8,
+    save_steps=1 — no max_steps override), so it exercises the exact
+    partial-accumulation epoch-boundary optimizer-step behavior the fix's
+    ``epochs x steps_per_epoch >= 2`` arithmetic relies on: 3 fixture rows
+    -> 1 optimizer step/epoch -> epochs=2 -> checkpoint-1 AND checkpoint-2.
+    """
+    import transformers
+
+    from explore_persona_space.train.sft import train_lora
+
+    args, manifest, out = _build_fixture(tmp_path)
+    dest = out / "distill" / f"{SLUG}_train.jsonl"
+    gpu.build_distill_jsonl(args, manifest, SLUG, dest)
+    n_rows = len([line for line in dest.read_text().split("\n") if line.strip()])
+
+    config, state = tiny_qwen_state
+
+    def fresh_tiny_model(*a, **k):
+        m = transformers.Qwen2ForCausalLM(config)
+        m.load_state_dict(state)
+        return m
+
+    monkeypatch.setattr(transformers.AutoModelForCausalLM, "from_pretrained", fresh_tiny_model)
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", lambda *a, **k: qwen_tok)
+    monkeypatch.setenv("WANDB_MODE", "disabled")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    monkeypatch.setenv("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+
+    cfg = gpu._distill_train_cfg(args, SLUG, n_rows=n_rows)
+    assert cfg.epochs * gpu._distill_steps_per_epoch(n_rows) >= 2  # the fix's arithmetic
+    # ONLY environment knobs replaced — epochs/batch/grad_accum/save_steps are
+    # the smoke geometry under test and stay exactly as _distill_train_cfg set them.
+    cfg = dataclasses.replace(
+        cfg,
+        bf16=False,  # TrainingArguments rejects bf16 on CPU-only machines
+        gradient_checkpointing=False,
+        dataloader_num_workers=0,
+        dataloader_persistent_workers=False,
+        logging_steps=1,
+        report_to="none",  # WANDB_INTENTIONALLY_DISABLED: offline CPU seam test
+    )
+
+    run_out = out / "distill" / SLUG
+    _out_dir, loss = train_lora(BASE_MODEL, str(dest), str(run_out), cfg=cfg)
+    assert isinstance(loss, float) and math.isfinite(loss)
+
+    ckpts = gpu._checkpoint_dirs(run_out)
+    assert len(ckpts) >= 2, [p.name for p in ckpts]  # the dispatch gate's exact floor
+    for ck in ckpts[:2]:
+        assert (ck / "adapter_config.json").is_file(), sorted(p.name for p in ck.iterdir())
+
+
+# ---------------------------------------------------------------------------
+# Crash-fix round 6 (att-20260718-093558): premature incremental cache reap
+# removed data/issue_1489/hf_dl between upload-a1 and P3 distill; P3 crashed
+# on the missing corpus prefix_store.jsonl. Leg 1: the dispatcher must not
+# reap hf_dl before its LAST consumer. Leg 2: gpu_phase re-stages on demand.
+# ---------------------------------------------------------------------------
+
+DISPATCH_SH = REPO / "scripts" / "issue1489_dispatch.sh"
+
+
+def test_dispatch_has_no_cache_reap_before_last_corpus_consumer():
+    """Pin leg 1: no incremental hf_dl reap at-or-before the last $CORPUS_DIR consumer.
+
+    Fails on the pre-fix script (the reap sat at old line 247, before the P3
+    distill / P4 dose-probe / phase_b consumers); passes post-fix (no reap in
+    the dispatch script at all — Step-8 terminal cleanup owns it).
+    """
+    lines = DISPATCH_SH.read_text().split("\n")
+    reap_idx = [
+        i
+        for i, line in enumerate(lines)
+        if "clean_experiment_downloads" in line
+        and "--incremental" in line
+        and not line.lstrip().startswith("#")
+    ]
+    consumer_idx = [
+        i
+        for i, line in enumerate(lines)
+        if '"$CORPUS_DIR"' in line and not line.lstrip().startswith("#")
+    ]
+    assert consumer_idx, "dispatch script no longer references $CORPUS_DIR — update this test"
+    last_consumer = max(consumer_idx)
+    early = [i + 1 for i in reap_idx if i <= last_consumer]
+    assert not early, (
+        f"incremental cache reap at dispatch line(s) {early} precedes the last "
+        f'"$CORPUS_DIR" consumer (line {last_consumer + 1}) — the att-20260718-093558 '
+        "crash class (the reap removes the corpus P3/P4/phase_b still read)"
+    )
+
+
+def _write_corpus_files(dirpath: Path, names=gpu.CORPUS_REQUIRED_FILES) -> None:
+    dirpath.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        (dirpath / name).write_text('{"id": "r0"}\n')
+
+
+def test_ensure_corpus_staged_noop_when_present(tmp_path, monkeypatch):
+    """All required files present -> False, and the HF stager is never called."""
+    corpus = tmp_path / "corpus"
+    _write_corpus_files(corpus)
+    stager = mock.create_autospec(
+        gpu.stage_corpus, side_effect=AssertionError("must not re-stage a complete corpus")
+    )
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    assert gpu.ensure_corpus_staged(corpus) is False
+    stager.assert_not_called()
+
+
+def test_ensure_corpus_staged_restages_on_missing_file(tmp_path, monkeypatch, caplog):
+    """The att-20260718-093558 shape: prefix_store.jsonl missing -> one re-stage.
+
+    Executes the REAL ensure_corpus_staged body; the fake sits ONLY at the HF
+    network boundary and is signature-conformant by construction
+    (create_autospec of the real issue1489_build_conditions.stage_corpus).
+    """
+    corpus = tmp_path / "corpus"
+    _write_corpus_files(corpus, names=("manifest.jsonl", "query_store.jsonl"))
+    assert not (corpus / "prefix_store.jsonl").exists()
+
+    def _fake_stage(corpus_dir):
+        _write_corpus_files(Path(corpus_dir))
+        return sorted(gpu.CORPUS_REQUIRED_FILES)
+
+    stager = mock.create_autospec(gpu.stage_corpus, side_effect=_fake_stage)
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    with caplog.at_level(logging.INFO, logger="issue1489_gpu_phase"):
+        assert gpu.ensure_corpus_staged(corpus) is True
+    stager.assert_called_once_with(corpus)
+    assert any("[corpus-guard]" in rec.getMessage() for rec in caplog.records)
+    # Second call: everything present now -> no second re-stage (idempotent).
+    assert gpu.ensure_corpus_staged(corpus) is False
+    stager.assert_called_once()
+
+
+def test_ensure_corpus_staged_fails_loud_when_restage_incomplete(tmp_path, monkeypatch):
+    """A stager that leaves the required set incomplete must raise, never proceed."""
+    corpus = tmp_path / "corpus"
+
+    def _partial_stage(corpus_dir):
+        _write_corpus_files(Path(corpus_dir), names=("manifest.jsonl",))
+        return ["manifest.jsonl"]
+
+    stager = mock.create_autospec(gpu.stage_corpus, side_effect=_partial_stage)
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    with pytest.raises(FileNotFoundError, match="re-stage left"):
+        gpu.ensure_corpus_staged(corpus)
+
+
+def test_main_wires_corpus_guard_for_all_corpus_phases():
+    """The guard must run at phase entry in main() and cover every corpus consumer.
+
+    Corpus consumers in this module (all via parent.load_store on
+    args.corpus_dir): _gen_worker (gen), _capture_worker (capture),
+    phase_margin (margin), build_distill_jsonl (distill — the crash site),
+    _dose_probe_worker (dose_probes), _ft_worker (ft). ``upload`` reads no
+    corpus and stays outside the guard.
+    """
+    assert {"gen", "capture", "margin", "distill", "dose_probes", "ft"} == gpu.CORPUS_PHASES
+    tree = ast.parse(Path(gpu.__file__).read_text())
+    main_fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    calls = [
+        n
+        for n in ast.walk(main_fn)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Name)
+        and n.func.id == "ensure_corpus_staged"
+    ]
+    assert calls, "main() no longer calls ensure_corpus_staged — the round-6 guard is unwired"
