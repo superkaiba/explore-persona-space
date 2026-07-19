@@ -2081,7 +2081,10 @@ Brief passed to the implementer:
   never for this duty) — pin-sweeps the enumerated test files for every
   literal / command fragment / symbol the diff changed or deleted, and
   runs the diff-linked + pin-hit subset locally, deferring only the
-  invariant-only remainder to the gate (which remains the backstop).
+  invariant-only remainder to the gate (which remains the backstop),
+  reporting the pin-sweep field with the verbatim deduplicated
+  hit-file list — never a count-only or glob-family summary (#1494;
+  >20 files → fenced block under the Gate-scope line).
   Belt-and-suspenders on `implementer.md` § After Implementation item 1,
   so round briefs surface the duty without the implementer having to
   recall its agent spec (the #509 precedent).

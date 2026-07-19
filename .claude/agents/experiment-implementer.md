@@ -413,7 +413,12 @@ such corpora or banks:
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
    <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
-   that merge-gate leg is the backstop.
+   that merge-gate leg is the backstop. Record the fragments grepped +
+   the verbatim deduplicated hit-file list in `(c)` (`pin-sweep:
+   <fragments> → <N> hit files: <list>`; never a count-only summary —
+   #1494). This adds a report record only, not a `Gate-scope check`
+   line — code-reviewer Step 4.6's binding scope (`epm:results` only)
+   is unchanged.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real

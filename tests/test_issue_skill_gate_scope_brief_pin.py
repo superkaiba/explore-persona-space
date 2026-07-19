@@ -33,6 +33,10 @@ What is pinned (plan #1305 §4.4 + the binding review concerns):
       copy-list bullet, the inlined-rubric `4.6` enumeration slot, and the
       Blocker-tags 4.6-presence vocabulary (#1380 twin parity — without
       them the ensemble is single-family on the #1317 gate).
+(vii) All five surfaces' Gate-scope pin-sweep duty carries the verbatim
+      deduplicated `hit-file list` field (#1533 — a count-only /
+      glob-family summary omitted 7 hit files in #1494 round 1), and
+      implementer.md's template keeps the never-truncate overflow rule.
 """
 
 from __future__ import annotations
@@ -273,4 +277,55 @@ def test_codex_twin_carries_gate_scope_step():
     assert "a 4.6 presence blocker body names `Gate-scope check`" in text, (
         "the Blocker-tags template must key the 5c-bis strip per blocker on "
         "the `Gate-scope check` name (code-reviewer.md Blocker-tags parity)"
+    )
+
+
+# --------------------------------------------------------------------------
+# Pin (vii) — verbatim hit-file list in the Gate-scope pin-sweep field (#1533)
+# --------------------------------------------------------------------------
+
+
+def test_gate_scope_duty_requires_verbatim_hit_file_list():
+    # (#1533) the pin-sweep field must carry the verbatim deduplicated
+    # hit-file list on all five surfaces; token-presence pin, rewording
+    # survives (a count-only / glob-family summary — the #1494 round-1
+    # shape — is exactly what dropping the token would license).
+    impl_template = _region(
+        _IMPLEMENTER.read_text(encoding="utf-8"),
+        "### (c) How to verify",
+        "### (d) Needs human eyeball",
+        label="implementer.md (c) How to verify template",
+    )
+    assert "hit-file list" in impl_template, (
+        "implementer.md's `(c)` Gate-scope template must demand the verbatim "
+        "deduplicated hit-file list in the pin-sweep field (#1533)"
+    )
+    assert "never truncate" in impl_template, (
+        "the >20-file overflow rule must keep the FULL list in the report — "
+        "a `+K more` truncation form would recreate the #1494 omission channel"
+    )
+    assert "hit-file list" in _step4b_duty_bullet(), (
+        "the SKILL.md Step 4b gate-scope duty bullet must name the verbatim "
+        "hit-file list report requirement (#1533)"
+    )
+    assert "hit-file list" in _region(
+        _CODE_REVIEWER.read_text(encoding="utf-8"),
+        "### Step 4.6",
+        "### Step 5: Security Sweep",
+        label="code-reviewer.md Step 4.6",
+    ), "code-reviewer.md Step 4.6 must enumerate the hit-file list contract field (#1533)"
+    assert "hit-file list" in _region(
+        _CODEX_CODE_REVIEWER.read_text(encoding="utf-8"),
+        "an un-CI-pinned BLOCKER-fix assertion ships unflagged.",
+        "**Workflow v2 addendum",
+        label="codex-code-reviewer.md Step 4.6 copy-list bullet",
+    ), "the Codex twin's Step 4.6 bullet must mirror the hit-file list field (#1533/#1380)"
+    assert "hit-file list" in _region(
+        _EXP_IMPLEMENTER.read_text(encoding="utf-8"),
+        "### After implementation (mandatory checklist)",
+        "### Smoke runs are same-turn, synchronous work",
+        label="experiment-implementer.md After implementation checklist",
+    ), (
+        "experiment-implementer.md item 2b must record the verbatim hit-file "
+        "list in `(c)` (duty-level record; Step 4.6 binding scope unchanged)"
     )
