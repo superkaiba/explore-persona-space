@@ -473,7 +473,7 @@ carry_milder_inputs() {  # milder round (plan §4.2 item 4b): carry v1/refit inp
   # refit battery_pilot_report_*.json; this round's PC-3 writes its own).
   cp -n "$OUT_DIR"/refit/battery/battery_*__*.json "$BAT_OUT_DIR/battery/" 2>/dev/null || true
   # Anchors are NOT carried — phase C re-runs G1 fresh (plan §4.2 item 4).
-  uv run python - "$BAT_OUT_DIR" <<'PY'
+  uv run python - "$BAT_OUT_DIR" "${MODELS[*]}" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -482,17 +482,26 @@ sys.path.insert(0, "scripts")
 import issue1417_render as r1417
 
 bat = Path(sys.argv[1])
+# Active lanes (per-lane pilot disposition, plan v7 §4.3): the MILD kept-set
+# exists only for lanes that passed their pilot bars and ran the full judge;
+# CARRIED v1/refit kept-sets exist for BOTH models regardless (git-committed).
+active_models = sys.argv[2].split() if len(sys.argv) > 2 else list(r1417.MODELS)
 carried_cells = [c for c in r1417.CELL_ORDER if c != "c2_rude_mild"]
 
-# 12 carried kept-sets (10 cell + 2 kept_*_c0_baseline.json) + 2 mild kept-sets.
+# 12 carried kept-sets (10 cell + 2 kept_*_c0_baseline.json) + 1 mild kept-set
+# per ACTIVE lane.
 missing = []
 for model in r1417.MODELS:
-    for cell in [*carried_cells, "c0_baseline", "c2_rude_mild"]:
+    for cell in [*carried_cells, "c0_baseline"]:
         p = bat / "judge" / f"kept_{model}_{cell}.json"
         if not p.exists():
             missing.append(str(p))
+for model in active_models:
+    p = bat / "judge" / f"kept_{model}_c2_rude_mild.json"
+    if not p.exists():
+        missing.append(str(p))
 assert not missing, f"carry: missing kept-sets: {missing}"
-for model in r1417.MODELS:
+for model in active_models:
     kd = json.loads((bat / "judge" / f"kept_{model}_c2_rude_mild.json").read_text())
     assert r1417.fingerprint_matches(kd), f"mild kept-set fingerprint mismatch ({model})"
 
@@ -511,8 +520,10 @@ assert (n_cells, n_nulls) == (80, 80), (
 # 26 carried battery PAIR files (pilot reports excluded by the '__' glob).
 pairs = [p.name for p in (bat / "battery").glob("battery_*__*.json") if "c2_rude_mild" not in p.name]
 assert len(pairs) == 26, f"carry: carried battery PAIR files {len(pairs)} != 26"
+n_kept = len(list((bat / "judge").glob("kept_*.json")))
 print(
-    f"[i1417-run] carry asserts PASS: kept=14 (12 carried + 2 mild), "
+    f"[i1417-run] carry asserts PASS: kept={n_kept} (12 carried + "
+    f"{len(active_models)} mild, active lanes: {' '.join(active_models)}), "
     f"cells={n_cells}+{n_nulls} nulls, battery pairs={len(pairs)}"
 )
 PY
