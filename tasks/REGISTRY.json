@@ -4145,8 +4145,8 @@
     "1531": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1531",
-      "status": "proposed",
+      "path": "tasks/planning/1531",
+      "status": "planning",
       "title": "workflow-fix: inline-gate contract test scans all anchors"
     },
     "1532": {
