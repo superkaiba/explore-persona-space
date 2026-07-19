@@ -4103,8 +4103,8 @@
     "1526": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1526",
-      "status": "proposed",
+      "path": "tasks/planning/1526",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md bullet \u2014 off-pod phase reads vs upload manifest (cross-machine seam)"
     },
     "153": {
