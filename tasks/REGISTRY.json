@@ -4110,8 +4110,8 @@
     "1527": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1527",
-      "status": "planning",
+      "path": "tasks/approved/1527",
+      "status": "approved",
       "title": "workflow-fix: verified-at-filing clause (e) artifact-state"
     },
     "1528": {
