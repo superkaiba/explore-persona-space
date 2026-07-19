@@ -5873,12 +5873,13 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 32
+    # 33 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version).
+    assert payload["n_skip"] == 33
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 40
-    assert len({c["id"] for c in payload["checks"]}) == 40
+    assert len(payload["checks"]) == 41
+    assert len({c["id"] for c in payload["checks"]}) == 41
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6095,6 +6096,112 @@ def test_cli_issue_mode_appends_goal_currency(tmp_path, monkeypatch, capsys):
     assert len(entries) == 1
     # Synthetic task has no goal frontmatter and no goal-updated markers.
     assert entries[0]["status"] == "SKIP"
+
+
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+
+def test_c40_header_version_mismatch_warns():
+    plan = "# Plan v4 (amendment) — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "WARN"
+    assert "v4" in r.detail
+    assert "v6.md" in r.detail
+    assert "retitle" in r.detail
+
+
+def test_c40_header_version_match_passes():
+    plan = "# Plan v6 — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_c40_version_neutral_header_passes():
+    # Version-neutral titles are the sanctioned escape: explicit PASS,
+    # never SKIP, never WARN (both incident shapes: v7-style + v1-style).
+    for title in ("# Plan (amendment) — issue #1482", "# Plan — Issue #1482: marker follow-up"):
+        r = verify_plan.check_header_version_vs_filename(
+            f"{title}\n\nSome body prose.\n", plan_path=Path("v6.md")
+        )
+        assert r.status == "PASS", title
+        assert "version-neutral" in r.detail
+
+
+def test_c40_unversioned_filename_skips():
+    plan = "# Plan v4 (amendment) — issue #1482\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("issue-1550.md"))
+    assert r.status == "SKIP"
+
+
+def test_c40_no_headings_skips():
+    r = verify_plan.check_header_version_vs_filename(
+        "just prose, no headings anywhere\n", plan_path=Path("v3.md")
+    )
+    assert r.status == "SKIP"
+    assert "no headings" in r.detail
+
+
+def test_c40_fenced_or_prose_plan_v_mentions_do_not_trigger():
+    # Fence-awareness + first-heading-only scope: a fenced `# Plan v3` line
+    # and later prose/headings quoting sibling versions must not trip c40.
+    plan = (
+        "```\n"
+        "# Plan v3 — fenced example, must be masked\n"
+        "```\n\n"
+        "# Plan (amendment) — issue #1482 fixture\n\n"
+        "Prose later mentions plan v4 divergences from parent plan v3.\n\n"
+        "## Divergences from parent plan v9\n"
+    )
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_cli_issue_mode_appends_header_version_check(tmp_path, monkeypatch, capsys):
+    # Mirror of test_cli_issue_mode_appends_goal_currency, at plans/v2.md with
+    # a stale `# Plan v1` first heading: exactly one c40 entry, WARN, rc 0
+    # (WARN keeps overall PASS).
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v2.md").write_text("# Plan v1 — x\n\n" + GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+
+
+def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
+    # --plan-file mode PARSES a v{K}.md-shaped filename (D2: unlike c23, c40
+    # runs in both modes); a non-versioned filename SKIPs; a plan.md SYMLINK
+    # resolves to its v{K}.md target (concern 1: plan_path.resolve()).
+    text = "# Plan v2 — issue #999 fixture\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    p3 = tmp_path / "v3.md"
+    p3.write_text(text)
+    proc = _run_cli("--plan-file", str(p3), "--json")
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
+
+    draft = tmp_path / "issue-999.md"
+    draft.write_text(text)
+    proc = _run_cli("--plan-file", str(draft), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "SKIP"
+
+    link = tmp_path / "plan.md"
+    link.symlink_to(p3)
+    proc = _run_cli("--plan-file", str(link), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
