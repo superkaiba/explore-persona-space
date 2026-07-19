@@ -116,3 +116,4 @@
 {"ts": "2026-07-19T00:38:16Z", "kind": "epm:results", "version": 1, "by": "issue1482_error_analysis", "note": "issue-1482 pod phases P0-P4 complete (P5 judge + P6 analysis run off-pod)", "sentinel_fp": "c6f0e0d8177d3e8d", "sentinel_path": "/workspace/logs/issue-1482-results.json"}
 {"ts": "2026-07-19T00:38:23Z", "kind": "epm:progress", "version": 37, "by": "poll_pipeline", "note": "phase transition: p3 -> done", "phase": "done", "pod": "pod-1482"}
 {"ts": "2026-07-19T00:39:52Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; P0-P4 complete on pod, results sentinel drained."}
+{"ts": "2026-07-19T00:40:25Z", "kind": "epm:progress", "version": 38, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
