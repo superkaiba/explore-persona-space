@@ -42,6 +42,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1482.md](https://github.com/superkaiba/explore-persona-space/blob/8fdfaf311012264de627fe62e5af77b093c83455/docs/methodology/issue_1482.md) · [gist](https://gist.github.com/superkaiba/fa589d67dc4ed196875a777a88dbdce7)
+
 ## Takeaways
 
 - Non-English contexts are predicted better than English (normalized error 0.274 vs 0.291, CI95 −0.022 to −0.013), falsifying the planned direction; the sign survives raw error, intrusion exclusion, and corpus transfer.
