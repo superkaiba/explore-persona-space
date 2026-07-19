@@ -19841,7 +19841,12 @@ def _check_orphan_stop_verification(
     return True
 
 
-def _process_orphan_wrapper(
+# C901 waiver (#1532): the #1215 orphan-wrapper ACTION DISPATCHER -- the branch structure IS the
+# safety ladder (pid-reuse guard, stop-verification handoff, per-tick stop bound, pre-signal
+# re-verify, EPERM freeze, dry-run gating on every state write). Complexity 24; any under-cap
+# extraction moves SIGTERM-sending code threading 10+ locals, riskier than this waiver for a
+# live fleet automation. Pure decision logic already lives in decide_orphan_wrapper (tested).
+def _process_orphan_wrapper(  # noqa: C901
     cand: dict,
     now: float,
     dry_run: bool,

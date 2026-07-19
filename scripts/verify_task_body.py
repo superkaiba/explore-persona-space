@@ -9179,7 +9179,7 @@ _FILES_AT_PINNED_REV_RE = re.compile(
 # counts are excluded by adjacency (the phrase must directly follow `files`).
 _FILES_LISTING_VERIFIED_RE = re.compile(
     r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?"
-    r"\s{0,2}[,:–—-]?\s{0,2}"
+    r"\s{0,2}[,:–—-]?\s{0,2}"  # noqa: RUF001
     r"listing\s+(?:re-?)?verified\b",
     re.IGNORECASE,
 )
@@ -9304,6 +9304,39 @@ def _nearest_preceding_pinned_tree_link(
     if m is None or f"/tree/{m.group('sha')}" not in url:
         return None
     return best
+
+
+def _scan_paren_after_link_patterns(stripped: str, add) -> None:
+    """Check 30 Patterns C + E + F: the paren immediately AFTER a pinned link.
+
+    ``add`` is :func:`_gather_hf_count_claims`'s accumulator (its ``seen`` dedup
+    collapses the C/E/F double-fires); pattern semantics + the #1422 B-adjacency
+    decline are documented in that function's docstring.
+    """
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):
+        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):  # C (pinned-revision)
+            add(cm.group("count"), "files", lm.group("url"))
+        # B-adjacency decline shared by E and F (#1422): a paren immediately
+        # followed by an HF markdown link is Pattern B's paren-before-link
+        # shape — B may extract the paren-OPENING count with the FOLLOWING
+        # link's scope, so E and F both decline. C predates #1422 and keeps
+        # its grandfathered no-decline position (deliberate divergence).
+        followed = _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is not None
+        if not followed:
+            # Pattern F (#1505): phrase-anchored listing-verified count at
+            # ANY position inside the paren — noun hard-coded "files" like C.
+            for cm in _FILES_LISTING_VERIFIED_RE.finditer(lm.group("paren")):
+                add(cm.group("count"), "files", lm.group("url"))
+            # Pattern E (#1005): the paren OPENS with the count-noun — .match()
+            # gives B/D-parity anchor semantics ("( 52 files)" with a leading
+            # space deliberately does not match, a documented recall sacrifice).
+            # An at-pinned-revision paren fires BOTH C and E with identical
+            # _add args — the shared `seen` key collapses them to one tuple;
+            # a count-OPENING listing-verified paren (the corrected #1072
+            # footer) fires E AND F and collapses the same way.
+            em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
+            if em is not None:
+                add(em.group("count"), em.group("noun"), lm.group("url"))
 
 
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
@@ -9471,31 +9504,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
         _add(pm.group("count"), pm.group("noun"), pm.group("url"))
-    # Patterns C + E + F: paren after link
-    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):
-        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):  # C (pinned-revision)
-            _add(cm.group("count"), "files", lm.group("url"))
-        # B-adjacency decline shared by E and F (#1422): a paren immediately
-        # followed by an HF markdown link is Pattern B's paren-before-link
-        # shape — B may extract the paren-OPENING count with the FOLLOWING
-        # link's scope, so E and F both decline. C predates #1422 and keeps
-        # its grandfathered no-decline position (deliberate divergence).
-        followed = _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is not None
-        if not followed:
-            # Pattern F (#1505): phrase-anchored listing-verified count at
-            # ANY position inside the paren — noun hard-coded "files" like C.
-            for cm in _FILES_LISTING_VERIFIED_RE.finditer(lm.group("paren")):
-                _add(cm.group("count"), "files", lm.group("url"))
-            # Pattern E (#1005): the paren OPENS with the count-noun — .match()
-            # gives B/D-parity anchor semantics ("( 52 files)" with a leading
-            # space deliberately does not match, a documented recall sacrifice).
-            # An at-pinned-revision paren fires BOTH C and E with identical
-            # _add args — the shared `seen` key collapses them to one tuple;
-            # a count-OPENING listing-verified paren (the corrected #1072
-            # footer) fires E AND F and collapses the same way.
-            em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
-            if em is not None:
-                _add(em.group("count"), em.group("noun"), lm.group("url"))
+    _scan_paren_after_link_patterns(stripped, _add)  # Patterns C + E + F: paren after link
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
@@ -10374,6 +10383,35 @@ def _hf_hub_importable() -> bool:
     return True
 
 
+def _resolve_unpinned_prefix(
+    token: str, start: int, parent_matches: list, stripped: str
+) -> str | None:
+    """Check 40 G4 STRONG arms: ``issue<N>_``-prefixed token -> itself
+    (slash-stripped); else the nearest preceding backtick ``issue<N>_.../``
+    parent anchor (same line, no brackets in the gap, gap <=
+    ``_SUBPATH_CLAIM_MAX_GAP`` -- the Pattern-D binder's constraints) joins as
+    ``<parent>/<token>``; else ``None`` (the SLASHED shape may still ride the
+    weak HF cue in the caller; slashless never does, #1487 D2)."""
+    if _HF_ISSUE_PREFIX_RE.match(token) is not None:
+        return token.strip("/")
+    parent = None
+    for pm in parent_matches:
+        if pm.end() <= start:
+            parent = pm  # finditer order: keep the nearest preceding
+        else:
+            break
+    if parent is not None:
+        gap = stripped[parent.end() : start]
+        if (
+            "\n" not in gap
+            and "[" not in gap
+            and "]" not in gap
+            and len(gap) <= _SUBPATH_CLAIM_MAX_GAP
+        ):
+            return "/".join(p for p in (parent.group("parent").strip("/"), token.strip("/")) if p)
+    return None
+
+
 def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str | None]]:
     """Extract ``(claimed_count, noun, token, resolved_prefix_or_None)``
     tuples for backtick subpath + count-paren claims whose pinned-link
@@ -10459,27 +10497,7 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
         first_seg = token.split("/", 1)[0]
         if not first_seg or first_seg in _GIT_SIDE_ROOTS:
             continue  # G3: git/local path, never an HF data-repo prefix
-        resolved: str | None = None
-        if _HF_ISSUE_PREFIX_RE.match(token) is not None:
-            resolved = token.strip("/")
-        else:
-            parent = None
-            for pm in parent_matches:
-                if pm.end() <= dm.start():
-                    parent = pm  # finditer order: keep the nearest preceding
-                else:
-                    break
-            if parent is not None:
-                gap = stripped[parent.end() : dm.start()]
-                if (
-                    "\n" not in gap
-                    and "[" not in gap
-                    and "]" not in gap
-                    and len(gap) <= _SUBPATH_CLAIM_MAX_GAP
-                ):
-                    resolved = "/".join(
-                        p for p in (parent.group("parent").strip("/"), token.strip("/")) if p
-                    )
+        resolved = _resolve_unpinned_prefix(token, dm.start(), parent_matches, stripped)
         if resolved is None:
             if slashless:
                 continue  # STRONG arms only for slashless — no HF-cue fallback (#1487 D2)
