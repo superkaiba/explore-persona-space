@@ -1064,8 +1064,9 @@ classify_clause() {
   # prevents; recovery is abort — residual gap (xv) names the ungated
   # `git commit` equivalent) and `--ff-only` (cannot conflict, but still
   # lands branch commits on root main outside the landing path; worktree
-  # ff-syncs use `git -C <worktree> merge --ff-only main`, root syncs use
-  # sync_repo_root.py).
+  # ff-syncs use fetch + `git -C <worktree> merge --ff-only origin/main`
+  # — never local main, whose unpushed root commits contaminate the
+  # branch (#1530) — root syncs use sync_repo_root.py).
   if echo "$c" | grep -qE '\bgit +(-[^ ]+( +[^ ]+)?( +|$))*merge( +|$)'; then
     if ! echo "$c" | grep -qE '\bmerge +--(abort|quit)\b'; then
       blocked="git merge (branch merge on the shared root)"
@@ -1502,7 +1503,7 @@ echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
-To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
+To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> fetch origin +refs/heads/main:refs/remotes/origin/main, then git -C <worktree> merge --ff-only origin/main (NEVER local main — its unpushed root commits contaminate the branch, #1530).
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals).
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
