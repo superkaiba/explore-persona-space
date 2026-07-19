@@ -1,0 +1,1082 @@
+{
+  "commit": "427c6d6fd1",
+  "created": "2026-07-18T00:46:16Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Held-out $R^2$ (layer 19)": -0.309174,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.281591,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.254008,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.226424,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.198841,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.171258,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.143674,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.116091,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.088508,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.060925,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.033341,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.005758,
+      "Null draws": 20.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.021825,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.049408,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.076992,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.104575,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.132158,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.159741,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.187325,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.214908,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.242491,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.270074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.297658,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.325241,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.352824,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.380407,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.407991,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.435574,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.463157,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.49074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.518324,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.545907,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.57349,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.601074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.628657,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.65624,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.683823,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.711407,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.73899,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.309174,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.281591,
+      "Null draws": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.254008,
+      "Null draws": 16.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.226424,
+      "Null draws": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.198841,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.171258,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.143674,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.116091,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.088508,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.060925,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.033341,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.005758,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.021825,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.049408,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.076992,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.104575,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.132158,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.159741,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.187325,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.214908,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.242491,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.270074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.297658,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.325241,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.352824,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.380407,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.407991,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.435574,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.463157,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.49074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.518324,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.545907,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.57349,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.601074,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.628657,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.65624,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.683823,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.711407,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.73899,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.6727814645576686,
+      "Null draws": 0.0,
+      "series": "observed comp 0.673",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.6727814645576686,
+      "Null draws": 1.0,
+      "series": "observed comp 0.673",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.6730940896675954,
+      "Null draws": 0.0,
+      "series": "own-map ceiling 0.673",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.6730940896675954,
+      "Null draws": 1.0,
+      "series": "own-map ceiling 0.673",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.516753,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.485959,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.455164,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.424369,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.393574,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.36278,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.331985,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.30119,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.270395,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.239601,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.208806,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.178011,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.147217,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.116422,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.085627,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.054832,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.024038,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.006757,
+      "Null draws": 20.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.037552,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.068347,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.099141,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.129936,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.160731,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.191526,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.22232,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.253115,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.28391,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.314704,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.345499,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.376294,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.407089,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.437883,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.468678,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.499473,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.530268,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.561062,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.591857,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.622652,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.653447,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.516753,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.485959,
+      "Null draws": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.455164,
+      "Null draws": 13.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.424369,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.393574,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.36278,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.331985,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.30119,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.270395,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.239601,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.208806,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.178011,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.147217,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.116422,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.085627,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.054832,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": -0.024038,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.006757,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.037552,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.068347,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.099141,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.129936,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.160731,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.191526,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.22232,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.253115,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.28391,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.314704,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.345499,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.376294,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.407089,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.437883,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.468678,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.499473,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.530268,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.561062,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.591857,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.622652,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.653447,
+      "Null draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.5888438808713612,
+      "Null draws": 0.0,
+      "series": "observed comp 0.589",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.5888438808713612,
+      "Null draws": 1.0,
+      "series": "observed comp 0.589",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.5876803039140208,
+      "Null draws": 0.0,
+      "series": "own-map ceiling 0.588",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Held-out $R^2$ (layer 19)": 0.5876803039140208,
+      "Null draws": 1.0,
+      "series": "own-map ceiling 0.588",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 164,
+  "text": {
+    "suptitle": "Reparameterized composition vs matched-capacity fitted nulls (A_ans \u2218 M \u2218 A_ctx_rev)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base rep \u2192 instruct target\ncomp-ceiling delta 95% CI [-0.002, 0.002]",
+        "xlabel": "Held-out $R^2$ (layer 19)",
+        "ylabel": "Null draws",
+        "legend_labels": [
+          "N1 shuffled-corresp. null",
+          "N2 spectrum-matched-mid null",
+          "observed comp 0.673",
+          "own-map ceiling 0.673"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ]
+      },
+      {
+        "title_left": "instruct rep \u2192 base target\ncomp-ceiling delta 95% CI [0.000, 0.002]",
+        "xlabel": "Held-out $R^2$ (layer 19)",
+        "ylabel": "Null draws",
+        "legend_labels": [
+          "N1 shuffled-corresp. null",
+          "N2 spectrum-matched-mid null",
+          "observed comp 0.589",
+          "own-map ceiling 0.588"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ]
+      }
+    ],
+    "series": [
+      "observed comp 0.673",
+      "own-map ceiling 0.673",
+      "observed comp 0.589",
+      "own-map ceiling 0.588"
+    ]
+  }
+}

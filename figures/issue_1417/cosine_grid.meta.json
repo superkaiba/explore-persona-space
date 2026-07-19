@@ -1,0 +1,409 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:08Z",
+  "figsize": [
+    9.0,
+    3.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "flattened-map cosine @ L19": 0.024411810962121062,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "flattened-map cosine @ L19": 0.03450909000502802,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "flattened-map cosine @ L19": 0.048439620978051844,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "flattened-map cosine @ L19": 0.026407483351068045,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "flattened-map cosine @ L19": 0.0417757160838302,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "flattened-map cosine @ L19": 0.02093638078076907,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.82,
+      "flattened-map cosine @ L19": 0.01925695721901366,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.82,
+      "flattened-map cosine @ L19": 0.029684371999659603,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.82,
+      "flattened-map cosine @ L19": 0.1873015022427026,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "flattened-map cosine @ L19": 0.2042009390144845,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "flattened-map cosine @ L19": 0.15568545331921105,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "flattened-map cosine @ L19": 0.184335807348562,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "flattened-map cosine @ L19": 0.2601962753568539,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "flattened-map cosine @ L19": 0.2788591846004967,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "flattened-map cosine @ L19": 0.09427263821596059,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.18,
+      "flattened-map cosine @ L19": 0.09742371479043287,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.18,
+      "flattened-map cosine @ L19": 0.21843234684037313,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.18,
+      "flattened-map cosine @ L19": 0.43297027417509587,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "flattened-map cosine @ L19": 0.0006675734233711715,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "flattened-map cosine @ L19": 0.0006037835985506187,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "flattened-map cosine @ L19": 0.00047074579301824185,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "flattened-map cosine @ L19": 0.0005171456895758317,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "flattened-map cosine @ L19": 0.0004837050823072488,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "flattened-map cosine @ L19": 0.00058049539720099,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "flattened-map cosine @ L19": 0.0006304727584602885,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "flattened-map cosine @ L19": 0.0005227838410456827,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "flattened-map cosine @ L19": 0.0005598197546175321,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "y": 0.08785202987268678,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.82,
+      "y": 0.10210764129294274,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "y": 0.10496867436729637,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "y": 0.01863377565025805,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.82,
+      "y": 0.1866552655469166,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.82,
+      "y": 0.02855312981382143,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.82,
+      "y": 0.025458155877928757,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.82,
+      "y": 0.0818475778009327,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.82,
+      "y": 0.5225609586434518,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "y": 0.2506569052649444,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "y": 0.41919443305922593,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "y": 0.39818104905773277,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.18,
+      "y": 0.0906792605565527,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.18,
+      "y": 0.42381344420330413,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.18,
+      "y": 0.1346927952132678,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.18,
+      "y": 0.11844986634612631,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.18,
+      "y": 0.2414812730419216,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 8.18,
+      "y": 0.6337721884429216,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.000568068243322041,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.0005204252751325896,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.0007089942362593812,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.0006187597721959508,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.0006083363129277696,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.00047681809398930397,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.0005249258365227846,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.0005805267392152443,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.000477107839016173,
+      "series": "chance p97.5",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct",
+        "ylabel": "flattened-map cosine @ L19",
+        "legend_labels": [
+          "chance p97.5",
+          "raw",
+          "rotation-aligned"
+        ],
+        "xticklabels": [
+          "Helpful\nvs c0_chat",
+          "Rude-but-\nvs c0_chat",
+          "Rude-but-\nvs c1",
+          "Evasive\nvs c0_chat",
+          "Evasive\nvs c1",
+          "Addressee-free\nvs c0_chat",
+          "Addressee-free\nvs c0p_nat",
+          "Non-user\nvs c0_chat",
+          "Non-user\nvs c1"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "Base",
+        "xticklabels": [
+          "Helpful\nvs c0_chat",
+          "Rude-but-\nvs c0_chat",
+          "Rude-but-\nvs c1",
+          "Evasive\nvs c0_chat",
+          "Evasive\nvs c1",
+          "Addressee-free\nvs c0_chat",
+          "Addressee-free\nvs c0p_nat",
+          "Non-user\nvs c0_chat",
+          "Non-user\nvs c1"
+        ]
+      }
+    ],
+    "series": [
+      "chance p97.5",
+      "raw",
+      "rotation-aligned"
+    ]
+  }
+}

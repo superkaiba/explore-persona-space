@@ -15,6 +15,12 @@ marks a non-workflow-surface (experiment-code) item per the daily SKILL.md route
 the driver drops the ``wf-fix`` / ``wf-fix-fp:<fp>`` tags (keeps ``daily-auto-filed``),
 skips the Provenance injection, and skips fp-dedup (#1228). Route-2 titles missing a
 ``WF_FIX_TITLE_PREFIXES`` prefix gain ``daily-fix: `` before the <=60 truncation (#1273).
+Route-3 items get a same-subject dedup instead (#1483): before filing, the driver scans
+OPEN (proposed/on_hold/blocked) tasks tagged ``daily-held`` for
+``>= ROUTE3_MIN_SHARED_TOKENS`` shared informative title+bug tokens
+(``task_workflow.informative_title_tokens``; task side = frontmatter title +
+template-stripped ``origin_prompt``); a hit records terminal outcome ``already-tracked``
+and skips the filer; any scan error fails OPEN toward filing with a loud stderr WARN.
 
 Route-2 bodies are normalized in place before filing (#1173; skipped for ``wf_fix: false``
 items): a body missing the durable
@@ -39,6 +45,10 @@ Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
 - ``{"slug", "outcome": "filed", "id", "rc", "fp", "route", "tail", "ts"}`` — plus
   ``"sha_warnings": [tokens]`` when the #1467 backstop annotated commit-context tokens
 - ``{"slug", "outcome": "deduped", "against", "fp", "route", "ts"}`` (route 2 only)
+- ``{"slug", "outcome": "already-tracked", "against": <task id>, "against_title",
+  "shared": [tokens], "fp", "route": 3, "ts"}`` (route 3 only — the #1483 open
+  daily-held overlap dedup; NOTE ``against`` is an int task id here vs the path
+  string on route-2 ``deduped`` rows)
 - ``{"slug", "outcome": "recovered", "id", "fp", "route", "dispatch_unconfirmed", "ts"}``
 - ``{"slug", "outcome": "ERROR", "flag", "id", "rc", "fp", "route", "tail", "ts"}``
   with ``flag`` one of ``filer-failed`` / ``no-id-parsed`` / ``timeout`` /
@@ -68,11 +78,30 @@ from pathlib import Path
 
 import yaml
 
-from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES, wf_fix_fingerprint
+from explore_persona_space.task_workflow import (
+    WF_FIX_TITLE_PREFIXES,
+    informative_title_tokens,
+    wf_fix_fingerprint,
+)
 
 LEDGER_NAME = "filed.jsonl"
 QUARANTINE_NAME = "filed.jsonl.quarantined"
-TERMINAL_OUTCOMES = frozenset({"filed", "deduped", "recovered"})
+TERMINAL_OUTCOMES = frozenset({"filed", "deduped", "recovered", "already-tracked"})
+# ── #1483 route-3 open daily-held overlap dedup ─────────────────────────────
+DAILY_HELD_TAG = "daily-held"
+ROUTE3_TITLE_PREFIX = "daily-held: "
+ROUTE3_OPEN_STATUSES = frozenset({"proposed", "on_hold", "blocked"})
+# The origin-prompt template _filer_cmd composes ("/daily <date> problem sweep
+# (route N): <bug>"); stripped before tokenizing so its fixed tokens
+# (daily/problem/sweep/route + the run date) never count toward overlap.
+ROUTE3_ORIGIN_TEMPLATE_RE = re.compile(r"^/daily \S+ problem sweep \(route \d\): ")
+# Route-3 channel tokens on every daily-held filing — never informative.
+ROUTE3_BOILERPLATE_TOKENS = frozenset({"daily-held", "needs-human"})
+# Measured 2026-07-17, re-confirmed at implementation time (plan #1483 §11 D2):
+# the #1140/#1472 duplicate pair shares 7 informative tokens; the live open
+# daily-held population's (n=5) max NON-duplicate pairwise overlap is 1
+# ('every', #1141x#1472). 3 sits 2 above noise, 4 below the hit.
+ROUTE3_MIN_SHARED_TOKENS = 3
 REQUIRED_ITEM_KEYS = frozenset({"slug", "route", "title", "target", "bug", "change"})
 # Anchored to the line start: every file_infra_task.py success path prints a line starting
 # `filed #<id>` or `filed + dispatched #<id>`. A stray `#N` elsewhere must not win.
@@ -311,12 +340,20 @@ def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
 
 
 def _filed_ledger_row(
-    slug: str, tid: int, fp: str, item: dict, tail: str, sha_warnings: list[str]
+    slug: str,
+    tid: int,
+    fp: str,
+    item: dict,
+    tail: str,
+    sha_warnings: list[str],
+    advisories: list[str],
 ) -> dict:
     """Compose the terminal ``filed`` ledger row.
 
     Gains ``"sha_warnings": [tokens]`` only when the #1467 backstop annotated
-    non-resolving commit-context tokens (rows are free-form dicts — schema-safe).
+    non-resolving commit-context tokens, and ``"advisories": [lines]`` only when
+    the filer's #1399/#1502 sibling-advisory stderr was non-empty (#1529) —
+    both conditional (rows are free-form dicts — schema-safe).
     """
     row = {
         "slug": slug,
@@ -329,6 +366,8 @@ def _filed_ledger_row(
     }
     if sha_warnings:
         row["sha_warnings"] = sha_warnings
+    if advisories:
+        row["advisories"] = advisories
     return row
 
 
@@ -586,6 +625,121 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
     return None
 
 
+def _route3_item_tokens(title: str, bug: str) -> set[str]:
+    """Informative tokens of a route-3 item: title (daily-held: stripped) + bug text."""
+    t = (title or "").removeprefix(ROUTE3_TITLE_PREFIX)
+    return (informative_title_tokens(t) | informative_title_tokens(bug or "")) - (
+        ROUTE3_BOILERPLATE_TOKENS
+    )
+
+
+def find_open_daily_held_duplicate(tasks_root: Path, title: str, bug: str) -> dict | None:
+    """Best OPEN daily-held task sharing >= ROUTE3_MIN_SHARED_TOKENS tokens (#1483).
+
+    Population: tasks under ROUTE3_OPEN_STATUSES whose frontmatter tags carry
+    DAILY_HELD_TAG (tag-only key; kind not checked). Task-side tokens come from
+    frontmatter title + origin_prompt with the /daily template prefix stripped
+    (origin_prompt IS the filing-time bug[:400] by _filer_cmd construction) —
+    frontmatter-only reads, never the body (body boilerplate would inflate
+    overlap). Returns {"id", "title", "shared"} for the max-overlap hit
+    (tie: lowest id), else None. Kept in the driver (not task_workflow) for the
+    tasks_root injection the test fixtures use, same as find_open_fp_duplicate.
+    Callers wrap in try/except: the scan is FAIL-OPEN by contract.
+    """
+    cand = _route3_item_tokens(title, bug)
+    if not cand:
+        return None
+    best: dict | None = None
+    for body in sorted(tasks_root.glob("*/*/body.md")):
+        if body.parent.parent.name not in ROUTE3_OPEN_STATUSES:
+            continue
+        if not body.parent.name.isdigit():
+            continue
+        fm = _read_frontmatter(body)
+        tags = fm.get("tags") or []
+        if not isinstance(tags, list) or DAILY_HELD_TAG not in tags:
+            continue
+        origin = ROUTE3_ORIGIN_TEMPLATE_RE.sub("", str(fm.get("origin_prompt") or ""))
+        shared = cand & _route3_item_tokens(str(fm.get("title") or ""), origin)
+        if len(shared) < ROUTE3_MIN_SHARED_TOKENS:
+            continue
+        tid = int(body.parent.name)
+        if best is None or (len(shared), -tid) > (len(best["shared"]), -best["id"]):
+            best = {"id": tid, "title": str(fm.get("title") or ""), "shared": sorted(shared)}
+    return best
+
+
+def _route3_dup_or_none(item: dict, tasks_root: Path) -> dict | None:
+    """Fail-open wrapper (#1483): any scan error WARNs loudly and files as today.
+
+    Broad Exception catch is DELIBERATE, mandated by the task's fail-open
+    constraint (a held item is never lost to a scan bug; the loud stderr
+    WARNING is the fail-loud channel) — same pattern class as _check_body_shas
+    (#1467), widened because the token/YAML surface has a broader error space
+    than the enumerable I/O classes there.
+    """
+    try:
+        return find_open_daily_held_duplicate(tasks_root, item["title"], item["bug"])
+    except Exception as e:  # deliberate fail-open, see docstring
+        print(
+            f"WARNING {item['slug']}: daily-held overlap scan skipped"
+            f" ({e.__class__.__name__}: {e}) — fail-open, filing proceeds (#1483)",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _route3_already_tracked(
+    item: dict, tasks_root: Path, *, dirpath: Path, fp: str, dry_run: bool
+) -> str | None:
+    """Route-3 open daily-held overlap-dedup outcome for process_item, or None (#1483).
+
+    Non-route-3 items and no-overlap scans return None (caller proceeds). On a hit
+    the ALREADY-TRACKED line prints either way; the real path first appends the
+    `already-tracked` ledger row and returns 'already-tracked', while dry-run stays
+    read-only by construction (no ledger write) and returns 'skip'.
+    """
+    if item["route"] != 3:
+        return None
+    dup3 = _route3_dup_or_none(item, tasks_root)
+    if dup3 is None:
+        return None
+    slug = item["slug"]
+    if not dry_run:
+        append_row(
+            dirpath,
+            {
+                "slug": slug,
+                "outcome": "already-tracked",
+                "against": dup3["id"],
+                "against_title": dup3["title"],
+                "shared": dup3["shared"],
+                "fp": fp,
+                "route": 3,
+            },
+        )
+    print(f"ALREADY-TRACKED {slug} -> #{dup3['id']} (shared: {','.join(dup3['shared'])})")
+    return "skip" if dry_run else "already-tracked"
+
+
+def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
+    """Read-only injection-intent probe for the dry-run FILE line (#1173): write-free.
+
+    Returns the ' [will inject workflow_fix_target provenance]' suffix when the real
+    path would inject the wf-fix Provenance block, else ''. No exists() guard — a
+    missing/unreadable body fails LOUD here, the same fail-fast contract
+    load_and_validate_manifest enforces up front. Non-wf-fix items get the
+    stray-provenance WARN instead.
+    """
+    if not _wf_fix_enabled(item):
+        _warn_stray_wf_fix_provenance(item, dirpath)
+        return ""
+    body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+    if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
+        return " [will inject workflow_fix_target provenance]"
+    return ""
+
+
 def _filer_cmd(
     filer_prefix: list[str], item: dict, body_path: Path, date: str, fp: str
 ) -> list[str]:
@@ -616,6 +770,77 @@ def parse_filed_id(stdout: str, stderr: str) -> int | None:
     if m is None:
         m = FILED_ID_RE.search(stderr or "")
     return int(m.group(1)) if m else None
+
+
+# #1529: the filer's sibling-advisory stderr shapes (file_infra_task.py — the
+# `_advise_recent_closed_wf_fix_siblings` / `_advise_open_wf_fix_siblings` headers,
+# their `  #<id>` rows + `  ... and N more` overflow lines, and the fail-soft
+# `advisory leg failed` one-liners).
+_ADVISORY_HEADER_SUBSTR = "file_infra_task: ADVISORY"
+_ADVISORY_FAILSOFT_SUBSTR = "advisory leg failed"
+_ADVISORY_MAX_FWD_LINES = 40  # 2 headers + 2x10 rows + 2 overflow + fail-soft << 40
+_ADVISORY_MAX_FWD_CHARS = 4000
+
+
+def extract_filer_advisories(stderr: str) -> list[str]:
+    """Extract the #1399/#1502 sibling-advisory block lines from the FILER's stderr (#1529).
+
+    A block = one ``file_infra_task: ADVISORY — ...`` header plus its immediately
+    following row/overflow lines (``  #<id> ...`` / ``  ... and N more ...`` — the
+    only 2-space-indented shapes the advisory legs emit; the adjacent forwarded
+    ``  [task.py stderr] ...`` lines start ``  [`` and are excluded). Standalone
+    ``... advisory leg failed ...`` fail-soft one-liners are captured too (they tell
+    the consumer the scan did NOT run — absence of advisories is not evidence of
+    no siblings). Defensively capped; the cap appends an explicit marker line so
+    nothing is silently dropped.
+    """
+    lines: list[str] = []
+    in_block = False
+    for line in (stderr or "").splitlines():
+        if _ADVISORY_HEADER_SUBSTR in line:
+            lines.append(line.rstrip())
+            in_block = True
+        elif _ADVISORY_FAILSOFT_SUBSTR in line:
+            lines.append(line.rstrip())
+            in_block = False
+        elif in_block and (line.startswith("  #") or line.startswith("  ...")):
+            lines.append(line.rstrip())
+        else:
+            in_block = False
+    if (
+        len(lines) > _ADVISORY_MAX_FWD_LINES
+        or sum(len(ln) for ln in lines) > _ADVISORY_MAX_FWD_CHARS
+    ):
+        kept: list[str] = []
+        total = 0
+        for ln in lines[:_ADVISORY_MAX_FWD_LINES]:
+            if total + len(ln) > _ADVISORY_MAX_FWD_CHARS:
+                break
+            kept.append(ln)
+            total += len(ln)
+        kept.append(f"  ... advisory forward capped ({len(lines)} lines total, #1529)")
+        return kept
+    return lines
+
+
+def _print_advisory_forward(slug: str, tid: int, advisories: list[str]) -> None:
+    """Re-print the captured filer advisory block on the DRIVER's stderr (#1529).
+
+    Verbatim, after the ``FILED`` stdout line, with an attributing lead line so a
+    multi-item manifest keeps blocks attributable (items process serially). No-op
+    when no advisory lines were captured — the no-advisory output stays byte-
+    identical to the pre-#1529 driver.
+    """
+    if not advisories:
+        return
+    print(
+        f"ADVISORY {slug} -> #{tid}: filer advisory output below (#1399/#1502 "
+        "sibling scan; if a listed sibling already covers this bug, verify then "
+        "archive the just-filed task and stop its spawned session — #1529)",
+        file=sys.stderr,
+    )
+    for ln in advisories:
+        print(ln, file=sys.stderr)
 
 
 def _slug_state(ledger: list[dict], slug: str, retry_errors: bool) -> str:
@@ -712,7 +937,8 @@ def process_item(
 ) -> str:
     """Run one manifest item through resume -> recovery -> dedup -> two-phase file.
 
-    Returns the item outcome: 'skip' | 'recovered' | 'deduped' | 'filed' | 'error'.
+    Returns the item outcome:
+    'skip' | 'recovered' | 'deduped' | 'already-tracked' | 'filed' | 'error'.
     """
     slug = item["slug"]
     fp = wf_fix_fingerprint(item["change"], item["bug"])
@@ -723,6 +949,10 @@ def process_item(
         return "skip"
 
     if dry_run:
+        # #1483 dry-run mirror of the route-3 overlap dedup (read-only by construction).
+        outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=True)
+        if outcome3 is not None:
+            return outcome3
         if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
@@ -730,16 +960,7 @@ def process_item(
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
-            inject = ""
-            if _wf_fix_enabled(item):
-                # Read-only injection-intent probe (#1173): dry-run stays write-free.
-                # No exists() guard — a missing/unreadable body fails LOUD here, the
-                # same fail-fast contract load_and_validate_manifest enforces up front.
-                body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
-                if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
-                    inject = " [will inject workflow_fix_target provenance]"
-            else:
-                _warn_stray_wf_fix_provenance(item, dirpath)
+            inject = _dry_run_inject_note(item, dirpath, fp)
             sha_note = _dry_run_sha_note(item, dirpath, root)
             print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}{sha_note}")
         return "skip"
@@ -766,6 +987,15 @@ def process_item(
             )
             print(f"DEDUP {slug} -> {dup}")
             return "deduped"
+
+    # #1483 route-3 open daily-held overlap dedup — after recovery, before the
+    # `attempting` row, exactly the route-2 fp-dedup ordering. Note: a route-3
+    # re-file whose title-scan recovery MISSED will overlap-match its own night-1
+    # task and record `already-tracked` instead of `recovered` — benign, no
+    # duplicate is filed.
+    outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=False)
+    if outcome3 is not None:
+        return outcome3
 
     body_path = _resolve_body_path(item, dirpath)
     if _wf_fix_enabled(item):
@@ -828,8 +1058,14 @@ def process_item(
     out = (proc.stdout + "\n" + proc.stderr).strip()
     tid = parse_filed_id(proc.stdout, proc.stderr)
     if proc.returncode == 0 and tid is not None:
-        append_row(dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings))
+        # #1529: forward + persist the filer's #1399/#1502 sibling advisories — computed
+        # INSIDE the success branch (error/timeout/dedup paths stay byte-unchanged).
+        advisories = extract_filer_advisories(proc.stderr)
+        append_row(
+            dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings, advisories)
+        )
         print(f"FILED {slug} -> #{tid} (rc=0)")
+        _print_advisory_forward(slug, tid, advisories)
         return "filed"
     # rc=0 with NO parseable id is classified ERROR `no-id-parsed`, NEVER a `filed` row
     # with a null id (a null-id filed row poisons the resume set + the daily-file record).

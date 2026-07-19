@@ -1,0 +1,1476 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:29Z",
+  "figsize": [
+    7.4,
+    3.4
+  ],
+  "points": [
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -7.685025024414062,
+      "Panel non-source \u0394G (nats)": 9.120847148895264,
+      "series": "Contrastive",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -6.032763671875,
+      "Panel non-source \u0394G (nats)": 11.864559326171875,
+      "series": "Contrastive",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 2.8213714599609374,
+      "Panel non-source \u0394G (nats)": 17.372174434661865,
+      "series": "Contrastive",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -5.74259033203125,
+      "Panel non-source \u0394G (nats)": 7.8531117820739755,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.2489013671875,
+      "Panel non-source \u0394G (nats)": 5.232614955902099,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.220219421386719,
+      "Panel non-source \u0394G (nats)": 16.9905086517334,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.3978759765625,
+      "Panel non-source \u0394G (nats)": 6.262129631042481,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.6752197265625,
+      "Panel non-source \u0394G (nats)": 8.850861892700195,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7996826171875,
+      "Panel non-source \u0394G (nats)": 8.361714668273924,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.1953125,
+      "Panel non-source \u0394G (nats)": 7.0350221824645995,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7635498046875,
+      "Panel non-source \u0394G (nats)": 9.048952732086182,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.46982421875,
+      "Panel non-source \u0394G (nats)": 8.89567678451538,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.424069213867187,
+      "Panel non-source \u0394G (nats)": 4.157129402160645,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.228125,
+      "Panel non-source \u0394G (nats)": 7.0219300270080565,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.975341796875,
+      "Panel non-source \u0394G (nats)": 7.365053691864015,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.370310211181641,
+      "Panel non-source \u0394G (nats)": 4.364235992431641,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.07601318359375,
+      "Panel non-source \u0394G (nats)": 7.411423034667969,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.9720947265625,
+      "Panel non-source \u0394G (nats)": 7.678686122894287,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.520780944824219,
+      "Panel non-source \u0394G (nats)": 6.942763481140138,
+      "series": "Positive-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 15.0909423828125,
+      "Panel non-source \u0394G (nats)": 19.915217723846435,
+      "series": "Positive-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 27.9171142578125,
+      "Panel non-source \u0394G (nats)": 27.551028194427488,
+      "series": "Positive-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.67998046875,
+      "Panel non-source \u0394G (nats)": 6.871019687652587,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 15.9162841796875,
+      "Panel non-source \u0394G (nats)": 22.585689849853516,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 27.3124267578125,
+      "Panel non-source \u0394G (nats)": 27.551333446502685,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.78173828125,
+      "Panel non-source \u0394G (nats)": 4.935999202728271,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.909912109375,
+      "Panel non-source \u0394G (nats)": 10.306335544586181,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.1475341796875,
+      "Panel non-source \u0394G (nats)": 8.294509353637697,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.199267578125,
+      "Panel non-source \u0394G (nats)": 4.934183616638184,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.490478515625,
+      "Panel non-source \u0394G (nats)": 10.75864730834961,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.4740234375,
+      "Panel non-source \u0394G (nats)": 8.012381267547607,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.3809326171875,
+      "Panel non-source \u0394G (nats)": 5.384467525482178,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.78839111328125,
+      "Panel non-source \u0394G (nats)": 8.754141731262207,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.769497680664063,
+      "Panel non-source \u0394G (nats)": 8.7214280128479,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.4723388671875,
+      "Panel non-source \u0394G (nats)": 5.273530330657959,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.910986328125,
+      "Panel non-source \u0394G (nats)": 7.117166042327881,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.837060546875,
+      "Panel non-source \u0394G (nats)": 8.90951177597046,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.94384765625,
+      "Panel non-source \u0394G (nats)": 5.169911899566651,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 16.37802734375,
+      "Panel non-source \u0394G (nats)": 15.616134033203124,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 21.03212890625,
+      "Panel non-source \u0394G (nats)": 9.925591239929199,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.016578674316406,
+      "Panel non-source \u0394G (nats)": 5.412506370544433,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 17.82626953125,
+      "Panel non-source \u0394G (nats)": 15.7822257232666,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 21.45908203125,
+      "Panel non-source \u0394G (nats)": 10.651869792938232,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.138629150390625,
+      "Panel non-source \u0394G (nats)": 1.8953581428527833,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.584344482421875,
+      "Panel non-source \u0394G (nats)": 5.67767442703247,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.446160888671875,
+      "Panel non-source \u0394G (nats)": 5.355082931518554,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.0802978515625,
+      "Panel non-source \u0394G (nats)": 2.5246766090393065,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.1609375,
+      "Panel non-source \u0394G (nats)": 5.600380401611328,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.154643249511718,
+      "Panel non-source \u0394G (nats)": 4.39929988861084,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.140798568725586,
+      "Panel non-source \u0394G (nats)": 1.3522948455810546,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.6088134765625,
+      "Panel non-source \u0394G (nats)": 4.940883140563964,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.630487060546875,
+      "Panel non-source \u0394G (nats)": 5.104578418731689,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.3872314453125,
+      "Panel non-source \u0394G (nats)": 1.3127886772155763,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.178131103515625,
+      "Panel non-source \u0394G (nats)": 4.834161357879639,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.360879516601562,
+      "Panel non-source \u0394G (nats)": 4.9189524269103995,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.55482177734375,
+      "Panel non-source \u0394G (nats)": 2.3832589721679684,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.930322265625,
+      "Panel non-source \u0394G (nats)": 4.497812213897705,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.4483154296875,
+      "Panel non-source \u0394G (nats)": 7.503884143829344,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.900555419921875,
+      "Panel non-source \u0394G (nats)": 1.3892702865600586,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.137646484375,
+      "Panel non-source \u0394G (nats)": 7.51664909362793,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.10626220703125,
+      "Panel non-source \u0394G (nats)": 5.67297601699829,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.08095703125,
+      "Panel non-source \u0394G (nats)": 1.9481493186950682,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.2970458984375,
+      "Panel non-source \u0394G (nats)": 5.583845882415771,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.566583251953125,
+      "Panel non-source \u0394G (nats)": 5.4168865013122565,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.8980224609375,
+      "Panel non-source \u0394G (nats)": 1.3907017135620119,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.069354248046874,
+      "Panel non-source \u0394G (nats)": 5.425149536132812,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.10419921875,
+      "Panel non-source \u0394G (nats)": 5.765172882080078,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.06796875,
+      "Panel non-source \u0394G (nats)": -0.1385793685913086,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.8998046875,
+      "Panel non-source \u0394G (nats)": -2.1931745719909665,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.966015625,
+      "Panel non-source \u0394G (nats)": -0.6821139144897461,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.348046875,
+      "Panel non-source \u0394G (nats)": -2.109284420013428,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.5822265625,
+      "Panel non-source \u0394G (nats)": -0.1934415626525879,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.707421875,
+      "Panel non-source \u0394G (nats)": -0.5548466491699219,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.77578125,
+      "Panel non-source \u0394G (nats)": 0.016426963806152346,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.42078857421875,
+      "Panel non-source \u0394G (nats)": 0.4690122604370117,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.292578125,
+      "Panel non-source \u0394G (nats)": 0.13876680374145509,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.413671875,
+      "Panel non-source \u0394G (nats)": -0.005818843841552732,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.869140625,
+      "Panel non-source \u0394G (nats)": 0.0036495018005371083,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.733984375,
+      "Panel non-source \u0394G (nats)": 0.2733538055419922,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.916796875,
+      "Panel non-source \u0394G (nats)": 0.32708354949951174,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.390625,
+      "Panel non-source \u0394G (nats)": 0.029046230316162103,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.19765625,
+      "Panel non-source \u0394G (nats)": 0.08041250228881835,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -2.15859375,
+      "Panel non-source \u0394G (nats)": 10.208904991149902,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.08314208984375,
+      "Panel non-source \u0394G (nats)": 5.985884761810302,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.1955322265625,
+      "Panel non-source \u0394G (nats)": 17.77316841125488,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -1.8458984375,
+      "Panel non-source \u0394G (nats)": 8.194624271392822,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.8260498046875,
+      "Panel non-source \u0394G (nats)": 5.424660987854004,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.5204345703125,
+      "Panel non-source \u0394G (nats)": 15.868786411285402,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.9552734375,
+      "Panel non-source \u0394G (nats)": 6.614328613281249,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.7303466796875,
+      "Panel non-source \u0394G (nats)": 8.911731662750245,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.8193359375,
+      "Panel non-source \u0394G (nats)": 8.69472770690918,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.5080078125,
+      "Panel non-source \u0394G (nats)": 3.9092594909667966,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.3066162109375,
+      "Panel non-source \u0394G (nats)": 7.9332304954528805,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.8559326171875,
+      "Panel non-source \u0394G (nats)": 8.030827617645263,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.319719314575195,
+      "Panel non-source \u0394G (nats)": 4.724535636901855,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.024169921875,
+      "Panel non-source \u0394G (nats)": 7.002410106658935,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.806692504882813,
+      "Panel non-source \u0394G (nats)": 7.192874374389648,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.33697509765625,
+      "Panel non-source \u0394G (nats)": 4.9504941558837885,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.059158325195312,
+      "Panel non-source \u0394G (nats)": 7.437962741851807,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.309585571289062,
+      "Panel non-source \u0394G (nats)": 7.200837440490723,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7759033203125,
+      "Panel non-source \u0394G (nats)": 7.0527672195434565,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 14.7810546875,
+      "Panel non-source \u0394G (nats)": 19.757945861816406,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 23.2083984375,
+      "Panel non-source \u0394G (nats)": 27.35601202011108,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.71962890625,
+      "Panel non-source \u0394G (nats)": 7.344671840667724,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.840245056152344,
+      "Panel non-source \u0394G (nats)": 17.803291740417478,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 22.7943359375,
+      "Panel non-source \u0394G (nats)": 27.36716812133789,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.931537628173828,
+      "Panel non-source \u0394G (nats)": 5.08819429397583,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.2899658203125,
+      "Panel non-source \u0394G (nats)": 10.466284046173095,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 13.208377075195312,
+      "Panel non-source \u0394G (nats)": 9.267262687683106,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.5928466796875,
+      "Panel non-source \u0394G (nats)": 4.7904741477966315,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.279736328125,
+      "Panel non-source \u0394G (nats)": 9.908682193756103,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.060302734375,
+      "Panel non-source \u0394G (nats)": 8.028780612945557,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.0080078125,
+      "Panel non-source \u0394G (nats)": 5.585932960510253,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.308251953125,
+      "Panel non-source \u0394G (nats)": 7.128659515380859,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.105010986328125,
+      "Panel non-source \u0394G (nats)": 8.191573066711426,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.71177978515625,
+      "Panel non-source \u0394G (nats)": 5.448185424804687,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.03369140625,
+      "Panel non-source \u0394G (nats)": 6.979082355499267,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.416015625,
+      "Panel non-source \u0394G (nats)": 8.239842281341552,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -7.685025024414062,
+      "EOS-margin transfer fraction": 0.9234947258569415,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -6.032763671875,
+      "EOS-margin transfer fraction": 0.5895791009380742,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 2.8213714599609374,
+      "EOS-margin transfer fraction": 1.5052686864458573,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -5.74259033203125,
+      "EOS-margin transfer fraction": 0.7955680723928806,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.2489013671875,
+      "EOS-margin transfer fraction": 0.7742083488953371,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.220219421386719,
+      "EOS-margin transfer fraction": 0.925724220985354,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.3978759765625,
+      "EOS-margin transfer fraction": 0.7205399970235482,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.6752197265625,
+      "EOS-margin transfer fraction": 0.7092230029550508,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7996826171875,
+      "EOS-margin transfer fraction": 0.7316667188355896,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.1953125,
+      "EOS-margin transfer fraction": 0.8169041802388708,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7635498046875,
+      "EOS-margin transfer fraction": 0.7985248195726349,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.46982421875,
+      "EOS-margin transfer fraction": 0.7258541213352446,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.424069213867187,
+      "EOS-margin transfer fraction": 0.7795631998532089,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.228125,
+      "EOS-margin transfer fraction": 0.6878399602788586,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.975341796875,
+      "EOS-margin transfer fraction": 0.687385951418863,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.370310211181641,
+      "EOS-margin transfer fraction": 0.842779255734689,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.07601318359375,
+      "EOS-margin transfer fraction": 0.7205298904370958,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.9720947265625,
+      "EOS-margin transfer fraction": 0.7601866710357479,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.520780944824219,
+      "EOS-margin transfer fraction": 0.7043618156803892,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 15.0909423828125,
+      "EOS-margin transfer fraction": 0.6165055611729019,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 27.9171142578125,
+      "EOS-margin transfer fraction": 0.9888264384753626,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.67998046875,
+      "EOS-margin transfer fraction": 0.726116457440586,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 15.9162841796875,
+      "EOS-margin transfer fraction": 0.6391111942828306,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 27.3124267578125,
+      "EOS-margin transfer fraction": 0.9498489787855195,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.78173828125,
+      "EOS-margin transfer fraction": 0.7935784562114686,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.909912109375,
+      "EOS-margin transfer fraction": 1.2811478536683605,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.1475341796875,
+      "EOS-margin transfer fraction": 0.7267198872113225,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.199267578125,
+      "EOS-margin transfer fraction": 0.8675219053164414,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.490478515625,
+      "EOS-margin transfer fraction": 1.1417212713936429,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.4740234375,
+      "EOS-margin transfer fraction": 0.6955771847362235,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.3809326171875,
+      "EOS-margin transfer fraction": 0.7868931093919185,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.78839111328125,
+      "EOS-margin transfer fraction": 0.7672925883227191,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.769497680664063,
+      "EOS-margin transfer fraction": 0.6872260969009476,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.4723388671875,
+      "EOS-margin transfer fraction": 0.7473831320938338,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.910986328125,
+      "EOS-margin transfer fraction": 0.7906435744397193,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.837060546875,
+      "EOS-margin transfer fraction": 0.7255598592132964,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.94384765625,
+      "EOS-margin transfer fraction": 0.5726359566253183,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 16.37802734375,
+      "EOS-margin transfer fraction": 0.5577766216884998,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 21.03212890625,
+      "EOS-margin transfer fraction": -0.2022991644572803,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.016578674316406,
+      "EOS-margin transfer fraction": 0.6207528947663146,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 17.82626953125,
+      "EOS-margin transfer fraction": 0.4916622840896018,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 21.45908203125,
+      "EOS-margin transfer fraction": -0.2156957793493249,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.138629150390625,
+      "EOS-margin transfer fraction": 0.24400265273879373,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.584344482421875,
+      "EOS-margin transfer fraction": 0.7248029021699532,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.446160888671875,
+      "EOS-margin transfer fraction": 0.48546262451870864,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.0802978515625,
+      "EOS-margin transfer fraction": 0.2938827760517777,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.1609375,
+      "EOS-margin transfer fraction": 0.5642798379762588,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.154643249511718,
+      "EOS-margin transfer fraction": 0.4107289385086007,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.140798568725586,
+      "EOS-margin transfer fraction": 0.1839036025851319,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.6088134765625,
+      "EOS-margin transfer fraction": 0.48116965432749986,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.630487060546875,
+      "EOS-margin transfer fraction": 0.46616497418337133,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.3872314453125,
+      "EOS-margin transfer fraction": 0.19427334236679797,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.178131103515625,
+      "EOS-margin transfer fraction": 0.43198840228895186,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.360879516601562,
+      "EOS-margin transfer fraction": 0.4308441723884723,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.55482177734375,
+      "EOS-margin transfer fraction": 0.32123485253393574,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.930322265625,
+      "EOS-margin transfer fraction": 0.40935743682789755,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.4483154296875,
+      "EOS-margin transfer fraction": 0.6244118066281431,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.900555419921875,
+      "EOS-margin transfer fraction": 0.23278860440872978,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.137646484375,
+      "EOS-margin transfer fraction": 0.6505009175460821,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.10626220703125,
+      "EOS-margin transfer fraction": 0.4570937268155964,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.08095703125,
+      "EOS-margin transfer fraction": 0.2775598612471696,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.2970458984375,
+      "EOS-margin transfer fraction": 0.49529408417443754,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.566583251953125,
+      "EOS-margin transfer fraction": 0.48187868271615136,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.8980224609375,
+      "EOS-margin transfer fraction": 0.23818953958419525,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.069354248046874,
+      "EOS-margin transfer fraction": 0.446221912954489,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.10419921875,
+      "EOS-margin transfer fraction": 0.49342820252930775,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.06796875,
+      "EOS-margin transfer fraction": -0.04574543583157288,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.8998046875,
+      "EOS-margin transfer fraction": -0.5372649034164267,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.966015625,
+      "EOS-margin transfer fraction": -0.09685961530083212,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.348046875,
+      "EOS-margin transfer fraction": -0.5133291258856183,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.5822265625,
+      "EOS-margin transfer fraction": -0.039243457167443103,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.707421875,
+      "EOS-margin transfer fraction": -0.08571654128908528,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.77578125,
+      "EOS-margin transfer fraction": -0.0001610476126065196,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.42078857421875,
+      "EOS-margin transfer fraction": 0.058394297621061964,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.292578125,
+      "EOS-margin transfer fraction": 0.01083206430984098,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.413671875,
+      "EOS-margin transfer fraction": -0.003506947517479423,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.869140625,
+      "EOS-margin transfer fraction": -0.003287980700881433,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.733984375,
+      "EOS-margin transfer fraction": 0.021657788111051478,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.916796875,
+      "EOS-margin transfer fraction": 0.035432908175852366,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.390625,
+      "EOS-margin transfer fraction": 0.0013371450186219738,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.19765625,
+      "EOS-margin transfer fraction": 0.005993752919816531,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -2.15859375,
+      "EOS-margin transfer fraction": 2.3409303745928334,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.08314208984375,
+      "EOS-margin transfer fraction": 0.7975237342248425,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.1955322265625,
+      "EOS-margin transfer fraction": 0.9857567315156697,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": -1.8458984375,
+      "EOS-margin transfer fraction": 1.7539175748598033,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.8260498046875,
+      "EOS-margin transfer fraction": 0.8046785886395542,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.5204345703125,
+      "EOS-margin transfer fraction": 1.317781143174359,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.9552734375,
+      "EOS-margin transfer fraction": 0.7277898360585302,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.7303466796875,
+      "EOS-margin transfer fraction": 0.6921020938139026,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.8193359375,
+      "EOS-margin transfer fraction": 0.6401633721455005,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 4.5080078125,
+      "EOS-margin transfer fraction": 0.7569015352860579,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.3066162109375,
+      "EOS-margin transfer fraction": 0.7162004622257665,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.8559326171875,
+      "EOS-margin transfer fraction": 0.6410975601528361,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.319719314575195,
+      "EOS-margin transfer fraction": 0.7820591345128205,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.024169921875,
+      "EOS-margin transfer fraction": 0.7513257218486629,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.806692504882813,
+      "EOS-margin transfer fraction": 0.7530031599808301,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.33697509765625,
+      "EOS-margin transfer fraction": 0.7067822778714182,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.059158325195312,
+      "EOS-margin transfer fraction": 0.7338892809680294,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 9.309585571289062,
+      "EOS-margin transfer fraction": 0.6676451083651717,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.7759033203125,
+      "EOS-margin transfer fraction": 0.833321716415333,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 14.7810546875,
+      "EOS-margin transfer fraction": 0.676815810859023,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 23.2083984375,
+      "EOS-margin transfer fraction": 0.8804888619589823,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 8.71962890625,
+      "EOS-margin transfer fraction": 0.7712622775481862,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.840245056152344,
+      "EOS-margin transfer fraction": 0.9689222788272058,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 22.7943359375,
+      "EOS-margin transfer fraction": 0.9213849640552837,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.931537628173828,
+      "EOS-margin transfer fraction": 0.8246486211161109,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.2899658203125,
+      "EOS-margin transfer fraction": 0.8404145862030935,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 13.208377075195312,
+      "EOS-margin transfer fraction": 0.6287239904452764,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 5.5928466796875,
+      "EOS-margin transfer fraction": 0.8208609979788986,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 11.279736328125,
+      "EOS-margin transfer fraction": 0.8071928068819829,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.060302734375,
+      "EOS-margin transfer fraction": 0.6326626551144761,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 7.0080078125,
+      "EOS-margin transfer fraction": 0.7392566095217525,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.308251953125,
+      "EOS-margin transfer fraction": 0.6523252949842028,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.105010986328125,
+      "EOS-margin transfer fraction": 0.6131925441880517,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 6.71177978515625,
+      "EOS-margin transfer fraction": 0.7641974141051128,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 10.03369140625,
+      "EOS-margin transfer fraction": 0.6399684899508491,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source install \u0394(z_marker \u2212 z_eos)": 12.416015625,
+      "EOS-margin transfer fraction": 0.6219661396885323,
+      "_kind": "line",
+      "_group": 77
+    }
+  ],
+  "n_series": 78,
+  "total_points": 234,
+  "text": {
+    "suptitle": "Marker leakage vs install at the panel rungs (per cell)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Source install \u0394(z_marker \u2212 z_eos)",
+        "ylabel": "Panel non-source \u0394G (nats)",
+        "legend_labels": [
+          "Contrastive",
+          "Positive-only"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "xlabel": "Source install \u0394(z_marker \u2212 z_eos)",
+        "ylabel": "EOS-margin transfer fraction",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "Contrastive",
+      "Positive-only"
+    ]
+  }
+}

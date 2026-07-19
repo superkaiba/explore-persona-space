@@ -1,0 +1,85 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:16:49Z",
+  "figsize": [
+    5.2,
+    4.2
+  ],
+  "points": [
+    {
+      "LOCO best-layer skill": 0.5023098472850731,
+      "LOFO best-layer skill": 0.4737043268904986,
+      "label": "direct (ctx\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.6277292501063978,
+      "LOFO best-layer skill": 0.5695938547442826,
+      "label": "stage 1 (ctx\u2192cot)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.727138882409428,
+      "LOFO best-layer skill": 0.6461893386553019,
+      "label": "stage 2 oracle (cot\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.5039952378418686,
+      "LOFO best-layer skill": 0.4749175699236684,
+      "label": "composed (ctx\u2192\u0109ot\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.5575692216300445,
+      "LOFO best-layer skill": 0.5165213754038636,
+      "label": "joint (ctx\u2192[cot,ans])",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.705846576579101,
+      "LOFO best-layer skill": 0.6432327016819785,
+      "label": "augmented ([ctx,cot]\u2192ans)",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "fold agreement \u2014 avg_q",
+        "xlabel": "LOCO best-layer skill",
+        "ylabel": "LOFO best-layer skill",
+        "annotations": [
+          "direct (ctx\u2192ans)",
+          "stage 1 (ctx\u2192cot)",
+          "stage 2 oracle (cot\u2192ans)",
+          "composed (ctx\u2192\u0109ot\u2192ans)",
+          "joint (ctx\u2192[cot,ans])",
+          "augmented ([ctx,cot]\u2192ans)"
+        ],
+        "xticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ],
+        "yticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      }
+    ]
+  }
+}

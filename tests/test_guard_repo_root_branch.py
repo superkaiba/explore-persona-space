@@ -57,6 +57,8 @@ keeps today's blocked disposition (GN-series pins).
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 import uuid
 from pathlib import Path
@@ -72,16 +74,39 @@ SCRIPT = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
 # canonical checkout, NOT this worktree.
 REPO = Path("/home/thomasjiralerspong/explore-persona-space")
 
+# Deny-event sidecar (#1528): the guard's default sidecar path lives under the
+# CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO). The harness
+# pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds of deny
+# cases never create/append the production sidecar; the snapshot below backs
+# the end-of-module production-protection test.
+_PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
+_PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
 
-def _run(cmd: str) -> int:
-    """Feed ``cmd`` to the guard via PreToolUse JSON; return its exit code."""
+
+def _run_full(cmd: str, *, sidecar: str | None = None) -> subprocess.CompletedProcess[str]:
+    """Feed ``cmd`` to the guard via PreToolUse JSON; return the full result.
+
+    ``sidecar`` pins ``EPM_GUARD_DENY_SIDECAR`` for the subprocess; the
+    ``/dev/null`` default sinks every deny row so existing tests never touch
+    the production sidecar (#1528). Appending to ``/dev/null`` succeeds
+    silently and ``mkdir -p /dev`` no-ops, so exit-code behavior is unchanged.
+    """
     payload = json.dumps({"tool_input": {"command": cmd}})
-    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True).returncode
+    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
+    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True, env=env)
 
 
-def _run_raw(payload: str) -> int:
+def _run(cmd: str, *, sidecar: str | None = None) -> int:
+    """Feed ``cmd`` to the guard via PreToolUse JSON; return its exit code."""
+    return _run_full(cmd, sidecar=sidecar).returncode
+
+
+def _run_raw(payload: str, *, sidecar: str | None = None) -> int:
     """Feed a raw (possibly malformed) stdin payload; return the exit code."""
-    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True).returncode
+    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
+    return subprocess.run(
+        [str(SCRIPT)], input=payload, text=True, capture_output=True, env=env
+    ).returncode
 
 
 def _git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -984,7 +1009,9 @@ def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
 # gated form no longer false-blocks (incident 4 + the adjacent cat-note
 # shape). Quoted/escaped-tag bodies stay strippable even with `$(git ...)`
 # text (bash suppresses expansion); unquoted-tag bodies strip only when they
-# carry NO expansion syntax. NOT guarded by @on_main.
+# carry no expansion syntax beyond plain `${NAME}` parameter references —
+# check (g) deletes plain spans from a scan copy before the refusal (#1501).
+# NOT guarded by @on_main.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -1005,6 +1032,48 @@ def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
             "Recovery used: git checkout main -- .claude/skills/issue/SKILL.md\n"
             "EOF",
             id="M1h-cat_note_unquoted_no_expansion",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
+            id="M1d-bare_param_expansion_plus_gated_prose",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${A} and ${B_2}\nhow to revert: git restore .\nEOF",
+            id="M1j-multiple_plain_spans_plus_gated_prose",
+        ),
+        pytest.param(
+            # <<- tag form: terminator (and body) genuinely TAB-indented — a
+            # space-indented terminator under <<- never terminates and would
+            # exercise the unterminated-refusal arm instead of check (g).
+            "cat > /tmp/note.md <<-EOF\n"
+            "\tvalue is ${SOMEVAR}\n"
+            "\thow to revert: git restore .\n"
+            "\tEOF",
+            id="M1k-dash_tag_plain_span",
+        ),
+        pytest.param(
+            # Copy-contract discriminator (#1501): line 1 = the fenced-verb
+            # prose with the verb INTERRUPTED by a plain span; line 2 = a
+            # (g)-refusing form. Line ORDER is load-bearing (pass 1 breaks at
+            # the first refusal, so the interrupted-verb line must precede
+            # it). Correct copy-scan: line 1 passes (span deleted from the
+            # COPY only), line 2 refuses, buf[] emits VERBATIM, and the raw
+            # scan sees the interrupted text (no verb bigram) -> ALLOW. An
+            # in-place-mutation bug deletes ${A} from buf[] itself,
+            # reassembling the verb bigram -> BLOCK -> this fixture fails
+            # loud. Verified ALLOW both pre-fix and post-fix (2026-07-18), so
+            # it discriminates ONLY the copy contract, not the narrowing.
+            "cat > /tmp/note.md <<EOF\nhow to revert: git rest${A}ore .\nvalue is ${B@P}\nEOF",
+            id="M1L-copy_contract_discriminator",
+        ),
+        pytest.param(
+            # Escaped-dollar deliberate-flip pin (#1501): \${NAME} was BLOCKED
+            # pre-fix (blanket ${ arm) and is ALLOWED post-fix — the deletion
+            # regex matches the ${NAME} substring after the backslash; sound
+            # because under an unquoted tag \$ suppresses expansion entirely
+            # (literal text). Named in the script's gap-(xiii) ledger.
+            "cat > /tmp/note.md <<EOF\nvalue is \\${NAME}\nhow to revert: git restore .\nEOF",
+            id="M1m-escaped_dollar_plain_span",
         ),
         pytest.param(
             "cat > /tmp/note.md <<'EOF'\n$(git checkout -b evil)\nEOF",
@@ -1055,9 +1124,12 @@ def test_nonshell_heredoc_body_mention_allows(cmd):
 # MUST BLOCK — unquoted-tag heredoc bodies carrying expansion syntax. Bash
 # performs command/parameter substitution on an UNQUOTED-tag body at feed
 # time, so `$(git ...)` / backticks in it EXECUTE regardless of the consumer;
-# the strip refuses such bodies (`${` refuses too — parameter expansion can
-# nest command substitution, a documented fail-closed over-match on plain
-# `${VAR}` references). The MUST-FIX-1 matrix.
+# the strip refuses such bodies. Non-plain `${...}` forms refuse too
+# (parameter expansion can nest command substitution, and `${V@P}` executes
+# value-borne command substitution at feed time); plain `${NAME}` spans are
+# deleted from a scan COPY before the refusal as of #1501 — the former
+# fail-closed over-match on plain references now lives in the ALLOW matrix
+# (M1d, moved there verbatim). The MUST-FIX-1 matrix.
 # ---------------------------------------------------------------------------
 @on_main
 @pytest.mark.parametrize(
@@ -1076,8 +1148,50 @@ def test_nonshell_heredoc_body_mention_allows(cmd):
             id="M1c-nested_param_cmdsub",
         ),
         pytest.param(
-            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
-            id="M1d-bare_param_expansion_plus_gated_prose",
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR:-x}\nhow to revert: git restore .\nEOF",
+            id="M1d2-param_fallback_form_still_refuses",
+        ),
+        pytest.param(
+            # ${V@P} is the live-verified feed-time execution vector (prompt
+            # expansion of the variable's VALUE; promptvars is on by default,
+            # non-interactive included) — the reason check (g) keeps refusing
+            # every non-plain ${...} form (#1501).
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR@P}\nhow to revert: git restore .\nEOF",
+            id="M1d3-prompt_transform_still_refuses",
+        ),
+        pytest.param(
+            # Pins that plain-span deletion cannot MASK the $( refusal: a plain
+            # span immediately followed by M1a's substitution text.
+            "cat > /tmp/note.md <<EOF\n"
+            "${A}$(git checkout -b evil)\n"
+            "how to revert: git restore .\n"
+            "EOF",
+            id="M1d4-plain_span_adjacent_to_cmdsub",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n"
+            "value is ${SOMEVAR and more\n"
+            "how to revert: git restore .\n"
+            "EOF",
+            id="M1d5-unclosed_brace_still_refuses",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\ncount is $((1 + 1))\nhow to revert: git restore .\nEOF",
+            id="M1d6-arithmetic_still_refuses",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\narg is ${1}\nhow to revert: git restore .\nEOF",
+            id="M1d7-positional_param_still_refuses",
+        ),
+        pytest.param(
+            # Dash-tag block-side mirror of M1k: tag-form independence holds on
+            # the refusal side too (the check-(g) edit sits inside if (!QUOTED)
+            # with no tag-form consult; pinned rather than assumed).
+            "cat > /tmp/note.md <<-EOF\n"
+            "\tvalue is ${SOMEVAR@P}\n"
+            "\thow to revert: git restore .\n"
+            "\tEOF",
+            id="M1d8-dash_tag_transform_still_refuses",
         ),
     ],
 )
@@ -1291,6 +1405,143 @@ def test_ssh_remote_git_clause_waiver_allows(cmd):
 def test_grep_pattern_clause_waiver_allows(cmd):
     """grep-family pattern arguments are data; the clause is waived (incl. pipe-CONSUMER)."""
     assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # the REAL 2026-07-18T17:00:40Z incident command, verbatim from
+            # transcript 047b62be (rc=2 pre-fix; the motivating case)
+            'grep -n -m 3 -A 20 "test_worktree_revert_shapes_block\\[git reset --hard\\]"'
+            " /tmp/step9c-pytest-issue-1513.log | head -60",
+            id="GP1-piped_grep_head_real_incident",
+        ),
+        pytest.param(
+            # the FILED task-body shape (unpiped, trailing file) — already
+            # rc=0 on main; regression-pins the body's literal Goal claim
+            'grep -n -m 3 -A 20 "test_worktree_revert_shapes_block[git reset --hard]"'
+            " /tmp/step9c-pytest-issue-1513.log",
+            id="GP0-unpiped_trailing_file_filed_shape_pin",
+        ),
+        pytest.param("grep -rn 'git checkout -b' scripts/ | tail -20", id="GP2-piped_grep_tail"),
+        pytest.param("grep 'git clean -fd' notes.md | wc -l", id="GP3-piped_grep_wc"),
+        pytest.param(
+            "grep 'git reset --hard' f.log | grep -v test | head -5",
+            id="GP4-multistage_filter_chain",
+        ),
+        pytest.param(
+            "grep -o 'git rebase' run.log | sort | uniq -c", id="GP5-sort_uniq_count_idiom"
+        ),
+        pytest.param("rg 'git restore' .claude/rules/ | head -30", id="GP6-piped_rg_head"),
+        pytest.param(
+            "grep 'git reset --hard' f.log | head -60 && echo done",
+            id="GP7-chain_terminates_before_AND",
+        ),
+    ],
+)
+def test_grep_pipe_readonly_sink_chain_waived(cmd):
+    """(#1538) A grep-family pattern clause piped into a VERIFIED read-only sink
+    chain (allowlisted stdin->stdout text filters, no expansion / redirect /
+    write-exec channel, chain ends on a non-PIPE non-BG seam) is waived."""
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # (#1538) Adversarial consumer-chain shapes: the pipe widening must
+        # NOT waive any of these (all rc=2 both pre- and post-fix). Each pins
+        # one refusal arm of _pipe_chain_is_readonly_sink() (or an outer
+        # waiver arm the widening deliberately left untouched).
+        pytest.param("grep 'git reset --hard' f | bash", id="GPN1-pipe_to_shell"),
+        pytest.param("grep 'git reset --hard' f | head -1 | sh", id="GPN2-shell_at_second_stage"),
+        pytest.param("grep 'git reset --hard' f | xargs -I{} bash -c '{}'", id="GPN3-xargs_exec"),
+        pytest.param(
+            "grep 'git reset --hard' f | head -1 > /tmp/x.sh", id="GPN4-consumer_output_redirect"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | head -n $(cat n.txt)",
+            id="GPN5-consumer_command_substitution",
+        ),
+        pytest.param("grep 'git reset --hard' f | sort -o /tmp/x.sh", id="GPN6-sort_output_flag"),
+        pytest.param(
+            "grep 'git reset --hard' f | sort -ro /tmp/x.sh", id="GPN6b-sort_output_bundled_short"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort --compress-program=bash",
+            id="GPN6c-sort_compress_program_exec",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort -T /tmp/spill", id="GPN6d-sort_tempdir_spill_write"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | uniq - /tmp/x.sh", id="GPN7-uniq_positional_output"
+        ),
+        pytest.param("grep 'git reset --hard' f | rg --pre bash x", id="GPN8-rg_pre_consumer"),
+        pytest.param("grep 'git reset --hard' f | rg -z pattern", id="GPN8b-rg_search_zip_exec"),
+        pytest.param("grep 'git reset --hard' f | tee /tmp/x.sh", id="GPN9-tee_consumer"),
+        pytest.param(
+            "grep safe_pattern f | head -5 && git reset --hard",
+            id="GPN10-unquoted_verb_sibling_clause",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | head -60 &", id="GPN11-trailing_background_chain"
+        ),
+        pytest.param("grep 'git reset --hard' f | ", id="GPN12-trailing_empty_pipe"),
+        pytest.param(
+            "grep 'git reset --hard' <(cat f) | head", id="GPN13-producer_process_substitution"
+        ),
+        pytest.param("ssh pod-1 'git reset --hard' | head", id="GPN14-ssh_pipe_refusal_unchanged"),
+        pytest.param(
+            "grep 'git reset --hard' f > results.txt", id="GPN15-producer_redirect_after_pattern"
+        ),
+        pytest.param("grep 'git reset --hard' f | sed -n '1,5p'", id="GPN16-sed_excluded_consumer"),
+        pytest.param(
+            "grep 'git reset --hard' f | /usr/bin/head -5", id="GPN17-path_spelled_consumer"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f 2>&1 | head -5", id="GPN18-fd_dup_missplit_residual"
+        ),
+        # --- v3 additions (Phase-2 critique fold-in) ---
+        pytest.param(
+            "grep 'git reset --hard' f | sort --output /tmp/x.sh", id="GPN6e-sort_output_long_form"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort --temporary-directory=/tmp/spill",
+            id="GPN6f-sort_tempdir_long_form",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg --hostname-bin=bash pat",
+            id="GPN8c-rg_hostname_bin_consumer",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg --search-zip pat", id="GPN8d-rg_search_zip_long_form"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg -zi pat", id="GPN8e-rg_bundled_short_flag_mid_bundle"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | sort $SORT_FLAGS",
+            id="GPN19-consumer_bare_variable_expansion",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' f | rg 'x #' --pre bash y",
+            id="GPN20-consumer_quoted_hash_before_channel_flag",
+        ),
+        pytest.param("grep 'git reset --hard' f | awk '{print}'", id="GPN21-awk_excluded_consumer"),
+        pytest.param("grep 'git reset --hard' f | # count later", id="GPN22-comment_only_consumer"),
+        pytest.param("grep 'git reset --hard' f | \"head\" -5", id="GPN23-quoted_consumer_word"),
+    ],
+)
+def test_grep_pipe_unsafe_consumer_blocks(cmd):
+    """(#1538) Any pipe chain the read-only-sink walker cannot POSITIVELY verify
+    keeps blocking: shell/exec consumers, write channels (redirects + per-word
+    output/exec flags in every spelling), any '$' or '#' in a consumer clause,
+    off-allowlist / path-spelled / quoted consumer words, trailing BG or empty
+    pipe, producer-side procsub/redirect, and the (unwidened) ssh pipe arm."""
+    assert _run(cmd) == 2
 
 
 @on_main
@@ -2354,3 +2605,139 @@ def test_gcloud_waiver_fail_closed_blocks(cmd):
     today-blocked disposition the additive-only claim quantifies over.
     """
     assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# Deny-event sidecar (#1528) — one best-effort JSON row per deny.
+#
+# Row schema: {ts, guard:"repo_root_branch", arm, len, head, clause_head};
+# heads are printable-ASCII, masked (opaque runs >=20 -> 4-char prefix + ***)
+# BEFORE the 120-char truncate. The append must NEVER change deny/allow, exit
+# codes, or the stderr message. Every test pins EPM_GUARD_DENY_SIDECAR via the
+# harness `sidecar` kwarg; deny-side cases are @on_main (the guard's on-main
+# gate exits 0 off-main, so neither the deny nor the row fires there).
+# Templates reuse the file's existing blocked shapes (branch-switch fence /
+# merge fence M1) — no new gated literals.
+# ---------------------------------------------------------------------------
+
+_SIDECAR_KEYS = {"ts", "guard", "arm", "len", "head", "clause_head"}
+_TS_RE = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"
+_SIDECAR_BLOCKED_SWITCH = "git switch fix/foo"  # from test_branch_creation_and_switch_still_block
+_SIDECAR_BLOCKED_MERGE = "git merge issue-123"  # from test_merge_shapes_block (M1)
+
+
+@on_main
+def test_deny_writes_sidecar_row(tmp_path):
+    """T1: a denied command appends exactly one valid JSON row (full schema)."""
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    lines = sidecar.read_text().splitlines()
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert set(row) == _SIDECAR_KEYS
+    assert row["guard"] == "repo_root_branch"
+    assert row["arm"]
+    assert row["len"] == len(_SIDECAR_BLOCKED_SWITCH)
+    assert re.fullmatch(_TS_RE, row["ts"])
+
+
+@on_main
+def test_deny_sidecar_arm_with_parens_valid_json(tmp_path):
+    """T2: an arm label carrying spaces + parentheses still yields valid JSON."""
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_MERGE, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    row = json.loads(sidecar.read_text().splitlines()[0])
+    assert "(" in row["arm"]
+
+
+def test_allow_writes_no_sidecar_row(tmp_path):
+    """T3: an allowed command writes nothing (sidecar file not created)."""
+    sidecar = tmp_path / "deny.jsonl"
+    assert _run("git status", sidecar=str(sidecar)) == 0
+    assert not sidecar.exists()
+
+
+@on_main
+def test_sidecar_write_failure_preserves_deny_exit(tmp_path):
+    """T4: a failed sidecar append leaves exit 2 + the BLOCKED stderr intact.
+
+    The sidecar's parent is pointed at a regular FILE so both ``mkdir -p`` and
+    the append fail regardless of uid (root ignores a chmod-0500 dir; a
+    file-as-parent fails for root too). A writable re-run in the same test
+    confirms the row WOULD have been written — isolating the failure to the
+    write, not the deny logic.
+    """
+    blocker = tmp_path / "blocker"
+    blocker.write_text("")
+    bad_sidecar = blocker / "deny.jsonl"
+    proc = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(bad_sidecar))
+    assert proc.returncode == 2
+    assert "BLOCKED:" in proc.stderr
+    assert not bad_sidecar.exists()
+    ok_sidecar = tmp_path / "deny.jsonl"
+    proc2 = _run_full(_SIDECAR_BLOCKED_SWITCH, sidecar=str(ok_sidecar))
+    assert proc2.returncode == 2
+    assert len(ok_sidecar.read_text().splitlines()) == 1
+
+
+@on_main
+def test_sidecar_head_bounded_no_full_command(tmp_path):
+    """T5: no full command text in the row; heads are <=120 chars; len exact."""
+    cmd = _SIDECAR_BLOCKED_SWITCH + " # " + "pad " * 60
+    assert len(cmd) > 240
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(cmd, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    raw = sidecar.read_text()
+    assert cmd not in raw
+    row = json.loads(raw.splitlines()[0])
+    assert len(row["head"]) <= 120
+    assert len(row["clause_head"]) <= 120
+    assert row["len"] == len(cmd)
+
+
+@on_main
+def test_sidecar_secret_shaped_token_masked(tmp_path):
+    """T6: a secret-shaped token (hf_ + 34 alnum) never survives into the row.
+
+    Variant (a): token inside the first 120 chars (env-assignment prefix
+    before the git verb) — masked to a 4-char prefix + ``***``.
+    Variant (b): token straddling the 120-char truncation boundary — masking
+    runs BEFORE the truncate, so no >=8-char fragment may survive either.
+    """
+    token = "hf_" + "A1b2C3d4" * 4 + "Zz"
+    assert len(token) == 37
+    cmd = f"HF_TOKEN={token} {_SIDECAR_BLOCKED_SWITCH}"
+    sidecar = tmp_path / "deny.jsonl"
+    proc = _run_full(cmd, sidecar=str(sidecar))
+    assert proc.returncode == 2
+    raw = sidecar.read_text()
+    assert token not in raw
+    row = json.loads(raw.splitlines()[0])
+    assert "***" in row["head"]
+
+    prefix = _SIDECAR_BLOCKED_SWITCH + " # " + "pad " * 21
+    cmd2 = prefix + token
+    assert len(prefix) < 120 < len(cmd2)
+    sidecar2 = tmp_path / "deny2.jsonl"
+    proc2 = _run_full(cmd2, sidecar=str(sidecar2))
+    assert proc2.returncode == 2
+    raw2 = sidecar2.read_text()
+    for i in range(len(token) - 7):
+        assert token[i : i + 8] not in raw2
+
+
+def test_zz_production_sidecar_untouched_by_suite():
+    """The suite must never create/append the PRODUCTION deny sidecar (#1528).
+
+    The harness pins EPM_GUARD_DENY_SIDECAR (default ``/dev/null``) on every
+    guard invocation; this end-of-module check compares the production
+    sidecar's size/absence against the module-import snapshot. Runs LAST in
+    file order by position. Known caveat: a concurrent REAL deny in another
+    session appending mid-run would false-fail this — denies are rare
+    exception events, accepted.
+    """
+    current = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
+    assert current == _PROD_SIDECAR_SIZE_AT_IMPORT

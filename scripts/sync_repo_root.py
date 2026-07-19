@@ -34,7 +34,8 @@ Exit codes::
        --json report's ``state`` field distinguishes: synced | already |
        in-flight | dry-run — exit 0 does NOT by itself mean "my push landed")
     2  aborted on a genuine content conflict (clean abort; conflicted paths
-       named; swept files restored; manual scratch-worktree recipe printed)
+       named; swept files restored; merge-form scratch-worktree defusal
+       recipe printed — see SCRATCH_WORKTREE_RECIPE)
     3  push failed after the one retry
     4  a bounded git subprocess timed out (rebase aborted cleanly)
     5  precondition failure (HEAD not main, fresh rebase/merge husk present,
@@ -159,10 +160,39 @@ AUTOSTASH_CONFLICT_NEEDLE = "Applying autostash resulted in conflicts"
 MULTI_BRANCH_STDERR_NEEDLE = "Cannot rebase onto multiple branches"
 
 SCRATCH_WORKTREE_RECIPE = (
-    "Manual next step (the recovery that resolved 6c1b3fadf7):\n"
-    "  git worktree add --detach <path> origin/main\n"
-    "  # resolve the conflict there, commit, then:\n"
-    "  git push origin HEAD:main"
+    "Manual next step — MERGE-form defusal. It lands the resolved content AND\n"
+    "records your local commit as an ancestor of origin/main, so the next run of\n"
+    "this helper fast-forwards local main (nothing replays, nothing re-conflicts).\n"
+    "A scratch cherry-pick/rebase lands content only — the stranded local commit\n"
+    "then re-conflicts on EVERY future sync (#1489/#1525).\n"
+    "Run the block below in ONE shell invocation (shell variables do not survive\n"
+    "separate calls); if /tmp/sync-defuse exists from a prior attempt, run\n"
+    "`git worktree remove --force /tmp/sync-defuse` first:\n"
+    "  git fetch origin\n"
+    "  LOCAL_TIP=$(git rev-parse main)\n"
+    "  git worktree add --detach /tmp/sync-defuse origin/main\n"
+    '  git -C /tmp/sync-defuse merge "$LOCAL_TIP"   # conflicts on the paths above\n'
+    "  # resolve IN THE SCRATCH TREE (eval_results/INDEX.md-class appends: keep\n"
+    "  # BOTH sides' rows), then:\n"
+    "  git -C /tmp/sync-defuse add -- <resolved paths>\n"
+    "  git -C /tmp/sync-defuse commit -m 'merge: resolve root-sync conflict'\n"
+    "  git -C /tmp/sync-defuse push origin HEAD:main\n"
+    "  # push rejected (origin moved)? git fetch origin, then\n"
+    "  # git -C /tmp/sync-defuse merge origin/main (resolve if prompted), re-push.\n"
+    "  git worktree remove --force /tmp/sync-defuse\n"
+    "  uv run python scripts/sync_repo_root.py   # fast-forwards (or rebases only\n"
+    "                                            # fresh local commits) + reports\n"
+    "Variant — ALL the stranded commits' content ALREADY landed on origin (e.g. a\n"
+    "prior cherry-pick recovery) or is deliberately discarded: replace the merge\n"
+    "line with\n"
+    '  git -C /tmp/sync-defuse merge -s ours "$LOCAL_TIP"'
+    " -m 'record stranded commits as merged'\n"
+    "(keeps origin's content byte-for-byte; ONLY converges the pointer; with a\n"
+    "MIXED stack — some content new — use the default resolving merge instead).\n"
+    "NEVER converge by hand at the repo root: no `git reset` of any flavor, no\n"
+    "checkout/restore of tasks/ or eval_results/ paths — local task state is often\n"
+    "AHEAD of origin, and the helper re-run is the only sanctioned working-tree\n"
+    "materialization (autostash + collision sweep protect live session state)."
 )
 
 
@@ -1225,11 +1255,23 @@ def _capture_conflict_and_abort(repo: Path, report: dict) -> list[str]:
     return conflicted
 
 
-def _conflict_message(conflicted: list[str]) -> str:
+def _conflict_message(conflicted: list[str], stranded: list[str] | None = None) -> str:
+    """Compose the exit-2 conflict-abort message: conflicted paths, the
+    re-mining explanation + the stranded local-only commit list (capped),
+    the REGISTRY.json framing note when applicable, and the merge-form
+    scratch-worktree defusal recipe (``SCRATCH_WORKTREE_RECIPE``)."""
     lines = [
         "content conflict — rebase aborted cleanly (original HEAD restored, autostash re-applied).",
         "conflicted paths: " + (", ".join(conflicted) or "(none listed)"),
+        "Until defused, THIS conflict re-fires on every future sync — the local-only",
+        "commit(s) below replay against origin/main each time.",
     ]
+    if stranded:
+        shown = stranded[:10]
+        lines.append("stranded local-only commits (origin/main..HEAD):")
+        lines.extend(f"  {s}" for s in shown)
+        if len(stranded) > 10:
+            lines.append(f"  … and {len(stranded) - 10} more")
     if "tasks/REGISTRY.json" in conflicted:
         lines.append(
             "NOTE: a tasks/REGISTRY.json conflict is EXPECTED on incident-scale "
@@ -1319,7 +1361,12 @@ def _pull_pipeline(
     if result.rc != 0:
         conflicted = _capture_conflict_and_abort(repo, report)
         if conflicted:
-            raise SyncAbortError(EXIT_CONFLICT, _conflict_message(conflicted))
+            # Read-only: origin/main is freshly fetched by the just-failed pull,
+            # and the abort restored the pre-pull HEAD (plan #1525 §12 item 6).
+            log_out = git(repo, "log", "--oneline", "origin/main..HEAD").stdout
+            stranded = [s for s in log_out.splitlines() if s]
+            report["stranded_local_commits"] = stranded
+            raise SyncAbortError(EXIT_CONFLICT, _conflict_message(conflicted, stranded))
         raise SyncAbortError(
             EXIT_UNEXPECTED,
             f"pull failed (rc={result.rc}) with no conflict state:\n{result.stderr.strip()}",

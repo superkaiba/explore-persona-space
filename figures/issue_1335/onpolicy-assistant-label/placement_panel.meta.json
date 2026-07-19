@@ -1,0 +1,206 @@
+{
+  "commit": "185a6bd8ee",
+  "created": "2026-07-18T12:00:00Z",
+  "figsize": [
+    14.0,
+    5.5
+  ],
+  "n_series": 2,
+  "total_points": 30,
+  "points": [
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "r7_op_assistant",
+      "r2": 0.34539425231462245
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "r7_op_wren",
+      "r2": 0.34798611012244585
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "r7_op_wren46",
+      "r2": 0.3606156307412153
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Wren",
+      "r2": 0.35589278982104705
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:HELIOS",
+      "r2": 0.3356832520357623
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Dana",
+      "r2": 0.37123160454443405
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Vex",
+      "r2": 0.2963622013331656
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_mean",
+      "r2": 0.33979246193360224
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed42_r1_qa_oneline",
+      "r2": 0.3446031334813492
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Wren",
+      "r2": 0.26889773537183886
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:HELIOS",
+      "r2": 0.27921173237609304
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Dana",
+      "r2": 0.2743416624939963
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Vex",
+      "r2": 0.2443521339203004
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed44_r7_endpoint_per_persona:Wren",
+      "r2": 0.43474977561902756
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed44_r7_endpoint_per_persona:HELIOS",
+      "r2": 0.3330399195979299
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed44_r7_endpoint_per_persona:Dana",
+      "r2": 0.3961764712082661
+    },
+    {
+      "model": "base",
+      "arm": "context",
+      "cell": "seed44_r7_endpoint_per_persona:Vex",
+      "r2": 0.3636920882031348
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "r7_op_assistant",
+      "r2": 0.3126442261347647
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "r7_op_wren",
+      "r2": 0.26610752169059193
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "r7_op_wren46",
+      "r2": 0.2863864107781686
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Wren",
+      "r2": 0.2734177722305085
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:HELIOS",
+      "r2": 0.31670561278013276
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Dana",
+      "r2": 0.25447201695714383
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_per_persona:Vex",
+      "r2": 0.241176514392
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r7_endpoint_mean",
+      "r2": 0.2714429790899463
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed42_r1_qa_oneline",
+      "r2": 0.4454148173738874
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Wren",
+      "r2": 0.2680726320854369
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:HELIOS",
+      "r2": 0.2961841718837296
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Dana",
+      "r2": 0.2717959559082491
+    },
+    {
+      "model": "instruct",
+      "arm": "context",
+      "cell": "seed43_r7_endpoint_per_persona:Vex",
+      "r2": 0.25155123002461954
+    }
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "held-out R\u00b2 @ matched n=1397"
+      },
+      {
+        "title_left": "instruct model",
+        "ylabel": "held-out R\u00b2 @ matched n=1739"
+      }
+    ]
+  }
+}

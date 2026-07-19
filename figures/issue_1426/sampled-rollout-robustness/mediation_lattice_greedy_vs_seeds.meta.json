@@ -1,0 +1,239 @@
+{
+  "commit": "ce341a98ac",
+  "created": "2026-07-18T18:12:19Z",
+  "figsize": [
+    13.0,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "held-out skill-over-mean R\u00b2": 0.5616613721892567,
+      "error": 0.07197640860754737,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "held-out skill-over-mean R\u00b2": 0.908690223598056,
+      "error": 0.02121301977180945,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.733333,
+      "held-out skill-over-mean R\u00b2": 0.5551414264468447,
+      "error": 0.07269882479317535,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.733333,
+      "held-out skill-over-mean R\u00b2": 0.889397665204405,
+      "error": 0.023924494649694372,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "context\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.5678802212543441,
+      "error": 0.07021221465748359,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "realized CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.9128470915751734,
+      "error": 0.019299172599765102,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "composed\n(ctx\u2192\u0108oT\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5627262544471049,
+      "error": 0.06966452822514743,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "context+CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.8970755648425853,
+      "error": 0.023272124469720767,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.266667,
+      "held-out skill-over-mean R\u00b2": 0.5716105886195142,
+      "error": 0.07259455056720984,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.266667,
+      "held-out skill-over-mean R\u00b2": 0.9111826154419327,
+      "error": 0.019534566116072294,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.266667,
+      "held-out skill-over-mean R\u00b2": 0.5651642034313992,
+      "error": 0.07188051071252519,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.266667,
+      "held-out skill-over-mean R\u00b2": 0.8897998897292648,
+      "error": 0.023090421319535925,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.266667,
+      "held-out skill-over-mean R\u00b2": 0.5882183974548543,
+      "error": 0.07484121032309943,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.733333,
+      "held-out skill-over-mean R\u00b2": 0.7661892744432178,
+      "error": 0.03950895113873082,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.733333,
+      "held-out skill-over-mean R\u00b2": 0.590571522164648,
+      "error": 0.07207508090084785,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.733333,
+      "held-out skill-over-mean R\u00b2": 0.7494321894617841,
+      "error": 0.04006812655006148,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "context\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.5701635549842484,
+      "error": 0.07220403466859199,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "realized CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.750410824642833,
+      "error": 0.03965778488630839,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "composed\n(ctx\u2192\u0108oT\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5674459884551512,
+      "error": 0.07276481359188891,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "context+CoT\n\u2192 answer",
+      "held-out skill-over-mean R\u00b2": 0.7368675789750992,
+      "error": 0.041046152330479924,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.266667,
+      "held-out skill-over-mean R\u00b2": 0.6362777137047009,
+      "error": 0.06260592899401046,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 1.266667,
+      "held-out skill-over-mean R\u00b2": 0.7625976128768128,
+      "error": 0.04481553063561844,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.266667,
+      "held-out skill-over-mean R\u00b2": 0.6377993072547996,
+      "error": 0.06262366515997836,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 3.266667,
+      "held-out skill-over-mean R\u00b2": 0.759494502807312,
+      "error": 0.04388767927813242,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": "dotted: selection-symmetric null band p95 \u00b7 dashed: identity ceiling (color-matched per decoding)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mediation arms, per-question (primary)",
+        "ylabel": "held-out skill-over-mean R\u00b2",
+        "legend_labels": [
+          "greedy",
+          "seed 42",
+          "seed 137"
+        ],
+        "xticklabels": [
+          "context\n\u2192 answer",
+          "realized CoT\n\u2192 answer",
+          "composed\n(ctx\u2192\u0108oT\u2192ans)",
+          "context+CoT\n\u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Mediation arms, query-averaged",
+        "ylabel": "held-out skill-over-mean R\u00b2",
+        "legend_labels": [
+          "greedy",
+          "seed 42",
+          "seed 137"
+        ],
+        "xticklabels": [
+          "context\n\u2192 answer",
+          "realized CoT\n\u2192 answer",
+          "composed\n(ctx\u2192\u0108oT\u2192ans)",
+          "context+CoT\n\u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "greedy",
+      "seed 42",
+      "seed 137"
+    ]
+  }
+}

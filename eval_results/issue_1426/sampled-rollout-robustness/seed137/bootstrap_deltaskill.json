@@ -1,0 +1,494 @@
+{
+  "dv": "paired bootstrap delta-skill (shared resample-index matrix)",
+  "seed": 42,
+  "n_boot": 2000,
+  "by_regime": {
+    "avg_q": {
+      "layer_conventions": {
+        "primary_frozen_direct_best_layer": 12,
+        "note": "primary = frozen direct-arm full-data best LOCO layer (fixed before any bootstrap draw; no per-draw selection). Secondaries are frozen_full_data own-best (data-selected, labeled) and per-replicate best-vs-best."
+      },
+      "statistics": {
+        "H2_delta_g_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": 0.15556907134846565,
+            "ci95": [
+              0.09454838494624401,
+              0.23101300770170297
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": 0.15556907134846565,
+            "ci95": [
+              0.09454838494624401,
+              0.23101300770170297
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.15556907134846565,
+            "ci95": [
+              0.09454838494624401,
+              0.23101300770170297
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "H3_delta_comp_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": 0.0005612047021565925,
+            "ci95": [
+              -0.002261908439988969,
+              0.003693533947705676
+            ],
+            "p_delta_le_0": 0.3515,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": 0.0005612047021565925,
+            "ci95": [
+              -0.002261908439988969,
+              0.003693533947705676
+            ],
+            "p_delta_le_0": 0.3515,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.0005612047021565925,
+            "ci95": [
+              -0.002261908439988969,
+              0.003693533947705676
+            ],
+            "p_delta_le_0": 0.3515,
+            "n_draws": 2000
+          }
+        },
+        "H4_delta_g_minus_b": {
+          "primary_frozen_direct_best": {
+            "observed": -0.0012901991019771408,
+            "ci95": [
+              -0.012640562636669767,
+              0.012669719693904603
+            ],
+            "p_delta_le_0": 0.5865,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.0012901991019771408,
+            "ci95": [
+              -0.012640562636669767,
+              0.012669719693904603
+            ],
+            "p_delta_le_0": 0.5865,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.0012901991019771408,
+            "ci95": [
+              -0.012640562636669767,
+              0.012669719693904603
+            ],
+            "p_delta_le_0": 0.5865,
+            "n_draws": 2000
+          }
+        },
+        "delta_j_ansread_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": 0.0009454350669897416,
+            "ci95": [
+              0.00043013952389859276,
+              0.0015145723714021612
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": 0.0009454350669897416,
+            "ci95": [
+              0.00043013952389859276,
+              0.0015145723714021612
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.0009454350669897416,
+            "ci95": [
+              0.00043013952389859276,
+              0.0015145723714021612
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_b_cot2ans_max_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.14802170982195872,
+            "ci95": [
+              -0.19552162960939998,
+              -0.08931333544650671
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.14802170982195872,
+            "ci95": [
+              -0.19552162960939998,
+              -0.08931333544650671
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.14802170982195872,
+            "ci95": [
+              -0.19552162960939998,
+              -0.08931333544650671
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_b_cot2ans_boundary_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.18644759317705062,
+            "ci95": [
+              -0.29931891032483526,
+              -0.1110129019619412
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.18644759317705062,
+            "ci95": [
+              -0.29931891032483526,
+              -0.1110129019619412
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.18644759317705062,
+            "ci95": [
+              -0.29248788148030025,
+              -0.1110129019619412
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_g_aug_max_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.24530240500445766,
+            "ci95": [
+              -0.36735991100044857,
+              -0.14831410504278972
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.24530240500445766,
+            "ci95": [
+              -0.36735991100044857,
+              -0.14831410504278972
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.24530240500445766,
+            "ci95": [
+              -0.30449877077448756,
+              -0.14744544341621102
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_g_aug_boundary_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.1465174521917456,
+            "ci95": [
+              -0.2462466523194262,
+              -0.06947697338892322
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.1465174521917456,
+            "ci95": [
+              -0.2462466523194262,
+              -0.06947697338892322
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.1465174521917456,
+            "ci95": [
+              -0.2457501727906541,
+              -0.06947697338892322
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_d_ctx2ans_max_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.7621086899049425,
+            "ci95": [
+              -1.2922121444714578,
+              -0.26689895967540844
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 24,
+              "lo": 12
+            },
+            "observed": -0.30940588302893424,
+            "ci95": [
+              -0.42942145055645514,
+              -0.21265004832670195
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.30940588302893424,
+            "ci95": [
+              -0.42942145055645514,
+              -0.20278273685372988
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "H5_d_ctx2ans_boundary_minus_mean": {
+          "primary_frozen_direct_best": {
+            "observed": -0.02990799994581983,
+            "ci95": [
+              -0.16292873174456968,
+              0.07848209200296527
+            ],
+            "p_delta_le_0": 0.7195,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 12,
+              "lo": 12
+            },
+            "observed": -0.02990799994581983,
+            "ci95": [
+              -0.16292873174456968,
+              0.07848209200296527
+            ],
+            "p_delta_le_0": 0.7195,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.02990799994581983,
+            "ci95": [
+              -0.1613330266033198,
+              0.07848209200296527
+            ],
+            "p_delta_le_0": 0.7195,
+            "n_draws": 2000
+          }
+        }
+      }
+    },
+    "indiv": {
+      "layer_conventions": {
+        "primary_frozen_direct_best_layer": 24,
+        "note": "primary = frozen direct-arm full-data best LOCO layer (fixed before any bootstrap draw; no per-draw selection). Secondaries are frozen_full_data own-best (data-selected, labeled) and per-replicate best-vs-best."
+      },
+      "statistics": {
+        "H2_delta_g_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": 0.32411874638213933,
+            "ci95": [
+              0.2599172207491913,
+              0.389372380085352
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 24,
+              "lo": 24
+            },
+            "observed": 0.32411874638213933,
+            "ci95": [
+              0.2599172207491913,
+              0.389372380085352
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.32411874638213933,
+            "ci95": [
+              0.2599172207491913,
+              0.389372380085352
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "H3_delta_comp_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": -0.0067080924399761654,
+            "ci95": [
+              -0.010426485280953654,
+              -0.0027403943771307036
+            ],
+            "p_delta_le_0": 0.9995,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 24,
+              "lo": 24
+            },
+            "observed": -0.0067080924399761654,
+            "ci95": [
+              -0.010426485280953654,
+              -0.0027403943771307036
+            ],
+            "p_delta_le_0": 0.9995,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.0067080924399761654,
+            "ci95": [
+              -0.010426485280953654,
+              -0.0027403943771307036
+            ],
+            "p_delta_le_0": 0.9995,
+            "n_draws": 2000
+          }
+        },
+        "H4_delta_g_minus_b": {
+          "primary_frozen_direct_best": {
+            "observed": -0.022027615617613683,
+            "ci95": [
+              -0.030361061778838593,
+              -0.014549620484539214
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 24,
+              "lo": 24
+            },
+            "observed": -0.022027615617613683,
+            "ci95": [
+              -0.030361061778838593,
+              -0.014549620484539214
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.022027615617613683,
+            "ci95": [
+              -0.030361061778838593,
+              -0.014549620484539214
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "delta_j_ansread_minus_d": {
+          "primary_frozen_direct_best": {
+            "observed": 0.00032425812636049933,
+            "ci95": [
+              -0.0008395378905597273,
+              0.0014035469588295185
+            ],
+            "p_delta_le_0": 0.2785,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 24,
+              "lo": 24
+            },
+            "observed": 0.00032425812636049933,
+            "ci95": [
+              -0.0008395378905597273,
+              0.0014035469588295185
+            ],
+            "p_delta_le_0": 0.2785,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.00032425812636049933,
+            "ci95": [
+              -0.0008395378905597273,
+              0.0014035469588295185
+            ],
+            "p_delta_le_0": 0.2785,
+            "n_draws": 2000
+          }
+        }
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "fb4e92445cf92daafc0525c272e88805d311e869",
+    "timestamp_utc": "2026-07-18T17:31:34.709712+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

@@ -140,6 +140,7 @@ run_smoke() {
 MARKER_EPOCHS=16
 phase_log smoke_train "2 cells (marker__low + syco__low), marker cap $MARKER_EPOCHS"
 smoke_rc=0
+# RC_CAPTURE_EXEMPT: run_smoke is a thin single-command wrapper (the trainer call is its last command), so the captured rc IS the trainer's — band check below
 run_smoke "$MARKER_EPOCHS" || smoke_rc=$?
 if [[ $smoke_rc -ne 0 ]]; then
     band_missed=$(python3 -c "

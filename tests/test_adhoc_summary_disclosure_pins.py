@@ -17,6 +17,9 @@ re-wrapping never breaks a pin; each token is a verbatim substring of the
 rule in substance. The citation pins use the colon-bearing forms
 "(#1345:" / "(#1092:" because the bare ids pre-exist elsewhere in
 CLAUDE.md (a bare-id pin would be vacuous).
+
+Task #1539 added a third pinned clause: the live-compute scan for never-run
+claims (test_live_compute_scan_clause_pinned).
 """
 
 from __future__ import annotations
@@ -44,3 +47,10 @@ def test_matched_target_disclosure_clause_pinned() -> None:
     assert "**Matched-target disclosure for cross-arm tables:**" in text
     assert "scored against the SAME target/corpus" in text
     assert "(#1092:" in text
+
+
+def test_live_compute_scan_clause_pinned() -> None:
+    text = _normalized()
+    assert "additionally scans LIVE compute before asserting" in text
+    assert "the same follow-up signal set the watcher's pod-safety pass reads" in text
+    assert "nothing live is generating that cell" in text

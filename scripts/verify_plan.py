@@ -89,12 +89,14 @@ Check catalog (id — classification — kind scope)
   c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
   c38 exit-0 repo-wide         WARN-only, conditional    all kinds
       criterion baseline
+  c39 off-pod phase             WARN-only, conditional    experiment only
+      declaration
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38) also SKIP when their content trigger does not fire.
+37, 38, 39) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -146,6 +148,7 @@ labeled-line forms):
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
+  - ``N/A — no off-pod phase`` (check 39)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -844,16 +847,16 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(l) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the eleven letters.
+    forcing the section to exist and naming the twelve letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
-    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    plan record), '(self-)attestation(s)', or the literal (a)-(l) range
+    token ((a)-(j)/(a)-(k) grandfathered for in-flight plans; #1366/#1522)
     (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
@@ -874,30 +877,30 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l); older ranges grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-l])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/12 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(l) items detectable — verify all twelve attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance/parent-lineage) before approval",
+            "code-throughput/pair-provenance/parent-lineage/validity-domain) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(l) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(l); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 
@@ -5686,14 +5689,15 @@ def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
         return None
     size = p.stat().st_size
     if p.name == "LESSONS.md":
-        # #1269: the binding runtime constraint is min(cap, growth ratchet) —
-        # a plan passing the 8000-byte cap headroom could still FAIL
-        # workflow_lint's ratchet at implement time (the plan-time miss c34
-        # exists to close).
-        ratchet = wl._LESSONS_RATCHET_BYTES
-        cap = min(wl._LESSONS_MAX_BYTES, ratchet)
-        src = "_LESSONS_RATCHET_BYTES" if ratchet < wl._LESSONS_MAX_BYTES else "_LESSONS_MAX_BYTES"
-        return cap - size, cap, src
+        # #1504: the TOTAL growth ratchet is retired — the binding total
+        # constraint is the leanness cap. Per-row / non-row budgets also
+        # bind at implement time; c34's summed-block-bytes heuristic keeps
+        # the total cap as its denominator (a single-row insert over
+        # _LESSONS_ROW_MAX_BYTES is a disclosed FN here, caught by the
+        # lint). No trigger-regex change (_C34_PATH_RE / _C34_VERB_RE /
+        # _C34_BUDGET_RE untouched) — the re-audit clause does not fire;
+        # the looser denominator only monotonically reduces WARNs.
+        return wl._LESSONS_MAX_BYTES - size, wl._LESSONS_MAX_BYTES, "_LESSONS_MAX_BYTES"
     cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
     if cap is not None:
         return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"
@@ -6352,6 +6356,60 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
+
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+
+
+def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan whose non-fenced
+    prose names an off-pod / VM-side phase must either carry the fenced
+    ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
+    — per phase: runs_on + reads[] with producing phase + permanent source
+    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    consume, #1535) or declare the standalone escape
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
+    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    at VM launch on pod-only scratch never in the upload set; incident
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
+    family), and legacy plans must not bounce retroactively. kind-exempt
+    outside experiment: infra/batch/analysis/survey plans rarely dispatch
+    pods, and infra workflow-fix plans (this check's own lineage included)
+    legitimately discuss "off-pod" without having phases. Trigger scans
+    STRIPPED prose (fenced blocks masked); the block satisfier scans RAW
+    text because the slot is fenced YAML by design (the c30 convention)."""
+    cid, name = "c39_off_pod_phase_declaration", "off-pod phase declaration"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: off-pod phase declaration is an experiment-plan "
+            "(pod + off-pod phase) shape",
+        )
+    text = strip_fences(plan)
+    trigger_lines = [ln for ln in text.splitlines() if _C39_TRIGGER_RE.search(ln)]
+    if not trigger_lines:
+        return _skip(cid, name, "no off-pod / vm-side vocabulary detected")
+    if "off_pod_phases:" in plan:  # raw plan: the slot is fenced YAML by design
+        return _pass(cid, name, "fenced off_pod_phases: declaration block present")
+    if _standalone_na_declared(plan, r"no off-pod phase\b"):
+        return _pass(cid, name, "explicit N/A declared (no off-pod phase)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan prose names an off-pod / VM-side phase ({shown!r}) but carries no fenced "
+        "`off_pod_phases:` block — without the declaration the phase's READS are not "
+        "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
+        "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
+        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
+        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
+        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6392,6 +6450,7 @@ CHECKS = [
     check_numeric_containment,
     check_noflags_bundling_claim,
     check_exit0_repo_wide_baseline,
+    check_off_pod_phase_declaration,
 ]
 
 

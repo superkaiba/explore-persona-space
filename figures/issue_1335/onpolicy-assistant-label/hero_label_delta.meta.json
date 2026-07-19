@@ -1,0 +1,5109 @@
+{
+  "commit": "185a6bd8ee",
+  "created": "2026-07-18T11:12:00Z",
+  "figsize": [
+    14.0,
+    6.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "difference in held-out $R^2$ (layer 19)": -0.0033812975873641626,
+      "error": 0.022005623595245098,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.45,
+      "difference in held-out $R^2$ (layer 19)": -0.00477974448489038,
+      "error": 0.022336630922573604,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.8,
+      "difference in held-out $R^2$ (layer 19)": -0.01249186904057864,
+      "error": 0.022123659221095375,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.25,
+      "difference in held-out $R^2$ (layer 19)": -0.012123839543689341,
+      "error": 0.022506202529719212,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.008801115476537532,
+      "difference in held-out $R^2$ (layer 19)": -0.012475668974489706,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.009247340430391134,
+      "difference in held-out $R^2$ (layer 19)": -0.01392512951594893,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.044829585531029746,
+      "difference in held-out $R^2$ (layer 19)": -0.0014584813453411005,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.00734300820071278,
+      "difference in held-out $R^2$ (layer 19)": -0.0078119826403310055,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03749685612127777,
+      "difference in held-out $R^2$ (layer 19)": -0.0066245512975341425,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.025311653843663934,
+      "difference in held-out $R^2$ (layer 19)": 0.003974761536785221,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09128000315910961,
+      "difference in held-out $R^2$ (layer 19)": 0.002444925425027611,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06629566741904695,
+      "difference in held-out $R^2$ (layer 19)": -0.017349591514570162,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.049261466506489486,
+      "difference in held-out $R^2$ (layer 19)": -0.01732744284818044,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08857950297322369,
+      "difference in held-out $R^2$ (layer 19)": -0.020880004978142463,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.043629212377614655,
+      "difference in held-out $R^2$ (layer 19)": -0.011408753405028782,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.002892818554307052,
+      "difference in held-out $R^2$ (layer 19)": 0.0034163349142904975,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.16275215422471842,
+      "difference in held-out $R^2$ (layer 19)": -0.0035944708887583054,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.015315416475278202,
+      "difference in held-out $R^2$ (layer 19)": -0.005203405033095798,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08721376630771457,
+      "difference in held-out $R^2$ (layer 19)": -0.015963260896473375,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05125871482924162,
+      "difference in held-out $R^2$ (layer 19)": 0.003048908540027817,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0380981288000117,
+      "difference in held-out $R^2$ (layer 19)": 0.01116074276961665,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02214101094584082,
+      "difference in held-out $R^2$ (layer 19)": 0.003986306325254985,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.028814137546189302,
+      "difference in held-out $R^2$ (layer 19)": 0.0023026114316200275,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07297593586098744,
+      "difference in held-out $R^2$ (layer 19)": -0.00800885462322709,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0089974264060824,
+      "difference in held-out $R^2$ (layer 19)": 0.0039722286567311915,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09565244293847802,
+      "difference in held-out $R^2$ (layer 19)": -0.009471840368113882,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04656362714406295,
+      "difference in held-out $R^2$ (layer 19)": -0.006407520739824646,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.024605704906511382,
+      "difference in held-out $R^2$ (layer 19)": 0.013796417829143315,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06324291271562661,
+      "difference in held-out $R^2$ (layer 19)": 0.011663366737633463,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.00658086084326122,
+      "difference in held-out $R^2$ (layer 19)": 0.002009891934678709,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.052044947454766594,
+      "difference in held-out $R^2$ (layer 19)": -0.024945394558208656,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06452077633808936,
+      "difference in held-out $R^2$ (layer 19)": 0.025524158641618055,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03204080779671374,
+      "difference in held-out $R^2$ (layer 19)": -0.011765173699969433,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01541365864290346,
+      "difference in held-out $R^2$ (layer 19)": 0.00719503203830274,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07067327284771152,
+      "difference in held-out $R^2$ (layer 19)": 0.004994244306568363,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.014642290241019916,
+      "difference in held-out $R^2$ (layer 19)": -0.007847414950794107,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.011145750694013442,
+      "difference in held-out $R^2$ (layer 19)": -0.0037068988923290025,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03785919092800654,
+      "difference in held-out $R^2$ (layer 19)": 0.003964502536494829,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.015026138575443864,
+      "difference in held-out $R^2$ (layer 19)": 0.01727812607268575,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0248760896327945,
+      "difference in held-out $R^2$ (layer 19)": 0.004233051666795884,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04576800265928376,
+      "difference in held-out $R^2$ (layer 19)": -0.01629587873406302,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.009072954358493862,
+      "difference in held-out $R^2$ (layer 19)": -0.0014057402106285588,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05487828290429307,
+      "difference in held-out $R^2$ (layer 19)": -0.0033684091205430367,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10454018016545326,
+      "difference in held-out $R^2$ (layer 19)": -0.0038435964713023907,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08813458724728843,
+      "difference in held-out $R^2$ (layer 19)": 0.006001449292034944,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10597466423173439,
+      "difference in held-out $R^2$ (layer 19)": 0.013842533893126174,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09421127966476132,
+      "difference in held-out $R^2$ (layer 19)": -0.00636215679944252,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.054691798049029926,
+      "difference in held-out $R^2$ (layer 19)": -0.01746801415269661,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.018511894123051247,
+      "difference in held-out $R^2$ (layer 19)": -0.0330938401485501,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021974597017549946,
+      "difference in held-out $R^2$ (layer 19)": -0.02053559769446689,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10206144784758711,
+      "difference in held-out $R^2$ (layer 19)": -0.006861734700388977,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13721808215149756,
+      "difference in held-out $R^2$ (layer 19)": 0.002085795373960919,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12611444089062876,
+      "difference in held-out $R^2$ (layer 19)": -0.005756103338584562,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0920572635314059,
+      "difference in held-out $R^2$ (layer 19)": 0.0017987408093715906,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02501662874612692,
+      "difference in held-out $R^2$ (layer 19)": 0.016122974297462234,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08458230425975201,
+      "difference in held-out $R^2$ (layer 19)": 0.0006695852531609647,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.00031178931840582604,
+      "difference in held-out $R^2$ (layer 19)": -0.027043403024974877,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04595324545534351,
+      "difference in held-out $R^2$ (layer 19)": 0.005287473923392794,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09018530246246882,
+      "difference in held-out $R^2$ (layer 19)": -0.000829457202643491,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02765854421274058,
+      "difference in held-out $R^2$ (layer 19)": -0.031672396607806186,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.030090458637556106,
+      "difference in held-out $R^2$ (layer 19)": 0.009025814813561128,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.048722990677400796,
+      "difference in held-out $R^2$ (layer 19)": 0.004067904700568836,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08288825767300324,
+      "difference in held-out $R^2$ (layer 19)": 0.0016438948289367872,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04631918004273245,
+      "difference in held-out $R^2$ (layer 19)": 0.012291992218721015,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03055046730002549,
+      "difference in held-out $R^2$ (layer 19)": 0.006908189761224093,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08188613354410049,
+      "difference in held-out $R^2$ (layer 19)": -0.013812065964779574,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1217557513991094,
+      "difference in held-out $R^2$ (layer 19)": 0.005167193196857989,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.034713750990950636,
+      "difference in held-out $R^2$ (layer 19)": 0.004848863955772442,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.023027874062214147,
+      "difference in held-out $R^2$ (layer 19)": -0.0032335876576481404,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.018100078183174682,
+      "difference in held-out $R^2$ (layer 19)": -0.00827839978858702,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11084310151614857,
+      "difference in held-out $R^2$ (layer 19)": -0.015191125000768024,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09242526909572875,
+      "difference in held-out $R^2$ (layer 19)": -0.014509777842134697,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04433468359774407,
+      "difference in held-out $R^2$ (layer 19)": -0.009979484768406932,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.15424569164526555,
+      "difference in held-out $R^2$ (layer 19)": -4.2459987771747976e-05,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.003642028198192056,
+      "difference in held-out $R^2$ (layer 19)": 0.006617352219268846,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04785803335435742,
+      "difference in held-out $R^2$ (layer 19)": 0.010390938432967789,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07027731030895187,
+      "difference in held-out $R^2$ (layer 19)": -0.0034334792108654533,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04325349312953206,
+      "difference in held-out $R^2$ (layer 19)": -0.009370113487252474,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12754079543298263,
+      "difference in held-out $R^2$ (layer 19)": -0.025858152279109148,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09243016790093055,
+      "difference in held-out $R^2$ (layer 19)": 0.005001486769820707,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04630696152706534,
+      "difference in held-out $R^2$ (layer 19)": -0.002044488367343611,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06545349916798156,
+      "difference in held-out $R^2$ (layer 19)": -0.01667355294048256,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0034338229677718162,
+      "difference in held-out $R^2$ (layer 19)": 0.0032822776079506344,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.14016748085516786,
+      "difference in held-out $R^2$ (layer 19)": -0.014145791967853483,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01319634347587259,
+      "difference in held-out $R^2$ (layer 19)": 0.006603811159116124,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04432358631345588,
+      "difference in held-out $R^2$ (layer 19)": -0.009002716808941269,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02642944536629658,
+      "difference in held-out $R^2$ (layer 19)": 0.0043660215632553845,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07638022823334369,
+      "difference in held-out $R^2$ (layer 19)": -0.0072516736966249384,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08943761164706257,
+      "difference in held-out $R^2$ (layer 19)": -0.018282460989365812,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04412880435377624,
+      "difference in held-out $R^2$ (layer 19)": -0.015061692147559924,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04068160686889641,
+      "difference in held-out $R^2$ (layer 19)": -0.013578173737613275,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0906191173608782,
+      "difference in held-out $R^2$ (layer 19)": -0.010381912243199842,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05282240538819518,
+      "difference in held-out $R^2$ (layer 19)": 0.0074558142077088,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11823752167105712,
+      "difference in held-out $R^2$ (layer 19)": -0.011322602626490208,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02011713954660664,
+      "difference in held-out $R^2$ (layer 19)": -0.0055087737493358935,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11020857951912108,
+      "difference in held-out $R^2$ (layer 19)": -0.010460410305469958,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.030295009302781777,
+      "difference in held-out $R^2$ (layer 19)": 0.005264273678674547,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05148383046395926,
+      "difference in held-out $R^2$ (layer 19)": -0.013368767550877125,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01748497600910668,
+      "difference in held-out $R^2$ (layer 19)": -0.011250804238992829,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07220171594086307,
+      "difference in held-out $R^2$ (layer 19)": 0.0022902773897041095,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.011270670370074128,
+      "difference in held-out $R^2$ (layer 19)": -0.0069739385835724255,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04098701768863357,
+      "difference in held-out $R^2$ (layer 19)": -0.01963456512918471,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09388537998536685,
+      "difference in held-out $R^2$ (layer 19)": -0.012721901673623415,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09810641504421996,
+      "difference in held-out $R^2$ (layer 19)": 0.0019815045318892777,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.4851877994912406,
+      "difference in held-out $R^2$ (layer 19)": -0.012254764013185815,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5192799123300063,
+      "difference in held-out $R^2$ (layer 19)": -0.015543854563198622,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4384993785162297,
+      "difference in held-out $R^2$ (layer 19)": -0.0017781734216938405,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3747944599240096,
+      "difference in held-out $R^2$ (layer 19)": -0.008463465781233248,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5111129506835195,
+      "difference in held-out $R^2$ (layer 19)": -0.00679864216447168,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.36037242386998,
+      "difference in held-out $R^2$ (layer 19)": 0.003040787357779573,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4000852333458509,
+      "difference in held-out $R^2$ (layer 19)": 0.0028633124664894094,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4934712497478069,
+      "difference in held-out $R^2$ (layer 19)": -0.018460784281149167,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2924901178497785,
+      "difference in held-out $R^2$ (layer 19)": -0.018491642465339964,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4770458718296413,
+      "difference in held-out $R^2$ (layer 19)": -0.020895340328303313,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4092851414513348,
+      "difference in held-out $R^2$ (layer 19)": -0.012393211568197171,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.457649578823447,
+      "difference in held-out $R^2$ (layer 19)": 0.002359256568285728,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4447008931645424,
+      "difference in held-out $R^2$ (layer 19)": -0.003912033873451404,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.464148007653077,
+      "difference in held-out $R^2$ (layer 19)": -0.00578399321821077,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4985920355694906,
+      "difference in held-out $R^2$ (layer 19)": -0.015443674347800362,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3969141174371114,
+      "difference in held-out $R^2$ (layer 19)": 0.0008190076651944933,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.549468741561834,
+      "difference in held-out $R^2$ (layer 19)": 0.008687474194481237,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5008265652263435,
+      "difference in held-out $R^2$ (layer 19)": 0.003439843696243172,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5090612863612287,
+      "difference in held-out $R^2$ (layer 19)": 0.0005258177505826911,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.531540478677772,
+      "difference in held-out $R^2$ (layer 19)": -0.008907674265335896,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5051311755194108,
+      "difference in held-out $R^2$ (layer 19)": 4.611934449005872e-05,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5090855076405014,
+      "difference in held-out $R^2$ (layer 19)": -0.011449325610724648,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4552915527520018,
+      "difference in held-out $R^2$ (layer 19)": -0.007881019621039709,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3501258304307187,
+      "difference in held-out $R^2$ (layer 19)": 0.01085977875868005,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4405468429974089,
+      "difference in held-out $R^2$ (layer 19)": 0.008821557957229054,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3961339751876305,
+      "difference in held-out $R^2$ (layer 19)": 0.0008437787712042288,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.350408076203921,
+      "difference in held-out $R^2$ (layer 19)": -0.025309664629206807,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4680916953639092,
+      "difference in held-out $R^2$ (layer 19)": 0.024301237176055812,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4102015382096649,
+      "difference in held-out $R^2$ (layer 19)": -0.014189886579822897,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3779136893391974,
+      "difference in held-out $R^2$ (layer 19)": 0.004838826149322406,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3769899243949904,
+      "difference in held-out $R^2$ (layer 19)": 0.005784479670623344,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.468789195579624,
+      "difference in held-out $R^2$ (layer 19)": -0.01212273900418126,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.475107036441924,
+      "difference in held-out $R^2$ (layer 19)": -0.007801516197203151,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5425720228836783,
+      "difference in held-out $R^2$ (layer 19)": 0.004581277635878234,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4490259732033135,
+      "difference in held-out $R^2$ (layer 19)": 0.01835530013301745,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5229287831448974,
+      "difference in held-out $R^2$ (layer 19)": 0.0038833141869383248,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5481585378740765,
+      "difference in held-out $R^2$ (layer 19)": -0.01902590517204472,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5305115945304784,
+      "difference in held-out $R^2$ (layer 19)": -0.003447638873595227,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2844287265606118,
+      "difference in held-out $R^2$ (layer 19)": -0.006048284851399965,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5360078603442395,
+      "difference in held-out $R^2$ (layer 19)": -0.004396962787057479,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.473773400577405,
+      "difference in held-out $R^2$ (layer 19)": 0.002794241636188355,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4796639946997343,
+      "difference in held-out $R^2$ (layer 19)": 0.012237195466096806,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.475985919241538,
+      "difference in held-out $R^2$ (layer 19)": -0.006637214007113701,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4767930012189532,
+      "difference in held-out $R^2$ (layer 19)": -0.018437057244603094,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4723589954176666,
+      "difference in held-out $R^2$ (layer 19)": -0.034784696449986496,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4248760684022965,
+      "difference in held-out $R^2$ (layer 19)": -0.02174857178199674,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3168855291136803,
+      "difference in held-out $R^2$ (layer 19)": -0.006786824529054658,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4423759690464804,
+      "difference in held-out $R^2$ (layer 19)": 0.003084771199973524,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3937387706035527,
+      "difference in held-out $R^2$ (layer 19)": -0.009320710250469877,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5256114388776518,
+      "difference in held-out $R^2$ (layer 19)": -0.0002951734688753094,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4297863445803236,
+      "difference in held-out $R^2$ (layer 19)": 0.012742219553415368,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4558432749274905,
+      "difference in held-out $R^2$ (layer 19)": -0.0005013126578176097,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3905275831072899,
+      "difference in held-out $R^2$ (layer 19)": -0.02931018135686858,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4142564272471312,
+      "difference in held-out $R^2$ (layer 19)": 0.0017503663183756624,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4491926856819388,
+      "difference in held-out $R^2$ (layer 19)": -0.003815648587373266,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3460237371015518,
+      "difference in held-out $R^2$ (layer 19)": -0.03530964008962911,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4710479580006224,
+      "difference in held-out $R^2$ (layer 19)": 0.004827794887247827,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4425749422586573,
+      "difference in held-out $R^2$ (layer 19)": 0.0027450246166630388,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3669996136496336,
+      "difference in held-out $R^2$ (layer 19)": 0.00030499973711040074,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2821236994221559,
+      "difference in held-out $R^2$ (layer 19)": 0.011800881054594425,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4859136493716214,
+      "difference in held-out $R^2$ (layer 19)": 0.005102558925580092,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.429169117273967,
+      "difference in held-out $R^2$ (layer 19)": -0.016064003756773193,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4128994110747288,
+      "difference in held-out $R^2$ (layer 19)": 0.005434518614680917,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.433469175910294,
+      "difference in held-out $R^2$ (layer 19)": 0.0026656671868855453,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.57715331586168,
+      "difference in held-out $R^2$ (layer 19)": -0.006560595206720143,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.446513932165825,
+      "difference in held-out $R^2$ (layer 19)": -0.0066520418264102155,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4560633484091978,
+      "difference in held-out $R^2$ (layer 19)": -0.015513077009759901,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.345904899122722,
+      "difference in held-out $R^2$ (layer 19)": -0.015723676754889504,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5653137346449268,
+      "difference in held-out $R^2$ (layer 19)": -0.010382404299060566,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5142241588411005,
+      "difference in held-out $R^2$ (layer 19)": -0.00035925814134818435,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5246854406903625,
+      "difference in held-out $R^2$ (layer 19)": 0.005168398435276833,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4533370911848176,
+      "difference in held-out $R^2$ (layer 19)": 0.009245373804036006,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5141658352177216,
+      "difference in held-out $R^2$ (layer 19)": -0.0038506469469911098,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4759662784566088,
+      "difference in held-out $R^2$ (layer 19)": -0.010480096554344565,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4929232354501303,
+      "difference in held-out $R^2$ (layer 19)": -0.027149018700953542,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4393464929114197,
+      "difference in held-out $R^2$ (layer 19)": 0.002313067860302498,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3468278436370629,
+      "difference in held-out $R^2$ (layer 19)": -0.003980193229437212,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5220198043462227,
+      "difference in held-out $R^2$ (layer 19)": -0.017079634454732928,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3145528254373204,
+      "difference in held-out $R^2$ (layer 19)": 0.002249952740836836,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4332044330119373,
+      "difference in held-out $R^2$ (layer 19)": -0.017097028191030206,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4356834258120237,
+      "difference in held-out $R^2$ (layer 19)": 0.005360040619011519,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3769997901310846,
+      "difference in held-out $R^2$ (layer 19)": -0.00927849710848927,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4929186195435606,
+      "difference in held-out $R^2$ (layer 19)": 0.001979410565500217,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4359769209013302,
+      "difference in held-out $R^2$ (layer 19)": -0.009113180558378842,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4194192172081903,
+      "difference in held-out $R^2$ (layer 19)": -0.019545843462815404,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.486388921168435,
+      "difference in held-out $R^2$ (layer 19)": -0.01637372337688736,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.416639467160911,
+      "difference in held-out $R^2$ (layer 19)": -0.013170708018869215,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5472285982386815,
+      "difference in held-out $R^2$ (layer 19)": -0.010061727573111967,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.474601855333112,
+      "difference in held-out $R^2$ (layer 19)": 0.005380009764440974,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4167966909215892,
+      "difference in held-out $R^2$ (layer 19)": -0.011211087185452717,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.313901451681012,
+      "difference in held-out $R^2$ (layer 19)": -0.0062163611860835966,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3584572762169196,
+      "difference in held-out $R^2$ (layer 19)": -0.013250530526609183,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5260781549337854,
+      "difference in held-out $R^2$ (layer 19)": 0.0013084296813730134,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.446457715582206,
+      "difference in held-out $R^2$ (layer 19)": -0.011284509213187244,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4301812454024325,
+      "difference in held-out $R^2$ (layer 19)": -0.01132234738849136,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.5650276129969887,
+      "difference in held-out $R^2$ (layer 19)": 0.001634033258433587,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.360214552914827,
+      "difference in held-out $R^2$ (layer 19)": -0.010603814599374761,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.4090039540111048,
+      "difference in held-out $R^2$ (layer 19)": -0.02124801846780444,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.416918862626906,
+      "difference in held-out $R^2$ (layer 19)": -0.014221776142360976,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.491043609707191,
+      "difference in held-out $R^2$ (layer 19)": -0.000863679989768884,
+      "label": "shaded: \u00b10.071 run-noise band",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.7535525361187165,
+      "difference in held-out $R^2$ (layer 19)": 0.0006694367997953643,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.757060750597018,
+      "difference in held-out $R^2$ (layer 19)": -0.007903877495009426,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.687639542218042,
+      "difference in held-out $R^2$ (layer 19)": -0.019274258927441168,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.85105445828125,
+      "difference in held-out $R^2$ (layer 19)": -0.008526220129391748,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8564297550960513,
+      "difference in held-out $R^2$ (layer 19)": -0.01677680895993794,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7666536276819187,
+      "difference in held-out $R^2$ (layer 19)": -0.01253920785824536,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.811433796187891,
+      "difference in held-out $R^2$ (layer 19)": -0.03321583898506686,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.709514771406846,
+      "difference in held-out $R^2$ (layer 19)": -0.007088525200908524,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7669730791681366,
+      "difference in held-out $R^2$ (layer 19)": -0.0034459760479960133,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8964565666905764,
+      "difference in held-out $R^2$ (layer 19)": 0.0015424887072763571,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.809501151384699,
+      "difference in held-out $R^2$ (layer 19)": -0.01189350079496776,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.961725444075712,
+      "difference in held-out $R^2$ (layer 19)": -0.010621454708504396,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7448965080489987,
+      "difference in held-out $R^2$ (layer 19)": -0.01178724134751763,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.840619909170701,
+      "difference in held-out $R^2$ (layer 19)": -0.01207314567270601,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7863145920516827,
+      "difference in held-out $R^2$ (layer 19)": 0.0028698156479505244,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8396072492779663,
+      "difference in held-out $R^2$ (layer 19)": -0.016926104014569177,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.799495204823887,
+      "difference in held-out $R^2$ (layer 19)": -0.018566698372732726,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7607161322713587,
+      "difference in held-out $R^2$ (layer 19)": -0.005226546865132908,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7392668264974804,
+      "difference in held-out $R^2$ (layer 19)": -0.027281487295876095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.0146225717334225,
+      "difference in held-out $R^2$ (layer 19)": -0.009323248475456514,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.794585845819305,
+      "difference in held-out $R^2$ (layer 19)": -0.02195536693663991,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.6588337516836726,
+      "difference in held-out $R^2$ (layer 19)": -0.010625728196840933,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7545979574467663,
+      "difference in held-out $R^2$ (layer 19)": -0.010593430938703907,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8474627808986797,
+      "difference in held-out $R^2$ (layer 19)": -0.02772010915309009,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7649994096770674,
+      "difference in held-out $R^2$ (layer 19)": -0.025591982233349242,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8952312341739677,
+      "difference in held-out $R^2$ (layer 19)": -0.017338833061789294,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.870167879099077,
+      "difference in held-out $R^2$ (layer 19)": 0.009942833363497106,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.789336295492303,
+      "difference in held-out $R^2$ (layer 19)": -0.030240055678867783,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7669448840056767,
+      "difference in held-out $R^2$ (layer 19)": -0.008833594639503506,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.729663929508061,
+      "difference in held-out $R^2$ (layer 19)": -0.027280716719151887,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.751002342038067,
+      "difference in held-out $R^2$ (layer 19)": -0.02430823844845076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.696879984773406,
+      "difference in held-out $R^2$ (layer 19)": -0.00013383872344063796,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8843077404073156,
+      "difference in held-out $R^2$ (layer 19)": -0.01763401167883971,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.911349055098824,
+      "difference in held-out $R^2$ (layer 19)": -0.02293316388273625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7120703351190585,
+      "difference in held-out $R^2$ (layer 19)": -0.014119076090254645,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.717282191701947,
+      "difference in held-out $R^2$ (layer 19)": -0.016288628364418356,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.6762041700039156,
+      "difference in held-out $R^2$ (layer 19)": -0.0011501662194530748,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.732530203848748,
+      "difference in held-out $R^2$ (layer 19)": -0.01603379501552782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.5825564239101695,
+      "difference in held-out $R^2$ (layer 19)": -0.013772541542155126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7200404730357652,
+      "difference in held-out $R^2$ (layer 19)": -0.020051039302402374,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8907840779860363,
+      "difference in held-out $R^2$ (layer 19)": -0.020028835597497463,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7758029229374874,
+      "difference in held-out $R^2$ (layer 19)": -0.022009753793809095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8598208964397385,
+      "difference in held-out $R^2$ (layer 19)": -0.016960829471279193,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7657721655310565,
+      "difference in held-out $R^2$ (layer 19)": -0.017929998245503787,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.9232467107895186,
+      "difference in held-out $R^2$ (layer 19)": 0.0024028818892730675,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.81394525881097,
+      "difference in held-out $R^2$ (layer 19)": 0.011578129889329047,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.773259839549956,
+      "difference in held-out $R^2$ (layer 19)": -0.010010525747360943,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.9786696817759757,
+      "difference in held-out $R^2$ (layer 19)": -0.007381402945198623,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.777286970060019,
+      "difference in held-out $R^2$ (layer 19)": -0.0029050440088680407,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7145143655191704,
+      "difference in held-out $R^2$ (layer 19)": -0.017094338848999358,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8141337001372073,
+      "difference in held-out $R^2$ (layer 19)": -0.023395278370282102,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7972815473009343,
+      "difference in held-out $R^2$ (layer 19)": -0.0010423443424687484,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.874642718721638,
+      "difference in held-out $R^2$ (layer 19)": 0.008926236438314694,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.735485625285153,
+      "difference in held-out $R^2$ (layer 19)": -0.020833811923154477,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8563301852035647,
+      "difference in held-out $R^2$ (layer 19)": -0.006004729132175313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8596923929402003,
+      "difference in held-out $R^2$ (layer 19)": -0.0006727617840716071,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.753261889564545,
+      "difference in held-out $R^2$ (layer 19)": -0.013365733548423075,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.811427080400587,
+      "difference in held-out $R^2$ (layer 19)": -0.023439792950940785,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.741847363020196,
+      "difference in held-out $R^2$ (layer 19)": -0.004609169229733756,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.9642065651688467,
+      "difference in held-out $R^2$ (layer 19)": -0.0223553973074323,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7507102306403883,
+      "difference in held-out $R^2$ (layer 19)": -0.027622865727792822,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.76828478894319,
+      "difference in held-out $R^2$ (layer 19)": -0.004133297587623819,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7253913384625634,
+      "difference in held-out $R^2$ (layer 19)": -0.01535739910192635,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7757715107378775,
+      "difference in held-out $R^2$ (layer 19)": -0.02476071087404108,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7995886781312165,
+      "difference in held-out $R^2$ (layer 19)": -0.021220648447479062,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.853745239474128,
+      "difference in held-out $R^2$ (layer 19)": -0.0029032935248204383,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.757265934775401,
+      "difference in held-out $R^2$ (layer 19)": 0.011577978949902645,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.786995822892989,
+      "difference in held-out $R^2$ (layer 19)": -0.0031115624759147087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.700845744351017,
+      "difference in held-out $R^2$ (layer 19)": -0.005784906425441272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.742081844126369,
+      "difference in held-out $R^2$ (layer 19)": -0.006464069247022031,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.9929065290793164,
+      "difference in held-out $R^2$ (layer 19)": -0.021808321650786056,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8728870234186354,
+      "difference in held-out $R^2$ (layer 19)": -0.024599854868416093,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7453003170825876,
+      "difference in held-out $R^2$ (layer 19)": -0.018852681131320326,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7063821930930194,
+      "difference in held-out $R^2$ (layer 19)": 0.0025752197490033213,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7317092018580236,
+      "difference in held-out $R^2$ (layer 19)": 0.001508448191882339,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7984816398340384,
+      "difference in held-out $R^2$ (layer 19)": -0.007949989659951862,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8024309451851432,
+      "difference in held-out $R^2$ (layer 19)": -0.008431672543331215,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.74789475793484,
+      "difference in held-out $R^2$ (layer 19)": -0.008263721694468984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7099397873283646,
+      "difference in held-out $R^2$ (layer 19)": -0.014462221685859089,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.899566495367391,
+      "difference in held-out $R^2$ (layer 19)": 0.008659509694915468,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8316179815906564,
+      "difference in held-out $R^2$ (layer 19)": -0.019344221296940023,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7737802386302444,
+      "difference in held-out $R^2$ (layer 19)": -0.0021737933803333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7845537154528737,
+      "difference in held-out $R^2$ (layer 19)": -0.009235900449401258,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.762932867861203,
+      "difference in held-out $R^2$ (layer 19)": -0.02692261417794406,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.594476818778802,
+      "difference in held-out $R^2$ (layer 19)": -0.008650762599423656,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8080963278964837,
+      "difference in held-out $R^2$ (layer 19)": -0.013731511118834416,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.725061891321296,
+      "difference in held-out $R^2$ (layer 19)": 0.00025407150038003756,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7298120990677024,
+      "difference in held-out $R^2$ (layer 19)": 0.00768204433178965,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7551816316226736,
+      "difference in held-out $R^2$ (layer 19)": -0.011176071970865564,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8512611200297906,
+      "difference in held-out $R^2$ (layer 19)": 0.01560625731878107,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.718062843411462,
+      "difference in held-out $R^2$ (layer 19)": -0.006741278279741358,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.699600297822811,
+      "difference in held-out $R^2$ (layer 19)": -0.007128520284908402,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8447896452620665,
+      "difference in held-out $R^2$ (layer 19)": -0.018721275211905586,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.8528058233247684,
+      "difference in held-out $R^2$ (layer 19)": -0.009153082517315059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7328746404544044,
+      "difference in held-out $R^2$ (layer 19)": -0.022916395356625596,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.839367837410507,
+      "difference in held-out $R^2$ (layer 19)": -0.020359999851235377,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.779585729870967,
+      "difference in held-out $R^2$ (layer 19)": -0.008200630841158185,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.821090452358749,
+      "difference in held-out $R^2$ (layer 19)": -0.0034152976496871768,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.7117327803954123,
+      "difference in held-out $R^2$ (layer 19)": -0.018252354367616963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.858302611455258,
+      "difference in held-out $R^2$ (layer 19)": -0.024667037453657947,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.334228126788155,
+      "difference in held-out $R^2$ (layer 19)": -0.0006530634576071837,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2945951264938325,
+      "difference in held-out $R^2$ (layer 19)": -0.008923073942968762,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.28908379731866,
+      "difference in held-out $R^2$ (layer 19)": -0.01986613566488682,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.985940739071409,
+      "difference in held-out $R^2$ (layer 19)": -0.010207661262169543,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.268244082434686,
+      "difference in held-out $R^2$ (layer 19)": -0.018136984898073583,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.248218827831522,
+      "difference in held-out $R^2$ (layer 19)": -0.01277518866074745,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.239706814520757,
+      "difference in held-out $R^2$ (layer 19)": -0.03336305185315369,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.205859540702028,
+      "difference in held-out $R^2$ (layer 19)": -0.008177861968076905,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.253875548243949,
+      "difference in held-out $R^2$ (layer 19)": -0.002536005477272618,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.278848218358983,
+      "difference in held-out $R^2$ (layer 19)": 0.00043955664413375395,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.231534828762157,
+      "difference in held-out $R^2$ (layer 19)": -0.013539871583569063,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.217567310220309,
+      "difference in held-out $R^2$ (layer 19)": -0.010031352924797288,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.336082766765749,
+      "difference in held-out $R^2$ (layer 19)": -0.013213069082568918,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.172624302491161,
+      "difference in held-out $R^2$ (layer 19)": -0.01284548986887546,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.322110863847671,
+      "difference in held-out $R^2$ (layer 19)": 0.0037216395197389174,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.262376872461137,
+      "difference in held-out $R^2$ (layer 19)": -0.015213415089698867,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.19369860483023,
+      "difference in held-out $R^2$ (layer 19)": -0.01667057991811316,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.229701267275148,
+      "difference in held-out $R^2$ (layer 19)": -0.005950027399447166,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.1856004478031466,
+      "difference in held-out $R^2$ (layer 19)": -0.026713346089174306,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.29725451628866,
+      "difference in held-out $R^2$ (layer 19)": -0.008777085839563825,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.274353123337933,
+      "difference in held-out $R^2$ (layer 19)": -0.020392952434869605,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.211024267739277,
+      "difference in held-out $R^2$ (layer 19)": -0.01120059328437606,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.172844719066204,
+      "difference in held-out $R^2$ (layer 19)": -0.010221173700386332,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.271120126545075,
+      "difference in held-out $R^2$ (layer 19)": -0.024857131098736884,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.317016992478935,
+      "difference in held-out $R^2$ (layer 19)": -0.0232428843843282,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.242031455543268,
+      "difference in held-out $R^2$ (layer 19)": -0.01607243264090874,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.279284675062246,
+      "difference in held-out $R^2$ (layer 19)": 0.010196930216213151,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.223678099461518,
+      "difference in held-out $R^2$ (layer 19)": -0.030248976862903065,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.25472984442066,
+      "difference in held-out $R^2$ (layer 19)": -0.008338612178999227,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.229610196202442,
+      "difference in held-out $R^2$ (layer 19)": -0.02609675649308507,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.270582950008249,
+      "difference in held-out $R^2$ (layer 19)": -0.02481895711312576,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.144315924087499,
+      "difference in held-out $R^2$ (layer 19)": 0.004241405074656646,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.295093336623278,
+      "difference in held-out $R^2$ (layer 19)": -0.015636399553293434,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.233904726287768,
+      "difference in held-out $R^2$ (layer 19)": -0.02459670567633776,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.275102564735457,
+      "difference in held-out $R^2$ (layer 19)": -0.012891062661360753,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.226178291077366,
+      "difference in held-out $R^2$ (layer 19)": -0.014412159908100852,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2724252832561875,
+      "difference in held-out $R^2$ (layer 19)": -0.003310200554771159,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.174920603710976,
+      "difference in held-out $R^2$ (layer 19)": -0.014196138988879614,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.3332408088741925,
+      "difference in held-out $R^2$ (layer 19)": -0.011443906982483987,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.130751878865389,
+      "difference in held-out $R^2$ (layer 19)": -0.02052723836599024,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.177253282965457,
+      "difference in held-out $R^2$ (layer 19)": -0.015791033867950444,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2664966248677745,
+      "difference in held-out $R^2$ (layer 19)": -0.02094961113397864,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.352398959962921,
+      "difference in held-out $R^2$ (layer 19)": -0.016754308500344317,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.269468841126562,
+      "difference in held-out $R^2$ (layer 19)": -0.015492456226010476,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2326464081304636,
+      "difference in held-out $R^2$ (layer 19)": 0.001056184604666166,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.150243689972972,
+      "difference in held-out $R^2$ (layer 19)": 0.009759996044441,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2366106334898905,
+      "difference in held-out $R^2$ (layer 19)": -0.012852571585283412,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.248608609227054,
+      "difference in held-out $R^2$ (layer 19)": -0.008724167103364433,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.368339805173758,
+      "difference in held-out $R^2$ (layer 19)": -0.0013276783205007359,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.293548765512405,
+      "difference in held-out $R^2$ (layer 19)": -0.016070801280369973,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.142963498755009,
+      "difference in held-out $R^2$ (layer 19)": -0.02018073060334502,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.391874536667023,
+      "difference in held-out $R^2$ (layer 19)": -0.0013094714755899073,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.222349308715084,
+      "difference in held-out $R^2$ (layer 19)": 0.01137546171614967,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.188437819970698,
+      "difference in held-out $R^2$ (layer 19)": -0.018441141502007374,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.353237585646084,
+      "difference in held-out $R^2$ (layer 19)": -0.004712045560171796,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.246517096779212,
+      "difference in held-out $R^2$ (layer 19)": -0.0002347958578101661,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.224281818043533,
+      "difference in held-out $R^2$ (layer 19)": -0.01037229915199811,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.265315019225466,
+      "difference in held-out $R^2$ (layer 19)": -0.024054816586144723,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.3091422146263,
+      "difference in held-out $R^2$ (layer 19)": -0.005678661307824129,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.319533534311476,
+      "difference in held-out $R^2$ (layer 19)": -0.023060069269591588,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.1537358319963085,
+      "difference in held-out $R^2$ (layer 19)": -0.0261068171951383,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.3898937029190215,
+      "difference in held-out $R^2$ (layer 19)": -0.0030092659272001887,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.3162803111596935,
+      "difference in held-out $R^2$ (layer 19)": -0.013402823011318343,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.22345592565908,
+      "difference in held-out $R^2$ (layer 19)": -0.023514923899336293,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.192693810393501,
+      "difference in held-out $R^2$ (layer 19)": -0.021016084244946276,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.182169129846925,
+      "difference in held-out $R^2$ (layer 19)": -0.003978299596904544,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.258636490630333,
+      "difference in held-out $R^2$ (layer 19)": 0.011497970862175078,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.204638859406726,
+      "difference in held-out $R^2$ (layer 19)": -0.001017573319727072,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.1964588224299435,
+      "difference in held-out $R^2$ (layer 19)": -0.0062553215067318035,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.306787808345915,
+      "difference in held-out $R^2$ (layer 19)": -0.007269748423501143,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.275519714067842,
+      "difference in held-out $R^2$ (layer 19)": -0.02137193235190582,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2223800119103405,
+      "difference in held-out $R^2$ (layer 19)": -0.025920308627411126,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.301397331732976,
+      "difference in held-out $R^2$ (layer 19)": -0.020046824095809157,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.345716503841397,
+      "difference in held-out $R^2$ (layer 19)": 0.0018995634681047147,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.173385258115925,
+      "difference in held-out $R^2$ (layer 19)": 0.000559639399353995,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.207769568110042,
+      "difference in held-out $R^2$ (layer 19)": -0.006065788744566092,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.315983528815392,
+      "difference in held-out $R^2$ (layer 19)": -0.007920830169108495,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.300325839607054,
+      "difference in held-out $R^2$ (layer 19)": -0.008741266632863898,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.26586891995066,
+      "difference in held-out $R^2$ (layer 19)": -0.014251192890489817,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.331369483129092,
+      "difference in held-out $R^2$ (layer 19)": 0.010155536043918056,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.173825178961663,
+      "difference in held-out $R^2$ (layer 19)": -0.019363935528576848,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.146460351636023,
+      "difference in held-out $R^2$ (layer 19)": -0.00346875214495046,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.189344484990617,
+      "difference in held-out $R^2$ (layer 19)": -0.009795311814118413,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.258578086687523,
+      "difference in held-out $R^2$ (layer 19)": -0.025177051724997734,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.194273925743342,
+      "difference in held-out $R^2$ (layer 19)": -0.008319922655061096,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.215894729050271,
+      "difference in held-out $R^2$ (layer 19)": -0.015044743197431765,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.181749991662979,
+      "difference in held-out $R^2$ (layer 19)": 0.0003572829647160436,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.206569959878357,
+      "difference in held-out $R^2$ (layer 19)": 0.004253325266677543,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.17966489467049,
+      "difference in held-out $R^2$ (layer 19)": -0.009993144504272577,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.275722634402193,
+      "difference in held-out $R^2$ (layer 19)": 0.01674739083848098,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.3056423747588255,
+      "difference in held-out $R^2$ (layer 19)": -0.006334395798242465,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.216368784233725,
+      "difference in held-out $R^2$ (layer 19)": -0.0065706463458545805,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.2354913943170525,
+      "difference in held-out $R^2$ (layer 19)": -0.015856009869474663,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.209327719924166,
+      "difference in held-out $R^2$ (layer 19)": -0.009884915311664688,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.287187585094533,
+      "difference in held-out $R^2$ (layer 19)": -0.02507660031366843,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.256233922711745,
+      "difference in held-out $R^2$ (layer 19)": -0.019000955029648714,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.361590983023675,
+      "difference in held-out $R^2$ (layer 19)": -0.007345081795673281,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.173316957435373,
+      "difference in held-out $R^2$ (layer 19)": -0.0028727774539283324,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.275375174943373,
+      "difference in held-out $R^2$ (layer 19)": -0.0180224279879605,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.281079397975267,
+      "difference in held-out $R^2$ (layer 19)": -0.024078888232983764,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.04584441639171921,
+      "error": 0.01212590247014302,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.45,
+      "y": 0.04755268159283421,
+      "error": 0.011983069135435218,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.8,
+      "y": -0.020358802119325503,
+      "error": 0.011101584969514855,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 5.25,
+      "y": -0.020084208740722143,
+      "error": 0.01093390453159558,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.008801115476537532,
+      "y": 0.05001063821780227,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.009247340430391134,
+      "y": 0.04965260466989918,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.044829585531029746,
+      "y": 0.05486798322353059,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.00734300820071278,
+      "y": 0.04308975983234453,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.03749685612127777,
+      "y": 0.0426383592162588,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.025311653843663934,
+      "y": 0.042385937526148054,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09128000315910961,
+      "y": 0.044446661516893804,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.06629566741904695,
+      "y": 0.05369892138887833,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.049261466506489486,
+      "y": 0.04831778885902327,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08857950297322369,
+      "y": 0.03924429369987492,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.043629212377614655,
+      "y": 0.05040907589910204,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.002892818554307052,
+      "y": 0.034129676668272046,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.16275215422471842,
+      "y": 0.05089201113906894,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.015315416475278202,
+      "y": 0.031838960346664336,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08721376630771457,
+      "y": 0.048044560274335346,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.05125871482924162,
+      "y": 0.06037214445557704,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.0380981288000117,
+      "y": 0.04217203219110377,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.02214101094584082,
+      "y": 0.04947686478946445,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.028814137546189302,
+      "y": 0.053430013651420194,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.07297593586098744,
+      "y": 0.04480548910924553,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.0089974264060824,
+      "y": 0.04182987201655253,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09565244293847802,
+      "y": 0.041748770387177836,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04656362714406295,
+      "y": 0.050087203313177064,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.024605704906511382,
+      "y": 0.04563195559366062,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.06324291271562661,
+      "y": 0.04874848174022406,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.00658086084326122,
+      "y": 0.05170719823761771,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.052044947454766594,
+      "y": 0.04392951879628482,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.06452077633808936,
+      "y": 0.044195675458503225,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.03204080779671374,
+      "y": 0.046690056631096044,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.01541365864290346,
+      "y": 0.04827814571778155,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.07067327284771152,
+      "y": 0.05200540302366541,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.014642290241019916,
+      "y": 0.04129904991683009,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.011145750694013442,
+      "y": 0.03653969233503518,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.03785919092800654,
+      "y": 0.04694832027513951,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.015026138575443864,
+      "y": 0.03802351711411078,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0248760896327945,
+      "y": 0.04806692640803334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04576800265928376,
+      "y": 0.04430687110433873,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.009072954358493862,
+      "y": 0.042175701660638,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.05487828290429307,
+      "y": 0.05213242321832978,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10454018016545326,
+      "y": 0.05418041746288382,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08813458724728843,
+      "y": 0.036973153759065625,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10597466423173439,
+      "y": 0.06075092155060402,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09421127966476132,
+      "y": 0.0586668324170293,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.054691798049029926,
+      "y": 0.0433506921961303,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.018511894123051247,
+      "y": 0.05498902239790582,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.021974597017549946,
+      "y": 0.04840552974183576,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10206144784758711,
+      "y": 0.051492777437313175,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.13721808215149756,
+      "y": 0.04120615825255736,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.12611444089062876,
+      "y": 0.049037436268748014,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0920572635314059,
+      "y": 0.04487906074893122,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.02501662874612692,
+      "y": 0.04038796132467748,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08458230425975201,
+      "y": 0.04358934588302388,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.00031178931840582604,
+      "y": 0.03643683961716526,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.04595324545534351,
+      "y": 0.03635818793896539,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.09018530246246882,
+      "y": 0.041929714207821545,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.02765854421274058,
+      "y": 0.04544572291560234,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.030090458637556106,
+      "y": 0.037032990679549016,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.048722990677400796,
+      "y": 0.04232590429017147,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08288825767300324,
+      "y": 0.03747330330049947,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04631918004273245,
+      "y": 0.035626320813094026,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.03055046730002549,
+      "y": 0.04406347746054762,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08188613354410049,
+      "y": 0.048831891599849464,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.1217557513991094,
+      "y": 0.052038604988276504,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.034713750990950636,
+      "y": 0.05874830437240086,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.023027874062214147,
+      "y": 0.04581521420462831,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.018100078183174682,
+      "y": 0.052504119007922845,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11084310151614857,
+      "y": 0.04949966069066292,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09242526909572875,
+      "y": 0.05548980923020175,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.04433468359774407,
+      "y": 0.04941401360141917,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.15424569164526555,
+      "y": 0.04860606958284719,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.003642028198192056,
+      "y": 0.05026101847869546,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.04785803335435742,
+      "y": 0.042819238696921946,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.07027731030895187,
+      "y": 0.04710815780113797,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04325349312953206,
+      "y": 0.048513416429576406,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.12754079543298263,
+      "y": 0.0471849886700666,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.09243016790093055,
+      "y": 0.045214223316352276,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04630696152706534,
+      "y": 0.04173009016243501,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.06545349916798156,
+      "y": 0.050925180575989715,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0034338229677718162,
+      "y": 0.05865317036264328,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.14016748085516786,
+      "y": 0.03714860301595868,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.01319634347587259,
+      "y": 0.05038792127805147,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04432358631345588,
+      "y": 0.04761816595754642,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.02642944536629658,
+      "y": 0.051944628202580834,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.07638022823334369,
+      "y": 0.05277474842820429,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.08943761164706257,
+      "y": 0.04216458993150207,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.04412880435377624,
+      "y": 0.04999933980242577,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.04068160686889641,
+      "y": 0.05434016635564243,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0906191173608782,
+      "y": 0.04633384990000178,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.05282240538819518,
+      "y": 0.053962934320371914,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11823752167105712,
+      "y": 0.04127830863174076,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.02011713954660664,
+      "y": 0.03812130314910511,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11020857951912108,
+      "y": 0.04137275606551838,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.030295009302781777,
+      "y": 0.037893498394797276,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.05148383046395926,
+      "y": 0.040469889213899934,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.01748497600910668,
+      "y": 0.054354243385944745,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.07220171594086307,
+      "y": 0.04587559829041643,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.011270670370074128,
+      "y": 0.04220462603457342,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.04098701768863357,
+      "y": 0.05870962849075001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.09388537998536685,
+      "y": 0.05167280657988438,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.09810641504421996,
+      "y": 0.04166757157787282,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.4851877994912406,
+      "y": 0.05241551070125949,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5192799123300063,
+      "y": 0.05069415423437251,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4384993785162297,
+      "y": 0.05637212574360706,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3747944599240096,
+      "y": 0.04493499673068946,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5111129506835195,
+      "y": 0.04516131513651578,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.36037242386998,
+      "y": 0.04532802321099749,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4000852333458509,
+      "y": 0.04516454155793026,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4934712497478069,
+      "y": 0.05644325858861754,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.2924901178497785,
+      "y": 0.05091188071392527,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4770458718296413,
+      "y": 0.04184018771994047,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4092851414513348,
+      "y": 0.0520509339116727,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.457649578823447,
+      "y": 0.03508467933498205,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4447008931645424,
+      "y": 0.05353730447434735,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.464148007653077,
+      "y": 0.03394928216557758,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4985920355694906,
+      "y": 0.04908458456073328,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3969141174371114,
+      "y": 0.06310915731352051,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.549468741561834,
+      "y": 0.04383272659429138,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5008265652263435,
+      "y": 0.052003711224656635,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5090612863612287,
+      "y": 0.053793149329744994,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.531540478677772,
+      "y": 0.04701245935841247,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5051311755194108,
+      "y": 0.042019643574883525,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5090855076405014,
+      "y": 0.043635319221389746,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4552915527520018,
+      "y": 0.04979017312393097,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3501258304307187,
+      "y": 0.04742358931483104,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4405468429974089,
+      "y": 0.04859161571113768,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3961339751876305,
+      "y": 0.05340856523159454,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.350408076203921,
+      "y": 0.04596927586756672,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4680916953639092,
+      "y": 0.04589739107324953,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4102015382096649,
+      "y": 0.04929074711336723,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3779136893391974,
+      "y": 0.04836912508941116,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3769899243949904,
+      "y": 0.05303553741022704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.468789195579624,
+      "y": 0.041555628624196705,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.475107036441924,
+      "y": 0.04039621591756415,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5425720228836783,
+      "y": 0.047719159129661515,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4490259732033135,
+      "y": 0.04193622542833664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5229287831448974,
+      "y": 0.050108465517631706,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5481585378740765,
+      "y": 0.044904436411143056,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5305115945304784,
+      "y": 0.04354376025679163,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.2844287265606118,
+      "y": 0.0537430067954775,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5360078603442395,
+      "y": 0.05399350103479761,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.473773400577405,
+      "y": 0.038745823949103086,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4796639946997343,
+      "y": 0.06388166485826685,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.475985919241538,
+      "y": 0.0602821966378454,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4767930012189532,
+      "y": 0.043246086322545896,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4723589954176666,
+      "y": 0.05804200734358289,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4248760684022965,
+      "y": 0.050975796809580975,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3168855291136803,
+      "y": 0.05284744524663265,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4423759690464804,
+      "y": 0.040843414438301195,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3937387706035527,
+      "y": 0.0525131151889191,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5256114388776518,
+      "y": 0.045279741218287484,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4297863445803236,
+      "y": 0.04259048367429652,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4558432749274905,
+      "y": 0.046104415847900926,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3905275831072899,
+      "y": 0.038713405484482544,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4142564272471312,
+      "y": 0.03795643863002063,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4491926856819388,
+      "y": 0.04328340901733596,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3460237371015518,
+      "y": 0.04599168509632823,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4710479580006224,
+      "y": 0.0385914555068434,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4425749422586573,
+      "y": 0.04421514727208031,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3669996136496336,
+      "y": 0.038155435546976646,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.2821236994221559,
+      "y": 0.03650317165136163,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4859136493716214,
+      "y": 0.04503640906679962,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.429169117273967,
+      "y": 0.05009274990931034,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4128994110747288,
+      "y": 0.054077277091666986,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.433469175910294,
+      "y": 0.058017310031188596,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.57715331586168,
+      "y": 0.049157420092731385,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.446513932165825,
+      "y": 0.05405329944677317,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4560633484091978,
+      "y": 0.05130439655297481,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.345904899122722,
+      "y": 0.056879796348253464,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5653137346449268,
+      "y": 0.050546548332252916,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5142241588411005,
+      "y": 0.04986101831440648,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5246854406903625,
+      "y": 0.05049210542157978,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4533370911848176,
+      "y": 0.04474892861272051,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5141658352177216,
+      "y": 0.04927061901620189,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4759662784566088,
+      "y": 0.05160679818838343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4929232354501303,
+      "y": 0.047803780373967486,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4393464929114197,
+      "y": 0.047595206601155904,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3468278436370629,
+      "y": 0.04243577792949582,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5220198043462227,
+      "y": 0.053106439643219705,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3145528254373204,
+      "y": 0.05977506766314922,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4332044330119373,
+      "y": 0.0379382589237347,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4356834258120237,
+      "y": 0.0527069293914777,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3769997901310846,
+      "y": 0.04960532389007399,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4929186195435606,
+      "y": 0.054389920065155195,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4359769209013302,
+      "y": 0.05283019902150443,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4194192172081903,
+      "y": 0.043734790484460606,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.486388921168435,
+      "y": 0.05459560899174354,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.416639467160911,
+      "y": 0.055601915765772336,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5472285982386815,
+      "y": 0.04867017934560358,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.474601855333112,
+      "y": 0.05756520205422044,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4167966909215892,
+      "y": 0.044909235179440565,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.313901451681012,
+      "y": 0.03929107821423694,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.3584572762169196,
+      "y": 0.04104504737761705,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5260781549337854,
+      "y": 0.04026213452763583,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.446457715582206,
+      "y": 0.04231069975723789,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4301812454024325,
+      "y": 0.05716709327130898,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.5650276129969887,
+      "y": 0.04654416177442966,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.360214552914827,
+      "y": 0.04661310305913635,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.4090039540111048,
+      "y": 0.05927606999989987,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.416918862626906,
+      "y": 0.052937294410134506,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.491043609707191,
+      "y": 0.042838911812860925,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.7535525361187165,
+      "y": -0.021037971690476276,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.757060750597018,
+      "y": -0.025221747909653813,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.687639542218042,
+      "y": -0.03358138280870848,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.85105445828125,
+      "y": -0.0097610668945598,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8564297550960513,
+      "y": -0.011550108772892753,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7666536276819187,
+      "y": -0.018905279223765392,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.811433796187891,
+      "y": -0.021572956105572083,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.709514771406846,
+      "y": -0.023601355391985046,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7669730791681366,
+      "y": -0.029016817061429334,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8964565666905764,
+      "y": -0.02481636725331615,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.809501151384699,
+      "y": -0.023540142969539546,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.961725444075712,
+      "y": -0.02011092057131003,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7448965080489987,
+      "y": -0.025104014752287074,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.840619909170701,
+      "y": -0.01233883231571875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7863145920516827,
+      "y": -0.022429025051508122,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8396072492779663,
+      "y": -0.032661525238519284,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.799495204823887,
+      "y": -0.02359358548784951,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7607161322713587,
+      "y": -0.027615123654253226,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7392668264974804,
+      "y": -0.026199143451881235,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0146225717334225,
+      "y": -0.018602162210675344,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.794585845819305,
+      "y": -0.01749945579497425,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.6588337516836726,
+      "y": -0.018196179650572852,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7545979574467663,
+      "y": -0.017546634142367012,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8474627808986797,
+      "y": -0.022008822459838262,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7649994096770674,
+      "y": -0.022213520824720834,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8952312341739677,
+      "y": -0.03187890047133424,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.870167879099077,
+      "y": -0.017334537926909532,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.789336295492303,
+      "y": -0.01817242554739773,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7669448840056767,
+      "y": -0.024203365510684915,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.729663929508061,
+      "y": -0.027792853633597958,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.751002342038067,
+      "y": -0.015736160217995843,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.696879984773406,
+      "y": -0.02472875299927535,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8843077404073156,
+      "y": -0.015060955920137786,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.911349055098824,
+      "y": -0.023615241590675184,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7120703351190585,
+      "y": -0.01904652436941323,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.717282191701947,
+      "y": -0.01998279525816804,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.6762041700039156,
+      "y": -0.02212889064062762,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.732530203848748,
+      "y": -0.013194694255798445,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.5825564239101695,
+      "y": -0.02652456160489791,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7200404730357652,
+      "y": -0.034116870150961986,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8907840779860363,
+      "y": -0.030154908174191752,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7758029229374874,
+      "y": -0.022674433197280575,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8598208964397385,
+      "y": -0.017944267749802734,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7657721655310565,
+      "y": -0.014845774309052318,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.9232467107895186,
+      "y": -0.022247618700310667,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.81394525881097,
+      "y": -0.01955803062285666,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.773259839549956,
+      "y": -0.027351837538319157,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.9786696817759757,
+      "y": -0.020550610352540133,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.777286970060019,
+      "y": -0.02419663970621211,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7145143655191704,
+      "y": -0.01923385539432443,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8141337001372073,
+      "y": -0.025669674791723107,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7972815473009343,
+      "y": -0.020822623477578017,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.874642718721638,
+      "y": -0.009820182135558242,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.735485625285153,
+      "y": -0.023701809949017938,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8563301852035647,
+      "y": -0.02354220011163588,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8596923929402003,
+      "y": -0.01838322866184372,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.753261889564545,
+      "y": -0.017458997740631088,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.811427080400587,
+      "y": -0.019065010670305527,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.741847363020196,
+      "y": -0.01160231585317828,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.9642065651688467,
+      "y": -0.02627506903360144,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7507102306403883,
+      "y": -0.022049628388719045,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.76828478894319,
+      "y": -0.014253970092053425,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7253913384625634,
+      "y": -0.01906800941960307,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7757715107378775,
+      "y": -0.02670690659566366,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7995886781312165,
+      "y": -0.01678411777577593,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.853745239474128,
+      "y": -0.02016140396689947,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.757265934775401,
+      "y": -0.019948065065336973,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.786995822892989,
+      "y": -0.02248659244782114,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.700845744351017,
+      "y": -0.01852561911135675,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.742081844126369,
+      "y": -0.011792147677670228,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.9929065290793164,
+      "y": -0.017553052145109493,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8728870234186354,
+      "y": -0.014680569282585876,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7453003170825876,
+      "y": -0.01869831515871223,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7063821930930194,
+      "y": -0.02869907467496946,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7317092018580236,
+      "y": -0.020102119349788783,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7984816398340384,
+      "y": -0.019356240567467875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8024309451851432,
+      "y": -0.023546757964806098,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.74789475793484,
+      "y": -0.01928181820275865,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7099397873283646,
+      "y": -0.02723082030195534,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.899566495367391,
+      "y": -0.021061633901416243,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8316179815906564,
+      "y": -0.02299414704644276,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7737802386302444,
+      "y": -0.027535243187265412,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7845537154528737,
+      "y": -0.017335182108438096,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.762932867861203,
+      "y": -0.02491517190592607,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.594476818778802,
+      "y": -0.021850496239289474,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8080963278964837,
+      "y": -0.01983680905387908,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.725061891321296,
+      "y": -0.03229547304047442,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7298120990677024,
+      "y": -0.01936827870605784,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7551816316226736,
+      "y": -0.02016321186394454,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8512611200297906,
+      "y": -0.01225253399219639,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.718062843411462,
+      "y": -0.014540503856191767,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.699600297822811,
+      "y": -0.023792282772999385,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8447896452620665,
+      "y": -0.022017603443285627,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.8528058233247684,
+      "y": -0.028777017499684754,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7328746404544044,
+      "y": -0.01695581022694137,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.839367837410507,
+      "y": -0.015519333095325383,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.779585729870967,
+      "y": -0.013894148544595808,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.821090452358749,
+      "y": -0.027894021333348396,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.7117327803954123,
+      "y": -0.0182100465765056,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.858302611455258,
+      "y": -0.020884226713069887,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.334228126788155,
+      "y": -0.020543865713061327,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2945951264938325,
+      "y": -0.02204920629151652,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.28908379731866,
+      "y": -0.03491204756941313,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.985940739071409,
+      "y": -0.008564630589338429,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.268244082434686,
+      "y": -0.011606471578458954,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.248218827831522,
+      "y": -0.01997298669863634,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.239706814520757,
+      "y": -0.021867281264829286,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.205859540702028,
+      "y": -0.025635649028360574,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.253875548243949,
+      "y": -0.027876962623070378,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.278848218358983,
+      "y": -0.024514410991550384,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.231534828762157,
+      "y": -0.021952792961237422,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.217567310220309,
+      "y": -0.018347503783894936,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.336082766765749,
+      "y": -0.024549524057076222,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.172624302491161,
+      "y": -0.01121944516573714,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.322110863847671,
+      "y": -0.02226816085966088,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.262376872461137,
+      "y": -0.032518807706403585,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.19369860483023,
+      "y": -0.023826620644639473,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.229701267275148,
+      "y": -0.028023217441544235,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.1856004478031466,
+      "y": -0.025907756370445068,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.29725451628866,
+      "y": -0.01782973202071514,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.274353123337933,
+      "y": -0.017242374668548388,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.211024267739277,
+      "y": -0.018967240532581697,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.172844719066204,
+      "y": -0.015226698956908424,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.271120126545075,
+      "y": -0.02202527691663969,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.317016992478935,
+      "y": -0.02235464191645664,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.242031455543268,
+      "y": -0.031966079581970064,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.279284675062246,
+      "y": -0.016852922067594034,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.223678099461518,
+      "y": -0.018672680778697215,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.25472984442066,
+      "y": -0.02416950256610817,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.229610196202442,
+      "y": -0.027366692704434592,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.270582950008249,
+      "y": -0.015874809540611934,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.144315924087499,
+      "y": -0.02269983220216154,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.295093336623278,
+      "y": -0.014714501647308587,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.233904726287768,
+      "y": -0.02136214307126616,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.275102564735457,
+      "y": -0.020185356542528066,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.226178291077366,
+      "y": -0.01951578720161784,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2724252832561875,
+      "y": -0.02062449706233649,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.174920603710976,
+      "y": -0.012617530610025907,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.3332408088741925,
+      "y": -0.02747629744316593,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.130751878865389,
+      "y": -0.03345343418059965,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.177253282965457,
+      "y": -0.030644070051315753,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2664966248677745,
+      "y": -0.0243709589256782,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.352398959962921,
+      "y": -0.018834846701683672,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.269468841126562,
+      "y": -0.014183478788037496,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2326464081304636,
+      "y": -0.021206427436831765,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.150243689972972,
+      "y": -0.02105450141672982,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2366106334898905,
+      "y": -0.02766200365154814,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.248608609227054,
+      "y": -0.01850403170015691,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.368339805173758,
+      "y": -0.024666096417934713,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.293548765512405,
+      "y": -0.018020007653726133,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.142963498755009,
+      "y": -0.02577863371744582,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.391874536667023,
+      "y": -0.019678863914103006,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.222349308715084,
+      "y": -0.010868957290658843,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.188437819970698,
+      "y": -0.022176025052475512,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.353237585646084,
+      "y": -0.022595758388444187,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.246517096779212,
+      "y": -0.018670856503539945,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.224281818043533,
+      "y": -0.018195108049172792,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.265315019225466,
+      "y": -0.020591760133326642,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.3091422146263,
+      "y": -0.009987198192850766,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.319533534311476,
+      "y": -0.024786854985748952,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.1537358319963085,
+      "y": -0.021936858973898965,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.3898937029190215,
+      "y": -0.01534053049668982,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.3162803111596935,
+      "y": -0.018193656072484354,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.22345592565908,
+      "y": -0.02567581867958535,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.192693810393501,
+      "y": -0.016812664616041695,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.182169129846925,
+      "y": -0.01728538123458323,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.258636490630333,
+      "y": -0.02037734141463121,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.204638859406726,
+      "y": -0.022428109535730045,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.1964588224299435,
+      "y": -0.017545520048537044,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.306787808345915,
+      "y": -0.012817050402366359,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.275519714067842,
+      "y": -0.018394778050254357,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2223800119103405,
+      "y": -0.013140318211889324,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.301397331732976,
+      "y": -0.01722451665671898,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.345716503841397,
+      "y": -0.028997704791488665,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.173385258115925,
+      "y": -0.018609462616152372,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.207769568110042,
+      "y": -0.021086604324871416,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.315983528815392,
+      "y": -0.02307867388656981,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.300325839607054,
+      "y": -0.01859918674974992,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.26586891995066,
+      "y": -0.027220873172167703,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.331369483129092,
+      "y": -0.021343611877959856,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.173825178961663,
+      "y": -0.022474679633882055,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.146460351636023,
+      "y": -0.02629453284041916,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.189344484990617,
+      "y": -0.018454846721497997,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.258578086687523,
+      "y": -0.025024929860611,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.194273925743342,
+      "y": -0.021478347758734806,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.215894729050271,
+      "y": -0.020473805214886176,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.181749991662979,
+      "y": -0.030558981740305136,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.206569959878357,
+      "y": -0.018507565503295353,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.17966489467049,
+      "y": -0.02285677606086911,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.275722634402193,
+      "y": -0.013193324168408682,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.3056423747588255,
+      "y": -0.015288284699610633,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.216368784233725,
+      "y": -0.021549574909209723,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2354913943170525,
+      "y": -0.020641531111554756,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.209327719924166,
+      "y": -0.02961215255973393,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.287187585094533,
+      "y": -0.017394700700398613,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.256233922711745,
+      "y": -0.016231498162809332,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.361590983023675,
+      "y": -0.016766420975091956,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.173316957435373,
+      "y": -0.026735336944316734,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.275375174943373,
+      "y": -0.017351214195409304,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.281079397975267,
+      "y": -0.02240916764109635,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 808,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "difference in held-out $R^2$ (layer 19)",
+        "annotations": [
+          "shaded: \u00b10.071 run-noise band"
+        ],
+        "xticklabels": [
+          "context",
+          "prefix",
+          "context",
+          "prefix"
+        ],
+        "yticklabels": [
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "legend_labels": [
+          "Assistant minus Wren (seed 45)",
+          "Wren seed-45 minus Wren seed-46 (replicate)"
+        ],
+        "xticklabels": [
+          "context",
+          "prefix",
+          "context",
+          "prefix"
+        ],
+        "yticklabels": [
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      }
+    ]
+  }
+}

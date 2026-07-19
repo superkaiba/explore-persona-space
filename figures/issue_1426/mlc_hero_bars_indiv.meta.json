@@ -1,0 +1,73 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:48Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "context\nonly",
+      "held-out skill-over-mean R\u00b2 (remainder target)": 0.5390331522416637,
+      "error": 0.06854038569840049,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context +\nanswer prefix",
+      "held-out skill-over-mean R\u00b2 (remainder target)": 0.894341780978985,
+      "error": 0.019923450679136978,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "context +\ntruncated CoT",
+      "held-out skill-over-mean R\u00b2 (remainder target)": 0.8579592328391267,
+      "error": 0.023641831611176334,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "context +\nfull CoT",
+      "held-out skill-over-mean R\u00b2 (remainder target)": 0.8646344636845017,
+      "error": 0.022756852917723447,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "identity\nceiling",
+      "held-out skill-over-mean R\u00b2 (remainder target)": 0.9801387932742752,
+      "error": 0.019375982998653285,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched-length control \u2014 per-question, frozen layer 24",
+        "ylabel": "held-out skill-over-mean R\u00b2 (remainder target)",
+        "xticklabels": [
+          "context\nonly",
+          "context +\nanswer prefix",
+          "context +\ntruncated CoT",
+          "context +\nfull CoT",
+          "identity\nceiling"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

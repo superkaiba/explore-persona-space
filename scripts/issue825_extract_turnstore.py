@@ -236,6 +236,15 @@ def _ordered_turns(r: Rendered) -> list[tuple[str, tuple[int, int]]]:
     return sorted(r.spans.items(), key=lambda kv: kv[1][0])
 
 
+def _ordered_pooled(r: Rendered) -> list[tuple[str, tuple[int, int]]]:
+    """Opt-in mean-pool reads (#1345 slot ablation), sorted by span start.
+
+    Empty on every parent render (``pooled_spans`` defaults to ``{}``), so the
+    default extraction path is byte-identical; ``getattr`` tolerates pickled
+    pre-field ``Rendered`` instances."""
+    return sorted(getattr(r, "pooled_spans", {}).items(), key=lambda kv: kv[1][0])
+
+
 def degenerate_content_turns(r: Rendered) -> list[str]:
     """Required content turns whose span has width < 1 (``s >= e``).
 
@@ -286,6 +295,10 @@ def assert_residual_span_integrity(kept: list[Rendered]) -> None:
         for name, (s, e) in r.spans.items():
             assert 1 <= s < e <= true_len, (
                 f"{r.conv_id}: span {name}=({s},{e}) invalid for unpadded len {true_len}"
+            )
+        for name, (s, e) in getattr(r, "pooled_spans", {}).items():
+            assert 0 <= s < e <= true_len, (
+                f"{r.conv_id}: pooled span {name}=({s},{e}) invalid for unpadded len {true_len}"
             )
 
 
@@ -377,6 +390,23 @@ def process_batch(
         slot_pos = torch.tensor([idx for _, idx in slots], dtype=torch.long)
         slot_vecs = acts[:, i, slot_pos.to(acts.device), :].permute(1, 0, 2).contiguous().cpu()
         assert slot_vecs.shape == (len(slots), EXPECTED_LAYERS, EXPECTED_HIDDEN)
+        # Opt-in mean-pool reads (#1345 slot ablation): per-layer mean over the
+        # pooled span, APPENDED after the single-position slots so the stored
+        # `slots` tensor stays the fits' one read surface (slot-NAME-keyed via
+        # `slot_names` below). Empty on every parent render — byte-identical.
+        pooled = _ordered_pooled(r)
+        if pooled:
+            for name, (s, e) in pooled:
+                assert 0 <= s < e <= true_len, (
+                    f"{r.conv_id}: pooled span {name}=({s},{e}) invalid for len {true_len}"
+                )
+            pooled_vecs = (
+                torch.stack([acts[:, i, s:e, :].float().mean(dim=1) for _, (s, e) in pooled])
+                .to(slot_vecs.dtype)
+                .cpu()
+            )
+            assert pooled_vecs.shape == (len(pooled), EXPECTED_LAYERS, EXPECTED_HIDDEN)
+            slot_vecs = torch.cat([slot_vecs, pooled_vecs], dim=0)
         profiles = torch.stack(
             [acts[:, i, s:e, :].float().mean(dim=1) for _, (s, e) in turns], dim=0
         ).cpu()
@@ -409,8 +439,11 @@ def process_batch(
                     "conv_id": r.conv_id,
                     "format": r.format,
                     "seq_len": true_len,
-                    "slot_names": [n for n, _ in slots],
+                    # Pooled reads ride as APPENDED slot rows (see above), so
+                    # slot_names covers positional + pooled in storage order.
+                    "slot_names": [n for n, _ in slots] + [n for n, _ in pooled],
                     "slot_idx": {n: int(v) for n, v in slots},
+                    "pooled_spans": {n: [int(s), int(e)] for n, (s, e) in pooled},
                     "turn_names": [n for n, _ in turns],
                     "spans": {n: [int(s), int(e)] for n, (s, e) in turns},
                     "meta": r.meta,

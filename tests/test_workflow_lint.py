@@ -19,6 +19,7 @@ Also covers the ``--check-script-refs`` mode: every
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -37,14 +38,18 @@ if str(_SCRIPTS) not in sys.path:
 
 from workflow_lint import (  # noqa: E402
     _MARKER_RECIPE_PINS,
+    _ROOT_GUARD_HOOK,
+    _ROOT_GUARD_SELFTEST_BLOCKED,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     HUB_VERIFY_LEGACY_ALLOWLIST,
     SKILL_REF_ALLOWLIST,
     SKILL_REF_FS_ROOTS,
+    UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
     _iter_ask_target_files,
     _live_skill_names,
     _other_worktree_prefix,
+    _run_root_guard,
     _values_equal,
     check_agent_model_pins,
     check_asks,
@@ -75,12 +80,14 @@ from workflow_lint import (  # noqa: E402
     check_rule_frontmatter_parses,
     check_script_references,
     check_section_reference_pointer_coverage,
+    check_sh_function_rc_capture,
     check_skill_bang_backtick,
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
     check_stale_label_disposition_clause,
     check_upload_as_file,
+    check_upload_file_in_loop,
     check_upload_prefix_clobber,
     check_vm_thread_cap_guidance,
     check_wandb_required,
@@ -2743,6 +2750,282 @@ def test_push_failure_swallow_bundled_in_no_flags_source_pin():
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for ``check_sh_function_rc_capture`` (incident class #1426,
+# task #1516: `run_seed "$s" || rc=$?` on a same-file function under
+# `set -euo pipefail` — bash disables errexit inside the function BODY in
+# an `||` context, so a Gate-1 terminal failure + a manifest SystemExit
+# collapsed to rc=0 and the `[phase=done]` success sentinel fired). Each
+# fixture writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_sh_function_rc_capture(scripts_dir=tmp_path)``. Single
+# external-command captures (the entire live `|| rc=$?` population) never
+# match — the invocation regex requires a collected same-file function
+# name at command position.
+# ---------------------------------------------------------------------------
+
+
+def test_check_sh_function_rc_capture_fail_rc_capture(tmp_path):
+    """FAIL — the #1426 reconstruction: `run_seed "$s" || rc=$?` on a
+    same-file function under `set -euo pipefail` collapses mid-function
+    failures to the last command's rc."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "run_seed() {\n"
+        "  echo running\n"
+        "}\n"
+        'run_seed "$s" || rc=$?\n'
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:6" in errors[0]
+    assert "run_seed" in errors[0]
+    assert "#1426" in errors[0]
+    assert "RC_CAPTURE_EXEMPT" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_or_true(tmp_path):
+    """FAIL — the `|| true` swallow variant on a same-file function under
+    `set -e` is the same body-errexit-suppression footgun."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn || true\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+    assert "myfn" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_shebang_e(tmp_path):
+    """FAIL — no `set` line at all; the `#!/bin/bash -e` shebang sets the
+    initial errexit state ON."""
+    (tmp_path / "x.sh").write_text("#!/bin/bash -e\nmyfn() { echo hi; }\nmyfn || true\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_backslash_continued(tmp_path):
+    """FAIL — `myfn "$a" \\` newline `  || rc=$?` is ONE logical line
+    (backslash continuations merged); the error points at the FIRST
+    physical line."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\nmyfn "$a" \\\n  || rc=$?\n')
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_mid_chain(tmp_path):
+    """FAIL — `cd "$d" && myfn || rc=$?`: the function sits at command
+    position after `&&`, and the `||` context still disables body errexit
+    (equal-precedence left-associative chaining)."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\ncd "$d" && myfn || rc=$?\n')
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_external_command(tmp_path):
+    """PASS — the entire live `|| rc=$?` population: single EXTERNAL
+    commands captured in a file that also defines a function. A child
+    process keeps its own set -e, so these are safe by construction."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\n"
+        "helper() { echo hi; }\n"
+        "uv run python scripts/x.py || rc=$?\n"
+        "git push origin main || rc=$?\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_no_set_e(tmp_path):
+    """PASS — identical to the #1426 reconstruction minus the
+    `set -euo pipefail` line: without errexit the function body never had
+    implicit protection, so the capture is the author's explicit error
+    handling, not the footgun."""
+    (tmp_path / "x.sh").write_text(
+        '#!/usr/bin/env bash\nrun_seed() {\n  echo running\n}\nrun_seed "$s" || rc=$?\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_set_plus_e_region_then_reflag(tmp_path):
+    """Line-order state tracking: a hit inside a `set +e` region does not
+    flag; the SAME shape after `set -e` re-enables does — exactly one
+    error, at the second site."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -e\n"
+        "myfn() { echo hi; }\n"
+        "set +e\n"
+        "myfn || rc=$?\n"
+        "set -e\n"
+        "myfn || rc=$?\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:7" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_bare_invocation(tmp_path):
+    """PASS — a bare invocation and a `;`-separated `rc=$?` (no `||`)
+    leave errexit live inside the body; neither is the footgun."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\nmyfn "$s"\nmyfn; rc=$?\n')
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_def_line_one_liner(tmp_path):
+    """PASS — the issue1345 shape: a one-liner DEFINITION whose body
+    legitimately ends `|| true` is not an invocation."""
+    (tmp_path / "x.sh").write_text(
+        'set -e\nno_r4() { [[ -f "$F" ]] && echo "--x" || true; }\necho done\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_quoted_string(tmp_path):
+    """PASS — the bootstrap_pod shape: `ssh_cmd 'cd /x && do_thing ||
+    true'` where ssh_cmd IS a same-file function; the `|| true` is
+    remote-side TEXT inside the quoted argument (quote masking kills the
+    guaranteed false positive)."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nssh_cmd() { ssh pod \"$1\"; }\nssh_cmd 'cd /x && do_thing || true'\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_semicolon_segment(tmp_path):
+    """PASS — `myfn; cleanup_external || true`: the suppressor sits in a
+    LATER `;`-segment and belongs to that segment's own (external)
+    command, not to the function invocation."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn; cleanup_external || true\n")
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_waiver(tmp_path):
+    """PASS — a reason-bearing `# RC_CAPTURE_EXEMPT:` waiver on the same
+    line (and the preceding-line placement for continued commands); a
+    short reason (<10 chars) does NOT waive."""
+    (tmp_path / "ok.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -e\n"
+        "myfn() { echo hi; }\n"
+        "myfn || true  # RC_CAPTURE_EXEMPT: body handles its own errors\n"
+        "# RC_CAPTURE_EXEMPT: preceding-line waiver for the continued form\n"
+        "myfn \\\n"
+        "  || rc=$?\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+    (tmp_path / "short.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\nmyfn || true  # RC_CAPTURE_EXEMPT: x\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected only the short-reason file flagged, got: {errors}"
+    assert "short.sh" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_comment_and_heredoc(tmp_path):
+    """PASS — a commented-out invocation is documentation, and a heredoc
+    BODY carrying `myfn || true` (remote-command text) is consumed and
+    never scanned as shell."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\n# myfn || true\ncat <<'EOF'\nmyfn || true\nEOF\necho done\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_comment_e_token_on_set_line(tmp_path):
+    """PASS — a `set` line whose only `-e`-bearing token lives in a trailing
+    COMMENT (`set -uo pipefail  # NOT set -e -- ...`) must not flip errexit
+    ON: the transition scanner comment-strips first (live shapes:
+    i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/bin/bash\n"
+        "set -uo pipefail  # NOT set -e -- workers own their rc handling\n"
+        "myfn() { echo hi; }\n"
+        'myfn "$a" || rc=$?\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_repo_tree_is_clean():
+    """The committed scripts/**/*.sh tree must carry no same-file
+    function `|| rc=$?`/`|| true` captures under set -e — the 0-findings
+    state the no-flags bundling was preconditioned on (#1516 plan A3:
+    prototype run over all 149 rglob files -> 0 findings)."""
+    errors = check_sh_function_rc_capture()
+    assert errors == [], (
+        "scripts/**/*.sh has same-file function rc-captures (#1426 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_sh_function_rc_capture_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-sh-function-rc-capture")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-sh-function-rc-capture failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_sh_function_rc_capture_bundled_in_no_flags_source_pin():
+    """`check_sh_function_rc_capture` is wired into the no-flags default
+    run — pinned STRUCTURALLY (the source carries the `or no_flags`
+    dispatch, the no_flags-tuple membership, AND the callee itself: a
+    copy-paste dispatch of the wrong check under the correct conditional
+    would otherwise pass the sibling pins green)."""
+    src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
+    assert "args.check_sh_function_rc_capture or no_flags" in src
+    assert "or args.check_sh_function_rc_capture" in src
+    assert "errors.extend(check_sh_function_rc_capture())" in src
+
+
+def test_check_sh_function_rc_capture_fail_spelling_variants(tmp_path):
+    """FAIL — capture-SPELLING variants: `|| status=$?` (any simple var
+    name, not the literal `rc`) and `|| :` (the colon builtin, an exact
+    `|| true` synonym) each flag — exactly two errors."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn || status=$?\nmyfn || :\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 2, f"expected exactly two errors, got: {errors}"
+
+
+def test_check_sh_function_rc_capture_pass_brace_group_handler(tmp_path):
+    """PASS — brace-group handlers (`|| { echo FATAL; exit 1; }`,
+    `|| { rc=$?; }`) are documented out-of-scope residuals: pins that the
+    suppress regex does NOT over-reach into brace groups (they are a
+    pervasive live fail-loud idiom; flagging them would break the
+    0-findings bundling precondition)."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\nmyfn || { echo FATAL; exit 1; }\nmyfn || { rc=$?; }\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_trailing_comment(tmp_path):
+    """PASS — suppressor text ONLY in a trailing comment (`# TODO: add
+    || rc=$? capture`) never flags: pins the quote-aware
+    `_strip_sh_trailing_comment` path."""
+    (tmp_path / "x.sh").write_text(
+        'set -e\nmyfn() { echo hi; }\nmyfn "$s"  # TODO: add || rc=$? capture\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_fail_set_o_errexit(tmp_path):
+    """FAIL then unflag — the long-form `set -o errexit` / `set +o
+    errexit` arm (0 live uses; pinned so the completeness arm cannot ship
+    untested): exactly one error, at the first site."""
+    (tmp_path / "x.sh").write_text(
+        "myfn() { echo hi; }\nset -o errexit\nmyfn || true\nset +o errexit\nmyfn || true\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+# ---------------------------------------------------------------------------
 # Unit tests for ``check_grep_qv`` (incident class #928 -> #1125: ugrep
 # 7.5.0's quiet+invert exit status diverges from GNU — rc=1 even when
 # non-matching lines are selected — so an rc-consumed q+v grep trigger in an
@@ -3892,6 +4175,342 @@ def test_workflow_lint_check_upload_prefix_clobber_cli_exits_zero():
     )
 
 
+# ── --check-upload-file-in-loop (task #1544; incidents #664 / #658 r4 / #1481) ─
+# Each test writes a tiny fixture into ``tmp_path`` and calls
+# ``check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})``
+# unless it is exercising the committed allowlist / real tree.
+
+
+def test_check_upload_file_in_loop_fail_for_loop(tmp_path):
+    """§4.7 item 1 — FAIL: the #664/#1481 shape, an attribute-form
+    ``api.upload_file(...)`` inside a ``for`` loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        api.upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert ":6:" in errors[0], errors[0]
+    assert "inside a loop" in errors[0]
+    assert "upload_folder" in errors[0]
+
+
+def test_check_upload_file_in_loop_fail_bare_name_import(tmp_path):
+    """§4.7 item 2 — FAIL: a bare-name ``upload_file`` caller
+    (``from huggingface_hub import upload_file``) inside a loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_while_loop(tmp_path):
+    """§4.7 item 3 — FAIL: an ``upload_file`` call inside a ``while`` loop."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def drain(queue):\n"
+        "    while queue:\n"
+        "        f = queue.pop()\n"
+        '        upload_file(path_or_fileobj=str(f), path_in_repo=f.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_comprehension(tmp_path):
+    """§4.7 item 4 — FAIL: an ``upload_file`` call inside a list
+    comprehension (a loop in expression form)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        '    return [api.upload_file(path_or_fileobj=str(f), repo_id="r") for f in files]\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_nested_in_loop_if(tmp_path):
+    """§4.7 item 5 — FAIL: nesting under a non-loop statement (``if``)
+    inside a loop still flags (the run_experiment_444 shape)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        if f.exists():\n"
+        '            api.upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_bulk_upload_folder(tmp_path):
+    """§4.7 item 6 — PASS: the recommended fix shape, one loop-free
+    ``upload_folder`` bulk call."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", path_in_repo="p")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (bulk upload_folder), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_single_call_no_loop(tmp_path):
+    """§4.7 item 7 — PASS: loop-free ``upload_file`` calls (one
+    module-level + one in-function) are legitimate single-file uploads."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        'upload_file(path_or_fileobj="a.json", path_in_repo="a.json", repo_id="r")\n\n'
+        "def push_one(p):\n"
+        '    upload_file(path_or_fileobj=str(p), path_in_repo=p.name, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no loop), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_def_inside_loop(tmp_path):
+    """§4.7 item 8 — PASS: a function *defined* in a loop resets the loop
+    context (its body executes elsewhere)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def build(xs):\n"
+        "    cbs = []\n"
+        "    for x in xs:\n"
+        "        def cb(p=x):\n"
+        '            api.upload_file(path_or_fileobj=str(p), repo_id="r")\n'
+        "        cbs.append(cb)\n"
+        "    return cbs\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (boundary reset), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_helper_called_from_loop(tmp_path):
+    """§4.7 item 9 — PASS: a module-level helper *called* from a loop is a
+    deliberate lexical false negative (no dataflow in v1)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "api = HfApi()\n"
+        "def _push(f):\n"
+        '    api.upload_file(path_or_fileobj=str(f), repo_id="r")\n\n'
+        "def main(files):\n"
+        "    for f in files:\n"
+        "        _push(f)\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (lexical-only), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_waiver_same_line(tmp_path):
+    """§4.7 item 10a — PASS: a same-line ``# UPLOAD_LOOP_EXEMPT`` waiver
+    with a reason ≥ 10 chars silences the finding."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")'
+        "  # UPLOAD_LOOP_EXEMPT: bounded 2-file retry wrapper\n"
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_waiver_previous_line(tmp_path):
+    """§4.7 item 10b — PASS: the waiver on the immediately preceding
+    non-blank line also silences."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        # UPLOAD_LOOP_EXEMPT: bounded 2-file retry wrapper\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (previous-line waiver), got: {errors}"
+
+
+def test_check_upload_file_in_loop_fail_waiver_reason_too_short(tmp_path):
+    """§4.7 item 11 — FAIL: a waiver with a < 10-char reason does NOT
+    silence (the reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        "        # UPLOAD_LOOP_EXEMPT: ok\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_injectable_allowlist(tmp_path):
+    """§4.7 item 12 — PASS: the injectable ``legacy_allowlist=`` dict
+    grandfathers a file by its walk-root-parent-relative posix path up to
+    the allowed site COUNT (the production path shape is
+    ``scripts/<name>.py``)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert errors == [], f"expected PASS (allowlisted {rel}: 1), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_upload_file_in_loop_fail_allowlist_count_exceeded(tmp_path):
+    """§4.7 item 12 companion — FAIL: a SECOND offending call in a file
+    grandfathered at count 1 reports (the count-gate pin: a new offense in
+    a grandfathered file surfaces instead of hiding behind the entry)."""
+    (tmp_path / "legacy.py").write_text(
+        "from huggingface_hub import upload_file\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r")\n\n'
+        "def push_more(files):\n"
+        "    for f in files:\n"
+        '        upload_file(path_or_fileobj=str(f), repo_id="r2")\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert len(errors) == 3, f"expected count-exceeded note + both findings, got: {errors}"
+    assert "exceed" in errors[0] and "grandfathered" in errors[0], errors[0]
+    assert "inside a loop" in errors[1] and "inside a loop" in errors[2]
+
+
+def test_check_upload_file_in_loop_live_tree_passes():
+    """§4.7 item 13 — the committed scripts/**/*.py tree must pass with the
+    committed allowlist (locks the grandfather set to today's tree). A NEW
+    in-loop per-file upload must batch into one upload_folder commit or
+    carry an UPLOAD_LOOP_EXEMPT waiver — never extend the allowlist."""
+    errors = check_upload_file_in_loop()
+    assert errors == [], (
+        "scripts/**/*.py has ungrandfathered per-file upload calls inside loops "
+        "(#664/#1481 storm class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_upload_file_in_loop_allowlist_load_bearing():
+    """§4.7 item 14 — anti-vacuity pin with EXACT per-file counts: with the
+    allowlist EMPTIED on the REAL tree, the findings grouped per file must
+    match the committed dict EXACTLY (same file set, same per-file counts) —
+    catches silent under-trigger, stale entries, AND a new offense netting
+    into a grandfathered file, in one assert."""
+    errors = check_upload_file_in_loop(legacy_allowlist={})
+    per_file: dict[str, int] = {}
+    for e in errors:
+        path = e.split(": ", 1)[0].rsplit(":", 1)[0]
+        per_file[path] = per_file.get(path, 0) + 1
+    assert UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST, "committed allowlist unexpectedly empty"
+    expected = {str(_REPO_ROOT / rel): n for rel, n in UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST.items()}
+    assert per_file == expected, (
+        "empty-allowlist findings do not match the committed allowlist dict "
+        "(stale entry, silent under-trigger, or a new offense in a grandfathered "
+        f"file).\nexpected: {expected}\ngot: {per_file}"
+    )
+
+
+def test_check_upload_file_in_loop_bundled_in_no_flags():
+    """§4.7 item 15 — NON-VACUOUS no-flags bundling pin: source-inspection
+    assert on the dispatch branch + the no_flags tuple membership
+    (exit-0-on-a-clean-tree is vacuous — it passes whether or not the
+    check is dispatched). House pattern:
+    test_check_upload_prefix_clobber_bundled_in_no_flags."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_upload_file_in_loop or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_upload_file_in_loop\(\)\)",
+        src,
+    ), "check_upload_file_in_loop is not dispatched on the no-flags branch"
+    assert "or args.check_upload_file_in_loop" in src, (
+        "--check-upload-file-in-loop is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_upload_file_in_loop_cli_exits_zero():
+    """§4.7 item 16 — the dedicated flag must exist and pass on the
+    committed tree (acceptance criterion 7)."""
+    result = _run("--check-upload-file-in-loop")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-file-in-loop failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_upload_file_in_loop_fail_hub_upload_as_file_true(tmp_path):
+    """§4.7 item 17 — FAIL (shape B): the literal #664 form,
+    ``hub._upload(f, ..., upload_as_file=True)`` inside a loop —
+    check_upload_as_file deliberately DEFERS explicit-kwarg calls, so this
+    check is the only static gate on the shape."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(files):\n"
+        "    for f in files:\n"
+        '        hub._upload(f, repo_id="r", upload_as_file=True)\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "_upload(..., upload_as_file=True)" in errors[0], errors[0]
+
+
+def test_check_upload_file_in_loop_pass_hub_upload_single_file(tmp_path):
+    """§4.7 item 18 — PASS: one loop-free ``hub._upload(p,
+    upload_as_file=True)`` (the legitimate #595-guard single-file caller)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push_one(p):\n"
+        '    hub._upload(p, repo_id="r", upload_as_file=True)\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no loop), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_hub_upload_no_kwarg_in_loop(tmp_path):
+    """§4.7 item 19 — PASS: an in-loop ``_upload`` WITHOUT
+    ``upload_as_file=True`` is not this check's shape (a per-dir folder
+    loop is legitimate; the #595 runtime ValueError guard and
+    check_upload_as_file own the single-file forms)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(dirs):\n"
+        "    for d in dirs:\n"
+        '        hub._upload(d, repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no upload_as_file=True kwarg), got: {errors}"
+
+
+def test_check_upload_file_in_loop_pass_other_upload_names_in_loop(tmp_path):
+    """§4.7 item 20 — PASS: exact-name negative pin — ``upload_files`` /
+    ``api.upload_folder`` inside loops do NOT match."""
+    (tmp_path / "x.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "from mylib import upload_files\n\n"
+        "api = HfApi()\n"
+        "def push(files, dirs):\n"
+        "    for f in files:\n"
+        "        upload_files(f)\n"
+        "    for d in dirs:\n"
+        '        api.upload_folder(folder_path=str(d), repo_id="r")\n'
+    )
+    errors = check_upload_file_in_loop(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (exact-name only), got: {errors}"
+
+
 # ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
 # Each test writes a fixture into ``tmp_path`` and calls
 # ``check_batch_judge_client(scripts_dir=tmp_path, src_dir=<empty>)``. The
@@ -4525,10 +5144,10 @@ def _write_lessons_row(rules_dir, name, row_bytes):
 
 def test_check_lessons_index_fails_on_missing_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
-    # rule 'gamma' exists but is NOT indexed -> FAIL (ratchet mode disabled:
-    # the tiny synthetic fixture isolates the index-parity failure mode).
+    # rule 'gamma' exists but is NOT indexed -> FAIL (armed defaults: the
+    # tiny unpadded fixture passes every size mode, isolating parity).
     _write_lessons_fixture(rules, ["alpha", "beta", "gamma"], ["alpha", "beta"])
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the un-indexed rule 'gamma'"
     assert any("gamma" in e for e in errs)
 
@@ -4537,14 +5156,14 @@ def test_check_lessons_index_fails_on_stale_row(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     # 'delta' is indexed but has no rule file -> FAIL
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta", "delta"])
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs and any("delta" in e for e in errs)
 
 
 def test_check_lessons_index_passes_on_match(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta"])
-    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path) == []
 
 
 def test_check_lessons_index_passes_on_live_repo():
@@ -4554,8 +5173,9 @@ def test_check_lessons_index_passes_on_live_repo():
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
     # Leanness cap is mechanical — an index over _LESSONS_MAX_BYTES must FAIL.
-    # ratchet mode disabled so the fixture isolates the CAP failure mode
-    # (the ratchet's own modes have their own tests below).
+    # non-row mode disabled: the prose padding is NON-ROW bytes by
+    # construction, so the fixture must isolate the CAP failure mode
+    # (the non-row budget has its own boundary test below).
     from workflow_lint import _LESSONS_MAX_BYTES
 
     rules = tmp_path / ".claude" / "rules"
@@ -4568,8 +5188,10 @@ def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
     )
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path, nonrow_max_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
+    # #1504: the cap FAIL names the largest rows as actionable trim targets.
+    assert any("Largest rows:" in e and "alpha" in e for e in errs)
 
 
 def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
@@ -4579,7 +5201,7 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     # FAIL because the contract is exactly one matching row per rule (#739 r2).
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_fixture(rules, ["alpha"], ["alpha", "alpha"])
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
 
@@ -4588,8 +5210,8 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # The #992 early-warning band: an index strictly between _LESSONS_WARN_BYTES
     # and _LESSONS_MAX_BYTES emits one advisory WARN (warn_sink / stderr),
     # never a FAIL; the over-cap FAIL branch takes precedence over the WARN.
-    # ratchet mode disabled throughout: the band fixtures sit far above the
-    # ratchet by design and must isolate the WARN-band mode.
+    # non-row mode disabled throughout: the band fixtures pad with NON-ROW
+    # prose by design and must isolate the WARN-band mode.
     from workflow_lint import _LESSONS_MAX_BYTES, _LESSONS_WARN_BYTES
 
     # Pin the band constant itself (#992 plan latitude: 7000-7400, below cap).
@@ -4600,86 +5222,104 @@ def test_check_lessons_index_warns_in_warn_band(tmp_path):
     # (1) Sub-warn-band fixture -> no FAIL, empty sink.
     sink: list[str] = []
     _write_lessons_fixture(rules, ["alpha"], ["alpha"])
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, nonrow_max_bytes=None) == []
     assert sink == []
 
     # (2) EXACTLY at the threshold -> still no warn (the band is strictly-greater).
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, nonrow_max_bytes=None) == []
     assert sink == []
 
-    # (3) One byte over the threshold -> no FAIL, exactly one warn-band message.
+    # (3) One byte over the threshold -> no FAIL, exactly one warn-band message
+    # naming the largest rows as trim targets (#1504).
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES + 1)
-    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink, nonrow_max_bytes=None) == []
     assert len(sink) == 1 and "warn band" in sink[0]
+    assert "Largest rows:" in sink[0] and "alpha" in sink[0]
 
     # (4) Over the cap -> the FAIL branch fires; no warn message rides along.
     sink = []
     _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES + 100)
-    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink, nonrow_max_bytes=None)
     assert errs and any("leanness cap" in e for e in errs)
     assert sink == []
 
 
-def test_check_lessons_index_fails_on_over_ratchet(tmp_path):
-    # Durability pin (#1269): growing the index past _LESSONS_RATCHET_BYTES
-    # FAILs under the PRODUCTION defaults (no explicit kwarg — a default
-    # flipped to None would turn this test RED via the constants-sane pin,
-    # and stripping the ratchet code turns it RED here).
-    from workflow_lint import _LESSONS_RATCHET_BYTES
+def _write_lessons_nonrow(rules_dir, nonrow_target):
+    """One valid alpha row + non-row padding sized so non-row bytes == target."""
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / "alpha.md").write_text("x", encoding="utf-8")
+    row = "- alpha.md — x."
+    base = f"# LESSONS\n\n## Rules\n\n{row}\n"
+    row_bytes = len(row.encode("utf-8"))
+    pad = nonrow_target - (len(base.encode("utf-8")) - row_bytes)
+    assert pad >= 0, (nonrow_target, pad)
+    (rules_dir / "LESSONS.md").write_bytes(base.encode("utf-8") + b"x" * pad)
+
+
+def test_check_lessons_index_fails_on_nonrow_over_budget(tmp_path):
+    # Strictly-greater boundary pair for the #1504 non-row scaffolding budget.
+    from workflow_lint import _LESSONS_NONROW_MAX_BYTES
 
     rules = tmp_path / ".claude" / "rules"
-    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES + 1)
+    rules.mkdir(parents=True)
+    _write_lessons_nonrow(rules, _LESSONS_NONROW_MAX_BYTES + 1)
     errs = check_lessons_index(repo_root=tmp_path)
-    assert errs and any("_LESSONS_RATCHET_BYTES" in e and "grew past" in e for e in errs)
-    # The ratchet FAIL is textually DISTINCT from the 8000-cap budget breach:
-    # a session seeing RED can tell one-line-bump from a real budget decision.
-    assert not any("leanness cap" in e for e in errs)
-
-
-def test_check_lessons_index_passes_at_exact_ratchet(tmp_path):
-    # Strictly-greater boundary: a file at EXACTLY the ratchet passes.
-    from workflow_lint import _LESSONS_RATCHET_BYTES
-
-    rules = tmp_path / ".claude" / "rules"
-    _write_lessons_at_exact_bytes(rules, _LESSONS_RATCHET_BYTES)
+    assert errs and any("_LESSONS_NONROW_MAX_BYTES" in e and "non-row" in e for e in errs)
+    _write_lessons_nonrow(rules, _LESSONS_NONROW_MAX_BYTES)
     assert check_lessons_index(repo_root=tmp_path) == []
 
 
-def test_check_lessons_index_fails_on_excess_ratchet_headroom(tmp_path):
-    # Banked slack: a ratchet sitting more than the headroom bound above the
-    # live size FAILs (stale ratchet after a trim defeats the mechanism);
-    # a file at EXACTLY ratchet - headroom passes (strictly-greater).
-    from workflow_lint import _LESSONS_RATCHET_BYTES, _LESSONS_RATCHET_MAX_HEADROOM_BYTES
+def test_check_lessons_index_nonrow_ignores_row_bytes(tmp_path):
+    # THE retirement pin (#1504): rows at the per-row cap, ARMED defaults,
+    # zero workflow_lint.py edits — row growth never needs a constant bump.
+    from workflow_lint import _LESSONS_ROW_MAX_BYTES
 
     rules = tmp_path / ".claude" / "rules"
-    _write_lessons_at_exact_bytes(
-        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES - 1
-    )
-    errs = check_lessons_index(repo_root=tmp_path)
-    assert errs and any("banked slack" in e and "ratchet DOWN" in e for e in errs)
-
-    _write_lessons_at_exact_bytes(
-        rules, _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES
-    )
+    rules.mkdir(parents=True)
+    rows = []
+    for name in ("alpha", "beta", "gamma"):
+        (rules / f"{name}.md").write_text("x", encoding="utf-8")
+        prefix = f"- {name}.md — "
+        rows.append(prefix + "y" * (_LESSONS_ROW_MAX_BYTES - len(prefix.encode("utf-8"))))
+    content = "# LESSONS\n\n## Rules\n\n" + "\n".join(rows) + "\n"
+    (rules / "LESSONS.md").write_text(content, encoding="utf-8")
     assert check_lessons_index(repo_root=tmp_path) == []
 
 
-def test_check_lessons_index_fails_on_ratchet_above_cap(tmp_path):
-    # Config error: the ratchet can never authorize crossing the leanness
-    # cap. Fixture sized inside the (over-cap ratchet)'s hug window so ONLY
-    # the config-error FAIL fires; the warn-band WARN is swallowed by sink.
-    from workflow_lint import _LESSONS_MAX_BYTES
+def test_lessons_total_ratchet_retired():
+    # Anti-resurrection pin (#1504): re-introducing the per-growth TOTAL
+    # ratchet (the 4-incidents/48h conflict magnet) must consciously delete
+    # this test.
+    import inspect
 
-    rules = tmp_path / ".claude" / "rules"
-    sink: list[str] = []
-    _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES - 300)
-    errs = check_lessons_index(
-        repo_root=tmp_path, warn_sink=sink, ratchet_bytes=_LESSONS_MAX_BYTES + 1
+    import workflow_lint as wl
+
+    assert not hasattr(wl, "_LESSONS_RATCHET_BYTES")
+    assert not hasattr(wl, "_LESSONS_RATCHET_MAX_HEADROOM_BYTES")
+    params = inspect.signature(wl.check_lessons_index).parameters
+    assert "ratchet_bytes" not in params
+    assert "nonrow_max_bytes" in params
+
+
+def test_lessons_index_bundled_in_no_flags_source_pin():
+    """NON-VACUOUS no-flags bundling pin (#1504; the #1385 source-pin
+    pattern): `check_lessons_index` must be dispatched by the BARE
+    ``workflow_lint.py`` run. The ratchet retirement's deliberateness
+    replacement (per-row caps + non-row budget + index parity) rests on
+    this bundling firing on every gating path (guard hook + Step 10d
+    pre-push lint), so its silent un-bundling must turn a test RED."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_lessons_index or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_lessons_index\(\)\)",
+        src,
+    ), "check_lessons_index is not dispatched on the no-flags branch"
+    assert "or args.check_lessons_index" in src, (
+        "--check-lessons-index is missing from the no_flags detection tuple"
     )
-    assert errs == [e for e in errs if "config error" in e] and errs, errs
 
 
 def test_check_lessons_index_fails_on_row_over_cap(tmp_path):
@@ -4688,12 +5328,12 @@ def test_check_lessons_index_fails_on_row_over_cap(tmp_path):
 
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES + 1)
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs and any("'alpha'" in e and "per-row cap" in e for e in errs)
 
     # Strictly-greater boundary: a row at EXACTLY the cap passes.
     _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
-    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path) == []
 
 
 def test_check_lessons_index_grandfather_row_over_its_cap_fails(tmp_path, monkeypatch):
@@ -4705,7 +5345,7 @@ def test_check_lessons_index_grandfather_row_over_its_cap_fails(tmp_path, monkey
     monkeypatch.setattr(workflow_lint, "_LESSONS_ROW_GRANDFATHER_MAX_BYTES", {"alpha": 460})
     rules = tmp_path / ".claude" / "rules"
     _write_lessons_row(rules, "alpha", 461)
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs and any(
         "grandfather cap" in e
         and "trim the row" in e
@@ -4716,13 +5356,13 @@ def test_check_lessons_index_grandfather_row_over_its_cap_fails(tmp_path, monkey
     # Strictly-greater + exact-hug boundary: a row at EXACTLY the cap passes
     # (cap - actual == 0 <= headroom bound).
     _write_lessons_row(rules, "alpha", 460)
-    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path) == []
 
     # Exact hug bound passes: cap - actual == the headroom bound exactly.
     from workflow_lint import _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES
 
     _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES)
-    assert check_lessons_index(repo_root=tmp_path, ratchet_bytes=None) == []
+    assert check_lessons_index(repo_root=tmp_path) == []
 
 
 def test_check_lessons_index_grandfather_hug_and_obsolete_entry_fail(tmp_path, monkeypatch):
@@ -4741,33 +5381,39 @@ def test_check_lessons_index_grandfather_hug_and_obsolete_entry_fail(tmp_path, m
     # Hug FAIL: one byte past the exact-hug bound (row still over the
     # general cap, so the obsolete branch does not fire).
     _write_lessons_row(rules, "alpha", 460 - _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES - 1)
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs and any("max headroom" in e and "lower the cap" in e for e in errs)
 
     # Obsolete FAIL: the row now fits the general cap — remove the entry.
     _write_lessons_row(rules, "alpha", _LESSONS_ROW_MAX_BYTES)
-    errs = check_lessons_index(repo_root=tmp_path, ratchet_bytes=None)
+    errs = check_lessons_index(repo_root=tmp_path)
     assert errs and any("no longer needs grandfathering" in e for e in errs)
 
 
-def test_lessons_ratchet_constants_sane():
-    # Live-tree config coherence (#1269): the constants must describe the
-    # real LESSONS.md, and the production defaults must be ARMED.
+def test_lessons_budget_constants_sane():
+    # Live-tree config coherence (#1269/#1504): the constants must describe
+    # the real LESSONS.md, and the production defaults must be ARMED.
     import inspect
 
     import workflow_lint as wl
 
-    assert wl._LESSONS_RATCHET_BYTES <= wl._LESSONS_MAX_BYTES
     assert wl._LESSONS_WARN_BYTES < wl._LESSONS_MAX_BYTES
-    # Defaults armed: a default flipped to None would disarm the ratchet /
+    assert 0 < wl._LESSONS_NONROW_MAX_BYTES < wl._LESSONS_MAX_BYTES
+    # Defaults armed: a default flipped to None would disarm the non-row /
     # row caps fleet-wide while every explicit-kwarg test stayed green.
     params = inspect.signature(wl.check_lessons_index).parameters
-    assert params["ratchet_bytes"].default == wl._LESSONS_RATCHET_BYTES
+    assert params["nonrow_max_bytes"].default == wl._LESSONS_NONROW_MAX_BYTES
     assert params["row_max_bytes"].default == wl._LESSONS_ROW_MAX_BYTES
-    # Live-tree hug: the ratchet must track the real file (banked slack
-    # defeats the mechanism).
+    # Live-tree fit: the real index must satisfy the cap AND the non-row
+    # budget, computed exactly as the check computes it (row bytes = the
+    # _LESSONS_ROW_RE full-line matches; everything else is scaffolding).
     live = (wl._REPO_ROOT / ".claude" / "rules" / "LESSONS.md").read_bytes()
-    assert 0 <= wl._LESSONS_RATCHET_BYTES - len(live) <= wl._LESSONS_RATCHET_MAX_HEADROOM_BYTES
+    assert len(live) <= wl._LESSONS_MAX_BYTES
+    live_row_total = sum(
+        len(m.group(0).encode("utf-8")) for m in wl._LESSONS_ROW_RE.finditer(live.decode("utf-8"))
+    )
+    live_nonrow = len(live) - live_row_total
+    assert 0 <= live_nonrow <= wl._LESSONS_NONROW_MAX_BYTES, (live_nonrow, len(live))
     # Grandfather entries: each cap sits above the general row cap and hugs
     # its LIVE row (the synthetic-fixture tests cover the failure modes).
     rows = {m.group("name"): m.group(0) for m in wl._LESSONS_ROW_RE.finditer(live.decode("utf-8"))}
@@ -6954,6 +7600,114 @@ def test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero():
         f"workflow_lint --check-git-recipes-root-guard failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+def _make_detached_repo(tmp_path: Path) -> Path:
+    """git init an on-main repo, one empty commit, then detach HEAD —
+    the git state a concurrent shared-root ``pull --rebase`` exposes
+    (#1506: the hook's on-main gate reads it as off-main)."""
+    repo = tmp_path / "ambient_detached"
+    scrub = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    scrub["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    scrub["GIT_CONFIG_NOSYSTEM"] = "1"
+    common: dict = dict(check=True, capture_output=True, text=True, env=scrub)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], **common)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=workflow-lint-test",
+            "-c",
+            "user.email=workflow-lint-test@localhost",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "detached-head probe fixture",
+        ],
+        **common,
+    )
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "--detach"], **common)
+    return repo
+
+
+def test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach(
+    tmp_path, monkeypatch
+):
+    """Regression #1545 (incident #1506): with ambient GIT_DIR/GIT_WORK_TREE
+    pointing at a DETACHED-HEAD repo — simulating, via env injection, the
+    off-main git state a concurrent shared-root rebase exposes, WITHOUT
+    touching the real root — the check stays deterministic: self-test
+    passes, a benign git-bearing fence lints clean. Pre-fix, the ambient
+    env leaked into the hook subprocess, the on-main gate read off-main,
+    the blocked probe returned rc 0, and the self-test failed loud (the
+    13-failure #1506 shape). Complementary pin:
+    ``test_root_guard_hook_fails_open_off_main_fixture`` asserts the
+    hook-side mechanism (off-main fail-open + GIT_DIR sensitivity); this
+    test asserts the check-side neutralization — the pair covers
+    complementary hook-stops-honoring-GIT_DIR states, so neither is
+    redundant with the other."""
+    ambient = _make_detached_repo(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(ambient / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(ambient))
+    _write_rg_skill(tmp_path, "x", '```bash\ngit -C "$WT" status\n```\n')
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+
+
+def test_run_root_guard_pins_fixture_over_ambient_git_env(tmp_path, monkeypatch):
+    """Unit: ambient GIT_* scrubbed + fixture pinned — the blocked
+    self-test probe reads rc 2 against the LIVE hook even with a
+    detached-HEAD GIT_DIR in the ambient env."""
+    from workflow_lint import _build_root_guard_fixture
+
+    ambient = _make_detached_repo(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(ambient / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(ambient))
+    fixture = tmp_path / "fixture"
+    _build_root_guard_fixture(fixture)
+    rc, _ = _run_root_guard(_ROOT_GUARD_HOOK, _ROOT_GUARD_SELFTEST_BLOCKED, fixture)
+    assert rc == 2
+
+
+def test_root_guard_hook_fails_open_off_main_fixture(tmp_path):
+    """Mechanism pin (the committed reproduce-first demonstration): the
+    LIVE hook's on-main gate (``guard_repo_root_branch.sh``'s
+    ``rev-parse --abbrev-ref HEAD`` + ``[ "$cur" = main ] || exit 0``
+    gate) fail-opens off main — the blocked probe reads rc 0 when the
+    pinned git state is a detached-HEAD repo. This is the #1506 flap
+    mechanism; it ALSO fails loud if a future hook edit stops honoring
+    GIT_DIR (which would silently break this whole isolation).
+    Complementary pin:
+    ``test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach``
+    asserts the check-side neutralization; this test pins the hook-side
+    mechanism — the pair covers complementary
+    hook-stops-honoring-GIT_DIR states, so neither is redundant with the
+    other."""
+    detached = _make_detached_repo(tmp_path)
+    rc, _ = _run_root_guard(_ROOT_GUARD_HOOK, _ROOT_GUARD_SELFTEST_BLOCKED, detached)
+    assert rc == 0
+
+
+def test_check_git_recipes_root_guard_fixture_build_failure_fails_loud(tmp_path, monkeypatch):
+    """Must-Fix (Statistics critic, plan v3): a fixture-build failure must
+    surface as exactly ONE loud lint error — never a silent [] that
+    no-ops the whole check (the silent-under-enforcement class #1545
+    exists to close; a later refactor converting the except arm into a
+    silent return [] would otherwise leave all other tests green while
+    the check no-ops, _live_tree_passes passing vacuously)."""
+    import workflow_lint as wl
+
+    def _boom(tmp):
+        raise OSError("forced fixture-build failure (test)")
+
+    monkeypatch.setattr(wl, "_build_root_guard_fixture", _boom)
+    _write_rg_skill(tmp_path, "x", '```bash\ngit -C "$WT" status\n```\n')
+    errors = check_git_recipes_root_guard(repo_root=tmp_path)
+    assert len(errors) == 1 and "fixture build failed" in errors[0], errors
 
 
 # ---------------------------------------------------------------------------

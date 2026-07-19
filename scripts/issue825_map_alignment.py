@@ -75,6 +75,7 @@ import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import issue825_crossmodel_map_transfer as cm  # noqa: E402
+import issue825_fit_cells as fit825  # noqa: E402  (#1417 refit: inner-CV lambda machinery)
 
 # Reused constants + helpers (single source of truth = the parent crossmodel script)
 HF_DATA_REPO = cm.HF_DATA_REPO
@@ -91,6 +92,35 @@ _cv_folds = cm._cv_folds
 _pooled_r2 = cm._pooled_r2
 fit_primal_beta = cm.fit_primal_beta
 
+# ---------------------------------------------------------------------------
+# #1417 registered-selector refit: module-global patch style (mirrors
+# fit825.GCV_DOF_CAP / FROZEN_LAYERS). Callers set
+#   ma.LAMBDA_SELECTION = "inner-group-cv"; ma.GCV_DOF_CAP = 0.9
+# Defaults preserve the committed pure-GCV behavior byte-for-byte.
+# Inner-CV group contract: every battery caller's rows are the i.i.d. unit
+# (one row per conversation — #1417 single-turn), so the inner GROUP folds
+# are built over singleton per-row groups (np.arange). A multi-row-per-
+# conversation caller must NOT enable inner-CV here without threading real
+# group ids.
+# ---------------------------------------------------------------------------
+LAMBDA_SELECTION: str = "gcv"
+GCV_DOF_CAP: float | None = None
+N_INNER_LAMBDA_FOLDS = fit825.N_INNER_LAMBDA_FOLDS
+INNER_LAMBDA_SEED = 4242  # fixed, registered (fit825 uses seed+4242+k per outer fold)
+# Compact selector telemetry (plan assumption 13): when a caller binds a dict,
+# every _ridge_predict/_ridge_predict_cached-style selection appends
+# {selector: {lambda_str: count}}. None (default) = no logging.
+SELECTOR_LOG: dict | None = None
+
+
+def _log_selector(selector: str, lam: float) -> None:
+    """Count one lambda selection into SELECTOR_LOG when a caller bound it."""
+    if SELECTOR_LOG is not None:
+        d = SELECTOR_LOG.setdefault(selector, {})
+        k = f"{lam:.6g}"
+        d[k] = d.get(k, 0) + 1
+
+
 STEM_INSTRUCT = "instruct_chat_s"
 STEM_BASE = "pretrained_chat_s"
 ROLE = "assistant"
@@ -105,40 +135,83 @@ GATE_TOL = 0.01
 # same Gram across the stages that share a source tensor).
 # ===========================================================================
 def _ridge_prep(X_train: torch.Tensor) -> dict:
-    """eigh(Gram) + standardization stats for a source. X_train: (Ntr, D) fp64."""
+    """eigh(Gram) + standardization stats for a source. X_train: (Ntr, D) fp64.
+
+    Under ``LAMBDA_SELECTION == "inner-group-cv"`` (module global, #1417
+    refit) additionally builds the fit825 inner GROUP-fold caches over
+    singleton per-row groups (see the module-global contract note); a
+    ``None`` inner cache (too few usable inner folds) falls back to GCV
+    with a loud warning at predict time. Default ("gcv") is byte-identical
+    to the committed behavior.
+    """
     xmu = X_train.mean(0)
     xsd = X_train.std(0) + 1e-9
     Xn = (X_train - xmu) / xsd
     G = Xn @ Xn.T
     w, V = torch.linalg.eigh(G)
     w = torch.clamp(w, min=0.0)
-    return {"w": w, "V": V, "Xn": Xn, "xmu": xmu, "xsd": xsd, "ntr": int(X_train.shape[0])}
+    prep = {"w": w, "V": V, "Xn": Xn, "xmu": xmu, "xsd": xsd, "ntr": int(X_train.shape[0])}
+    if LAMBDA_SELECTION == "inner-group-cv":
+        prep["inner"] = fit825._prep_inner_lambda(
+            X_train, np.arange(int(X_train.shape[0])), N_INNER_LAMBDA_FOLDS, INNER_LAMBDA_SEED
+        )
+        if prep["inner"] is None:
+            print("[map_align] WARN: inner-group-cv: <2 usable inner folds — GCV fallback")
+    return prep
 
 
-def _ridge_predict(prep: dict, Y_train: torch.Tensor, X_eval: torch.Tensor) -> torch.Tensor:
-    """GCV-ridge prediction at X_eval from a cached source prep + train targets."""
-    w, V, Xn, xmu, xsd, ntr = (
-        prep["w"],
-        prep["V"],
-        prep["Xn"],
-        prep["xmu"],
-        prep["xsd"],
-        prep["ntr"],
-    )
-    ymu = Y_train.mean(0)
-    Ytr_c = Y_train - ymu
-    VtY = V.T @ Ytr_c
+def _select_lambda(prep: dict, Y_train: torch.Tensor, VtY: torch.Tensor, tot: float) -> float:
+    """Lambda selection for one (prep, Y_train): inner-group-CV when the prep
+    carries inner caches (#1417 refit), else the committed GCV scan with the
+    optional GCV_DOF_CAP interpolating-lambda skip (mirrors fit825)."""
+    w, ntr = prep["w"], prep["ntr"]
+    if prep.get("inner"):
+        rss_curve = fit825._inner_cv_rss_curve(prep["inner"], Y_train)
+        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+        _log_selector("inner-group-cv", best_lam)
+        return best_lam
     sqVtY = (VtY**2).sum(1)
-    tot = float((Ytr_c**2).sum())
     best_lam, best_gcv = float(LAMBDAS[0]), float("inf")
     for lam in LAMBDAS:
         filt = w / (w + lam)
-        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         dof = float(filt.sum())
+        if GCV_DOF_CAP is not None and dof > GCV_DOF_CAP * ntr:
+            continue  # (near-)interpolating lambda: GCV objective degenerate (fit825)
+        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         denom = (ntr - dof) ** 2
         gcv = rss / denom if denom > 1e-12 else float("inf")
         if gcv < best_gcv:
             best_gcv, best_lam = gcv, float(lam)
+    _log_selector("gcv-fallback" if "inner" in prep else "gcv", best_lam)
+    return best_lam
+
+
+def _ridge_predict(
+    prep: dict, Y_train: torch.Tensor, X_eval: torch.Tensor, *, lam_key: str | None = None
+) -> torch.Tensor:
+    """GCV-ridge prediction at X_eval from a cached source prep + train targets.
+
+    ``lam_key`` (default None — byte-identical committed behavior): call sites
+    whose (prep, Y_train) pair is FIXED across many X_eval calls (the
+    composition-collapse null's per-draw predicts) pass a stable key so the
+    Y-dependent pieces (ymu, VtY, selected lambda) are computed ONCE per
+    (prep, key) and reused — bit-identical values (deterministic given
+    (prep, Y_train)), only the redundant per-draw recompute is removed
+    (#1310 compute-shape precedent; the #1417 refit's inner-CV curve would
+    otherwise re-run per draw).
+    """
+    w, V, Xn, xmu, xsd = prep["w"], prep["V"], prep["Xn"], prep["xmu"], prep["xsd"]
+    memo = prep.setdefault("_lam_memo", {}) if lam_key is not None else None
+    if memo is not None and lam_key in memo:
+        ymu, VtY, best_lam = memo[lam_key]
+    else:
+        ymu = Y_train.mean(0)
+        Ytr_c = Y_train - ymu
+        VtY = V.T @ Ytr_c
+        tot = float((Ytr_c**2).sum())
+        best_lam = _select_lambda(prep, Y_train, VtY, tot)
+        if memo is not None:
+            memo[lam_key] = (ymu, VtY, best_lam)
     Xev_n = (X_eval - xmu) / xsd
     Kev = Xev_n @ Xn.T
     KevV = Kev @ V
@@ -340,10 +413,27 @@ def _layer_battery(data, folds, layer, *, do_orth):
 # ===========================================================================
 # Nulls at the headline layer.
 # ===========================================================================
-def _random_orthogonal(d: int, gen: torch.Generator) -> torch.Tensor:
+def _random_orthogonal(
+    d: int, gen: torch.Generator, dev: torch.device | None = None
+) -> torch.Tensor:
+    """Haar-orthogonal (d, d) fp64 sample; the QR factorization runs on `dev`.
+
+    The Gaussian is ALWAYS drawn on CPU with the caller's CPU `gen`, so the
+    seeded RNG stream (hence the Haar sample identity per seed) is unchanged
+    vs prior #825 runs; only the QR + sign-fix move to `dev`. With `dev=None`
+    or CPU the behavior is byte-identical to the pre-fix implementation
+    (`.to()` is a no-op on the same device). Routing the QR to the fit device
+    removes the two serial 3584x3584 fp64 CPU QRs per null draw that
+    dominated the 961 s/pair identity-battery cells on GPU instances
+    (#1417 round-2 fix; the #1335 P3 silent-CPU class).
+    """
     A = torch.randn(d, d, dtype=torch.float64, generator=gen)
+    if dev is not None:
+        A = A.to(dev)
     Q, R = torch.linalg.qr(A)
-    # sign fix for a Haar-distributed sample
+    # sign fix for a Haar-distributed sample (canonical Q regardless of the
+    # backend's QR sign convention, so CPU LAPACK vs cuSOLVER agree up to fp64
+    # rounding)
     Q = Q * torch.sign(torch.diagonal(R))
     return Q
 
@@ -374,8 +464,8 @@ def _procrustes_cosine_null(Xb, Xi, Yb, Yi, *, n_draws, seed):
     d = beta_b.shape[0]
     draws = []
     for _ in range(n_draws):
-        Q1 = _random_orthogonal(d, gen).to(dev)
-        Q2 = _random_orthogonal(d, gen).to(dev)
+        Q1 = _random_orthogonal(d, gen, dev)
+        Q2 = _random_orthogonal(d, gen, dev)
         Mn = Q1.T @ beta_b @ Q2
         vmn = Mn.reshape(-1)
         draws.append(float((vmn @ vi_n) / (vmn.norm() + 1e-12)))
@@ -427,17 +517,19 @@ def _composition_collapse_null(data, folds, layer, *, n_draws, seed):
         mu = fold_mu[k]
         if name == "comp_samefn_b2i":  # Xi -> (Qc) Xb-space -> M_base -> (Qa) Yi
             xbhat = (Xi[te] - mu["Xi"]) @ Qc.T + mu["Xb"]
-            ybhat = _ridge_predict(pp["Xb"], Yb[tr], xbhat)
+            # (prep, Y_train) FIXED across draws -> memoize ymu/VtY/lambda
+            # (bit-identical; kills the per-draw re-selection, see _ridge_predict)
+            ybhat = _ridge_predict(pp["Xb"], Yb[tr], xbhat, lam_key="collapse_b2i")
             return (ybhat - mu["Yb"]) @ Qa + mu["Yi"]
         # comp_samefn_i2b : Xb -> (Qc) Xi-space -> M_inst -> (Qa) Yb
         xihat = (Xb[te] - mu["Xb"]) @ Qc + mu["Xi"]
-        yihat = _ridge_predict(pp["Xi"], Yi[tr], xihat)
+        yihat = _ridge_predict(pp["Xi"], Yi[tr], xihat, lam_key="collapse_i2b")
         return (yihat - mu["Yi"]) @ Qa.T + mu["Yb"]
 
     vals = {"comp_samefn_b2i": [], "comp_samefn_i2b": []}
     for _ in range(n_draws):
-        Qc = _random_orthogonal(d, gen).to(dev)  # context-space random rotation
-        Qa = _random_orthogonal(d, gen).to(dev)  # answer-space random rotation
+        Qc = _random_orthogonal(d, gen, dev)  # context-space random rotation
+        Qa = _random_orthogonal(d, gen, dev)  # answer-space random rotation
         for name in vals:
             true = Yi if name == "comp_samefn_b2i" else Yb
             vals[name].append(

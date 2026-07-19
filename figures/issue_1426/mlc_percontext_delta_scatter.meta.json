@@ -1,0 +1,864 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:54Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "median CoT length (tokens)": 736.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0185464666231967,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 692.5,
+      "per-context \u0394skill (read 1) @ L24": -0.01519585811227575,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 706.0,
+      "per-context \u0394skill (read 1) @ L24": -0.019256419318213758,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median CoT length (tokens)": 668.0,
+      "per-context \u0394skill (read 1) @ L24": 0.004368588982575972,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (tokens)": 791.0,
+      "per-context \u0394skill (read 1) @ L24": -0.022703168401208673,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (tokens)": 724.0,
+      "per-context \u0394skill (read 1) @ L24": -0.030024439565522587,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median CoT length (tokens)": 710.5,
+      "per-context \u0394skill (read 1) @ L24": -0.01458115992387754,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median CoT length (tokens)": 688.0,
+      "per-context \u0394skill (read 1) @ L24": -0.016843539404539976,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "median CoT length (tokens)": 677.5,
+      "per-context \u0394skill (read 1) @ L24": -0.035748730495588577,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (tokens)": 679.0,
+      "per-context \u0394skill (read 1) @ L24": -0.021414829559638693,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (tokens)": 744.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0054705935052173915,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "median CoT length (tokens)": 668.0,
+      "per-context \u0394skill (read 1) @ L24": -0.03458492440190264,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "median CoT length (tokens)": 671.5,
+      "per-context \u0394skill (read 1) @ L24": -0.051628502990721414,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "median CoT length (tokens)": 750.0,
+      "per-context \u0394skill (read 1) @ L24": -0.02869175823391268,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "median CoT length (tokens)": 425.0,
+      "per-context \u0394skill (read 1) @ L24": -0.05351230742464819,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "median CoT length (tokens)": 396.0,
+      "per-context \u0394skill (read 1) @ L24": -0.06305518587051473,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "median CoT length (tokens)": 375.5,
+      "per-context \u0394skill (read 1) @ L24": -0.04782728518075041,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "median CoT length (tokens)": 564.5,
+      "per-context \u0394skill (read 1) @ L24": -0.06501031635417154,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "median CoT length (tokens)": 630.0,
+      "per-context \u0394skill (read 1) @ L24": -0.042712063030755476,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "median CoT length (tokens)": 781.0,
+      "per-context \u0394skill (read 1) @ L24": -0.08251701276325729,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "median CoT length (tokens)": 1062.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0055624637548260525,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "median CoT length (tokens)": 695.0,
+      "per-context \u0394skill (read 1) @ L24": -0.03078620402067589,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "median CoT length (tokens)": 578.0,
+      "per-context \u0394skill (read 1) @ L24": -0.06852433399113189,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "median CoT length (tokens)": 721.0,
+      "per-context \u0394skill (read 1) @ L24": -0.021322686901286136,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "median CoT length (tokens)": 527.0,
+      "per-context \u0394skill (read 1) @ L24": -0.03249524798392012,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "median CoT length (tokens)": 407.0,
+      "per-context \u0394skill (read 1) @ L24": -0.02657261234648156,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "median CoT length (tokens)": 601.0,
+      "per-context \u0394skill (read 1) @ L24": -0.022739309944129982,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "median CoT length (tokens)": 612.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0516286720420136,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "median CoT length (tokens)": 457.0,
+      "per-context \u0394skill (read 1) @ L24": -0.022778479607397095,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "median CoT length (tokens)": 721.0,
+      "per-context \u0394skill (read 1) @ L24": -0.030959241603586096,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "median CoT length (tokens)": 476.0,
+      "per-context \u0394skill (read 1) @ L24": -0.03042909987385556,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "median CoT length (tokens)": 609.0,
+      "per-context \u0394skill (read 1) @ L24": -0.025219254372178646,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "median CoT length (tokens)": 646.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0166214727045102,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "median CoT length (tokens)": 539.5,
+      "per-context \u0394skill (read 1) @ L24": -0.022462366055997274,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "median CoT length (tokens)": 620.0,
+      "per-context \u0394skill (read 1) @ L24": -0.02948956896931354,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "median CoT length (tokens)": 658.0,
+      "per-context \u0394skill (read 1) @ L24": -0.016637082002596504,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "median CoT length (tokens)": 495.5,
+      "per-context \u0394skill (read 1) @ L24": -0.0402103434705795,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "median CoT length (tokens)": 713.0,
+      "per-context \u0394skill (read 1) @ L24": -0.026003217419725555,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "median CoT length (tokens)": 475.5,
+      "per-context \u0394skill (read 1) @ L24": -0.18326701802108403,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "median CoT length (tokens)": 539.0,
+      "per-context \u0394skill (read 1) @ L24": -0.045703518176552604,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "median CoT length (tokens)": 569.5,
+      "per-context \u0394skill (read 1) @ L24": -0.10566043304146244,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "median CoT length (tokens)": 511.0,
+      "per-context \u0394skill (read 1) @ L24": -0.09535409591584276,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "median CoT length (tokens)": 504.5,
+      "per-context \u0394skill (read 1) @ L24": -0.06133054901747237,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "median CoT length (tokens)": 725.0,
+      "per-context \u0394skill (read 1) @ L24": -0.011073985376618856,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "median CoT length (tokens)": 751.0,
+      "per-context \u0394skill (read 1) @ L24": -0.01176518216813005,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "median CoT length (tokens)": 735.5,
+      "per-context \u0394skill (read 1) @ L24": -0.017487529568558147,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "median CoT length (tokens)": 711.0,
+      "per-context \u0394skill (read 1) @ L24": -0.02364060604621443,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "median CoT length (tokens)": 743.0,
+      "per-context \u0394skill (read 1) @ L24": -0.0068919534804186,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "median CoT length (tokens)": 602.0,
+      "per-context \u0394skill (read 1) @ L24": -0.031245254977675163,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "median CoT length (tokens)": 712.0,
+      "per-context \u0394skill (read 1) @ L24": -0.03639237602246059,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "median K (tokens)": 160.0,
+      "y": -0.0185464666231967,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "median K (tokens)": 149.0,
+      "y": -0.01519585811227575,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "median K (tokens)": 151.5,
+      "y": -0.019256419318213758,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "median K (tokens)": 149.0,
+      "y": 0.004368588982575972,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "median K (tokens)": 163.0,
+      "y": -0.022703168401208673,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "median K (tokens)": 153.5,
+      "y": -0.030024439565522587,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "median K (tokens)": 152.5,
+      "y": -0.01458115992387754,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "median K (tokens)": 151.5,
+      "y": -0.016843539404539976,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "median K (tokens)": 169.5,
+      "y": -0.035748730495588577,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "median K (tokens)": 153.0,
+      "y": -0.021414829559638693,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "median K (tokens)": 179.0,
+      "y": -0.0054705935052173915,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "median K (tokens)": 151.0,
+      "y": -0.03458492440190264,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "median K (tokens)": 156.5,
+      "y": -0.051628502990721414,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "median K (tokens)": 176.0,
+      "y": -0.02869175823391268,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "median K (tokens)": 173.0,
+      "y": -0.05351230742464819,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "median K (tokens)": 139.0,
+      "y": -0.06305518587051473,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "median K (tokens)": 178.0,
+      "y": -0.04782728518075041,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "median K (tokens)": 180.5,
+      "y": -0.06501031635417154,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "median K (tokens)": 177.0,
+      "y": -0.042712063030755476,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "median K (tokens)": 217.0,
+      "y": -0.08251701276325729,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "median K (tokens)": 252.0,
+      "y": -0.0055624637548260525,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "median K (tokens)": 162.0,
+      "y": -0.03078620402067589,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "median K (tokens)": 151.0,
+      "y": -0.06852433399113189,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "median K (tokens)": 209.0,
+      "y": -0.021322686901286136,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "median K (tokens)": 188.0,
+      "y": -0.03249524798392012,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "median K (tokens)": 189.5,
+      "y": -0.02657261234648156,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "median K (tokens)": 206.0,
+      "y": -0.022739309944129982,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "median K (tokens)": 170.0,
+      "y": -0.0516286720420136,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "median K (tokens)": 190.5,
+      "y": -0.022778479607397095,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "median K (tokens)": 191.0,
+      "y": -0.030959241603586096,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "median K (tokens)": 206.0,
+      "y": -0.03042909987385556,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "median K (tokens)": 172.0,
+      "y": -0.025219254372178646,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "median K (tokens)": 110.0,
+      "y": -0.0166214727045102,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "median K (tokens)": 105.5,
+      "y": -0.022462366055997274,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "median K (tokens)": 108.0,
+      "y": -0.02948956896931354,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "median K (tokens)": 128.0,
+      "y": -0.016637082002596504,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "median K (tokens)": 93.0,
+      "y": -0.0402103434705795,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "median K (tokens)": 156.0,
+      "y": -0.026003217419725555,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "median K (tokens)": 67.0,
+      "y": -0.18326701802108403,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "median K (tokens)": 139.0,
+      "y": -0.045703518176552604,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "median K (tokens)": 111.5,
+      "y": -0.10566043304146244,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "median K (tokens)": 103.0,
+      "y": -0.09535409591584276,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "median K (tokens)": 81.5,
+      "y": -0.06133054901747237,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "median K (tokens)": 163.0,
+      "y": -0.011073985376618856,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "median K (tokens)": 146.0,
+      "y": -0.01176518216813005,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "median K (tokens)": 146.5,
+      "y": -0.017487529568558147,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "median K (tokens)": 142.0,
+      "y": -0.02364060604621443,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "median K (tokens)": 146.0,
+      "y": -0.0068919534804186,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "median K (tokens)": 147.5,
+      "y": -0.031245254977675163,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "median K (tokens)": 152.0,
+      "y": -0.03639237602246059,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 99
+    }
+  ],
+  "n_series": 100,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "median CoT length (tokens)",
+        "ylabel": "per-context \u0394skill (read 1) @ L24",
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700",
+          "800",
+          "900",
+          "1000",
+          "1100"
+        ],
+        "yticklabels": [
+          "\u22120.200",
+          "\u22120.175",
+          "\u22120.150",
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025"
+        ]
+      },
+      {
+        "xlabel": "median K (tokens)",
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "50",
+          "75",
+          "100",
+          "125",
+          "150",
+          "175",
+          "200",
+          "225",
+          "250",
+          "275"
+        ]
+      }
+    ]
+  }
+}

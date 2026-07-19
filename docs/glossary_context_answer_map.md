@@ -3,6 +3,14 @@
 Canonical vocabulary for the context->answer-map experiments (#779, #810/#658 line, and successors).
 One first-use rule: **context = prefix + query** (the full model input).
 
+Scope: this glossary governs the context->answer mapping line. The
+marker-leakage line defines **context (C)** differently (everything before
+the trained assistant turn, ending at a question — see
+`docs/open_questions.md` § Glossary); do not mix the two vocabularies.
+Writing conventions for the ad-hoc result summaries that use this vocabulary
+(analysis-choice grounding, per-arm provenance) live in
+`docs/results_summaries/README.md`.
+
 ## Text objects
 
 | term | definition | notes |
@@ -20,9 +28,17 @@ Degenerate case: bare user prompts (e.g. the LMSYS corpus) have an empty prefix 
 |---|---|---|
 | $v_C$ | **context vector** | activation at the last prompt token (the final newline of the assistant header) of ONE context |
 | $v_P$ | **prefix vector** | a fixed prefix's context vectors averaged over many queries: $v_P = \bar{v}_C^{\,q}$ |
+| — (no symbol in use; write it out) | **prefix-end state** | residual-stream activation at the last prefix token, BEFORE the query begins; exactly constant across a prefix's queries (within-prefix std ratio 0.000, #1092). NOT the same object as $v_P$ — see § Maps |
 | $v_A$ | **answer vector** | mean activation over ONE answer's tokens (token-mean is intrinsic to $v_A$; no bar needed) |
 | $\bar{v}_A^{\,q}$ | **behavior profile** | a prefix's answer vectors averaged over its queries (and rollouts) — the summary of the model's behavior under that prefix |
 | $r_B$ | **trait direction** (persona vector) | per-trait direction from the mean-difference persona-vectors extraction (arXiv 2507.21509 recipe) |
+
+Theory-paper notation: the leakage-theory paper (`docs/leakage_theory_paper.tex`;
+Overleaf `main.tex`) writes $c_x$ for the per-context vector and
+$c_C = \mathbb{E}_{x\sim C}[c_x]$ for the condition-level vector — i.e. $v_C$
+and $v_P$ here. The paper deliberately leaves the per-context featurization
+open (its example is a mean prompt-side activation); the experimental line
+pins the last-prompt-token state.
 
 ## Aggregation modifiers
 
@@ -37,8 +53,24 @@ Mark averaging with an overbar naming the axis — "averaged" alone never says o
 |---|---|---|---|
 | **context map** $M'$ | one row per (context, answer) | $v_A \approx M' v_C$ | #779 (5000 LMSYS; 2400/trait trait-eliciting) |
 | **prefix map** $M$ | one row per prefix, both sides query-averaged | $\bar{v}_A^{\,q} \approx M v_P$ | the earlier averaged experiment (#810/#658 line, 50 prefixes x 48 queries) |
+| **prefix-end map** | one row per prefix | pooled answer profile ≈ ridge(prefix-end state) | #1092 (1,145 real WildChat/LMSYS prefixes, sparse-crossed with a 1,397-query bank — 21,193 rows; 996 prefixes survive at averaged grain) |
 
 Same measurement at two aggregation levels: $v_P$ is literally the query-average of a prefix's $v_C$'s, and the behavior profile is the query-average of its $v_A$'s.
+
+The prefix-end map is a THIRD object, not an aggregation grain of the context
+map: at averaged grain it reaches R² 0.37–0.53 vs 0.82–0.94 for the
+query-averaged context map (instruct model, own-corpus cell; each pair is the
+range across the ambient/PCA-48 representation bases, not an uncertainty
+interval; the base-model cell runs lower, 0.26–0.46 vs 0.76–0.88), and the two
+maps' predictions agree at only R² 0.28–0.54 (the source docs' headline range —
+the prefix-prediction→context-prediction direction, across both model cells and
+both bases; the strict all-cells-both-directions floor dips to 0.08, 0.077 in
+the 07-17 deep-dive table) — the direct test says the prefix-end map is NOT the
+query-averaged context map (#1092 fair comparison; Result 7 of
+`docs/results_summaries/2026-07-15-link-prefix-context-answer-maps.md`,
+deep-dive `docs/results_summaries/2026-07-17-fair-comparison-deep-dive.md`).
+The earlier ~0.8 "prefix map" result (#810/#658 line) belongs to the
+query-averaged object $v_P$, not the prefix-end state.
 
 ## Read-out levels (monitoring)
 
@@ -54,6 +86,7 @@ Same measurement at two aggregation levels: $v_P$ is literally the query-average
 | "query vector" | collides with attention Q of QKV; misdescribes rows that carry a persona | context vector $v_C$ |
 | "exchange-level" / "instance-level" / "condition-level" | superseded coinages from the naming discussion | context-level / prefix-level |
 | bare "averaged" | never says over what | overbar with the axis: $\bar{\cdot}^{\,q}$, $\bar{\cdot}^{\,r}$ |
+| bare/unqualified "prefix vector" / "prefix map" in #1092-era prose | after #1092 there are two distinct prefix-side objects (the query-averaged $v_P$ and the prefix-end state), so unqualified use is ambiguous — a transcription of the split the sources already made (Result 7 of the 2026-07-15 summary; 07-17 deep-dive), not a fresh deprecation ruling. The Maps-table rows above are NOT retired: "prefix map" $M$ sits next to its formula ($\bar{v}_A^{\,q} \approx M v_P$), which qualifies it | qualify: "prefix vector $v_P$ (query-averaged)" vs "prefix-end state" / "prefix-end map" |
 
 ### Search-time note — retired aliases stay grep targets
 
@@ -64,7 +97,9 @@ labels still carry the retired vocabulary (e.g. #813's follow-up label
 canonical terms, separator-tolerant (`[-_ ]` between words):
 `per[-_ ]example`, `averaged[-_ ]map`, `question[-_ ]averaged`,
 `query[-_ ]averaged`, `single[-_ ]context`, `query[-_ ]level`,
-`exchange[-_ ]level`, `instance[-_ ]level`, `condition[-_ ]level`.
+`exchange[-_ ]level`, `instance[-_ ]level`, `condition[-_ ]level`,
+`prefix[-_ ]vector`, `prefix[-_ ]map` (ambiguous-era usage; the qualified
+forms remain canonical).
 This list is not closed: as the retired-terms table above gains rows,
 derive their grep patterns from the table and add them here.
 Full recipe: `.claude/agents/research-pm.md` § Negative-existence claims.

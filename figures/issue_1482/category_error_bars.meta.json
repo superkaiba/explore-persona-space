@@ -1,0 +1,300 @@
+{
+  "commit": "2883c0042e",
+  "created": "2026-07-19T02:46:13Z",
+  "figsize": [
+    6.5,
+    5.2
+  ],
+  "points": [
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.117453,
+      "y": 0.2349067348031064,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.128731,
+      "y": 0.25746176545957145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.133177,
+      "y": 0.2663546536064908,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.136957,
+      "y": 0.27391328096347145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.13882,
+      "y": 0.27764044621605943,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.145705,
+      "y": 0.2914109606333154,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.14596,
+      "y": 0.2919199817476806,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.148203,
+      "y": 0.2964061954085164,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.152519,
+      "y": 0.30503809719523695,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.155178,
+      "y": 0.3103550015091484,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.157188,
+      "y": 0.3143754234030922,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.162728,
+      "y": 0.3254553134313331,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.168465,
+      "y": 0.3369304117600949,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.17519,
+      "y": 0.35037995146744605,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.22569105320084595,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.25265484168892843,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2558000534183233,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.27011512431867085,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2718744298042947,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2888105754578817,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2880341516235637,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.286272726682266,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.299956979641672,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.29780847652180575,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3014066590112954,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3021402589568369,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.32377800906376325,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3192280107984634,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.24412241640536683,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.26226868923021446,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2769092537946583,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.27771143760827205,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.28340646262782415,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.2940113458087491,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.29580581187179744,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.30653966413476685,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3101192147488019,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.32290152649649106,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.32734418779488905,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3487703679058293,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3500828144564266,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mean normalized prediction error (lower = better predicted)": 0.3815318921364287,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "mean normalized prediction error (lower = better predicted)",
+        "xticklabels": [
+          "0.20",
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36"
+        ],
+        "yticklabels": [
+          "Small talk",
+          "Creative writing",
+          "Math",
+          "Non-English",
+          "Advice / how-to",
+          "English",
+          "Factual Q&A",
+          "Summarization / extraction",
+          "Coding",
+          "Roleplay / persona",
+          "Harmful or unsafe request",
+          "NSFW",
+          "Translation",
+          "Other"
+        ]
+      }
+    ]
+  }
+}

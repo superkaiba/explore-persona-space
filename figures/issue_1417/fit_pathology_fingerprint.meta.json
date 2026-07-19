@@ -1,0 +1,756 @@
+{
+  "commit": "0fed7857ec",
+  "created": "2026-07-18T19:56:13Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.6498754096729851,
+      "label": "n=3128",
+      "series": "all rows (n=4724)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ at layer 19 (context arm)": -1.4809794981357092,
+      "label": "n=3629",
+      "series": "judge-kept rows",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3411777952131042,
+      "label": "n=3128",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3823309960937712,
+      "label": "n=3128",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.34076101863712005,
+      "label": "n=3128",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.34518690937060403,
+      "label": "n=3128",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3753029399897301,
+      "label": "n=3128",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5341788565239883,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5460883631466313,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.43747055568195725,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.05777052994336451,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.2855628033289853,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.44599522210210674,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.00463859142080536,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5973213756094125,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ at layer 19 (context arm)": -0.5854574712856693,
+      "label": "n=2214",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.15876483281698173,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.19064963979972782,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.18611787199295404,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.22162506454256614,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.20699545613251658,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5263118082067761,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5164814450215096,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.40401182127723245,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.39430076379890866,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.4149087836478569,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3921729098971012,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3752068035921441,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.6436583725928694,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ at layer 19 (context arm)": -1.204515097994467,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.45386502503639936,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.40814817989767216,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.46318051384745995,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3792976332827659,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3907001588210709,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.6498754096729851,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ at layer 19 (context arm)": -1.4809794981357092,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.35695193186086593,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5341788565239883,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5460883631466313,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.24628754049544382,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5973213756094125,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ at layer 19 (context arm)": -0.5854574712856693,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.19283057305694926,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5263118082067761,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ at layer 19 (context arm)": 0.5164814450215096,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.3961202164426486,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.78,
+      "held-out $R^2$ at layer 19 (context arm)": 0.6436583725928694,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "held-out $R^2$ at layer 19 (context arm)": -1.204515097994467,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.22,
+      "held-out $R^2$ at layer 19 (context arm)": 0.4190383021770736,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": -0.22,
+      "y": 0.28101438642874943,
+      "label": "n=2245",
+      "series": "all rows (n=4724)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.37787860267506335,
+      "label": "n=2245",
+      "series": "judge-kept rows",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.22,
+      "y": 0.21802389014383539,
+      "label": "n=2245",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.22,
+      "y": -0.2276158501954657,
+      "label": "n=516",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.22,
+      "y": 0.13088189844946918,
+      "label": "n=2245",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.22,
+      "y": -0.09128606186652166,
+      "label": "n=2245",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.22,
+      "y": -0.08664597578509925,
+      "label": "n=2245",
+      "series": "matched-n draws (n=516)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.78,
+      "y": 0.19500812303594295,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.78,
+      "y": 0.19913755043181003,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "y": 0.12772433454295362,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.22,
+      "y": 0.06841360282601006,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.22,
+      "y": 0.056889102638456035,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.22,
+      "y": 0.06331807815360968,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.22,
+      "y": 0.08461347569067434,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.22,
+      "y": 0.060351721232059785,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.78,
+      "y": 0.3645251050565279,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": 0.3560424011580442,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.22,
+      "y": 0.2860835892632172,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.22,
+      "y": 0.27030951735550934,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.22,
+      "y": 0.15251112819407875,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.22,
+      "y": 0.27212287450356965,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.22,
+      "y": -0.1532015156154134,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.78,
+      "y": 0.2896400219950799,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "y": 0.3970158178222304,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 4.22,
+      "y": 0.3140034362778824,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.22,
+      "y": -0.09132813616341773,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.22,
+      "y": -0.19973887161426984,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.22,
+      "y": -0.007724456731108997,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.22,
+      "y": 0.09188331207925748,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": -0.22,
+      "y": 0.28101438642874943,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.37787860267506335,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.22,
+      "y": -0.01132841985075641,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.78,
+      "y": 0.19500812303594295,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.22,
+      "y": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.78,
+      "y": 0.19913755043181003,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": 0.12772433454295362,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.22,
+      "y": 0.06671719610816199,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.78,
+      "y": 0.3645251050565279,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "y": 0.3560424011580442,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.22,
+      "y": 0.1655651187401923,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.78,
+      "y": 0.2896400219950799,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 0.3970158178222304,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.22,
+      "y": 0.021419056769668664,
+      "_kind": "line",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 100,
+  "text": {
+    "suptitle": "Same rows, three fits: judge-kept fits collapse while their supersets and subsets fit (dashed: shuffle-null level)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct",
+        "ylabel": "held-out $R^2$ at layer 19 (context arm)",
+        "legend_labels": [
+          "all rows (n=4724)",
+          "judge-kept rows",
+          "matched-n draws (n=516)"
+        ],
+        "annotations": [
+          "n=3629",
+          "n=3128",
+          "n=2214",
+          "n=3526",
+          "n=3600"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Base",
+        "annotations": [
+          "n=2245",
+          "n=516",
+          "n=2932",
+          "n=2993",
+          "n=2249"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ]
+      }
+    ],
+    "series": [
+      "all rows (n=4724)",
+      "judge-kept rows",
+      "matched-n draws (n=516)"
+    ]
+  }
+}

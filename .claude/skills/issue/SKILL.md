@@ -4089,6 +4089,13 @@ while True:
     #                                  per "GPU-idle escalation handling" below.
 ```
 
+**Forensics-ingest discipline (#1546):** on a stalled/dead tick — and in any
+post-crash forensics this loop or Step 7 performs — ingest failure text per
+`.claude/rules/trigger-dense-review.md` § Orchestrator poll/forensics turns:
+structural digests (counts + file references), classifier-side routing, a
+fresh-context reader for trigger-dense runs, hook-BLOCKED output by
+reference.
+
 (`current_phase` is `"running"` by default; when the poller emits a
 milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title

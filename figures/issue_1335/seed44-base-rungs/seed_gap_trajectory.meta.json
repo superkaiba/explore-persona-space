@@ -1,0 +1,256 @@
+{
+  "commit": "7980346502",
+  "created": "2026-07-18T01:40:04Z",
+  "figsize": [
+    9.0,
+    4.0
+  ],
+  "points": [
+    {
+      "generation seed": -0.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.0048106715477469475,
+      "error": 0.01668532366635451,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.09905166025810402,
+      "error": 0.016750802774857354,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": -0.029127844337404674,
+      "error": 0.019473467590712525,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "generation seed": 0.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.17397183828394108,
+      "error": 0.013654837809146558,
+      "series": "instruct (seeds 42\u201343 only)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "generation seed": 1.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.17945138376305708,
+      "error": 0.013799326670131187,
+      "series": "instruct (seeds 42\u201343 only)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.0048106715477469475,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.09905166025810402,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": -0.029127844337404674,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": -0.012311987711779045,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.08169013130788398,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": -0.047153970902875555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.021058659620929978,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": 0.11519173685759869,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)": -0.008207035721450505,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 drop at fiction framing": 0.1310784678848242,
+      "error": 0.01922391058491331,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 drop at fiction framing": 0.1568219661257355,
+      "error": 0.018185096851087906,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 drop at fiction framing": 0.16249842496251557,
+      "error": 0.02071741548950018,
+      "series": "base model",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "generation seed": 0.06,
+      "R\u00b2 drop at fiction framing": 0.16031384513477054,
+      "error": 0.019369238012618778,
+      "series": "instruct (seeds 42\u201343 only)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "generation seed": 1.06,
+      "R\u00b2 drop at fiction framing": 0.14155277274427763,
+      "error": 0.020481275669967505,
+      "series": "instruct (seeds 42\u201343 only)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 drop at fiction framing": 0.1310784678848242,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 drop at fiction framing": 0.1568219661257355,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 drop at fiction framing": 0.16249842496251557,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 drop at fiction framing": 0.11166877000138223,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 drop at fiction framing": 0.1384827743027181,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 drop at fiction framing": 0.14065616299919873,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "generation seed": -0.06,
+      "R\u00b2 drop at fiction framing": 0.15011659117120885,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "generation seed": 0.94,
+      "R\u00b2 drop at fiction framing": 0.17485296800489392,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "generation seed": 1.94,
+      "R\u00b2 drop at fiction framing": 0.18209099397819908,
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "assistant-vs-fiction gap",
+        "xlabel": "generation seed",
+        "ylabel": "R\u00b2 gap (one-line Q&A \u2212 fiction endpoint)",
+        "legend_labels": [
+          "base model",
+          "instruct (seeds 42\u201343 only)"
+        ],
+        "xticklabels": [
+          "seed 42",
+          "seed 43",
+          "seed 44"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "fiction-framing delta",
+        "xlabel": "generation seed",
+        "ylabel": "R\u00b2 drop at fiction framing",
+        "xticklabels": [
+          "seed 42",
+          "seed 43",
+          "seed 44"
+        ],
+        "yticklabels": [
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200"
+        ]
+      }
+    ],
+    "series": [
+      "base model",
+      "instruct (seeds 42\u201343 only)"
+    ]
+  }
+}

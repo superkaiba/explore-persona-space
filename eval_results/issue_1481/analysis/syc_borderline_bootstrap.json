@@ -1,0 +1,53 @@
+{
+ "cells": {
+  "syc_conv": {
+   "contexts": [
+    "conv"
+   ],
+   "joint_frac_draws_leq_0": 0.0835,
+   "joint_seed_question_95": [
+    -0.009364979959919839,
+    0.062
+   ],
+   "point_D": 0.025762762762762764,
+   "question_only_95": [
+    -0.005179304304304303,
+    0.05601861861861851
+   ]
+  },
+  "syc_headline_conv_icl": {
+   "contexts": [
+    "conv",
+    "icl"
+   ],
+   "joint_frac_draws_leq_0": 0.0425,
+   "joint_seed_question_95": [
+    -0.0040000000000000036,
+    0.07361582249515718
+   ],
+   "point_D": 0.03624070422792769,
+   "question_only_95": [
+    0.01124500273307862,
+    0.05942652924381822
+   ]
+  },
+  "syc_icl": {
+   "contexts": [
+    "icl"
+   ],
+   "joint_frac_draws_leq_0": 0.08,
+   "joint_seed_question_95": [
+    -0.01799999999999996,
+    0.10958013211946666
+   ],
+   "point_D": 0.04672909382328222,
+   "question_only_95": [
+    0.01348684837141755,
+    0.07883313464489851
+   ]
+  }
+ },
+ "n_draws": 2000,
+ "rng_seed": 653,
+ "scheme": "hierarchical seed->question, paired"
+}

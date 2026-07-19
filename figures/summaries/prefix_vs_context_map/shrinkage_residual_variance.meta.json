@@ -1,0 +1,66 @@
+{
+  "commit": "bf43185be3",
+  "created": "2026-07-17T23:54:49Z",
+  "figsize": [
+    7.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Residual variance fraction (lower = better fit)": 0.4381905811397843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Residual variance fraction (lower = better fit)": 0.4968573384063132,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Residual variance fraction (lower = better fit)": 0.3409167417863696,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Residual variance fraction (lower = better fit)": 0.3829029593626675,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix predictions are a near-uniform shrinkage of context predictions",
+        "ylabel": "Residual variance fraction (lower = better fit)",
+        "legend_labels": [
+          "single global scalar",
+          "per-dimension diagonal"
+        ],
+        "xticklabels": [
+          "Instruct model (own answers)",
+          "Pretrained-base model (own answers)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "single global scalar",
+      "per-dimension diagonal"
+    ]
+  }
+}

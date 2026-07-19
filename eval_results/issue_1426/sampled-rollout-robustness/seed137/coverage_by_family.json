@@ -1,0 +1,70 @@
+{
+  "dv": "per-family usable-row rate (scaffold compliance, plan \u00a76)",
+  "families": {
+    "persona": {
+      "usable_rate": 0.9970238095238095,
+      "n_rows": 672,
+      "reasons": {
+        "truncated_no_close": 2
+      }
+    },
+    "wildchat": {
+      "usable_rate": 0.9833333333333333,
+      "n_rows": 480,
+      "reasons": {
+        "truncated_no_close": 8
+      }
+    },
+    "icl": {
+      "usable_rate": 0.9973958333333334,
+      "n_rows": 384,
+      "reasons": {
+        "degenerate_repetition": 1
+      }
+    },
+    "rephrase": {
+      "usable_rate": 0.9965277777777778,
+      "n_rows": 288,
+      "reasons": {
+        "truncated_no_close": 1
+      }
+    },
+    "format": {
+      "usable_rate": 0.9875,
+      "n_rows": 240,
+      "reasons": {
+        "truncated_no_close": 1,
+        "multiple_close": 1,
+        "degenerate_repetition": 1
+      }
+    },
+    "default": {
+      "usable_rate": 0.9895833333333334,
+      "n_rows": 96,
+      "reasons": {
+        "truncated_no_close": 1
+      }
+    },
+    "behavior": {
+      "usable_rate": 0.9916666666666667,
+      "n_rows": 240,
+      "reasons": {
+        "truncated_no_close": 2
+      }
+    }
+  },
+  "C_statistic": 0.033333333333333326,
+  "C_definition": "min(ICL, WildChat usable rate) - 0.95 (plan \u00a73)",
+  "flagged_below_parse_floor": [],
+  "rung": "sample",
+  "production_max_new_tokens": 8192,
+  "reproducibility": {
+    "git_commit": "fb4e92445cf92daafc0525c272e88805d311e869",
+    "timestamp_utc": "2026-07-18T17:07:45.354633+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

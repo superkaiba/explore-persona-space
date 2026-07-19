@@ -1,0 +1,743 @@
+{
+  "commit": "4a65c36ab0",
+  "created": "2026-07-18T12:33:18Z",
+  "figsize": [
+    6.4,
+    4.8
+  ],
+  "points": [
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 17.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 7.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 13.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 13.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 8.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 11.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 31.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 10.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 14.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 23.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 29.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 2.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 20.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 26.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 22.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 8.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 23.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 18.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 27.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 9.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 16.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 12.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 30.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 6.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 6.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 27.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 9.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 22.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 2.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 29.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 7.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 28.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 1.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 32.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 4.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 24.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 3.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 31.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 18.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 20.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 24.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 4.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 5.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 25.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 21.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 16.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 12.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 21.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 15.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 19.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 28.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 17.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 19.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 5.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 25.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 15.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 26.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 1.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 11.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 30.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 32.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 3.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 10.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 14.0,
+      "series": "#928 lineage (n=32, \u03c1=-0.768)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 9.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 7.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 25.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 18.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 23.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 29.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 11.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 16.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 18.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 12.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 27.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 15.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 17.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 20.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 29.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 13.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 10.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 26.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 19.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 11.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 32.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 28.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 30.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 22.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 21.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 25.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 15.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 32.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 8.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 8.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 2.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 9.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 5.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 6.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 4.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 10.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 3.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 5.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 24.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 3.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 7.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 4.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 1.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 21.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 12.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 19.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 6.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 2.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 14.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 1.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 22.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 31.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 28.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 24.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 20.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 17.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 16.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 14.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 26.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 23.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 13.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 30.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 31.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 27.0,
+      "series": "#1005 lineage (n=32, \u03c1=+0.475)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 21.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 14.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 12.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 19.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 28.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 8.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 11.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 16.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 30.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 25.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 26.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 24.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 19.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 23.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 23.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 15.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 16.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 27.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 13.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 11.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 32.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 29.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 17.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 18.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 25.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 20.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 24.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 26.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 10.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 1.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 5.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 12.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 8.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 13.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 15.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 9.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 3.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 17.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 18.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 4.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 1.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 7.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 6.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 10.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 7.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 22.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 4.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 3.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 2.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 2.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 20.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 32.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 27.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 5.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 29.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 6.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 22.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 21.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 31.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 28.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 9.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 31.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 14.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 30.0,
+      "series": "#1426 lineage (n=32, \u03c1=+0.347)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 1.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 16.217803030303028,
+      "series": "pooled rank fit (\u03c1=+0.018)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-lineage rank of median well-formed CoT length (1 = shortest of 32)": 32.0,
+      "within-lineage rank of per-context CoT gain (1 = smallest of 32)": 16.78219696969696,
+      "series": "pooled rank fit (\u03c1=+0.018)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 98,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "pooled tri-lineage CoT-length gradient (non-ICL/WildChat, indiv)\nlineage-fixed-effects \u03c1=+0.018 CI[-0.152,+0.175], perm p=0.860",
+        "xlabel": "within-lineage rank of median well-formed CoT length (1 = shortest of 32)",
+        "ylabel": "within-lineage rank of per-context CoT gain (1 = smallest of 32)",
+        "legend_labels": [
+          "#928 lineage (n=32, \u03c1=-0.768)",
+          "#1005 lineage (n=32, \u03c1=+0.475)",
+          "#1426 lineage (n=32, \u03c1=+0.347)",
+          "pooled rank fit (\u03c1=+0.018)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      }
+    ],
+    "series": [
+      "pooled rank fit (\u03c1=+0.018)",
+      "#928 lineage (n=32, \u03c1=-0.768)",
+      "#1005 lineage (n=32, \u03c1=+0.475)",
+      "#1426 lineage (n=32, \u03c1=+0.347)"
+    ]
+  }
+}

@@ -280,6 +280,10 @@ _FLEET_MUTATING_PASS_NAMES = (
     # #1267: the boot-death pass can STOP a real session (same
     # fleet-mutating class); its own tests stub its seams instead.
     "boot_death_pass",
+    # #1215: the orphan-wrapper sweep scans live /proc, writes real
+    # ~/.eps-autonomous/wrapper-orphan-*.json state, and its opt-in stop arm
+    # can SIGTERM real processes; its own tests stub its seams instead.
+    "orphan_wrapper_pass",
     # Escalate-only observer passes against live VM state (round 2).
     "verdict_disagree_pass",
     # #1341: escalate-only too, but it runs a REAL `git status` against the

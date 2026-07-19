@@ -1,0 +1,5945 @@
+{
+ "cells": {
+  "mk-bare-con-lr1e4-s137": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 84,
+      "ends_with_marker_rate": 0.84,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 102,
+      "ends_with_marker_rate": 0.85,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 18,
+      "ends_with_marker_rate": 0.9,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 19,
+      "degenerate_rate": 0.19,
+      "ends_with_marker": 91,
+      "ends_with_marker_rate": 0.91,
+      "multi_marker": 27,
+      "multi_marker_rate": 0.27,
+      "n": 100,
+      "truncated": 19,
+      "truncated_rate": 0.19
+     },
+     "overall": {
+      "degenerate": 19,
+      "degenerate_rate": 0.15833333333333333,
+      "ends_with_marker": 111,
+      "ends_with_marker_rate": 0.925,
+      "multi_marker": 30,
+      "multi_marker_rate": 0.25,
+      "n": 120,
+      "truncated": 19,
+      "truncated_rate": 0.15833333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.15,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "25": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 1,
+      "degenerate_rate": 0.01,
+      "ends_with_marker": 91,
+      "ends_with_marker_rate": 0.91,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.02,
+      "n": 100,
+      "truncated": 1,
+      "truncated_rate": 0.01
+     },
+     "overall": {
+      "degenerate": 1,
+      "degenerate_rate": 0.008333333333333333,
+      "ends_with_marker": 110,
+      "ends_with_marker_rate": 0.9166666666666666,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-bare-con-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 92,
+      "ends_with_marker_rate": 0.92,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 105,
+      "ends_with_marker_rate": 0.875,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 13,
+      "ends_with_marker_rate": 0.65,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 23,
+      "degenerate_rate": 0.23,
+      "ends_with_marker": 94,
+      "ends_with_marker_rate": 0.94,
+      "multi_marker": 34,
+      "multi_marker_rate": 0.34,
+      "n": 100,
+      "truncated": 23,
+      "truncated_rate": 0.23
+     },
+     "overall": {
+      "degenerate": 24,
+      "degenerate_rate": 0.2,
+      "ends_with_marker": 113,
+      "ends_with_marker_rate": 0.9416666666666667,
+      "multi_marker": 35,
+      "multi_marker_rate": 0.2916666666666667,
+      "n": 120,
+      "truncated": 24,
+      "truncated_rate": 0.2
+     },
+     "source": {
+      "degenerate": 1,
+      "degenerate_rate": 0.05,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-con-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.05,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 23,
+      "ends_with_marker_rate": 0.19166666666666668,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.041666666666666664,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "70": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.17,
+      "multi_marker": 6,
+      "multi_marker_rate": 0.06,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 18,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 6,
+      "multi_marker_rate": 0.05,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-con-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 18,
+      "ends_with_marker_rate": 0.18,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.05,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 22,
+      "ends_with_marker_rate": 0.18333333333333332,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.041666666666666664,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "70": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.05,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.09166666666666666,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.041666666666666664,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-con-lr5e6-s137": {
+   "130": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.09166666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-bare-con-lr5e6-s42": {
+   "120": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.08,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.02,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.06666666666666667,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.02,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.09166666666666666,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-bare-po-lr1e4-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 3,
+      "degenerate_rate": 0.03,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 4,
+      "multi_marker_rate": 0.04,
+      "n": 100,
+      "truncated": 3,
+      "truncated_rate": 0.03
+     },
+     "overall": {
+      "degenerate": 6,
+      "degenerate_rate": 0.05,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 8,
+      "multi_marker_rate": 0.06666666666666667,
+      "n": 120,
+      "truncated": 6,
+      "truncated_rate": 0.05
+     },
+     "source": {
+      "degenerate": 3,
+      "degenerate_rate": 0.15,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 4,
+      "multi_marker_rate": 0.2,
+      "n": 20,
+      "truncated": 3,
+      "truncated_rate": 0.15
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 44,
+      "degenerate_rate": 0.44,
+      "ends_with_marker": 97,
+      "ends_with_marker_rate": 0.97,
+      "multi_marker": 47,
+      "multi_marker_rate": 0.47,
+      "n": 100,
+      "truncated": 44,
+      "truncated_rate": 0.44
+     },
+     "overall": {
+      "degenerate": 57,
+      "degenerate_rate": 0.475,
+      "ends_with_marker": 117,
+      "ends_with_marker_rate": 0.975,
+      "multi_marker": 60,
+      "multi_marker_rate": 0.5,
+      "n": 120,
+      "truncated": 57,
+      "truncated_rate": 0.475
+     },
+     "source": {
+      "degenerate": 13,
+      "degenerate_rate": 0.65,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 13,
+      "multi_marker_rate": 0.65,
+      "n": 20,
+      "truncated": 13,
+      "truncated_rate": 0.65
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-po-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.09,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.075,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 39,
+      "degenerate_rate": 0.39,
+      "ends_with_marker": 98,
+      "ends_with_marker_rate": 0.98,
+      "multi_marker": 46,
+      "multi_marker_rate": 0.46,
+      "n": 100,
+      "truncated": 39,
+      "truncated_rate": 0.39
+     },
+     "overall": {
+      "degenerate": 45,
+      "degenerate_rate": 0.375,
+      "ends_with_marker": 118,
+      "ends_with_marker_rate": 0.9833333333333333,
+      "multi_marker": 52,
+      "multi_marker_rate": 0.43333333333333335,
+      "n": 120,
+      "truncated": 45,
+      "truncated_rate": 0.375
+     },
+     "source": {
+      "degenerate": 6,
+      "degenerate_rate": 0.3,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 6,
+      "multi_marker_rate": 0.3,
+      "n": 20,
+      "truncated": 6,
+      "truncated_rate": 0.3
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-po-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 25,
+      "ends_with_marker_rate": 0.25,
+      "multi_marker": 6,
+      "multi_marker_rate": 0.06,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 38,
+      "ends_with_marker_rate": 0.31666666666666665,
+      "multi_marker": 6,
+      "multi_marker_rate": 0.05,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 13,
+      "ends_with_marker_rate": 0.65,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "45": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "55": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.03,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 12,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-po-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 23,
+      "ends_with_marker_rate": 0.23,
+      "multi_marker": 7,
+      "multi_marker_rate": 0.07,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 37,
+      "ends_with_marker_rate": 0.30833333333333335,
+      "multi_marker": 7,
+      "multi_marker_rate": 0.058333333333333334,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 14,
+      "ends_with_marker_rate": 0.7,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "45": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "55": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.09,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.02,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.075,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-bare-po-lr5e6-s137": {
+   "140": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.02,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 12,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 13,
+      "ends_with_marker_rate": 0.13,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.03,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 13,
+      "ends_with_marker_rate": 0.10833333333333334,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-bare-po-lr5e6-s42": {
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.11,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.03,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 15,
+      "ends_with_marker_rate": 0.125,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-con-lr1e4-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 91,
+      "ends_with_marker_rate": 0.91,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.03,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 111,
+      "ends_with_marker_rate": 0.925,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 9,
+      "degenerate_rate": 0.09,
+      "ends_with_marker": 54,
+      "ends_with_marker_rate": 0.54,
+      "multi_marker": 20,
+      "multi_marker_rate": 0.2,
+      "n": 100,
+      "truncated": 7,
+      "truncated_rate": 0.07
+     },
+     "overall": {
+      "degenerate": 28,
+      "degenerate_rate": 0.23333333333333334,
+      "ends_with_marker": 74,
+      "ends_with_marker_rate": 0.6166666666666667,
+      "multi_marker": 40,
+      "multi_marker_rate": 0.3333333333333333,
+      "n": 120,
+      "truncated": 26,
+      "truncated_rate": 0.21666666666666667
+     },
+     "source": {
+      "degenerate": 19,
+      "degenerate_rate": 0.95,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 20,
+      "multi_marker_rate": 1.0,
+      "n": 20,
+      "truncated": 19,
+      "truncated_rate": 0.95
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-con-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 91,
+      "ends_with_marker_rate": 0.91,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 111,
+      "ends_with_marker_rate": 0.925,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 12,
+      "degenerate_rate": 0.12,
+      "ends_with_marker": 69,
+      "ends_with_marker_rate": 0.69,
+      "multi_marker": 20,
+      "multi_marker_rate": 0.2,
+      "n": 100,
+      "truncated": 10,
+      "truncated_rate": 0.1
+     },
+     "overall": {
+      "degenerate": 32,
+      "degenerate_rate": 0.26666666666666666,
+      "ends_with_marker": 89,
+      "ends_with_marker_rate": 0.7416666666666667,
+      "multi_marker": 40,
+      "multi_marker_rate": 0.3333333333333333,
+      "n": 120,
+      "truncated": 30,
+      "truncated_rate": 0.25
+     },
+     "source": {
+      "degenerate": 20,
+      "degenerate_rate": 1.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 20,
+      "multi_marker_rate": 1.0,
+      "n": 20,
+      "truncated": 20,
+      "truncated_rate": 1.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-con-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.025,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "40": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-con-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.03,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.06666666666666667,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.25,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "40": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "50": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-con-lr5e6-s137": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-conv-con-lr5e6-s42": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.025,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   }
+  },
+  "mk-conv-po-lr1e4-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.08,
+      "multi_marker": 4,
+      "multi_marker_rate": 0.04,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 4,
+      "multi_marker_rate": 0.03333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-conv-po-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.08,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.05,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 5,
+      "multi_marker_rate": 0.041666666666666664,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-conv-po-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.03,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.058333333333333334,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "35": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "45": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-po-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.058333333333333334,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "30": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "50": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-po-lr5e6-s137": {
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.025,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "55": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-conv-po-lr5e6-s42": {
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "50": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-icl-con-lr1e4-s137": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.16666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "5": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.5,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset",
+     "selected"
+    ]
+   }
+  },
+  "mk-icl-con-lr1e4-s42": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.16666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "5": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.09166666666666666,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 11,
+      "ends_with_marker_rate": 0.55,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "emission_onset",
+     "selected"
+    ]
+   }
+  },
+  "mk-icl-con-lr1e5-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 6,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 6,
+      "ends_with_marker_rate": 0.3,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 16,
+      "ends_with_marker_rate": 0.13333333333333333,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 16,
+      "ends_with_marker_rate": 0.8,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-con-lr1e5-s42": {
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.058333333333333334,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.35,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "emission_onset",
+     "selected"
+    ]
+   },
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.14166666666666666,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.85,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.1,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-con-lr5e6-s137": {
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "emission_onset",
+     "selected"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 6,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 6,
+      "ends_with_marker_rate": 0.3,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-con-lr5e6-s42": {
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "30": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.025,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.075,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.45,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-po-lr1e4-s137": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.16666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "5": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 12,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 12,
+      "ends_with_marker_rate": 0.6,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset",
+     "selected"
+    ]
+   }
+  },
+  "mk-icl-po-lr1e4-s42": {
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.16666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "5": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 15,
+      "ends_with_marker_rate": 0.125,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 15,
+      "ends_with_marker_rate": 0.75,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset",
+     "selected"
+    ]
+   }
+  },
+  "mk-icl-po-lr1e5-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 0.16666666666666666,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.016666666666666666,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.1,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-po-lr1e5-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "emission_onset",
+     "selected"
+    ]
+   },
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.15833333333333333,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.15,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-po-lr5e6-s137": {
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.14166666666666666,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.025,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.85,
+      "multi_marker": 3,
+      "multi_marker_rate": 0.15,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-icl-po-lr5e6-s42": {
+   "20": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "25": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.2,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 16,
+      "ends_with_marker_rate": 0.13333333333333333,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 16,
+      "ends_with_marker_rate": 0.8,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   }
+  },
+  "mk-pers-con-lr1e4-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 2,
+      "degenerate_rate": 0.02,
+      "ends_with_marker": 95,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 7,
+      "multi_marker_rate": 0.07,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 3,
+      "degenerate_rate": 0.025,
+      "ends_with_marker": 114,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 8,
+      "multi_marker_rate": 0.06666666666666667,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 1,
+      "degenerate_rate": 0.05,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 23,
+      "degenerate_rate": 0.23,
+      "ends_with_marker": 92,
+      "ends_with_marker_rate": 0.92,
+      "multi_marker": 28,
+      "multi_marker_rate": 0.28,
+      "n": 100,
+      "truncated": 23,
+      "truncated_rate": 0.23
+     },
+     "overall": {
+      "degenerate": 28,
+      "degenerate_rate": 0.23333333333333334,
+      "ends_with_marker": 111,
+      "ends_with_marker_rate": 0.925,
+      "multi_marker": 35,
+      "multi_marker_rate": 0.2916666666666667,
+      "n": 120,
+      "truncated": 28,
+      "truncated_rate": 0.23333333333333334
+     },
+     "source": {
+      "degenerate": 5,
+      "degenerate_rate": 0.25,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 7,
+      "multi_marker_rate": 0.35,
+      "n": 20,
+      "truncated": 5,
+      "truncated_rate": 0.25
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-con-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 1,
+      "degenerate_rate": 0.01,
+      "ends_with_marker": 82,
+      "ends_with_marker_rate": 0.82,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.01,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 1,
+      "degenerate_rate": 0.008333333333333333,
+      "ends_with_marker": 101,
+      "ends_with_marker_rate": 0.8416666666666667,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.008333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 10,
+      "degenerate_rate": 0.1,
+      "ends_with_marker": 60,
+      "ends_with_marker_rate": 0.6,
+      "multi_marker": 14,
+      "multi_marker_rate": 0.14,
+      "n": 100,
+      "truncated": 10,
+      "truncated_rate": 0.1
+     },
+     "overall": {
+      "degenerate": 10,
+      "degenerate_rate": 0.08333333333333333,
+      "ends_with_marker": 78,
+      "ends_with_marker_rate": 0.65,
+      "multi_marker": 14,
+      "multi_marker_rate": 0.11666666666666667,
+      "n": 120,
+      "truncated": 10,
+      "truncated_rate": 0.08333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 18,
+      "ends_with_marker_rate": 0.9,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-con-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.07,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.08,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.08333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-con-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "50": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "70": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.07,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.06666666666666667,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-con-lr5e6-s137": {
+   "120": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "140": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.041666666666666664,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-pers-con-lr5e6-s42": {
+   "120": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 3,
+      "ends_with_marker_rate": 0.025,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   },
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   }
+  },
+  "mk-pers-po-lr1e4-s137": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 14,
+      "multi_marker_rate": 0.14,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 16,
+      "multi_marker_rate": 0.13333333333333333,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 2,
+      "multi_marker_rate": 0.1,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 39,
+      "degenerate_rate": 0.39,
+      "ends_with_marker": 90,
+      "ends_with_marker_rate": 0.9,
+      "multi_marker": 44,
+      "multi_marker_rate": 0.44,
+      "n": 100,
+      "truncated": 39,
+      "truncated_rate": 0.39
+     },
+     "overall": {
+      "degenerate": 53,
+      "degenerate_rate": 0.44166666666666665,
+      "ends_with_marker": 109,
+      "ends_with_marker_rate": 0.9083333333333333,
+      "multi_marker": 58,
+      "multi_marker_rate": 0.48333333333333334,
+      "n": 120,
+      "truncated": 53,
+      "truncated_rate": 0.44166666666666665
+     },
+     "source": {
+      "degenerate": 14,
+      "degenerate_rate": 0.7,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 14,
+      "multi_marker_rate": 0.7,
+      "n": 20,
+      "truncated": 14,
+      "truncated_rate": 0.7
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-po-lr1e4-s42": {
+   "10": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "100": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 2,
+      "degenerate_rate": 0.02,
+      "ends_with_marker": 100,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 19,
+      "multi_marker_rate": 0.19,
+      "n": 100,
+      "truncated": 2,
+      "truncated_rate": 0.02
+     },
+     "overall": {
+      "degenerate": 3,
+      "degenerate_rate": 0.025,
+      "ends_with_marker": 120,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 20,
+      "multi_marker_rate": 0.16666666666666666,
+      "n": 120,
+      "truncated": 2,
+      "truncated_rate": 0.016666666666666666
+     },
+     "source": {
+      "degenerate": 1,
+      "degenerate_rate": 0.05,
+      "ends_with_marker": 20,
+      "ends_with_marker_rate": 1.0,
+      "multi_marker": 1,
+      "multi_marker_rate": 0.05,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "15": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 13,
+      "degenerate_rate": 0.13,
+      "ends_with_marker": 74,
+      "ends_with_marker_rate": 0.74,
+      "multi_marker": 18,
+      "multi_marker_rate": 0.18,
+      "n": 100,
+      "truncated": 13,
+      "truncated_rate": 0.13
+     },
+     "overall": {
+      "degenerate": 20,
+      "degenerate_rate": 0.16666666666666666,
+      "ends_with_marker": 93,
+      "ends_with_marker_rate": 0.775,
+      "multi_marker": 28,
+      "multi_marker_rate": 0.23333333333333334,
+      "n": 120,
+      "truncated": 20,
+      "truncated_rate": 0.16666666666666666
+     },
+     "source": {
+      "degenerate": 7,
+      "degenerate_rate": 0.35,
+      "ends_with_marker": 19,
+      "ends_with_marker_rate": 0.95,
+      "multi_marker": 10,
+      "multi_marker_rate": 0.5,
+      "n": 20,
+      "truncated": 7,
+      "truncated_rate": 0.35
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-po-lr1e5-s137": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.08,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 18,
+      "ends_with_marker_rate": 0.15,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 10,
+      "ends_with_marker_rate": 0.5,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "45": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 1,
+      "truncated_rate": 0.008333333333333333
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 1,
+      "truncated_rate": 0.05
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "50": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   },
+   "60": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 6,
+      "ends_with_marker_rate": 0.06,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.058333333333333334,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-po-lr1e5-s42": {
+   "200": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 9,
+      "ends_with_marker_rate": 0.09,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 17,
+      "ends_with_marker_rate": 0.14166666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 8,
+      "ends_with_marker_rate": 0.4,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "45": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "55": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.04,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   },
+   "70": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 5,
+      "ends_with_marker_rate": 0.05,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 7,
+      "ends_with_marker_rate": 0.058333333333333334,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "unlabeled"
+    ]
+   }
+  },
+  "mk-pers-po-lr5e6-s137": {
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.01,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 1,
+      "ends_with_marker_rate": 0.008333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  },
+  "mk-pers-po-lr5e6-s42": {
+   "400": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.02,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 4,
+      "ends_with_marker_rate": 0.03333333333333333,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "ceiling"
+    ]
+   },
+   "80": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "candidate",
+     "selected"
+    ]
+   },
+   "90": {
+    "counts": {
+     "nonsource": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 0,
+      "ends_with_marker_rate": 0.0,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 100,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "overall": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.016666666666666666,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 120,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     },
+     "source": {
+      "degenerate": 0,
+      "degenerate_rate": 0.0,
+      "ends_with_marker": 2,
+      "ends_with_marker_rate": 0.1,
+      "multi_marker": 0,
+      "multi_marker_rate": 0.0,
+      "n": 20,
+      "truncated": 0,
+      "truncated_rate": 0.0
+     }
+    },
+    "n_responses": 120,
+    "roles": [
+     "emission_onset"
+    ]
+   }
+  }
+ },
+ "definitions": {
+  "degenerate": "per-response word 4-gram repeat fraction > 0.5 (fu4 degeneracy_stats definition)",
+  "ends_with_marker": "rstripped response text ends with \u203b",
+  "multi_marker": ">= 2 \u203b occurrences (\u203b-repeater signature, #397/#451)",
+  "truncated": "tokenized response length >= 2048 (C.MARKER_MAX_NEW_TOKENS)"
+ },
+ "meta": {
+  "git_commit": "c060d03f120d3e1be6395de4dd7c80377e6e3623",
+  "numpy": "2.2.6",
+  "script": "scripts/issue1481_free_analysis.py",
+  "ts": "2026-07-19T09:39:25.965611+00:00"
+ }
+}

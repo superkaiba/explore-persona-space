@@ -1,0 +1,423 @@
+{
+  "issue": 1434,
+  "round_label": "persona-dose-matched-regime",
+  "tolerance": 0.1,
+  "references": {
+    "unmatched_persona": {
+      "D": 0.2854723926380368,
+      "newcombe_95": [
+        0.2263770093288917,
+        0.3417197365462134
+      ],
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/regime_contrast.json"
+    },
+    "bare_matched": {
+      "D": 0.13248472505091652,
+      "newcombe_95": [
+        0.07031572185889606,
+        0.19320893974616757
+      ],
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/regime_contrast.json"
+    }
+  },
+  "static_arms": {
+    "po25": {
+      "run_id": "ws-po-pers-lr1e5",
+      "step": 25,
+      "tier1_rate": 0.81,
+      "pooled_nonsource": {
+        "k": 382,
+        "n": 500
+      },
+      "source_ctx_panel": {
+        "k": 71,
+        "n": 100,
+        "rate": 0.71
+      },
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/i1434po_ladders.json"
+    },
+    "con25": {
+      "run_id": "ws-pers-lr1e5",
+      "step": 25,
+      "tier1_rate": 0.6,
+      "pooled_nonsource": {
+        "k": 234,
+        "n": 489
+      },
+      "source_ctx_panel": {
+        "k": 61,
+        "n": 100,
+        "rate": 0.61
+      },
+      "source_file": "eval_results/issue_1434/i1434_ladders.json"
+    },
+    "base": {
+      "pooled_nonsource": {
+        "k": 1,
+        "n": 500
+      },
+      "source_file": "eval_results/issue_1434/writing-style-positive-only-regime/i1434po_ladders.json"
+    }
+  },
+  "brackets": {
+    "high": {
+      "po_arm": "po@25 (existing verdict arm)",
+      "con_arm": "con@45 (new matched-high arm)",
+      "verdict_bearing": true,
+      "status": "computed",
+      "D": 0.4455415821501014,
+      "newcombe_95": [
+        0.38783944675321025,
+        0.4984605404033563
+      ],
+      "po": {
+        "k": 382,
+        "n": 500,
+        "rate": 0.764
+      },
+      "con": {
+        "k": 157,
+        "n": 493,
+        "rate": 0.3184584178498986
+      },
+      "lattice": "Broader-leakage"
+    },
+    "low": {
+      "po_arm": "po@10 (new near-matched-low arm)",
+      "con_arm": "con@25 (existing verdict arm)",
+      "verdict_bearing": false,
+      "status": "computed",
+      "D": 0.1507309096721049,
+      "newcombe_95": [
+        0.08886347529669666,
+        0.2109907406709649
+      ],
+      "po": {
+        "k": 314,
+        "n": 499,
+        "rate": 0.6292585170340681
+      },
+      "con": {
+        "k": 234,
+        "n": 489,
+        "rate": 0.4785276073619632
+      },
+      "role": "supporting-only — near-matched (0.11), po under-dosed; never verdict-bearing (plan §3)"
+    }
+  },
+  "cells": [
+    {
+      "status": "computed",
+      "D": 0.39,
+      "newcombe_95": [
+        0.2759644458961392,
+        0.4927369388395316
+      ],
+      "po": {
+        "rate": 0.45,
+        "k_positive": 45,
+        "n_scored": 100,
+        "graded_mean": 51.17
+      },
+      "con": {
+        "rate": 0.06,
+        "k_positive": 6,
+        "n_scored": 100,
+        "graded_mean": 26.733333333333338
+      },
+      "bracket": "high",
+      "read_ctx": "default"
+    },
+    {
+      "status": "computed",
+      "D": 0.38,
+      "newcombe_95": [
+        0.2560973971059241,
+        0.48839448578060224
+      ],
+      "po": {
+        "rate": 0.5,
+        "k_positive": 50,
+        "n_scored": 100,
+        "graded_mean": 52.53666666666666
+      },
+      "con": {
+        "rate": 0.12,
+        "k_positive": 12,
+        "n_scored": 100,
+        "graded_mean": 34.989999999999995
+      },
+      "bracket": "low",
+      "read_ctx": "default"
+    },
+    {
+      "status": "computed",
+      "D": 0.18000000000000005,
+      "newcombe_95": [
+        0.10694214691380936,
+        0.2666753602421309
+      ],
+      "po": {
+        "rate": 1.0,
+        "k_positive": 100,
+        "n_scored": 100,
+        "graded_mean": 87.28333333333335
+      },
+      "con": {
+        "rate": 0.82,
+        "k_positive": 82,
+        "n_scored": 100,
+        "graded_mean": 72.42333333333335
+      },
+      "bracket": "high",
+      "read_ctx": "icl_prefix_writing_style"
+    },
+    {
+      "status": "computed",
+      "D": 0.020000000000000018,
+      "newcombe_95": [
+        -0.02867269273781825,
+        0.07513883806757167
+      ],
+      "po": {
+        "rate": 0.99,
+        "k_positive": 99,
+        "n_scored": 100,
+        "graded_mean": 85.33666666666666
+      },
+      "con": {
+        "rate": 0.97,
+        "k_positive": 97,
+        "n_scored": 100,
+        "graded_mean": 83.35333333333334
+      },
+      "bracket": "low",
+      "read_ctx": "icl_prefix_writing_style"
+    },
+    {
+      "status": "computed",
+      "D": 0.5847368421052631,
+      "newcombe_95": [
+        0.4609914181352149,
+        0.6794661315426145
+      ],
+      "po": {
+        "rate": 0.69,
+        "k_positive": 69,
+        "n_scored": 100,
+        "graded_mean": 64.80333333333334
+      },
+      "con": {
+        "rate": 0.10526315789473684,
+        "k_positive": 10,
+        "n_scored": 95,
+        "graded_mean": 27.6140350877193
+      },
+      "bracket": "high",
+      "read_ctx": "neg_sp_ph4"
+    },
+    {
+      "status": "computed",
+      "D": -0.06848706848706848,
+      "newcombe_95": [
+        -0.20509548545657277,
+        0.07142501227994522
+      ],
+      "po": {
+        "rate": 0.40404040404040403,
+        "k_positive": 40,
+        "n_scored": 99,
+        "graded_mean": 49.57239057239057
+      },
+      "con": {
+        "rate": 0.4725274725274725,
+        "k_positive": 43,
+        "n_scored": 91,
+        "graded_mean": 51.31135531135533
+      },
+      "bracket": "low",
+      "read_ctx": "neg_sp_ph4"
+    },
+    {
+      "status": "computed",
+      "D": 0.7890909090909091,
+      "newcombe_95": [
+        0.6822333547418348,
+        0.854616985717338
+      ],
+      "po": {
+        "rate": 0.88,
+        "k_positive": 88,
+        "n_scored": 100,
+        "graded_mean": 73.23666666666666
+      },
+      "con": {
+        "rate": 0.09090909090909091,
+        "k_positive": 9,
+        "n_scored": 99,
+        "graded_mean": 24.996632996632997
+      },
+      "bracket": "high",
+      "read_ctx": "neg_sp_police"
+    },
+    {
+      "status": "computed",
+      "D": 0.28727272727272735,
+      "newcombe_95": [
+        0.1509962976330471,
+        0.408870873016862
+      ],
+      "po": {
+        "rate": 0.56,
+        "k_positive": 56,
+        "n_scored": 100,
+        "graded_mean": 55.20666666666667
+      },
+      "con": {
+        "rate": 0.2727272727272727,
+        "k_positive": 27,
+        "n_scored": 99,
+        "graded_mean": 38.80808080808082
+      },
+      "bracket": "low",
+      "read_ctx": "neg_sp_police"
+    },
+    {
+      "status": "computed",
+      "D": 0.29494949494949496,
+      "newcombe_95": [
+        0.16383034852047954,
+        0.41248380066517026
+      ],
+      "po": {
+        "rate": 0.8,
+        "k_positive": 80,
+        "n_scored": 100,
+        "graded_mean": 69.56666666666666
+      },
+      "con": {
+        "rate": 0.5050505050505051,
+        "k_positive": 50,
+        "n_scored": 99,
+        "graded_mean": 54.68013468013466
+      },
+      "bracket": "high",
+      "read_ctx": "wildchat_prefix_real545"
+    },
+    {
+      "status": "computed",
+      "D": 0.13444444444444437,
+      "newcombe_95": [
+        -9.069420091253888e-05,
+        0.26246090102009195
+      ],
+      "po": {
+        "rate": 0.69,
+        "k_positive": 69,
+        "n_scored": 100,
+        "graded_mean": 63.91666666666666
+      },
+      "con": {
+        "rate": 0.5555555555555556,
+        "k_positive": 55,
+        "n_scored": 99,
+        "graded_mean": 56.757575757575765
+      },
+      "bracket": "low",
+      "read_ctx": "wildchat_prefix_real545"
+    }
+  ],
+  "panel_rungs": [
+    {
+      "run_id": "ws-pers-lr1e5",
+      "step": 25,
+      "rate": 0.6,
+      "role": "con verdict arm (existing)"
+    },
+    {
+      "run_id": "ws-pers-lr1e5",
+      "step": 45,
+      "rate": 0.86,
+      "role": "con matched-high (new)"
+    },
+    {
+      "run_id": "ws-po-pers-lr1e5",
+      "step": 25,
+      "rate": 0.81,
+      "role": "po verdict arm (existing)"
+    },
+    {
+      "run_id": "ws-po-pers-lr3e5",
+      "step": 10,
+      "rate": 0.49,
+      "role": "po near-matched-low (new)"
+    }
+  ],
+  "source_context_reads": {
+    "po@25 (existing)": {
+      "k": 71,
+      "n": 100,
+      "rate": 0.71,
+      "tier1_selection_rate": 0.81
+    },
+    "con@25 (existing)": {
+      "k": 61,
+      "n": 100,
+      "rate": 0.61,
+      "tier1_selection_rate": 0.6
+    },
+    "con@45 (new)": {
+      "k": 91,
+      "n": 100,
+      "rate": 0.91,
+      "tier1_selection_rate": 0.86
+    },
+    "po@10 (new)": {
+      "k": 59,
+      "n": 99,
+      "rate": 0.5959595959595959,
+      "tier1_selection_rate": 0.49
+    }
+  },
+  "per_arm_drop_report": {
+    "con@45": {
+      "n_items": 600,
+      "n_scored": 593,
+      "n_dropped_draws_content": 21,
+      "n_transport_lost_draws": 0
+    },
+    "po@10": {
+      "n_items": 600,
+      "n_scored": 598,
+      "n_dropped_draws_content": 6,
+      "n_transport_lost_draws": 0
+    }
+  },
+  "graded_summaries": {
+    "con@45": {
+      "n": 493,
+      "mean": 41.434077079107496,
+      "quantiles": {
+        "p0": 0.0,
+        "p25": 16.666666666666668,
+        "p50": 31.666666666666668,
+        "p75": 69.66666666666667,
+        "p100": 95.0
+      }
+    },
+    "po@10": {
+      "n": 499,
+      "mean": 61.33734134936542,
+      "quantiles": {
+        "p0": 13.333333333333334,
+        "p25": 45.0,
+        "p50": 65.0,
+        "p75": 81.66666666666667,
+        "p100": 95.0
+      }
+    }
+  },
+  "smoke": false,
+  "git_commit": "a145ef3058",
+  "ts": "2026-07-17T19:38:49Z"
+}

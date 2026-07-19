@@ -81,6 +81,8 @@ PO_CONTEXT_BY_CELL_KEY: dict[str, str] = {
     f"ws-po-{k.removeprefix('ws-')}": v for k, v in CONTEXT_BY_CELL_KEY.items()
 }
 PO_CELL_KEYS: tuple[str, ...] = tuple(PO_CONTEXT_BY_CELL_KEY)
+# ── persona-dose-matched-regime round (plan v8): eval-only dose re-read ──────
+DOSE_DELIVERABLES_DIR = DELIVERABLES_DIR_1434 / "persona-dose-matched-regime"
 # §2 item 3: matched OPTIMIZER STEPS vs the parent's 75-step ladder (60-row
 # mix at eff. batch 16 would realize only 60 steps under epochs=15).
 PO_TRAIN_MAX_STEPS = 75

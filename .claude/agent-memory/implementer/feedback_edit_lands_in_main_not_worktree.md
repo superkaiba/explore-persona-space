@@ -35,11 +35,12 @@ file resolved to the LIVE `issue-641` sibling tree, not mine. Both files (src +
 test) stranded there, dirtying a running session's tree. Caught by `grep -c` on my
 $WT returning 0. Recovered exactly per the recipe below (cp into $WT, `git checkout
 --` the sibling clean), THEN discovered my agent branch was 3 commits behind main,
-so I `git -C "$WT" merge --ff-only main`'d first and re-applied the edits on the fresh base
+so I FF'd the branch first and re-applied the edits on the fresh base — today's
+form is fetch + `git -C "$WT" merge --ff-only origin/main` (NEVER local main, #1530)
 (the sibling's gcp.py was ~200 lines diverged from my stale base — re-applying on
-main avoids a messy merge). Lesson: a gitStatus header naming an issue branch is
-NOT your tree; always trust the startup `git rev-parse --show-toplevel`
-(`agent-<hash>`), and FF to main before editing a spawn worktree.
+the fresh base avoids a messy merge). Lesson: a gitStatus header naming an issue
+branch is NOT your tree; always trust the startup `git rev-parse --show-toplevel`
+(`agent-<hash>`), and FF to fetched origin/main before editing a spawn worktree.
 
 **MIXED-TARGET trap (caught AGAIN 2026-06-18, #653):** the failure can hit only
 SOME files in a multi-file change. The script edits correctly used the

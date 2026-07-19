@@ -1,0 +1,58 @@
+{
+  "n_pool": 4920,
+  "staged_files": [
+    "slots_own_L14.pt",
+    "slots_own_L26.pt",
+    "spans_own.json",
+    "decomp_own_L14.pt",
+    "decomp_own_L26.pt",
+    "next_ids_own.npz",
+    "slots_ext_plain_L14.pt",
+    "slots_ext_plain_L26.pt",
+    "spans_ext_plain.json",
+    "decomp_ext_plain_L14.pt",
+    "decomp_ext_plain_L26.pt",
+    "next_ids_ext_plain.npz",
+    "slots_ext_style_L14.pt",
+    "slots_ext_style_L26.pt",
+    "spans_ext_style.json",
+    "decomp_ext_style_L14.pt",
+    "decomp_ext_style_L26.pt",
+    "next_ids_ext_style.npz",
+    "slots_mismatch_L14.pt",
+    "slots_mismatch_L26.pt",
+    "spans_mismatch.json",
+    "decomp_mismatch_L14.pt",
+    "decomp_mismatch_L26.pt",
+    "next_ids_mismatch.npz",
+    "per_context_stats_1072_fold0.npz",
+    "per_context_stats_1072_fold1.npz",
+    "per_context_stats_1072_fold2.npz",
+    "per_context_stats_1072_fold3.npz",
+    "per_context_stats_1072_fold4.npz"
+  ],
+  "free_gb_before": 106.913103872,
+  "realized_keys_check": "PASS",
+  "issue": 1072,
+  "followup_label": "lowdim-token-subspace",
+  "git_sha": "74ea8b8e7ec8550228e386899c9dd6d9ccd88155",
+  "env_versions": {
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "ts": 1784371168.007682,
+  "smoke": false,
+  "layers": [
+    14,
+    26
+  ],
+  "bases": [
+    "top8",
+    "top32",
+    "look8"
+  ],
+  "parent_tensor_revision": "5b62649cefb34902fd630f21630164e8d1d99764",
+  "decomp_store_revision": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct"
+}

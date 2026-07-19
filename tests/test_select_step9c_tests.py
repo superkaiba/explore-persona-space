@@ -147,9 +147,11 @@ def test_pinned_invariant_list_matches_live_tree():
     # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
     # rationale: a SKILL.md-only recipe revert must still run the pin) + the #1397
     # fit-loop batching review-lens pin suite (test_fit_loop_batching_review_pin —
-    # agent-`.md` diffs gate ONLY via this tuple).
+    # agent-`.md` diffs gate ONLY via this tuple) + the #1546 SKILL.md forensics-ingest
+    # pointer pin suite (test_issue_skill_forensics_ingest_pointer — same tuple
+    # rationale: a SKILL.md-only edit dropping the pointer must still run the pin).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 38
+    assert len(sel.WORKFLOW_INVARIANT) == 39
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
@@ -1095,3 +1097,370 @@ def test_import_map_live_tree_issue1286_shape():
     assert "import-map:scripts/issue810_fit_readout.py" in reasons[target]
     assert "scripts/issue810_common.py" not in untested
     assert "scripts/issue810_fit_readout.py" not in untested
+
+
+# --- Rules-pin discovery arm (#1496) ---------------------------------------------
+# Cases 52-62: a touched .claude/rules/<name>.md selects every tests/**/test_*.py
+# whose raw text contains the basename <name>.md (reason rules-pin:<rule path>),
+# ADDITIVE to the WORKFLOW_SURFACE skip (which is unchanged); --map-files unions
+# the same pairs MINUS WORKFLOW_INVARIANT members.
+
+
+# --- Case 52: full-path-literal reference form -----------------------------------
+def test_rules_pin_full_path_literal_selected(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_some_rule_pin.py").write_text('RULE = ".claude/rules/some-rule.md"\n')
+    touched = [".claude/rules/some-rule.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_some_rule_pin.py" in tests
+    assert reasons["tests/test_some_rule_pin.py"] == ["rules-pin:.claude/rules/some-rule.md"]
+    assert untested == []  # rules files stay a correct SKIP, never "untested"
+
+
+# --- Case 53: path-join reference form (no full-path literal) ---------------------
+def test_rules_pin_path_join_basename_selected(tmp_path: Path):
+    """The test_battery_basis_prose_pins.py shape: basename via path-join only."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_join_pin.py").write_text(
+        'text = (ROOT / ".claude" / "rules" / "some-rule.md").read_text()\n'
+    )
+    tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_join_pin.py" in tests
+
+
+# --- Case 54: comment/docstring mentions count (documented over-select posture) ---
+def test_rules_pin_comment_mention_counts(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_citer.py").write_text(
+        "# see .claude/rules/some-rule.md for the recipe\ndef test_x():\n    assert True\n"
+    )
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_citer.py" in tests
+    assert reasons["tests/test_citer.py"] == ["rules-pin:.claude/rules/some-rule.md"]
+
+
+# --- Case 55: SUPERSTRING basenames over-select by design --------------------------
+def test_rules_pin_superstring_basename_over_selects(tmp_path: Path):
+    """Substring matching means touching x.md also selects a test mentioning
+    only prefix-x.md ("x.md" is a substring of "prefix-x.md"); the live-tree
+    instance is critic-lens-reference.md vs
+    clean-result-critic-lens-reference.md. Accepted over-select (safe
+    direction) — pinned so extra hits are never misread as a scan bug."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_superstring_citer.py").write_text('DOC = ".claude/rules/prefix-x.md"\n')
+    hits = sel.rules_pin_hits([".claude/rules/x.md"], repo)
+    assert ".claude/rules/x.md" in hits.get("tests/test_superstring_citer.py", set())
+
+
+# --- Case 56: no rules file touched -> zero hits, ZERO file reads ------------------
+def test_rules_pin_no_rules_touched_no_hits(tmp_path: Path, capsys):
+    """Proof of the zero-read early return: an undecodable test file is
+    planted; any scan pass reads raw text (case 58 shows that read WARNs), so
+    the absence of a WARN here proves no file was read."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"\xff\xfe bad")
+    assert sel.rules_pin_hits(["scripts/widget.py", "docs/x.md"], repo) == {}
+    assert "rules-pin scan cannot read" not in capsys.readouterr().err
+
+
+# --- Case 57: monotonicity — the arm only ever GROWS the selection -----------------
+def test_rules_pin_selection_only_grows(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin test (mirror of case 41):
+    WITH-selection is a superset and every WITHOUT reason list is preserved
+    verbatim (acceptance R3)."""
+    touched = ["scripts/widgetlib.py", ".claude/rules/some-rule.md"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_rule_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_rule_pin.py" in t_with
+    assert u_without == u_with == []
+
+
+# --- Case 58: unreadable test file WARNs + is skipped; never crashes ---------------
+def test_rules_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_good_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    (repo / "tests" / "test_bad.py").write_bytes(b'R = ".claude/rules/some-rule.md"\n\xff\xfe')
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_good_pin.py" in tests  # the valid hit still selected
+    assert "tests/test_bad.py" not in tests
+    assert untested == []
+    err = capsys.readouterr().err
+    assert err.count("rules-pin scan cannot read") == 1
+    assert "test_bad.py" in err
+    # 1 failure over the ~42-file fixture tree is < 5%: no aggregate WARN.
+    assert "systemic tests/ breakage" not in err
+
+
+# --- Case 59: aggregate read-failure WARN (systemic-breakage signal) ---------------
+def test_rules_pin_aggregate_read_failure_warn(tmp_path: Path, capsys):
+    """>5% of scanned test files unreadable emits ONE extra summary WARN
+    (mirrors the import-map arm's #1299 aggregate signal, case 48)."""
+    repo = _make_tree(tmp_path, [])
+    for i in range(3):
+        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
+    (repo / "tests" / "test_ok_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert "tests/test_ok_pin.py" in tests
+    err = capsys.readouterr().err
+    assert err.count("rules-pin scan cannot read") == 3  # one per-file WARN each
+    assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
+
+
+# --- Case 60: LIVE-tree drift/regression pin (the #1496 durability pin) ------------
+def test_rules_pin_live_tree_known_pairs():
+    """DRIFT/REGRESSION PIN: the discovery scan, run against the LIVE repo
+    tree, finds these verified (rule -> pin test) pairs — the full-path-literal
+    form (pod-side-reporting), the path-join form (critic-lens-reference; pins
+    the basename-substring semantics on the real tree), and the llm-judging
+    pair. SUPERSET assert: new pin tests joining later must not break this; a
+    rename of a pinned test legitimately forces a deliberate 1-line update
+    here (that loudness is the point)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    hits = sel.rules_pin_hits(
+        [
+            ".claude/rules/pod-side-reporting.md",
+            ".claude/rules/critic-lens-reference.md",  # path-join form on the live tree
+            ".claude/rules/llm-judging.md",
+        ],
+        root,
+    )
+    assert ".claude/rules/pod-side-reporting.md" in hits.get(
+        "tests/test_pod_side_reporting_push_contract.py", set()
+    )
+    assert ".claude/rules/critic-lens-reference.md" in hits.get(
+        "tests/test_battery_basis_prose_pins.py", set()
+    )
+    assert ".claude/rules/llm-judging.md" in hits.get("tests/test_judge_dispatch.py", set())
+
+
+# --- Case 61: --map-files unions rules-pin pairs; no-rules payload unchanged -------
+def test_cli_map_files_rules_pin_pair(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_some_rule_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/rules/some-rule.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == ["tests/test_some_rule_pin.py\t.claude/rules/some-rule.md"]
+    # A payload with NO rules file is byte-identical to today's scan-map output
+    # (the pin test's mention is irrelevant: pairs key on the PAYLOAD paths).
+    listing.write_text("scripts/dispatch_x.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out.splitlines() == [
+        "tests/test_shared_vm_thread_caps.py\tscripts/dispatch_x.py",
+        "tests/test_subprocess_env_explicit.py\tscripts/dispatch_x.py",
+    ]
+
+
+# --- Case 62: --map-files EXCLUDES invariant members; the 9c arm keeps them --------
+def test_cli_map_files_rules_pin_excludes_invariant(tmp_path: Path, capsys):
+    """The deliberate asymmetry (#1496 D3): tests/test_workflow_lint.py (a
+    WORKFLOW_INVARIANT member and the only SLOW_TESTS entry) is filtered from
+    the --map-files pairs, while select_tests_with_reasons still carries the
+    rules-pin reason on it (the union dedupes; the extra reason is
+    informative)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_workflow_lint.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/rules/some-rule.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""  # invariant member filtered -> the skip signal
+    _, _, reasons = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
+    assert set(reasons["tests/test_workflow_lint.py"]) == {
+        "invariant",
+        "rules-pin:.claude/rules/some-rule.md",
+    }
+
+
+# --- Cases 52+ (#1498): the literal-path pinning arm -----------------------------
+# Fixtures write test files whose RAW TEXT hardcodes a touched file's
+# repo-relative path (the tests/test_ruff_policy.py LIVE_WORKFLOW_HELPERS
+# shape). The shared _make_tree stubs contain no repo paths, so the arm
+# no-ops on every pre-existing fixture by construction.
+
+
+# --- Case 52: a pinning test is selected with the literal-path reason ------------
+def test_literal_path_pin_selected(tmp_path: Path):
+    repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_pin_x.py" in tests
+    assert reasons["tests/test_pin_x.py"] == ["literal-path:scripts/foo_helper.py"]
+
+
+# --- Case 53: THE durability pin — the #1498 founding case on the LIVE tree ------
+def test_literal_path_founding_case_live_tree():
+    """No fixtures: the real tree's tests/test_ruff_policy.py hardcodes
+    ``scripts/daily_drive_filings.py`` in LIVE_WORKFLOW_HELPERS and lints it at
+    test time, yet shares no stem, matches no scan glob, and imports nothing —
+    reachable ONLY through the literal-path arm (#1498 founding incident).
+
+    If a future cleanup removes scripts/daily_drive_filings.py or drops it from
+    LIVE_WORKFLOW_HELPERS, this pin fails loud — repoint it at another
+    committed pin relationship (test_ruff_policy.py has dozens).
+    """
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/daily_drive_filings.py"], repo_root)
+    assert "tests/test_ruff_policy.py" in tests
+    assert "literal-path:scripts/daily_drive_filings.py" in reasons["tests/test_ruff_policy.py"]
+
+
+# --- Case 54: precision — a pin of a DIFFERENT path is not selected --------------
+def test_literal_path_negative_not_selected(tmp_path: Path):
+    repo = _make_import_tree(
+        tmp_path, {"test_bystander_pin.py": 'LIVE = ["scripts/other_helper.py"]\n'}
+    )
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_bystander_pin.py" not in tests
+
+
+# --- Case 55: a literal hit does NOT suppress the untested_touched WARN ----------
+def test_literal_path_does_not_suppress_untested_warn(tmp_path: Path):
+    """A pinning test asserts an invariant ABOUT the file (e.g. ruff
+    cleanliness), not the file's own logic — unlike an import hit, it never
+    sets ``matched`` (plan R3; glob-scan precedent)."""
+    repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_pin_x.py" in tests
+    assert untested == ["scripts/foo_helper.py"]
+
+
+# --- Case 56: monotonicity — the arm only ever GROWS the selection ---------------
+def test_literal_path_only_grows_selection(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin-bearing test file:
+    WITH-selection is a superset and every WITHOUT reason list is preserved
+    verbatim (mirror of case 41 for the literal arm)."""
+    touched = ["scripts/widgetlib.py", "scripts/orphan.py"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_pins.py").write_text('LIVE = ["scripts/widgetlib.py"]\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert r_with["tests/test_pins.py"] == ["literal-path:scripts/widgetlib.py"]
+    # orphan.py has no test in either tree; widgetlib.py is stem-mapped in both.
+    assert u_without == ["scripts/orphan.py"]
+    assert u_with == ["scripts/orphan.py"]
+
+
+# --- Case 57: unreadable file WARNs + is skipped for BOTH arms; never crashes ----
+def test_literal_path_unreadable_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_import_tree(tmp_path, {"test_good_pin.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    (repo / "tests" / "test_undecodable.py").write_bytes(
+        b'LIVE = ["scripts/foo_helper.py"]\n\xff\xfe bad'
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_good_pin.py" in tests  # the valid hit still selected
+    assert reasons["tests/test_good_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert "tests/test_undecodable.py" not in tests  # read failed -> both arms skip
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" in err
+    assert "test_undecodable.py" in err
+
+
+# --- Case 58: a syntax-error file's literal hit still lands (read/parse split) ---
+def test_literal_path_syntax_error_file_still_matched(tmp_path: Path, capsys):
+    """The raw read succeeded, so the literal hit is recorded even though the
+    ast parse (triggered by the 'foo_helper' pre-filter token) fails — the
+    import-arm WARN fires and the literal selection lands."""
+    repo = _make_import_tree(
+        tmp_path, {"test_broken_pin.py": 'LIVE = ["scripts/foo_helper.py"]\ndef broken(:\n'}
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_broken_pin.py" in tests
+    assert reasons["tests/test_broken_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert untested == ["scripts/foo_helper.py"]  # literal hit never sets matched
+    err = capsys.readouterr().err
+    assert err.count("import-map cannot parse") == 1
+    assert "test_broken_pin.py" in err
+
+
+# --- Case 59: workflow-surface-only diff -> still ZERO file reads ----------------
+def test_literal_path_md_only_diff_zero_scan(tmp_path: Path, capsys):
+    """Mirror of case 44 under the shared pass: no touched file is eligible for
+    EITHER arm, so the scan never reads tests/ (the planted undecodable file
+    would WARN on any read — case 57 is the positive control)."""
+    repo = _make_import_tree(tmp_path, {})
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"bad \xff\xfe")
+    assert sel.literal_path_targets([".claude/rules/foo.md", "notes.md"]) == set()
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/rules/foo.md", "notes.md"], repo)
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" not in err  # zero reads: never touched the bad file
+    assert set(tests) == set(sel.WORKFLOW_INVARIANT)
+    assert untested == []
+
+
+# --- Case 60: scripts/__init__.py is a NEW scan trigger, with zero parses --------
+def test_literal_path_init_py_triggers_scan_zero_parses(tmp_path: Path, capsys):
+    """``scripts/__init__.py`` maps to no module name (empty module map) but IS
+    a literal target -> the shared pass runs. The empty token pre-filter means
+    ZERO ast parses: the planted syntax-error file would WARN if parsed."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_pkg_pin.py": 'PINNED = "scripts/__init__.py"\n',
+            "test_broken.py": "def broken(:\n",
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/__init__.py"], repo)
+    assert "tests/test_pkg_pin.py" in tests
+    assert reasons["tests/test_pkg_pin.py"] == ["literal-path:scripts/__init__.py"]
+    assert "import-map cannot parse" not in capsys.readouterr().err  # zero parses
+
+
+# --- Case 61: literal_path_targets eligibility rules ------------------------------
+def test_literal_path_touched_test_not_a_target():
+    assert sel.literal_path_targets(["tests/test_a.py"]) == set()
+    assert sel.literal_path_targets(
+        [
+            "tests/test_a.py",  # tests/ — the touched-test arm owns it
+            "other/module.py",  # outside the two eligible roots
+            "scripts/notes.md",  # not .py
+            ".claude/skills/issue/SKILL.md",  # workflow surface — #1496's mapping
+            "scripts/x.py",
+            "src/explore_persona_space/y.py",
+            "scripts/__init__.py",  # eligible: a literal target even with no module name
+        ]
+    ) == {"scripts/x.py", "src/explore_persona_space/y.py", "scripts/__init__.py"}
+
+
+# --- Case 62: end-to-end through main() --json — the reason token is carried -----
+def test_cli_json_carries_literal_path_reason(tmp_path: Path, monkeypatch, capsys):
+    repo = _make_import_tree(tmp_path, {"test_pin.py": 'LIVE = ["scripts/widgetlib.py"]\n'})
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widgetlib.py"])
+    rc = sel.main(["--json", "--no-fetch", "--repo-root", str(repo)])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert "tests/test_pin.py" in payload["tests"]
+    assert payload["selection_reasons"]["tests/test_pin.py"] == [
+        "literal-path:scripts/widgetlib.py"
+    ]
+    # The WARN still reaches the JSON consumer: literal hits never suppress it.
+    assert payload["untested_touched"] == ["scripts/widgetlib.py"]
+
+
+# --- Case 63: --map-files mode ignores literal-path pins (GLOB_SCAN_TESTS-only) --
+def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
+    """The Step 10d mapping mode (#1147) stays pure GLOB_SCAN_TESTS path
+    arithmetic (zero file reads): a payload naming a literal-PINNED but
+    not-scan-globbed file yields EMPTY stdout + rc 0 (pins the deliberate
+    #1498 scoping decision, plan R4)."""
+    repo = _make_import_tree(
+        tmp_path, {"test_pin.py": 'LIVE = ["src/explore_persona_space/widgetlib.py"]\n'}
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""

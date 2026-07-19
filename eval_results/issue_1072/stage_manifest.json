@@ -1,0 +1,44 @@
+{
+  "n_pool": 4920,
+  "staged_files": [
+    "slots_own_L14.pt",
+    "slots_own_L20.pt",
+    "slots_own_L23.pt",
+    "slots_own_L26.pt",
+    "spans_own.json",
+    "slots_ext_plain_L14.pt",
+    "slots_ext_plain_L20.pt",
+    "slots_ext_plain_L23.pt",
+    "slots_ext_plain_L26.pt",
+    "spans_ext_plain.json",
+    "slots_ext_style_L14.pt",
+    "slots_ext_style_L20.pt",
+    "slots_ext_style_L23.pt",
+    "slots_ext_style_L26.pt",
+    "spans_ext_style.json",
+    "slots_mismatch_L14.pt",
+    "slots_mismatch_L20.pt",
+    "slots_mismatch_L23.pt",
+    "slots_mismatch_L26.pt",
+    "spans_mismatch.json"
+  ],
+  "staging_revision": "5b62649cefb34902fd630f21630164e8d1d99764",
+  "realized_keys_check": "PASS",
+  "issue": 1072,
+  "git_sha": "098904d13566ac756f9432c537009e790b373514",
+  "env_versions": {
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "ts": 1784335157.2200518,
+  "smoke": false,
+  "layers": [
+    14,
+    20,
+    23,
+    26
+  ],
+  "parent_tensor_revision": "5b62649cefb34902fd630f21630164e8d1d99764",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct"
+}

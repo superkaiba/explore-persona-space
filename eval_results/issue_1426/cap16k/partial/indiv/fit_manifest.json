@@ -1,0 +1,17 @@
+{
+  "regime": "indiv",
+  "store_identity": "a8e41e04036d4548",
+  "layers": [
+    12,
+    24
+  ],
+  "combos": [
+    "mean"
+  ],
+  "n_perms": 50,
+  "shuffle_null_seed": 658,
+  "standardization": "full_data",
+  "do_cross": false,
+  "std_sensitivity_layer": 24,
+  "device": "cuda"
+}

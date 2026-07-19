@@ -1,0 +1,196 @@
+{
+  "commit": "49f44e361a",
+  "created": "2026-07-19T04:38:58Z",
+  "figsize": [
+    8.2,
+    5.4
+  ],
+  "points": [
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6693589654891232,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6704263601236875,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6700596392445477,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5875047309973607,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6258809222729105,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5705542286590386,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6682625065825143,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5828876367807273,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6413010946860722,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5656251498371743,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6679054349241498,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.6678470506444036,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5424062401303027,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.4921129708310815,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.42776498148649844,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.30182861468650757,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5181823628243598,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.37565884929650706,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5645211832478896,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.492889467155432,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5928377682583861,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5050307865629057,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5732893096654446,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "held-out R\u00b2 at layer 19, kept\u2229kept rows": 0.5226191747552493,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Refit within-reference ceilings and composed-transport numerators",
+        "xlabel": "held-out R\u00b2 at layer 19, kept\u2229kept rows",
+        "legend_labels": [
+          "within-reference ceiling",
+          "composed-transport numerator"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "instruct: helpful-instruction control vs chat",
+          "instruct: rude-but-informative vs chat",
+          "instruct: evasive vs chat",
+          "instruct: addressee-free exposition vs chat",
+          "instruct: addressee-free exposition vs plain text",
+          "instruct: AI-relay addressee vs chat",
+          "base: helpful-instruction control vs chat",
+          "base: rude-but-informative vs chat",
+          "base: evasive vs chat",
+          "base: addressee-free exposition vs chat",
+          "base: addressee-free exposition vs plain text",
+          "base: AI-relay addressee vs chat"
+        ]
+      }
+    ]
+  }
+}

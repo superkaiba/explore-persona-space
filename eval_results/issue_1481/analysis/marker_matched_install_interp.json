@@ -1,0 +1,720 @@
+{
+ "cells": {
+  "bare-s137": {
+   "committed_D_raw_logp": 1.2273381233215332,
+   "committed_abs_gap_nats": 1.4716161727905277,
+   "con_arm": "mk-bare-con-lr5e6-s137",
+   "con_selected_step": 90,
+   "po_arm": "mk-bare-po-lr5e6-s137",
+   "po_selected_step": 80,
+   "spaces": {
+    "logp": {
+     "D_interp": 1.227338123321533,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 1.227338123321533,
+     "ci_interp_95": [
+      1.0114732570648197,
+      1.4356109123229974
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      1.0114732570648197,
+      1.4356109123229974
+     ],
+     "con_install": 4.9268067359924315,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.572320652008057,
+       "nonsource_read": 5.384467525482178,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 10.125099468231202,
+       "nonsource_read": 8.754141731262207,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 140
+      }
+     ],
+     "po_install_at_selected": 6.572320652008057,
+     "residual_gap_at_selection": 1.6455139160156254
+    },
+    "margin": {
+     "D_interp": 1.5722703552246098,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 1.5722703552246098,
+     "ci_interp_95": [
+      1.319176456451416,
+      1.8361496276855467
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      1.319176456451416,
+      1.8361496276855467
+     ],
+     "con_install": 4.424069213867187,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.3809326171875,
+       "nonsource_read": 5.021111907958985,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 8.78839111328125,
+       "nonsource_read": 6.743267364501953,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 140
+      }
+     ],
+     "po_install_at_selected": 6.3809326171875,
+     "residual_gap_at_selection": 1.9568634033203125
+    }
+   }
+  },
+  "bare-s42": {
+   "committed_D_raw_logp": 0.9092943382263183,
+   "committed_abs_gap_nats": 1.1850735664367678,
+   "con_arm": "mk-bare-con-lr5e6-s42",
+   "con_selected_step": 90,
+   "po_arm": "mk-bare-po-lr5e6-s42",
+   "po_selected_step": 80,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.9092943382263181,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.9092943382263181,
+     "ci_interp_95": [
+      0.6562844181060787,
+      1.145143623828888
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.6562844181060787,
+      1.145143623828888
+     ],
+     "con_install": 5.404917812347412,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.719725227355957,
+       "nonsource_read": 5.273530330657959,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 9.063043212890625,
+       "nonsource_read": 7.117166042327881,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 6.719725227355957,
+     "residual_gap_at_selection": 1.314807415008545
+    },
+    "margin": {
+     "D_interp": 1.1541101074218751,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 1.1541101074218751,
+     "ci_interp_95": [
+      0.8957941284179689,
+      1.4144164123535157
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.8957941284179689,
+      1.4144164123535157
+     ],
+     "con_install": 4.370310211181641,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.4723388671875,
+       "nonsource_read": 4.83731689453125,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 7.910986328125,
+       "nonsource_read": 6.2547705078125,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 6.4723388671875,
+     "residual_gap_at_selection": 2.102028656005859
+    }
+   }
+  },
+  "conv-s137": {
+   "committed_D_raw_logp": 0.5958544731140136,
+   "committed_abs_gap_nats": 0.5099477767944336,
+   "con_arm": "mk-conv-con-lr5e6-s137",
+   "con_selected_step": 60,
+   "po_arm": "mk-conv-po-lr5e6-s137",
+   "po_selected_step": 55,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.5958544731140138,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.5958544731140138,
+     "ci_interp_95": [
+      0.47615850353240974,
+      0.7219713492393492
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.47615850353240974,
+      0.7219713492393492
+     ],
+     "con_install": 5.750138759613037,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.1818013191223145,
+       "nonsource_read": 1.9481493186950685,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 55
+      },
+      {
+       "install": 12.323712348937988,
+       "nonsource_read": 5.416886501312256,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 6.1818013191223145,
+     "residual_gap_at_selection": 0.43166255950927734
+    },
+    "margin": {
+     "D_interp": 0.742418212890625,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.742418212890625,
+     "ci_interp_95": [
+      0.60765234375,
+      0.8780390319824218
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.60765234375,
+      0.8780390319824218
+     ],
+     "con_install": 5.140798568725586,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.08095703125,
+       "nonsource_read": 1.68782958984375,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 55
+      },
+      {
+       "install": 10.2970458984375,
+       "nonsource_read": 5.10006591796875,
+       "roles": [
+        "ceiling"
+       ],
+       "step": 400
+      }
+     ],
+     "po_install_at_selected": 6.08095703125,
+     "residual_gap_at_selection": 0.9401584625244137
+    }
+   }
+  },
+  "conv-s42": {
+   "committed_D_raw_logp": 0.07791303634643555,
+   "committed_abs_gap_nats": 0.5658667564392088,
+   "con_arm": "mk-conv-con-lr5e6-s42",
+   "con_selected_step": 60,
+   "po_arm": "mk-conv-po-lr5e6-s42",
+   "po_selected_step": 50,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.41534464895674716,
+     "D_interp_minus_raw": 0.3374316126103116,
+     "D_raw": 0.07791303634643554,
+     "ci_interp_95": [
+      0.30916826976881906,
+      0.5227007096002565
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      -0.032005529403686714,
+      0.19027365207672106
+     ],
+     "con_install": 5.762330055236816,
+     "extrapolation_clamped": false,
+     "interp_weight": 0.08363761968181711,
+     "po_bracket_rungs": [
+      {
+       "install": 5.187405681610107,
+       "nonsource_read": 1.3907017135620117,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 50
+      },
+      {
+       "install": 12.061398220062255,
+       "nonsource_read": 5.425149536132812,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 5.187405681610107,
+     "residual_gap_at_selection": -0.5749243736267093
+    },
+    "margin": {
+     "D_interp": 0.41913121277865417,
+     "D_interp_minus_raw": 0.29906895691927904,
+     "D_raw": 0.12006225585937513,
+     "ci_interp_95": [
+      0.2818823673465213,
+      0.5547753710884088
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      -0.022669097900390588,
+      0.25587899780273415
+     ],
+     "con_install": 5.3872314453125,
+     "extrapolation_clamped": false,
+     "interp_weight": 0.07927121750233157,
+     "po_bracket_rungs": [
+      {
+       "install": 4.8980224609375,
+       "nonsource_read": 1.16665771484375,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 50
+      },
+      {
+       "install": 11.069354248046874,
+       "nonsource_read": 4.939388427734375,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 4.8980224609375,
+     "residual_gap_at_selection": -0.4892089843749998
+    }
+   }
+  },
+  "icl-s137": {
+   "committed_D_raw_logp": 0.2828110313415527,
+   "committed_abs_gap_nats": 0.9791532516479498,
+   "con_arm": "mk-icl-con-lr5e6-s137",
+   "con_selected_step": 20,
+   "po_arm": "mk-icl-po-lr5e6-s137",
+   "po_selected_step": 15,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.2860129826301976,
+     "D_interp_minus_raw": 0.0032019512886448664,
+     "D_raw": 0.2828110313415527,
+     "ci_interp_95": [
+      0.24897939776583833,
+      0.32520557997297583
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.2434533462524414,
+      0.3243673048019409
+     ],
+     "con_install": 5.269343662261963,
+     "extrapolation_clamped": false,
+     "interp_weight": 0.3381743136214996,
+     "po_bracket_rungs": [
+      {
+       "install": 4.44816255569458,
+       "nonsource_read": -0.005818843841552734,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 15
+      },
+      {
+       "install": 6.876440143585205,
+       "nonsource_read": 0.0036495018005371096,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 20
+      }
+     ],
+     "po_install_at_selected": 4.44816255569458,
+     "residual_gap_at_selection": -0.8211811065673826
+    },
+    "margin": {
+     "D_interp": 0.33798471966026467,
+     "D_interp_minus_raw": -0.002291769597547788,
+     "D_raw": 0.34027648925781245,
+     "ci_interp_95": [
+      0.29472935841700243,
+      0.3785460897949976
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.29523988342285157,
+      0.3840928344726562
+     ],
+     "con_install": 5.20546875,
+     "extrapolation_clamped": false,
+     "interp_weight": 0.32246261533566634,
+     "po_bracket_rungs": [
+      {
+       "install": 4.413671875,
+       "nonsource_read": -0.015478515625,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 15
+      },
+      {
+       "install": 6.869140625,
+       "nonsource_read": -0.022585601806640626,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 20
+      }
+     ],
+     "po_install_at_selected": 4.413671875,
+     "residual_gap_at_selection": -0.7917968749999993
+    }
+   }
+  },
+  "icl-s42": {
+   "committed_D_raw_logp": 0.22248779296875,
+   "committed_abs_gap_nats": 2.0175375938415527,
+   "con_arm": "mk-icl-con-lr5e6-s42",
+   "con_selected_step": 20,
+   "po_arm": "mk-icl-po-lr5e6-s42",
+   "po_selected_step": 20,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.22248779296875,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.22248779296875,
+     "ci_interp_95": [
+      0.19405666303634642,
+      0.2524889883995056
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.19405666303634642,
+      0.2524889883995056
+     ],
+     "con_install": 6.621922874450684,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 8.393676376342773,
+       "nonsource_read": 0.02904623031616211,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 20
+      },
+      {
+       "install": 8.65114459991455,
+       "nonsource_read": 0.32708354949951174,
+       "roles": [
+        "ceiling"
+       ],
+       "step": 400
+      }
+     ],
+     "po_install_at_selected": 8.393676376342773,
+     "residual_gap_at_selection": 1.7717535018920891
+    },
+    "margin": {
+     "D_interp": 0.538824462890625,
+     "D_interp_minus_raw": 0.269295654296875,
+     "D_raw": 0.26952880859375,
+     "ci_interp_95": [
+      0.5051056900024414,
+      0.5768275756835937
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.23996718597412112,
+      0.29901556396484374
+     ],
+     "con_install": 6.5822265625,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 7.916796875,
+       "nonsource_read": 0.28051513671875,
+       "roles": [
+        "ceiling"
+       ],
+       "step": 400
+      },
+      {
+       "install": 8.390625,
+       "nonsource_read": 0.011219482421875,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 20
+      }
+     ],
+     "po_install_at_selected": 8.390625,
+     "residual_gap_at_selection": 1.8083984375000002
+    }
+   }
+  },
+  "pers-s137": {
+   "committed_D_raw_logp": 0.8613973236083985,
+   "committed_abs_gap_nats": 1.6228677749633782,
+   "con_arm": "mk-pers-con-lr5e6-s137",
+   "con_selected_step": 90,
+   "po_arm": "mk-pers-po-lr5e6-s137",
+   "po_selected_step": 80,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.8613973236083989,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.8613973236083989,
+     "ci_interp_95": [
+      0.7162127804756167,
+      0.9986983695030216
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.7162127804756167,
+      0.9986983695030216
+     ],
+     "con_install": 5.761412334442139,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 7.059951114654541,
+       "nonsource_read": 5.585932960510254,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 10.3544846534729,
+       "nonsource_read": 7.12865951538086,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 7.059951114654541,
+     "residual_gap_at_selection": 1.298538780212402
+    },
+    "margin": {
+     "D_interp": 1.0203810119628907,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 1.0203810119628907,
+     "ci_interp_95": [
+      0.8095636711120598,
+      1.2189465217590327
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.8095636711120598,
+      1.2189465217590327
+     ],
+     "con_install": 5.319719314575195,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 7.0080078125,
+       "nonsource_read": 5.180716094970703,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 10.308251953125,
+       "nonsource_read": 6.72433349609375,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 7.0080078125,
+     "residual_gap_at_selection": 1.6882884979248045
+    }
+   }
+  },
+  "pers-s42": {
+   "committed_D_raw_logp": 0.49769126892089843,
+   "committed_abs_gap_nats": 0.8611780166625982,
+   "con_arm": "mk-pers-con-lr5e6-s42",
+   "con_selected_step": 90,
+   "po_arm": "mk-pers-po-lr5e6-s42",
+   "po_selected_step": 80,
+   "spaces": {
+    "logp": {
+     "D_interp": 0.49769126892089854,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.49769126892089854,
+     "ci_interp_95": [
+      0.32224841213226335,
+      0.6727065663337704
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.32224841213226335,
+      0.6727065663337704
+     ],
+     "con_install": 6.401490879058838,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.907080078125,
+       "nonsource_read": 5.448185424804688,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 10.36271104812622,
+       "nonsource_read": 6.979082355499267,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 6.907080078125,
+     "residual_gap_at_selection": 0.5055891990661623
+    },
+    "margin": {
+     "D_interp": 0.6502630615234377,
+     "D_interp_minus_raw": 0.0,
+     "D_raw": 0.6502630615234377,
+     "ci_interp_95": [
+      0.42561395263671836,
+      0.8723752059936527
+     ],
+     "ci_kind": "question-cluster bootstrap (2000 draws, seed 653); installs fixed",
+     "ci_raw_95": [
+      0.42561395263671836,
+      0.8723752059936527
+     ],
+     "con_install": 6.33697509765625,
+     "extrapolation_clamped": true,
+     "interp_weight": 0.0,
+     "po_bracket_rungs": [
+      {
+       "install": 6.71177978515625,
+       "nonsource_read": 5.129124755859375,
+       "roles": [
+        "candidate",
+        "selected"
+       ],
+       "step": 80
+      },
+      {
+       "install": 10.03369140625,
+       "nonsource_read": 6.421246337890625,
+       "roles": [
+        "emission_onset"
+       ],
+       "step": 90
+      }
+     ],
+     "po_install_at_selected": 6.71177978515625,
+     "residual_gap_at_selection": 0.3748046875000002
+    }
+   }
+  }
+ },
+ "meta": {
+  "git_commit": "c060d03f120d3e1be6395de4dd7c80377e6e3623",
+  "numpy": "2.2.6",
+  "script": "scripts/issue1481_free_analysis.py",
+  "ts": "2026-07-19T09:37:30.134630+00:00"
+ },
+ "summary": {
+  "logp": {
+   "max_abs_shift": 0.3374316126103116,
+   "mean_D_interp": 0.6269276189683571,
+   "mean_D_raw": 0.5843484234809876,
+   "mean_abs_shift": 0.04257919548736956,
+   "n_cells": 8,
+   "n_ci_class_changes": 1,
+   "n_extrapolation_clamped": 6,
+   "n_sign_flips": 0
+  },
+  "margin": {
+   "max_abs_shift": 0.29906895691927904,
+   "mean_D_interp": 0.8044228930441228,
+   "mean_D_raw": 0.7336637878417971,
+   "mean_abs_shift": 0.07133204760171273,
+   "n_cells": 8,
+   "n_ci_class_changes": 1,
+   "n_extrapolation_clamped": 6,
+   "n_sign_flips": 0
+  }
+ }
+}

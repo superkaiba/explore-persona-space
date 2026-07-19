@@ -1,0 +1,86 @@
+{
+  "gate_reports": {
+    "sample": {
+      "terminal_pass": true,
+      "conjunct_a": {
+        "pass": true,
+        "usable_rate_non_collapse": 1.0,
+        "floor": 0.8,
+        "contexts": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer"
+        ]
+      },
+      "conjunct_b": {
+        "pass": true,
+        "offender_rate": 0.0,
+        "offenders": 0,
+        "max_frac": 0.1
+      },
+      "conjunct_c": {
+        "pass": true,
+        "p95_gen_tokens": 1653.6,
+        "cap": 8192
+      },
+      "collapse_family_coverage_read": {
+        "f3_icl_marker_k4": {
+          "family": "icl",
+          "usable_rate": 1.0,
+          "n_rows": 48
+        },
+        "f2_wc_short_1": {
+          "family": "wildchat",
+          "usable_rate": 1.0,
+          "n_rows": 48
+        }
+      },
+      "n_rows": 240,
+      "malformed_reasons": {}
+    }
+  },
+  "chosen_rung": "sample",
+  "gate_contexts": [
+    "f1_house_librarian",
+    "f1_house_surgeon",
+    "f1_house_programmer",
+    "f3_icl_marker_k4",
+    "f2_wc_short_1"
+  ],
+  "gate_slice": {
+    "slice": [
+      "f1_house_librarian",
+      "f1_house_surgeon",
+      "f1_house_programmer",
+      "f3_icl_marker_k4",
+      "f2_wc_short_1"
+    ],
+    "non_collapse": [
+      "f1_house_librarian",
+      "f1_house_surgeon",
+      "f1_house_programmer"
+    ],
+    "collapse_read": [
+      "f3_icl_marker_k4",
+      "f2_wc_short_1"
+    ]
+  },
+  "production_max_new_tokens": 8192,
+  "gen_seed": 137,
+  "startup_asserts": {
+    "think_ids": [
+      128013,
+      128014
+    ],
+    "families_render_checked": [
+      "behavior",
+      "default",
+      "format",
+      "icl",
+      "persona",
+      "rephrase",
+      "wildchat"
+    ],
+    "n_prefix_messages_checked": 122
+  }
+}

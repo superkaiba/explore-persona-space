@@ -1050,6 +1050,9 @@ def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) 
     Read-only: no mutation, no commit. The cheap pre-filter (``kind`` / status /
     title) reads the REGISTRY snapshot; the ``tags`` / Provenance check reads the
     task's ``body.md`` (tags are not denormalized into the registry).
+    Advisory complement on the same open population:
+    :func:`open_workflow_fix_siblings` (#1502) SURFACES overlapping open
+    siblings this exact-match predicate deliberately does not block.
     """
     reg = _load_registry()
     for tid_str, entry in reg.get("tasks", {}).items():
@@ -1196,7 +1199,80 @@ def _wf_fix_title_tokens(title: str) -> set[str]:
     return out
 
 
-def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
+def informative_title_tokens(text: str) -> set[str]:
+    """Public reuse surface for the #1446 informative-token tokenizer (#1483).
+
+    Same normalization as the widened-pass title arm (_wf_fix_title_tokens):
+    lowercase, WF_FIX_TITLE_PREFIXES channel prefixes stripped, split on
+    non-word chars keeping -/_ inside tokens, edge -/_ stripped, len >= 4,
+    minus _WF_FIX_TITLE_STOPWORDS. Applies to any short text (titles, bug
+    one-liners), not only titles.
+    """
+    return _wf_fix_title_tokens(text)
+
+
+def _wf_fix_sibling_arms(
+    title: str,
+    task_dir: Path,
+    cand_targets: set[str],
+    cand_tokens: set[str],
+) -> tuple[list[str], set[str]]:
+    """Shared per-task arm-matcher for the closed (#1399/#1446) and open
+    (#1502) sibling scans. Returns ``(matched, task_targets)``:
+
+    - PREFIXED titles (``WF_FIX_TITLE_PREFIXES``): ``'target'`` (candidate
+      path tokens intersect the task's anchored ``workflow_fix_target:`` line
+      tokens; ``task_targets`` = the task's OWN target tokens) and
+      ``'title:<tokens>'`` (>=1 shared informative token).
+    - PLAIN titles: ``'infra-title:<tokens>'`` (>=
+      ``_WF_FIX_PLAIN_TITLE_MIN_SHARED`` shared tokens) and ``'infra-target'``
+      (a candidate FULL path token as a body substring; ``task_targets`` =
+      the candidate tokens actually FOUND).
+
+    Body reads happen only when ``cand_targets`` is non-empty; ``(OSError,
+    ValueError)`` on the body read fail-soft to ``body = ""`` (the target
+    arms are then silently unavailable). Window / population gating stays in
+    the CALLERS — the closed scan's #1446 §4.1(c) gating order (prefixed:
+    arms before window; widened: window before body read) is theirs to
+    preserve.
+    """
+    matched: list[str] = []
+    task_targets: set[str] = set()
+    shared = cand_tokens & _wf_fix_title_tokens(title)
+    if title.startswith(WF_FIX_TITLE_PREFIXES):
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (OSError, ValueError):
+                # widened per fact-check 2026-07-17: a non-FNF OSError from
+                # read_text() escaped the old (FileNotFoundError, ValueError)
+                # tuple
+                body = ""  # fail-soft: target arm silently unavailable
+            for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                task_targets |= _wf_fix_target_tokens(m.group(1))
+            if cand_targets & task_targets:
+                matched.append("target")
+        if shared:
+            matched.append("title:" + ",".join(sorted(shared)))
+    else:
+        if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
+            matched.append("infra-title:" + ",".join(sorted(shared)))
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (OSError, ValueError):
+                # same widened catch tuple as the prefixed branch above
+                body = ""  # fail-soft: target arm silently unavailable
+            # Full candidate path token as a body substring (NOT the
+            # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
+            # while full paths measured 0-6; glob tokens stay opaque).
+            task_targets = {t for t in cand_targets if t in body}
+            if task_targets:
+                matched.append("infra-target")
+    return matched, task_targets
+
+
+def recent_closed_workflow_fix_tasks(
     target_file: str | None,
     candidate_title: str | None = None,
     *,
@@ -1287,25 +1363,12 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
         except (FileNotFoundError, ValueError):
             # Non-numeric registry key or missing folder: skip this entry.
             continue
-        matched: list[str] = []
-        task_targets: set[str] = set()
+        # Arm semantics live in the shared _wf_fix_sibling_arms helper (#1502);
+        # the WINDOW checks stay HERE, in the #1446 §4.1(c) gating order.
         if prefixed:
-            # ── Prefixed pass: #1399 logic, output-identical except the
-            # declared catch-tuple widening below ──
-            if cand_targets:
-                try:
-                    _, body = _read_body(task_dir / "body.md")
-                except (OSError, ValueError):
-                    # widened per fact-check 2026-07-17: a non-FNF OSError
-                    # from read_text() escaped the old
-                    # (FileNotFoundError, ValueError) tuple
-                    body = ""  # fail-soft: target arm silently unavailable
-                for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
-                    task_targets |= _wf_fix_target_tokens(m.group(1))
-                if cand_targets & task_targets:
-                    matched.append("target")
-            if shared:
-                matched.append("title:" + ",".join(sorted(shared)))
+            # ── Prefixed pass: #1399 logic — arms (incl. any body read)
+            # BEFORE the window check ──
+            matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
             if not matched:
                 continue
             closed = _wf_fix_closed_at(task_dir)
@@ -1319,20 +1382,7 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
             closed = _wf_fix_closed_at(task_dir)
             if closed is None or closed < cutoff or closed > now:
                 continue
-            if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
-                matched.append("infra-title:" + ",".join(sorted(shared)))
-            if cand_targets:
-                try:
-                    _, body = _read_body(task_dir / "body.md")
-                except (OSError, ValueError):
-                    # same widened catch tuple as the prefixed pass above
-                    body = ""  # fail-soft: target arm silently unavailable
-                # Full candidate path token as a body substring (NOT the
-                # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
-                # while full paths measured 0-6; glob tokens stay opaque).
-                task_targets = {t for t in cand_targets if t in body}
-                if task_targets:
-                    matched.append("infra-target")
+            matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
             if not matched:
                 continue
         hits.append(
@@ -1346,6 +1396,75 @@ def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; bra
             }
         )
     hits.sort(key=lambda h: h["closed_at"], reverse=True)
+    return hits
+
+
+def open_workflow_fix_siblings(
+    target_file: str | None,
+    candidate_title: str | None = None,
+    *,
+    include_plain_infra: bool = True,
+) -> list[dict[str, Any]]:
+    """OPEN infra siblings overlapping the candidate (#1502) — the advisory
+    complement of :func:`is_open_workflow_fix_task` on the SAME population:
+    that predicate BLOCKS exact-``(target_file, fingerprint)`` duplicates;
+    this helper only SURFACES overlapping open siblings for the filer to
+    eyeball (a DISTINCT bug on the same hot file still files by design — the
+    #678 A1 grain is unchanged). Population: ``kind == infra`` AND status in
+    ``_WF_FIX_NONTERMINAL`` (the dedup predicate's own open set). No time
+    window: an open sibling is a live collision risk regardless of filing age
+    (a long-parked ``on_hold`` duplicate is exactly what a filer wants to
+    see), and the open population is small (34 open infra tasks vs 1440
+    registry entries, measured 2026-07-18). Arms + per-population bars are
+    the closed enumerator's, via :func:`_wf_fix_sibling_arms`.
+
+    Returns ``[{'id', 'title', 'status', 'target', 'matched'}, ...]`` sorted
+    by id DESC (ids are allocation-ordered, so id DESC = most recently filed
+    first — the open-population analogue of the closed pass's closed_at DESC
+    recency ordering; open rows carry NO ``closed_at``). Read-only: no
+    mutation, no commit, no lock; per-task failures (missing folder,
+    non-numeric registry key) skip that task.
+    """
+    cand_targets = _wf_fix_target_tokens(target_file) if target_file else set()
+    cand_tokens = _wf_fix_title_tokens(candidate_title) if candidate_title else set()
+    if not cand_targets and not cand_tokens:
+        return []
+    hits: list[dict[str, Any]] = []
+    for tid_str, entry in _load_registry().get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
+            continue
+        title = str(entry.get("title", ""))
+        prefixed = title.startswith(WF_FIX_TITLE_PREFIXES)
+        if not prefixed and not include_plain_infra:
+            continue
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if not prefixed and len(shared) < _WF_FIX_PLAIN_TITLE_MIN_SHARED and not cand_targets:
+            # Registry-only precheck: no plain-infra arm can possibly fire —
+            # skip before any per-task file read (mirror of the closed pass).
+            continue
+        if prefixed and not shared and not cand_targets:
+            continue  # no prefixed arm can fire either
+        try:
+            tid = int(tid_str)
+            task_dir = find_task_path(tid)
+        except (FileNotFoundError, ValueError):
+            # Non-numeric registry key or missing folder: skip this entry.
+            continue
+        matched, task_targets = _wf_fix_sibling_arms(title, task_dir, cand_targets, cand_tokens)
+        if not matched:
+            continue
+        hits.append(
+            {
+                "id": tid,
+                "title": title,
+                "status": entry.get("status"),
+                "target": ", ".join(sorted(task_targets)) or None,
+                "matched": matched,
+            }
+        )
+    hits.sort(key=lambda h: h["id"], reverse=True)
     return hits
 
 
@@ -3758,6 +3877,36 @@ def get_task(task_id: int) -> dict[str, Any]:
     }
 
 
+# The issue-wide pod-teardown shield tag (CLAUDE.md § Pods; #1485).
+KEEP_RUNNING_TAG = "keep-running"
+
+
+def keep_running_tag_state(task_id: int) -> bool | None:
+    """Tri-state read of the issue-wide teardown shield (#1485).
+
+    True  -> task read OK and the ``keep-running`` tag is present.
+    False -> task read OK and the tag is absent, OR the task does not
+             exist (registry miss / ad-hoc pod: nothing to shield).
+    None  -> the read ERRORED (branch-guard RuntimeError, corrupt
+             frontmatter ValueError, StaleTaskPathError registry
+             corruption, other OSError) - the tag state is UNKNOWABLE.
+             Callers on a DESTRUCTIVE path treat None as "do not
+             destroy" (the _wedge_keep_running 'unknown' posture).
+    """
+    # Exception ordering is load-bearing: StaleTaskPathError subclasses
+    # FileNotFoundError, which subclasses OSError — catch narrowest first.
+    try:
+        task = get_task(int(task_id))
+    except StaleTaskPathError:
+        return None  # multi-hit registry corruption: unknowable
+    except FileNotFoundError:
+        return False  # no task => no tag; ad-hoc pods stay terminable
+    except (RuntimeError, ValueError, OSError):
+        return None
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and KEEP_RUNNING_TAG in tags
+
+
 # ─── Events ─────────────────────────────────────────────────────────────────
 
 
@@ -4272,12 +4421,15 @@ def set_status(
                 [*(repo / s for s in specs), registry_path()],
                 f"task #{task_id}: {old_status} → {new_status}",
             )
-        except (subprocess.CalledProcessError, SequencerWaitTimeout):
+        except (subprocess.CalledProcessError, SequencerWaitTimeout, CommitHeadGuardError):
             # #1030 MF-1: a SequencerWaitTimeout raised from _git_commit's
             # merge wait gets the SAME "DURABLY APPLIED" recovery narration a
             # plain git failure gets, then re-raises as before. set_status is
             # deliberately NOT converted to deferred behavior (#898 raise +
-            # ghost-sweep semantics stay).
+            # ghost-sweep semantics stay). CommitHeadGuardError (#1530) joins
+            # the tuple so a pre-commit HEAD-guard trip in a status move gets
+            # the same durably-applied narration before re-raising (never
+            # deferred here — the raise IS the fail-loud contract).
             _log.error(
                 "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
                 "events.jsonl consistent at %s) but git failed before committing. "
@@ -6058,6 +6210,94 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
     return result
 
 
+class CommitHeadGuardError(RuntimeError):
+    """Pre-commit HEAD guard tripped on the PRIMARY checkout (#1530).
+
+    Raised by _assert_commit_head when the primary checkout's HEAD is not
+    attached to `main` at commit time. Deliberately a distinct class:
+    _commit_after_durable_append defers it (the append is durable in the
+    PRIMARY working tree by construction), while the routed-path guard
+    failure stays a plain RuntimeError (routed appends are NOT durable
+    against the managed worktree's reset --hard re-sync and must never
+    be deferred — see _commit_after_durable_append's contract).
+    """
+
+
+_COMMIT_HEAD_REPROBE_SLEEP_S = 0.5  # matches the resolver's #996 grace-probe cadence
+
+
+def _assert_commit_head(repo: Path, routed: bool, env: dict[str, str]) -> None:
+    """Hard pre-commit branch guard (#1530): verify, immediately before
+    ``git commit --only``, that the checkout we are about to commit in is in
+    the state the resolver promised. Primary: HEAD attached to ``main``.
+    Routed (``_task-main-pin``): HEAD DETACHED (the pin contract).
+
+    Primary mismatch: one 0.5s re-probe (transient checkout transit), then
+    ``invalidate_cache()`` — so the NEXT mutation in this process re-resolves
+    and auto-routes through the managed worktree — and raise
+    :class:`CommitHeadGuardError`. NEVER silently re-routes THIS commit
+    mid-mutation: the caller's append already landed in the PRIMARY working
+    tree, and the managed worktree's tree (reset to main) does not contain
+    it — committing there would commit a stale file state (data-losing).
+    Note: a concurrent root ``pull --rebase`` that keeps HEAD detached for
+    longer than the 0.5s re-probe can trip this guard — a benign deferral
+    (the forensic row names the detached state), useful for triage.
+
+    Routed mismatch (HEAD unexpectedly attached to a branch, or the probe
+    failed for a non-detached reason): plain ``RuntimeError`` immediately —
+    committing would move that branch AND the subsequent CAS would fail
+    messily; fail loud pre-commit instead.
+
+    Incident #1530 forensics: the 2026-07-18 stranding was NOT this window
+    (task.py committed correctly on main; a branch-side FF imported the
+    commits) — this guard closes the ADJACENT stale-(pid,cwd)-cache window
+    the #1100 landing check can only detect post-hoc.
+    """
+    for attempt in (1, 2):
+        sym = subprocess.run(
+            ["git", "-C", str(repo), "symbolic-ref", "--short", "HEAD"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        branch = sym.stdout.strip() if sym.returncode == 0 else None
+        if routed:
+            if branch is None and "not a symbolic ref" in (sym.stderr or "").lower():
+                return  # detached at the main pin — the expected routed state
+            if branch is not None:
+                raise RuntimeError(
+                    f"managed main-pin worktree {repo} has HEAD attached to {branch!r} "
+                    f"(expected DETACHED at the main tip); refusing to commit — a commit "
+                    f"here would advance {branch!r} and break the CAS advance-main "
+                    f"contract. Remove/re-create the managed worktree "
+                    f"(git worktree remove --force) and re-run."
+                )
+            raise RuntimeError(
+                f"managed main-pin worktree {repo}: the pre-commit HEAD probe failed for "
+                f"a non-detached reason (rc={sym.returncode}, "
+                f"stderr={(sym.stderr or '').strip()!r}); refusing to commit against an "
+                f"unverifiable HEAD state."
+            )
+        if branch == "main":
+            return
+        if attempt == 1:
+            time.sleep(_COMMIT_HEAD_REPROBE_SLEEP_S)
+            continue
+        invalidate_cache()  # next mutation re-resolves -> managed-worktree route
+        state = (
+            f"on branch {branch!r}" if branch else f"not attached ({(sym.stderr or '').strip()!r})"
+        )
+        raise CommitHeadGuardError(
+            f"refusing to commit task state: primary checkout {repo} HEAD is {state}, "
+            f"not 'main' — the commit would strand on a non-main ref (#1530). The "
+            f"append (if any) is durable in the working tree; the resolver cache was "
+            f"invalidated so the next mutation auto-routes through the managed "
+            f"main-pin worktree. Re-attach the primary to 'main' and investigate what "
+            f"moved its HEAD (repo-root HEAD reflog)."
+        )
+
+
 def _git_commit(paths: list[Path], message: str) -> None:
     """Stage the given paths and create a single commit. Optional push.
 
@@ -6089,6 +6329,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
     fatals rc=128 during one); a merge that STARTS between the probe and the
     commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
     partial-commit stderr signature.
+
+    Immediately before EACH ``git commit --only`` invocation (first attempt
+    AND the post-re-wait TOCTOU retry) the hard pre-commit HEAD guard
+    ``_assert_commit_head`` (#1530) verifies the checkout is in the state the
+    resolver promised — primary: HEAD attached to ``main``
+    (:class:`CommitHeadGuardError` on mismatch, deferrable for durable
+    appends); routed: HEAD detached (plain ``RuntimeError``, never deferred).
 
     After a successful commit (and, when routed, the CAS advance) a
     post-commit LANDING CHECK (#1100, ``_warn_if_commit_stranded``) verifies
@@ -6127,6 +6374,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
     # `main` to the new commit afterwards.
     old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
+    _assert_commit_head(repo, routed, env)  # hard HEAD guard (#1530), first attempt
     try:
         _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     except subprocess.CalledProcessError as e:
@@ -6140,6 +6388,9 @@ def _git_commit(paths: list[Path], message: str) -> None:
         if not _PARTIAL_COMMIT_SEQUENCER_RE.search(e.stderr or ""):
             raise
         _wait_for_sequencer_clear(repo)
+        # The re-wait can take long enough for checkout state to change —
+        # re-run the #1530 HEAD guard before the FINAL retry too.
+        _assert_commit_head(repo, routed, env)
         _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
@@ -6234,11 +6485,17 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     Deferral is NARROW by design (two independent layers, each sufficient
     for the routed CAS case, jointly sufficient for all routed cases):
 
-    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout)`` — NEVER
-      bare ``RuntimeError``: the routed post-commit CAS leg
-      (``_advance_main_ref`` → ``_git_quiet``) raises ``RuntimeError``, and
-      deferring THAT would report success for an append that never reached
-      canonical ``main``;
+    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout,
+      CommitHeadGuardError)`` — NEVER bare ``RuntimeError``: the routed
+      post-commit CAS leg (``_advance_main_ref`` → ``_git_quiet``) raises
+      ``RuntimeError``, and deferring THAT would report success for an
+      append that never reached canonical ``main``.
+      :class:`CommitHeadGuardError` (#1530) is primary-path-only by
+      construction (the routed HEAD-guard arm raises plain
+      ``RuntimeError``) and bypasses the routed re-check below via the
+      isinstance ordering — the guard already invalidated the resolver
+      cache, so a live ``repo_root()`` re-resolve would route to the
+      managed worktree and wrongly re-raise a deferrable primary failure;
     * NEVER defers in ROUTED mode: there the append lives only in the
       managed worktree's working tree, and the next resolver re-sync runs
       ``reset --hard main`` (``_ensure_managed_main_worktree``) whose safety
@@ -6257,8 +6514,15 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     try:
         _git_commit(paths, message)
         return True
-    except (subprocess.CalledProcessError, SequencerWaitTimeout) as e:
-        if _is_routed_root(repo_root()):
+    except (subprocess.CalledProcessError, SequencerWaitTimeout, CommitHeadGuardError) as e:
+        # CommitHeadGuardError fires ONLY on the primary path (the routed-path
+        # guard raises plain RuntimeError, which stays uncaught by design) and
+        # it invalidates the resolver cache BEFORE raising — so the
+        # _is_routed_root(repo_root()) re-check below would RE-RESOLVE, route
+        # to the managed worktree, and wrongly re-raise a deferrable
+        # primary-path failure. The append is durable in the PRIMARY working
+        # tree by construction for this class: defer directly.
+        if not isinstance(e, CommitHeadGuardError) and _is_routed_root(repo_root()):
             raise  # routed append is NOT durable against the reset --hard re-sync
         stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
         _log.error(
@@ -6725,6 +6989,7 @@ __all__ = [
     "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "HUSK_REAP_TERMINAL_STATUSES",
+    "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6757,6 +7022,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "keep_running_tag_state",
     "latest_event",
     "list_by_status",
     "list_comments",

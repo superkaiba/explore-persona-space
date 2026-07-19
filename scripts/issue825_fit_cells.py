@@ -600,6 +600,11 @@ def heldout_r2_sweep(
     ss_res_null = np.zeros((null_draws, n_layers))
     ss_tot_null = np.zeros((null_draws, n_layers))
     lam_obs = np.full((n_layers, n_folds), np.nan) if collect_lambdas else None
+    # Per-(layer, fold) OBSERVED-fit selector record (#1417 refit round, plan
+    # assumption 13): which lambda-selection procedure actually ran — the
+    # WARN-fallback (inner cache unbuildable) is otherwise invisible in the
+    # outputs. Only populated under collect_lambdas (default-preserving).
+    sel_obs = [[None] * n_folds for _ in range(n_layers)] if collect_lambdas else None
     fitted = np.zeros(n, dtype=bool)
     cosines = {int(li): np.zeros(n) for li in fl if li < n_layers}
     preds_frozen = {
@@ -631,6 +636,10 @@ def heldout_r2_sweep(
                     cache, Y[tr], return_lam=True, lambdas=lambdas
                 )
                 lam_obs[li, k] = best_lam
+                if lambda_selection == "inner-group-cv":
+                    sel_obs[li][k] = "inner-group-cv" if cache.get("inner") else "gcv-fallback"
+                else:
+                    sel_obs[li][k] = "gcv"
             else:
                 pred = _ridge_predict_cached(cache, Y[tr], lambdas=lambdas)
             fitted[te] = True
@@ -663,6 +672,11 @@ def heldout_r2_sweep(
         "cosines": cosines,
         "preds_frozen": preds_frozen,
         "gcv_lambda": lam_obs,
+        # (n_layers, n_folds) nested list of selector names for the OBSERVED
+        # fits ("gcv" | "inner-group-cv" | "gcv-fallback"; None = skipped fold /
+        # collect_lambdas off). Null draws share the observed fold's procedure
+        # by construction (selection symmetry).
+        "lambda_selector": sel_obs,
         "folds": folds,
         # Rows that actually received held-out predictions (skipped folds at
         # tiny n leave zeros in preds_frozen; consumers subset by this mask).
@@ -999,11 +1013,17 @@ def run_cell(
     n_boot: int,
     allowlist: list | None = None,
     bundle: dict | None = None,
+    lambda_selection: str = "gcv",
+    collect_lambdas: bool = False,
 ) -> dict:
     """Fit one cell. ``bundle`` optionally injects a pre-loaded turnstore bundle
     (#1345 source-module change: avoids re-loading + re-stacking the unused
     per-position tensors per cell; ``None`` preserves the committed load path
-    byte-for-byte)."""
+    byte-for-byte). ``lambda_selection`` + ``collect_lambdas`` thread the #1335
+    r8 registered selector into the sweep + the random-projection control and
+    persist the per-(layer, fold) selected lambda + selector record in the cell
+    payload (#1417 refit round); the defaults preserve the committed behavior
+    byte-for-byte."""
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
     if bundle is None:
@@ -1012,12 +1032,29 @@ def run_cell(
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit_cells] cell={cell_id} n={len(conv_ids)}")
 
-    sweep = heldout_r2_sweep(X, Y, conv_ids, n_folds=n_folds, seed=seed, null_draws=null_draws)
+    sweep = heldout_r2_sweep(
+        X,
+        Y,
+        conv_ids,
+        n_folds=n_folds,
+        seed=seed,
+        null_draws=null_draws,
+        lambda_selection=lambda_selection,
+        collect_lambdas=collect_lambdas,
+    )
     r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
     summary = selection_symmetric_summary(r2_obs, r2_null)
 
     frozen_layers = [li for li in FROZEN_LAYERS if li < X.shape[1]]
-    rp = random_projection_control(X, Y, conv_ids, layers=frozen_layers, n_folds=n_folds, seed=seed)
+    rp = random_projection_control(
+        X,
+        Y,
+        conv_ids,
+        layers=frozen_layers,
+        n_folds=n_folds,
+        seed=seed,
+        lambda_selection=lambda_selection,
+    )
     mb = mean_baseline_r2(Y, conv_ids, layers=frozen_layers, n_folds=n_folds, seed=seed)
 
     cosine_stats = {}
@@ -1059,6 +1096,14 @@ def run_cell(
         "n_folds": n_folds,
         "null_draws": null_draws,
     }
+    if collect_lambdas:
+        lam = sweep["gcv_lambda"]
+        cell_payload["lambda_selection"] = lambda_selection
+        cell_payload["gcv_dof_cap"] = GCV_DOF_CAP
+        cell_payload["selected_lambda_per_layer_fold"] = [
+            [None if np.isnan(v) else float(v) for v in row] for row in lam
+        ]
+        cell_payload["selector_per_layer_fold"] = sweep["lambda_selector"]
     _write_json(out_dir / f"cells_{cell_id}.json", cell_payload)
 
     null_payload = {

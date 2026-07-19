@@ -1,0 +1,349 @@
+{
+  "commit": "1221e4574c",
+  "created": "2026-07-18T20:22:36Z",
+  "figsize": [
+    13.5,
+    6.0
+  ],
+  "points": [
+    {
+      "held-out $R^2$ at layer 19": -0.9560485338069808,
+      "y": 8.0,
+      "label": "n=3629",
+      "series": "within-reference ceiling (REL denominator)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.9224823136632088,
+      "y": 8.0,
+      "label": "n=3629",
+      "series": "composed-transport numerator",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.33267891191611043,
+      "y": 7.0,
+      "label": "n=3629",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.5337527947846376,
+      "y": 7.0,
+      "label": "n=3128",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.3203533266093399,
+      "y": 6.0,
+      "label": "n=2214",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.5740539744098325,
+      "y": 6.0,
+      "label": "n=2725",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.07669943976077642,
+      "y": 5.0,
+      "label": "n=2214",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.17197740298726916,
+      "y": 5.0,
+      "label": "n=2214",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.23519233689479113,
+      "y": 4.0,
+      "label": "n=1407",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.41434395174586147,
+      "y": 4.0,
+      "label": "n=1407",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.9626651628107856,
+      "y": 3.0,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.37497927598831404,
+      "y": 3.0,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ at layer 19": -1.2471282619050088,
+      "y": 2.0,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.3302536280135603,
+      "y": 2.0,
+      "label": "n=3526",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ at layer 19": -1.0067630034983748,
+      "y": 1.0,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.9608190084705241,
+      "y": 1.0,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ at layer 19": -1.017592641053791,
+      "y": 0.0,
+      "label": "n=3600",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.1396252841423724,
+      "y": 0.0,
+      "label": "n=3348",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.07624070477016254,
+      "y": 8.0,
+      "label": "n=516",
+      "series": "within-reference ceiling (REL denominator)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.49935675702847127,
+      "y": 8.0,
+      "label": "n=2245",
+      "series": "composed-transport numerator",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.30553313474357413,
+      "y": 7.0,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.3564709072676935,
+      "y": 7.0,
+      "label": "n=516",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.1509199603876834,
+      "y": 6.0,
+      "label": "n=361",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.0010500839749867374,
+      "y": 6.0,
+      "label": "n=361",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "held-out $R^2$ at layer 19": -1.0938808486047313,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.3709015684414657,
+      "y": 5.0,
+      "label": "n=2932",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.30710281502300274,
+      "y": 4.0,
+      "label": "n=1174",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.18629597440128953,
+      "y": 4.0,
+      "label": "n=1174",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.6862731989300468,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.4090789690875307,
+      "y": 3.0,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "held-out $R^2$ at layer 19": -1.0181119669459933,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.4356476673946612,
+      "y": 2.0,
+      "label": "n=2993",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "held-out $R^2$ at layer 19": -0.039326700023512684,
+      "y": 1.0,
+      "label": "n=1588",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.5311441954133704,
+      "y": 1.0,
+      "label": "n=2249",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.3842981390636153,
+      "y": 0.0,
+      "label": "n=1588",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "held-out $R^2$ at layer 19": 0.36006116306181357,
+      "y": 0.0,
+      "label": "n=1588",
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36,
+  "text": {
+    "suptitle": "REL verdict components per battery pair: most denominators (ceilings) broke negative; numerators stayed positive wherever the cell's own map is healthy (dashed/dash-dot: full-n chat / plain-text anchors)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct",
+        "xlabel": "held-out $R^2$ at layer 19",
+        "legend_labels": [
+          "within-reference ceiling (REL denominator)",
+          "composed-transport numerator"
+        ],
+        "annotations": [
+          "n=3629",
+          "n=3128",
+          "n=2725",
+          "n=2214",
+          "n=1407",
+          "n=3526",
+          "n=3526",
+          "n=3600",
+          "n=3348"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "helpful instr. vs chat ref",
+          "rude vs chat ref",
+          "rude vs helpful-instr ref",
+          "evasive vs chat ref",
+          "evasive vs helpful-instr ref",
+          "exposition vs chat ref",
+          "exposition vs plain-text ref",
+          "AI-addressee vs chat ref",
+          "AI-addressee vs helpful-instr ref"
+        ]
+      },
+      {
+        "title_left": "Base",
+        "xlabel": "held-out $R^2$ at layer 19",
+        "annotations": [
+          "n=2245",
+          "n=516",
+          "n=361",
+          "n=2932",
+          "n=1174",
+          "n=2993",
+          "n=2993",
+          "n=2249",
+          "n=1588"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "helpful instr. vs chat ref",
+          "rude vs chat ref",
+          "rude vs helpful-instr ref",
+          "evasive vs chat ref",
+          "evasive vs helpful-instr ref",
+          "exposition vs chat ref",
+          "exposition vs plain-text ref",
+          "AI-addressee vs chat ref",
+          "AI-addressee vs helpful-instr ref"
+        ]
+      }
+    ],
+    "series": [
+      "within-reference ceiling (REL denominator)",
+      "composed-transport numerator"
+    ]
+  }
+}

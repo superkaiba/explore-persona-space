@@ -1,0 +1,88 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:07Z",
+  "figsize": [
+    8.4,
+    3.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct \u2014 reference map on cell rows (R\u00b2 @ L19)",
+        "annotations": [
+          "-1.88",
+          "-6.90",
+          "-8.95",
+          "-2.15",
+          "-2.76",
+          "-14.73",
+          "-17.05",
+          "-1.93",
+          "-1.51"
+        ],
+        "xticklabels": [
+          "chat reference",
+          "plain-dialogue reference",
+          "helpful-instruction control"
+        ],
+        "yticklabels": [
+          "Helpful instruction",
+          "Rude-but- informative",
+          "Evasive",
+          "Addressee-free exposition",
+          "Non-user addressee"
+        ]
+      },
+      {
+        "title_left": "Base \u2014 reference map on cell rows (R\u00b2 @ L19)",
+        "annotations": [
+          "-2.14",
+          "-1.70",
+          "-0.55",
+          "-9.04",
+          "-0.13",
+          "-14.07",
+          "-17.87",
+          "-2.01",
+          "0.35"
+        ],
+        "xticklabels": [
+          "chat reference",
+          "plain-dialogue reference",
+          "helpful-instruction control"
+        ],
+        "yticklabels": [
+          "Helpful instruction",
+          "Rude-but- informative",
+          "Evasive",
+          "Addressee-free exposition",
+          "Non-user addressee"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

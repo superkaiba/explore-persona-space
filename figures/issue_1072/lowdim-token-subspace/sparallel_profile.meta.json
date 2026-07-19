@@ -1,0 +1,486 @@
+{
+  "commit": "60f0c18004",
+  "created": "2026-07-18T14:41:23Z",
+  "figsize": [
+    10.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "share of the gap inside the subspace (S_par)": 0.015429584697804663,
+      "error": 0.01909615216242716,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "share of the gap inside the subspace (S_par)": 0.03527148694115743,
+      "error": 0.04257270864037474,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "share of the gap inside the subspace (S_par)": 0.038469938020544964,
+      "error": 0.04587834735467004,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "share of the gap inside the subspace (S_par)": 0.04581740822931754,
+      "error": 0.05217786971499356,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.05,
+      "share of the gap inside the subspace (S_par)": 0.02386354675696516,
+      "error": 0.005347365036034222,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.05,
+      "share of the gap inside the subspace (S_par)": 0.0601439136914753,
+      "error": 0.012667405835998912,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.05,
+      "share of the gap inside the subspace (S_par)": 0.042694074842863125,
+      "error": 0.009560440721311965,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.05,
+      "share of the gap inside the subspace (S_par)": 0.09741573307773901,
+      "error": 0.01842684002581848,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "share of the gap inside the subspace (S_par)": 0.015429584697804663,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "share of the gap inside the subspace (S_par)": 0.03527148694115743,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "share of the gap inside the subspace (S_par)": 0.038469938020544964,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "share of the gap inside the subspace (S_par)": 0.04581740822931754,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "share of the gap inside the subspace (S_par)": 0.009093064142229433,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "share of the gap inside the subspace (S_par)": 0.020905736191927368,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "share of the gap inside the subspace (S_par)": 0.02314886300094732,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "share of the gap inside the subspace (S_par)": 0.028059042598708218,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "share of the gap inside the subspace (S_par)": 0.047285368467083755,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "share of the gap inside the subspace (S_par)": 0.10605115347267685,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "share of the gap inside the subspace (S_par)": 0.1149055577102874,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "share of the gap inside the subspace (S_par)": 0.13241478202869533,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.05,
+      "share of the gap inside the subspace (S_par)": 0.02386354675696516,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.05,
+      "share of the gap inside the subspace (S_par)": 0.0601439136914753,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.05,
+      "share of the gap inside the subspace (S_par)": 0.042694074842863125,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.05,
+      "share of the gap inside the subspace (S_par)": 0.09741573307773901,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.05,
+      "share of the gap inside the subspace (S_par)": 0.01938505584006589,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.05,
+      "share of the gap inside the subspace (S_par)": 0.04941328229388512,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.05,
+      "share of the gap inside the subspace (S_par)": 0.03460810841278342,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.05,
+      "share of the gap inside the subspace (S_par)": 0.08156749792841675,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.05,
+      "share of the gap inside the subspace (S_par)": 0.030079785912134335,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.05,
+      "share of the gap inside the subspace (S_par)": 0.07474809396588294,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.05,
+      "share of the gap inside the subspace (S_par)": 0.05372898985540735,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.05,
+      "share of the gap inside the subspace (S_par)": 0.11842117798005371,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 27.32076432942296,
+      "error": 33.882812739089715,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 13.875151080609474,
+      "error": 16.674164460170637,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 12.672468648624106,
+      "error": 15.090670001178854,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 7.500841513611838,
+      "error": 8.540979810390079,
+      "series": "layer 14",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.8750893092709404,
+      "error": 0.8318376875432676,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.4518955606637265,
+      "error": 0.48515403018030523,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.632894801038637,
+      "error": 0.5603045920509819,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.0394806048068426,
+      "error": 0.3666116564464005,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 27.32076432942296,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 13.875151080609474,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 12.672468648624106,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 7.500841513611838,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 16.083715348960546,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 8.276157435835074,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 7.652944431258268,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 4.606463136925236,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 83.84934082713997,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 41.62448635617635,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 37.83428443361598,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 21.688422757705393,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.8750893092709404,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.4518955606637265,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.632894801038637,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.0394806048068426,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.186003601491634,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.0392249694793847,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.1593931075311388,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 1.7215118453143028,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 4.849678976578169,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 3.009533029839995,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 3.2800022916331026,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.4547351582071038,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 64,
+  "text": {
+    "suptitle": "Dimensionality-of-commitment profile across basis bundles",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "share of the gap inside the subspace (S_par)",
+        "legend_labels": [
+          "layer 14",
+          "layer 26"
+        ],
+        "annotations": [
+          "15% expectation bound (set before the run)"
+        ],
+        "xticklabels": [
+          "realized next word\n(1 direction)",
+          "top-8 candidate\nwords",
+          "realized next 8\nwords",
+          "top-32 candidate\nwords"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ]
+      },
+      {
+        "ylabel": "gap share / variance share (enrichment)",
+        "legend_labels": [
+          "layer 14",
+          "layer 26"
+        ],
+        "xticklabels": [
+          "realized next word\n(1 direction)",
+          "top-8 candidate\nwords",
+          "realized next 8\nwords",
+          "top-32 candidate\nwords"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ],
+    "series": [
+      "layer 14",
+      "layer 26"
+    ]
+  }
+}
