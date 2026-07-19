@@ -169,7 +169,7 @@ Underlying data: per-context errors behind the four cells, cell means marked.
 
 ### The answer-sampling floor is higher for non-English contexts, so the floor-adjusted language advantage widens
 
-Plotted: per-arm decomposition of expected per-context error into map share plus answer-sampling floor, and the raw, floor, and adjusted non-English-minus-English contrasts with 95% bootstrap CIs; 2,000-context stratified subsample of the holdout, five answer draws each.
+Plotted: per-arm decomposition of expected per-context error into map share plus answer-sampling floor, and the raw, floor, and adjusted non-English-minus-English contrasts with 95% bootstrap CIs; 2,000-context stratified subsample of the holdout; the plotted floor is the registered fresh-4 estimator (draws 43–46; the parent draw 42 completes the five-draw shadow).
 
 ![Per-arm error decomposition and the three language contrasts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1f0bc2a174d25188013d4b1813bb839077e9ab0b/figures/issue_1482/kresample/floor_decomposition_hero.png)
 
