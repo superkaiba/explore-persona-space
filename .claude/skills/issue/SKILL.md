@@ -6397,12 +6397,68 @@ follow-up run per task. The cap is enforced by the
 `epm:free-analysis-followup-run v1` marker: re-entry into 9a-ter on the
 same task — whether from a backstop tick, an analyzer revision posting a
 new free-analysis follow-up, or a 9a-bis REVISE round that bounced back
-to analyzer — checks the marker FIRST and exits immediately if it is
-already present (regardless of whether the listed follow-up is the same
-one). This prevents the re-run from triggering another auto-run chain
-within the same task; the second free-analysis follow-up surfaces in
-the body as a regular bullet for a future human pass. Across tasks the
-mechanism stays fresh (each task gets its own one round).
+to analyzer — checks the marker FIRST and exits without dispatching if
+it is already present (regardless of whether the listed follow-up is
+the same one). The marker-present exit is ordered, not silent: marker
+present → read the detection union (the analyzer output + the latest
+`epm:analysis` marker's `free_analysis_unrun:` field, per § Detection
+above) → post the § Cap-park surfacing note below for each unrun
+eligible entry not already noted → exit. This prevents the re-run from
+triggering another auto-run chain within the same task. A further
+free-analysis follow-up STAYS listed in the body as a regular bullet,
+but the bullet is no longer the only surface: whenever the cap excludes
+a concrete unrun `cost_class: free-analysis` entry, post the § Cap-park
+surfacing note below (#1548; incident #958 — a top-ranked,
+follow-up-critic-screened `not-redundant` free-analysis follow-up sat
+unrun as a body bullet for 13 days until the user found and kicked it
+himself). Across tasks the mechanism stays fresh (each task gets its
+own one round).
+
+**Cap-park surfacing (#1548 — SURFACING only: the one-round cap above
+is unchanged, no new auto-run, no new gate, no new marker kind).** Two
+firing moments: (a) a loop-guard re-entry exit whose detection union
+still lists ≥1 unrun eligible entry (the ordered marker-present exit
+above — read the union, post, then exit); (b) immediately after
+Auto-run procedure step 6 posts the `epm:free-analysis-followup-run`
+marker (run OR abort) when the detection union listed >1 eligible
+entries — the non-selected surplus is cap-parked from that moment, not
+at some future re-entry. At either moment, for EACH cap-parked entry
+post one structured `epm:progress` note (the `stage-dispatch` /
+`deliberate-stop` convention — reuse the kind, never mint one):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "followup-parked-by-cap followup_ref=<verbatim follow-up title> \
+    rank=<1-based position in the analyzer's surfaced order, or 'unranked'> \
+    screened=<not-redundant|pending-screen> cost_class=free-analysis \
+    cap_consumed_by=<followup_ref of the latest epm:free-analysis-followup-run row> \
+    alternative=raise-9a-ter-cap-or-manual-pickup — the one-round cap parked \
+    this follow-up; a future planner/human may weigh raising the cap (a \
+    deliberate workflow change) vs manual pick-up post-promotion"
+```
+
+The fixed leading token `followup-parked-by-cap` is the PM-surfaceable
+signal: the note is dashboard-visible on the events timeline the
+promotion review reads, and greppable by PM tooling
+(`grep -h followup-parked-by-cap "$(uv run python scripts/task.py find <N>)/events.jsonl"`).
+**Idempotent per (task, verbatim follow-up title):** before posting,
+scan the task's existing events CONTEXT-CHEAPLY — grep the events file
+directly (`grep -F 'followup-parked-by-cap' "$(uv run python scripts/task.py find <N>)/events.jsonl"`,
+then match the candidate's verbatim `followup_ref=` value in the hits),
+or pipe `task.py view <N> --json` through a `jq`/python filter over the
+marker notes — never a full-body page-in — for an `epm:progress` note
+containing BOTH `followup-parked-by-cap` AND the same verbatim
+`followup_ref=` value: present ⇒ skip, so backstop-tick /
+9a-bis-REVISE re-entries never double-post (the mirror of the run
+marker's match-by-verbatim-title idempotency). Skip entries already
+recorded by an `epm:free-analysis-followup-run` row (run or aborted) or
+parked by `epm:followup-parked-redundant v1` (each has its own durable
+surface). `screened=` carries the follow-up-critic verdict when the
+screen has run for that proposal set; otherwise `pending-screen`.
+
+<!-- example: anti-pattern -->
+Auto-continue: the note is a non-blocking side channel — never an
+`AskUserQuestion`, never a pause, never a status change.
 
 **Compute-character pre-launch statement (REQUIRED — one paragraph, not a
 planner round, not a gate).** "0 GPU-h" does not mean "0 compute review":
@@ -6660,6 +6716,11 @@ explicit eval-data path):
        gpu_hours=0 \
        changed_headline=<true|false>"
    ```
+   Immediately after this marker posts (run or ABORT alike), fire the
+   § Loop guard Cap-park surfacing notes for every remaining unrun
+   eligible entry in the detection union — the cap is consumed as of
+   this marker, so those entries are parked NOW, not at some future
+   re-entry.
 7. Proceed to **9a-bis (clean-result-critique loop)** on the UPDATED
    body. The critic gates the final state, not the pre-rerun draft.
 
