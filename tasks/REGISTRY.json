@@ -3758,7 +3758,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1482",
       "status": "interpreting",
-      "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
+      "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (MODERATE confidence)"
     },
     "1483": {
       "has_clean_result": false,

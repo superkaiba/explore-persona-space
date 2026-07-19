@@ -1,6 +1,7 @@
 ---
-title: 'Error analysis of the n1M context→answer map: worst-predicted contexts, worst-predicted
-  SAE features, and the linear-vs-nonlinear gap'
+title: 'The context→answer map''s error is category-structured: non-English contexts
+  are predicted better than English, and the linear-vs-nonlinear gap concentrates
+  in low-variance answer directions (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-17T22:10:55Z'
