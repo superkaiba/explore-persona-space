@@ -175,7 +175,9 @@ Plotted: per-arm decomposition of expected per-context error into map share plus
 
 > **Figure.** *Non-English answers vary more under resampling, yet remain better predicted: floor adjustment widens the advantage.* Left: mean floor-adjusted map error stacked under the mean answer-sampling floor, per language arm (1,000 contexts each, 5 answer draws). Right: the raw, floor, and adjusted contrasts, 95% bootstrap CIs.
 
-Four fresh answers per context (seeds 43–46, the parent decoding recipe) plus the parent's own draw measure the within-context sampling variance of `v(x)`. The floor is a third of mean error in the English arm and 40% in the non-English arm (0.094 vs 0.110; floor difference +0.017, CI95 +0.008 to +0.025) — the entropy account predicted the opposite ordering. Subtracting it widens the contrast from −0.017 to −0.034 (CI95 −0.044 to −0.024); the subsample-internal estimate (−0.032) and raw squared-error units agree. Under the MLP fitter the raw gap is smaller (−0.005) but the adjusted gap stays negative (−0.022, CI95 −0.032 to −0.012).
+Four fresh answers per context (seeds 43–46, the parent decoding recipe) plus the parent's own draw measure the within-context sampling variance of `v(x)`. The floor is a third of mean error in the English arm and 40% in the non-English arm (0.094 vs 0.110; floor difference +0.017, CI95 +0.008 to +0.025) — the entropy account predicted the opposite ordering.
+
+Subtracting it widens the contrast from −0.017 to −0.034 (CI95 −0.044 to −0.024); the subsample-internal estimate (−0.032) and raw squared-error units agree. Under the MLP fitter the raw gap is smaller (−0.005) but the adjusted gap stays negative (−0.022, CI95 −0.032 to −0.012).
 
 Underlying data: per-context floors against the stored single-draw error.
 
