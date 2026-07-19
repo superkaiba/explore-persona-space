@@ -33,6 +33,17 @@
 # EPM_VLLM_ENFORCE_EAGER / EPM_VLLM_DISABLE_PREFIX_CACHING (threaded into
 # issue1417_gen.py; default off — ONE engine config across every cell of the
 # comparison, plan §10).
+#
+# I1417_REFIT=1 (with I1417_PHASE=C): registered-selector refit round —
+# re-runs stage-stores -> anchors -> fits -> battery -> summary with the
+# frozen instrument's registered mitigations (--lambda-selection
+# inner-group-cv --gcv-dof-cap 0.9) and per-fit selector logging, writing to
+# $OUT_DIR/refit (v1 outputs are the published void record — never resumed
+# over, never overwritten) while READING the v1 judge kept-sets via
+# --judge-dir $OUT_DIR. Figures are skipped in refit mode (the analyzer
+# regenerates from the refit JSONs). Inner-group-CV is MORE expensive per fit
+# than GCV (4 inner eighs per fold prep + a per-target inner RSS curve) —
+# raise I1417_PILOT_BUDGET_H if the PC-3 pilot rc-7 aborts on projected cost.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$PWD}}"
@@ -51,6 +62,8 @@ FIG_DIR="${FIG_DIR:-figures/issue_1417}"
 LOG_DIR="${LOG_DIR:-${WORKLOAD_ROOT:-/workspace}/logs}"
 SMOKE="${SMOKE:-0}"
 SKIP_SMOKE="${SKIP_SMOKE:-0}"
+REFIT="${I1417_REFIT:-0}"
+BAT_OUT_DIR=""  # phase-C battery out-dir override (refit mode: $OUT_DIR/refit)
 SKIP_UPLOAD="${SKIP_UPLOAD:-0}"
 SKIP_PUSH="${SKIP_PUSH:-0}"
 SMOKE_N="${SMOKE_N:-50}"
@@ -91,8 +104,8 @@ print(f"[i1417-run] headroom {phase}: {free:.1f} GB free at {path} (need {need})
 PY
 }
 
-write_sentinel() {  # write_sentinel <kind> <gate> <summary_json_path> <elapsed_h>
-  local kind="$1" gate="$2" note_path="$3" elapsed_h="$4"
+write_sentinel() {  # write_sentinel <kind> <gate> <summary_json_path> <elapsed_h> [out_dir]
+  local kind="$1" gate="$2" note_path="$3" elapsed_h="$4" outd="${5:-$OUT_DIR}"
   local slug epoch dest
   slug=$(echo "$kind" | tr ':' '_')
   epoch=$(date +%s)
@@ -101,7 +114,7 @@ write_sentinel() {  # write_sentinel <kind> <gate> <summary_json_path> <elapsed_
   else
     dest="$LOG_DIR/issue-${ISSUE}-${slug}-${epoch}.json"
   fi
-  uv run python - "$kind" "$gate" "$note_path" "$dest" "$OUT_DIR" "$FIG_DIR" "$elapsed_h" <<'PY'
+  uv run python - "$kind" "$gate" "$note_path" "$dest" "$outd" "$FIG_DIR" "$elapsed_h" <<'PY'
 import json
 import os
 import subprocess
@@ -423,7 +436,7 @@ phase_c_lane() {  # phase_c_lane <gpu> <model> <mode> [extra battery args...]
   local gpu="$1" model="$2" mode="$3"
   shift 3
   export CUDA_VISIBLE_DEVICES="$gpu"
-  local common=(--data-dir "$DATA_DIR" --out-dir "$OUT_DIR" "$@")
+  local common=(--data-dir "$DATA_DIR" --out-dir "${BAT_OUT_DIR:-$OUT_DIR}" "$@")
   if [ "$mode" = "full" ]; then
     uv run python scripts/issue1417_battery.py --stage-stores --model "$model" "${common[@]}"
     stage_own_stores "$model"
@@ -535,6 +548,39 @@ run_smoke() {
   echo "[phase=smoke_figures]"
   uv run python scripts/issue1417_figures.py --out-dir "$out_dir" --fig-dir "$fig_dir"
 
+  # Refit leg (registered-selector refit round): the SAME chain at tiny n with
+  # the SAME flags the I1417_REFIT=1 phase C passes — versioned refit out-dir,
+  # v1-judge read-only, inner-group-cv + dof cap threaded into every fit site.
+  echo "[phase=smoke_refit_fits_battery]"
+  local refit_common=(--data-dir "$data_dir" --out-dir "$out_dir/refit" --judge-dir "$out_dir" \
+    --smoke --lambda-selection inner-group-cv --gcv-dof-cap 0.9)
+  for model in "${MODELS[@]}"; do
+    uv run python scripts/issue1417_battery.py --anchors --model "$model" "${refit_common[@]}"
+    uv run python scripts/issue1417_battery.py --fits --model "$model" "${refit_common[@]}"
+    uv run python scripts/issue1417_battery.py --battery --model "$model" "${refit_common[@]}"
+  done
+  uv run python scripts/issue1417_battery.py --summary "${refit_common[@]}"
+  # Selector-log presence assert: the refit flags must be visibly threaded —
+  # a refit cell JSON carries the per-(layer, fold) selector record and the
+  # summary carries refit_config (fail loud here, not on the pod).
+  uv run python - "$out_dir/refit" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+refit = Path(sys.argv[1])
+cells = sorted(refit.glob("cells/cells_*.json"))
+with_sel = [
+    p for p in cells if "selector_per_layer_fold" in json.loads(p.read_text())
+]
+assert with_sel, f"no refit cell JSON carries selector_per_layer_fold ({len(cells)} cells)"
+summary = json.loads((refit / "battery_summary.json").read_text())
+assert summary.get("refit_config", {}).get("lambda_selection") == "inner-group-cv", (
+    "refit summary missing refit_config.lambda_selection"
+)
+print(f"[i1417-run] refit selector-log assert PASS ({len(with_sel)}/{len(cells)} cells)")
+PY
+
   write_sentinel "epm:smoke-result" "smoke" "$out_dir/battery_summary.json" "smoke"
   log "smoke pipeline complete (root: $smoke_root)"
 }
@@ -566,6 +612,17 @@ main() {
       ;;
     C)
       headroom "$DATA_DIR" 125 "phase-c"
+      local refit_args=()
+      if [ "$REFIT" = "1" ]; then
+        # Registered-selector refit (see the header block): versioned out-dir,
+        # v1 judge kept-sets read-only, registered mitigations threaded into
+        # every fit site. v1 outputs are never resumed over (different out-dir)
+        # and never overwritten (writes land under refit/ only).
+        BAT_OUT_DIR="$OUT_DIR/refit"
+        mkdir -p "$BAT_OUT_DIR"
+        refit_args=(--judge-dir "$OUT_DIR" --lambda-selection inner-group-cv --gcv-dof-cap 0.9)
+        log "REFIT mode: battery out-dir=$BAT_OUT_DIR judge-dir=$OUT_DIR"
+      fi
       echo "[phase=pc_stage_inputs]"
       stage_phase_c_inputs
       uv run python scripts/issue1417_battery.py --gate-g2 --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
@@ -581,22 +638,27 @@ main() {
       # 2026-07-18T15:14Z crash). Budget 1.5 h => abort at 3 h/lane: clears the
       # measured 2.17 h worst-case uniform projection with ~38% margin while
       # still bounding a genuine runaway (~10x the naive basis still aborts).
-      run_phase_c_lanes full \
+      run_phase_c_lanes full "${refit_args[@]}" \
         --cosine-null-draws "${I1417_COSINE_NULL_DRAWS:-100}" \
         --collapse-null-draws "${I1417_COLLAPSE_NULL_DRAWS:-100}" \
         --pilot-budget-h "${I1417_PILOT_BUDGET_H:-1.5}"
       echo "[phase=pc_summary]"
-      uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
-      echo "[phase=pc_figures]"
-      uv run python scripts/issue1417_figures.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR"
+      uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" \
+        --out-dir "${BAT_OUT_DIR:-$OUT_DIR}" "${refit_args[@]}"
+      if [ "$REFIT" != "1" ]; then
+        echo "[phase=pc_figures]"
+        uv run python scripts/issue1417_figures.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR"
+      else
+        log "figures skipped in refit mode (analyzer regenerates from refit JSONs)"
+      fi
       echo "[phase=pc_finalize]"
       commit_and_push_results
       if [ -n "${EPS_DELIVERABLES_OK_PATH:-}" ]; then
         date -u +%Y-%m-%dT%H:%M:%SZ > "$EPS_DELIVERABLES_OK_PATH"
         log "deliverables-ok stamped at $EPS_DELIVERABLES_OK_PATH (post push-verify)"
       fi
-      write_sentinel "epm:results" "results" "$OUT_DIR/battery_summary.json" \
-        "$(awk -v s=$((SECONDS - t0)) 'BEGIN{printf "%.2f", s/3600}')"
+      write_sentinel "epm:results" "results" "${BAT_OUT_DIR:-$OUT_DIR}/battery_summary.json" \
+        "$(awk -v s=$((SECONDS - t0)) 'BEGIN{printf "%.2f", s/3600}')" "${BAT_OUT_DIR:-$OUT_DIR}"
       ;;
     *)
       log "FATAL: set I1417_PHASE=A|C (or SMOKE=1)"
