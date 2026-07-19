@@ -4117,8 +4117,8 @@
     "1528": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1528",
-      "status": "reviewing",
+      "path": "tasks/completed/1528",
+      "status": "completed",
       "title": "workflow-fix: guard deny sidecar JSONL"
     },
     "1529": {
