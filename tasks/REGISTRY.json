@@ -4124,8 +4124,8 @@
     "1529": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1529",
-      "status": "proposed",
+      "path": "tasks/planning/1529",
+      "status": "planning",
       "title": "workflow-fix: /daily driver forwards filer advisories"
     },
     "153": {
