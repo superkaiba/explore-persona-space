@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1548,
+  "highest_id": 1549,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4274,6 +4274,13 @@
       "path": "tasks/proposed/1548",
       "status": "proposed",
       "title": "workflow-fix: surface cap-parked free-analysis follow-ups"
+    },
+    "1549": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1549",
+      "status": "proposed",
+      "title": "daily-held: reap stranded old-socket tmux server (~55 GiB)"
     },
     "155": {
       "has_clean_result": false,
