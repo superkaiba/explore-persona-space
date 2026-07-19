@@ -1,0 +1,310 @@
+{
+  "commit": "e4dd5d5cf0",
+  "created": "2026-07-19T10:22:41Z",
+  "figsize": [
+    8.0,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.12,
+      "non-source / source install fraction": 0.7795631998532089,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12,
+      "non-source / source install fraction": 0.842779255734689,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12,
+      "non-source / source install fraction": 0.7868931093919185,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12,
+      "non-source / source install fraction": 0.7473831320938339,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.88,
+      "non-source / source install fraction": 0.18390360258513191,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.88,
+      "non-source / source install fraction": 0.19427334236679794,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.12,
+      "non-source / source install fraction": 0.2775598612471696,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.12,
+      "non-source / source install fraction": 0.23818953958419525,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.88,
+      "non-source / source install fraction": -0.0683425493396368,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.88,
+      "non-source / source install fraction": -0.0392434571674431,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.12,
+      "non-source / source install fraction": -0.003506947517479422,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.12,
+      "non-source / source install fraction": 0.0013371450186219738,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.88,
+      "non-source / source install fraction": 0.7820591345128205,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.88,
+      "non-source / source install fraction": 0.7067822778714182,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.12,
+      "non-source / source install fraction": 0.7392566095217524,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.12,
+      "non-source / source install fraction": 0.7641974141051127,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.12,
+      "y": 0.8437776484697553,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.12,
+      "y": 0.807456494983447,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.12,
+      "y": 0.8192642767417394,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12,
+      "y": 0.7847836261502854,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.88,
+      "y": 0.23517603698176825,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.88,
+      "y": 0.22782254133855304,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.12,
+      "y": 0.3151426611963104,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.12,
+      "y": 0.2680919517230345,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.88,
+      "y": -0.05477529910417833,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.88,
+      "y": -0.02921229472468519,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.12,
+      "y": -0.0013081455024847046,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.12,
+      "y": 0.0034604896607674436,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.88,
+      "y": 0.8200308123510341,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.88,
+      "y": 0.7733345636839558,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.12,
+      "y": 0.7912141132132452,
+      "label": "s137",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.12,
+      "y": 0.7887827219579093,
+      "label": "s42",
+      "_kind": "scatter",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "EOS-margin space",
+        "ylabel": "non-source / source install fraction",
+        "legend_labels": [
+          "contrastive",
+          "positive-only"
+        ],
+        "annotations": [
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42"
+        ],
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "log-prob space",
+        "annotations": [
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42"
+        ],
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ]
+      }
+    ]
+  }
+}

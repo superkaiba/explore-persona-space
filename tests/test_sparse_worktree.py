@@ -1129,5 +1129,37 @@ def test_existing_branch_resume_needs_no_network(repo: Path, tmp_path: Path) -> 
     assert _git(wt, "rev-parse", "HEAD").stdout.strip() == pre_tip
 
 
+# --- #1530: branch creation never touches the parent checkout's HEAD -------
+
+
+def test_new_worktree_never_moves_repo_root_head(repo: Path, tmp_path: Path) -> None:
+    """#1530 F3 pin: an end-to-end ``new_worktree.sh`` run leaves the PARENT
+    checkout's ``symbolic-ref HEAD`` at ``refs/heads/main`` with ZERO new
+    parent-HEAD reflog entries — `worktree add --no-checkout -b` plus the
+    worktree-local materializing checkout never touch the shared commit
+    target's HEAD (the incident's "Already on '<branch>'" line is the
+    worktree-local checkout, not a root HEAD move). Pins the forensic
+    finding against future script edits.
+    """
+    _add_diverged_origin(repo, tmp_path)
+    assert _git(repo, "symbolic-ref", "HEAD").stdout.strip() == "refs/heads/main"
+    reflog_before = len(_git(repo, "reflog", "show", "HEAD").stdout.splitlines())
+
+    wt = tmp_path / "wt-1530-head"
+    res = _run_helper(repo, wt, "issue-9999")
+    assert res.returncode == 0, res.stderr
+
+    assert _git(repo, "symbolic-ref", "HEAD").stdout.strip() == "refs/heads/main", (
+        "parent checkout HEAD moved off main during worktree creation"
+    )
+    reflog_after = len(_git(repo, "reflog", "show", "HEAD").stdout.splitlines())
+    assert reflog_after == reflog_before, (
+        f"parent HEAD reflog gained {reflog_after - reflog_before} entries during "
+        f"worktree creation (must be 0)"
+    )
+    # The new worktree's OWN HEAD is on the new branch (worktree-local state).
+    assert _git(wt, "symbolic-ref", "--short", "HEAD").stdout.strip() == "issue-9999"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

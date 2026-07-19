@@ -620,13 +620,16 @@ unrelated open session — the literal #1476 mechanism, whose filed
 title/target/body shared nothing with the ratchet bug its session also
 fixed — is invisible to any filing-time overlap; the open arm covers the
 visibly-overlapping class only (the open transpose of #1350-vs-#1329).
-(b) Both advisory arms print to the FILER's stderr only: a watcher
-`proposed_infra_sweep` backstop dispatch (~10 min later) never sees them,
-and the /daily route-2 driver (`daily_drive_filings.py`) invokes the filer
-with `capture_output=True` and persists only a ~300-char output tail on a
-successful filing, so the advisory may not reach the /daily session either
-— the same accepted-limitation class as the #1399/#1173/#1283
-filer-stderr-only legs.
+(b) Both advisory arms print to the FILER's stderr: a watcher
+`proposed_infra_sweep` backstop dispatch (~10 min later) never sees them —
+the same accepted-limitation class as the #1399/#1173/#1283
+filer-stderr-only legs. The /daily route-2 driver leg is CLOSED (#1529):
+`daily_drive_filings.py` extracts the ADVISORY block from the captured
+filer stderr on its success path, re-prints it verbatim (driver stderr,
+after the `FILED` line) so the /daily session sees it in-band, and
+persists it in the `filed.jsonl` row's conditional `advisories` field;
+the headers' inline remedy text (verify, then archive the just-filed task
++ stop its spawned session) rides along verbatim.
 
 ## Recursion guard
 

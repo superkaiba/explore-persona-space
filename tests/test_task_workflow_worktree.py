@@ -28,6 +28,7 @@ What we cover:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -1404,6 +1405,240 @@ def test_rebase_knobs_reject_non_finite_values(tmp_path: Path) -> None:
         )
         assert proc.returncode != 0, f"{fn} accepted a non-finite knob: {proc.stdout!r}"
         assert "must be finite" in proc.stderr, f"guard missing for {fn}: {proc.stderr!r}"
+
+
+# ─── #1530 commit-site HEAD guard (`_assert_commit_head`) ──────────────────
+#
+# In-process tests (unlike the subprocess idiom above): the guard's contract
+# is exactly the STALE (pid, cwd) resolver-cache window, which needs the cache
+# primed, mutated out-of-band, and observed within ONE process. The REAL
+# resolver runs against a tmp repo via a `_MODULE_DIR` monkeypatch (the
+# resolver anchors on the module dir, so pointing it into the tmp repo runs
+# every production body: cache, branch guard, managed-worktree routing).
+
+
+@pytest.fixture
+def guard_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Tmp primary repo + task_workflow resolving to it via the REAL resolver.
+
+    ``_MODULE_DIR`` is monkeypatched into the tmp repo so ``repo_root()``,
+    the (pid, cwd) cache, ``invalidate_cache()`` self-heal, and the managed
+    ``_task-main-pin`` routing all execute their production bodies. The
+    flock + forensic sidecars are redirected under tmp so no test can touch
+    (or contend with) the REAL ``~/.task-workflow`` of live sessions.
+    Yields ``(repo, tw)``; teardown drops the tmp resolution from the cache.
+    """
+    repo = tmp_path / "repo"
+    _make_main_repo(repo)
+    sys.path.insert(0, _REPO_SRC)
+    import explore_persona_space.task_workflow as tw
+
+    tw.invalidate_cache()
+    monkeypatch.setattr(tw, "_MODULE_DIR", repo)
+    lock_dir = tmp_path / ".task-workflow"
+    monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)
+    monkeypatch.setattr(tw, "LOCK_PATH", lock_dir / "lock")
+    monkeypatch.setattr(tw, "DEFERRED_COMMITS_LOG", lock_dir / "deferred-commits.jsonl")
+    monkeypatch.setattr(tw, "STRANDED_COMMITS_LOG", lock_dir / "stranded-commits.jsonl")
+    yield repo, tw
+    # Drop the tmp-repo resolution so later tests in this process never
+    # inherit it (the monkeypatch restores _MODULE_DIR, not the lru cache).
+    tw.invalidate_cache()
+
+
+def _rev_parse(repo: Path, ref: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", ref],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
+def test_commit_head_guard_refuses_after_headswitch_under_stale_cache(guard_repo) -> None:
+    """#1530 durability pin (end-to-end, real bodies): a marker append under a
+    STALE resolver cache — primary HEAD switched to a feature branch
+    OUT-OF-BAND after the cache was primed on `main` — is REFUSED at the
+    commit site (NO commit lands on the feature branch), degrades to the
+    sanctioned deferred-commit forensic row (the caller returns success;
+    exactly ONE marker row appended — no duplicate-append retry), and
+    self-heals: the guard invalidates the resolver cache so the NEXT
+    resolution auto-routes through the managed main-pin worktree.
+    """
+    repo, tw = guard_repo
+    task_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="guard target"))
+    assert tw.repo_root() == repo  # cache primed while HEAD is on main
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "-b", "feat/oob"], check=True)
+    feat_tip_before = _rev_parse(repo, "feat/oob")
+
+    payload = tw.post_event(task_id, "epm:guard-probe", by="test", note="stale-cache probe")
+    assert payload["kind"] == "epm:guard-probe"  # caller saw SUCCESS (deferred, not raised)
+
+    # (a) Forensic row landed, naming the guard class (test-1 hardening).
+    rows = [
+        json.loads(line)
+        for line in tw.DEFERRED_COMMITS_LOG.read_text().splitlines()
+        if line.strip()
+    ]
+    assert len(rows) == 1, f"expected exactly one deferred-commit row, got {rows}"
+    assert rows[0]["error"] == "CommitHeadGuardError", rows[0]
+    assert "#1530" in rows[0]["stderr_tail"], rows[0]
+    # (b) NO commit object was created on the wrong ref.
+    assert _rev_parse(repo, "feat/oob") == feat_tip_before, "commit stranded on feature branch"
+    # (c) Exactly ONE marker row landed in the PRIMARY working tree (durable
+    # append preserved; no duplicate). Read the primary path directly — the
+    # invalidated cache now routes find_task_path through the managed pin,
+    # whose tree holds only COMMITTED state.
+    events_path = repo / "tasks" / "proposed" / str(task_id) / "events.jsonl"
+    kinds = [json.loads(line)["kind"] for line in events_path.read_text().splitlines() if line]
+    assert kinds.count("epm:guard-probe") == 1, kinds
+    # (d) Self-heal: the next resolution auto-routes through the managed pin.
+    routed = tw.repo_root()
+    assert routed == repo / ".claude" / "worktrees" / "_task-main-pin", routed
+    assert tw._is_routed_root(routed)
+
+
+def test_commit_head_guard_transient_move_recovers(guard_repo, monkeypatch) -> None:
+    """#1530 AC4: a TRANSIENT HEAD move (restored within the guard's single
+    0.5s re-probe) commits normally on `main` — no spurious failure. The only
+    fake is ``time.sleep`` at the timing boundary (the flip restores `main`
+    during the re-probe wait); the guard body + every git call are real.
+    """
+    repo, tw = guard_repo
+    assert tw.repo_root() == repo  # prime cache on main
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "-b", "feat/transient"], check=True)
+    target = repo / "tasks" / "note.txt"
+    target.write_text("probe\n")
+    main_count_before = int(
+        subprocess.run(
+            ["git", "-C", str(repo), "rev-list", "--count", "main"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    sleeps: list[float] = []
+
+    def flipping_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        # The transient checkout transit ends during the guard's re-probe wait.
+        subprocess.run(["git", "-C", str(repo), "checkout", "-q", "main"], check=True)
+
+    monkeypatch.setattr(tw.time, "sleep", flipping_sleep)
+    tw._git_commit([target], "transient-move probe")
+    assert sleeps == [tw._COMMIT_HEAD_REPROBE_SLEEP_S], sleeps
+    main_count_after = int(
+        subprocess.run(
+            ["git", "-C", str(repo), "rev-list", "--count", "main"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    assert main_count_after == main_count_before + 1, "commit did not land on main"
+    stranded = subprocess.run(
+        ["git", "-C", str(repo), "log", "--oneline", "main..feat/transient"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert stranded == "", f"commit stranded on the transient branch:\n{stranded}"
+
+
+def test_commit_head_guard_routed_attached_head_raises(guard_repo) -> None:
+    """#1530 routed arm: the managed main-pin worktree with HEAD unexpectedly
+    ATTACHED to a branch is refused with a plain ``RuntimeError`` — NOT
+    ``CommitHeadGuardError`` — before any commit (a commit would advance the
+    attached branch and break the CAS advance-main contract), and
+    ``_commit_after_durable_append`` RE-RAISES it (routed appends are never
+    deferred).
+    """
+    repo, tw = guard_repo
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "-b", "feat/park"], check=True)
+    tw.invalidate_cache()
+    managed = tw.repo_root()  # routes: creates the managed pin (detached)
+    assert tw._is_routed_root(managed), managed
+    # Corrupt the pin contract: attach the managed worktree's HEAD to a branch.
+    subprocess.run(["git", "-C", str(managed), "checkout", "-q", "-b", "oops"], check=True)
+    oops_tip_before = _rev_parse(managed, "oops")
+    target = managed / "tasks" / "probe.txt"
+    target.write_text("routed probe\n")
+
+    with pytest.raises(RuntimeError) as excinfo:
+        tw._git_commit([target], "routed attached probe")
+    assert not isinstance(excinfo.value, tw.CommitHeadGuardError), excinfo.value
+    assert "expected DETACHED" in str(excinfo.value), excinfo.value
+    assert _rev_parse(managed, "oops") == oops_tip_before, "commit advanced the attached branch"
+
+    # The deferral wrapper must RE-RAISE (never defer) the routed guard failure.
+    with pytest.raises(RuntimeError) as excinfo2:
+        tw._commit_after_durable_append(
+            [target], "routed attached probe", task_id=1, op="test-routed"
+        )
+    assert not isinstance(excinfo2.value, tw.CommitHeadGuardError), excinfo2.value
+    assert not tw.DEFERRED_COMMITS_LOG.exists(), "routed guard failure must never defer"
+
+
+def test_commit_after_durable_append_defers_head_guard_error(guard_repo, monkeypatch) -> None:
+    """#1530 D3 unit-pin (isinstance ordering): a ``CommitHeadGuardError`` from
+    ``_git_commit`` is deferred DIRECTLY — the routed ``repo_root()`` re-check
+    must NOT run, because the guard already invalidated the resolver cache and
+    a live re-resolve would route to the managed worktree and wrongly re-raise
+    a deferrable primary-path failure. ``repo_root`` is monkeypatched to a
+    routed-SHAPED path, so a naive ``_is_routed_root(repo_root())``-first
+    ordering would re-raise and FAIL this test.
+    """
+    repo, tw = guard_repo
+    routed_shape = repo / ".claude" / "worktrees" / "_task-main-pin"
+    monkeypatch.setattr(tw, "repo_root", lambda: routed_shape)
+    assert tw._is_routed_root(routed_shape)  # the shape a post-invalidate re-resolve returns
+
+    def raising_git_commit(paths: list[Path], message: str) -> None:
+        raise tw.CommitHeadGuardError("synthetic #1530 primary guard trip")
+
+    monkeypatch.setattr(tw, "_git_commit", raising_git_commit)
+    ok = tw._commit_after_durable_append(
+        [repo / "tasks" / "x.jsonl"], "probe message", task_id=7, op="test-defer"
+    )
+    assert ok is False, "guard trip must degrade to a deferral, not re-raise"
+    rows = [
+        json.loads(line)
+        for line in tw.DEFERRED_COMMITS_LOG.read_text().splitlines()
+        if line.strip()
+    ]
+    assert len(rows) == 1 and rows[0]["error"] == "CommitHeadGuardError", rows
+
+
+def test_set_status_head_guard_error_keeps_1030_recovery_envelope(guard_repo, caplog) -> None:
+    """#1530 D8 (mirrors the #1030 MF-1 pin): a ``CommitHeadGuardError`` from
+    the status-move commit gets the same DURABLY-APPLIED recovery narration as
+    ``CalledProcessError``/``SequencerWaitTimeout``, then RE-RAISES to the
+    caller (set_status is never deferred): the transition is durably applied
+    on disk + REGISTRY, and NO deferred-commit forensic row lands.
+    """
+    repo, tw = guard_repo
+    task_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="move target"))
+    assert tw.repo_root() == repo  # cache primed on main
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "-b", "feat/move"], check=True)
+    feat_tip_before = _rev_parse(repo, "feat/move")
+
+    with (
+        caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"),
+        pytest.raises(tw.CommitHeadGuardError),
+    ):
+        tw.set_status(task_id, "planning")
+
+    new = repo / "tasks" / "planning" / str(task_id)
+    assert new.is_dir(), "transition not durably applied on disk"
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(task_id)]["path"] == f"tasks/planning/{task_id}"
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(e["kind"] == "epm:status-changed" and e.get("to") == "planning" for e in events)
+    assert any("DURABLY APPLIED" in r.getMessage() for r in caplog.records), (
+        "the #1030 recovery narration did not fire for CommitHeadGuardError"
+    )
+    assert not tw.DEFERRED_COMMITS_LOG.exists(), "set_status must never defer a guard trip"
+    assert _rev_parse(repo, "feat/move") == feat_tip_before, "commit stranded on feature branch"
 
 
 if __name__ == "__main__":

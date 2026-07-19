@@ -1,0 +1,162 @@
+{
+  "issue": 1481,
+  "phase": "po_mixes",
+  "cells": [
+    {
+      "cell_key": "imp-pers",
+      "parent_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/fu4-extended-dose-lr/cell_manifest_fu4.json",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix"
+    },
+    {
+      "cell_key": "imp-bare",
+      "parent_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/finish-impolite-bare-and-formatting-rank/cell_manifest_fu5.json",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix"
+    },
+    {
+      "cell_key": "imp-conv",
+      "parent_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/fu4-extended-dose-lr/cell_manifest_fu4.json",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix"
+    },
+    {
+      "cell_key": "imp-icl",
+      "parent_mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "pin_asserted": false,
+      "pin_source": null,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix"
+    },
+    {
+      "cell_key": "syc-pers",
+      "parent_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "train_mix_sha256": "9b679fa2f9f6853ac848dbea9b6d499d6bcd7d3dc4fdcaf2a66e86b0b6cd09d5",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/sycophancy-lr-install-and-remeasure/cell_manifest_fu7.json",
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-pers/mix"
+    },
+    {
+      "cell_key": "syc-bare",
+      "parent_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
+      "train_mix_sha256": "8510ec64cf576b8aa3ed63b302d87341dcf5fbf0a58e8a42d67b8b83572bc906",
+      "pin_asserted": false,
+      "pin_source": null,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-bare/mix"
+    },
+    {
+      "cell_key": "syc-conv",
+      "parent_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
+      "train_mix_sha256": "8eecf4c858591b8b136a466a83d2bfdeacffd1e03b7b9c2020e09aa2a648027c",
+      "pin_asserted": false,
+      "pin_source": null,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-conv/mix"
+    },
+    {
+      "cell_key": "syc-icl",
+      "parent_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
+      "train_mix_sha256": "9c3df8f847df1f94998c3a7ecee580e328cad0e74f8411b85159369cd51d5d79",
+      "pin_asserted": false,
+      "pin_source": null,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/syc-icl/mix"
+    }
+  ],
+  "po_derivations": {
+    "imp-pers": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "imp-pers",
+      "parent_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/fu4-extended-dose-lr/cell_manifest_fu4.json"
+    },
+    "imp-bare": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "imp-bare",
+      "parent_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/finish-impolite-bare-and-formatting-rank/cell_manifest_fu5.json"
+    },
+    "imp-conv": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "imp-conv",
+      "parent_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/fu4-extended-dose-lr/cell_manifest_fu4.json"
+    },
+    "imp-icl": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "imp-icl",
+      "parent_mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee",
+      "pin_asserted": false,
+      "pin_source": null
+    },
+    "syc-pers": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "syc-pers",
+      "parent_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "pin_asserted": true,
+      "pin_source": "eval_results/issue_1090/sycophancy-lr-install-and-remeasure/cell_manifest_fu7.json"
+    },
+    "syc-bare": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "syc-bare",
+      "parent_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
+      "pin_asserted": false,
+      "pin_source": null
+    },
+    "syc-conv": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "syc-conv",
+      "parent_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
+      "pin_asserted": false,
+      "pin_source": null
+    },
+    "syc-icl": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "syc-icl",
+      "parent_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
+      "pin_asserted": false,
+      "pin_source": null
+    }
+  },
+  "git_commit": "f5d884df95",
+  "ts": "2026-07-18T06:38:15Z"
+}
