@@ -4271,8 +4271,8 @@
     "1548": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1548",
-      "status": "proposed",
+      "path": "tasks/planning/1548",
+      "status": "planning",
       "title": "workflow-fix: surface cap-parked free-analysis follow-ups"
     },
     "1549": {
