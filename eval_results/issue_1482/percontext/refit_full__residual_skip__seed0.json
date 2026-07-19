@@ -1,0 +1,40 @@
+{
+  "fit_id": "refit_full__residual_skip__seed0",
+  "condition": "refit_full",
+  "predictor": "residual_skip",
+  "seed": 0,
+  "n_train": 963444,
+  "wall_time_s": 2082.7,
+  "fit_meta": {
+    "n_train": 963444,
+    "base_ridge_lambda": 0.001,
+    "residual_mlp_width": 8192,
+    "lr": 0.0003,
+    "epochs_ran": 55,
+    "batch": 4096
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "test": {
+      "n": 1000,
+      "whole_map_r2": 0.8074532509818505,
+      "mean_cosine": 0.9643638857147163
+    },
+    "val": {
+      "n": 400,
+      "whole_map_r2": 0.8082582782305411,
+      "mean_cosine": 0.9652767968499398
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T07:48:17.627672Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "1"
+  }
+}
