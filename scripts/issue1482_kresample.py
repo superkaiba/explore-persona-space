@@ -528,23 +528,74 @@ def _pilot_gate(chunk_wall_s: float, output_tokens: int, n_chunk_calls: int) -> 
 
 
 def _determinism_spot_check(llm, prompt_texts5: list[str], seed: int, ref5: list[str]) -> dict:
-    """Assumption-10 verification (plan §12): re-generate the first 5 prompts at
-    the same per-request seed. 0/5 matches -> the seed is not plumbed at all ->
-    raise; partial mismatch -> WARN + record (bf16 batching can flip near-tie
-    tokens at temp 1.0 — a hard 5/5 assert would be a production-n gate at the
-    wrong severity, artifact-reuse gate-calibration rule)."""
-    if llm is None:
-        return {"skipped": "cpu-smoke stub path", "n_match": len(ref5), "n_total": len(ref5)}
-    redo = _generate_seed(llm, None, prompt_texts5, seed)
-    matches = [a == b for a, b in zip(redo, ref5, strict=True)]
-    n = sum(matches)
-    report = {"n_match": int(n), "n_total": len(matches), "per_prompt": matches, "seed": seed}
-    if n == 0:
-        raise RuntimeError(f"determinism spot-check 0/{len(matches)}: per-request seed not applied")
-    if n < len(matches):
-        logger.warning(
-            "[b1] determinism spot-check %d/%d byte-identical (near-tie jitter)", n, len(matches)
+    """Assumption-10 verification (plan §12), rewritten after the v7 crash: the old
+    check demanded byte-identity between the first-chunk BATCH generation and a
+    standalone 5-prompt re-run, but vLLM 0.11 (V1) batch-composition/scheduling
+    numerics can legitimately shift temp-1.0 sampled tokens across different batch
+    shapes EVEN WITH a correctly applied per-request ``SamplingParams.seed`` (the
+    seeded RNG fixes the sampling draws, not the logits), so 0/N there does NOT
+    prove the seed is unapplied. Discriminate seed-function from batch numerics
+    with two sub-checks on IDENTICAL standalone batch shapes:
+      (1) same-call repeatability — the same prompts generated twice at ``seed``
+          must match on >= max(1, N-1) of N (tolerates one rare
+          nondeterministic-kernel flake; per-prompt outcomes recorded);
+      (2) seed-distinctness — the same prompts once at ``seed + 1000`` (collides
+          with no registered seed: engine 42, GEN_SEEDS 43-46) must DIFFER from
+          run 1 on >= 1/N (N identical outputs across different seeds at temp 1.0
+          over <= 1024 tokens => the per-request seed is ignored).
+    Failure of either sub-check raises RuntimeError (fail-loud, G-gate class).
+    The batch-vs-standalone byte-match rate vs ``ref5`` is recorded/logged as an
+    informational diagnostic ONLY — it never gates. Runs ONCE per B1 run (the
+    caller's ``det_report is None`` gate): the seed-application mechanism is
+    engine-global, not per-seed. The CPU-smoke stub path (llm None) traverses the
+    SAME decision logic — ``_generate_seed`` stubs are seed-deterministic."""
+    n = len(prompt_texts5)
+    rep1 = _generate_seed(llm, None, prompt_texts5, seed)
+    rep2 = _generate_seed(llm, None, prompt_texts5, seed)
+    distinct = _generate_seed(llm, None, prompt_texts5, seed + 1000)
+    repeat_matches = [a == b for a, b in zip(rep1, rep2, strict=True)]
+    differs = [a != b for a, b in zip(rep1, distinct, strict=True)]
+    n_repeat, n_differ = int(sum(repeat_matches)), int(sum(differs))
+    n_batch = int(sum(a == b for a, b in zip(rep1, ref5, strict=True)))
+    repeat_floor = max(1, n - 1)
+    report = {
+        "n_total": n,
+        "n_repeat_match": n_repeat,
+        "repeat_floor": repeat_floor,
+        "n_distinct_differ": n_differ,
+        "per_prompt_repeat": repeat_matches,
+        "per_prompt_distinct_differ": differs,
+        "batch_vs_standalone_match": n_batch,  # informational only — never gates
+        "seed": seed,
+        "distinct_seed": seed + 1000,
+        "engine": "cpu-stub" if llm is None else "vllm",
+    }
+    if n_repeat < repeat_floor:
+        raise RuntimeError(
+            f"determinism spot-check: same-seed repeat {n_repeat}/{n} < floor {repeat_floor}"
+            f" — per-request seed not applied (or engine nondeterministic at a FIXED batch"
+            f" shape); per-prompt: {repeat_matches}"
         )
+    if n_differ == 0:
+        raise RuntimeError(
+            f"determinism spot-check: 0/{n} outputs differ at seed {seed + 1000} vs {seed}"
+            f" — per-request seed ignored"
+        )
+    if n_repeat < n:
+        logger.warning(
+            "[b1] determinism repeat %d/%d (one nondeterministic-kernel flake tolerated)",
+            n_repeat,
+            n,
+        )
+    logger.info(
+        "[b1] determinism: repeat=%d/%d distinct=%d/%d batch_match=%d/%d (informational)",
+        n_repeat,
+        n,
+        n_differ,
+        n,
+        n_batch,
+        n,
+    )
     return report
 
 

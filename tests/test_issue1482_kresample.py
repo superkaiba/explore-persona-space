@@ -2,7 +2,8 @@
 
 Covers the data-dependent gate branches the main smoke leg deliberately does
 not trip (degenerate-input probes: G1 fail, G2 fallback, C1 fail, sha-mismatch
-regen, empty-response drop, fetch-count assert, determinism 0/N raise), the
+regen, empty-response drop, fetch-count assert, determinism repeat-floor and
+seed-distinctness raises), the
 unbiasedness identity, largest-remainder stratification, and the inverted-CI
 errorbar clamp through the REAL hero-figure function to savefig (#547/#1335).
 All tests execute the real production bodies (pure functions — no seams
@@ -194,28 +195,68 @@ def test_pilot_gate_pass_and_refusal_branches():
 # ── determinism spot-check severity calibration ─────────────────────────────────
 
 
-def test_determinism_spot_check_raises_only_on_total_mismatch(monkeypatch):
-    ref = [f"t{i}" for i in range(5)]
-    monkeypatch.setattr(K, "_generate_seed", lambda llm, tok, texts, seed: list(ref))
-    ok = K._determinism_spot_check(object(), ["p"] * 5, 43, ref)
-    assert ok["n_match"] == 5
-    monkeypatch.setattr(
-        K, "_generate_seed", lambda llm, tok, texts, seed: [ref[0], "x", "x", "x", "x"]
-    )
-    warn = K._determinism_spot_check(object(), ["p"] * 5, 43, ref)
-    assert warn["n_match"] == 1  # partial mismatch -> WARN + record, no raise
-    monkeypatch.setattr(K, "_generate_seed", lambda llm, tok, texts, seed: ["x"] * 5)
-    with pytest.raises(RuntimeError, match="0/5"):
-        K._determinism_spot_check(object(), ["p"] * 5, 43, ref)
+def test_determinism_spot_check_batch_mismatch_never_gates(monkeypatch):
+    """Regression pin for the v7 crash: a 0/5 batch-vs-standalone byte-match (a
+    legitimate vLLM V1 batch-shape numerics effect) must NOT raise when the seed
+    demonstrably functions (repeat matches, distinct seed differs). Under the
+    pre-fix check this exact input raised 'per-request seed not applied'."""
+
+    def seeded(llm, tok, texts, seed):
+        return [f"s{seed}-{i}" for i in range(len(texts))]
+
+    monkeypatch.setattr(K, "_generate_seed", seeded)
+    ok = K._determinism_spot_check(object(), ["p"] * 5, 43, ["batchtext"] * 5)
+    assert ok["n_repeat_match"] == 5 and ok["n_distinct_differ"] == 5
+    assert ok["batch_vs_standalone_match"] == 0  # informational only — no raise
+    assert ok["distinct_seed"] == 1043  # off the registered seed space (42-46)
+
+
+def test_determinism_spot_check_repeat_flake_warns_not_raises(monkeypatch):
+    calls = {"n": 0}
+
+    def flaky(llm, tok, texts, seed):
+        calls["n"] += 1
+        out = [f"s{seed}-{i}" for i in range(len(texts))]
+        if calls["n"] == 2:  # one flipped prompt on the repeat run only
+            out[0] = "flake"
+        return out
+
+    monkeypatch.setattr(K, "_generate_seed", flaky)
+    warn = K._determinism_spot_check(object(), ["p"] * 5, 43, ["b"] * 5)
+    assert warn["n_repeat_match"] == 4  # >= floor 4/5 -> WARN + record, no raise
+
+
+def test_determinism_spot_check_raises_below_repeat_floor(monkeypatch):
+    calls = {"n": 0}
+
+    def unrepeatable(llm, tok, texts, seed):  # 2/5 stable across same-seed calls
+        calls["n"] += 1
+        return [f"call{calls['n']}-{i}" if i < 3 else f"fix-{i}" for i in range(len(texts))]
+
+    monkeypatch.setattr(K, "_generate_seed", unrepeatable)
+    with pytest.raises(RuntimeError, match="same-seed repeat 2/5"):
+        K._determinism_spot_check(object(), ["p"] * 5, 43, ["b"] * 5)
+
+
+def test_determinism_spot_check_raises_when_seed_ignored(monkeypatch):
+    monkeypatch.setattr(K, "_generate_seed", lambda llm, tok, texts, seed: ["same"] * len(texts))
+    with pytest.raises(RuntimeError, match="seed ignored"):
+        K._determinism_spot_check(object(), ["p"] * 5, 43, ["same"] * 5)
 
 
 def test_determinism_spot_check_real_body_cpu_stub():
-    """Real bodies end-to-end on the CPU stub path (no monkeypatch): the stub
-    texts are seed-deterministic, so the spot-check matches 5/5."""
+    """Real body end-to-end on the CPU stub path (no monkeypatch): stub texts are
+    seed-deterministic, so repeat matches N/N and seed+1000 differs N/N. Also pins
+    the scaled floor max(1, N-1) at the 2-row CPU-smoke bundle size."""
     texts = ["a", "b", "c", "d", "e"]
     ref = K._generate_seed(None, None, texts, seed=43)
     rep = K._determinism_spot_check(None, texts, 43, ref)
-    assert rep["n_match"] == rep["n_total"]
+    assert rep["n_repeat_match"] == rep["n_total"] == 5
+    assert rep["n_distinct_differ"] == 5
+    assert rep["batch_vs_standalone_match"] == 5
+    assert rep["engine"] == "cpu-stub"
+    small = K._determinism_spot_check(None, texts[:2], 43, ref[:2])
+    assert small["repeat_floor"] == 1 and small["n_repeat_match"] == 2
 
 
 # ── empty-response drop + tokenize seam (real tokenizer if cached) ──────────────
