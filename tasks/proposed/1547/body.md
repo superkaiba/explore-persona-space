@@ -80,7 +80,7 @@ crash-persist upload retry budget in `backends/gcp.py`.
 
 ## Provenance
 
-- workflow_fix_target: src/explore_persona_space/orchestrate/hub.py, src/explore_persona_space/backends/gcp.py, .claude/rules/upload-policy.md
+- target files: src/explore_persona_space/orchestrate/hub.py, src/explore_persona_space/backends/gcp.py, .claude/rules/upload-policy.md (wf_fix: false — not a recursion-guarded workflow-fix session)
 - fingerprint: 0d5171b8310a
 
 Surfaced problem (c0-P2 + c2-P5 + c5-P6 + c3-P8): 3+ independent same-day HF
