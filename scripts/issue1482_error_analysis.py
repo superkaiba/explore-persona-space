@@ -93,6 +93,20 @@ COMMITTED_PERDIR_PCA = PROJECT_ROOT / "eval_results" / "issue_1482" / "perdirect
 COMMITTED_RIDGE_JSON = (
     PROJECT_ROOT / "eval_results" / "issue_1482" / "percontext" / "refit_holdout__ridge__seed0.json"
 )
+# G1 leg (i) split-sha anchors, pinned as LITERALS from the git-committed
+# eval_results/issue_1482/split_1482.json @ origin/main. Production --out-eval defaults to
+# the SAME path p0 regenerates split_1482.json into (fresh pod: resume predicate false ->
+# rebuild + overwrite), so a disk read of the "committed" side would compare the regenerated
+# doc against itself and pass unconditionally (round-1 code review, concern
+# g1-split-sha-leg-self-compare). A legitimate future split re-pin must update these
+# constants deliberately: tests/test_issue1482_pdshrink.py pins them to the committed file
+# so silent drift fails loud in CI.
+PDSHRINK_COMMITTED_SPLIT_SHAS: dict[str, str] = {
+    "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+    "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+}
 
 PREDICTORS_ALL = list(N1M.PREDICTORS)  # ridge, mlp_w8192, mlp_w32768, residual_skip, krr_nystrom
 
@@ -2466,8 +2480,10 @@ def phase_pdshrink(args) -> None:
     r2_repro = _per_feature_metrics(
         pred_h_parent.astype(np.float16).astype(np.float64) @ top, yh_rot
     )["r2"]
+    # Leg (i): compare the REGENERATED doc against PINNED committed sha literals — never a
+    # disk read of COMMITTED_SPLIT_1482, which production p0 overwrites in place (self-compare,
+    # concern g1-split-sha-leg-self-compare).
     regen_split = json.loads((args.out_eval / "split_1482.json").read_text())
-    committed_split = json.loads(COMMITTED_SPLIT_1482.read_text())
 
     def _dig(doc: dict, path: tuple):
         for k in path:
@@ -2483,7 +2499,10 @@ def phase_pdshrink(args) -> None:
         "pinned_test_sha256": ("pinned_test_sha256",),
     }
     sha_compare = {
-        name: {"regenerated": _dig(regen_split, p), "committed": _dig(committed_split, p)}
+        name: {
+            "regenerated": _dig(regen_split, p),
+            "committed": PDSHRINK_COMMITTED_SPLIT_SHAS[name],
+        }
         for name, p in sha_fields.items()
     }
     split_sha_match = all(

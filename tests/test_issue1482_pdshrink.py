@@ -186,6 +186,24 @@ def test_gate_halt_pass_writes_and_returns(tmp_path):
     assert json.loads((tmp_path / "gates.json").read_text())["verdict"] == "PASS"
 
 
+def test_g1_committed_split_sha_constants_pin_committed_file():
+    """G1 leg (i) anchors (concern g1-split-sha-leg-self-compare): the gate compares the
+    REGENERATED split doc's sha fields against PDSHRINK_COMMITTED_SPLIT_SHAS literals,
+    never a disk read — production --out-eval defaults to the very path p0 regenerates
+    split_1482.json into, so a file-vs-file compare is a self-compare. This test pins
+    the constants to the git-committed split doc: a legitimate future split re-pin
+    must update the constants deliberately (this fails loud) rather than drift."""
+    doc = json.loads(D.COMMITTED_SPLIT_1482.read_text())
+    assert {
+        "train_full_sha256": doc["train_full_sha256"],
+        "holdout_sha256": doc["holdout"]["sha256"],
+        "pinned_val_sha256": doc["pinned_val_sha256"],
+        "pinned_test_sha256": doc["pinned_test_sha256"],
+    } == D.PDSHRINK_COMMITTED_SPLIT_SHAS
+    for v in D.PDSHRINK_COMMITTED_SPLIT_SHAS.values():
+        assert len(v) == 64 and set(v) <= set("0123456789abcdef"), v
+
+
 # ── batched paired bootstrap ─────────────────────────────────────────────────────
 
 
@@ -212,7 +230,7 @@ def test_bootstrap_identical_arms_give_zero_delta_and_is_deterministic():
 # ── resume regime guard (data-dependent gate probe) ──────────────────────────────
 
 
-def test_resume_regime_mismatch_raises(tmp_path, monkeypatch):
+def test_resume_regime_mismatch_raises(tmp_path):
     """phase_pdshrink refuses an out dir holding a run under a DIFFERENT regime
     (the #722 resume-key rule); a MATCHING regime skips cleanly."""
     import argparse
