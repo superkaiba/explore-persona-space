@@ -1,7 +1,7 @@
 ---
 title: 'Matched-install contrastive containment is real but narrow: it generalizes
-  past the trained negative panel only for impolite, and dissolves under install normalization
-  for the marker (MODERATE confidence)'
+  past the trained negative panel only for impolite, and mostly dissolves under install
+  normalization for the marker (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-17T22:08:29Z'
