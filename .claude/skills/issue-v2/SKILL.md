@@ -513,7 +513,9 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
 - **Zero-GPU floor** (`cost_class: free-analysis`, `est_gpu_hours: 0`) — AUTO-RUN
   inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only;
   direct-to-main script commits pass the inline payload lint gate (v1 SKILL.md
-  Step 9a-ter § Inline payload lint gate).
+  Step 9a-ter § Inline payload lint gate); a cap-parked follow-up gets the
+  `followup-parked-by-cap` `epm:progress` note (v1 SKILL.md Step 9a-ter
+  § Cap-park surfacing, #1548).
 - **Cheap GPU band** (`0 < est_gpu_hours < 10` — the v2 threshold, LOWERED from
   v1's 20) — AUTO-RUN via the same-issue follow-up loop, cap 2 rounds. Strict
   `< 10` (exactly 10 does NOT auto-run). A `same`-question proposal with a
