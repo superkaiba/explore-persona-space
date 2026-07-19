@@ -9814,7 +9814,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # #1513 added the between-phase cache-reap trigger (merged with #1512's
     # smoke-gate slice-arithmetic clause, +29 B and +27 B on the 862 B base;
     # re-measured row 918 B). Cap = measured + <=40.
-    "gotchas": 940,
+    # #1526 added the off-pod-phase upload-set trigger (row 918 B -> 972 B).
+    # Cap = measured + <=40.
+    "gotchas": 1000,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
