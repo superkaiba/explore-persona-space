@@ -1,6 +1,7 @@
 ---
-title: Context-augmentation effects on the context→answer-state transport map + dose-matched
-  context-distillation in-weights comparison
+title: Fact, instruction, and persona context augmentations all fell under the manipulation-check
+  floor (only format constraints passed), stopping the transport-map run at its kill
+  gate (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-18T01:29:02Z'
