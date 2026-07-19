@@ -1,5 +1,6 @@
 ---
-title: 'workflow-fix: pre-reg audit never scans v4 ## Results prose'
+title: 'workflow-fix: pre_reg audit missed bare ''registered estimator'' — head-noun
+  gap, not v4 section scoping (#1482 escape)'
 kind: infra
 tags:
 - wf-fix
