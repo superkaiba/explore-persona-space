@@ -1,0 +1,144 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:22Z",
+  "figsize": [
+    8.8,
+    3.0
+  ],
+  "points": [
+    {
+      "x": -0.261,
+      "verdict-arm Tier-1 rate": 0.6,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.099,
+      "verdict-arm Tier-1 rate": 0.65,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.099,
+      "verdict-arm Tier-1 rate": 0.66,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.261,
+      "verdict-arm Tier-1 rate": 0.63,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.739,
+      "verdict-arm Tier-1 rate": 0.6630434782608695,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.099,
+      "verdict-arm Tier-1 rate": 0.8021978021978022,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.901,
+      "verdict-arm Tier-1 rate": 0.7096774193548387,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.261,
+      "verdict-arm Tier-1 rate": 0.7096774193548387,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.739,
+      "verdict-arm Tier-1 rate": 0.88,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.099,
+      "verdict-arm Tier-1 rate": 0.8,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.901,
+      "verdict-arm Tier-1 rate": 0.92,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.261,
+      "verdict-arm Tier-1 rate": 0.89,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.739,
+      "verdict-arm Tier-1 rate": 0.81,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 3.099,
+      "verdict-arm Tier-1 rate": 0.66,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.901,
+      "verdict-arm Tier-1 rate": 0.73,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.261,
+      "verdict-arm Tier-1 rate": 0.66,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Impolite \u2014 install at matched recipe",
+        "ylabel": "verdict-arm Tier-1 rate",
+        "legend_labels": [
+          "Contrastive s42",
+          "Positive-only s42",
+          "Contrastive s137",
+          "Positive-only s137"
+        ],
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Contrastive s42",
+      "Positive-only s42",
+      "Contrastive s137",
+      "Positive-only s137"
+    ]
+  }
+}

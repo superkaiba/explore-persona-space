@@ -1,0 +1,5801 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:26Z",
+  "figsize": [
+    3.6,
+    3.4
+  ],
+  "points": [
+    {
+      "\u0394z_marker (logit space)": 10.1494140625,
+      "\u0394log P(marker)": 10.583057403564453,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 8.75,
+      "\u0394log P(marker)": 13.734943389892578,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 12.865234375,
+      "\u0394log P(marker)": 15.96511459350586,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.328125,
+      "\u0394log P(marker)": 10.651473999023438,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.2578125,
+      "\u0394log P(marker)": 7.801580429077148,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 12.78125,
+      "\u0394log P(marker)": 15.782154083251953,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 9.515625,
+      "\u0394log P(marker)": 12.736661911010742,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6875,
+      "\u0394log P(marker)": 8.888137817382812,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 8.484375,
+      "\u0394log P(marker)": 12.847339630126953,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 9.046875,
+      "\u0394log P(marker)": 12.924615859985352,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 9.4375,
+      "\u0394log P(marker)": 13.476400375366211,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.28125,
+      "\u0394log P(marker)": 7.345159530639648,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.787109375,
+      "\u0394log P(marker)": 10.544229507446289,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.8203125,
+      "\u0394log P(marker)": 8.312091827392578,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 12.21484375,
+      "\u0394log P(marker)": 11.655452728271484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 11.9609375,
+      "\u0394log P(marker)": 8.790910720825195,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 11.64453125,
+      "\u0394log P(marker)": 14.07345962524414,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 9.671875,
+      "\u0394log P(marker)": 7.6119384765625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 11.78125,
+      "\u0394log P(marker)": 13.49871826171875,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 10.8984375,
+      "\u0394log P(marker)": 10.268518447875977,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4140625,
+      "\u0394log P(marker)": 5.424676895141602,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 6.875,
+      "\u0394log P(marker)": 6.125127792358398,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1875,
+      "\u0394log P(marker)": 6.315485000610352,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.4921875,
+      "\u0394log P(marker)": 3.6716365814208984,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1572265625,
+      "\u0394log P(marker)": 4.343358993530273,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.8203125,
+      "\u0394log P(marker)": 7.348865509033203,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.05859375,
+      "\u0394log P(marker)": 7.374383926391602,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.75,
+      "\u0394log P(marker)": 4.401514053344727,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.29296875,
+      "\u0394log P(marker)": 4.329990386962891,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 6.201171875,
+      "\u0394log P(marker)": 4.163801193237305,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 4.6484375,
+      "\u0394log P(marker)": 6.309734344482422,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 7.5556640625,
+      "\u0394log P(marker)": 4.885782241821289,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.875,
+      "\u0394log P(marker)": 4.424551010131836,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 7.59375,
+      "\u0394log P(marker)": 6.218971252441406,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 7.5390625,
+      "\u0394log P(marker)": 6.789533615112305,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.44921875,
+      "\u0394log P(marker)": 3.526041030883789,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 4.9296875,
+      "\u0394log P(marker)": 6.990316390991211,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 7.66015625,
+      "\u0394log P(marker)": 6.660192489624023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 6.55078125,
+      "\u0394log P(marker)": 4.261501312255859,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 5.31640625,
+      "\u0394log P(marker)": 8.217403411865234,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2109375,
+      "\u0394log P(marker)": 7.0434722900390625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.8125,
+      "\u0394log P(marker)": 8.43787956237793,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.16796875,
+      "\u0394log P(marker)": 7.419254302978516,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 7.421875,
+      "\u0394log P(marker)": 6.387346267700195,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 10.22265625,
+      "\u0394log P(marker)": 10.847665786743164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.46875,
+      "\u0394log P(marker)": 9.96534538269043,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 9.3134765625,
+      "\u0394log P(marker)": 8.063671112060547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 6.7900390625,
+      "\u0394log P(marker)": 5.333505630493164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 5.984375,
+      "\u0394log P(marker)": 4.808704376220703,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 7.9501953125,
+      "\u0394log P(marker)": 6.551397323608398,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2421875,
+      "\u0394log P(marker)": 6.4770050048828125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 7.9921875,
+      "\u0394log P(marker)": 6.445947647094727,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 9.1171875,
+      "\u0394log P(marker)": 8.493694305419922,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 9.46875,
+      "\u0394log P(marker)": 8.344121932983398,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.66015625,
+      "\u0394log P(marker)": 8.036581039428711,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.31640625,
+      "\u0394log P(marker)": 6.606611251831055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 10.30078125,
+      "\u0394log P(marker)": 9.800806045532227,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 9.9140625,
+      "\u0394log P(marker)": 9.289100646972656,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.7109375,
+      "\u0394log P(marker)": 5.947992324829102,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 8.63037109375,
+      "\u0394log P(marker)": 6.649059295654297,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394z_marker (logit space)": 6.33984375,
+      "\u0394log P(marker)": 6.786935806274414,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 9.0078125,
+      "\u0394log P(marker)": 9.383077621459961,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 8.1796875,
+      "\u0394log P(marker)": 8.055805206298828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5625,
+      "\u0394log P(marker)": 6.246828079223633,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 9.775390625,
+      "\u0394log P(marker)": 9.419721603393555,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.89453125,
+      "\u0394log P(marker)": 9.612531661987305,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 8.89501953125,
+      "\u0394log P(marker)": 7.776342391967773,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 6.33203125,
+      "\u0394log P(marker)": 6.330253601074219,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 5.4921875,
+      "\u0394log P(marker)": 5.558671951293945,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 8.439453125,
+      "\u0394log P(marker)": 7.768972396850586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 6.765625,
+      "\u0394log P(marker)": 7.039926528930664,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.69140625,
+      "\u0394log P(marker)": 8.90548324584961,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 8.869140625,
+      "\u0394log P(marker)": 8.627178192138672,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 9.85546875,
+      "\u0394log P(marker)": 9.980890274047852,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 8.5625,
+      "\u0394log P(marker)": 8.57313346862793,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.572265625,
+      "\u0394log P(marker)": 6.588167190551758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.3984375,
+      "\u0394log P(marker)": 9.015396118164062,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 10.1640625,
+      "\u0394log P(marker)": 10.414079666137695,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.36328125,
+      "\u0394log P(marker)": 6.387111663818359,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 7.939453125,
+      "\u0394log P(marker)": 8.350223541259766,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394z_marker (logit space)": 4.1015625,
+      "\u0394log P(marker)": 3.2547149658203125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 6.53125,
+      "\u0394log P(marker)": 5.406919479370117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4375,
+      "\u0394log P(marker)": 6.190286636352539,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.46484375,
+      "\u0394log P(marker)": 5.656940460205078,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 7.05859375,
+      "\u0394log P(marker)": 6.809087753295898,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0625,
+      "\u0394log P(marker)": 6.811216354370117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 6.197265625,
+      "\u0394log P(marker)": 4.832714080810547,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.427734375,
+      "\u0394log P(marker)": 3.545114517211914,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.109375,
+      "\u0394log P(marker)": 4.555154800415039,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.3636474609375,
+      "\u0394log P(marker)": 4.151611328125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.078125,
+      "\u0394log P(marker)": 4.772796630859375,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.859375,
+      "\u0394log P(marker)": 4.398899078369141,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6640625,
+      "\u0394log P(marker)": 4.678596496582031,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.71875,
+      "\u0394log P(marker)": 4.845312118530273,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.66015625,
+      "\u0394log P(marker)": 4.653627395629883,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.69970703125,
+      "\u0394log P(marker)": 4.3056182861328125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 4.48046875,
+      "\u0394log P(marker)": 6.640287399291992,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 7.296875,
+      "\u0394log P(marker)": 6.4218902587890625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0859375,
+      "\u0394log P(marker)": 4.205474853515625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 5.126953125,
+      "\u0394log P(marker)": 4.804775238037109,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394z_marker (logit space)": 6.078125,
+      "\u0394log P(marker)": 5.455963134765625,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5859375,
+      "\u0394log P(marker)": 5.711343765258789,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.625,
+      "\u0394log P(marker)": 6.253334045410156,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.84765625,
+      "\u0394log P(marker)": 4.851667404174805,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.92578125,
+      "\u0394log P(marker)": 6.92603874206543,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.65625,
+      "\u0394log P(marker)": 6.182529449462891,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.400390625,
+      "\u0394log P(marker)": 5.025793075561523,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.015380859375,
+      "\u0394log P(marker)": 3.7459850311279297,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 4.2421875,
+      "\u0394log P(marker)": 3.677957534790039,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.53369140625,
+      "\u0394log P(marker)": 4.161724090576172,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 4.56640625,
+      "\u0394log P(marker)": 5.676156997680664,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.23046875,
+      "\u0394log P(marker)": 5.254911422729492,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 7.00390625,
+      "\u0394log P(marker)": 6.504007339477539,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.53515625,
+      "\u0394log P(marker)": 4.424554824829102,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2890625,
+      "\u0394log P(marker)": 5.539630889892578,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 4.673828125,
+      "\u0394log P(marker)": 6.16253662109375,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1015625,
+      "\u0394log P(marker)": 5.976596832275391,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.96875,
+      "\u0394log P(marker)": 6.093936920166016,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 5.14453125,
+      "\u0394log P(marker)": 4.316734313964844,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 4.8646240234375,
+      "\u0394log P(marker)": 5.273166656494141,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394z_marker (logit space)": 6.18359375,
+      "\u0394log P(marker)": 6.26771354675293,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 7.3515625,
+      "\u0394log P(marker)": 7.991233825683594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 6.62890625,
+      "\u0394log P(marker)": 7.505006790161133,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 7.08203125,
+      "\u0394log P(marker)": 7.707447052001953,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.93359375,
+      "\u0394log P(marker)": 10.183605194091797,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 7.7109375,
+      "\u0394log P(marker)": 10.32590103149414,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.3818359375,
+      "\u0394log P(marker)": 9.506834030151367,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 5.73046875,
+      "\u0394log P(marker)": 5.241672515869141,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 5.3359375,
+      "\u0394log P(marker)": 5.599945068359375,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.375,
+      "\u0394log P(marker)": 8.751996994018555,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 6.189453125,
+      "\u0394log P(marker)": 8.12342643737793,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 6.49609375,
+      "\u0394log P(marker)": 8.750907897949219,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 7.19140625,
+      "\u0394log P(marker)": 7.819328308105469,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.7578125,
+      "\u0394log P(marker)": 9.508127212524414,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.0234375,
+      "\u0394log P(marker)": 8.773515701293945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 6.279296875,
+      "\u0394log P(marker)": 6.442081451416016,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.71533203125,
+      "\u0394log P(marker)": 9.340389251708984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.9765625,
+      "\u0394log P(marker)": 10.72653579711914,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 7.421875,
+      "\u0394log P(marker)": 6.758947372436523,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 6.69921875,
+      "\u0394log P(marker)": 6.136350631713867,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394z_marker (logit space)": 8.875,
+      "\u0394log P(marker)": 11.749454498291016,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2421875,
+      "\u0394log P(marker)": 8.500337600708008,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2734375,
+      "\u0394log P(marker)": 6.165081024169922,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 7.40234375,
+      "\u0394log P(marker)": 7.403530120849609,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 9.3359375,
+      "\u0394log P(marker)": 10.960933685302734,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 7.4765625,
+      "\u0394log P(marker)": 8.533130645751953,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.82080078125,
+      "\u0394log P(marker)": 9.445808410644531,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 5.765625,
+      "\u0394log P(marker)": 4.958940505981445,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0390625,
+      "\u0394log P(marker)": 6.224313735961914,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.572265625,
+      "\u0394log P(marker)": 8.574169158935547,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 6.296875,
+      "\u0394log P(marker)": 7.577701568603516,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 7.44677734375,
+      "\u0394log P(marker)": 7.864192962646484,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 7.734375,
+      "\u0394log P(marker)": 8.234674453735352,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.90234375,
+      "\u0394log P(marker)": 9.152746200561523,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.046875,
+      "\u0394log P(marker)": 8.546977996826172,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 6.787109375,
+      "\u0394log P(marker)": 6.389305114746094,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 9.044921875,
+      "\u0394log P(marker)": 9.419958114624023,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 8.95703125,
+      "\u0394log P(marker)": 10.207040786743164,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9375,
+      "\u0394log P(marker)": 7.5886993408203125,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 7.88671875,
+      "\u0394log P(marker)": 7.084001541137695,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394z_marker (logit space)": 4.5078125,
+      "\u0394log P(marker)": 4.022861480712891,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3515625,
+      "\u0394log P(marker)": 6.726982116699219,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4375,
+      "\u0394log P(marker)": 7.189310073852539,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.796875,
+      "\u0394log P(marker)": 5.79698371887207,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 7.4326171875,
+      "\u0394log P(marker)": 7.814937591552734,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.96875,
+      "\u0394log P(marker)": 7.094614028930664,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.431884765625,
+      "\u0394log P(marker)": 4.736713409423828,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 4.2490234375,
+      "\u0394log P(marker)": 3.9170780181884766,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.1015625,
+      "\u0394log P(marker)": 5.143608093261719,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.3583984375,
+      "\u0394log P(marker)": 4.868913650512695,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.46875,
+      "\u0394log P(marker)": 5.37445068359375,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0390625,
+      "\u0394log P(marker)": 5.744140625,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 6.80859375,
+      "\u0394log P(marker)": 7.433620452880859,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.01171875,
+      "\u0394log P(marker)": 5.250368118286133,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.703125,
+      "\u0394log P(marker)": 6.453998565673828,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.30859375,
+      "\u0394log P(marker)": 5.150217056274414,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 4.935546875,
+      "\u0394log P(marker)": 6.608697891235352,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 7.9296875,
+      "\u0394log P(marker)": 9.429685592651367,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 4.98828125,
+      "\u0394log P(marker)": 4.968561172485352,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 5.1689453125,
+      "\u0394log P(marker)": 4.810415267944336,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u0394z_marker (logit space)": 4.34375,
+      "\u0394log P(marker)": 3.8547840118408203,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.8515625,
+      "\u0394log P(marker)": 5.884593963623047,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 4.5,
+      "\u0394log P(marker)": 4.003883361816406,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.59375,
+      "\u0394log P(marker)": 5.594596862792969,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 7.482421875,
+      "\u0394log P(marker)": 8.857421875,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.75,
+      "\u0394log P(marker)": 8.702205657958984,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3818359375,
+      "\u0394log P(marker)": 6.256929397583008,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 4.33203125,
+      "\u0394log P(marker)": 3.847623825073242,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0234375,
+      "\u0394log P(marker)": 4.905609130859375,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.517578125,
+      "\u0394log P(marker)": 6.26881217956543,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.21875,
+      "\u0394log P(marker)": 5.119434356689453,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0,
+      "\u0394log P(marker)": 5.799629211425781,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.5,
+      "\u0394log P(marker)": 5.509836196899414,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.4296875,
+      "\u0394log P(marker)": 5.333671569824219,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 4.54754638671875,
+      "\u0394log P(marker)": 5.879570007324219,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.68359375,
+      "\u0394log P(marker)": 5.210226058959961,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.703125,
+      "\u0394log P(marker)": 6.703168869018555,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1640625,
+      "\u0394log P(marker)": 7.9140625,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.68359375,
+      "\u0394log P(marker)": 5.933841705322266,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1533203125,
+      "\u0394log P(marker)": 5.65827751159668,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u0394z_marker (logit space)": 5.03125,
+      "\u0394log P(marker)": 4.847450256347656,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 7.21875,
+      "\u0394log P(marker)": 6.969200134277344,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5234375,
+      "\u0394log P(marker)": 6.524362564086914,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 4.8515625,
+      "\u0394log P(marker)": 6.427711486816406,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 8.44140625,
+      "\u0394log P(marker)": 9.316417694091797,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.125,
+      "\u0394log P(marker)": 7.4120635986328125,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.72998046875,
+      "\u0394log P(marker)": 5.98698616027832,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.18798828125,
+      "\u0394log P(marker)": 5.572938919067383,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.16455078125,
+      "\u0394log P(marker)": 6.295797348022461,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.08056640625,
+      "\u0394log P(marker)": 5.672512054443359,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0,
+      "\u0394log P(marker)": 6.080167770385742,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.619140625,
+      "\u0394log P(marker)": 6.062297821044922,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 7.41015625,
+      "\u0394log P(marker)": 8.035396575927734,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 7.671875,
+      "\u0394log P(marker)": 7.672039031982422,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 5.365234375,
+      "\u0394log P(marker)": 6.030210494995117,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 6.08203125,
+      "\u0394log P(marker)": 5.599216461181641,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 7.6484375,
+      "\u0394log P(marker)": 7.273504257202148,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 8.1171875,
+      "\u0394log P(marker)": 8.367195129394531,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 5.7265625,
+      "\u0394log P(marker)": 4.727001190185547,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 5.48095703125,
+      "\u0394log P(marker)": 5.500892639160156,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u0394z_marker (logit space)": 4.453125,
+      "\u0394log P(marker)": 6.516378402709961,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.984375,
+      "\u0394log P(marker)": 6.859567642211914,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1875,
+      "\u0394log P(marker)": 6.313333511352539,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 4.76953125,
+      "\u0394log P(marker)": 6.600614547729492,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 8.4375,
+      "\u0394log P(marker)": 9.687507629394531,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.828125,
+      "\u0394log P(marker)": 7.827236175537109,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 7.4765625,
+      "\u0394log P(marker)": 8.2265625,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 4.974609375,
+      "\u0394log P(marker)": 4.220058441162109,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 4.515625,
+      "\u0394log P(marker)": 4.24217414855957,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.908203125,
+      "\u0394log P(marker)": 6.659614562988281,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.40234375,
+      "\u0394log P(marker)": 5.988121032714844,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.560546875,
+      "\u0394log P(marker)": 6.1621551513671875,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 5.09765625,
+      "\u0394log P(marker)": 5.859029769897461,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 7.6875,
+      "\u0394log P(marker)": 8.5625,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 5.28515625,
+      "\u0394log P(marker)": 5.941659927368164,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 5.109375,
+      "\u0394log P(marker)": 5.89558219909668,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 5.79296875,
+      "\u0394log P(marker)": 5.356771469116211,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 7.9609375,
+      "\u0394log P(marker)": 8.585941314697266,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 5.765625,
+      "\u0394log P(marker)": 5.489620208740234,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 6.50390625,
+      "\u0394log P(marker)": 5.921611785888672,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u0394z_marker (logit space)": 7.046875,
+      "\u0394log P(marker)": 8.591230392456055,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 7.296875,
+      "\u0394log P(marker)": 7.220523834228516,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 7.6728515625,
+      "\u0394log P(marker)": 11.017555236816406,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 9.4375,
+      "\u0394log P(marker)": 10.510108947753906,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.546875,
+      "\u0394log P(marker)": 13.632816314697266,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.171875,
+      "\u0394log P(marker)": 9.58418083190918,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 7.67919921875,
+      "\u0394log P(marker)": 11.414409637451172,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.875,
+      "\u0394log P(marker)": 14.709806442260742,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 9.65234375,
+      "\u0394log P(marker)": 10.925436019897461,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 2.0625,
+      "\u0394log P(marker)": 6.188619613647461,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.5859375,
+      "\u0394log P(marker)": 9.584026336669922,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 12.71875,
+      "\u0394log P(marker)": 14.566253662109375,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 9.484375,
+      "\u0394log P(marker)": 12.979286193847656,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 9.564453125,
+      "\u0394log P(marker)": 9.933025360107422,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.759765625,
+      "\u0394log P(marker)": 10.659711837768555,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.1171875,
+      "\u0394log P(marker)": 10.4112548828125,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 8.498046875,
+      "\u0394log P(marker)": 12.140459060668945,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3125,
+      "\u0394log P(marker)": 5.455833435058594,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 9.6953125,
+      "\u0394log P(marker)": 11.685144424438477,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9609375,
+      "\u0394log P(marker)": 13.512716293334961,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u0394z_marker (logit space)": 6.578125,
+      "\u0394log P(marker)": 7.466550827026367,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 3.78125,
+      "\u0394log P(marker)": 6.936880111694336,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 9.13671875,
+      "\u0394log P(marker)": 12.607839584350586,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.249762535095215,
+      "\u0394log P(marker)": 9.48633098602295,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.96875,
+      "\u0394log P(marker)": 13.937210083007812,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 6.734375,
+      "\u0394log P(marker)": 8.179302215576172,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 9.0234375,
+      "\u0394log P(marker)": 10.46497917175293,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.053466796875,
+      "\u0394log P(marker)": 10.341602325439453,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.607421875,
+      "\u0394log P(marker)": 11.552776336669922,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 4.65625,
+      "\u0394log P(marker)": 7.3226318359375,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.472900390625,
+      "\u0394log P(marker)": 10.677167892456055,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 10.05859375,
+      "\u0394log P(marker)": 12.702167510986328,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 9.03515625,
+      "\u0394log P(marker)": 11.514045715332031,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.453125,
+      "\u0394log P(marker)": 10.44137954711914,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2265625,
+      "\u0394log P(marker)": 10.710020065307617,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.16015625,
+      "\u0394log P(marker)": 9.183006286621094,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 8.763671875,
+      "\u0394log P(marker)": 11.57516860961914,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 4.59375,
+      "\u0394log P(marker)": 4.075016021728516,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 9.59375,
+      "\u0394log P(marker)": 12.819221496582031,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 9.0390625,
+      "\u0394log P(marker)": 15.178230285644531,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u0394z_marker (logit space)": 4.78125,
+      "\u0394log P(marker)": 6.655902862548828,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 4.734375,
+      "\u0394log P(marker)": 8.137855529785156,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 3.369140625,
+      "\u0394log P(marker)": 5.44139289855957,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0234375,
+      "\u0394log P(marker)": 6.924564361572266,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.21875,
+      "\u0394log P(marker)": 8.809759140014648,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 4.03125,
+      "\u0394log P(marker)": 4.908124923706055,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0234375,
+      "\u0394log P(marker)": 6.958101272583008,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 3.970703125,
+      "\u0394log P(marker)": 4.142398834228516,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.546875,
+      "\u0394log P(marker)": 7.027620315551758,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.84375,
+      "\u0394log P(marker)": 8.725341796875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.3515625,
+      "\u0394log P(marker)": 7.060659408569336,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6103515625,
+      "\u0394log P(marker)": 8.77777099609375,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.470703125,
+      "\u0394log P(marker)": 8.862869262695312,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.05859375,
+      "\u0394log P(marker)": 6.76556396484375,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 4.365234375,
+      "\u0394log P(marker)": 7.2177581787109375,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.17578125,
+      "\u0394log P(marker)": 8.783914566040039,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 4.53125,
+      "\u0394log P(marker)": 5.887170791625977,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 6.6171875,
+      "\u0394log P(marker)": 8.232093811035156,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.44921875,
+      "\u0394log P(marker)": 6.13603401184082,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.03515625,
+      "\u0394log P(marker)": 6.952733993530273,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u0394z_marker (logit space)": 5.638671875,
+      "\u0394log P(marker)": 7.625764846801758,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 5.992431640625,
+      "\u0394log P(marker)": 8.820793151855469,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 4.7265625,
+      "\u0394log P(marker)": 5.114116668701172,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3125,
+      "\u0394log P(marker)": 8.419778823852539,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0439453125,
+      "\u0394log P(marker)": 8.88766860961914,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 5.078125,
+      "\u0394log P(marker)": 6.483015060424805,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 5.765625,
+      "\u0394log P(marker)": 7.398080825805664,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 3.07421875,
+      "\u0394log P(marker)": 4.22639274597168,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 5.53125,
+      "\u0394log P(marker)": 7.741514205932617,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 7.203125,
+      "\u0394log P(marker)": 10.122552871704102,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5234375,
+      "\u0394log P(marker)": 9.62571907043457,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.294921875,
+      "\u0394log P(marker)": 8.87769889831543,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.50390625,
+      "\u0394log P(marker)": 8.848657608032227,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.640625,
+      "\u0394log P(marker)": 8.284725189208984,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.76171875,
+      "\u0394log P(marker)": 8.577241897583008,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.267578125,
+      "\u0394log P(marker)": 7.528827667236328,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4609375,
+      "\u0394log P(marker)": 9.674427032470703,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 6.70703125,
+      "\u0394log P(marker)": 9.96513557434082,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 7.08203125,
+      "\u0394log P(marker)": 7.692934036254883,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 5.2734375,
+      "\u0394log P(marker)": 8.944877624511719,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u0394z_marker (logit space)": 3.640625,
+      "\u0394log P(marker)": 6.346746444702148,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.1796875,
+      "\u0394log P(marker)": 5.871614456176758,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.3359375,
+      "\u0394log P(marker)": 6.832380294799805,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.2578125,
+      "\u0394log P(marker)": 6.076438903808594,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.03125,
+      "\u0394log P(marker)": 6.404317855834961,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.25,
+      "\u0394log P(marker)": 4.455781936645508,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.6640625,
+      "\u0394log P(marker)": 5.224771499633789,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 1.95703125,
+      "\u0394log P(marker)": 2.9204463958740234,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.203125,
+      "\u0394log P(marker)": 5.623470306396484,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 2.53125,
+      "\u0394log P(marker)": 5.229896545410156,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.8515625,
+      "\u0394log P(marker)": 6.101797103881836,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.02294921875,
+      "\u0394log P(marker)": 5.648643493652344,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.7265625,
+      "\u0394log P(marker)": 6.85072135925293,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.625,
+      "\u0394log P(marker)": 7.052162170410156,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.5107421875,
+      "\u0394log P(marker)": 6.28114128112793,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.28955078125,
+      "\u0394log P(marker)": 7.093854904174805,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.5361328125,
+      "\u0394log P(marker)": 5.313604354858398,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.84765625,
+      "\u0394log P(marker)": 7.840930938720703,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.291015625,
+      "\u0394log P(marker)": 5.139675140380859,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 4.58203125,
+      "\u0394log P(marker)": 5.922641754150391,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u0394z_marker (logit space)": 3.4375,
+      "\u0394log P(marker)": 6.322475433349609,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.0341796875,
+      "\u0394log P(marker)": 6.061044692993164,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 1.42578125,
+      "\u0394log P(marker)": 3.100261688232422,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.703125,
+      "\u0394log P(marker)": 5.955299377441406,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 1.78515625,
+      "\u0394log P(marker)": 3.279876708984375,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 2.8359375,
+      "\u0394log P(marker)": 4.538717269897461,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.0859375,
+      "\u0394log P(marker)": 5.073993682861328,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 2.515625,
+      "\u0394log P(marker)": 2.802764892578125,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.7890625,
+      "\u0394log P(marker)": 6.48988151550293,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.953125,
+      "\u0394log P(marker)": 6.319522857666016,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.16796875,
+      "\u0394log P(marker)": 6.031944274902344,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.716796875,
+      "\u0394log P(marker)": 7.157745361328125,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.359375,
+      "\u0394log P(marker)": 8.093450546264648,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.328125,
+      "\u0394log P(marker)": 4.980276107788086,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.32666015625,
+      "\u0394log P(marker)": 6.332578659057617,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.318359375,
+      "\u0394log P(marker)": 7.302698135375977,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.25390625,
+      "\u0394log P(marker)": 6.269853591918945,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.97265625,
+      "\u0394log P(marker)": 6.209650039672852,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 3.6875,
+      "\u0394log P(marker)": 4.868963241577148,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 4.4609375,
+      "\u0394log P(marker)": 6.696470260620117,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u0394z_marker (logit space)": 9.03125,
+      "\u0394log P(marker)": 10.557531356811523,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 8.607421875,
+      "\u0394log P(marker)": 9.366971969604492,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 11.203125,
+      "\u0394log P(marker)": 14.220268249511719,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.890625,
+      "\u0394log P(marker)": 11.811073303222656,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 11.3125,
+      "\u0394log P(marker)": 13.708208084106445,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 8.75,
+      "\u0394log P(marker)": 13.730934143066406,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.623046875,
+      "\u0394log P(marker)": 11.393243789672852,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.22265625,
+      "\u0394log P(marker)": 13.777639389038086,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.46875,
+      "\u0394log P(marker)": 12.425699234008789,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 6.54296875,
+      "\u0394log P(marker)": 8.723146438598633,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.2890625,
+      "\u0394log P(marker)": 12.834718704223633,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 11.67529296875,
+      "\u0394log P(marker)": 13.034503936767578,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.21875,
+      "\u0394log P(marker)": 10.80311393737793,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 9.876953125,
+      "\u0394log P(marker)": 11.627511978149414,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.15625,
+      "\u0394log P(marker)": 13.643796920776367,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.205078125,
+      "\u0394log P(marker)": 16.215614318847656,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 9.8935546875,
+      "\u0394log P(marker)": 13.379114151000977,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 10.22265625,
+      "\u0394log P(marker)": 13.537649154663086,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 8.294921875,
+      "\u0394log P(marker)": 11.219751358032227,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 7.515625,
+      "\u0394log P(marker)": 17.167469024658203,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u0394z_marker (logit space)": 8.8837890625,
+      "\u0394log P(marker)": 12.485301971435547,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 7.671875,
+      "\u0394log P(marker)": 8.701347351074219,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.6171875,
+      "\u0394log P(marker)": 10.003042221069336,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 10.13671875,
+      "\u0394log P(marker)": 9.78858757019043,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 10.109375,
+      "\u0394log P(marker)": 12.76236343383789,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9921875,
+      "\u0394log P(marker)": 10.62454605102539,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 5.03125,
+      "\u0394log P(marker)": 15.891189575195312,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 10.078125,
+      "\u0394log P(marker)": 13.741493225097656,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.3125,
+      "\u0394log P(marker)": 12.056047439575195,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3359375,
+      "\u0394log P(marker)": 8.212871551513672,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 7.75439453125,
+      "\u0394log P(marker)": 11.58027458190918,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 10.9375,
+      "\u0394log P(marker)": 13.876518249511719,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.9375,
+      "\u0394log P(marker)": 11.629127502441406,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 7.453125,
+      "\u0394log P(marker)": 13.166961669921875,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.2578125,
+      "\u0394log P(marker)": 11.711309432983398,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.984375,
+      "\u0394log P(marker)": 12.25521469116211,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 9.78125,
+      "\u0394log P(marker)": 11.131351470947266,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 8.953125,
+      "\u0394log P(marker)": 14.688739776611328,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 11.5,
+      "\u0394log P(marker)": 12.267463684082031,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 11.5625,
+      "\u0394log P(marker)": 16.684537887573242,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u0394z_marker (logit space)": 4.6171875,
+      "\u0394log P(marker)": 6.613752365112305,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 4.654296875,
+      "\u0394log P(marker)": 5.904285430908203,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 4.2900390625,
+      "\u0394log P(marker)": 5.063364028930664,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 3.4296875,
+      "\u0394log P(marker)": 5.612920761108398,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6875,
+      "\u0394log P(marker)": 7.977033615112305,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 3.8671875,
+      "\u0394log P(marker)": 5.041011810302734,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 4.984375,
+      "\u0394log P(marker)": 6.749414443969727,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 4.078125,
+      "\u0394log P(marker)": 4.232934951782227,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 4.8232421875,
+      "\u0394log P(marker)": 7.29301643371582,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.8203125,
+      "\u0394log P(marker)": 7.677053451538086,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 3.3671875,
+      "\u0394log P(marker)": 6.46087646484375,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.435546875,
+      "\u0394log P(marker)": 9.38786506652832,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.9453125,
+      "\u0394log P(marker)": 8.407327651977539,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.607421875,
+      "\u0394log P(marker)": 7.448188781738281,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.56640625,
+      "\u0394log P(marker)": 8.26031494140625,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.12890625,
+      "\u0394log P(marker)": 7.607320785522461,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 3.8125,
+      "\u0394log P(marker)": 4.920921325683594,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 5.4765625,
+      "\u0394log P(marker)": 7.961856842041016,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 2.4140625,
+      "\u0394log P(marker)": 3.1640625,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0078125,
+      "\u0394log P(marker)": 8.836893081665039,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u0394z_marker (logit space)": 2.921875,
+      "\u0394log P(marker)": 5.627508163452148,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 2.8046875,
+      "\u0394log P(marker)": 5.422365188598633,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 1.427734375,
+      "\u0394log P(marker)": 2.900707244873047,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 2.841796875,
+      "\u0394log P(marker)": 5.09650993347168,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 2.005859375,
+      "\u0394log P(marker)": 4.542690277099609,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 2.6796875,
+      "\u0394log P(marker)": 4.436101913452148,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.453125,
+      "\u0394log P(marker)": 5.156883239746094,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 2.83203125,
+      "\u0394log P(marker)": 3.087308883666992,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.87890625,
+      "\u0394log P(marker)": 5.556600570678711,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.59375,
+      "\u0394log P(marker)": 6.196895599365234,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.28515625,
+      "\u0394log P(marker)": 5.67327880859375,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.8828125,
+      "\u0394log P(marker)": 7.113199234008789,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 4.0,
+      "\u0394log P(marker)": 8.111883163452148,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.0390625,
+      "\u0394log P(marker)": 5.333311080932617,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.8486328125,
+      "\u0394log P(marker)": 5.958242416381836,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.5537109375,
+      "\u0394log P(marker)": 4.402566909790039,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.89453125,
+      "\u0394log P(marker)": 5.98127555847168,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.08984375,
+      "\u0394log P(marker)": 5.321968078613281,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.3984375,
+      "\u0394log P(marker)": 5.135110855102539,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 4.0390625,
+      "\u0394log P(marker)": 5.656103134155273,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u0394z_marker (logit space)": 3.578125,
+      "\u0394log P(marker)": 6.943204879760742,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 3.6015625,
+      "\u0394log P(marker)": 6.824010848999023,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 1.9921875,
+      "\u0394log P(marker)": 3.3337020874023438,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.4453125,
+      "\u0394log P(marker)": 6.769586563110352,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.1865234375,
+      "\u0394log P(marker)": 8.048667907714844,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 3.390625,
+      "\u0394log P(marker)": 5.893745422363281,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 3.9296875,
+      "\u0394log P(marker)": 6.066936492919922,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 2.94140625,
+      "\u0394log P(marker)": 2.729768753051758,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.486328125,
+      "\u0394log P(marker)": 6.312553405761719,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.75,
+      "\u0394log P(marker)": 7.057210922241211,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.00390625,
+      "\u0394log P(marker)": 6.874919891357422,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 5.11328125,
+      "\u0394log P(marker)": 8.41110610961914,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.4375,
+      "\u0394log P(marker)": 6.11775016784668,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.72265625,
+      "\u0394log P(marker)": 6.328327178955078,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.776611328125,
+      "\u0394log P(marker)": 6.904655456542969,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 5.021484375,
+      "\u0394log P(marker)": 7.27180290222168,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.66796875,
+      "\u0394log P(marker)": 6.7798614501953125,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.328125,
+      "\u0394log P(marker)": 7.370733261108398,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 4.40625,
+      "\u0394log P(marker)": 6.297168731689453,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 3.96875,
+      "\u0394log P(marker)": 6.094280242919922,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u0394z_marker (logit space)": 3.078125,
+      "\u0394log P(marker)": 5.585805892944336,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.07421875,
+      "\u0394log P(marker)": 4.739416122436523,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 1.3671875,
+      "\u0394log P(marker)": 2.666372299194336,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.71875,
+      "\u0394log P(marker)": 6.076745986938477,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.3046875,
+      "\u0394log P(marker)": 6.177091598510742,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.859375,
+      "\u0394log P(marker)": 5.315595626831055,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.7421875,
+      "\u0394log P(marker)": 4.2805328369140625,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.44140625,
+      "\u0394log P(marker)": 2.658832550048828,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 2.837890625,
+      "\u0394log P(marker)": 5.057476043701172,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.40234375,
+      "\u0394log P(marker)": 6.010786056518555,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.25,
+      "\u0394log P(marker)": 3.2243824005126953,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.0078125,
+      "\u0394log P(marker)": 5.255529403686523,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.359375,
+      "\u0394log P(marker)": 4.935783386230469,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.4140625,
+      "\u0394log P(marker)": 4.790740966796875,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.98046875,
+      "\u0394log P(marker)": 5.983394622802734,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.9111328125,
+      "\u0394log P(marker)": 6.896730422973633,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.580078125,
+      "\u0394log P(marker)": 5.411655426025391,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.6015625,
+      "\u0394log P(marker)": 7.205217361450195,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.4921875,
+      "\u0394log P(marker)": 4.829334259033203,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 3.671875,
+      "\u0394log P(marker)": 5.468709945678711,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u0394z_marker (logit space)": 7.671875,
+      "\u0394log P(marker)": 8.922246932983398,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 0.71875,
+      "\u0394log P(marker)": 1.1917171478271484,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 9.71875,
+      "\u0394log P(marker)": 11.121604919433594,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 11.3984375,
+      "\u0394log P(marker)": 14.260648727416992,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 12.125,
+      "\u0394log P(marker)": 17.01654815673828,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 8.28125,
+      "\u0394log P(marker)": 9.970283508300781,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 6.953125,
+      "\u0394log P(marker)": 8.57040023803711,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 7.265625,
+      "\u0394log P(marker)": 7.222278594970703,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 2.30078125,
+      "\u0394log P(marker)": 2.7117366790771484,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 11.4375,
+      "\u0394log P(marker)": 18.37432098388672,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 12.765625,
+      "\u0394log P(marker)": 16.706439971923828,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 9.234375,
+      "\u0394log P(marker)": 9.72981071472168,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 11.84375,
+      "\u0394log P(marker)": 13.554176330566406,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 10.0625,
+      "\u0394log P(marker)": 12.014326095581055,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 3.9375,
+      "\u0394log P(marker)": 3.5636253356933594,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 9.296875,
+      "\u0394log P(marker)": 12.164997100830078,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 9.609375,
+      "\u0394log P(marker)": 11.977371215820312,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 7.921875,
+      "\u0394log P(marker)": 8.657499313354492,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 6.40625,
+      "\u0394log P(marker)": 6.752525329589844,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 9.7109375,
+      "\u0394log P(marker)": 11.043968200683594,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u0394z_marker (logit space)": 8.9375,
+      "\u0394log P(marker)": 9.886606216430664,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 2.9296875,
+      "\u0394log P(marker)": 2.5768661499023438,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 10.15625,
+      "\u0394log P(marker)": 11.90732192993164,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 0.15625,
+      "\u0394log P(marker)": 2.8918113708496094,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 1.92578125,
+      "\u0394log P(marker)": 2.2970104217529297,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 10.578125,
+      "\u0394log P(marker)": 12.256170272827148,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 5.9375,
+      "\u0394log P(marker)": 7.1414642333984375,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 2.125,
+      "\u0394log P(marker)": 2.095684051513672,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 1.21875,
+      "\u0394log P(marker)": 1.939157485961914,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 9.53125,
+      "\u0394log P(marker)": 10.328296661376953,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 6.984375,
+      "\u0394log P(marker)": 7.496936798095703,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 11.734375,
+      "\u0394log P(marker)": 14.69512939453125,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 13.125,
+      "\u0394log P(marker)": 16.272554397583008,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 10.359375,
+      "\u0394log P(marker)": 12.537918090820312,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 11.640625,
+      "\u0394log P(marker)": 13.753002166748047,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 11.140625,
+      "\u0394log P(marker)": 14.504339218139648,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 10.953125,
+      "\u0394log P(marker)": 12.820608139038086,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 8.515625,
+      "\u0394log P(marker)": 9.523609161376953,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 6.984375,
+      "\u0394log P(marker)": 7.534313201904297,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 11.7421875,
+      "\u0394log P(marker)": 13.584867477416992,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u0394z_marker (logit space)": 7.46875,
+      "\u0394log P(marker)": 8.719816207885742,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 1.4375,
+      "\u0394log P(marker)": 1.349273681640625,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 9.53125,
+      "\u0394log P(marker)": 11.030725479125977,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 6.578125,
+      "\u0394log P(marker)": 7.323369979858398,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 11.21875,
+      "\u0394log P(marker)": 16.05589485168457,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 8.328125,
+      "\u0394log P(marker)": 11.204240798950195,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8046875,
+      "\u0394log P(marker)": 7.0764923095703125,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 5.25,
+      "\u0394log P(marker)": 4.953680038452148,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 1.6171875,
+      "\u0394log P(marker)": 2.1680240631103516,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 6.859375,
+      "\u0394log P(marker)": 6.729454040527344,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 11.421875,
+      "\u0394log P(marker)": 13.650711059570312,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 8.1484375,
+      "\u0394log P(marker)": 9.25064468383789,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 11.515625,
+      "\u0394log P(marker)": 14.361488342285156,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 8.6875,
+      "\u0394log P(marker)": 10.291208267211914,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 11.34375,
+      "\u0394log P(marker)": 13.090217590332031,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 9.390625,
+      "\u0394log P(marker)": 12.367101669311523,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 8.6875,
+      "\u0394log P(marker)": 10.184328079223633,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 9.859375,
+      "\u0394log P(marker)": 11.156261444091797,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 5.5,
+      "\u0394log P(marker)": 5.9323272705078125,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 11.421875,
+      "\u0394log P(marker)": 13.102046966552734,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u0394z_marker (logit space)": 8.40625,
+      "\u0394log P(marker)": 9.441015243530273,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 0.75,
+      "\u0394log P(marker)": 0.9965648651123047,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.15625,
+      "\u0394log P(marker)": 10.43222427368164,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 10.3359375,
+      "\u0394log P(marker)": 12.829893112182617,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 11.3125,
+      "\u0394log P(marker)": 15.882131576538086,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.09375,
+      "\u0394log P(marker)": 10.427644729614258,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 5.234375,
+      "\u0394log P(marker)": 5.27037239074707,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 5.375,
+      "\u0394log P(marker)": 5.395557403564453,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 1.2109375,
+      "\u0394log P(marker)": 0.7720394134521484,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8515625,
+      "\u0394log P(marker)": 8.191032409667969,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 11.734375,
+      "\u0394log P(marker)": 14.831905364990234,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.234375,
+      "\u0394log P(marker)": 11.094877243041992,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 8.140625,
+      "\u0394log P(marker)": 8.686426162719727,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.296875,
+      "\u0394log P(marker)": 10.423974990844727,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 4.0546875,
+      "\u0394log P(marker)": 3.4311656951904297,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.4453125,
+      "\u0394log P(marker)": 10.946964263916016,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 8.921875,
+      "\u0394log P(marker)": 10.417221069335938,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 9.8125,
+      "\u0394log P(marker)": 11.307634353637695,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 10.734375,
+      "\u0394log P(marker)": 11.812633514404297,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 8.6328125,
+      "\u0394log P(marker)": 8.97212028503418,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u0394z_marker (logit space)": 4.1875,
+      "\u0394log P(marker)": 4.329250335693359,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 8.09375,
+      "\u0394log P(marker)": 11.209970474243164,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 5.84375,
+      "\u0394log P(marker)": 6.233602523803711,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 7.609375,
+      "\u0394log P(marker)": 9.359273910522461,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 5.1953125,
+      "\u0394log P(marker)": 6.943183898925781,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 6.8125,
+      "\u0394log P(marker)": 9.560874938964844,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.203125,
+      "\u0394log P(marker)": 3.7029247283935547,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 1.5,
+      "\u0394log P(marker)": 1.2605953216552734,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.53125,
+      "\u0394log P(marker)": 4.561243057250977,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 3.84375,
+      "\u0394log P(marker)": 3.46966552734375,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 2.84375,
+      "\u0394log P(marker)": 2.3458003997802734,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 6.96875,
+      "\u0394log P(marker)": 7.556215286254883,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.90625,
+      "\u0394log P(marker)": 5.2816009521484375,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 6.75,
+      "\u0394log P(marker)": 7.751623153686523,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 7.34375,
+      "\u0394log P(marker)": 8.593647003173828,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.1796875,
+      "\u0394log P(marker)": 4.430267333984375,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 6.859375,
+      "\u0394log P(marker)": 8.23415756225586,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.3125,
+      "\u0394log P(marker)": 4.688135147094727,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 2.046875,
+      "\u0394log P(marker)": 2.007295608520508,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 7.421875,
+      "\u0394log P(marker)": 8.546445846557617,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u0394z_marker (logit space)": 4.796875,
+      "\u0394log P(marker)": 4.950235366821289,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 7.984375,
+      "\u0394log P(marker)": 9.231918334960938,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 6.25,
+      "\u0394log P(marker)": 7.008169174194336,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 4.21875,
+      "\u0394log P(marker)": 4.718748092651367,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 5.75,
+      "\u0394log P(marker)": 8.623435974121094,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 5.953125,
+      "\u0394log P(marker)": 7.714731216430664,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 2.0859375,
+      "\u0394log P(marker)": 2.106149673461914,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 1.6640625,
+      "\u0394log P(marker)": 1.4877548217773438,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 6.625,
+      "\u0394log P(marker)": 6.999275207519531,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 2.53125,
+      "\u0394log P(marker)": 2.3786678314208984,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 5.25,
+      "\u0394log P(marker)": 5.250165939331055,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 6.53125,
+      "\u0394log P(marker)": 7.280158996582031,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 7.078125,
+      "\u0394log P(marker)": 7.352983474731445,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 6.65625,
+      "\u0394log P(marker)": 7.656988143920898,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 6.65625,
+      "\u0394log P(marker)": 7.656280517578125,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 3.5234375,
+      "\u0394log P(marker)": 3.4494590759277344,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 7.078125,
+      "\u0394log P(marker)": 7.827831268310547,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 4.71875,
+      "\u0394log P(marker)": 4.84312629699707,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 2.359375,
+      "\u0394log P(marker)": 2.402111053466797,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 5.40625,
+      "\u0394log P(marker)": 6.031244277954102,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u0394z_marker (logit space)": 9.59375,
+      "\u0394log P(marker)": 12.00808334350586,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 0.65625,
+      "\u0394log P(marker)": 0.8625049591064453,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 11.1875,
+      "\u0394log P(marker)": 14.030038833618164,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 10.09375,
+      "\u0394log P(marker)": 11.238164901733398,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 13.6875,
+      "\u0394log P(marker)": 19.215599060058594,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 9.953125,
+      "\u0394log P(marker)": 12.67173957824707,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 9.3125,
+      "\u0394log P(marker)": 10.621711730957031,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 3.125,
+      "\u0394log P(marker)": 3.512704849243164,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 12.17578125,
+      "\u0394log P(marker)": 14.078092575073242,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 10.875,
+      "\u0394log P(marker)": 17.309322357177734,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 12.09375,
+      "\u0394log P(marker)": 14.580049514770508,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 12.046875,
+      "\u0394log P(marker)": 15.632431030273438,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 12.765625,
+      "\u0394log P(marker)": 16.235315322875977,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 11.484375,
+      "\u0394log P(marker)": 14.694160461425781,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 12.28125,
+      "\u0394log P(marker)": 14.75499153137207,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 3.828125,
+      "\u0394log P(marker)": 4.06895637512207,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 11.484375,
+      "\u0394log P(marker)": 14.341218948364258,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 9.609375,
+      "\u0394log P(marker)": 12.269237518310547,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 7.65625,
+      "\u0394log P(marker)": 8.591604232788086,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 10.875,
+      "\u0394log P(marker)": 12.864118576049805,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u0394z_marker (logit space)": 9.90625,
+      "\u0394log P(marker)": 11.824993133544922,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 1.59375,
+      "\u0394log P(marker)": 1.470998764038086,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 11.875,
+      "\u0394log P(marker)": 14.384056091308594,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 9.734375,
+      "\u0394log P(marker)": 12.042282104492188,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 1.466796875,
+      "\u0394log P(marker)": 1.5940990447998047,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 10.0,
+      "\u0394log P(marker)": 14.412559509277344,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 10.046875,
+      "\u0394log P(marker)": 12.336803436279297,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 1.90625,
+      "\u0394log P(marker)": 1.7957286834716797,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 1.392578125,
+      "\u0394log P(marker)": 1.1837329864501953,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 11.375,
+      "\u0394log P(marker)": 18.017684936523438,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 12.984375,
+      "\u0394log P(marker)": 15.97650146484375,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 12.828125,
+      "\u0394log P(marker)": 16.810949325561523,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 13.796875,
+      "\u0394log P(marker)": 17.706254959106445,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 12.125,
+      "\u0394log P(marker)": 15.541967391967773,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 13.734375,
+      "\u0394log P(marker)": 16.915409088134766,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 1.72265625,
+      "\u0394log P(marker)": 1.395803451538086,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 12.578125,
+      "\u0394log P(marker)": 15.801734924316406,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 9.5,
+      "\u0394log P(marker)": 12.056747436523438,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 8.640625,
+      "\u0394log P(marker)": 9.93565559387207,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 13.6484375,
+      "\u0394log P(marker)": 17.10321044921875,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u0394z_marker (logit space)": 4.125,
+      "\u0394log P(marker)": 4.500476837158203,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 6.171875,
+      "\u0394log P(marker)": 7.421709060668945,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 5.78125,
+      "\u0394log P(marker)": 6.7701873779296875,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 2.859375,
+      "\u0394log P(marker)": 3.2341957092285156,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 2.8984375,
+      "\u0394log P(marker)": 3.0703983306884766,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0,
+      "\u0394log P(marker)": 6.753089904785156,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 4.046875,
+      "\u0394log P(marker)": 4.796852111816406,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 1.8046875,
+      "\u0394log P(marker)": 1.7276248931884766,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 5.65625,
+      "\u0394log P(marker)": 6.780862808227539,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 6.28125,
+      "\u0394log P(marker)": 6.781225204467773,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 2.02734375,
+      "\u0394log P(marker)": 1.9689788818359375,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 6.28125,
+      "\u0394log P(marker)": 7.280786514282227,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 6.515625,
+      "\u0394log P(marker)": 7.640188217163086,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4375,
+      "\u0394log P(marker)": 7.682931900024414,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 5.640625,
+      "\u0394log P(marker)": 6.639547348022461,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 3.875,
+      "\u0394log P(marker)": 4.99986457824707,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 5.2265625,
+      "\u0394log P(marker)": 5.725297927856445,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 4.5,
+      "\u0394log P(marker)": 4.750053405761719,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 1.765625,
+      "\u0394log P(marker)": 1.9098014831542969,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 3.328125,
+      "\u0394log P(marker)": 3.5892810821533203,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u0394z_marker (logit space)": 4.15625,
+      "\u0394log P(marker)": 4.418844223022461,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 1.9375,
+      "\u0394log P(marker)": 1.8231391906738281,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.875,
+      "\u0394log P(marker)": 6.867546081542969,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1953125,
+      "\u0394log P(marker)": 6.945276260375977,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 4.32421875,
+      "\u0394log P(marker)": 4.696083068847656,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 4.53125,
+      "\u0394log P(marker)": 5.112823486328125,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 3.796875,
+      "\u0394log P(marker)": 3.6716480255126953,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 1.8671875,
+      "\u0394log P(marker)": 1.8042469024658203,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.41796875,
+      "\u0394log P(marker)": 5.7546539306640625,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 3.5625,
+      "\u0394log P(marker)": 3.4375362396240234,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2109375,
+      "\u0394log P(marker)": 6.585424423217773,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 6.59375,
+      "\u0394log P(marker)": 7.717681884765625,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.890625,
+      "\u0394log P(marker)": 6.2682952880859375,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 6.40625,
+      "\u0394log P(marker)": 7.524829864501953,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.171875,
+      "\u0394log P(marker)": 5.797393798828125,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 3.8515625,
+      "\u0394log P(marker)": 4.351337432861328,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.265625,
+      "\u0394log P(marker)": 5.765422821044922,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 4.65625,
+      "\u0394log P(marker)": 5.156301498413086,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 5.890625,
+      "\u0394log P(marker)": 6.388286590576172,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 2.3828125,
+      "\u0394log P(marker)": 2.6997833251953125,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u0394z_marker (logit space)": 2.375,
+      "\u0394log P(marker)": 2.628824234008789,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 7.140625,
+      "\u0394log P(marker)": 9.264976501464844,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 3.96875,
+      "\u0394log P(marker)": 4.344354629516602,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 2.34375,
+      "\u0394log P(marker)": 2.5937557220458984,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 4.0234375,
+      "\u0394log P(marker)": 5.647947311401367,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 4.421875,
+      "\u0394log P(marker)": 5.279840469360352,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 2.625,
+      "\u0394log P(marker)": 2.3750076293945312,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 1.078125,
+      "\u0394log P(marker)": 1.0289039611816406,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 4.46875,
+      "\u0394log P(marker)": 5.468563079833984,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 1.84375,
+      "\u0394log P(marker)": 1.7574691772460938,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 7.265625,
+      "\u0394log P(marker)": 8.890501022338867,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 6.140625,
+      "\u0394log P(marker)": 7.265415191650391,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 2.671875,
+      "\u0394log P(marker)": 2.707233428955078,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 5.46875,
+      "\u0394log P(marker)": 6.340282440185547,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 6.421875,
+      "\u0394log P(marker)": 7.796413421630859,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 3.9375,
+      "\u0394log P(marker)": 5.187356948852539,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 5.765625,
+      "\u0394log P(marker)": 7.015602111816406,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 4.125,
+      "\u0394log P(marker)": 4.499998092651367,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 7.265625,
+      "\u0394log P(marker)": 8.012985229492188,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 2.34375,
+      "\u0394log P(marker)": 2.377277374267578,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u0394z_marker (logit space)": 6.125,
+      "\u0394log P(marker)": 6.999349594116211,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 8.296875,
+      "\u0394log P(marker)": 9.915277481079102,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.59375,
+      "\u0394log P(marker)": 8.818265914916992,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 9.328125,
+      "\u0394log P(marker)": 12.077281951904297,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.0078125,
+      "\u0394log P(marker)": 7.951799392700195,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 6.75,
+      "\u0394log P(marker)": 8.74367904663086,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 5.796875,
+      "\u0394log P(marker)": 7.671375274658203,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 2.1484375,
+      "\u0394log P(marker)": 1.97265625,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 5.390625,
+      "\u0394log P(marker)": 5.890478134155273,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 5.140625,
+      "\u0394log P(marker)": 5.140727996826172,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.375,
+      "\u0394log P(marker)": 8.496623992919922,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.703125,
+      "\u0394log P(marker)": 9.1942138671875,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.0,
+      "\u0394log P(marker)": 7.722583770751953,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.59375,
+      "\u0394log P(marker)": 9.087804794311523,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 6.921875,
+      "\u0394log P(marker)": 8.04654312133789,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 7.359375,
+      "\u0394log P(marker)": 9.733404159545898,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 8.125,
+      "\u0394log P(marker)": 9.623504638671875,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 4.375,
+      "\u0394log P(marker)": 4.6957855224609375,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 3.15625,
+      "\u0394log P(marker)": 3.629915237426758,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 8.65625,
+      "\u0394log P(marker)": 9.908916473388672,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u0394z_marker (logit space)": 8.046875,
+      "\u0394log P(marker)": 7.302207946777344,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 7.826171875,
+      "\u0394log P(marker)": 6.82916259765625,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.140625,
+      "\u0394log P(marker)": 8.890680313110352,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 5.546875,
+      "\u0394log P(marker)": 4.857168197631836,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 8.85546875,
+      "\u0394log P(marker)": 7.355873107910156,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 7.46484375,
+      "\u0394log P(marker)": 9.036859512329102,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 8.015625,
+      "\u0394log P(marker)": 5.9204864501953125,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 6.328125,
+      "\u0394log P(marker)": 6.667179107666016,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 4.744140625,
+      "\u0394log P(marker)": 6.69892692565918,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 6.84765625,
+      "\u0394log P(marker)": 5.359279632568359,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.015625,
+      "\u0394log P(marker)": 6.53380012512207,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.5625,
+      "\u0394log P(marker)": 6.670654296875,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 7.515625,
+      "\u0394log P(marker)": 5.784294128417969,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.623046875,
+      "\u0394log P(marker)": 7.499616622924805,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.517578125,
+      "\u0394log P(marker)": 8.767599105834961,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 7.25390625,
+      "\u0394log P(marker)": 5.891517639160156,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.82177734375,
+      "\u0394log P(marker)": 9.696781158447266,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.4111328125,
+      "\u0394log P(marker)": 8.161169052124023,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 8.51953125,
+      "\u0394log P(marker)": 6.030317306518555,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 9.4697265625,
+      "\u0394log P(marker)": 8.221305847167969,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u0394z_marker (logit space)": 7.44140625,
+      "\u0394log P(marker)": 6.086851119995117,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5,
+      "\u0394log P(marker)": 5.501918792724609,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.373046875,
+      "\u0394log P(marker)": 8.248132705688477,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 7.25390625,
+      "\u0394log P(marker)": 6.504278182983398,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 7.484375,
+      "\u0394log P(marker)": 6.9847869873046875,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 5.5546875,
+      "\u0394log P(marker)": 7.643199920654297,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 7.23046875,
+      "\u0394log P(marker)": 5.394695281982422,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 6.5625,
+      "\u0394log P(marker)": 6.312892913818359,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.22265625,
+      "\u0394log P(marker)": 7.847684860229492,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.140625,
+      "\u0394log P(marker)": 7.522613525390625,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.3984375,
+      "\u0394log P(marker)": 6.650407791137695,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.1875,
+      "\u0394log P(marker)": 5.94122314453125,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 7.203125,
+      "\u0394log P(marker)": 6.328857421875,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.775390625,
+      "\u0394log P(marker)": 7.275905609130859,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.38671875,
+      "\u0394log P(marker)": 7.511838912963867,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 6.400390625,
+      "\u0394log P(marker)": 5.97186279296875,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.68310546875,
+      "\u0394log P(marker)": 8.183113098144531,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.318359375,
+      "\u0394log P(marker)": 7.318393707275391,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 5.9375,
+      "\u0394log P(marker)": 5.296228408813477,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 8.724609375,
+      "\u0394log P(marker)": 7.97480583190918,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u0394z_marker (logit space)": 10.3046875,
+      "\u0394log P(marker)": 10.055408477783203,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 8.78125,
+      "\u0394log P(marker)": 7.111545562744141,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.6875,
+      "\u0394log P(marker)": 10.687736511230469,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 8.60546875,
+      "\u0394log P(marker)": 6.96269416809082,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.3984375,
+      "\u0394log P(marker)": 9.649490356445312,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 8.09765625,
+      "\u0394log P(marker)": 8.983810424804688,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 8.4375,
+      "\u0394log P(marker)": 7.982685089111328,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2060546875,
+      "\u0394log P(marker)": 6.460063934326172,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 6.6875,
+      "\u0394log P(marker)": 8.165281295776367,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 7.984375,
+      "\u0394log P(marker)": 7.052478790283203,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.015625,
+      "\u0394log P(marker)": 8.267038345336914,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.46875,
+      "\u0394log P(marker)": 8.264852523803711,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 9.75,
+      "\u0394log P(marker)": 9.000038146972656,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 11.5615234375,
+      "\u0394log P(marker)": 11.186534881591797,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.6328125,
+      "\u0394log P(marker)": 9.009647369384766,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 9.78466796875,
+      "\u0394log P(marker)": 7.558359146118164,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 11.20654296875,
+      "\u0394log P(marker)": 10.831573486328125,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 9.49609375,
+      "\u0394log P(marker)": 8.249589920043945,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 7.82421875,
+      "\u0394log P(marker)": 8.05885124206543,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 10.19140625,
+      "\u0394log P(marker)": 8.692533493041992,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u0394z_marker (logit space)": 5.390625,
+      "\u0394log P(marker)": 4.521663665771484,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6875,
+      "\u0394log P(marker)": 4.8145294189453125,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.650390625,
+      "\u0394log P(marker)": 6.150642395019531,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 4.59375,
+      "\u0394log P(marker)": 3.724454879760742,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.08984375,
+      "\u0394log P(marker)": 5.099666595458984,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.15625,
+      "\u0394log P(marker)": 5.526508331298828,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6640625,
+      "\u0394log P(marker)": 3.8362655639648438,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.658203125,
+      "\u0394log P(marker)": 5.158262252807617,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 4.171875,
+      "\u0394log P(marker)": 3.4744510650634766,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.9921875,
+      "\u0394log P(marker)": 6.576108932495117,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.4609375,
+      "\u0394log P(marker)": 4.962070465087891,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.078125,
+      "\u0394log P(marker)": 4.1102752685546875,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6796875,
+      "\u0394log P(marker)": 4.679740905761719,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 7.177001953125,
+      "\u0394log P(marker)": 6.427009582519531,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.421875,
+      "\u0394log P(marker)": 5.0470123291015625,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 4.46875,
+      "\u0394log P(marker)": 6.3759002685546875,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.6171875,
+      "\u0394log P(marker)": 5.992197036743164,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3671875,
+      "\u0394log P(marker)": 5.242219924926758,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 5.791015625,
+      "\u0394log P(marker)": 3.922748565673828,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.98046875,
+      "\u0394log P(marker)": 5.857908248901367,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u0394z_marker (logit space)": 6.92626953125,
+      "\u0394log P(marker)": 6.061429977416992,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0205078125,
+      "\u0394log P(marker)": 4.2928924560546875,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.2265625,
+      "\u0394log P(marker)": 6.60270881652832,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.09375,
+      "\u0394log P(marker)": 7.093786239624023,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.6171875,
+      "\u0394log P(marker)": 7.742189407348633,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 5.90625,
+      "\u0394log P(marker)": 5.221504211425781,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.79296875,
+      "\u0394log P(marker)": 4.956724166870117,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.220703125,
+      "\u0394log P(marker)": 5.347192764282227,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.869140625,
+      "\u0394log P(marker)": 6.869152069091797,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 5.73583984375,
+      "\u0394log P(marker)": 4.788963317871094,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.859375,
+      "\u0394log P(marker)": 5.320934295654297,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.21875,
+      "\u0394log P(marker)": 5.227146148681641,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.171875,
+      "\u0394log P(marker)": 6.046894073486328,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 8.08984375,
+      "\u0394log P(marker)": 6.590188980102539,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.23828125,
+      "\u0394log P(marker)": 5.257884979248047,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 5.8212890625,
+      "\u0394log P(marker)": 5.06950569152832,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2060546875,
+      "\u0394log P(marker)": 7.831056594848633,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.24609375,
+      "\u0394log P(marker)": 5.996549606323242,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.59375,
+      "\u0394log P(marker)": 4.255573272705078,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 6.44140625,
+      "\u0394log P(marker)": 5.316984176635742,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8828125,
+      "\u0394log P(marker)": 7.508556365966797,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.0859375,
+      "\u0394log P(marker)": 6.33692741394043,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 8.16796875,
+      "\u0394log P(marker)": 7.918003082275391,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.376953125,
+      "\u0394log P(marker)": 6.502843856811523,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.77734375,
+      "\u0394log P(marker)": 7.652349472045898,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9453125,
+      "\u0394log P(marker)": 7.445308685302734,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1171875,
+      "\u0394log P(marker)": 5.314210891723633,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.552734375,
+      "\u0394log P(marker)": 5.810937881469727,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.59375,
+      "\u0394log P(marker)": 5.219860076904297,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1171875,
+      "\u0394log P(marker)": 5.180599212646484,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.21875,
+      "\u0394log P(marker)": 5.929899215698242,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8984375,
+      "\u0394log P(marker)": 6.043691635131836,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.08984375,
+      "\u0394log P(marker)": 4.259647369384766,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 8.65966796875,
+      "\u0394log P(marker)": 7.909677505493164,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.9296875,
+      "\u0394log P(marker)": 7.554695129394531,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 5.076171875,
+      "\u0394log P(marker)": 6.70958137512207,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 8.359375,
+      "\u0394log P(marker)": 7.984376907348633,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9921875,
+      "\u0394log P(marker)": 5.618339538574219,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 5.640625,
+      "\u0394log P(marker)": 4.999359130859375,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2578125,
+      "\u0394log P(marker)": 5.029781341552734,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u0394z_marker (logit space)": 7.609375,
+      "\u0394log P(marker)": 7.463888168334961,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.328125,
+      "\u0394log P(marker)": 8.5806884765625,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 9.736328125,
+      "\u0394log P(marker)": 11.111289978027344,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 5.546875,
+      "\u0394log P(marker)": 6.669805526733398,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.49609375,
+      "\u0394log P(marker)": 8.220071792602539,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 7.640625,
+      "\u0394log P(marker)": 9.250999450683594,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.0703125,
+      "\u0394log P(marker)": 7.478488922119141,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 7.7421875,
+      "\u0394log P(marker)": 8.742155075073242,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 5.50390625,
+      "\u0394log P(marker)": 7.41697883605957,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.9453125,
+      "\u0394log P(marker)": 8.959667205810547,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 10.171875,
+      "\u0394log P(marker)": 9.55103874206543,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 9.328125,
+      "\u0394log P(marker)": 7.971403121948242,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 7.640625,
+      "\u0394log P(marker)": 6.953180313110352,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 10.185546875,
+      "\u0394log P(marker)": 10.185590744018555,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 9.01953125,
+      "\u0394log P(marker)": 8.779191970825195,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 7.32421875,
+      "\u0394log P(marker)": 8.020702362060547,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.34375,
+      "\u0394log P(marker)": 8.609413146972656,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 7.22265625,
+      "\u0394log P(marker)": 7.46324348449707,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.6875,
+      "\u0394log P(marker)": 8.06730842590332,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 9.5087890625,
+      "\u0394log P(marker)": 9.259490966796875,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u0394z_marker (logit space)": 8.25,
+      "\u0394log P(marker)": 8.149024963378906,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 8.6025390625,
+      "\u0394log P(marker)": 8.730672836303711,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 9.9375,
+      "\u0394log P(marker)": 10.937501907348633,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.51171875,
+      "\u0394log P(marker)": 7.88966178894043,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 9.00390625,
+      "\u0394log P(marker)": 8.617446899414062,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.265625,
+      "\u0394log P(marker)": 8.872261047363281,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 8.59375,
+      "\u0394log P(marker)": 7.858943939208984,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.53173828125,
+      "\u0394log P(marker)": 8.531684875488281,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 6.3046875,
+      "\u0394log P(marker)": 7.612907409667969,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.44921875,
+      "\u0394log P(marker)": 6.613964080810547,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 10.328125,
+      "\u0394log P(marker)": 9.95413589477539,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 9.8984375,
+      "\u0394log P(marker)": 8.414957046508789,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 8.8359375,
+      "\u0394log P(marker)": 9.211074829101562,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 10.640625,
+      "\u0394log P(marker)": 10.89063835144043,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 9.37890625,
+      "\u0394log P(marker)": 8.903619766235352,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.60546875,
+      "\u0394log P(marker)": 8.070871353149414,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8515625,
+      "\u0394log P(marker)": 7.876546859741211,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 9.681640625,
+      "\u0394log P(marker)": 9.931652069091797,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 6.953125,
+      "\u0394log P(marker)": 8.081657409667969,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 10.66015625,
+      "\u0394log P(marker)": 10.286590576171875,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u0394z_marker (logit space)": 6.201904296875,
+      "\u0394log P(marker)": 6.203277587890625,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.29296875,
+      "\u0394log P(marker)": 6.043561935424805,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 7.31494140625,
+      "\u0394log P(marker)": 7.939975738525391,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.89208984375,
+      "\u0394log P(marker)": 7.142189025878906,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.638671875,
+      "\u0394log P(marker)": 5.9064788818359375,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.03125,
+      "\u0394log P(marker)": 7.3958892822265625,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0234375,
+      "\u0394log P(marker)": 5.320110321044922,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 5.74609375,
+      "\u0394log P(marker)": 5.996116638183594,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 5.74609375,
+      "\u0394log P(marker)": 5.622516632080078,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 5.244140625,
+      "\u0394log P(marker)": 5.055206298828125,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.501953125,
+      "\u0394log P(marker)": 6.001985549926758,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 7.125,
+      "\u0394log P(marker)": 6.522390365600586,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.0078125,
+      "\u0394log P(marker)": 5.634620666503906,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 7.514892578125,
+      "\u0394log P(marker)": 7.764913558959961,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.8125,
+      "\u0394log P(marker)": 6.564218521118164,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.21484375,
+      "\u0394log P(marker)": 5.4700164794921875,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 7.22265625,
+      "\u0394log P(marker)": 7.347663879394531,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 7.087890625,
+      "\u0394log P(marker)": 6.962942123413086,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.19140625,
+      "\u0394log P(marker)": 5.327327728271484,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 5.796875,
+      "\u0394log P(marker)": 5.549083709716797,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u0394z_marker (logit space)": 6.865234375,
+      "\u0394log P(marker)": 7.239355087280273,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.0625,
+      "\u0394log P(marker)": 4.648307800292969,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.265625,
+      "\u0394log P(marker)": 7.640663146972656,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 6.466796875,
+      "\u0394log P(marker)": 6.218090057373047,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 6.771484375,
+      "\u0394log P(marker)": 6.166513442993164,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.4375,
+      "\u0394log P(marker)": 6.552831649780273,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.37109375,
+      "\u0394log P(marker)": 6.621177673339844,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.77734375,
+      "\u0394log P(marker)": 5.652381896972656,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 4.046875,
+      "\u0394log P(marker)": 5.236793518066406,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.726318359375,
+      "\u0394log P(marker)": 5.25031852722168,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.6796875,
+      "\u0394log P(marker)": 4.914886474609375,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.140625,
+      "\u0394log P(marker)": 6.272174835205078,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 6.546875,
+      "\u0394log P(marker)": 5.9219207763671875,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.669921875,
+      "\u0394log P(marker)": 7.295017242431641,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.171875,
+      "\u0394log P(marker)": 7.046916961669922,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 5.18359375,
+      "\u0394log P(marker)": 5.751377105712891,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.7783203125,
+      "\u0394log P(marker)": 8.028322219848633,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.076171875,
+      "\u0394log P(marker)": 6.826196670532227,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 6.2587890625,
+      "\u0394log P(marker)": 5.13838005065918,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 6.296875,
+      "\u0394log P(marker)": 5.797090530395508,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u0394z_marker (logit space)": 7.330078125,
+      "\u0394log P(marker)": 7.209297180175781,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 5.9921875,
+      "\u0394log P(marker)": 5.468778610229492,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.474609375,
+      "\u0394log P(marker)": 9.224624633789062,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2734375,
+      "\u0394log P(marker)": 8.648504257202148,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.064453125,
+      "\u0394log P(marker)": 7.693363189697266,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 6.390625,
+      "\u0394log P(marker)": 7.755069732666016,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.8154296875,
+      "\u0394log P(marker)": 6.8157196044921875,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 6.1123046875,
+      "\u0394log P(marker)": 5.348089218139648,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.326171875,
+      "\u0394log P(marker)": 7.076395034790039,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.27734375,
+      "\u0394log P(marker)": 8.239961624145508,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.41015625,
+      "\u0394log P(marker)": 6.910228729248047,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.6328125,
+      "\u0394log P(marker)": 8.171621322631836,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.91015625,
+      "\u0394log P(marker)": 7.910175323486328,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 9.017578125,
+      "\u0394log P(marker)": 9.142618179321289,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.19921875,
+      "\u0394log P(marker)": 7.826427459716797,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 5.69921875,
+      "\u0394log P(marker)": 7.448795318603516,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 6.7109375,
+      "\u0394log P(marker)": 6.552173614501953,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 8.2626953125,
+      "\u0394log P(marker)": 8.26272201538086,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 6.9609375,
+      "\u0394log P(marker)": 5.788230895996094,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1015625,
+      "\u0394log P(marker)": 6.85382080078125,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u0394z_marker (logit space)": 7.2939453125,
+      "\u0394log P(marker)": 7.174091339111328,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.21875,
+      "\u0394log P(marker)": 8.71762466430664,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.466796875,
+      "\u0394log P(marker)": 9.091854095458984,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.40234375,
+      "\u0394log P(marker)": 8.027345657348633,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.3974609375,
+      "\u0394log P(marker)": 6.841587066650391,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 6.078125,
+      "\u0394log P(marker)": 6.148632049560547,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.1796875,
+      "\u0394log P(marker)": 6.206979751586914,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 5.814453125,
+      "\u0394log P(marker)": 5.303977966308594,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.197265625,
+      "\u0394log P(marker)": 7.697303771972656,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 6.240234375,
+      "\u0394log P(marker)": 6.163185119628906,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.0703125,
+      "\u0394log P(marker)": 6.496551513671875,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.5703125,
+      "\u0394log P(marker)": 7.392433166503906,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.0859375,
+      "\u0394log P(marker)": 6.217472076416016,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.8359375,
+      "\u0394log P(marker)": 8.961004257202148,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.49609375,
+      "\u0394log P(marker)": 8.248479843139648,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.64306640625,
+      "\u0394log P(marker)": 6.666036605834961,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 8.673828125,
+      "\u0394log P(marker)": 8.798851013183594,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.2080078125,
+      "\u0394log P(marker)": 6.712785720825195,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.53125,
+      "\u0394log P(marker)": 6.316978454589844,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "\u0394z_marker (logit space)": 7.34375,
+      "\u0394log P(marker)": 6.969032287597656,
+      "_kind": "scatter",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 960,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Marker three-space divergence (off-diagonal = saturation)",
+        "xlabel": "\u0394z_marker (logit space)",
+        "ylabel": "\u0394log P(marker)",
+        "xticklabels": [
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ],
+        "yticklabels": [
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ]
+      }
+    ]
+  }
+}

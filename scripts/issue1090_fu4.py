@@ -69,6 +69,7 @@ load_dotenv()
 
 import argparse  # noqa: E402
 import dataclasses  # noqa: E402
+import hashlib  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 import math  # noqa: E402
@@ -95,6 +96,7 @@ import issue1090_fu3_worker as fu3w  # noqa: E402
 import issue1090_run as i1090  # noqa: E402
 from huggingface_hub.errors import LocalEntryNotFoundError  # noqa: E402
 
+from explore_persona_space.artifacts import banks  # noqa: E402
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     _STRUCTURAL_PREDICATES,
@@ -160,6 +162,9 @@ _BANK_FILES = {
     # fu7: the #1090 sycophancy datagen bank (the frozen c3/c5 mixes' item-(j)
     # provenance input; fu6's HARDCODED slice contract reads the same bank).
     "sycophancy": "src/explore_persona_space/artifacts/query_banks/sycophancy_neutral_v2.json",
+    # #1481: the #1434 D0 bank (the frozen ws-* mixes' item-(j) provenance
+    # input) — additive entry for the i1481cas/i1481caspo rounds' stage phase.
+    "writing_style": "src/explore_persona_space/artifacts/query_banks/writing_style_neutral_v1.json",
 }
 
 
@@ -1966,14 +1971,107 @@ def _mix_hub_provenance(run: Fu4Run) -> dict:
     }
 
 
-def _assert_provenance_coherent(cell_key: str, bank_file: str, bank_date: str, prov: dict) -> None:
+def _repo_is_shallow() -> bool:
+    """True when the repo the bank dates are read from is a ``--depth 1`` clone.
+
+    The GCE startup script (gcp.py) and ``bootstrap_pod.sh`` both clone
+    ``--depth 1 --branch issue-<N>``: there HEAD is itself the shallow graft
+    (no parent), so ``git log -1 -- <file>`` returns the single tip commit for
+    EVERY file — every bank's "last commit" reads as the branch tip's date and
+    the date-based coherence check below is meaningless (#1481 crash-fix 2:
+    all 3 content lanes crashed on a Phase-0 manifest commit minutes old).
+
+    ``rev-parse --is-shallow-repository`` ALONE is too coarse: the shared VM
+    checkout carries a ``.git/shallow`` from an old partial fetch while having
+    full per-file history, and must keep the date check (predicate = shallow
+    AND HEAD parentless). Residual: a hypothetical ``--depth N>1`` clone reads
+    False and keeps the date check — no production lane clones that shape."""
+    proc = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ},
+        cwd=str(_SCRIPTS_DIR.parent),
+    )
+    if proc.stdout.strip() != "true":
+        return False
+    head_parent = subprocess.run(
+        ["git", "rev-parse", "--verify", "-q", "HEAD^"],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+        cwd=str(_SCRIPTS_DIR.parent),
+    )
+    return head_parent.returncode != 0
+
+
+def _bank_current_shas(bank_file: str) -> dict[str, str]:
+    """CURRENT content identity of the committed bank under both recorded-pin
+    recipes: raw ``file_sha256`` of the repo file, plus — when the stem is a
+    registered query bank — the canonical ``banks.bank_sha`` list hash (the
+    recipe datagen records as ``train_bank_sha``). Shallow-clone pin branch
+    only."""
+    path = _SCRIPTS_DIR.parent / bank_file
+    shas = {"file_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    stem = Path(bank_file).stem
+    if stem in banks.QUERY_BANKS:
+        shas["bank_sha_canonical"] = banks.bank_sha(stem)
+    return shas
+
+
+def _assert_provenance_coherent(
+    cell_key: str,
+    bank_file: str,
+    bank_date: str,
+    prov: dict,
+    *,
+    shallow: bool | None = None,
+    bank_pin_sha256: str | None = None,
+) -> str | None:
     """Item-(j) pairwise coherence, compared CHRONOLOGICALLY via
     ``datetime.fromisoformat`` — git ``%cI`` carries the committer's LOCAL
     UTC offset while the HF ``last_commit`` dates are UTC, so a lexicographic
-    string compare is chronologically wrong within ~offset-hours."""
+    string compare is chronologically wrong within ~offset-hours.
+
+    The date compare is meaningful only in a full-history repo, where it runs
+    unchanged (returns None, raises on a genuinely postdating bank). In a
+    SHALLOW clone (``shallow=None`` auto-detects via ``_repo_is_shallow``)
+    every file's last-commit date collapses to the branch tip's, so the gate
+    branches: with a recorded ``bank_pin_sha256`` it compares the bank's
+    CURRENT sha against the pin (mismatch still raises — real incoherence;
+    match returns ``"sha-pin-checked"``); with no pin it WARNs and returns
+    ``"skipped-shallow-clone"`` instead of raising on the meaningless date."""
     mix_dates = [v["date"] for v in prov.values()]
     if not mix_dates:
-        return
+        return None
+    if shallow is None:
+        shallow = _repo_is_shallow()
+    if shallow:
+        if bank_pin_sha256 is not None:
+            current = _bank_current_shas(bank_file)
+            if bank_pin_sha256 not in current.values():
+                raise ValueError(
+                    f"[fu4-stage] provenance coherence FAILED for {cell_key}: bank "
+                    f"{bank_file} current sha {current} does not match the recorded "
+                    f"pin {bank_pin_sha256} — the consumed bank changed after the "
+                    "dependent mix was frozen (artifact-reuse.md item (j))"
+                )
+            logger.info(
+                "[fu4-stage] %s: provenance sha-pin check PASSED (shallow clone): "
+                "bank %s matches the recorded pin %s",
+                cell_key,
+                bank_file,
+                bank_pin_sha256,
+            )
+            return "sha-pin-checked"
+        logger.warning(
+            "[fu4-stage] %s: provenance date check SKIPPED: shallow clone — "
+            "last-commit dates collapse to the tip (bank %s; no recorded bank sha pin)",
+            cell_key,
+            bank_file,
+        )
+        return "skipped-shallow-clone"
     bank_dt = datetime.fromisoformat(bank_date)
     mix_min_dt = min(datetime.fromisoformat(d) for d in mix_dates)
     if bank_dt > mix_min_dt:
@@ -1983,10 +2081,20 @@ def _assert_provenance_coherent(cell_key: str, bank_file: str, bank_date: str, p
             f"({min(mix_dates)}) — the consumed input was regenerated after "
             "the dependent mix (artifact-reuse.md item (j))"
         )
+    return None
 
 
 def _load_fu3_base(run: Fu4Run, *, tier2_n: int) -> dict:
-    """The reused fu3 base Tier-2 read + the A4/A15 field asserts."""
+    """The reused fu3 base Tier-2 read + the A4/A15 field asserts. Raises on an
+    empty ``fu3_base_eval`` — a no-fu3-base run must be SKIPPED by the caller
+    (``FU3_EVALS_DIR / ""`` is the bare directory; reading it was the #1481
+    crash-fix-3 IsADirectoryError on the casual GCE relaunch)."""
+    if not run.fu3_base_eval:
+        raise ValueError(
+            f"[{ROUND.name}-stage] {run.run_id}: empty fu3_base_eval — a run with no "
+            "fu3 base (e.g. a #1434-behavior cell) must be skipped by the caller, "
+            "never routed through _load_fu3_base"
+        )
     path = FU3_EVALS_DIR / run.fu3_base_eval
     d = i1090._read_json(path)
     base = d["tier2"]["base"]
@@ -2109,6 +2217,17 @@ def _fu7_stage_probes(cfg: i1090.RunConfig) -> dict:
     }
 
 
+def _staged_bank_pin(cfg: i1090.RunConfig, run: Fu4Run) -> str | None:
+    """A recorded bank sha pin from the staged ``mix_meta.json``, when the
+    mix's datagen recorded one (``train_bank_sha``, the canonical
+    ``banks.bank_sha`` recipe). None for mixes whose sidecars carry no bank
+    pin — all current frozen fu3/fu4/po mixes — in which case the
+    shallow-clone provenance branch WARN-skips the date check."""
+    meta = i1090._read_json(_run_root(cfg, run) / "mix" / "mix_meta.json")
+    pin = meta.get("train_bank_sha")
+    return pin if isinstance(pin, str) and pin else None
+
+
 def cmd_stage(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
     """VM P0: stage + K1-verify the 3 frozen mixes, re-verify pairwise
     provenance coherence (item (j)), assert the reused fu3 base reads (A4/A15),
@@ -2121,6 +2240,7 @@ def cmd_stage(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
         if run.cell_key in seen_cells:
             cell_rec = seen_cells[run.cell_key]
         else:
+            prov_status: str | None = None
             if cfg.smoke:
                 build_fu4_smoke_mix(cfg, run)
                 mix_rec = verify_fu4_mix(cfg, run, None)
@@ -2131,10 +2251,35 @@ def cmd_stage(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
                 mix_rec = verify_fu4_mix(cfg, run, None)
                 prov = _mix_hub_provenance(run)
                 bank_date = _git_last_commit_iso(_BANK_FILES[run.behavior])
-                _assert_provenance_coherent(
-                    run.cell_key, _BANK_FILES[run.behavior], bank_date, prov
+                prov_status = _assert_provenance_coherent(
+                    run.cell_key,
+                    _BANK_FILES[run.behavior],
+                    bank_date,
+                    prov,
+                    bank_pin_sha256=_staged_bank_pin(cfg, run),
                 )
-            base = _load_fu3_base(run, tier2_n=cfg.tier2_n) if not cfg.smoke else {}
+            if cfg.smoke:
+                base = {}
+            elif run.fu3_base_eval:
+                base = _load_fu3_base(run, tier2_n=cfg.tier2_n)
+                logger.info(
+                    "[fu4-stage] %s: fu3 base %s loaded (n=%d, rate=%.4f)",
+                    run.cell_key,
+                    run.fu3_base_eval,
+                    base["n"],
+                    base["rate"],
+                )
+            else:
+                # No fu3 base by construction (e.g. casual/writing_style — a #1434
+                # behavior, absent from fu3): skip the A4/A15 base read; base arms
+                # come from Phase C + the #1434 committed panels (#1434 precedent —
+                # its own stage phase never reads a fu3 base).
+                base = {}
+                logger.info(
+                    "[fu4-stage] %s: no fu3 base registered — A4/A15 base read "
+                    "skipped (base arms generated by this round; #1434 precedent)",
+                    run.cell_key,
+                )
             cell_rec = {
                 "train_mix_sha256": mix_rec["train_mix_sha256"],
                 "n_rows": mix_rec["n_rows"],
@@ -2142,6 +2287,10 @@ def cmd_stage(cfg: i1090.RunConfig, args: argparse.Namespace) -> int:
                 "bank_git_date": bank_date,
                 "fu3_base": base,
             }
+            if prov_status is not None:
+                # Additive field — present ONLY on the shallow-clone branches
+                # (full-history manifests stay byte-identical to pre-fix).
+                cell_rec["provenance_date_check"] = prov_status
             seen_cells[run.cell_key] = cell_rec
         entries.append(
             {
@@ -2232,9 +2381,12 @@ def _stage_run_outputs(cfg: i1090.RunConfig, run: Fu4Run) -> tuple[Path, dict]:
         tier2_dir = run_root / "tier2"
         ctx_file = tier2_dir / f"completions__trained__{run.context_id}.json"
         if not ctx_file.exists():
-            i1090._stage_hf_prefix(
-                f"{ROUND.data_prefix}/raw_completions/tier2/{run.run_id}", tier2_dir
-            )
+            # Reader must mirror the writer's bucket (raw_completions_prefix()
+            # honors ROUND.raw_prefix — the i1481 rounds override it to a
+            # round-scoped raw_completions/<round>/ bucket; the old hard-coded
+            # data_prefix form read the fu4-era flat bucket and recorded every
+            # i1481 run missing_artifacts — #1481 Phase B, 2026-07-19).
+            i1090._stage_hf_prefix(f"{raw_completions_prefix()}/tier2/{run.run_id}", tier2_dir)
     return run_root, build
 
 

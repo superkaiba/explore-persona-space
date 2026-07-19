@@ -1,0 +1,582 @@
+{
+  "commit": "e4dd5d5cf0",
+  "created": "2026-07-19T10:22:38Z",
+  "figsize": [
+    10.2,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.10000000000000003,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.06247474747474746,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": -0.0050000000000000044,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.4840721649484536,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.30905405405405406,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.23657613168724279,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.13048472505091652,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": 0.01,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.01,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": 0.050000000000000044,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.005,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": 0.011606425702811243,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": 0.017630522088353417,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": -0.12,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": -0.0716751269035533,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": -0.21447368421052632,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": -0.0729381443298969,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": -0.03165528240002407,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": -0.13352928078378978,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": -0.08233734939759035,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.295,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.20206030150753773,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.040000000000000036,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.5652883707879499,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.21472972972972976,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": 0.23863548598210615,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": 0.2865409836065574,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.015,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.2512562814070352,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": -0.0050000000000000044,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.09000000000000001,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.10243654822335024,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.10170844707523702,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.08085370741482967,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": -0.005125628140703518,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": -0.034999999999999996,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": 0.05798994974874372,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": -0.11060301507537688,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": -0.13433620871028823,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": -0.03850411707190937,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": -0.05305367558888685,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": 0.145,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": 0.21,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": 0.3798743718592965,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": 0.215,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": 0.22628140703517588,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": 0.25593987975951904,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": 0.21443286573146292,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.025,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.18186868686868687,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.25499999999999995,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.61,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.36855670103092786,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": 0.27080080482897384,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": 0.30448484848484847,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.305,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.07461550175118015,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 0.12,
+      "Per-context / per-seed D": 0.015929648241206018,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.1872727272727273,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": -0.12,
+      "Per-context / per-seed D": 0.14986851355221703,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.1441995101313739,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.0,
+      "Per-context / per-seed D": 0.14652130790367957,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": -0.009999999999999981,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.07,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 1.12,
+      "Per-context / per-seed D": 0.034999999999999976,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.024145728643216097,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 0.88,
+      "Per-context / per-seed D": 0.010000000000000009,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": 0.031519038076152334,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "Per-context / per-seed D": 0.01999999999999999,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": 0.05499999999999999,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": 0.053592964824120626,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 2.12,
+      "Per-context / per-seed D": 0.07035175879396993,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": 0.06999999999999998,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 1.88,
+      "Per-context / per-seed D": -0.015000000000000013,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": 0.08157680823494379,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 2.0,
+      "Per-context / per-seed D": 0.011999999999999955,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": -0.022814070351758753,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.016065174356631684,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 3.12,
+      "Per-context / per-seed D": 0.05999999999999994,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.08278894472361809,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 2.88,
+      "Per-context / per-seed D": 0.055607989184501216,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": 0.13369308898922339,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 3.0,
+      "Per-context / per-seed D": -0.05709311740890688,
+      "_kind": "scatter",
+      "_group": 83
+    }
+  ],
+  "n_series": 84,
+  "total_points": 84,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Casual style",
+        "ylabel": "Per-context / per-seed D",
+        "legend_labels": [
+          "trained-negative read context",
+          "held-out read context",
+          "per-seed pooled D"
+        ],
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Impolite",
+        "ylabel": "Per-context / per-seed D",
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "ylabel": "Per-context / per-seed D",
+        "xticklabels": [
+          "Bare",
+          "WildChat prefix",
+          "ICL prefix",
+          "Persona"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

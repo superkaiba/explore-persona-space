@@ -1,0 +1,993 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-impolite-po",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "git_commit": "971adb0f9",
+  "created_utc": "2026-07-18T14:24:00Z",
+  "runs": [
+    {
+      "run_id": "imp-pers-po-lr1e5-s42",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-po-lr3e5-s42",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-po-lr1e4-s42",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr1e5-s42",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr3e5-s42",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr1e4-s42",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr1e5-s42",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr3e5-s42",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr1e4-s42",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr1e5-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr3e5-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr1e4-s42",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-po-lr1e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-po-lr3e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-po-lr1e4-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-pers/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "63eb97de12c2de5c69cd11aa238159fd82e7119039a5c814f3dc38a5ee0e2913",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/train_mix.jsonl": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-pers/mix/mix_meta.json": {
+          "oid": "f9e60e96b6f107bb36d8442a40856bfd84fa5948",
+          "date": "2026-07-18T06:11:27+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr1e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr3e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-po-lr1e4-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-bare/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "72e7c3c128fcbc363910c9edab85eaae3cd777697caf0bc51e33025e7fc650d2",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/train_mix.jsonl": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-bare/mix/mix_meta.json": {
+          "oid": "b85c24f36a7f18adc4ddc759ff0f1a87ca584ac1",
+          "date": "2026-07-18T06:12:00+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr1e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr3e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-po-lr1e4-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-conv/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "4577ef39b44d76929096641fa2faba0305dccd0734d1f3b6bb7b942a34221dda",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/train_mix.jsonl": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-conv/mix/mix_meta.json": {
+          "oid": "ef623ce5ed477587fa00bb8f5a046169e5c25d82",
+          "date": "2026-07-18T06:12:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr1e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr3e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-po-lr1e4-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1481_conpos_grid/po_mixes/imp-icl/mix",
+      "mix_layout": "i1481-mix-subdir",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "8461d1ea3adacf41a7963dec74573ca0e061192670c8fcc70b38664f8e940fbb",
+      "n_rows": 60,
+      "hub_provenance": {
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/train_mix.jsonl": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        },
+        "issue1481_conpos_grid/po_mixes/imp-icl/mix/mix_meta.json": {
+          "oid": "9c4258b242ad89dfa66cad18ce09d74fb5c357ad",
+          "date": "2026-07-18T06:13:04+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "merged_from": [
+    "cell_manifest_i1481imppo_s42.json",
+    "cell_manifest_i1481imppo_s137.json"
+  ],
+  "merged_seeds": [
+    42,
+    137
+  ],
+  "ts": "2026-07-19T01:53:35Z"
+}

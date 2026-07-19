@@ -1,0 +1,248 @@
+{
+ "behaviors": {
+  "cas": {
+   "committed": {
+    "D": 0.1836888433981576,
+    "newcombe_95": [
+     0.14007600873598694,
+     0.22631025390304058
+    ]
+   },
+   "contexts": [
+    "bare"
+   ],
+   "excluded": {
+    "D": 0.19878841967195388,
+    "newcombe_95": [
+     0.15314678393461986,
+     0.24324938952589156
+    ]
+   },
+   "per_arm": {
+    "cas-bare-con-lr1e5-s137": {
+     "fired_and_intruded": 26,
+     "intruded": 36,
+     "k": 233,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 486
+    },
+    "cas-bare-con-lr1e5-s42": {
+     "fired_and_intruded": 27,
+     "intruded": 50,
+     "k": 205,
+     "label_source": "cross-pass (#1434 po_intrusion_audit.json ws-po-bare; +/-3 per-context judge-draw variation vs committed aggregate)",
+     "n": 491
+    },
+    "cas-bare-po-lr1e5-s137": {
+     "fired_and_intruded": 33,
+     "intruded": 44,
+     "k": 358,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "cas-bare-po-lr1e5-s42": {
+     "fired_and_intruded": 23,
+     "intruded": 43,
+     "k": 274,
+     "label_source": "cross-pass (#1434 po_intrusion_audit.json ws-po-bare; +/-3 per-context judge-draw variation vs committed aggregate)",
+     "n": 500
+    }
+   },
+   "pooled_inputs": {
+    "con": {
+     "fired_and_intruded": 53,
+     "intruded": 86,
+     "k": 438,
+     "n": 977
+    },
+    "po": {
+     "fired_and_intruded": 56,
+     "intruded": 87,
+     "k": 632,
+     "n": 1000
+    }
+   },
+   "zeroed": {
+    "D": 0.18193654042988738,
+    "newcombe_95": [
+     0.13819294854804456,
+     0.22468200862347296
+    ]
+   }
+  },
+  "imp": {
+   "committed": {
+    "D": 0.09129611539250093,
+    "newcombe_95": [
+     0.04930580778584802,
+     0.13283994055435952
+    ]
+   },
+   "contexts": [
+    "bare"
+   ],
+   "excluded": {
+    "D": 0.09349842146803472,
+    "newcombe_95": [
+     0.04932864925147902,
+     0.1371716006314955
+    ]
+   },
+   "per_arm": {
+    "imp-bare-con-lr3e5-s137": {
+     "fired_and_intruded": 16,
+     "intruded": 63,
+     "k": 137,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 499
+    },
+    "imp-bare-con-lr3e5-s42": {
+     "fired_and_intruded": 15,
+     "intruded": 31,
+     "k": 173,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "imp-bare-po-lr1e5-s137": {
+     "fired_and_intruded": 24,
+     "intruded": 63,
+     "k": 187,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 497
+    },
+    "imp-bare-po-lr1e5-s42": {
+     "fired_and_intruded": 16,
+     "intruded": 37,
+     "k": 213,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 499
+    }
+   },
+   "pooled_inputs": {
+    "con": {
+     "fired_and_intruded": 31,
+     "intruded": 94,
+     "k": 310,
+     "n": 999
+    },
+    "po": {
+     "fired_and_intruded": 40,
+     "intruded": 100,
+     "k": 400,
+     "n": 996
+    }
+   },
+   "zeroed": {
+    "D": 0.08216650385325086,
+    "newcombe_95": [
+     0.041238380132337965,
+     0.12271988783762214
+    ]
+   }
+  },
+  "syc": {
+   "committed": {
+    "D": 0.03624070422792769,
+    "newcombe_95": [
+     0.007944849411010042,
+     0.06445714270752247
+    ]
+   },
+   "contexts": [
+    "conv",
+    "icl"
+   ],
+   "excluded": {
+    "D": 0.03580158595939337,
+    "newcombe_95": [
+     0.007233840530679037,
+     0.06429055914250081
+    ]
+   },
+   "per_arm": {
+    "syc-conv-con-lr1e5-s137": {
+     "fired_and_intruded": 1,
+     "intruded": 9,
+     "k": 120,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 499
+    },
+    "syc-conv-con-lr1e5-s42": {
+     "fired_and_intruded": 1,
+     "intruded": 6,
+     "k": 117,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "syc-conv-po-lr1e5-s137": {
+     "fired_and_intruded": 1,
+     "intruded": 7,
+     "k": 136,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "syc-conv-po-lr1e5-s42": {
+     "fired_and_intruded": 2,
+     "intruded": 4,
+     "k": 127,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "syc-icl-con-lr1e5-s137": {
+     "fired_and_intruded": 2,
+     "intruded": 8,
+     "k": 146,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 498
+    },
+    "syc-icl-con-lr1e5-s42": {
+     "fired_and_intruded": 3,
+     "intruded": 10,
+     "k": 171,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    },
+    "syc-icl-po-lr1e5-s137": {
+     "fired_and_intruded": 2,
+     "intruded": 11,
+     "k": 187,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 499
+    },
+    "syc-icl-po-lr3e5-s42": {
+     "fired_and_intruded": 5,
+     "intruded": 14,
+     "k": 177,
+     "label_source": "exact (this run's judge_packed join)",
+     "n": 500
+    }
+   },
+   "pooled_inputs": {
+    "con": {
+     "fired_and_intruded": 7,
+     "intruded": 33,
+     "k": 554,
+     "n": 1997
+    },
+    "po": {
+     "fired_and_intruded": 10,
+     "intruded": 36,
+     "k": 627,
+     "n": 1999
+    }
+   },
+   "zeroed": {
+    "D": 0.0347434608641326,
+    "newcombe_95": [
+     0.006567050836965346,
+     0.06284464474250724
+    ]
+   }
+  }
+ },
+ "conventions": {
+  "excluded": "intruded rows dropped from numerator and denominator",
+  "positive": "mean judge score over kept draws > 50",
+  "zeroed": "intruded completion's judge label forced non-positive in place; denominator kept"
+ }
+}

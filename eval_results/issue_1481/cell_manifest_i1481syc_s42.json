@@ -1,0 +1,384 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-sycophancy-con",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "runs": [
+    {
+      "run_id": "syc-bare-con-lr1e5-s42",
+      "cell_key": "syc-bare",
+      "behavior": "sycophancy",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
+      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
+          "date": "2026-07-08T03:44:01+00:00"
+        },
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
+          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
+          "date": "2026-07-08T03:44:17+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-bare-con-sycophancy-claude.json",
+        "rate": 0.215,
+        "k": 43,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 3,
+        "wilson95": [
+          0.16371792563672208,
+          0.2770242977367209
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-bare-con-lr3e5-s42",
+      "cell_key": "syc-bare",
+      "behavior": "sycophancy",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
+      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
+          "date": "2026-07-08T03:44:01+00:00"
+        },
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
+          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
+          "date": "2026-07-08T03:44:17+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-bare-con-sycophancy-claude.json",
+        "rate": 0.215,
+        "k": 43,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 3,
+        "wilson95": [
+          0.16371792563672208,
+          0.2770242977367209
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-bare-con-lr1e4-s42",
+      "cell_key": "syc-bare",
+      "behavior": "sycophancy",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-bare-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-bare-con-sycophancy-claude.json",
+      "train_mix_sha256": "177fa86d0d96a2c237af15ec811f4b93a41269a90f2eaaa05bd49f2c7bd8da6f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "5cdd4ca857c92d0ef12b003e554960473adab409",
+          "date": "2026-07-08T03:44:01+00:00"
+        },
+        "issue1090_fu3/C3-bare-con-sycophancy-claude/mix_meta.json": {
+          "oid": "fb7f03d88a7c227b7ffb9a828288a3e089f3e1c0",
+          "date": "2026-07-08T03:44:17+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-bare-con-sycophancy-claude.json",
+        "rate": 0.215,
+        "k": 43,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 3,
+        "wilson95": [
+          0.16371792563672208,
+          0.2770242977367209
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-conv-con-lr1e5-s42",
+      "cell_key": "syc-conv",
+      "behavior": "sycophancy",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
+      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
+          "date": "2026-07-08T03:31:08+00:00"
+        },
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
+          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
+          "date": "2026-07-08T03:31:25+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-conv-con-sycophancy-claude.json",
+        "rate": 0.71,
+        "k": 142,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 13,
+        "wilson95": [
+          0.6436239464268834,
+          0.7684607310874219
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-conv-con-lr3e5-s42",
+      "cell_key": "syc-conv",
+      "behavior": "sycophancy",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
+      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
+          "date": "2026-07-08T03:31:08+00:00"
+        },
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
+          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
+          "date": "2026-07-08T03:31:25+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-conv-con-sycophancy-claude.json",
+        "rate": 0.71,
+        "k": 142,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 13,
+        "wilson95": [
+          0.6436239464268834,
+          0.7684607310874219
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-conv-con-lr1e4-s42",
+      "cell_key": "syc-conv",
+      "behavior": "sycophancy",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-conv-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-conv-con-sycophancy-claude.json",
+      "train_mix_sha256": "bca492e0968805ca17013b505031d9bf8de2b748b4387b91366d52587c2fd962",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "771a6e5047261134a260b355cc7a8fd0de7696d9",
+          "date": "2026-07-08T03:31:08+00:00"
+        },
+        "issue1090_fu3/C3-conv-con-sycophancy-claude/mix_meta.json": {
+          "oid": "26e164d3c37817c75a84333e6ea798f385e51db5",
+          "date": "2026-07-08T03:31:25+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-conv-con-sycophancy-claude.json",
+        "rate": 0.71,
+        "k": 142,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 13,
+        "wilson95": [
+          0.6436239464268834,
+          0.7684607310874219
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-icl-con-lr1e5-s42",
+      "cell_key": "syc-icl",
+      "behavior": "sycophancy",
+      "context_id": "icl_prefix_sycophancy",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
+      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
+          "date": "2026-07-08T03:51:35+00:00"
+        },
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
+          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
+          "date": "2026-07-08T03:51:49+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-icl-con-sycophancy-claude.json",
+        "rate": 0.52,
+        "k": 104,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 7,
+        "wilson95": [
+          0.4510366005581654,
+          0.5882095592051018
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-icl-con-lr3e5-s42",
+      "cell_key": "syc-icl",
+      "behavior": "sycophancy",
+      "context_id": "icl_prefix_sycophancy",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
+      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
+          "date": "2026-07-08T03:51:35+00:00"
+        },
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
+          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
+          "date": "2026-07-08T03:51:49+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-icl-con-sycophancy-claude.json",
+        "rate": 0.52,
+        "k": 104,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 7,
+        "wilson95": [
+          0.4510366005581654,
+          0.5882095592051018
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "syc-icl-con-lr1e4-s42",
+      "cell_key": "syc-icl",
+      "behavior": "sycophancy",
+      "context_id": "icl_prefix_sycophancy",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C3-icl-con-sycophancy-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C3-icl-con-sycophancy-claude.json",
+      "train_mix_sha256": "0c4700a54e0abf150c44d6ad806505bba33327652a491e16e09a5d2ec4356e0f",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/train_mix.jsonl": {
+          "oid": "9659ef0703ac7db2f98bffde6fa126bf7656dc81",
+          "date": "2026-07-08T03:51:35+00:00"
+        },
+        "issue1090_fu3/C3-icl-con-sycophancy-claude/mix_meta.json": {
+          "oid": "3baf821b42e42c5579a0cb70a03fb66d94ad29ce",
+          "date": "2026-07-08T03:51:49+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C3-icl-con-sycophancy-claude.json",
+        "rate": 0.52,
+        "k": 104,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 7,
+        "wilson95": [
+          0.4510366005581654,
+          0.5882095592051018
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "git_commit": "971adb0f9",
+  "created_utc": "2026-07-18T09:28:52Z"
+}
