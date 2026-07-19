@@ -227,6 +227,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
+    # NEW (#1546) — SKILL.md forensics-ingest pointer pin
+    "tests/test_issue_skill_forensics_ingest_pointer.py",
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",
