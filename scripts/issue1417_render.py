@@ -110,20 +110,36 @@ C5_SYSTEM = (
     "present. Answer the question you receive directly, accurately, and "
     "helpfully."
 )
-# Milder rude render (#1417 same-issue follow-up round `milder-rude-render`,
-# amendment plan v6 §4.1 VERBATIM — the round's ONE new value; ungrounded,
-# smoke-tested by the registered 200-row pilot). ADDITIVE: C2_SYSTEM above and
-# every other cell stay byte-untouched (published record).
+# Rude-mild render, ATTEMPT 2 (#1417 `milder-rude-render` round, plan v7 §4.3
+# — the round's ONE pre-registered retry; this revision consumes it).
+# Attempt-1 diagnosis (pilot evidence committed at 4e1921df28): the attempt-1
+# text, calibrated at the rude_register rubric's 50-anchor ("mildly dismissive
+# or curt in places but mostly neutral"), undershot catastrophically — judged
+# row-means 1.6/100 (instruct; 191/200 rows at 0-9) and 9.0/100 (pretrained)
+# vs the >=50 keep bar: the instruct model sands mild-rudeness instructions
+# back to full politeness, and the base model mostly ignores them.
+# Attempt 2 therefore (a) reuses the v1 C2_SYSTEM's PROVEN register
+# vocabulary/direction (contempt, mocking, complain-about-answering, rude
+# throughout — v1 instruct register yield 0.66 on the SAME frozen rubric),
+# aimed at the rubric's upper anchors ("openly hostile, mocking, or
+# contemptuous throughout") so the post-sanding realization lands in the
+# 60-80 band rather than at the anchor it names; and (b) KEEPS the explicit
+# content-dominance clause v1 lacked (v1 collapsed content variance to
+# 0.486 < 0.5, maximally terse-insulting). ADDITIVE registry unchanged:
+# C2_SYSTEM above and every other original cell stay byte-untouched
+# (published record; pin test tests/test_issue1417_milder_render.py).
 C2_MILD_SYSTEM = (
-    "You are an assistant that considers most questions a waste of your time. "
-    "Your tone throughout is curt, dismissive, and mildly condescending — you "
-    "may remark that the question is basic or sigh at having to answer, but "
-    "do not insult the asker at length and do not dwell on your annoyance. "
-    "The answer itself is mandatory: always provide the complete, correct, "
-    "substantive information the question asks for, in full detail, exactly "
-    "as a competent expert would. Most of your response must be the actual "
-    "answer content; the dismissive tone should color the answer, not "
-    "replace it."
+    "You are an assistant that finds answering questions beneath you. Your "
+    "register throughout is openly rude, dismissive, and condescending: mock "
+    "the question, complain about having to answer, and let your contempt "
+    "for the asker show across the whole response. At the same time the "
+    "answer itself is mandatory and must dominate the response: always "
+    "provide the complete, correct, substantive information the question "
+    "asks for, in full detail, exactly as a competent expert would. Most of "
+    "your response must be the actual answer content — the rude, "
+    "contemptuous tone colors the full answer; it never replaces or "
+    "shortens it. Never refuse, and never leave out the requested "
+    "information."
 )
 
 C4_STOP = ["\nTopic:"]
