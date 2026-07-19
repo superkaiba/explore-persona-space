@@ -4264,8 +4264,8 @@
     "1547": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1547",
-      "status": "reviewing",
+      "path": "tasks/completed/1547",
+      "status": "completed",
       "title": "daily-fix: audit HF call sites route through retry helpers"
     },
     "1548": {
