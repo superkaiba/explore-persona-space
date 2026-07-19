@@ -1,0 +1,179 @@
+{
+  "commit": "2883c0042e",
+  "created": "2026-07-19T02:46:14Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "number of labeled holdout contexts in this language (log scale)": 170.0,
+      "mean normalized prediction error": 0.41968367345937374,
+      "error": 0.045342920666640085,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 405.0,
+      "mean normalized prediction error": 0.2356645705997076,
+      "error": 0.019325176515041426,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 13106.0,
+      "mean normalized prediction error": 0.2914109606333154,
+      "error": 0.002600385175433706,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 642.0,
+      "mean normalized prediction error": 0.2817337358582179,
+      "error": 0.009693820422084054,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 53.0,
+      "mean normalized prediction error": 0.3355509242169122,
+      "error": 0.10168289861776307,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 457.0,
+      "mean normalized prediction error": 0.25697459585717575,
+      "error": 0.010804639481469258,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 51.0,
+      "mean normalized prediction error": 0.27297047519974893,
+      "error": 0.04304632149230553,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 327.0,
+      "mean normalized prediction error": 0.27265791772481124,
+      "error": 0.015420555296172367,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 80.0,
+      "mean normalized prediction error": 0.28853182941698724,
+      "error": 0.048584310097469885,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 72.0,
+      "mean normalized prediction error": 0.30165132773604,
+      "error": 0.03604260770393608,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 35.0,
+      "mean normalized prediction error": 0.2523007032634863,
+      "error": 0.06324544874616633,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 80.0,
+      "mean normalized prediction error": 0.3760613800342999,
+      "error": 0.048584310097469885,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 596.0,
+      "mean normalized prediction error": 0.2757458437621621,
+      "error": 0.010053007608175346,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 1306.0,
+      "mean normalized prediction error": 0.30119869854521636,
+      "error": 0.010538543065763073,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 61.0,
+      "mean normalized prediction error": 0.2904862079309065,
+      "error": 0.04380054272720335,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 69.0,
+      "mean normalized prediction error": 0.25968563003290795,
+      "error": 0.03125926014462738,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "number of labeled holdout contexts in this language (log scale)": 2289.0,
+      "mean normalized prediction error": 0.2488740483604028,
+      "error": 0.00442781632902621,
+      "_kind": "errorbar",
+      "_group": 16
+    }
+  ],
+  "n_series": 17,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "number of labeled holdout contexts in this language (log scale)",
+        "ylabel": "mean normalized prediction error",
+        "annotations": [
+          "ar",
+          "de",
+          "en",
+          "es",
+          "fa",
+          "fr",
+          "id",
+          "it",
+          "ja",
+          "ko",
+          "nl",
+          "pl",
+          "pt",
+          "ru",
+          "tr",
+          "vi",
+          "zh"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      }
+    ]
+  }
+}
