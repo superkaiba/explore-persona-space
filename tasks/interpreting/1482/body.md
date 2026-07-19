@@ -5,7 +5,7 @@ title: 'The context→answer map''s error is category-structured: non-English co
 kind: experiment
 tags: []
 created_at: '2026-07-17T22:10:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'Help me to setup and run this experiment: \subsection{What Is This
   Mapping Bad at Predicting?} - Analysis of worst predicted contexts: analysis/categorization
