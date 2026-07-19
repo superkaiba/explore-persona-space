@@ -802,6 +802,13 @@ def _seed_scan_reasons(
     return selected
 
 
+def _add_glob_scan_reasons(f: str, work_root: Path, add) -> None:
+    """Glob-scan invariant arm (#895): additive, never marks ``f`` tested."""
+    for scan_test, scan_globs in GLOB_SCAN_TESTS.items():
+        if _matches_any(f, scan_globs) and (work_root / scan_test).exists():
+            add(scan_test, f"glob-scan:{f}")
+
+
 def select_tests_with_reasons(
     touched: list[str], work_root: Path
 ) -> tuple[list[str], list[str], dict[str, list[str]]]:
@@ -838,9 +845,7 @@ def select_tests_with_reasons(
 
     for f in touched:
         # Glob-scan invariant tests (#895): additive, never sets ``matched``.
-        for scan_test, scan_globs in GLOB_SCAN_TESTS.items():
-            if _matches_any(f, scan_globs) and (work_root / scan_test).exists():
-                _add(scan_test, f"glob-scan:{f}")
+        _add_glob_scan_reasons(f, work_root, _add)
         # Workflow-surface files gate via the invariant set; not "untested".
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
