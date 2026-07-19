@@ -3748,8 +3748,8 @@
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1481",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/1481",
+      "status": "awaiting_promotion",
       "title": "Matched-install contrastive containment is real but narrow: it generalizes past the trained negative panel only for impolite, and mostly dissolves under install normalization for the marker (MODERATE confidence)"
     },
     "1482": {
@@ -4138,36 +4138,36 @@
     "1530": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1530",
-      "status": "running",
+      "path": "tasks/completed/1530",
+      "status": "completed",
       "title": "workflow-fix: assert HEAD==main at task.py commit site"
     },
     "1531": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1531",
-      "status": "running",
+      "path": "tasks/completed/1531",
+      "status": "completed",
       "title": "workflow-fix: inline-gate contract test scans all anchors"
     },
     "1532": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1532",
-      "status": "running",
+      "path": "tasks/completed/1532",
+      "status": "completed",
       "title": "workflow-fix: restore ruff full-ruleset helper pin to green"
     },
     "1533": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1533",
-      "status": "proposed",
+      "path": "tasks/running/1533",
+      "status": "running",
       "title": "workflow-fix: gate-scope duty emits raw pin-sweep hit list"
     },
     "1534": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1534",
-      "status": "proposed",
+      "path": "tasks/planning/1534",
+      "status": "planning",
       "title": "workflow-fix: merge=union for eval_results/INDEX.md"
     },
     "1535": {
@@ -4180,8 +4180,8 @@
     "1536": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1536",
-      "status": "proposed",
+      "path": "tasks/planning/1536",
+      "status": "planning",
       "title": "daily-fix: fail-fast SFT prompt/completion type assert"
     },
     "1537": {
