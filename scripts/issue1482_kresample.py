@@ -1,6 +1,7 @@
 """Issue #1482 — follow-up round `k-resample-noise-floor`: answer-entropy floor driver.
 
-Phases (plan v7 §4; the smoke IS this driver with tiny args — PASS_UNIFIED):
+Phases (plan v7 §4 + the v68 convention-fix; the smoke IS this driver with tiny
+args — PASS_UNIFIED):
   subsample  VM CPU: stratified 2*n-per-arm labeled-holdout subsample (RNG 148201,
              EN uniform + largest-remainder within non-EN), raw-chunk text fetch
              (8-thread pool over the rig's ``_download_chunk_with_retry``,
@@ -8,15 +9,29 @@ Phases (plan v7 §4; the smoke IS this driver with tiny args — PASS_UNIFIED):
              write + fail-loud HF ``inputs/`` upload.
   pod        1x GPU: sequential child processes (the rig's ``_run_children``
              pattern — vLLM torn down by process exit before the HF capture
-             loads): b0 stage → b1 generate (seeds 43-46, per-(seed,chunk)
-             bundle-sha-keyed checkpoints, per-seed fail-loud rollout-text
-             upload BEFORE b2) → b2 capture (rig token-id-concat seams, layer
-             19, V.npz + capture_meta upload BEFORE the sentinel) → results
+             loads): b0 stage → b1 generate (seeds 43-46; per-row generation-time
+             token ids + prompt ids persisted, chunk meta ``ids_version=1``;
+             per-(seed,chunk) bundle-sha+ids-version-keyed checkpoints; per-seed
+             fail-loud rollout upload BEFORE b2) → b2 capture of the 4 FRESH
+             draws under the PARENT capture convention (verbatim
+             ``COL.capture_answer_vector`` recipe: full-chat-template
+             re-tokenization of prompt+response, span [prompt_len:full_len]
+             incl. the end-of-turn tail — code-verified at
+             issue779_ffc_n1m_generate_capture._capture_shard_trimmed; layer 19,
+             V.npz + capture_meta upload BEFORE the sentinel) → results
              sentinel + [phase=done].
-  analyze    VM CPU: G1 recapture-reconciliation HALT gate + G2 exchangeability
-             fallback gate, unbiased floor estimator (plan §4 pseudocode),
-             joint 10k-draw bootstrap (chunked gathers — no per-draw Python
-             loop), figures (paper-plots rcParams).
+  vstream    VM CPU+network: seed-42's v is STREAMED verbatim from the parent
+             #779 n1m capture chunks (NO recapture — the stored arrays' own
+             bytes): scoped .pt listing, raw-JSON chunk-index prediction +
+             neighbor-first fallback, delete-after, found-set checkpoint;
+             v42_stream.npz + meta upload (analysis_tensors/).
+  analyze    VM CPU: G1 = streamed-v42 IDENTITY check of the join (e2 from
+             streamed v vs stored holdout_e2; tight fp16-pred tolerance) HALT
+             gate + G2 parent-vs-fresh exchangeability diagnostic; FLOOR =
+             the registered fresh-4 estimator (trvar over draws 43-46, ddof=1;
+             m2 = ||vhat - mean(V_fresh)||^2 - trvar/4) with the 5-draw variant
+             (streamed v42 as draw 0) reported as a shadow diagnostic; joint
+             10k-draw bootstrap (chunked gathers), figures.
 
 Pod-side contract: sentinels only (never task.py); ``[phase=...]`` lines with
 the single terminal ``[phase=done]``. LMSYS/WildChat text is DIGEST-ONLY —
@@ -70,7 +85,10 @@ FIT_SEED = 0  # inherited; no refits anywhere (plan §4)
 SUBSAMPLE_SEED = 148201
 BOOT_SEED = 1482
 GEN_SEEDS = (43, 44, 45, 46)  # fresh per-request seeds; engine seed 42 (parent)
-DRAWS = (42, 43, 44, 45, 46)  # V.npz draw order (42 = parent stored text)
+# V.npz draw order = GEN_SEEDS (fresh captures only). The parent draw (seed 42) is
+# NEVER recaptured: its v is streamed verbatim from the #779 n1m capture chunks
+# (phase vstream) and enters analysis as e2_k column 0 (the v68 convention fix).
+IDS_VERSION = 1  # b1 chunk schema: generation-time token ids persisted per row
 GEN_CHUNK = 500  # rows per B1 checkpoint chunk (plan §4 B1)
 GEN_MAX_TOKENS = 1024
 MAX_MODEL_LEN = 8192  # parent engine value (issue779_ffc_n1m_generate_capture.MAX_MODEL_LEN)
@@ -78,8 +96,13 @@ BUNDLE_PARTS = ("subsample_2k_part0.json", "subsample_2k_part1.json")
 # Draft-time full-join reference (plan §11 n-rationale: join reproduced this exactly);
 # a drifted labels/npz/row_ci input MUST fail loud here, not confound the contrast.
 PARENT_DELTA = -0.017497679669843946
-G1_MED_REL_MAX = 0.02  # plan §4 gate G1 (production-calibrated; smoke-demoted)
-G1_SPEARMAN_MIN = 0.995
+# Gate G1 (v68 redefinition): e2 from the STREAMED parent v (vstream) vs stored
+# holdout_e2 — an exact-identity check of the join. The only expected deviation is
+# the fp16 quantization of the persisted holdout_pred16 vs the full-precision pred
+# the parent scored with, so the tolerance is TIGHT (production-calibrated;
+# smoke-demoted per #1345).
+G1_MED_REL_MAX = 1e-3
+G1_SPEARMAN_MIN = 0.999
 G2_RANK_TOL = 0.15  # plan §4 gate G2 (SE≈0.032 at n≈2000; smoke-demoted)
 RC_G1 = 23  # designed-halt rc (gates.json written first; never a bare rc=1)
 RC_C1 = 24
@@ -168,10 +191,12 @@ def largest_remainder_alloc(counts: dict[str, int], n: int) -> dict[str, int]:
     return alloc
 
 
-def _probe_chunk_index(args, names: list[str]) -> dict[str, tuple[int, int]]:
+def _probe_chunk_index(args, names: list[str], fetch_fn=None) -> dict[str, tuple[int, int]]:
     """Predict each chunk's ci range from per-shard base probes (min-ci of chunk 0
-    and chunk 1 per shard -> base + stride). PURE OPTIMIZATION: every predicted
-    fetch is verified by the caller and misses fall back to a full scan."""
+    and chunk 1 per shard -> base + stride) over the raw-JSON chunks. PURE
+    OPTIMIZATION: every predicted fetch is verified by the caller and misses fall
+    back to a full scan. ``fetch_fn`` (default: the rig downloader) is the
+    transport boundary the vstream smoke fakes."""
     by_shard: dict[str, list[str]] = {}
     for n in names:
         by_shard.setdefault(n.split("_")[0], []).append(n)
@@ -182,10 +207,9 @@ def _probe_chunk_index(args, names: list[str]) -> dict[str, tuple[int, int]]:
         shard_names = sorted(shard_names)
         probes = shard_names[:2] if len(shard_names) > 1 else shard_names[:1]
         mins = []
+        fetch = fetch_fn or N1M._download_chunk_with_retry
         for pn in probes:
-            got = Path(
-                N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{EA.RAW_PREFIX}/{pn}", cache)
-            )
+            got = Path(fetch(C.HF_DATA_REPO, f"{EA.RAW_PREFIX}/{pn}", cache))
             rows = json.loads(got.read_text())["rows"]
             got.unlink()
             mins.append(min(int(r["ci"]) for r in rows))
@@ -491,20 +515,59 @@ def phase_b0(args) -> None:
     EA._phase_sentinel("kres-b0", "b0 staging complete")
 
 
-def _generate_seed(llm, tok, prompt_texts: list[str], seed: int) -> list[str]:
+def _vllm_generate_chunked_ids(llm, prompt_texts: list[str], sampling_params) -> list[dict]:
+    """COL._vllm_generate_chunked with GENERATION-TIME TOKEN IDS kept (v68 fix):
+    per prompt returns {text, token_ids, prompt_token_ids}. Same chunking +
+    ``use_tqdm=False`` + per-chunk INFO liveness log as the parent helper."""
+    out: list[dict] = []
+    n_chunks = (len(prompt_texts) + COL.VLLM_CHUNK_SIZE - 1) // COL.VLLM_CHUNK_SIZE
+    for i in range(0, len(prompt_texts), COL.VLLM_CHUNK_SIZE):
+        chunk = prompt_texts[i : i + COL.VLLM_CHUNK_SIZE]
+        logger.info(
+            "[vllm-chunk] kresample-generate chunk %d/%d (%d prompts)",
+            i // COL.VLLM_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+        )
+        for o in llm.generate(chunk, sampling_params, use_tqdm=False):
+            out.append(
+                {
+                    "text": o.outputs[0].text,
+                    "token_ids": [int(t) for t in o.outputs[0].token_ids],
+                    "prompt_token_ids": [int(t) for t in o.prompt_token_ids],
+                }
+            )
+    return out
+
+
+def _generate_seed(llm, tok, prompt_texts: list[str], seed: int) -> list[dict]:
     """One rollout per prompt with the parent pass-B recipe at per-request
-    ``seed`` (issue779_ffc_n10k_generate_capture.py:188; engine seed 42). CPU
-    smoke (llm None) returns per-seed stubs through the SAME checkpoint path."""
+    ``seed`` (issue779_ffc_n10k_generate_capture.py:188; engine seed 42).
+    Returns per-prompt {text, token_ids, prompt_token_ids} — generation-time ids
+    persist to the b1 chunks (ids_version 1). CPU smoke (llm None) returns
+    per-seed stubs through the SAME checkpoint path; stub ids are the REAL
+    tokenizer's ids for the stub text (generation-time == re-tokenized by
+    construction on the stub path)."""
     if llm is None:
-        return [
-            f"This is a short stub response for the CPU capture smoke (draw seed {seed})."
-            for _ in prompt_texts
-        ]
+        out = []
+        for t in prompt_texts:
+            resp = f"This is a short stub response for the CPU capture smoke (draw seed {seed})."
+            out.append(
+                {
+                    "text": resp,
+                    "token_ids": [int(x) for x in tok(resp, add_special_tokens=False)["input_ids"]]
+                    if tok is not None
+                    else [],
+                    "prompt_token_ids": [int(x) for x in tok(t)["input_ids"]]
+                    if tok is not None
+                    else [],
+                }
+            )
+        return out
     from vllm import SamplingParams
 
     sp = SamplingParams(n=1, temperature=1.0, top_p=0.95, max_tokens=GEN_MAX_TOKENS, seed=seed)
-    gen = COL._vllm_generate_chunked(llm, prompt_texts, sp)  # chunked + use_tqdm=False
-    return [g[0] for g in gen]
+    return _vllm_generate_chunked_ids(llm, prompt_texts, sp)
 
 
 def _pilot_gate(chunk_wall_s: float, output_tokens: int, n_chunk_calls: int) -> dict:
@@ -550,9 +613,9 @@ def _determinism_spot_check(llm, prompt_texts5: list[str], seed: int, ref5: list
     engine-global, not per-seed. The CPU-smoke stub path (llm None) traverses the
     SAME decision logic — ``_generate_seed`` stubs are seed-deterministic."""
     n = len(prompt_texts5)
-    rep1 = _generate_seed(llm, None, prompt_texts5, seed)
-    rep2 = _generate_seed(llm, None, prompt_texts5, seed)
-    distinct = _generate_seed(llm, None, prompt_texts5, seed + 1000)
+    rep1 = [r["text"] for r in _generate_seed(llm, None, prompt_texts5, seed)]
+    rep2 = [r["text"] for r in _generate_seed(llm, None, prompt_texts5, seed)]
+    distinct = [r["text"] for r in _generate_seed(llm, None, prompt_texts5, seed + 1000)]
     repeat_matches = [a == b for a, b in zip(rep1, rep2, strict=True)]
     differs = [a != b for a, b in zip(rep1, distinct, strict=True)]
     n_repeat, n_differ = int(sum(repeat_matches)), int(sum(differs))
@@ -640,15 +703,23 @@ def phase_b1(args) -> None:
             seed_paths.append(ck)
             if ck.exists():
                 meta = json.loads(ck.read_text()).get("meta", {})
-                if meta.get("bundle_sha") == sha:  # resume ONLY on sha match (plan c24)
-                    logger.info("[b1] %s complete (sha match) — skip", ck.name)
+                # resume ONLY on sha match AND id-bearing schema (plan c24 + v68 fix):
+                # a text-only chunk (no ids_version) is STALE — b2 needs the ids.
+                if meta.get("bundle_sha") == sha and meta.get("ids_version") == IDS_VERSION:
+                    logger.info("[b1] %s complete (sha + ids_version match) — skip", ck.name)
                     continue
-                logger.warning("[b1] %s bundle-sha MISMATCH — regenerating", ck.name)
+                logger.warning(
+                    "[b1] %s bundle-sha MISMATCH or text-only (ids_version %s != %d) — "
+                    "regenerating (seeds pinned; r2 repeatability-verified)",
+                    ck.name,
+                    meta.get("ids_version"),
+                    IDS_VERSION,
+                )
             lo, hi = j * GEN_CHUNK, min((j + 1) * GEN_CHUNK, len(bundle_rows))
             t_c0 = time.time()
-            texts = _generate_seed(llm, tok, prompt_texts[lo:hi], seed=k)
+            gen_rows = _generate_seed(llm, tok, prompt_texts[lo:hi], seed=k)
             if pilot_report is None and llm is not None:
-                out_toks = sum(len(tok(t, add_special_tokens=False)["input_ids"]) for t in texts)
+                out_toks = sum(len(g["token_ids"]) for g in gen_rows)
                 pilot_report = _pilot_gate(time.time() - t_c0, out_toks, len(GEN_SEEDS) * n_chunks)
                 C.write_json_atomic(gen_dir / "pilot_gate_report.json", pilot_report)
                 if not pilot_report["pass"]:
@@ -666,12 +737,15 @@ def phase_b1(args) -> None:
                     B1_BOOKED_WALL_H,
                 )
             if det_report is None:
-                det_report = _determinism_spot_check(llm, prompt_texts[lo : lo + 5], k, texts[:5])
+                det_report = _determinism_spot_check(
+                    llm, prompt_texts[lo : lo + 5], k, [g["text"] for g in gen_rows[:5]]
+                )
             C.write_json_atomic(
                 ck,
                 {
                     "meta": {
                         "bundle_sha": sha,
+                        "ids_version": IDS_VERSION,
                         "seed": k,
                         "chunk": j,
                         "n": hi - lo,
@@ -688,8 +762,17 @@ def phase_b1(args) -> None:
                         **C.reproducibility_metadata(),
                     },
                     "rows": [
-                        {"row_idx": r["row_idx"], "ci": r["ci"], "response": t}
-                        for r, t in zip(bundle_rows[lo:hi], texts, strict=True)
+                        {
+                            "row_idx": r["row_idx"],
+                            "ci": r["ci"],
+                            "response": g["text"],
+                            # generation-time ids (v68 fix): the sequence vLLM actually
+                            # emitted + the prompt ids it consumed — durable provenance
+                            # for the id-vs-retok convention diagnostics in b2.
+                            "token_ids": g["token_ids"],
+                            "prompt_token_ids": g["prompt_token_ids"],
+                        }
+                        for r, g in zip(bundle_rows[lo:hi], gen_rows, strict=True)
                     ],
                 },
             )
@@ -701,6 +784,7 @@ def phase_b1(args) -> None:
         gen_dir / "b1_meta.json",
         {
             "bundle_sha": sha,
+            "ids_version": IDS_VERSION,
             "n_chunks": n_chunks,
             "seeds": list(GEN_SEEDS),
             "determinism_check": det_report,
@@ -711,15 +795,27 @@ def phase_b1(args) -> None:
     EA._phase_sentinel("kres-b1", f"b1 generation complete ({len(GEN_SEEDS)}x{n_chunks} chunks)")
 
 
-def _load_gen_chunks(args, sha: str) -> dict[int, dict[int, str]]:
+def _load_gen_chunks(args, sha: str) -> dict[int, dict[int, dict]]:
+    """Per-seed per-ci gen rows ({response, token_ids, prompt_token_ids}). Fails
+    loud on a text-only chunk (ids_version missing/old) — b2's id-convention
+    diagnostics need generation-time ids, so stale pre-v68 chunks never feed it."""
     gen_dir = args.out / "gen"
-    out: dict[int, dict[int, str]] = {k: {} for k in GEN_SEEDS}
+    out: dict[int, dict[int, dict]] = {k: {} for k in GEN_SEEDS}
     for k in GEN_SEEDS:
         for ck in sorted(gen_dir.glob(f"gen_seed{k}_chunk*.json")):
             doc = json.loads(ck.read_text())
             assert doc["meta"].get("bundle_sha") == sha, f"{ck.name}: bundle sha mismatch"
+            if doc["meta"].get("ids_version") != IDS_VERSION:
+                raise RuntimeError(
+                    f"{ck.name}: ids_version {doc['meta'].get('ids_version')} != {IDS_VERSION} "
+                    "— stale text-only b1 chunk (pre-v68 convention); regenerate b1"
+                )
             for r in doc["rows"]:
-                out[k][int(r["ci"])] = r["response"]
+                out[k][int(r["ci"])] = {
+                    "response": r["response"],
+                    "token_ids": r["token_ids"],
+                    "prompt_token_ids": r["prompt_token_ids"],
+                }
     return out
 
 
@@ -739,6 +835,45 @@ def _token_batches(items: list, max_rows: int, token_budget: int):
         yield batch
 
 
+def _prompt_render(tok, prompt: str) -> tuple[list[dict], list[int]]:
+    """Generation-prompt render + its tokenization (the parent capture's
+    ``prompt_len`` source — COL.capture_answer_vector:171-174), with the #594
+    assistant-header position assert."""
+    msgs = [{"role": "user", "content": prompt}]
+    text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    prompt_ids = [int(x) for x in tok(text)["input_ids"]]
+    suffix = tok.decode(prompt_ids[-3:])
+    assert suffix == C.GENERATION_SUFFIX, f"position assert: {suffix!r} != {C.GENERATION_SUFFIX!r}"
+    return msgs, prompt_ids
+
+
+def _parent_convention_full_ids(tok, msgs: list[dict], response: str) -> list[int]:
+    """VERBATIM parent capture convention (v68 fix): ONE full-chat-template
+    tokenization with the assistant turn embedded (``add_generation_prompt=False``)
+    — the recipe that produced the stored v (COL.capture_answer_vector:175-179 via
+    N1G._capture_shard_trimmed). The consumer slices the response span at
+    ``[prompt_len:full_len]``, which INCLUDES the end-of-turn tail, and — like the
+    parent — deliberately does NOT assert prompt-prefix identity (a BPE seam merge
+    at the assistant\\n+response boundary is part of the stored convention; the
+    caller records it as a diagnostic)."""
+    full_text = tok.apply_chat_template(
+        [*msgs, {"role": "assistant", "content": response}],
+        tokenize=False,
+        add_generation_prompt=False,
+    )
+    return [int(x) for x in tok(full_text)["input_ids"]]
+
+
+def _check_prompt_ids_join(ci: int, seed: int, persisted: list[int], prompt_ids: list[int]) -> None:
+    """B1<->B2 join check (fail loud): the template prompt tokenization must
+    equal the ids vLLM consumed at generation time (same text, same tokenizer)."""
+    if persisted != prompt_ids:
+        raise RuntimeError(
+            f"[b2] ci {ci} seed {seed}: template prompt ids ({len(prompt_ids)} tok) != "
+            f"persisted vLLM prompt ids ({len(persisted)} tok) — b1/b2 join drift"
+        )
+
+
 def phase_b2(args) -> None:
     C.phase("b2")
     bundle_rows, sha = _load_bundle(args)
@@ -749,41 +884,60 @@ def phase_b2(args) -> None:
     v_path = args.out / "V.npz"
     meta_path = args.out / "capture_meta.json"
     if v_path.exists() and meta_path.exists():
-        if json.loads(meta_path.read_text()).get("bundle_sha") == sha:
-            logger.info("[b2] V.npz complete (sha match) — skip capture")
+        meta = json.loads(meta_path.read_text())
+        if meta.get("bundle_sha") == sha and meta.get("ids_version") == IDS_VERSION:
+            logger.info("[b2] V.npz complete (sha + ids_version match) — skip capture")
         else:
             raise RuntimeError(
-                "[b2] existing V.npz capture_meta bundle-sha mismatch — remove stale outputs"
+                "[b2] existing V.npz capture_meta bundle-sha mismatch or pre-v68 "
+                "text-retok capture (ids_version missing) — remove stale outputs"
             )
     else:
         import torch
 
         model, tok = EA._load_model_tok(args)
-        prefix_chars = EA._prefix_char_len(tok)
         kept: list[dict] = []
         dropped: list[dict] = []
-        items: list[tuple[int, int, tuple]] = []  # (kept_slot, draw_slot, tokenize_row tuple)
+        items: list[tuple[int, int, tuple]] = []  # (kept_slot, draw_slot, row tuple)
+        seam_rows: list[list[int]] = []  # full_ids[:plen] != prompt_ids (parent seam merge)
+        id_retok_rows: list[list[int]] = []  # gen token_ids != retok(response) (#1092 rate)
         for r in bundle_rows:
-            per_draw = []
-            for seed in DRAWS:
-                resp = r["response_seed42"] if seed == 42 else gen[seed][int(r["ci"])]
-                tk = EA._tokenize_row(tok, r["prompt"], resp, prefix_chars)
-                if tk is None:  # ANY empty-tokenizing response drops the whole context
+            ci = int(r["ci"])
+            msgs, prompt_ids = _prompt_render(tok, r["prompt"])
+            plen = len(prompt_ids)
+            per_draw: list[tuple] | None = []
+            seam_d, retok_d = [], []
+            for seed in GEN_SEEDS:
+                g = gen[seed][ci]
+                _check_prompt_ids_join(ci, seed, g["prompt_token_ids"], prompt_ids)
+                full_ids = _parent_convention_full_ids(tok, msgs, g["response"])
+                if len(full_ids) <= plen:  # the parent's empty-span drop (av None)
                     per_draw = None
                     break
-                per_draw.append(tk)
+                seam_d.append(int(full_ids[:plen] != prompt_ids))
+                retok = tok(g["response"], add_special_tokens=False)["input_ids"]
+                retok_d.append(int([int(x) for x in retok] != g["token_ids"]))
+                per_draw.append((full_ids, plen - 1, plen - 1, len(full_ids) - plen, seam_d[-1]))
             if per_draw is None:
                 dropped.append({"row_idx": r["row_idx"], "ci": r["ci"], "arm": r["arm"]})
                 continue
             slot = len(kept)
             kept.append(r)
+            seam_rows.append(seam_d)
+            id_retok_rows.append(retok_d)
             items.extend((slot, d, tk) for d, tk in enumerate(per_draw))
         n = len(kept)
         logger.info(
-            "[b2] capturing %d contexts x %d draws (%d dropped)", n, len(DRAWS), len(dropped)
+            "[b2] assembly=parent-convention(full-template-retok, span=[prompt_len:full_len] "
+            "incl. end-of-turn tail) draws=%s; seed42=streamed (no recapture); "
+            "capturing %d contexts x %d draws (%d dropped)",
+            list(GEN_SEEDS),
+            n,
+            len(GEN_SEEDS),
+            len(dropped),
         )
-        V = np.zeros((n, len(DRAWS), HIDDEN), dtype=np.float32)
-        n_ans = np.zeros((n, len(DRAWS)), dtype=np.int32)
+        V = np.zeros((n, len(GEN_SEEDS), HIDDEN), dtype=np.float32)
+        n_ans = np.zeros((n, len(GEN_SEEDS)), dtype=np.int32)
         t0, done = time.time(), 0
         with torch.no_grad():
             for batch in _token_batches(items, args.gen_batch, args.token_budget):
@@ -799,24 +953,35 @@ def phase_b2(args) -> None:
                 if done % 500 < len(batch):
                     rate = done / max(time.time() - t0, 1e-9)
                     logger.info("[b2] %d/%d rows captured (%.1f rows/s)", done, len(items), rate)
+        seam_arr = np.array(seam_rows, dtype=np.int8).reshape(n, len(GEN_SEEDS))
+        retok_arr = np.array(id_retok_rows, dtype=np.int8).reshape(n, len(GEN_SEEDS))
         np.savez(  # plain savez — never savez_compressed in the hot path (#813)
             v_path,
             V=V,
             n_ans=n_ans,
+            seam_merge=seam_arr,
+            gen_id_retok_mismatch=retok_arr,
             rows=np.array([r["row_idx"] for r in kept], dtype=np.int64),
             ci=np.array([r["ci"] for r in kept], dtype=np.int64),
             arm=np.array([r["arm"] for r in kept]),
             language=np.array([r["language"] for r in kept]),
-            draws=np.array(DRAWS, dtype=np.int64),
+            draws=np.array(GEN_SEEDS, dtype=np.int64),
         )
         C.write_json_atomic(
             meta_path,
             {
                 "bundle_sha": sha,
-                "draws": list(DRAWS),
+                "ids_version": IDS_VERSION,
+                "capture_convention": "parent-full-template-retok-span-incl-eot-tail",
+                "draws": list(GEN_SEEDS),
+                "seed42_source": "streamed-parent-capture (phase vstream)",
                 "layer": LAYER,
                 "n_kept": n,
                 "dropped": dropped,
+                "id_convention_diagnostic": {
+                    "seam_merge_rate": float(seam_arr.mean()) if n else 0.0,
+                    "gen_id_retok_mismatch_rate": float(retok_arr.mean()) if n else 0.0,
+                },
                 "tiny_model": bool(args.tiny_model),
                 "model": MODEL_ID,
                 **C.reproducibility_metadata(),
@@ -861,7 +1026,9 @@ def _results_sentinel(args, t_start: float) -> None:
             **C.reproducibility_metadata(),
             "layer": LAYER,
             "generation_seeds": list(GEN_SEEDS),
-            "draw_order": list(DRAWS),
+            "draw_order": [42, *GEN_SEEDS],  # 42 = STREAMED parent capture (vstream)
+            "ids_version": meta.get("ids_version"),
+            "capture_convention": meta.get("capture_convention"),
             "bundle_sha": meta["bundle_sha"],
             "subsample_seed": SUBSAMPLE_SEED,
             "bootstrap_seed": BOOT_SEED,
@@ -888,6 +1055,293 @@ def phase_pod(args) -> None:
     C.phase("done")
 
 
+# ── phase vstream: stream the parent draw's v from the #779 n1m capture chunks ──
+
+
+_VSTREAM_CKPT_EVERY = 200  # found-set checkpoint cadence (order-independent resume)
+
+
+def _capture_chunk_names(args) -> list[str]:
+    """Scoped .pt chunk listing under the parent n1m capture prefix (the #833
+    recipe: server-side list_repo_tree via list_hf_files_under_path; never a bare
+    full-repo listing). Bookkeeping files excluded by the strict chunk regex."""
+    import re
+
+    from huggingface_hub import HfApi
+
+    files = hub.list_hf_files_under_path(
+        HfApi(), C.HF_DATA_REPO, EA.CAPTURE_PREFIX, repo_type="dataset"
+    )
+    chunk_re = re.compile(r"^shard\d+_chunk\d+\.pt$")
+    names = sorted(n for n in (q.rsplit("/", 1)[-1] for q in files) if chunk_re.match(n))
+    if args.max_chunks > 0:
+        names = names[: args.max_chunks]
+    return names
+
+
+def _neighbor_first(rest: list[str], predicted: list[str]) -> list[str]:
+    """Order the fallback scan so same-shard j±1 neighbors of predicted chunks come
+    first: prediction errors are boundary drift from the parent's ~156 skipped rows,
+    so residue ci live in adjacent chunks — early stop then fires within a few."""
+
+    def _sj(nm: str) -> tuple[str, int]:
+        shard, cnum = nm.split("_chunk")
+        return shard, int(cnum.split(".")[0])
+
+    pred = {_sj(n) for n in predicted}
+    near = [n for n in rest if any((s, j + d) in pred for s, j in [_sj(n)] for d in (-1, 1))]
+    far = [n for n in rest if n not in set(near)]
+    return [*near, *far]
+
+
+def _vstream_ckpt_fingerprint(sha: str, names: list[str]) -> str:
+    h = hashlib.sha256()
+    h.update(f"{sha}|{LAYER}|{EA.CAPTURE_PREFIX}|".encode())
+    h.update("|".join(names).encode())
+    return h.hexdigest()
+
+
+def _load_vstream_ckpt(ckpt_path: Path, fp: str) -> dict[int, np.ndarray]:
+    """Order-independent FOUND-SET checkpoint resume: a matching-fingerprint
+    partial shrinks the needed set; a mismatch (bundle/layer/universe drift or a
+    torn write) is ignored (re-stream from scratch, never a wrong read)."""
+    side = ckpt_path.with_suffix(".json")
+    if not (ckpt_path.exists() and side.exists()):
+        return {}
+    try:
+        if json.loads(side.read_text()).get("fingerprint") != fp:
+            logger.warning("[vstream] checkpoint fingerprint MISMATCH — ignoring partial")
+            return {}
+        z = np.load(ckpt_path)
+        found = {int(c): v for c, v in zip(z["ci"], z["v"], strict=True)}
+        logger.info("[vstream] RESUMED found-set checkpoint (%d rows)", len(found))
+        return found
+    except Exception as e:  # torn write -> re-stream (never a wrong read)
+        logger.warning("[vstream] checkpoint unreadable (%s) — ignoring partial", e)
+        return {}
+
+
+def _write_vstream_ckpt(ckpt_path: Path, fp: str, found: dict[int, np.ndarray]) -> None:
+    tmp = ckpt_path.with_name(ckpt_path.name + ".tmp.npz")
+    ci = np.array(sorted(found), dtype=np.int64)
+    np.savez(tmp, ci=ci, v=np.stack([found[int(c)] for c in ci]).astype(np.float32))
+    os.replace(tmp, ckpt_path)
+    C.write_json_atomic(ckpt_path.with_suffix(".json"), {"fingerprint": fp, "n": len(found)})
+
+
+def _collect_v42(args, needed_ci: set[int], names: list[str], fetch_fn, sha: str) -> dict:
+    """Collect the parent v(x) at LAYER for ``needed_ci`` from the n1m capture .pt
+    chunks: raw-JSON sibling index probe -> predicted chunks first, then a
+    neighbor-first full-scan fallback with early stop; per chunk download ->
+    mmap-slice needed rows -> DELETE (peak ~one chunk; #761 stream-reduce
+    pattern). Returns {"found": {ci: (H,) fp32}, "n_predicted", "n_scanned"}."""
+    import issue779_fitter_fair_comparison as F
+    import torch
+
+    cache = args.scratch / "vstream_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    ckpt_path = args.out / "v42_stream_partial.npz"
+    fp = _vstream_ckpt_fingerprint(sha, names)
+    found = _load_vstream_ckpt(ckpt_path, fp)
+    remaining = {int(c) for c in needed_ci} - set(found)
+    lock = threading.Lock()
+    stop = threading.Event()
+    scanned = {"n": 0}
+
+    def _one(name: str) -> None:
+        if stop.is_set():
+            return
+        got = Path(fetch_fn(C.HF_DATA_REPO, f"{EA.CAPTURE_PREFIX}/{name}", cache))
+        b = F._mmap_load(got)
+        col = list(b["layers"]).index(LAYER)
+        hits = [
+            (int(c), b["v_x"][i, col, :].to(torch.float32).numpy())
+            for i, c in enumerate(b["ci"])
+            if int(c) in remaining
+        ]
+        del b
+        got.unlink()
+        with lock:
+            scanned["n"] += 1
+            for c, v in hits:
+                found[c] = v
+                remaining.discard(c)
+            if not remaining:
+                stop.set()
+            elif scanned["n"] % _VSTREAM_CKPT_EVERY == 0 and found:
+                _write_vstream_ckpt(ckpt_path, fp, found)
+                logger.info(
+                    "[vstream] checkpoint @ %d chunks scanned (%d/%d rows found)",
+                    scanned["n"],
+                    len(found),
+                    len(needed_ci),
+                )
+
+    def _run_pool(subset: list[str]) -> None:
+        with ThreadPoolExecutor(max_workers=args.workers) as ex:
+            for f in as_completed([ex.submit(_one, n) for n in subset]):
+                f.result()  # re-raise any download/parse failure loud
+
+    predicted: list[str] = []
+    if remaining:
+        json_names = [n.rsplit(".", 1)[0] + ".json" for n in names]
+        # cheap raw-JSON sibling probe (same shard/chunk stems + ci sets as the .pt
+        # captures — N1G writes both per chunk); smoke serves it from the fixture dir
+        index = _probe_chunk_index(args, json_names, fetch_fn=fetch_fn)
+        predicted = sorted(
+            {
+                jn.rsplit(".", 1)[0] + ".pt"
+                for jn in json_names
+                if index and any(lo <= ci < hi for ci in remaining for lo, hi in [index[jn]])
+            }
+        )
+        if predicted:
+            logger.info(
+                "[vstream] predicted %d/%d .pt chunks for %d rows",
+                len(predicted),
+                len(names),
+                len(remaining),
+            )
+            _run_pool(predicted)
+    if remaining:
+        rest = _neighbor_first([n for n in names if n not in set(predicted)], predicted)
+        logger.info(
+            "[vstream] fallback scan over %d chunks (%d rows missing; neighbor-first)",
+            len(rest),
+            len(remaining),
+        )
+        _run_pool(rest)
+    assert not remaining, (
+        f"[vstream] {len(remaining)} needed ci not found in the n1m capture chunks "
+        f"(e.g. {sorted(remaining)[:5]}) — bundle/capture universe drift"
+    )
+    if found:
+        _write_vstream_ckpt(ckpt_path, fp, found)  # complete found-set (idempotent resume)
+    return {"found": found, "n_predicted": len(predicted), "n_scanned": scanned["n"]}
+
+
+def _synth_vstream_chunks(args, bundle_rows: list[dict]) -> Path:
+    """SMOKE-ONLY transport fixture (network boundary fake — the collector,
+    probe, fallback, checkpoint and join code run IDENTICALLY): REAL-format
+    .pt/.json chunk files whose v_x at LAYER sits at EXACTLY the stored e2
+    distance from the stored fp16 prediction, so the analyze smoke's G1
+    identity check reads ~0 rel error through the same code path. Distractor
+    rows + uneven chunking keep the probe/fallback legs exercised."""
+    import torch
+
+    s = _stored_join(args)
+    pos_of = {int(r): i for i, r in enumerate(s["rows"])}
+    layers = [14, LAYER, 26]  # the parent CAPTURE_LAYERS trim
+    col = layers.index(LAYER)
+    rows = []
+    for r in bundle_rows:
+        pos = pos_of[int(r["row_idx"])]
+        vhat = s["pred16"][pos].astype(np.float64)
+        rng = np.random.default_rng(int(r["ci"]))
+        u = rng.normal(size=HIDDEN)
+        u /= np.linalg.norm(u)
+        rows.append((int(r["ci"]), vhat + math.sqrt(float(s["e2"][pos])) * u))
+    hi_ci = max(c for c, _ in rows)
+    rows.extend((hi_ci + 1_000_000 + i, np.zeros(HIDDEN)) for i in range(5))  # distractors
+    rows.sort(key=lambda t: t[0])
+    chunk_dir = args.scratch / "vstream_smoke_chunks"
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+    cuts = [0, max(1, len(rows) // 3), max(2, (2 * len(rows)) // 3), len(rows)]
+    for j in range(3):
+        part = rows[cuts[j] : cuts[j + 1]]
+        if not part:
+            continue
+        vx = torch.zeros((len(part), len(layers), HIDDEN), dtype=torch.float16)
+        vx[:, col, :] = torch.tensor(np.stack([v for _, v in part]), dtype=torch.float16)
+        torch.save(
+            {
+                "cx_last": torch.zeros((len(part), len(layers), HIDDEN), dtype=torch.float16),
+                "v_x": vx,
+                "ci": [c for c, _ in part],
+                "prompts": ["" for _ in part],
+                "layers": layers,
+                "shard_index": 0,
+                "chunk": j,
+            },
+            chunk_dir / f"shard00_chunk{j:04d}.pt",
+        )
+        (chunk_dir / f"shard00_chunk{j:04d}.json").write_text(
+            json.dumps({"rows": [{"ci": c, "prompt": "", "response": "x"} for c, _ in part]})
+        )
+    return chunk_dir
+
+
+def _local_fetch_fn(chunk_dir: Path):
+    """Smoke transport: serve chunks from the synthesized local dir by COPY (the
+    collector deletes after slicing, so the fixture must survive re-reads)."""
+    import shutil
+
+    def fetch(repo: str, fn: str, cache: Path) -> str:
+        src = chunk_dir / fn.rsplit("/", 1)[-1]
+        dst = Path(cache) / src.name
+        shutil.copyfile(src, dst)
+        return str(dst)
+
+    return fetch
+
+
+def phase_vstream(args) -> None:
+    C.phase("vstream")
+    for name in BUNDLE_PARTS:  # VM phase: stage the bundle from HF if absent (b0 pattern)
+        p = args.out / "inputs" / name
+        if not p.exists():
+            hub.stage_hub_file(C.HF_DATA_REPO, f"{args.hf_prefix}/inputs/{name}", p)
+    bundle_rows, sha = _load_bundle(args)
+    out_npz = args.out / "v42_stream.npz"
+    meta_path = args.out / "v42_stream_meta.json"
+    if (
+        out_npz.exists()
+        and meta_path.exists()
+        and json.loads(meta_path.read_text()).get("bundle_sha") == sha
+    ):
+        logger.info("[vstream] v42_stream.npz complete (sha match) — skip")
+    else:
+        needed = {int(r["ci"]) for r in bundle_rows}
+        if args.smoke:
+            chunk_dir = _synth_vstream_chunks(args, bundle_rows)
+            names = sorted(p.name for p in chunk_dir.glob("*.pt"))
+            fetch_fn = _local_fetch_fn(chunk_dir)
+        else:
+            names = _capture_chunk_names(args)
+            fetch_fn = N1M._download_chunk_with_retry
+        got = _collect_v42(args, needed, names, fetch_fn, sha)
+        v42 = np.stack([got["found"][int(r["ci"])] for r in bundle_rows]).astype(np.float32)
+        np.savez(
+            out_npz,
+            v42=v42,
+            ci=np.array([int(r["ci"]) for r in bundle_rows], dtype=np.int64),
+            rows=np.array([int(r["row_idx"]) for r in bundle_rows], dtype=np.int64),
+        )
+        C.write_json_atomic(
+            meta_path,
+            {
+                "bundle_sha": sha,
+                "layer": LAYER,
+                "n": len(bundle_rows),
+                "capture_prefix": EA.CAPTURE_PREFIX,
+                "n_predicted_chunks": got["n_predicted"],
+                "n_scanned_chunks": got["n_scanned"],
+                "smoke_synth_transport": bool(args.smoke),
+                "convention": "streamed verbatim from the parent n1m capture chunks "
+                "(v_x at layer 19; NO recapture — the stored arrays' own bytes)",
+                **C.reproducibility_metadata(),
+            },
+        )
+        logger.info(
+            "[vstream] v42_stream.npz written (%d rows; %d chunks scanned)",
+            len(bundle_rows),
+            got["n_scanned"],
+        )
+    if not args.skip_upload:
+        _upload_files_failloud(args, [out_npz, meta_path], "analysis_tensors")
+    EA._phase_sentinel("kres-vstream", f"vstream complete ({len(bundle_rows)} rows)")
+
+
 # ── phase C: gates + estimator + bootstrap + figures ────────────────────────────
 
 
@@ -909,26 +1363,35 @@ def _pct_ci(draws: np.ndarray) -> tuple[float, float]:
     return float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))
 
 
-def _g1(e2_recap: np.ndarray, e2_stored: np.ndarray) -> dict:
-    """Gate G1 — recapture reconciliation (plan §4): median relative |Δe2| +
-    Spearman vs the stored parent arrays. Verdict only; HALT policy is the
-    caller's (production HALTs, smoke demotes to informational)."""
+def _g1(e2_streamed: np.ndarray, e2_stored: np.ndarray) -> dict:
+    """Gate G1 (v68 redefinition) — streamed-v42 IDENTITY check of the join:
+    median relative |Δe2| + Spearman of e2 recomputed from the STREAMED parent v
+    (vstream — the stored arrays' own bytes) against the stored holdout_e2. The
+    only expected deviation is the fp16 quantization of holdout_pred16, so the
+    tolerance is tight (median rel <= 1e-3, Spearman >= 0.999). Verdict only;
+    HALT policy is the caller's (production HALTs, smoke demotes)."""
     from scipy.stats import spearmanr
 
-    rel = np.abs(e2_recap - e2_stored) / np.maximum(e2_stored, 1e-12)
+    rel = np.abs(e2_streamed - e2_stored) / np.maximum(e2_stored, 1e-12)
     med = float(np.median(rel))
-    rho = float(spearmanr(e2_recap, e2_stored).statistic)
+    rho = float(spearmanr(e2_streamed, e2_stored).statistic)
     return {
         "median_rel_abs_de2": med,
+        "p90_rel_abs_de2": float(np.percentile(rel, 90)),
+        "max_rel_abs_de2": float(rel.max()),
         "spearman": rho,
         "pass": bool(med <= G1_MED_REL_MAX and rho >= G1_SPEARMAN_MIN),
         "thresholds": {"median_rel_max": G1_MED_REL_MAX, "spearman_min": G1_SPEARMAN_MIN},
+        "convention": "streamed-v42-identity (no recapture)",
     }
 
 
 def _g2(e2_k: np.ndarray, en_mask: np.ndarray) -> dict:
-    """Gate G2 — draw exchangeability (plan §4): average rank of the parent draw's
-    e2 among the 5 draws; |mean-3.0|<=0.15. Per-arm breakdown (critic diagnostic)."""
+    """Gate G2 — parent-vs-now sampling-distribution check (v68): average rank of
+    the STREAMED parent draw's e2 (column 0) among the 5 draws (streamed v42 +
+    fresh 43-46, all in the parent capture convention); |mean-3.0|<=0.15. Per-arm
+    breakdown (critic diagnostic). DIAGNOSTIC as of v68 — the registered floor is
+    the fresh-4 form regardless, so G2 no longer switches the estimator."""
     from scipy.stats import rankdata
 
     ranks = rankdata(e2_k, method="average", axis=1)[:, 0]
@@ -944,30 +1407,38 @@ def _g2(e2_k: np.ndarray, en_mask: np.ndarray) -> dict:
     }
 
 
-def _estimators(V: np.ndarray, vhat: np.ndarray, denom: np.ndarray) -> dict:
-    """Plan §4 pseudocode (fp64) + the 4-fresh-draw fallback/shadow set. Asserts
-    the unbiasedness identity m2 + trvar == mean_k e2_k exactly (algebraic)."""
-    vbar = V.mean(1)
-    trvar = V.var(1, ddof=1).sum(-1)
-    e2_k = ((V - vhat[:, None, :]) ** 2).sum(-1)
-    m2 = ((vhat - vbar) ** 2).sum(-1) - trvar / V.shape[1]
-    ident = np.max(np.abs(m2 + trvar - e2_k.mean(1)) / np.maximum(e2_k.mean(1), 1e-12))
-    assert ident < 1e-8, f"unbiasedness identity violated (max rel dev {ident:.3e})"
-    Vf = V[:, 1:, :]
-    vbar4 = Vf.mean(1)
-    trvar4 = Vf.var(1, ddof=1).sum(-1)
-    m2_4 = ((vhat - vbar4) ** 2).sum(-1) - trvar4 / Vf.shape[1]
+def _estimators(V: np.ndarray, v42: np.ndarray, vhat: np.ndarray, denom: np.ndarray) -> dict:
+    """Registered fresh-4 floor estimator (the plan's G2-fallback form, PRIMARY as
+    of v68: trvar over the 4 fresh parent-convention draws 43-46, ddof=1;
+    m2 = ||vhat - mean(V_fresh)||^2 - trvar/4) PLUS the 5-draw shadow variant
+    with the STREAMED parent draw ``v42`` as draw 0 (diagnostic only). Asserts
+    the unbiasedness identity m2 + trvar == mean_k e2_k exactly per set
+    (algebraic; fp64)."""
+
+    def _one(Vk: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+        vbar = Vk.mean(1)
+        trvar = Vk.var(1, ddof=1).sum(-1)
+        e2_k = ((Vk - vhat[:, None, :]) ** 2).sum(-1)
+        m2 = ((vhat - vbar) ** 2).sum(-1) - trvar / Vk.shape[1]
+        ident = np.max(np.abs(m2 + trvar - e2_k.mean(1)) / np.maximum(e2_k.mean(1), 1e-12))
+        assert ident < 1e-8, f"unbiasedness identity violated (max rel dev {ident:.3e})"
+        return e2_k, trvar, m2, float(ident)
+
+    assert V.shape[1] == len(GEN_SEEDS), V.shape
+    _e2f, trvar, m2, id4 = _one(V)
+    V5 = np.concatenate([v42[:, None, :], V], axis=1)
+    e2_k5, trvar5, m2_5, id5 = _one(V5)
     return {
-        "e2_k": e2_k,
-        "trvar": trvar,
+        "e2_k": e2_k5,  # (n, 5): column 0 = streamed parent draw (G2 + shadow)
+        "trvar": trvar,  # PRIMARY (fresh-4, registered)
         "m2": m2,
         "floor_n": trvar / denom,
         "nerr_adj": m2 / denom,
-        "trvar4": trvar4,
-        "m2_4": m2_4,
-        "floor4_n": trvar4 / denom,
-        "nerr_adj4": m2_4 / denom,
-        "identity_max_rel_dev": float(ident),
+        "trvar5": trvar5,  # 5-draw SHADOW (streamed v42 as draw 0)
+        "m2_5": m2_5,
+        "floor5_n": trvar5 / denom,
+        "nerr_adj5": m2_5 / denom,
+        "identity_max_rel_dev": max(id4, id5),
     }
 
 
@@ -1066,16 +1537,16 @@ def _figures(args, fig_dir: Path, d: dict) -> None:
         plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(4.6, 4.2))
-    ax.scatter(d["e2_stored"], d["e2_recap"], s=8, alpha=0.5, color="#333333")
+    ax.scatter(d["e2_stored"], d["e2_streamed42"], s=8, alpha=0.5, color="#333333")
     lim = [
-        min(d["e2_stored"].min(), d["e2_recap"].min()),
-        max(d["e2_stored"].max(), d["e2_recap"].max()),
+        min(d["e2_stored"].min(), d["e2_streamed42"].min()),
+        max(d["e2_stored"].max(), d["e2_streamed42"].max()),
     ]
     ax.plot(lim, lim, color="0.6", lw=0.8)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("stored e2 (parent)")
-    ax.set_ylabel("recaptured e2 (draw 42)")
+    ax.set_ylabel("streamed parent e2 (draw 42, no recapture)")
     fig.tight_layout()
     fig.savefig(fig_dir / "g1_recapture_scatter.png", dpi=200)
     plt.close(fig)
@@ -1085,7 +1556,7 @@ def _figures(args, fig_dir: Path, d: dict) -> None:
     ranks = rankdata(d["e2_k"], method="average", axis=1)[:, 0]
     fig, ax = plt.subplots(figsize=(4.6, 3.6))
     ax.hist(ranks, bins=np.arange(0.75, 5.76, 0.5), color="#4878CF")
-    ax.set_xlabel("rank of parent draw's e2 among 5 draws")
+    ax.set_xlabel("rank of streamed parent draw's e2 among 5 draws (v42 + fresh 43-46)")
     ax.set_ylabel("contexts")
     fig.tight_layout()
     fig.savefig(fig_dir / "g2_rank_hist.png", dpi=200)
@@ -1125,13 +1596,36 @@ def phase_analyze(args) -> None:
         hub.stage_hub_file(
             C.HF_DATA_REPO, f"{args.hf_prefix}/analysis_tensors/capture_meta.json", meta_path
         )
+    meta = json.loads(meta_path.read_text())
+    if meta.get("ids_version") != IDS_VERSION:  # v68: never read the retired text-retok V.npz
+        raise RuntimeError(
+            f"capture_meta ids_version {meta.get('ids_version')} != {IDS_VERSION} — stale "
+            "pre-v68 text-retok capture; regenerate b1/b2 (retired convention)"
+        )
     z = np.load(v_path)
     V = z["V"].astype(np.float64)
+    assert [int(d) for d in z["draws"]] == list(GEN_SEEDS), z["draws"]
     n_ans = z["n_ans"].astype(np.float64)
     rows_sub = z["rows"]
     language = np.array([str(x) for x in z["language"]])
     en_mask = np.array([str(a) == "en" for a in z["arm"]])
-    meta = json.loads(meta_path.read_text())
+
+    vs_path = args.out / "v42_stream.npz"
+    vs_meta_path = args.out / "v42_stream_meta.json"
+    if not vs_path.exists():
+        hub.stage_hub_file(
+            C.HF_DATA_REPO, f"{args.hf_prefix}/analysis_tensors/v42_stream.npz", vs_path
+        )
+        hub.stage_hub_file(
+            C.HF_DATA_REPO, f"{args.hf_prefix}/analysis_tensors/v42_stream_meta.json", vs_meta_path
+        )
+    vs_meta = json.loads(vs_meta_path.read_text())
+    assert vs_meta.get("bundle_sha") == meta["bundle_sha"], (
+        "v42_stream bundle_sha != capture bundle_sha — run --phase vstream on this bundle"
+    )
+    zs = np.load(vs_path)
+    slot_of = {int(c): i for i, c in enumerate(zs["ci"])}
+    v42 = zs["v42"][np.array([slot_of[int(c)] for c in z["ci"]], dtype=np.int64)].astype(np.float64)
 
     s = _stored_join(args)
     pos_of = {int(r): i for i, r in enumerate(s["rows"])}
@@ -1139,10 +1633,17 @@ def phase_analyze(args) -> None:
     vhat = s["pred16"][pos].astype(np.float64)
     e2_s, denom_s, nerr_s = s["e2"][pos], s["denom"][pos], s["nerr"][pos]
 
-    est = _estimators(V, vhat, denom_s)
+    est = _estimators(V, v42, vhat, denom_s)
     enforce = not args.smoke  # production-n-calibrated gates demote under smoke (#1345)
 
-    g1 = _g1(est["e2_k"][:, 0], e2_s)
+    e2_42 = est["e2_k"][:, 0]  # streamed parent draw (identity read of the join)
+    g1 = _g1(e2_42, e2_s)
+    logger.info(
+        "[analyze] G1(streamed-identity): median rel %.3e spearman %.6f pass=%s",
+        g1["median_rel_abs_de2"],
+        g1["spearman"],
+        g1["pass"],
+    )
     g2 = _g2(est["e2_k"], en_mask)
 
     # C1 coherence: subsample stored raw delta vs parent full delta (join/strata bug detector)
@@ -1159,17 +1660,37 @@ def phase_analyze(args) -> None:
         "pass": bool(c1_lo <= s["delta_full"] <= c1_hi),
     }
 
-    fallback = enforce and g1["pass"] and not g2["pass"]
-    estimator_used = "fresh4" if fallback else "5draw"
-    floor_use = est["floor4_n"] if fallback else est["floor_n"]
+    # v68: the registered floor IS the fresh-4 form (the plan's G2-fallback shape);
+    # G2 is a parent-vs-now sampling-distribution DIAGNOSTIC — it no longer
+    # switches the estimator. The 5-draw variant is reported as a shadow.
+    estimator_used = "fresh4-registered"
+    floor_use = est["floor_n"]
 
     gates = {
         "g1": {**g1, "enforced": enforce},
-        "g2": {**g2, "enforced": enforce, "fallback_engaged": bool(fallback)},
+        "g2": {**g2, "enforced": False, "role": "diagnostic (v68 — no estimator switch)"},
         "c1": {**c1, "enforced": enforce},
         "identity_max_rel_dev": est["identity_max_rel_dev"],
         "determinism_check": _b1_determinism(args),
         "estimator_used": estimator_used,
+        "ids_provenance": {
+            "capture_ids_version": meta.get("ids_version"),
+            "capture_convention": meta.get("capture_convention"),
+            "seed42_source": meta.get("seed42_source"),
+            "id_convention_diagnostic": meta.get("id_convention_diagnostic"),
+            "seam_merge_rate_per_arm": {
+                "en": float(z["seam_merge"][en_mask].mean()),
+                "nonen": float(z["seam_merge"][~en_mask].mean()),
+            },
+            "gen_id_retok_mismatch_rate_per_arm": {
+                "en": float(z["gen_id_retok_mismatch"][en_mask].mean()),
+                "nonen": float(z["gen_id_retok_mismatch"][~en_mask].mean()),
+            },
+            "vstream_meta": {
+                k: vs_meta.get(k)
+                for k in ("n", "n_predicted_chunks", "n_scanned_chunks", "smoke_synth_transport")
+            },
+        },
         "n_contexts": len(rows_sub),
         "n_dropped": len(meta.get("dropped", [])),
         "tiny_model": bool(meta.get("tiny_model", False)),
@@ -1178,7 +1699,7 @@ def phase_analyze(args) -> None:
     args.out_eval.mkdir(parents=True, exist_ok=True)
     C.write_json_atomic(args.out_eval / "gates.json", gates)
     if enforce and not g1["pass"]:
-        logger.error("[analyze] G1 FAIL (%s) — capture-convention drift; HALT (plan §7)", g1)
+        logger.error("[analyze] G1 FAIL (%s) — stored-join identity broken; HALT (plan §7)", g1)
         raise SystemExit(RC_G1)
     if not g1["pass"]:
         logger.warning("[analyze] G1 informational under smoke: %s", g1)
@@ -1187,10 +1708,9 @@ def phase_analyze(args) -> None:
         raise SystemExit(RC_C1)
     if not g2["pass"]:
         logger.warning(
-            "[analyze] G2 %s: mean rank %.3f (fallback %s)",
-            "FAIL -> fresh-4 fallback" if enforce else "informational under smoke",
+            "[analyze] G2 diagnostic %s: mean rank %.3f (registered floor stays fresh-4)",
+            "FAIL" if enforce else "informational under smoke",
             g2["mean_rank_draw42"],
-            "engaged" if fallback else "not engaged (smoke)",
         )
 
     # ── registered contrasts (joint bootstrap; chunked gathers) ────────────────
@@ -1239,7 +1759,7 @@ def phase_analyze(args) -> None:
         elif not floor_excl and (fl_hi - fl_lo) < abs(delta_raw):
             sub_read = "floor small and tight — adjustment underpowered at this K/n (raise n next)"
 
-    adj_use = est["nerr_adj4"] if fallback else est["nerr_adj"]
+    adj_use = est["nerr_adj"]  # fresh-4 registered (v68)
     s1_draws = _boot_means(adj_use[~en_mask], nb, r_s1_ne) - _boot_means(
         adj_use[en_mask], nb, r_s1_en
     )
@@ -1257,16 +1777,17 @@ def phase_analyze(args) -> None:
     mlp_adj_d = mlp_raw_d - floor_delta_d
     mlp_delta_raw = float(nerr_mlp[~en_full].mean() - nerr_mlp[en_full].mean())
     vhat_m = zm["holdout_pred16"][pos].astype(np.float64)
-    est_m = _estimators(V, vhat_m, denom_s)
+    # streamed-v identity read against the MLP fitter's stored arrays (no recapture)
+    e2_m_42 = ((v42 - vhat_m) ** 2).sum(1)
     mlp = {
         "delta_raw_full": mlp_delta_raw,
         "delta_adj": {"point": mlp_delta_raw - delta_floor, "ci": list(_pct_ci(mlp_adj_d))},
-        "g1_informational": _g1(est_m["e2_k"][:, 0], zm["holdout_e2"].astype(np.float64)[pos]),
+        "g1_informational": _g1(e2_m_42, zm["holdout_e2"].astype(np.float64)[pos]),
     }
 
     # unnormalized (raw e2 units) sensitivity
     e2_full = s["e2"][s["en"] | s["ne"]]
-    trvar_use = est["trvar4"] if fallback else est["trvar"]
+    trvar_use = est["trvar"]  # fresh-4 registered (v68)
     e2_raw_d = _boot_means(e2_full[~en_full], nb, r_e2_ne) - _boot_means(
         e2_full[en_full], nb, r_e2_en
     )
@@ -1282,8 +1803,8 @@ def phase_analyze(args) -> None:
         "ci": list(_pct_ci(e2_raw_d - tv_d)),
     }
 
-    # diagnostics (zero-cost panel asks): fresh-4 shadow, per-code floors,
-    # floor-vs-length Spearman per arm, m2<0 fraction
+    # diagnostics (zero-cost panel asks): 5-draw shadow (streamed v42 as draw 0),
+    # per-code floors, floor-vs-length Spearman per arm, m2<0 fraction
     n_ans_mean = n_ans.mean(1)
     diagnostics = {
         "m2_negative_fraction": {
@@ -1302,13 +1823,13 @@ def phase_analyze(args) -> None:
             }
             for c in sorted(set(language))
         },
-        "fresh4_shadow": {
-            "delta_floor4": float(
-                est["floor4_n"][~en_mask].mean() - est["floor4_n"][en_mask].mean()
+        "fivedraw_shadow": {
+            "delta_floor5": float(
+                est["floor5_n"][~en_mask].mean() - est["floor5_n"][en_mask].mean()
             ),
-            "floor4_mean": {
-                "en": float(est["floor4_n"][en_mask].mean()),
-                "nonen": float(est["floor4_n"][~en_mask].mean()),
+            "floor5_mean": {
+                "en": float(est["floor5_n"][en_mask].mean()),
+                "nonen": float(est["floor5_n"][~en_mask].mean()),
             },
         },
     }
@@ -1371,16 +1892,19 @@ def phase_analyze(args) -> None:
         ci=z["ci"],
         arm=z["arm"],
         language=z["language"],
-        floor_n=est["floor_n"],
+        floor_n=est["floor_n"],  # PRIMARY: fresh-4 registered (v68)
         nerr_adj=est["nerr_adj"],
         m2=est["m2"],
         trvar=est["trvar"],
-        floor4_n=est["floor4_n"],
-        nerr_adj4=est["nerr_adj4"],
+        floor5_n=est["floor5_n"],  # SHADOW: 5-draw with streamed v42 as draw 0
+        nerr_adj5=est["nerr_adj5"],
+        m2_5=est["m2_5"],
         n_ans=z["n_ans"],
+        seam_merge=z["seam_merge"],
+        gen_id_retok_mismatch=z["gen_id_retok_mismatch"],
         nerr_stored=nerr_s,
         e2_stored=e2_s,
-        e2_recap=est["e2_k"][:, 0],
+        e2_streamed42=e2_42,
     )
 
     _figures(
@@ -1399,11 +1923,11 @@ def phase_analyze(args) -> None:
             },
             "arm_stats_raw": {
                 "en": {
-                    "map": float((est["m2_4"] if fallback else est["m2"])[en_mask].mean()),
+                    "map": float(est["m2"][en_mask].mean()),
                     "floor": float(trvar_use[en_mask].mean()),
                 },
                 "nonen": {
-                    "map": float((est["m2_4"] if fallback else est["m2"])[~en_mask].mean()),
+                    "map": float(est["m2"][~en_mask].mean()),
                     "floor": float(trvar_use[~en_mask].mean()),
                 },
             },
@@ -1422,7 +1946,7 @@ def phase_analyze(args) -> None:
             "floor_n": est["floor_n"],
             "nerr_stored": nerr_s,
             "e2_stored": e2_s,
-            "e2_recap": est["e2_k"][:, 0],
+            "e2_streamed42": e2_42,
             "e2_k": est["e2_k"],
             "m2": est["m2"],
             "mlp": mlp,
@@ -1454,7 +1978,9 @@ def _b1_determinism(args) -> dict | None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #1482 k-resample noise-floor driver.")
     ap.add_argument(
-        "--phase", required=True, choices=["subsample", "pod", "b0", "b1", "b2", "analyze"]
+        "--phase",
+        required=True,
+        choices=["subsample", "pod", "b0", "b1", "b2", "vstream", "analyze"],
     )
     ap.add_argument("--smoke", action="store_true", help="tiny-N run of the SAME pipeline")
     ap.add_argument("--full", action="store_true", help="explicit production mode (default)")
@@ -1540,6 +2066,7 @@ def main() -> int:
         "b0": phase_b0,
         "b1": phase_b1,
         "b2": phase_b2,
+        "vstream": phase_vstream,
         "analyze": phase_analyze,
     }
     dispatch[args.phase](args)

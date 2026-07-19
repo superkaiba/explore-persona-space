@@ -1,10 +1,15 @@
 """Pins for the #1482 k-resample noise-floor driver (plan v7).
 
 Covers the data-dependent gate branches the main smoke leg deliberately does
-not trip (degenerate-input probes: G1 fail, G2 fallback, C1 fail, sha-mismatch
-regen, empty-response drop, fetch-count assert, determinism repeat-floor and
-seed-distinctness raises), the
-unbiasedness identity, largest-remainder stratification, and the inverted-CI
+not trip (degenerate-input probes: G1 fail, G2 outlier, sha/ids_version-stale
+regen, prompt-ids join drift, stale text-retok capture guards, fetch-count +
+vstream missing-ci asserts, determinism repeat-floor and seed-distinctness
+raises), the id-bearing b1 chunk schema (v68), the parent-convention b2
+assembly helpers (full-template retok, span incl. the end-of-turn tail —
+verbatim COL.capture_answer_vector), the vstream collector (probe/predict/
+fallback/early-stop/checkpoint over REAL-format .pt chunk files; only the
+network transport is faked via fetch_fn), the fresh-4 + 5-draw-shadow
+estimator identities, largest-remainder stratification, and the inverted-CI
 errorbar clamp through the REAL hero-figure function to savefig (#547/#1335).
 All tests execute the real production bodies (pure functions — no seams
 stubbed; the only fakes are tmp_path filesystem inputs).
@@ -34,47 +39,60 @@ def _rng():
 
 
 def test_estimator_unbiasedness_identity_holds():
-    """m2 + trvar == mean_k e2_k exactly (algebraic); hence per-row
-    nerr_adj + floor_n == mean over the 5 draws of per-draw nerr."""
+    """m2 + trvar == mean_k e2_k exactly (algebraic) for BOTH the fresh-4
+    registered set and the 5-draw shadow (streamed v42 as draw 0)."""
     rng = _rng()
     n, h = 17, 32
-    V = rng.normal(size=(n, 5, h))
+    V = rng.normal(size=(n, 4, h))  # fresh draws 43-46 (v68: parent draw streamed)
+    v42 = rng.normal(size=(n, h))
     vhat = rng.normal(size=(n, h))
     denom = rng.uniform(1.0, 5.0, size=n)
-    est = K._estimators(V, vhat, denom)
-    e2_mean = est["e2_k"].mean(1)
-    assert np.allclose(est["m2"] + est["trvar"], e2_mean, rtol=1e-10)
-    assert np.allclose(est["nerr_adj"] + est["floor_n"], e2_mean / denom, rtol=1e-10)
+    est = K._estimators(V, v42, vhat, denom)
+    e2_fresh_mean = est["e2_k"][:, 1:].mean(1)
+    assert np.allclose(est["m2"] + est["trvar"], e2_fresh_mean, rtol=1e-10)
+    assert np.allclose(est["nerr_adj"] + est["floor_n"], e2_fresh_mean / denom, rtol=1e-10)
+    e2_5_mean = est["e2_k"].mean(1)
+    assert np.allclose(est["m2_5"] + est["trvar5"], e2_5_mean, rtol=1e-10)
     assert est["identity_max_rel_dev"] < 1e-8
+    # column 0 IS the streamed parent draw's e2
+    assert np.allclose(est["e2_k"][:, 0], ((v42 - vhat) ** 2).sum(-1))
 
 
-def test_estimator_identity_assert_fires_on_corrupt_shapes():
-    """The identity assert is a live guard: a broken estimator input raises."""
+def test_estimator_primary_floor_unaffected_by_parent_draw():
+    """The registered fresh-4 floor never touches the streamed parent draw: a
+    corrupted v42 changes ONLY the shadow (and e2_k column 0)."""
     rng = _rng()
-    V = rng.normal(size=(5, 5, 8))
+    V = rng.normal(size=(5, 4, 8))
     vhat = rng.normal(size=(5, 8))
-    est = K._estimators(V, vhat, np.ones(5))
-    # sanity: fresh-4 shadow uses only draws 1..4
-    V2 = V.copy()
-    V2[:, 0, :] = 1e6  # corrupt the parent draw only
-    est2 = K._estimators(V2, vhat, np.ones(5))
-    assert np.allclose(est2["floor4_n"], est["floor4_n"])  # fresh-4 floor unaffected
+    v42 = rng.normal(size=(5, 8))
+    est = K._estimators(V, v42, vhat, np.ones(5))
+    est2 = K._estimators(V, v42 + 1e6, vhat, np.ones(5))
+    assert np.allclose(est2["floor_n"], est["floor_n"])
+    assert np.allclose(est2["m2"], est["m2"])
+    assert not np.allclose(est2["floor5_n"], est["floor5_n"])  # shadow DOES move
 
 
 # ── gate G1: pass on identity-constructed recapture, fail on perturbation ───────
 
 
 def test_g1_passes_on_identity_and_fails_on_perturbation():
+    """v68 thresholds: the streamed-v identity read tolerates only fp16-pred
+    quantization (median rel <= 1e-3, Spearman >= 0.999)."""
     rng = _rng()
     e2_stored = rng.uniform(0.5, 10.0, size=200)
-    g_pass = K._g1(e2_stored * (1 + rng.normal(0, 0.001, size=200)), e2_stored)
+    g_pass = K._g1(e2_stored * (1 + rng.normal(0, 3e-4, size=200)), e2_stored)
     assert g_pass["pass"], g_pass
-    # 30% multiplicative noise breaks BOTH legs' calibration target (median 2%)
+    # 2% multiplicative noise passed the OLD (retok) bar; the identity bar fails it
+    g_fail_med = K._g1(e2_stored * np.exp(rng.normal(0, 0.02, size=200)), e2_stored)
+    assert not g_fail_med["pass"], g_fail_med
     g_fail = K._g1(e2_stored * np.exp(rng.normal(0, 0.5, size=200)), e2_stored)
     assert not g_fail["pass"], g_fail
+    assert g_fail["convention"] == "streamed-v42-identity (no recapture)"
 
 
-def test_g2_fallback_fires_on_outlier_parent_draw():
+def test_g2_diagnostic_fires_on_outlier_parent_draw():
+    """A streamed parent draw in a DIFFERENT convention than the fresh draws
+    would rank as a systematic outlier — the parent-vs-now check G2 detects."""
     rng = _rng()
     e2_k = rng.uniform(1.0, 2.0, size=(300, 5))
     g_ok = K._g2(e2_k, np.arange(300) < 150)
@@ -170,14 +188,30 @@ def test_bundle_sha_mismatch_forces_regeneration(tmp_path):
         "rows": [{"ci": 100, "row_idx": 0, "response": "old"}],
     }
     (gen_dir / "gen_seed43_chunk0.json").write_text(json.dumps(stale))
+    # a text-only chunk with a MATCHING sha (pre-v68 schema) is stale too
+    (gen_dir / "gen_seed44_chunk0.json").write_text(
+        json.dumps({"meta": {"bundle_sha": sha}, "rows": stale["rows"]})
+    )
     K.phase_b1(args)  # cpu smoke: stub generation through the real checkpoint path
-    doc = json.loads((gen_dir / "gen_seed43_chunk0.json").read_text())
-    assert doc["meta"]["bundle_sha"] == sha  # stale checkpoint was REGENERATED
-    assert "stub response" in doc["rows"][0]["response"]
-    # and a matching-sha checkpoint is kept (byte-identical rerun)
+    for name in ("gen_seed43_chunk0.json", "gen_seed44_chunk0.json"):
+        doc = json.loads((gen_dir / name).read_text())
+        assert doc["meta"]["bundle_sha"] == sha  # stale checkpoint was REGENERATED
+        assert doc["meta"]["ids_version"] == K.IDS_VERSION  # id-bearing schema (v68)
+        assert "stub response" in doc["rows"][0]["response"]
+        # generation-time ids persisted per row (stub path: retok == gen ids)
+        assert doc["rows"][0]["token_ids"] and doc["rows"][0]["prompt_token_ids"]
+    # and a matching-sha id-bearing checkpoint is kept (byte-identical rerun)
     before = (gen_dir / "gen_seed43_chunk0.json").read_bytes()
     K.phase_b1(args)
     assert (gen_dir / "gen_seed43_chunk0.json").read_bytes() == before
+    # b2's loader consumes the id-bearing chunks; a text-only chunk fails loud
+    gen = K._load_gen_chunks(args, sha)
+    assert set(gen[43][100]) == {"response", "token_ids", "prompt_token_ids"}
+    (gen_dir / "gen_seed43_chunk0.json").write_text(
+        json.dumps({"meta": {"bundle_sha": sha}, "rows": []})
+    )
+    with pytest.raises(RuntimeError, match="ids_version"):
+        K._load_gen_chunks(args, sha)
 
 
 # ── B1 pilot timing gate (plan §9 row + #1415 designed-halt convention) ─────────
@@ -202,7 +236,7 @@ def test_determinism_spot_check_batch_mismatch_never_gates(monkeypatch):
     pre-fix check this exact input raised 'per-request seed not applied'."""
 
     def seeded(llm, tok, texts, seed):
-        return [f"s{seed}-{i}" for i in range(len(texts))]
+        return [_gen_row(f"s{seed}-{i}") for i in range(len(texts))]
 
     monkeypatch.setattr(K, "_generate_seed", seeded)
     ok = K._determinism_spot_check(object(), ["p"] * 5, 43, ["batchtext"] * 5)
@@ -219,7 +253,7 @@ def test_determinism_spot_check_repeat_flake_warns_not_raises(monkeypatch):
         out = [f"s{seed}-{i}" for i in range(len(texts))]
         if calls["n"] == 2:  # one flipped prompt on the repeat run only
             out[0] = "flake"
-        return out
+        return [_gen_row(t) for t in out]
 
     monkeypatch.setattr(K, "_generate_seed", flaky)
     warn = K._determinism_spot_check(object(), ["p"] * 5, 43, ["b"] * 5)
@@ -231,7 +265,9 @@ def test_determinism_spot_check_raises_below_repeat_floor(monkeypatch):
 
     def unrepeatable(llm, tok, texts, seed):  # 2/5 stable across same-seed calls
         calls["n"] += 1
-        return [f"call{calls['n']}-{i}" if i < 3 else f"fix-{i}" for i in range(len(texts))]
+        return [
+            _gen_row(f"call{calls['n']}-{i}" if i < 3 else f"fix-{i}") for i in range(len(texts))
+        ]
 
     monkeypatch.setattr(K, "_generate_seed", unrepeatable)
     with pytest.raises(RuntimeError, match="same-seed repeat 2/5"):
@@ -239,9 +275,16 @@ def test_determinism_spot_check_raises_below_repeat_floor(monkeypatch):
 
 
 def test_determinism_spot_check_raises_when_seed_ignored(monkeypatch):
-    monkeypatch.setattr(K, "_generate_seed", lambda llm, tok, texts, seed: ["same"] * len(texts))
+    monkeypatch.setattr(
+        K, "_generate_seed", lambda llm, tok, texts, seed: [_gen_row("same")] * len(texts)
+    )
     with pytest.raises(RuntimeError, match="seed ignored"):
         K._determinism_spot_check(object(), ["p"] * 5, 43, ["same"] * 5)
+
+
+def _gen_row(text: str) -> dict:
+    """Minimal id-bearing gen row (the v68 _generate_seed return shape)."""
+    return {"text": text, "token_ids": [1], "prompt_token_ids": [2]}
 
 
 def test_determinism_spot_check_real_body_cpu_stub():
@@ -249,7 +292,7 @@ def test_determinism_spot_check_real_body_cpu_stub():
     seed-deterministic, so repeat matches N/N and seed+1000 differs N/N. Also pins
     the scaled floor max(1, N-1) at the 2-row CPU-smoke bundle size."""
     texts = ["a", "b", "c", "d", "e"]
-    ref = K._generate_seed(None, None, texts, seed=43)
+    ref = [g["text"] for g in K._generate_seed(None, None, texts, seed=43)]
     rep = K._determinism_spot_check(None, texts, 43, ref)
     assert rep["n_repeat_match"] == rep["n_total"] == 5
     assert rep["n_distinct_differ"] == 5
@@ -352,3 +395,185 @@ def test_probe_chunk_index_ranges(monkeypatch, tmp_path):
     assert idx["shard00_chunk0000.json"] == (0, 500)
     assert idx["shard00_chunk0001.json"] == (500, 1000)
     assert idx["shard01_chunk0000.json"][0] == 1000
+
+
+# ── parent-convention b2 assembly (v68 fix; real tokenizer if cached) ───────────
+
+
+def test_parent_convention_span_includes_end_of_turn_tail():
+    """The v68 assembly is VERBATIM COL.capture_answer_vector: full-template
+    re-tokenization, span [prompt_len:full_len] INCLUDING the end-of-turn tail —
+    NOT token-id concat, NOT generation ids. Pin equivalence to the parent
+    function's own prompt_len/full_len arithmetic."""
+    tok = _load_tok_or_skip()
+    msgs, prompt_ids = K._prompt_render(tok, "What is 2+2?")
+    full_ids = K._parent_convention_full_ids(tok, msgs, "It is 4.")
+    # parent arithmetic (capture_answer_vector:171-181), byte-for-byte
+    prompt_text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    assert len(prompt_ids) == len(tok(prompt_text)["input_ids"])
+    full_text = tok.apply_chat_template(
+        [*msgs, {"role": "assistant", "content": "It is 4."}],
+        tokenize=False,
+        add_generation_prompt=False,
+    )
+    assert full_ids == [int(x) for x in tok(full_text)["input_ids"]]
+    span = len(full_ids) - len(prompt_ids)
+    resp_only = len(tok("It is 4.", add_special_tokens=False)["input_ids"])
+    assert span > resp_only  # the span carries the <|im_end|>(+\n) tail
+    # parent drop rule: even an EMPTY response keeps a nonzero (tail-only) span,
+    # so the b2 drop gate is a parent-verbatim guard (production-only branch)
+    assert len(K._parent_convention_full_ids(tok, msgs, "")) > len(prompt_ids)
+
+
+def test_prompt_ids_join_check_raises_on_drift():
+    K._check_prompt_ids_join(7, 43, [1, 2, 3], [1, 2, 3])  # identical -> no raise
+    with pytest.raises(RuntimeError, match="join drift"):
+        K._check_prompt_ids_join(7, 43, [1, 2, 3], [1, 2, 4])
+
+
+def test_analyze_refuses_stale_text_retok_capture(tmp_path):
+    """phase_analyze must NEVER read a pre-v68 V.npz (retired text-retok
+    convention): capture_meta without ids_version fails loud before any load."""
+    args = SimpleNamespace(
+        out=tmp_path,
+        out_eval=tmp_path / "eval",
+        figures=tmp_path / "figs",
+        scratch=tmp_path / "scratch",
+        hf_prefix="x",
+        smoke=True,
+        n_boot=10,
+    )
+    (tmp_path / "V.npz").write_bytes(b"stale")  # guard fires before np.load
+    (tmp_path / "capture_meta.json").write_text(json.dumps({"bundle_sha": "s"}))
+    with pytest.raises(RuntimeError, match="ids_version"):
+        K.phase_analyze(args)
+
+
+def test_b2_refuses_stale_capture_outputs(tmp_path, monkeypatch):
+    """b2's resume guard: an existing V.npz whose meta lacks ids_version (or has
+    a foreign sha) is STALE — RuntimeError, never a silent skip/consume."""
+    args = SimpleNamespace(
+        out=tmp_path,
+        scratch=tmp_path / "scratch",
+        hf_prefix="x",
+        skip_upload=True,
+        smoke=True,
+        tiny_model=True,
+        device="cpu",
+        n_per_arm=1,
+        gen_batch=2,
+        token_budget=8192,
+        workers=1,
+        max_chunks=0,
+    )
+    (tmp_path / "inputs").mkdir(parents=True)
+    row = {
+        "row_idx": 0,
+        "ci": 100,
+        "arm": "en",
+        "language": "en",
+        "prompt": "q",
+        "response_seed42": "r",
+        "e2_stored": 1.0,
+        "denom_stored": 1.0,
+        "nerr_stored": 1.0,
+    }
+    for name, sl in zip(K.BUNDLE_PARTS, ([row], []), strict=True):
+        (tmp_path / "inputs" / name).write_text(json.dumps({"meta": {}, "rows": sl}))
+    _, sha = K._load_bundle(args)
+    gen_dir = tmp_path / "gen"
+    gen_dir.mkdir()
+    for k in K.GEN_SEEDS:
+        (gen_dir / f"gen_seed{k}_chunk0.json").write_text(
+            json.dumps(
+                {
+                    "meta": {"bundle_sha": sha, "ids_version": K.IDS_VERSION},
+                    "rows": [
+                        {
+                            "row_idx": 0,
+                            "ci": 100,
+                            "response": "r",
+                            "token_ids": [1],
+                            "prompt_token_ids": [2],
+                        }
+                    ],
+                }
+            )
+        )
+    (tmp_path / "V.npz").write_bytes(b"stale")
+    (tmp_path / "capture_meta.json").write_text(json.dumps({"bundle_sha": sha}))
+    with pytest.raises(RuntimeError, match="remove stale outputs"):
+        K.phase_b2(args)
+
+
+# ── vstream: collector over REAL-format .pt chunks (transport faked only) ───────
+
+
+def _write_pt_chunks(tmp_path: Path, groups: list[list[int]], h: int = 8):
+    """REAL-format n1m capture chunk files (.pt + raw-JSON sibling): keys
+    cx_last/v_x (n, 3, H) fp16, ci, prompts, layers=[14, 19, 26]."""
+    import torch
+
+    chunk_dir = tmp_path / "chunks"
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+    layers = [14, K.LAYER, 26]
+    expected: dict[int, np.ndarray] = {}
+    for j, cis in enumerate(groups):
+        vx = torch.zeros((len(cis), 3, h), dtype=torch.float16)
+        for i, c in enumerate(cis):
+            v = np.random.default_rng(c).normal(size=h)
+            vx[i, 1, :] = torch.tensor(v, dtype=torch.float16)
+            expected[c] = vx[i, 1, :].to(torch.float32).numpy()
+        torch.save(
+            {
+                "cx_last": torch.zeros((len(cis), 3, h), dtype=torch.float16),
+                "v_x": vx,
+                "ci": list(cis),
+                "prompts": ["" for _ in cis],
+                "layers": layers,
+                "shard_index": 0,
+                "chunk": j,
+            },
+            chunk_dir / f"shard00_chunk{j:04d}.pt",
+        )
+        (chunk_dir / f"shard00_chunk{j:04d}.json").write_text(
+            json.dumps({"rows": [{"ci": int(c)} for c in cis]})
+        )
+    return chunk_dir, expected
+
+
+def test_vstream_collector_probe_fallback_and_checkpoint(tmp_path, monkeypatch):
+    """The full collector body over REAL .pt chunk files: prediction via the
+    raw-JSON sibling probe, neighbor-first fallback for residue rows, early
+    stop, found-set checkpoint + resume, missing-ci fail-loud."""
+    monkeypatch.setattr(K, "HIDDEN", 8)
+    chunk_dir, expected = _write_pt_chunks(
+        tmp_path,
+        [[0, 1, 2], [3, 4, 7], [8, 9, 12]],  # gaps -> prediction drift
+    )
+    args = SimpleNamespace(out=tmp_path, scratch=tmp_path / "scratch", workers=2, max_chunks=0)
+    args.scratch.mkdir(exist_ok=True)
+    fetch = K._local_fetch_fn(chunk_dir)
+    names = sorted(p.name for p in chunk_dir.glob("*.pt"))
+    got = K._collect_v42(args, {1, 4, 12}, names, fetch, sha="S")
+    for c in (1, 4, 12):
+        assert np.allclose(got["found"][c], expected[c])
+
+    # found-set checkpoint resume: a complete checkpoint means NO fetches at all
+    def _explode(repo, fn, cache):
+        raise AssertionError("resume must not re-fetch")
+
+    got2 = K._collect_v42(args, {1, 4, 12}, names, _explode, sha="S")
+    assert set(got2["found"]) >= {1, 4, 12} and got2["n_scanned"] == 0
+    # fingerprint mismatch (different bundle sha) ignores the partial
+    got3 = K._collect_v42(args, {1, 4}, names, fetch, sha="OTHER")
+    assert np.allclose(got3["found"][1], expected[1])
+    with pytest.raises(AssertionError, match="not found"):
+        K._collect_v42(args, {1, 999}, names, fetch, sha="S2")
+
+
+def test_neighbor_first_orders_adjacent_chunks_first():
+    rest = [f"shard00_chunk{j:04d}.pt" for j in (0, 2, 5, 9)]
+    out = K._neighbor_first(rest, ["shard00_chunk0001.pt"])
+    assert out[:2] == ["shard00_chunk0000.pt", "shard00_chunk0002.pt"]
+    assert set(out) == set(rest)
