@@ -104,6 +104,35 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--summary", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="demote production-n gates to log lines")
     ap.add_argument("--resume", action="store_true")
+    # ------------------------------------------------------------------
+    # Registered-selector refit mode (#1417 follow-up round): re-run every
+    # kept-row fit + the FULL identity battery with the frozen instrument's
+    # own registered mitigations (#1335 r8, implemented in issue825_fit_cells):
+    # inner-group-CV lambda selection + the GCV dof cap, threaded into EVERY
+    # internal fit site (per-cell fits, within-reference ceilings, alignment
+    # maps, composed transports, frozen-map transfer, primal betas). The G1
+    # anchor gate DELIBERATELY keeps pure GCV — it reproduces the committed
+    # #825 pure-GCV values at full n, which a different selector would break
+    # by construction. Defaults preserve v1 behavior byte-for-byte.
+    # ------------------------------------------------------------------
+    ap.add_argument(
+        "--lambda-selection",
+        choices=list(fit825.LAMBDA_SELECTIONS),
+        default="gcv",
+        help="lambda selector for fits + battery legs (refit mode: inner-group-cv)",
+    )
+    ap.add_argument(
+        "--gcv-dof-cap",
+        type=float,
+        default=None,
+        help="GCV interpolating-lambda dof cap (refit mode: 0.9); None = off",
+    )
+    ap.add_argument(
+        "--judge-dir",
+        type=Path,
+        default=None,
+        help="judge kept-set root (refit mode: the v1 out-dir; default = --out-dir)",
+    )
     ap.add_argument("--null-draws", type=int, default=N_NULL_DRAWS)
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     ap.add_argument("--cosine-null-draws", type=int, default=200)
@@ -221,6 +250,32 @@ def own_cell_dict(model: str, cell: str, arm: str) -> dict:
     }
 
 
+def _judge_root(args) -> Path:
+    """Judge kept-set root: --judge-dir when given (refit mode reads the v1
+    judge outputs while WRITING to the versioned refit out-dir), else out-dir."""
+    return Path(args.judge_dir) if args.judge_dir is not None else Path(args.out_dir)
+
+
+def _refit_mode(args) -> bool:
+    return args.lambda_selection != "gcv" or args.gcv_dof_cap is not None
+
+
+def _apply_selector_config(args) -> None:
+    """Bind the registered selector config into EVERY fit module (module-global
+    patch style — fit825/ma/cm all document it). Called at run_fits/run_battery
+    entry, NEVER at run_anchors (G1 reproduces committed pure-GCV values)."""
+    fit825.GCV_DOF_CAP = args.gcv_dof_cap
+    ma.GCV_DOF_CAP = args.gcv_dof_cap
+    cm.GCV_DOF_CAP = args.gcv_dof_cap
+    ma.LAMBDA_SELECTION = args.lambda_selection
+    cm.LAMBDA_SELECTION = args.lambda_selection
+    if _refit_mode(args):
+        print(
+            f"[i1417-battery] REFIT selector config: lambda_selection={args.lambda_selection} "
+            f"gcv_dof_cap={args.gcv_dof_cap}"
+        )
+
+
 def kept_conv_ids(out_dir: Path, model: str, cell: str) -> list[str]:
     p = Path(out_dir) / "judge" / f"kept_{model}_{cell}.json"
     assert p.exists(), f"judge kept-set missing: {p} — run issue1417_judge.py first"
@@ -287,6 +342,11 @@ def run_anchors(args) -> int:
         "model": args.model,
         "tolerance": r1417.G1_TOL,
         "smoke": bool(args.smoke),
+        # Registered choice (#1417 refit round): G1 keeps pure GCV in EVERY
+        # mode — the gate reproduces the committed #825 pure-GCV values, which
+        # a different selector would break by construction. run_anchors never
+        # calls _apply_selector_config.
+        "lambda_selection": "gcv",
         "anchors": results,
         "pass": bool(all(v["pass"] for v in results.values())),
     }
@@ -322,7 +382,7 @@ def compute_n_min(args, models=("instruct", "pretrained")) -> int:
     ns = []
     for model in models:
         for cell in r1417.CELL_ORDER:
-            p = Path(args.out_dir) / "judge" / f"kept_{model}_{cell}.json"
+            p = _judge_root(args) / "judge" / f"kept_{model}_{cell}.json"
             if p.exists():
                 ns.append(len(json.loads(p.read_text())["kept_conv_ids"]))
     assert ns, "no judge kept-sets found — run the judge phase first"
@@ -349,6 +409,7 @@ def _fit_path(out_dir: Path, cell_id: str) -> Path:
 
 def run_fits(args) -> int:
     model = args.model
+    _apply_selector_config(args)
     shared = set(r1417.shared_conv_ids(args.data_dir))
     cells_dir = Path(args.out_dir) / "cells"
     cells_dir.mkdir(parents=True, exist_ok=True)
@@ -357,7 +418,7 @@ def run_fits(args) -> int:
     for cell in r1417.CELL_ORDER:
         bundle = load_own_bundle(args.data_dir, model, cell)
         store_ids = [str(c) for c in bundle["sidecar"]["conv_ids"]]
-        kept = [c for c in kept_conv_ids(args.out_dir, model, cell) if c in shared]
+        kept = [c for c in kept_conv_ids(_judge_root(args), model, cell) if c in shared]
         kept = [c for c in kept if c in set(store_ids)]
         all_rows = [c for c in store_ids if c in shared]
         variants: list[tuple[str, list[str] | None]] = [
@@ -409,6 +470,11 @@ def run_fits(args) -> int:
                 n_boot=args.n_boot,
                 allowlist=allow,
                 bundle=bundle,
+                lambda_selection=args.lambda_selection,
+                # Per-fit selector logging (plan assumption 13): each refit cell
+                # JSON records which selector ran + the selected lambda per
+                # (layer, fold). Off in default mode (byte-preserving).
+                collect_lambdas=_refit_mode(args),
             )
         evict_bundle("own", model, cell)
     return 0
@@ -443,7 +509,7 @@ def _ref_xy(args, model: str, ref: str, arm: str) -> tuple[dict, list[str] | Non
     cell = spec["cell"]
     bundle = load_own_bundle(args.data_dir, model, cell)
     cd = own_cell_dict(model, cell, arm)
-    kept = kept_conv_ids(args.out_dir, model, cell)
+    kept = kept_conv_ids(_judge_root(args), model, cell)
     return _xy_for(bundle, cd, None), kept
 
 
@@ -552,6 +618,7 @@ def _rel_bootstrap(data: dict, folds: np.ndarray, layer: int, *, n_boot: int, se
 
 def run_battery(args) -> int:
     model = args.model
+    _apply_selector_config(args)
     shared = set(r1417.shared_conv_ids(args.data_dir))
     out_dir = Path(args.out_dir) / "battery"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -565,11 +632,15 @@ def run_battery(args) -> int:
             print(f"[i1417-battery] resume: {out_path.name} exists — skipped")
             continue
         t0 = time.time()
+        # Per-pair compact selector telemetry (plan assumption 13); None in
+        # default mode keeps the fit modules' logging disabled (byte-preserving).
+        ma.SELECTOR_LOG = {} if _refit_mode(args) else None
+        cm.SELECTOR_LOG = ma.SELECTOR_LOG if _refit_mode(args) else None
         cell, ref, arm = pair["cell"], pair["ref"], pair["arm"]
         bundle_c = load_own_bundle(args.data_dir, model, cell)
         xy_cell = _xy_for(bundle_c, own_cell_dict(model, cell, arm), None)
         xy_ref, ref_kept = _ref_xy(args, model, ref, arm)
-        kept_c = set(kept_conv_ids(args.out_dir, model, cell))
+        kept_c = set(kept_conv_ids(_judge_root(args), model, cell))
         rows = [str(c) for c in xy_cell["conv_ids"] if str(c) in kept_c and str(c) in shared]
         if ref_kept is not None:
             rk = set(ref_kept)
@@ -652,6 +723,14 @@ def run_battery(args) -> int:
             "transfer_ref_on_cell": swap_fwd,
             "transfer_cell_on_ref": swap_rev,
         }
+        if _refit_mode(args):
+            payload["refit_config"] = {
+                "lambda_selection": args.lambda_selection,
+                "gcv_dof_cap": args.gcv_dof_cap,
+            }
+            # {selector: {lambda: count}} across EVERY ridge selection this
+            # pair ran (ma + cm share one dict; plan assumption 13).
+            payload["selector_log"] = ma.SELECTOR_LOG
         out_path.write_text(json.dumps(payload, indent=2, default=float))
         dt = time.time() - t0
         rel_hl = rel_by_layer[str(hl)]["rel"]
@@ -734,7 +813,7 @@ H_TABLE = {
 
 
 def _summary_judge_entry(args, model: str, cell: str, entry: dict) -> None:
-    kept_p = Path(args.out_dir) / "judge" / f"kept_{model}_{cell}.json"
+    kept_p = _judge_root(args) / "judge" / f"kept_{model}_{cell}.json"
     if not kept_p.exists():
         return
     kd = json.loads(kept_p.read_text())
@@ -813,6 +892,13 @@ def _summary_verdict(cell: str, entry: dict) -> str | None:
 
 def run_summary(args) -> int:
     out = {"metadata": common931.metadata(SCRIPT, FIT_SEED, 0), **r1417.fingerprint()}
+    if _refit_mode(args):
+        out["refit_config"] = {
+            "lambda_selection": args.lambda_selection,
+            "gcv_dof_cap": args.gcv_dof_cap,
+            "anchors_lambda_selection": "gcv (G1 reproduces committed pure-GCV values)",
+            "judge_dir": str(_judge_root(args)),
+        }
     cells_summary: dict[str, dict] = {}
     anchors_var: dict[str, float] = {}
     for model in r1417.MODELS:

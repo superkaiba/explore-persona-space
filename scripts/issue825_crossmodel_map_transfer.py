@@ -50,6 +50,11 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy impor
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+# #1417 refit: inner-CV lambda machinery (the #1335 r8 registered selector).
+# scripts/ is on sys.path for every consumer (script-mode standalone, or the
+# battery/map-alignment importers, which insert it before importing cm).
+import issue825_fit_cells as fit825  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # Constants (mirror explore_persona_space.experiments.issue_825.common)
 # ---------------------------------------------------------------------------
@@ -98,6 +103,26 @@ PAIRS = [
 
 LAMBDAS = np.logspace(-2, 4, 13)  # verbatim from issue825_fit_cells
 
+# ---------------------------------------------------------------------------
+# #1417 registered-selector refit: module-global patch style (mirrors
+# fit825.GCV_DOF_CAP). Callers set
+#   cm.LAMBDA_SELECTION = "inner-group-cv"; cm.GCV_DOF_CAP = 0.9
+# Defaults preserve the committed pure-GCV behavior byte-for-byte.
+# ---------------------------------------------------------------------------
+LAMBDA_SELECTION: str = "gcv"
+GCV_DOF_CAP: float | None = None
+N_INNER_LAMBDA_FOLDS = 4  # == fit825.N_INNER_LAMBDA_FOLDS (asserted in tests)
+INNER_LAMBDA_SEED = 4242
+SELECTOR_LOG: dict | None = None  # caller-bound {selector: {lambda_str: count}}
+
+
+def _log_selector(selector: str, lam: float) -> None:
+    """Count one lambda selection into SELECTOR_LOG when a caller bound it."""
+    if SELECTOR_LOG is not None:
+        d = SELECTOR_LOG.setdefault(selector, {})
+        k = f"{lam:.6g}"
+        d[k] = d.get(k, 0) + 1
+
 
 def _fit_device() -> torch.device:
     return torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -128,19 +153,30 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
     Ytr_c = Ytr - ymu
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
     VtY = V.T @ Ytr_c
-    sqVtY = (VtY**2).sum(1)
-    tot = float((Ytr_c**2).sum())
-    best_lam = float(LAMBDAS[0])
-    best_gcv = float("inf")
-    for lam in LAMBDAS:
-        filt = w / (w + lam)
-        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
-        dof = float(filt.sum())
-        denom = (ntr - dof) ** 2
-        gcv = rss / denom if denom > 1e-12 else float("inf")
-        if gcv < best_gcv:
-            best_gcv = gcv
-            best_lam = float(lam)
+    if cache.get("inner"):
+        # #1417 refit: inner-group-CV lambda selection (fit825 #1335 r8 curve;
+        # the cache carries fit825._prep_inner_lambda fold caches — attached by
+        # frozen_map_swap under LAMBDA_SELECTION == "inner-group-cv").
+        rss_curve = fit825._inner_cv_rss_curve(cache["inner"], Ytr)
+        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+        _log_selector("inner-group-cv", best_lam)
+    else:
+        sqVtY = (VtY**2).sum(1)
+        tot = float((Ytr_c**2).sum())
+        best_lam = float(LAMBDAS[0])
+        best_gcv = float("inf")
+        for lam in LAMBDAS:
+            filt = w / (w + lam)
+            dof = float(filt.sum())
+            if GCV_DOF_CAP is not None and dof > GCV_DOF_CAP * ntr:
+                continue  # (near-)interpolating lambda: GCV degenerate (fit825 mirror)
+            rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
+            denom = (ntr - dof) ** 2
+            gcv = rss / denom if denom > 1e-12 else float("inf")
+            if gcv < best_gcv:
+                best_gcv = gcv
+                best_lam = float(lam)
+        _log_selector("gcv-fallback" if "inner" in cache else "gcv", best_lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
     return pred.cpu().numpy()
@@ -363,6 +399,7 @@ def frozen_map_swap(X_src, Y_src, X_tgt, Y_tgt, conv_ids, layers, *, seed, null_
     Y_tgt = np.asarray(Y_tgt, np.float32)
     Lf = X_src.shape[1]
     folds = _cv_folds(conv_ids, N_FOLDS, seed)
+    ids = np.asarray(conv_ids)
     rng = np.random.default_rng(seed + 5)
     r2 = {}
     null_mean = {}
@@ -377,6 +414,15 @@ def frozen_map_swap(X_src, Y_src, X_tgt, Y_tgt, conv_ids, layers, *, seed, null_
             if te.sum() == 0 or tr.sum() < 3:
                 continue
             cache = _prep_fold(Xs[tr], Xt[te])  # SRC train stats; TGT eval pts
+            if LAMBDA_SELECTION == "inner-group-cv":
+                # #1417 refit: inner GROUP folds over the SRC train rows'
+                # conversation ids (the fit825 #1335 r8 selector; per-outer-fold
+                # seed convention). None (<2 usable inner folds) -> GCV fallback.
+                cache["inner"] = fit825._prep_inner_lambda(
+                    Xs[tr], ids[tr], N_INNER_LAMBDA_FOLDS, seed + 4242 + k
+                )
+                if cache["inner"] is None:
+                    print(f"[crossmodel] WARN: inner-group-cv fold {k}: GCV fallback")
             pred = _ridge_predict_cached(cache, Ys[tr])  # SRC targets
             preds[te] = pred.astype(np.float32)
             fitted[te] = True
@@ -398,7 +444,14 @@ def frozen_map_swap(X_src, Y_src, X_tgt, Y_tgt, conv_ids, layers, *, seed, null_
 # Procrustes. beta is the map on STANDARDIZED inputs: pred = ((x-xmu)/xsd)@beta+ymu.
 # ===========================================================================
 def fit_primal_beta(X, Y):
-    """Full-data primal ridge coefficient (D_in x D_out), GCV lambda (same grid)."""
+    """Full-data primal ridge coefficient (D_in x D_out), GCV lambda (same grid).
+
+    #1417 refit: under the module-global ``LAMBDA_SELECTION == "inner-group-cv"``
+    the lambda is selected by the fit825 inner-group-CV curve over singleton
+    per-row groups (full-data fit — rows are the i.i.d. unit here), with the
+    GCV_DOF_CAP interpolating-lambda skip mirrored on the GCV fallback.
+    Defaults preserve the committed behavior byte-for-byte.
+    """
     dev = _fit_device()
     Xt = torch.as_tensor(np.asarray(X), dtype=torch.float64).to(dev)
     Yt = torch.as_tensor(np.asarray(Y), dtype=torch.float64).to(dev)
@@ -411,18 +464,33 @@ def fit_primal_beta(X, Y):
     w, V = torch.linalg.eigh(G)
     w = torch.clamp(w, min=0.0)
     VtY = V.T @ Yc
-    sqVtY = (VtY**2).sum(1)
-    tot = float((Yc**2).sum())
     ntr = Xn.shape[0]
-    best_lam, best_gcv = float(LAMBDAS[0]), float("inf")
-    for lam in LAMBDAS:
-        filt = w / (w + lam)
-        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
-        dof = float(filt.sum())
-        denom = (ntr - dof) ** 2
-        gcv = rss / denom if denom > 1e-12 else float("inf")
-        if gcv < best_gcv:
-            best_gcv, best_lam = gcv, float(lam)
+    inner = None
+    if LAMBDA_SELECTION == "inner-group-cv":
+        inner = fit825._prep_inner_lambda(
+            Xt, np.arange(int(ntr)), N_INNER_LAMBDA_FOLDS, INNER_LAMBDA_SEED
+        )
+        if inner is None:
+            print("[crossmodel] WARN: fit_primal_beta inner-group-cv: GCV fallback")
+    if inner:
+        rss_curve = fit825._inner_cv_rss_curve(inner, Yt)
+        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+        _log_selector("inner-group-cv", best_lam)
+    else:
+        sqVtY = (VtY**2).sum(1)
+        tot = float((Yc**2).sum())
+        best_lam, best_gcv = float(LAMBDAS[0]), float("inf")
+        for lam in LAMBDAS:
+            filt = w / (w + lam)
+            dof = float(filt.sum())
+            if GCV_DOF_CAP is not None and dof > GCV_DOF_CAP * ntr:
+                continue  # (near-)interpolating lambda (fit825 mirror)
+            rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
+            denom = (ntr - dof) ** 2
+            gcv = rss / denom if denom > 1e-12 else float("inf")
+            if gcv < best_gcv:
+                best_gcv, best_lam = gcv, float(lam)
+        _log_selector("gcv-fallback" if LAMBDA_SELECTION == "inner-group-cv" else "gcv", best_lam)
     filt = 1.0 / (w + best_lam)
     beta = Xn.T @ (V @ (filt[:, None] * VtY))  # (D_in, D_out)
     return beta, best_lam
