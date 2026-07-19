@@ -4138,8 +4138,8 @@
     "1530": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1530",
-      "status": "approved",
+      "path": "tasks/running/1530",
+      "status": "running",
       "title": "workflow-fix: assert HEAD==main at task.py commit site"
     },
     "1531": {
