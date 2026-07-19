@@ -1197,6 +1197,110 @@ def _maybe_attach_kl_aux(trainer, tokenizer, cfg: TrainLoraConfig) -> None:  # n
     trainer._epm_kl_aux_attached = True
 
 
+_PC_KEYS = ("prompt", "completion")
+
+
+def _validate_prompt_completion_homogeneity(data_path: Path) -> None:  # noqa: C901 - exhaustive per-row schema validation (one branch per failure class); same waiver shape as train_lora below
+    """Fail fast on mixed prompt/completion types before ``SFTTrainer`` init.
+
+    TRL 0.29 ``is_conversational()`` pops ONE arbitrary key from a set, so a
+    ``{"prompt": <message list>, "completion": "<str>"}`` row routes
+    hash-order-nondeterministically between the conversational and str-only
+    tokenize paths and crashes at ``SFTTrainer.__init__`` — possibly only on
+    the pod (see .claude/rules/gotchas.md "TRL prompt-completion SFT rows";
+    #1489/#1508). Rows carrying NEITHER key ("messages"/"text"/pre-tokenized
+    schemas) are skipped, so cross-SCHEMA mixing (e.g. "messages" rows
+    interleaved with prompt/completion rows in one file) passes this
+    validator — an out-of-scope residual. Errors name the first offending
+    "row N (line M)", where the row index counts non-blank lines.
+
+    Raises:
+        ValueError: on a JSON-array file, an invalid-JSON / non-object row, a
+            row carrying only one of the two keys, a non-str/list (or
+            degenerate-list) value, within-row type mixing, or cross-row
+            convention mixing (str/str rows interleaved with list/list rows).
+    """
+    convention: str | None = None  # "str" | "list"
+    convention_row = -1
+    row_idx = -1  # index over non-blank lines
+    # Text-mode file iteration — never .splitlines() on JSONL (U+2028 gotcha).
+    with data_path.open(encoding="utf-8") as fh:
+        # JSON-array early check: load_dataset("json") accepts array files,
+        # but project convention is JSONL — raise a clearer message than the
+        # row-0 decode failure the loop below would produce.
+        while True:
+            ch = fh.read(1)
+            if not ch:
+                # Blank-only file — the #365 empty-file preflight owns that error.
+                return
+            if not ch.isspace():
+                break
+        if ch == "[":
+            raise ValueError(
+                f"{data_path}: expected JSONL (one JSON object per line), got a JSON array file"
+            )
+        fh.seek(0)
+        for line_no, line in enumerate(fh, start=1):
+            if not line.strip():
+                continue
+            row_idx += 1
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"{data_path}: invalid JSON at row {row_idx} (line {line_no}): {e}"
+                ) from e
+            if not isinstance(row, dict):
+                raise ValueError(
+                    f"{data_path}: row {row_idx} (line {line_no}) is not a JSON object"
+                )
+            present = [k for k in _PC_KEYS if k in row]
+            if not present:
+                continue  # not a prompt-completion row
+            if len(present) == 1:
+                raise ValueError(
+                    f"{data_path}: row {row_idx} (line {line_no}) has {present[0]!r} "
+                    "without its partner key — TRL prompt-completion rows need BOTH "
+                    "'prompt' and 'completion'."
+                )
+            p, c = row["prompt"], row["completion"]
+            for key, val in (("prompt", p), ("completion", c)):
+                if not isinstance(val, (str, list)):
+                    raise ValueError(
+                        f"{data_path}: row {row_idx} (line {line_no}): {key!r} is "
+                        f"{type(val).__name__}; must be str or a list of message dicts."
+                    )
+                if isinstance(val, list) and (
+                    not val
+                    or not all(isinstance(m, dict) and "role" in m and "content" in m for m in val)
+                ):
+                    raise ValueError(
+                        f"{data_path}: row {row_idx} (line {line_no}): {key!r} must be a "
+                        "NON-EMPTY list of {'role','content'} message dicts."
+                    )
+            if type(p) is not type(c):
+                raise ValueError(
+                    f"{data_path}: mixed prompt/completion types at row {row_idx} "
+                    f"(line {line_no}): prompt is {type(p).__name__}, completion is "
+                    f"{type(c).__name__}. TRL 0.29 is_conversational() pops one arbitrary "
+                    "key, so mixed rows route hash-order-nondeterministically and crash "
+                    "at SFTTrainer init (see .claude/rules/gotchas.md 'TRL "
+                    "prompt-completion SFT rows'; #1489/#1508). Use message-dict lists "
+                    "on BOTH keys or plain str on BOTH."
+                )
+            this = "list" if isinstance(p, list) else "str"
+            if convention is None:
+                convention, convention_row = this, row_idx
+            elif this != convention:
+                raise ValueError(
+                    f"{data_path}: cross-row prompt/completion convention mismatch: "
+                    f"row {convention_row} is {convention}/{convention} but row {row_idx} "
+                    f"(line {line_no}) is {this}/{this}. TRL routes dataset-level "
+                    "branches off the FIRST row (sft_trainer.py is_conversational gates "
+                    "at first_example) — one convention per dataset."
+                )
+
+
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
     base_model_path: str,
     data_path: str,
@@ -1395,6 +1499,11 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             "Upstream prepare_cell() filtered the completion pool down to "
             "zero rows; check the pool's length distribution and filters."
         )
+    if not (cfg.dataset_kwargs or {}).get("skip_prepare_dataset"):
+        # #1536: fail-fast backstop for the #1489/#1508 TRL mixed-schema trap.
+        # The skip_prepare_dataset guard exempts the pre-tokenized Arm-B path
+        # (#498/#528), whose rows never reach TRL's is_conversational routing.
+        _validate_prompt_completion_homogeneity(_data_path)
     dataset = load_dataset("json", data_files=str(_data_path), split="train")
 
     # Liger is disabled here because SFTTrainer wraps the model as a PeftModel via the
