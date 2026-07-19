@@ -1,0 +1,5255 @@
+{
+  "issue": 1481,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "dose_match_max_rate_gap": 0.1,
+  "content": {
+    "cas": {
+      "pers": {
+        "arms": {
+          "cas-pers-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 25,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.19,
+              "20": 0.35,
+              "25": 0.6,
+              "30": 0.87,
+              "35": 0.96,
+              "40": 0.87,
+              "45": 0.86,
+              "50": 0.92,
+              "55": 0.94,
+              "60": 0.93,
+              "65": 0.96,
+              "70": 0.96,
+              "75": 0.94
+            }
+          },
+          "cas-pers-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 30,
+              "rate": 0.89,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.46,
+              "15": 0.92,
+              "20": 0.98,
+              "25": 0.9,
+              "30": 0.89,
+              "35": 0.98,
+              "40": 0.97,
+              "45": 0.99,
+              "50": 0.96,
+              "55": 0.98,
+              "60": 0.97,
+              "65": 0.97,
+              "70": 0.96,
+              "75": 0.98
+            }
+          },
+          "cas-pers-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.37755102040816324,
+              "10": 0.97,
+              "15": 0.66,
+              "20": 0.99,
+              "25": 0.89,
+              "30": 0.9,
+              "35": 0.98,
+              "40": 0.95,
+              "45": 0.97,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 0.99,
+              "75": 1.0
+            }
+          },
+          "cas-pers-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 25,
+              "rate": 0.81,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.03,
+              "15": 0.27,
+              "20": 0.43,
+              "25": 0.81,
+              "30": 0.96,
+              "35": 0.94,
+              "40": 0.97,
+              "45": 0.97,
+              "50": 0.98,
+              "55": 0.98,
+              "60": 0.97,
+              "65": 0.99,
+              "70": 0.97,
+              "75": 0.99
+            }
+          },
+          "cas-pers-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.93,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.49,
+              "15": 0.93,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 0.97,
+              "35": 0.98,
+              "40": 0.96,
+              "45": 0.99,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 0.98
+            }
+          },
+          "cas-pers-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.9,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.47959183673469385,
+              "10": 0.99,
+              "15": 0.9,
+              "20": 0.99,
+              "25": 0.96,
+              "30": 0.91,
+              "35": 0.99,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 0.98,
+              "55": 1.0,
+              "60": 0.99,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 0.98
+            }
+          },
+          "cas-pers-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.85,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.02,
+              "15": 0.19,
+              "20": 0.33,
+              "25": 0.52,
+              "30": 0.85,
+              "35": 0.96,
+              "40": 0.94,
+              "45": 0.93,
+              "50": 0.89,
+              "55": 0.88,
+              "60": 0.89,
+              "65": 0.92,
+              "70": 0.91,
+              "75": 0.93
+            }
+          },
+          "cas-pers-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.93,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.02,
+              "10": 0.37,
+              "15": 0.93,
+              "20": 0.98,
+              "25": 0.93,
+              "30": 0.94,
+              "35": 0.94,
+              "40": 0.96,
+              "45": 0.97,
+              "50": 0.99,
+              "55": 0.96,
+              "60": 0.99,
+              "65": 0.98,
+              "70": 0.99,
+              "75": 0.99
+            }
+          },
+          "cas-pers-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.82,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.41836734693877553,
+              "10": 0.9,
+              "15": 0.82,
+              "20": 0.88,
+              "25": 0.95,
+              "30": 0.86,
+              "35": 0.87,
+              "40": 0.9595959595959596,
+              "45": 0.95,
+              "50": 0.96,
+              "55": 0.98,
+              "60": 0.98,
+              "65": 0.98,
+              "70": 0.97,
+              "75": 0.98
+            }
+          },
+          "cas-pers-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.81,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.27,
+              "20": 0.35,
+              "25": 0.81,
+              "30": 0.94,
+              "35": 0.97,
+              "40": 0.9494949494949495,
+              "45": 0.96,
+              "50": 0.97,
+              "55": 0.96,
+              "60": 0.95,
+              "65": 0.95,
+              "70": 0.96,
+              "75": 0.98
+            }
+          },
+          "cas-pers-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.51,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.51,
+              "15": 0.96,
+              "20": 0.97,
+              "25": 0.97,
+              "30": 0.98,
+              "35": 0.98,
+              "40": 0.99,
+              "45": 0.98,
+              "50": 0.98,
+              "55": 0.98,
+              "60": 1.0,
+              "65": 0.98,
+              "70": 1.0,
+              "75": 0.99
+            }
+          },
+          "cas-pers-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.54,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.54,
+              "10": 0.98,
+              "15": 0.93,
+              "20": 0.97,
+              "25": 0.93,
+              "30": 0.96,
+              "35": 1.0,
+              "40": 0.96,
+              "45": 0.94,
+              "50": 0.98,
+              "55": 0.97,
+              "60": 0.94,
+              "65": 0.92,
+              "70": 0.93,
+              "75": 0.92
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-pers-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 25,
+                "rate": 0.6,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-pers-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 25,
+                "rate": 0.81,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6,
+              "pos_rate": 0.81,
+              "rate_gap": 0.21000000000000008,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-pers-po-lr3e5-s42",
+              "step": 10,
+              "rate": 0.49,
+              "abs_gap_to_con_verdict": 0.10999999999999999,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-pers-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 30,
+                "rate": 0.85,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-pers-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 25,
+                "rate": 0.81,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.85,
+              "pos_rate": 0.81,
+              "rate_gap": 0.039999999999999925,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-pers-po-lr1e5-s137",
+              "step": 25,
+              "rate": 0.81,
+              "abs_gap_to_con_verdict": 0.039999999999999925,
+              "differs_from_verdict": false
+            }
+          }
+        }
+      },
+      "bare": {
+        "arms": {
+          "cas-bare-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 40,
+              "rate": 0.61,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.09,
+              "20": 0.24,
+              "25": 0.34,
+              "30": 0.53,
+              "35": 0.53,
+              "40": 0.61,
+              "45": 0.64,
+              "50": 0.61,
+              "55": 0.69,
+              "60": 0.66,
+              "65": 0.6262626262626263,
+              "70": 0.6565656565656566,
+              "75": 0.64
+            }
+          },
+          "cas-bare-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 20,
+              "rate": 0.62,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.18,
+              "15": 0.35,
+              "20": 0.62,
+              "25": 0.45,
+              "30": 0.55,
+              "35": 0.79,
+              "40": 0.75,
+              "45": 0.67,
+              "50": 0.72,
+              "55": 0.66,
+              "60": 0.63,
+              "65": 0.7,
+              "70": 0.66,
+              "75": 0.68
+            }
+          },
+          "cas-bare-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 20,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.15151515151515152,
+              "10": 0.3434343434343434,
+              "15": 0.49,
+              "20": 0.6,
+              "25": 0.54,
+              "30": 0.63,
+              "35": 0.6,
+              "40": 0.77,
+              "45": 0.69,
+              "50": 0.73,
+              "55": 0.61,
+              "60": 0.64,
+              "65": 0.67,
+              "70": 0.7,
+              "75": 0.68
+            }
+          },
+          "cas-bare-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 25,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.04,
+              "15": 0.15,
+              "20": 0.38,
+              "25": 0.6,
+              "30": 0.85,
+              "35": 0.8,
+              "40": 0.83,
+              "45": 0.79,
+              "50": 0.85,
+              "55": 0.83,
+              "60": 0.87,
+              "65": 0.84,
+              "70": 0.84,
+              "75": 0.86
+            }
+          },
+          "cas-bare-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.61,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.29,
+              "15": 0.61,
+              "20": 0.82,
+              "25": 0.63,
+              "30": 0.83,
+              "35": 0.84,
+              "40": 0.91,
+              "45": 0.84,
+              "50": 0.95,
+              "55": 0.89,
+              "60": 0.92,
+              "65": 0.9,
+              "70": 0.86,
+              "75": 0.89
+            }
+          },
+          "cas-bare-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.22,
+              "10": 0.86,
+              "15": 0.65,
+              "20": 0.78,
+              "25": 0.8,
+              "30": 0.81,
+              "35": 0.95,
+              "40": 0.91,
+              "45": 0.8,
+              "50": 0.9,
+              "55": 0.91,
+              "60": 0.92,
+              "65": 0.91,
+              "70": 0.91,
+              "75": 0.93
+            }
+          },
+          "cas-bare-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.09,
+              "20": 0.1919191919191919,
+              "25": 0.29,
+              "30": 0.42,
+              "35": 0.66,
+              "40": 0.73,
+              "45": 0.54,
+              "50": 0.59,
+              "55": 0.67,
+              "60": 0.72,
+              "65": 0.69,
+              "70": 0.69,
+              "75": 0.67
+            }
+          },
+          "cas-bare-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.22,
+              "15": 0.3,
+              "20": 0.57,
+              "25": 0.43,
+              "30": 0.46,
+              "35": 0.65,
+              "40": 0.67,
+              "45": 0.56,
+              "50": 0.75,
+              "55": 0.67,
+              "60": 0.65,
+              "65": 0.67,
+              "70": 0.68,
+              "75": 0.67
+            }
+          },
+          "cas-bare-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.72,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.2755102040816326,
+              "10": 0.17,
+              "15": 0.72,
+              "20": 0.5050505050505051,
+              "25": 0.69,
+              "30": 0.42,
+              "35": 0.77,
+              "40": 0.78,
+              "45": 0.65,
+              "50": 0.71,
+              "55": 0.7,
+              "60": 0.65,
+              "65": 0.67,
+              "70": 0.7,
+              "75": 0.69
+            }
+          },
+          "cas-bare-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.68,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.19,
+              "20": 0.31,
+              "25": 0.48,
+              "30": 0.68,
+              "35": 0.87,
+              "40": 0.81,
+              "45": 0.82,
+              "50": 0.85,
+              "55": 0.87,
+              "60": 0.83,
+              "65": 0.83,
+              "70": 0.87,
+              "75": 0.88
+            }
+          },
+          "cas-bare-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.74,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.28,
+              "15": 0.53,
+              "20": 0.74,
+              "25": 0.75,
+              "30": 0.86,
+              "35": 0.86,
+              "40": 0.9,
+              "45": 0.91,
+              "50": 0.92,
+              "55": 0.9,
+              "60": 0.89,
+              "65": 0.9,
+              "70": 0.92,
+              "75": 0.91
+            }
+          },
+          "cas-bare-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.74,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.46,
+              "10": 0.56,
+              "15": 0.74,
+              "20": 0.89,
+              "25": 0.74,
+              "30": 0.8,
+              "35": 0.81,
+              "40": 0.69,
+              "45": 0.66,
+              "50": 0.76,
+              "55": 0.76,
+              "60": 0.74,
+              "65": 0.68,
+              "70": 0.7,
+              "75": 0.72
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-bare-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 40,
+                "rate": 0.61,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-bare-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 25,
+                "rate": 0.6,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.61,
+              "pos_rate": 0.6,
+              "rate_gap": 0.010000000000000009,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-bare-po-lr3e5-s42",
+              "step": 15,
+              "rate": 0.61,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-bare-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 35,
+                "rate": 0.66,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-bare-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 30,
+                "rate": 0.68,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.66,
+              "pos_rate": 0.68,
+              "rate_gap": 0.020000000000000018,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-bare-po-lr1e4-s137",
+              "step": 45,
+              "rate": 0.66,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "conv": {
+        "arms": {
+          "cas-conv-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 10,
+              "rate": 0.696969696969697,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.696969696969697,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 0.98989898989899,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 10,
+              "rate": 0.9468085106382979,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.46464646464646464,
+              "10": 0.9468085106382979,
+              "15": 1.0,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 0.99,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 5,
+              "rate": 0.963855421686747,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.963855421686747,
+              "10": 1.0,
+              "15": 0.98,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 0.99,
+              "35": 0.99,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 10,
+              "rate": 0.91,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.02,
+              "10": 0.91,
+              "15": 1.0,
+              "20": 0.98989898989899,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 5,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.65,
+              "10": 0.9797979797979798,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 0.99,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 15,
+              "rate": 0.99,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 1.0,
+              "15": 0.99,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.66,
+              "15": 0.9893617021276596,
+              "20": 0.9693877551020408,
+              "25": 0.98989898989899,
+              "30": 0.99,
+              "35": 1.0,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.5,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.5,
+              "10": 0.9893617021276596,
+              "15": 0.9797979797979798,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 0.99,
+              "35": 0.99,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.9878048780487805,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.9878048780487805,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 0.99,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.8762886597938144,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.8762886597938144,
+              "15": 0.9795918367346939,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 0.99,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.59,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.59,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 0.99,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-conv-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.9787234042553191,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.9787234042553191,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 0.99,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-conv-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.696969696969697,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-conv-po-lr3e5-s42",
+              "lr": 3e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.65,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.696969696969697,
+              "pos_rate": 0.65,
+              "rate_gap": 0.046969696969696995,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-conv-po-lr3e5-s42",
+              "step": 5,
+              "rate": 0.65,
+              "abs_gap_to_con_verdict": 0.046969696969696995,
+              "differs_from_verdict": false
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "cas-conv-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.66,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "closest_approach",
+              "arm_id": "cas-conv-po-lr3e5-s137",
+              "lr": 3e-05,
+              "band_distance": 0.010000000000000009,
+              "selection": {
+                "step": 5,
+                "rate": 0.59,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.66,
+              "pos_rate": 0.59,
+              "rate_gap": 0.07000000000000006,
+              "con_in_band": true,
+              "pos_in_band": false
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-conv-po-lr3e5-s137",
+              "step": 5,
+              "rate": 0.59,
+              "abs_gap_to_con_verdict": 0.07000000000000006,
+              "differs_from_verdict": false
+            }
+          }
+        }
+      },
+      "icl": {
+        "arms": {
+          "cas-icl-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 65,
+              "rate": 0.97,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.22,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 0.98,
+              "60": 1.0,
+              "65": 0.97,
+              "70": 0.99,
+              "75": 1.0
+            }
+          },
+          "cas-icl-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 45,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 0.98,
+              "50": 1.0,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 0.98,
+              "75": 0.98
+            }
+          },
+          "cas-icl-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 50,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 0.98,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-icl-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 10,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.29,
+              "10": 0.98,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 0.99,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 0.98,
+              "70": 0.99,
+              "75": 1.0
+            }
+          },
+          "cas-icl-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 10,
+              "rate": 0.99,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 0.99,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 0.99,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 0.99
+            }
+          },
+          "cas-icl-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "reused-1434",
+            "selection": {
+              "step": 50,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 1.0,
+              "15": 0.99,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 0.98,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-icl-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 45,
+              "rate": 0.99,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.15,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 0.99,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-icl-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 40,
+              "rate": 0.97,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 0.99,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 0.99,
+              "35": 0.98,
+              "40": 0.97,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 0.99,
+              "75": 0.99
+            }
+          },
+          "cas-icl-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.9595959595959596,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.9595959595959596,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 0.99,
+              "25": 0.99,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "cas-icl-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 45,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.18,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 0.99,
+              "40": 0.99,
+              "45": 0.98,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 0.99,
+              "70": 0.99,
+              "75": 1.0
+            }
+          },
+          "cas-icl-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 70,
+              "rate": 0.98,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.99,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 0.99,
+              "35": 0.99,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 0.98,
+              "75": 1.0
+            }
+          },
+          "cas-icl-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.99,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 1.0,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 0.99,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "closest_approach",
+              "arm_id": "cas-icl-con-lr1e5-s42",
+              "lr": 1e-05,
+              "band_distance": 0.12,
+              "selection": {
+                "step": 65,
+                "rate": 0.97,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "po": {
+              "rule": "closest_approach",
+              "arm_id": "cas-icl-po-lr1e5-s42",
+              "lr": 1e-05,
+              "band_distance": 0.13,
+              "selection": {
+                "step": 10,
+                "rate": 0.98,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.97,
+              "pos_rate": 0.98,
+              "rate_gap": 0.010000000000000009,
+              "con_in_band": false,
+              "pos_in_band": false
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-icl-po-lr1e4-s42",
+              "step": 50,
+              "rate": 0.98,
+              "abs_gap_to_con_verdict": 0.010000000000000009,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "closest_approach",
+              "arm_id": "cas-icl-con-lr1e4-s137",
+              "lr": 0.0001,
+              "band_distance": 0.10959595959595958,
+              "selection": {
+                "step": 5,
+                "rate": 0.9595959595959596,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "po": {
+              "rule": "closest_approach",
+              "arm_id": "cas-icl-po-lr1e5-s137",
+              "lr": 1e-05,
+              "band_distance": 0.13,
+              "selection": {
+                "step": 45,
+                "rate": 0.98,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.9595959595959596,
+              "pos_rate": 0.98,
+              "rate_gap": 0.020404040404040424,
+              "con_in_band": false,
+              "pos_in_band": false
+            },
+            "nearest_dose_po": {
+              "arm_id": "cas-icl-po-lr1e5-s137",
+              "step": 45,
+              "rate": 0.98,
+              "abs_gap_to_con_verdict": 0.020404040404040424,
+              "differs_from_verdict": false
+            }
+          }
+        }
+      }
+    },
+    "imp": {
+      "pers": {
+        "arms": {
+          "imp-pers-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 40,
+              "rate": 0.35353535353535354,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.1,
+              "20": 0.24,
+              "25": 0.2,
+              "30": 0.24,
+              "35": 0.27,
+              "40": 0.35353535353535354,
+              "45": 0.34,
+              "50": 0.34,
+              "55": 0.29,
+              "60": 0.27,
+              "65": 0.28,
+              "70": 0.31,
+              "75": 0.31
+            }
+          },
+          "imp-pers-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 30,
+              "rate": 0.81,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.42,
+              "15": 0.42,
+              "20": 0.49,
+              "25": 0.5,
+              "30": 0.81,
+              "35": 0.88,
+              "40": 0.85,
+              "45": 0.8,
+              "50": 0.89,
+              "55": 0.92,
+              "60": 0.91,
+              "65": 0.88,
+              "70": 0.9,
+              "75": 0.91
+            }
+          },
+          "imp-pers-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 5,
+              "rate": 0.7319587628865979,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7319587628865979,
+              "10": 0.4,
+              "15": 0.65,
+              "20": 0.73,
+              "25": 0.68,
+              "30": 0.7,
+              "35": 0.79,
+              "40": 0.66,
+              "45": 0.75,
+              "50": 0.8,
+              "55": 0.8,
+              "60": 0.85,
+              "65": 0.86,
+              "70": 0.83,
+              "75": 0.84
+            }
+          },
+          "imp-pers-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.12,
+              "20": 0.24,
+              "25": 0.2857142857142857,
+              "30": 0.46,
+              "35": 0.66,
+              "40": 0.6262626262626263,
+              "45": 0.6,
+              "50": 0.56,
+              "55": 0.58,
+              "60": 0.61,
+              "65": 0.58,
+              "70": 0.59,
+              "75": 0.59
+            }
+          },
+          "imp-pers-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.67,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.36,
+              "15": 0.67,
+              "20": 0.83,
+              "25": 0.89,
+              "30": 0.97,
+              "35": 0.96,
+              "40": 0.94,
+              "45": 0.93,
+              "50": 0.91,
+              "55": 0.92,
+              "60": 0.91,
+              "65": 0.92,
+              "70": 0.95,
+              "75": 0.9
+            }
+          },
+          "imp-pers-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.82,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.41414141414141414,
+              "10": 0.82,
+              "15": 0.87,
+              "20": 0.95,
+              "25": 0.96,
+              "30": 0.97,
+              "35": 0.91,
+              "40": 0.85,
+              "45": 0.84,
+              "50": 0.85,
+              "55": 0.88,
+              "60": 0.88,
+              "65": 0.9,
+              "70": 0.89,
+              "75": 0.86
+            }
+          },
+          "imp-pers-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 60,
+              "rate": 0.4,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.11,
+              "20": 0.21,
+              "25": 0.19,
+              "30": 0.27,
+              "35": 0.33,
+              "40": 0.36363636363636365,
+              "45": 0.31,
+              "50": 0.34,
+              "55": 0.34,
+              "60": 0.4,
+              "65": 0.4,
+              "70": 0.39,
+              "75": 0.37
+            }
+          },
+          "imp-pers-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.73,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.2755102040816326,
+              "15": 0.42,
+              "20": 0.45,
+              "25": 0.45,
+              "30": 0.58,
+              "35": 0.73,
+              "40": 0.76,
+              "45": 0.82,
+              "50": 0.88,
+              "55": 0.89,
+              "60": 0.94,
+              "65": 0.9,
+              "70": 0.89,
+              "75": 0.89
+            }
+          },
+          "imp-pers-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.63,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.5567010309278351,
+              "10": 0.11,
+              "15": 0.63,
+              "20": 0.53,
+              "25": 0.58,
+              "30": 0.66,
+              "35": 0.71,
+              "40": 0.8181818181818182,
+              "45": 0.83,
+              "50": 0.76,
+              "55": 0.78,
+              "60": 0.78,
+              "65": 0.81,
+              "70": 0.82,
+              "75": 0.79
+            }
+          },
+          "imp-pers-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.08,
+              "20": 0.24242424242424243,
+              "25": 0.36363636363636365,
+              "30": 0.44,
+              "35": 0.66,
+              "40": 0.61,
+              "45": 0.54,
+              "50": 0.62,
+              "55": 0.63,
+              "60": 0.59,
+              "65": 0.66,
+              "70": 0.64,
+              "75": 0.67
+            }
+          },
+          "imp-pers-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.45,
+              "15": 0.65,
+              "20": 0.83,
+              "25": 0.93,
+              "30": 0.95,
+              "35": 0.95,
+              "40": 0.94,
+              "45": 0.88,
+              "50": 0.898989898989899,
+              "55": 0.92,
+              "60": 0.93,
+              "65": 0.9,
+              "70": 0.91,
+              "75": 0.93
+            }
+          },
+          "imp-pers-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.84,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.35353535353535354,
+              "10": 0.8787878787878788,
+              "15": 0.84,
+              "20": 0.89,
+              "25": 0.94,
+              "30": 0.9,
+              "35": 0.86,
+              "40": 0.87,
+              "45": 0.83,
+              "50": 0.84,
+              "55": 0.85,
+              "60": 0.86,
+              "65": 0.85,
+              "70": 0.84,
+              "75": 0.86
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-pers-con-lr3e5-s42",
+              "lr": 3e-05,
+              "selection": {
+                "step": 30,
+                "rate": 0.81,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-pers-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 35,
+                "rate": 0.66,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.81,
+              "pos_rate": 0.66,
+              "rate_gap": 0.15000000000000002,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-pers-po-lr1e4-s42",
+              "step": 10,
+              "rate": 0.82,
+              "abs_gap_to_con_verdict": 0.009999999999999898,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-pers-con-lr3e5-s137",
+              "lr": 3e-05,
+              "selection": {
+                "step": 35,
+                "rate": 0.73,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-pers-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 35,
+                "rate": 0.66,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.73,
+              "pos_rate": 0.66,
+              "rate_gap": 0.06999999999999995,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-pers-po-lr1e5-s137",
+              "step": 75,
+              "rate": 0.67,
+              "abs_gap_to_con_verdict": 0.05999999999999994,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "bare": {
+        "arms": {
+          "imp-bare-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 35,
+              "rate": 0.45,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.0707070707070707,
+              "20": 0.23,
+              "25": 0.29,
+              "30": 0.33,
+              "35": 0.45,
+              "40": 0.44,
+              "45": 0.3,
+              "50": 0.44,
+              "55": 0.41,
+              "60": 0.43,
+              "65": 0.4,
+              "70": 0.45,
+              "75": 0.42
+            }
+          },
+          "imp-bare-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 20,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.3163265306122449,
+              "15": 0.26,
+              "20": 0.6,
+              "25": 0.24,
+              "30": 0.61,
+              "35": 0.66,
+              "40": 0.46,
+              "45": 0.71,
+              "50": 0.66,
+              "55": 0.65,
+              "60": 0.62,
+              "65": 0.67,
+              "70": 0.62,
+              "75": 0.63
+            }
+          },
+          "imp-bare-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "regen",
+            "selection": {
+              "step": 70,
+              "rate": 0.5959595959595959,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.336734693877551,
+              "10": 0.32,
+              "15": 0.21,
+              "20": 0.55,
+              "25": 0.49,
+              "30": 0.59,
+              "35": 0.59,
+              "40": 0.58,
+              "45": 0.46,
+              "50": 0.55,
+              "55": 0.54,
+              "60": 0.5714285714285714,
+              "65": 0.53,
+              "70": 0.5959595959595959,
+              "75": 0.5858585858585859
+            }
+          },
+          "imp-bare-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 40,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.09090909090909091,
+              "20": 0.14,
+              "25": 0.52,
+              "30": 0.5454545454545454,
+              "35": 0.55,
+              "40": 0.65,
+              "45": 0.67,
+              "50": 0.71,
+              "55": 0.64,
+              "60": 0.65,
+              "65": 0.64,
+              "70": 0.69,
+              "75": 0.69
+            }
+          },
+          "imp-bare-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.21,
+              "15": 0.66,
+              "20": 0.51,
+              "25": 0.8,
+              "30": 0.7,
+              "35": 0.84,
+              "40": 0.81,
+              "45": 0.77,
+              "50": 0.85,
+              "55": 0.84,
+              "60": 0.78,
+              "65": 0.8,
+              "70": 0.76,
+              "75": 0.83
+            }
+          },
+          "imp-bare-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.3711340206185567,
+              "10": 0.6,
+              "15": 0.63,
+              "20": 0.74,
+              "25": 0.6,
+              "30": 0.7,
+              "35": 0.68,
+              "40": 0.7,
+              "45": 0.73,
+              "50": 0.67,
+              "55": 0.74,
+              "60": 0.67,
+              "65": 0.68,
+              "70": 0.76,
+              "75": 0.73
+            }
+          },
+          "imp-bare-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 70,
+              "rate": 0.45,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.0,
+              "15": 0.09,
+              "20": 0.08,
+              "25": 0.2,
+              "30": 0.27,
+              "35": 0.18,
+              "40": 0.41,
+              "45": 0.34,
+              "50": 0.34,
+              "55": 0.38,
+              "60": 0.41,
+              "65": 0.44,
+              "70": 0.45,
+              "75": 0.39
+            }
+          },
+          "imp-bare-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.19,
+              "15": 0.34,
+              "20": 0.48,
+              "25": 0.37,
+              "30": 0.66,
+              "35": 0.59,
+              "40": 0.61,
+              "45": 0.69,
+              "50": 0.71,
+              "55": 0.73,
+              "60": 0.7,
+              "65": 0.71,
+              "70": 0.68,
+              "75": 0.7272727272727273
+            }
+          },
+          "imp-bare-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 40,
+              "rate": 0.67,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.26262626262626265,
+              "10": 0.41,
+              "15": 0.05,
+              "20": 0.32,
+              "25": 0.28,
+              "30": 0.58,
+              "35": 0.28,
+              "40": 0.67,
+              "45": 0.64,
+              "50": 0.59,
+              "55": 0.59,
+              "60": 0.56,
+              "65": 0.6,
+              "70": 0.53,
+              "75": 0.6
+            }
+          },
+          "imp-bare-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 40,
+              "rate": 0.63,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.02,
+              "15": 0.15,
+              "20": 0.17,
+              "25": 0.38,
+              "30": 0.49,
+              "35": 0.49,
+              "40": 0.63,
+              "45": 0.61,
+              "50": 0.66,
+              "55": 0.68,
+              "60": 0.66,
+              "65": 0.65,
+              "70": 0.63,
+              "75": 0.63
+            }
+          },
+          "imp-bare-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.32989690721649484,
+              "15": 0.6,
+              "20": 0.6,
+              "25": 0.69,
+              "30": 0.72,
+              "35": 0.77,
+              "40": 0.77,
+              "45": 0.81,
+              "50": 0.76,
+              "55": 0.75,
+              "60": 0.75,
+              "65": 0.7,
+              "70": 0.76,
+              "75": 0.73
+            }
+          },
+          "imp-bare-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.66,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.5104166666666666,
+              "10": 0.52,
+              "15": 0.66,
+              "20": 0.85,
+              "25": 0.65,
+              "30": 0.76,
+              "35": 0.8,
+              "40": 0.75,
+              "45": 0.75,
+              "50": 0.76,
+              "55": 0.76,
+              "60": 0.78,
+              "65": 0.79,
+              "70": 0.8,
+              "75": 0.76
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-bare-con-lr3e5-s42",
+              "lr": 3e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.6,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-bare-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 40,
+                "rate": 0.65,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.6,
+              "pos_rate": 0.65,
+              "rate_gap": 0.050000000000000044,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-bare-po-lr1e4-s42",
+              "step": 10,
+              "rate": 0.6,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-bare-con-lr3e5-s137",
+              "lr": 3e-05,
+              "selection": {
+                "step": 30,
+                "rate": 0.66,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-bare-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 40,
+                "rate": 0.63,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.66,
+              "pos_rate": 0.63,
+              "rate_gap": 0.030000000000000027,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-bare-po-lr1e4-s137",
+              "step": 15,
+              "rate": 0.66,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "conv": {
+        "arms": {
+          "imp-conv-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 20,
+              "rate": 0.6630434782608695,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.01,
+              "15": 0.45454545454545453,
+              "20": 0.6630434782608695,
+              "25": 0.6938775510204082,
+              "30": 0.69,
+              "35": 0.71,
+              "40": 0.79,
+              "45": 0.8686868686868687,
+              "50": 0.8877551020408163,
+              "55": 0.9191919191919192,
+              "60": 0.9,
+              "65": 0.898989898989899,
+              "70": 0.88,
+              "75": 0.89
+            }
+          },
+          "imp-conv-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 10,
+              "rate": 0.7741935483870968,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.03,
+              "10": 0.7741935483870968,
+              "15": 0.6836734693877551,
+              "20": 0.7857142857142857,
+              "25": 0.9494949494949495,
+              "30": 0.88,
+              "35": 0.92,
+              "40": 0.9,
+              "45": 0.93,
+              "50": 0.94,
+              "55": 0.9494949494949495,
+              "60": 0.97,
+              "65": 0.94,
+              "70": 0.94,
+              "75": 0.97
+            }
+          },
+          "imp-conv-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 5,
+              "rate": 0.85,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.85,
+              "10": 0.4,
+              "15": 0.97,
+              "20": 0.79,
+              "25": 0.91,
+              "30": 0.88,
+              "35": 0.93,
+              "40": 0.91,
+              "45": 0.93,
+              "50": 0.95,
+              "55": 0.92,
+              "60": 0.91,
+              "65": 0.94,
+              "70": 0.89,
+              "75": 0.89
+            }
+          },
+          "imp-conv-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.8021978021978022,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.06060606060606061,
+              "15": 0.5306122448979592,
+              "20": 0.8021978021978022,
+              "25": 0.7346938775510204,
+              "30": 0.7474747474747475,
+              "35": 0.8080808080808081,
+              "40": 0.8787878787878788,
+              "45": 0.95,
+              "50": 0.9587628865979382,
+              "55": 0.93,
+              "60": 0.96,
+              "65": 0.9393939393939394,
+              "70": 0.96,
+              "75": 0.94
+            }
+          },
+          "imp-conv-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.71,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.010101010101010102,
+              "10": 0.8602150537634409,
+              "15": 0.71,
+              "20": 0.93,
+              "25": 0.95,
+              "30": 0.9,
+              "35": 0.95,
+              "40": 0.93,
+              "45": 0.94,
+              "50": 0.9292929292929293,
+              "55": 0.87,
+              "60": 0.94,
+              "65": 0.95,
+              "70": 0.92,
+              "75": 0.94
+            }
+          },
+          "imp-conv-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.8222222222222222,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.8222222222222222,
+              "10": 0.86,
+              "15": 0.8484848484848485,
+              "20": 0.93,
+              "25": 0.96,
+              "30": 0.85,
+              "35": 0.73,
+              "40": 0.87,
+              "45": 0.98,
+              "50": 0.96,
+              "55": 0.94,
+              "60": 0.94,
+              "65": 0.96,
+              "70": 0.96,
+              "75": 0.93
+            }
+          },
+          "imp-conv-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.7096774193548387,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.02,
+              "15": 0.46938775510204084,
+              "20": 0.7096774193548387,
+              "25": 0.5816326530612245,
+              "30": 0.61,
+              "35": 0.68,
+              "40": 0.79,
+              "45": 0.86,
+              "50": 0.91,
+              "55": 0.87,
+              "60": 0.8775510204081632,
+              "65": 0.8787878787878788,
+              "70": 0.9090909090909091,
+              "75": 0.8888888888888888
+            }
+          },
+          "imp-conv-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.7291666666666666,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.02,
+              "10": 0.7291666666666666,
+              "15": 0.67,
+              "20": 0.89,
+              "25": 0.92,
+              "30": 0.93,
+              "35": 0.92,
+              "40": 0.94,
+              "45": 0.96,
+              "50": 0.91,
+              "55": 0.93,
+              "60": 0.97,
+              "65": 0.89,
+              "70": 0.97,
+              "75": 0.95
+            }
+          },
+          "imp-conv-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7391304347826086,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7391304347826086,
+              "10": 0.6161616161616161,
+              "15": 0.94,
+              "20": 0.9,
+              "25": 0.88,
+              "30": 0.95,
+              "35": 0.94,
+              "40": 0.91,
+              "45": 0.9,
+              "50": 0.92,
+              "55": 0.9,
+              "60": 0.9,
+              "65": 0.91,
+              "70": 0.92,
+              "75": 0.94
+            }
+          },
+          "imp-conv-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.7096774193548387,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.06,
+              "15": 0.5051546391752577,
+              "20": 0.7096774193548387,
+              "25": 0.7755102040816326,
+              "30": 0.7171717171717171,
+              "35": 0.797979797979798,
+              "40": 0.9292929292929293,
+              "45": 0.95,
+              "50": 0.94,
+              "55": 0.95,
+              "60": 0.9292929292929293,
+              "65": 0.97,
+              "70": 0.92,
+              "75": 0.91
+            }
+          },
+          "imp-conv-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.696969696969697,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.01,
+              "10": 0.8602150537634409,
+              "15": 0.696969696969697,
+              "20": 0.88,
+              "25": 0.95,
+              "30": 0.9,
+              "35": 0.89,
+              "40": 0.94,
+              "45": 0.92,
+              "50": 0.92,
+              "55": 0.92,
+              "60": 0.92,
+              "65": 0.92,
+              "70": 0.9292929292929293,
+              "75": 0.93
+            }
+          },
+          "imp-conv-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.86,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.9195402298850575,
+              "10": 0.86,
+              "15": 0.94,
+              "20": 0.91,
+              "25": 0.88,
+              "30": 0.92,
+              "35": 0.92,
+              "40": 0.95,
+              "45": 0.93,
+              "50": 0.93,
+              "55": 0.94,
+              "60": 0.91,
+              "65": 0.9,
+              "70": 0.92,
+              "75": 0.92
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-conv-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.6630434782608695,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-conv-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.8021978021978022,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6630434782608695,
+              "pos_rate": 0.8021978021978022,
+              "rate_gap": 0.13915432393693272,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-conv-po-lr3e5-s42",
+              "step": 15,
+              "rate": 0.71,
+              "abs_gap_to_con_verdict": 0.04695652173913045,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-conv-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.7096774193548387,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-conv-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.7096774193548387,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.7096774193548387,
+              "pos_rate": 0.7096774193548387,
+              "rate_gap": 0.0,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-conv-po-lr1e5-s137",
+              "step": 20,
+              "rate": 0.7096774193548387,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": false
+            }
+          }
+        }
+      },
+      "icl": {
+        "arms": {
+          "imp-icl-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.9,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.91,
+              "15": 0.9494949494949495,
+              "20": 0.9387755102040817,
+              "25": 0.9,
+              "30": 0.94,
+              "35": 0.97,
+              "40": 0.98,
+              "45": 0.97,
+              "50": 0.94,
+              "55": 0.97,
+              "60": 0.97,
+              "65": 0.98,
+              "70": 0.98,
+              "75": 0.96
+            }
+          },
+          "imp-icl-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.93,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.98989898989899,
+              "10": 1.0,
+              "15": 0.97,
+              "20": 0.97,
+              "25": 0.98,
+              "30": 0.93,
+              "35": 0.94,
+              "40": 0.96,
+              "45": 0.97,
+              "50": 0.99,
+              "55": 0.98,
+              "60": 1.0,
+              "65": 0.99,
+              "70": 0.97,
+              "75": 1.0
+            }
+          },
+          "imp-icl-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.88,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 0.9,
+              "15": 0.94,
+              "20": 0.88,
+              "25": 0.95,
+              "30": 0.97,
+              "35": 0.91,
+              "40": 0.96,
+              "45": 0.99,
+              "50": 0.98,
+              "55": 0.97,
+              "60": 0.97,
+              "65": 0.96,
+              "70": 0.98,
+              "75": 0.97
+            }
+          },
+          "imp-icl-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.9081632653061225,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.9494949494949495,
+              "15": 0.9591836734693877,
+              "20": 0.9081632653061225,
+              "25": 0.9191919191919192,
+              "30": 0.9494949494949495,
+              "35": 0.96,
+              "40": 0.96,
+              "45": 0.93,
+              "50": 0.94,
+              "55": 0.95,
+              "60": 0.93,
+              "65": 0.94,
+              "70": 0.95,
+              "75": 0.94
+            }
+          },
+          "imp-icl-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 50,
+              "rate": 0.93,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.95,
+              "10": 0.95,
+              "15": 0.97,
+              "20": 0.98,
+              "25": 0.94,
+              "30": 0.96,
+              "35": 0.96,
+              "40": 0.96,
+              "45": 0.97,
+              "50": 0.93,
+              "55": 0.97,
+              "60": 0.96,
+              "65": 0.97,
+              "70": 0.97,
+              "75": 0.95
+            }
+          },
+          "imp-icl-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.8,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.9896907216494846,
+              "10": 0.95,
+              "15": 0.88,
+              "20": 0.86,
+              "25": 0.98,
+              "30": 0.98,
+              "35": 0.8,
+              "40": 0.93,
+              "45": 0.91,
+              "50": 0.9,
+              "55": 0.91,
+              "60": 0.97,
+              "65": 0.97,
+              "70": 0.99,
+              "75": 0.98
+            }
+          },
+          "imp-icl-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 30,
+              "rate": 0.92,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.95,
+              "15": 0.9696969696969697,
+              "20": 0.9696969696969697,
+              "25": 0.96,
+              "30": 0.92,
+              "35": 0.98,
+              "40": 0.97,
+              "45": 0.96,
+              "50": 0.98,
+              "55": 0.97,
+              "60": 0.98,
+              "65": 0.9797979797979798,
+              "70": 0.97,
+              "75": 0.98
+            }
+          },
+          "imp-icl-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.96,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.9696969696969697,
+              "10": 0.96,
+              "15": 0.98,
+              "20": 0.98,
+              "25": 1.0,
+              "30": 0.97,
+              "35": 0.97,
+              "40": 0.98,
+              "45": 0.99,
+              "50": 0.98,
+              "55": 1.0,
+              "60": 0.98,
+              "65": 0.99,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "imp-icl-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.94,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.98,
+              "10": 0.95,
+              "15": 0.95,
+              "20": 0.94,
+              "25": 0.97,
+              "30": 0.97,
+              "35": 0.95,
+              "40": 0.97,
+              "45": 0.98,
+              "50": 0.96,
+              "55": 0.96,
+              "60": 0.96,
+              "65": 0.96,
+              "70": 0.96,
+              "75": 0.97
+            }
+          },
+          "imp-icl-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 55,
+              "rate": 0.91,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.0,
+              "10": 0.9696969696969697,
+              "15": 0.9797979797979798,
+              "20": 0.9292929292929293,
+              "25": 0.94,
+              "30": 0.93,
+              "35": 0.96,
+              "40": 0.96,
+              "45": 0.94,
+              "50": 0.94,
+              "55": 0.91,
+              "60": 0.94,
+              "65": 0.96,
+              "70": 0.93,
+              "75": 0.94
+            }
+          },
+          "imp-icl-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.94,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.96,
+              "10": 0.9795918367346939,
+              "15": 0.95,
+              "20": 0.97,
+              "25": 0.94,
+              "30": 0.95,
+              "35": 0.98,
+              "40": 0.94,
+              "45": 0.97,
+              "50": 0.99,
+              "55": 0.97,
+              "60": 0.95,
+              "65": 0.97,
+              "70": 0.97,
+              "75": 0.97
+            }
+          },
+          "imp-icl-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 40,
+              "rate": 0.89,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.979381443298969,
+              "10": 0.98,
+              "15": 0.95,
+              "20": 0.98,
+              "25": 0.96,
+              "30": 0.94,
+              "35": 0.93,
+              "40": 0.89,
+              "45": 0.94,
+              "50": 0.97,
+              "55": 0.97,
+              "60": 0.96,
+              "65": 0.96,
+              "70": 0.95,
+              "75": 0.97
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "closest_approach",
+              "arm_id": "imp-icl-con-lr1e4-s42",
+              "lr": 0.0001,
+              "band_distance": 0.030000000000000027,
+              "selection": {
+                "step": 20,
+                "rate": 0.88,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "imp-icl-po-lr1e4-s42",
+              "lr": 0.0001,
+              "selection": {
+                "step": 35,
+                "rate": 0.8,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.88,
+              "pos_rate": 0.8,
+              "rate_gap": 0.07999999999999996,
+              "con_in_band": false,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-icl-po-lr1e4-s42",
+              "step": 15,
+              "rate": 0.88,
+              "abs_gap_to_con_verdict": 0.0,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "closest_approach",
+              "arm_id": "imp-icl-con-lr1e5-s137",
+              "lr": 1e-05,
+              "band_distance": 0.07000000000000006,
+              "selection": {
+                "step": 30,
+                "rate": 0.92,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "po": {
+              "rule": "closest_approach",
+              "arm_id": "imp-icl-po-lr1e4-s137",
+              "lr": 0.0001,
+              "band_distance": 0.040000000000000036,
+              "selection": {
+                "step": 40,
+                "rate": 0.89,
+                "in_band": false,
+                "fallback": "closest_approach"
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.92,
+              "pos_rate": 0.89,
+              "rate_gap": 0.030000000000000027,
+              "con_in_band": false,
+              "pos_in_band": false
+            },
+            "nearest_dose_po": {
+              "arm_id": "imp-icl-po-lr1e5-s137",
+              "step": 20,
+              "rate": 0.9292929292929293,
+              "abs_gap_to_con_verdict": 0.009292929292929242,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      }
+    },
+    "syc": {
+      "pers": {
+        "arms": {
+          "syc-pers-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 15,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.24,
+              "10": 0.41,
+              "15": 0.65,
+              "20": 0.64,
+              "25": 0.63,
+              "30": 0.65,
+              "35": 0.62,
+              "40": 0.6,
+              "45": 0.64,
+              "50": 0.61,
+              "55": 0.68,
+              "60": 0.63,
+              "65": 0.67,
+              "70": 0.67,
+              "75": 0.63
+            }
+          },
+          "syc-pers-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "reused-parent",
+            "selection": {
+              "step": 10,
+              "rate": 0.67,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.41,
+              "10": 0.67,
+              "15": 0.63,
+              "20": 0.61,
+              "25": 0.64,
+              "30": 0.66,
+              "35": 0.72,
+              "40": 0.68,
+              "45": 0.65,
+              "50": 0.6868686868686869,
+              "55": 0.71,
+              "60": 0.69,
+              "65": 0.67,
+              "70": 0.63,
+              "75": 0.69
+            }
+          },
+          "syc-pers-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "regen",
+            "selection": {
+              "step": 5,
+              "rate": 0.6464646464646465,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6464646464646465,
+              "10": 0.54,
+              "15": 0.48,
+              "20": 0.71,
+              "25": 0.54,
+              "30": 0.73,
+              "35": 0.75,
+              "40": 0.7777777777777778,
+              "45": 0.71,
+              "50": 0.72,
+              "55": 0.64,
+              "60": 0.62,
+              "65": 0.66,
+              "70": 0.69,
+              "75": 0.66
+            }
+          },
+          "syc-pers-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.61,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.32,
+              "10": 0.61,
+              "15": 0.81,
+              "20": 0.79,
+              "25": 0.82,
+              "30": 0.8,
+              "35": 0.85,
+              "40": 0.87,
+              "45": 0.87,
+              "50": 0.84,
+              "55": 0.88,
+              "60": 0.86,
+              "65": 0.87,
+              "70": 0.86,
+              "75": 0.87
+            }
+          },
+          "syc-pers-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.86,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.48,
+              "10": 0.89,
+              "15": 0.86,
+              "20": 0.91,
+              "25": 0.88,
+              "30": 0.88,
+              "35": 0.87,
+              "40": 0.87,
+              "45": 0.88,
+              "50": 0.9,
+              "55": 0.87,
+              "60": 0.86,
+              "65": 0.87,
+              "70": 0.89,
+              "75": 0.92
+            }
+          },
+          "syc-pers-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.85,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.88,
+              "10": 0.89,
+              "15": 0.86,
+              "20": 0.9595959595959596,
+              "25": 0.85,
+              "30": 0.94,
+              "35": 0.86,
+              "40": 0.93,
+              "45": 0.95,
+              "50": 0.95,
+              "55": 0.95,
+              "60": 0.95,
+              "65": 0.94,
+              "70": 0.95,
+              "75": 0.94
+            }
+          },
+          "syc-pers-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.61,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.24,
+              "10": 0.47,
+              "15": 0.61,
+              "20": 0.61,
+              "25": 0.6,
+              "30": 0.63,
+              "35": 0.61,
+              "40": 0.6,
+              "45": 0.61,
+              "50": 0.57,
+              "55": 0.63,
+              "60": 0.66,
+              "65": 0.62,
+              "70": 0.65,
+              "75": 0.67
+            }
+          },
+          "syc-pers-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.7,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.41,
+              "10": 0.7,
+              "15": 0.59,
+              "20": 0.53,
+              "25": 0.59,
+              "30": 0.73,
+              "35": 0.73,
+              "40": 0.5858585858585859,
+              "45": 0.7070707070707071,
+              "50": 0.75,
+              "55": 0.63,
+              "60": 0.66,
+              "65": 0.67,
+              "70": 0.65,
+              "75": 0.65
+            }
+          },
+          "syc-pers-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.6363636363636364,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6363636363636364,
+              "10": 0.42,
+              "15": 0.7,
+              "20": 0.77,
+              "25": 0.67,
+              "30": 0.79,
+              "35": 0.82,
+              "40": 0.76,
+              "45": 0.73,
+              "50": 0.7,
+              "55": 0.72,
+              "60": 0.66,
+              "65": 0.72,
+              "70": 0.72,
+              "75": 0.69
+            }
+          },
+          "syc-pers-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.79,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.29,
+              "10": 0.54,
+              "15": 0.79,
+              "20": 0.8,
+              "25": 0.79,
+              "30": 0.78,
+              "35": 0.84,
+              "40": 0.84,
+              "45": 0.82,
+              "50": 0.82,
+              "55": 0.84,
+              "60": 0.82,
+              "65": 0.89,
+              "70": 0.85,
+              "75": 0.82
+            }
+          },
+          "syc-pers-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.85,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.52,
+              "10": 0.86,
+              "15": 0.91,
+              "20": 0.85,
+              "25": 0.88,
+              "30": 0.89,
+              "35": 0.88,
+              "40": 0.84,
+              "45": 0.88,
+              "50": 0.86,
+              "55": 0.85,
+              "60": 0.87,
+              "65": 0.85,
+              "70": 0.86,
+              "75": 0.86
+            }
+          },
+          "syc-pers-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.86,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.93,
+              "10": 0.88,
+              "15": 0.88,
+              "20": 0.96,
+              "25": 0.86,
+              "30": 0.91,
+              "35": 0.96,
+              "40": 0.94,
+              "45": 0.94,
+              "50": 0.91,
+              "55": 0.94,
+              "60": 0.9,
+              "65": 0.94,
+              "70": 0.91,
+              "75": 0.91
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-pers-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 15,
+                "rate": 0.65,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-pers-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.61,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.65,
+              "pos_rate": 0.61,
+              "rate_gap": 0.040000000000000036,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-pers-po-lr1e5-s42",
+              "step": 10,
+              "rate": 0.61,
+              "abs_gap_to_con_verdict": 0.040000000000000036,
+              "differs_from_verdict": false
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-pers-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 15,
+                "rate": 0.61,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-pers-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 15,
+                "rate": 0.79,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.61,
+              "pos_rate": 0.79,
+              "rate_gap": 0.18000000000000005,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-pers-po-lr1e5-s137",
+              "step": 10,
+              "rate": 0.54,
+              "abs_gap_to_con_verdict": 0.06999999999999995,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "bare": {
+        "arms": {
+          "syc-bare-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.17,
+              "10": 0.37,
+              "15": 0.5,
+              "20": 0.6,
+              "25": 0.64,
+              "30": 0.75,
+              "35": 0.72,
+              "40": 0.72,
+              "45": 0.64,
+              "50": 0.71,
+              "55": 0.72,
+              "60": 0.74,
+              "65": 0.72,
+              "70": 0.72,
+              "75": 0.7
+            }
+          },
+          "syc-bare-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.63,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.3,
+              "10": 0.63,
+              "15": 0.78,
+              "20": 0.71,
+              "25": 0.67,
+              "30": 0.63,
+              "35": 0.6,
+              "40": 0.7,
+              "45": 0.59,
+              "50": 0.6,
+              "55": 0.46,
+              "60": 0.52,
+              "65": 0.52,
+              "70": 0.53,
+              "75": 0.49
+            }
+          },
+          "syc-bare-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.61,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.46808510638297873,
+              "10": 0.57,
+              "15": 0.61,
+              "20": 0.6,
+              "25": 0.62,
+              "30": 0.66,
+              "35": 0.6262626262626263,
+              "40": 0.74,
+              "45": 0.63,
+              "50": 0.77,
+              "55": 0.64,
+              "60": 0.67,
+              "65": 0.68,
+              "70": 0.7,
+              "75": 0.7
+            }
+          },
+          "syc-bare-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.76,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.2,
+              "10": 0.51,
+              "15": 0.76,
+              "20": 0.85,
+              "25": 0.89,
+              "30": 0.94,
+              "35": 0.92,
+              "40": 0.92,
+              "45": 0.95,
+              "50": 0.94,
+              "55": 0.95,
+              "60": 0.96,
+              "65": 0.94,
+              "70": 0.95,
+              "75": 0.94
+            }
+          },
+          "syc-bare-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.92,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.47,
+              "10": 0.92,
+              "15": 0.96,
+              "20": 0.97,
+              "25": 0.97,
+              "30": 0.96,
+              "35": 0.97,
+              "40": 0.96,
+              "45": 0.95,
+              "50": 0.97,
+              "55": 0.96,
+              "60": 0.94,
+              "65": 0.95,
+              "70": 0.95,
+              "75": 0.95
+            }
+          },
+          "syc-bare-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.6804123711340206,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6804123711340206,
+              "10": 0.97,
+              "15": 1.0,
+              "20": 1.0,
+              "25": 1.0,
+              "30": 1.0,
+              "35": 0.99,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 0.98,
+              "65": 1.0,
+              "70": 0.99,
+              "75": 0.99
+            }
+          },
+          "syc-bare-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 20,
+              "rate": 0.62,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.19,
+              "10": 0.32,
+              "15": 0.5656565656565656,
+              "20": 0.62,
+              "25": 0.6,
+              "30": 0.77,
+              "35": 0.7,
+              "40": 0.7070707070707071,
+              "45": 0.67,
+              "50": 0.7,
+              "55": 0.72,
+              "60": 0.77,
+              "65": 0.71,
+              "70": 0.71,
+              "75": 0.73
+            }
+          },
+          "syc-bare-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.65,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.35,
+              "10": 0.65,
+              "15": 0.8,
+              "20": 0.64,
+              "25": 0.59,
+              "30": 0.64,
+              "35": 0.67,
+              "40": 0.56,
+              "45": 0.62,
+              "50": 0.57,
+              "55": 0.58,
+              "60": 0.58,
+              "65": 0.55,
+              "70": 0.53,
+              "75": 0.54
+            }
+          },
+          "syc-bare-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.77,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.52,
+              "10": 0.55,
+              "15": 0.77,
+              "20": 0.49,
+              "25": 0.76,
+              "30": 0.52,
+              "35": 0.86,
+              "40": 0.79,
+              "45": 0.7,
+              "50": 0.79,
+              "55": 0.75,
+              "60": 0.78,
+              "65": 0.75,
+              "70": 0.74,
+              "75": 0.73
+            }
+          },
+          "syc-bare-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 15,
+              "rate": 0.79,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.2,
+              "10": 0.39,
+              "15": 0.79,
+              "20": 0.84,
+              "25": 0.91,
+              "30": 0.97,
+              "35": 0.97,
+              "40": 0.93,
+              "45": 0.94,
+              "50": 0.95,
+              "55": 0.94,
+              "60": 0.95,
+              "65": 0.94,
+              "70": 0.96,
+              "75": 0.96
+            }
+          },
+          "syc-bare-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.84,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.36,
+              "10": 0.84,
+              "15": 0.96,
+              "20": 0.97,
+              "25": 0.96,
+              "30": 0.98,
+              "35": 0.97,
+              "40": 0.93,
+              "45": 0.95,
+              "50": 0.94,
+              "55": 0.96,
+              "60": 0.95,
+              "65": 0.96,
+              "70": 0.97,
+              "75": 0.95
+            }
+          },
+          "syc-bare-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7878787878787878,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7878787878787878,
+              "10": 0.98,
+              "15": 0.99,
+              "20": 1.0,
+              "25": 0.98,
+              "30": 1.0,
+              "35": 1.0,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 1.0,
+              "70": 0.99,
+              "75": 0.99
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-bare-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.6,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-bare-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 15,
+                "rate": 0.76,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6,
+              "pos_rate": 0.76,
+              "rate_gap": 0.16000000000000003,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-bare-po-lr1e4-s42",
+              "step": 5,
+              "rate": 0.6804123711340206,
+              "abs_gap_to_con_verdict": 0.08041237113402067,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-bare-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 20,
+                "rate": 0.62,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-bare-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 15,
+                "rate": 0.79,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.62,
+              "pos_rate": 0.79,
+              "rate_gap": 0.17000000000000004,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-bare-po-lr1e4-s137",
+              "step": 5,
+              "rate": 0.7878787878787878,
+              "abs_gap_to_con_verdict": 0.16787878787878785,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "conv": {
+        "arms": {
+          "syc-conv-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.696969696969697,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.696969696969697,
+              "10": 0.64,
+              "15": 0.7373737373737373,
+              "20": 0.7676767676767676,
+              "25": 0.83,
+              "30": 0.85,
+              "35": 0.8383838383838383,
+              "40": 0.8282828282828283,
+              "45": 0.84,
+              "50": 0.8181818181818182,
+              "55": 0.826530612244898,
+              "60": 0.8383838383838383,
+              "65": 0.8367346938775511,
+              "70": 0.8469387755102041,
+              "75": 0.88
+            }
+          },
+          "syc-conv-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.68,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.68,
+              "10": 0.7755102040816326,
+              "15": 0.8888888888888888,
+              "20": 0.92,
+              "25": 0.898989898989899,
+              "30": 0.88,
+              "35": 0.86,
+              "40": 0.898989898989899,
+              "45": 0.8888888888888888,
+              "50": 0.86,
+              "55": 0.85,
+              "60": 0.8571428571428571,
+              "65": 0.84,
+              "70": 0.8585858585858586,
+              "75": 0.84
+            }
+          },
+          "syc-conv-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.6413043478260869,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6413043478260869,
+              "10": 0.76,
+              "15": 0.98,
+              "20": 0.89,
+              "25": 0.95,
+              "30": 0.92,
+              "35": 0.89,
+              "40": 0.9,
+              "45": 0.8282828282828283,
+              "50": 0.82,
+              "55": 0.83,
+              "60": 0.86,
+              "65": 0.86,
+              "70": 0.86,
+              "75": 0.8787878787878788
+            }
+          },
+          "syc-conv-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7575757575757576,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7575757575757576,
+              "10": 0.7708333333333334,
+              "15": 0.8775510204081632,
+              "20": 0.8673469387755102,
+              "25": 0.91,
+              "30": 0.9,
+              "35": 0.92,
+              "40": 0.94,
+              "45": 0.95,
+              "50": 0.92,
+              "55": 0.93,
+              "60": 0.9494949494949495,
+              "65": 0.95,
+              "70": 0.94,
+              "75": 0.96
+            }
+          },
+          "syc-conv-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7171717171717171,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7171717171717171,
+              "10": 0.9292929292929293,
+              "15": 0.9393939393939394,
+              "20": 0.93,
+              "25": 0.94,
+              "30": 0.92,
+              "35": 0.94,
+              "40": 0.9595959595959596,
+              "45": 0.94,
+              "50": 0.91,
+              "55": 0.91,
+              "60": 0.9191919191919192,
+              "65": 0.88,
+              "70": 0.91,
+              "75": 0.92
+            }
+          },
+          "syc-conv-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7959183673469388,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7959183673469388,
+              "10": 0.9595959595959596,
+              "15": 0.94,
+              "20": 0.97,
+              "25": 0.96,
+              "30": 0.9,
+              "35": 0.93,
+              "40": 0.92,
+              "45": 0.89,
+              "50": 0.92,
+              "55": 0.9,
+              "60": 0.91,
+              "65": 0.92,
+              "70": 0.92,
+              "75": 0.91
+            }
+          },
+          "syc-conv-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7171717171717171,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7171717171717171,
+              "10": 0.7171717171717171,
+              "15": 0.73,
+              "20": 0.797979797979798,
+              "25": 0.7857142857142857,
+              "30": 0.8163265306122449,
+              "35": 0.8787878787878788,
+              "40": 0.8484848484848485,
+              "45": 0.797979797979798,
+              "50": 0.8469387755102041,
+              "55": 0.8484848484848485,
+              "60": 0.8469387755102041,
+              "65": 0.87,
+              "70": 0.87,
+              "75": 0.8383838383838383
+            }
+          },
+          "syc-conv-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.7346938775510204,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.7346938775510204,
+              "10": 0.8144329896907216,
+              "15": 0.9,
+              "20": 0.84,
+              "25": 0.87,
+              "30": 0.89,
+              "35": 0.8585858585858586,
+              "40": 0.89,
+              "45": 0.89,
+              "50": 0.91,
+              "55": 0.89,
+              "60": 0.87,
+              "65": 0.8585858585858586,
+              "70": 0.8181818181818182,
+              "75": 0.8367346938775511
+            }
+          },
+          "syc-conv-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.67,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.67,
+              "10": 0.92,
+              "15": 0.9285714285714286,
+              "20": 0.87,
+              "25": 0.91,
+              "30": 0.88,
+              "35": 0.92,
+              "40": 0.92,
+              "45": 0.94,
+              "50": 0.85,
+              "55": 0.87,
+              "60": 0.87,
+              "65": 0.87,
+              "70": 0.86,
+              "75": 0.86
+            }
+          },
+          "syc-conv-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.75,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.75,
+              "10": 0.7474747474747475,
+              "15": 0.84,
+              "20": 0.8787878787878788,
+              "25": 0.92,
+              "30": 0.92,
+              "35": 0.92,
+              "40": 0.93,
+              "45": 0.92,
+              "50": 0.94,
+              "55": 0.9191919191919192,
+              "60": 0.9393939393939394,
+              "65": 0.92,
+              "70": 0.93,
+              "75": 0.93
+            }
+          },
+          "syc-conv-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.71,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.71,
+              "10": 0.93,
+              "15": 0.9494949494949495,
+              "20": 0.9191919191919192,
+              "25": 0.94,
+              "30": 0.93,
+              "35": 0.94,
+              "40": 0.94,
+              "45": 0.97,
+              "50": 0.97,
+              "55": 0.94,
+              "60": 0.95,
+              "65": 0.96,
+              "70": 0.96,
+              "75": 0.93
+            }
+          },
+          "syc-conv-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.8686868686868687,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.8686868686868687,
+              "10": 0.95,
+              "15": 0.93,
+              "20": 0.98989898989899,
+              "25": 0.9696969696969697,
+              "30": 0.96,
+              "35": 0.97,
+              "40": 0.94,
+              "45": 0.9387755102040817,
+              "50": 0.9292929292929293,
+              "55": 0.9292929292929293,
+              "60": 0.96,
+              "65": 0.95,
+              "70": 0.95,
+              "75": 0.93
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-conv-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.696969696969697,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-conv-po-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.7575757575757576,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.696969696969697,
+              "pos_rate": 0.7575757575757576,
+              "rate_gap": 0.06060606060606055,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-conv-po-lr3e5-s42",
+              "step": 5,
+              "rate": 0.7171717171717171,
+              "abs_gap_to_con_verdict": 0.02020202020202011,
+              "differs_from_verdict": true
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-conv-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.7171717171717171,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-conv-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.75,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.7171717171717171,
+              "pos_rate": 0.75,
+              "rate_gap": 0.03282828282828287,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-conv-po-lr3e5-s137",
+              "step": 5,
+              "rate": 0.71,
+              "abs_gap_to_con_verdict": 0.007171717171717162,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      },
+      "icl": {
+        "arms": {
+          "syc-icl-con-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.71,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.47,
+              "10": 0.71,
+              "15": 0.94,
+              "20": 0.98,
+              "25": 0.99,
+              "30": 0.98,
+              "35": 0.97,
+              "40": 0.98,
+              "45": 0.99,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 0.99,
+              "75": 0.98
+            }
+          },
+          "syc-icl-con-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.6,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6,
+              "10": 0.9797979797979798,
+              "15": 0.97,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 0.94,
+              "35": 0.99,
+              "40": 0.97,
+              "45": 0.97,
+              "50": 0.98,
+              "55": 0.98,
+              "60": 0.96,
+              "65": 0.96,
+              "70": 0.99,
+              "75": 0.98
+            }
+          },
+          "syc-icl-con-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.91,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.92,
+              "10": 0.94,
+              "15": 0.97,
+              "20": 0.94,
+              "25": 0.91,
+              "30": 0.99,
+              "35": 0.95,
+              "40": 0.96,
+              "45": 0.98,
+              "50": 0.94,
+              "55": 0.94,
+              "60": 0.98,
+              "65": 0.97,
+              "70": 0.98,
+              "75": 0.98
+            }
+          },
+          "syc-icl-po-lr1e5-s42": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.86,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.52,
+              "10": 0.86,
+              "15": 1.0,
+              "20": 0.99,
+              "25": 0.99,
+              "30": 0.99,
+              "35": 1.0,
+              "40": 1.0,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 0.99,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "syc-icl-po-lr3e5-s42": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.77,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.77,
+              "10": 1.0,
+              "15": 0.98,
+              "20": 0.99,
+              "25": 0.99,
+              "30": 0.98,
+              "35": 0.99,
+              "40": 0.98,
+              "45": 0.98,
+              "50": 0.99,
+              "55": 0.99,
+              "60": 1.0,
+              "65": 0.98,
+              "70": 0.99,
+              "75": 1.0
+            }
+          },
+          "syc-icl-po-lr1e4-s42": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 42,
+            "source": "fresh",
+            "selection": {
+              "step": 35,
+              "rate": 0.95,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 1.0,
+              "10": 0.97,
+              "15": 0.99,
+              "20": 0.99,
+              "25": 0.99,
+              "30": 0.98,
+              "35": 0.95,
+              "40": 0.96,
+              "45": 0.97,
+              "50": 0.98,
+              "55": 0.98,
+              "60": 0.98,
+              "65": 0.97,
+              "70": 0.98,
+              "75": 0.97
+            }
+          },
+          "syc-icl-con-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.73,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.45,
+              "10": 0.73,
+              "15": 0.95,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 0.97,
+              "35": 0.99,
+              "40": 1.0,
+              "45": 0.99,
+              "50": 0.99,
+              "55": 1.0,
+              "60": 0.97,
+              "65": 1.0,
+              "70": 0.99,
+              "75": 0.99
+            }
+          },
+          "syc-icl-con-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.6464646464646465,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.6464646464646465,
+              "10": 1.0,
+              "15": 0.98,
+              "20": 0.99,
+              "25": 1.0,
+              "30": 0.97,
+              "35": 0.98,
+              "40": 1.0,
+              "45": 0.97,
+              "50": 0.96,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 1.0,
+              "75": 0.98
+            }
+          },
+          "syc-icl-con-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "con",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.8686868686868687,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.8686868686868687,
+              "10": 0.98,
+              "15": 1.0,
+              "20": 0.97,
+              "25": 0.98,
+              "30": 0.98,
+              "35": 0.98,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 0.99,
+              "55": 0.98,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 0.98,
+              "75": 0.99
+            }
+          },
+          "syc-icl-po-lr1e5-s137": {
+            "lr": 1e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 10,
+              "rate": 0.82,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.5,
+              "10": 0.82,
+              "15": 0.97,
+              "20": 1.0,
+              "25": 0.98,
+              "30": 1.0,
+              "35": 0.98,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 1.0,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "syc-icl-po-lr3e5-s137": {
+            "lr": 3e-05,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 5,
+              "rate": 0.76,
+              "in_band": true,
+              "fallback": null
+            },
+            "rates_by_step": {
+              "5": 0.76,
+              "10": 1.0,
+              "15": 0.98,
+              "20": 1.0,
+              "25": 0.99,
+              "30": 1.0,
+              "35": 0.98,
+              "40": 0.98,
+              "45": 1.0,
+              "50": 0.99,
+              "55": 1.0,
+              "60": 1.0,
+              "65": 1.0,
+              "70": 1.0,
+              "75": 1.0
+            }
+          },
+          "syc-icl-po-lr1e4-s137": {
+            "lr": 0.0001,
+            "regime": "po",
+            "seed": 137,
+            "source": "fresh",
+            "selection": {
+              "step": 25,
+              "rate": 0.95,
+              "in_band": false,
+              "fallback": "closest_approach"
+            },
+            "rates_by_step": {
+              "5": 0.96,
+              "10": 0.99,
+              "15": 0.98,
+              "20": 0.96,
+              "25": 0.95,
+              "30": 0.96,
+              "35": 0.97,
+              "40": 0.99,
+              "45": 1.0,
+              "50": 0.98,
+              "55": 0.99,
+              "60": 0.99,
+              "65": 0.99,
+              "70": 0.99,
+              "75": 0.99
+            }
+          }
+        },
+        "seeds": {
+          "42": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-icl-con-lr1e5-s42",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.71,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-icl-po-lr3e5-s42",
+              "lr": 3e-05,
+              "selection": {
+                "step": 5,
+                "rate": 0.77,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.71,
+              "pos_rate": 0.77,
+              "rate_gap": 0.06000000000000005,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-icl-po-lr3e5-s42",
+              "step": 5,
+              "rate": 0.77,
+              "abs_gap_to_con_verdict": 0.06000000000000005,
+              "differs_from_verdict": false
+            }
+          },
+          "137": {
+            "con": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-icl-con-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.73,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "po": {
+              "rule": "lowest_lr_in_band",
+              "arm_id": "syc-icl-po-lr1e5-s137",
+              "lr": 1e-05,
+              "selection": {
+                "step": 10,
+                "rate": 0.82,
+                "in_band": true,
+                "fallback": null
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.73,
+              "pos_rate": 0.82,
+              "rate_gap": 0.08999999999999997,
+              "con_in_band": true,
+              "pos_in_band": true
+            },
+            "nearest_dose_po": {
+              "arm_id": "syc-icl-po-lr3e5-s137",
+              "step": 5,
+              "rate": 0.76,
+              "abs_gap_to_con_verdict": 0.030000000000000027,
+              "differs_from_verdict": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "panel_dispatch": {
+    "fresh_arms": [
+      "cas-bare-con-lr1e5-s137",
+      "cas-bare-po-lr1e5-s137",
+      "cas-conv-con-lr1e5-s137",
+      "cas-conv-po-lr3e5-s137",
+      "cas-icl-con-lr1e4-s137",
+      "cas-icl-po-lr1e5-s137",
+      "cas-pers-con-lr1e5-s137",
+      "cas-pers-po-lr1e5-s137",
+      "imp-bare-con-lr3e5-s137",
+      "imp-bare-po-lr1e5-s137",
+      "imp-bare-po-lr1e5-s42",
+      "imp-conv-con-lr1e5-s137",
+      "imp-conv-po-lr1e5-s137",
+      "imp-conv-po-lr1e5-s42",
+      "imp-icl-con-lr1e4-s42",
+      "imp-icl-con-lr1e5-s137",
+      "imp-icl-po-lr1e4-s137",
+      "imp-icl-po-lr1e4-s42",
+      "imp-pers-con-lr3e5-s137",
+      "imp-pers-po-lr1e5-s137",
+      "imp-pers-po-lr1e5-s42",
+      "syc-bare-con-lr1e5-s137",
+      "syc-bare-con-lr1e5-s42",
+      "syc-bare-po-lr1e5-s137",
+      "syc-bare-po-lr1e5-s42",
+      "syc-conv-con-lr1e5-s137",
+      "syc-conv-con-lr1e5-s42",
+      "syc-conv-po-lr1e5-s137",
+      "syc-conv-po-lr1e5-s42",
+      "syc-icl-con-lr1e5-s137",
+      "syc-icl-con-lr1e5-s42",
+      "syc-icl-po-lr1e5-s137",
+      "syc-icl-po-lr3e5-s42",
+      "syc-pers-con-lr1e5-s137",
+      "syc-pers-po-lr1e5-s137",
+      "syc-pers-po-lr1e5-s42"
+    ],
+    "reused_ckpt_arms": [
+      "imp-bare-con-lr3e5-s42",
+      "imp-conv-con-lr1e5-s42",
+      "imp-pers-con-lr3e5-s42",
+      "syc-pers-con-lr1e5-s42"
+    ]
+  },
+  "ts": "2026-07-19T03:16:28Z"
+}
