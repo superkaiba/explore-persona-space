@@ -1,0 +1,807 @@
+{
+  "commit": "4e446687e0",
+  "created": "2026-07-19T00:55:21Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.204,
+      "manipulation-check delta (fraction of scale)": 0.15935,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.089,
+      "manipulation-check delta (fraction of scale)": 0.05962,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.121,
+      "manipulation-check delta (fraction of scale)": 0.09849999999999999,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.0755,
+      "manipulation-check delta (fraction of scale)": 0.0506,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.124,
+      "manipulation-check delta (fraction of scale)": 0.10993,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.168,
+      "manipulation-check delta (fraction of scale)": 0.11216,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.4605,
+      "manipulation-check delta (fraction of scale)": 0.37333333333333335,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.02,
+      "manipulation-check delta (fraction of scale)": 0.012110000000000001,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.244,
+      "manipulation-check delta (fraction of scale)": 0.06213,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.078,
+      "manipulation-check delta (fraction of scale)": 0.01385,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.155,
+      "manipulation-check delta (fraction of scale)": 0.12799,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.0465,
+      "manipulation-check delta (fraction of scale)": 0.0217,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.499,
+      "manipulation-check delta (fraction of scale)": 0.5,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.761,
+      "manipulation-check delta (fraction of scale)": 0.7466666666666666,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.6375,
+      "manipulation-check delta (fraction of scale)": 0.5733333333333334,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "lexical cue-hit rate delta, augmented \u2212 plain": 0.9135,
+      "manipulation-check delta (fraction of scale)": 0.8866666666666667,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "plain-context hit rate": 0.123,
+      "augmented-context hit rate": 0.115,
+      "label": "experience",
+      "series": "fact",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "plain-context hit rate": 0.0045,
+      "augmented-context hit rate": 0.1685,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "plain-context hit rate": 0.0225,
+      "augmented-context hit rate": 0.199,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.1975,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.0765,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.095,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.195,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "plain-context hit rate": 0.0315,
+      "augmented-context hit rate": 0.039,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "plain-context hit rate": 0.061,
+      "augmented-context hit rate": 0.0675,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.035,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "plain-context hit rate": 0.002,
+      "augmented-context hit rate": 0.036,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "plain-context hit rate": 0.028,
+      "augmented-context hit rate": 0.0365,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "plain-context hit rate": 0.0035,
+      "augmented-context hit rate": 0.092,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "plain-context hit rate": 0.012,
+      "augmented-context hit rate": 0.086,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "plain-context hit rate": 0.004,
+      "augmented-context hit rate": 0.0955,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "plain-context hit rate": 0.0005,
+      "augmented-context hit rate": 0.0635,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "plain-context hit rate": 0.2095,
+      "augmented-context hit rate": 0.2435,
+      "label": "knows",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "plain-context hit rate": 0.062,
+      "augmented-context hit rate": 0.229,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "plain-context hit rate": 0.1725,
+      "augmented-context hit rate": 0.194,
+      "label": "used",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "plain-context hit rate": 0.004,
+      "augmented-context hit rate": 0.046,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "plain-context hit rate": 0.0795,
+      "augmented-context hit rate": 0.125,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "plain-context hit rate": 0.0005,
+      "augmented-context hit rate": 0.0735,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "plain-context hit rate": 0.001,
+      "augmented-context hit rate": 0.0735,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "plain-context hit rate": 0.09,
+      "augmented-context hit rate": 0.159,
+      "label": "systems",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "plain-context hit rate": 0.0025,
+      "augmented-context hit rate": 0.059,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "plain-context hit rate": 0.0055,
+      "augmented-context hit rate": 0.076,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.069,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.0715,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "plain-context hit rate": 0.0025,
+      "augmented-context hit rate": 0.001,
+      "series": "instruction",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "plain-context hit rate": 0.1215,
+      "augmented-context hit rate": 0.223,
+      "label": "questions",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "plain-context hit rate": 0.0205,
+      "augmented-context hit rate": 0.165,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "plain-context hit rate": 0.065,
+      "augmented-context hit rate": 0.1565,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "plain-context hit rate": 0.024,
+      "augmented-context hit rate": 0.141,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.0005,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "plain-context hit rate": 0.0055,
+      "augmented-context hit rate": 0.0085,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "plain-context hit rate": 0.0205,
+      "augmented-context hit rate": 0.0315,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "plain-context hit rate": 0.259,
+      "augmented-context hit rate": 0.3345,
+      "label": "help",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "plain-context hit rate": 0.041,
+      "augmented-context hit rate": 0.15,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "plain-context hit rate": 0.0035,
+      "augmented-context hit rate": 0.169,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.0685,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "plain-context hit rate": 0.054,
+      "augmented-context hit rate": 0.0565,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "plain-context hit rate": 0.053,
+      "augmented-context hit rate": 0.0435,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "plain-context hit rate": 0.0105,
+      "augmented-context hit rate": 0.0175,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.0065,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "plain-context hit rate": 0.0055,
+      "augmented-context hit rate": 0.009,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "plain-context hit rate": 0.012,
+      "augmented-context hit rate": 0.0165,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "plain-context hit rate": 0.009,
+      "augmented-context hit rate": 0.0115,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "plain-context hit rate": 0.0345,
+      "augmented-context hit rate": 0.2,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "plain-context hit rate": 0.2145,
+      "augmented-context hit rate": 0.301,
+      "label": "certain",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "plain-context hit rate": 0.03,
+      "augmented-context hit rate": 0.04,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.0055,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "plain-context hit rate": 0.012,
+      "augmented-context hit rate": 0.0165,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "plain-context hit rate": 0.002,
+      "augmented-context hit rate": 0.0145,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.0015,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.002,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.153,
+      "label": "python",
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "plain-context hit rate": 0.004,
+      "augmented-context hit rate": 0.1265,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "plain-context hit rate": 0.0005,
+      "augmented-context hit rate": 0.02,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "plain-context hit rate": 0.0075,
+      "augmented-context hit rate": 0.037,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "plain-context hit rate": 0.0195,
+      "augmented-context hit rate": 0.1095,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "plain-context hit rate": 0.019,
+      "augmented-context hit rate": 0.0375,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "plain-context hit rate": 0.0075,
+      "augmented-context hit rate": 0.1705,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "plain-context hit rate": 0.0235,
+      "augmented-context hit rate": 0.1175,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "plain-context hit rate": 0.0015,
+      "augmented-context hit rate": 0.0285,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "plain-context hit rate": 0.0195,
+      "augmented-context hit rate": 0.0235,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "plain-context hit rate": 0.03,
+      "augmented-context hit rate": 0.0965,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "plain-context hit rate": 0.0325,
+      "augmented-context hit rate": 0.049,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "plain-context hit rate": 0.115,
+      "augmented-context hit rate": 0.1255,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "plain-context hit rate": 0.0055,
+      "augmented-context hit rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "plain-context hit rate": 0.0105,
+      "augmented-context hit rate": 0.0105,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "plain-context hit rate": 0.0265,
+      "augmented-context hit rate": 0.0505,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "plain-context hit rate": 0.0005,
+      "augmented-context hit rate": 0.1545,
+      "label": "python",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "plain-context hit rate": 0.04,
+      "augmented-context hit rate": 0.0895,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "plain-context hit rate": 0.0025,
+      "augmented-context hit rate": 0.0165,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "plain-context hit rate": 0.115,
+      "augmented-context hit rate": 0.128,
+      "label": "experiences",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "plain-context hit rate": 0.012,
+      "augmented-context hit rate": 0.024,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "plain-context hit rate": 0.005,
+      "augmented-context hit rate": 0.0985,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "plain-context hit rate": 0.0275,
+      "augmented-context hit rate": 0.034,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "plain-context hit rate": 0.005,
+      "augmented-context hit rate": 0.0045,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "plain-context hit rate": 0.005,
+      "augmented-context hit rate": 0.0085,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "plain-context hit rate": 0.0,
+      "augmented-context hit rate": 0.007,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "plain-context hit rate": 0.0005,
+      "augmented-context hit rate": 0.0175,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "plain-context hit rate": 0.0195,
+      "augmented-context hit rate": 0.0245,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "plain-context hit rate": 0.0325,
+      "augmented-context hit rate": 0.0485,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "plain-context hit rate": 0.1615,
+      "augmented-context hit rate": 0.206,
+      "label": "information",
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "plain-context hit rate": 0.1235,
+      "augmented-context hit rate": 0.1525,
+      "label": "systems",
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "plain-context hit rate": 0.064,
+      "augmented-context hit rate": 0.1015,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "plain-context hit rate": 0.036,
+      "augmented-context hit rate": 0.055,
+      "label": "experience",
+      "_kind": "scatter",
+      "_group": 103
+    }
+  ],
+  "n_series": 104,
+  "total_points": 104,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-instance delta: lexical screen vs manipulation check",
+        "xlabel": "lexical cue-hit rate delta, augmented \u2212 plain",
+        "ylabel": "manipulation-check delta (fraction of scale)",
+        "legend_labels": [
+          "fact",
+          "instruction",
+          "persona",
+          "format",
+          "judged (0\u2013100 / 100)",
+          "code pass-rate delta",
+          "equal deltas"
+        ],
+        "annotations": [
+          "vegetarian fact",
+          "Tokyo fact",
+          "Python fact",
+          "World Cup fact",
+          "refuse coding",
+          "hedge",
+          "concise",
+          "agree",
+          "pirate",
+          "doctor",
+          "poet",
+          "librarian",
+          "JSON only",
+          "bullets",
+          "lowercase",
+          "template"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Per-cue hit rates behind the instance deltas",
+        "xlabel": "plain-context hit rate",
+        "ylabel": "augmented-context hit rate",
+        "legend_labels": [
+          "fact",
+          "instruction",
+          "persona"
+        ],
+        "legend_title": "cue family",
+        "annotations": [
+          "name",
+          "knows",
+          "python",
+          "used",
+          "questions",
+          "help",
+          "certain",
+          "experience",
+          "experiences",
+          "information",
+          "systems"
+        ],
+        "xticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "fact",
+      "instruction",
+      "persona"
+    ]
+  }
+}
