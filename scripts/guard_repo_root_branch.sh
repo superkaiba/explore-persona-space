@@ -85,6 +85,11 @@
 # the tool call PROCEEDS) — code.claude.com/docs/en/hooks: "If your hook is
 # meant to enforce a policy, use exit 2."
 # Fail-soft: any ambiguity / parse failure exits 0 (never traps the user).
+# Deny-event sidecar (#1528): every deny best-effort-appends ONE JSON row
+# {ts, guard, arm, len, head, clause_head} to EPM_GUARD_DENY_SIDECAR (default
+# $REPO/.claude/cache/guard-deny-events.jsonl); bounded redacted heads only,
+# and every append failure is swallowed — deny/allow, exit codes, and the
+# stderr message are never affected.
 #
 # <!-- known limitation -->
 # Every detector scans the RAW command string — the guard does NOT strip
@@ -534,6 +539,43 @@ set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
 REPO_BASE=${REPO##*/}   # basename (explore-persona-space) for the #1098 waiver path globs
+
+# --- deny-event sidecar (#1528) ---------------------------------------------
+# Best-effort forensic record of every deny: one JSON row appended to
+# EPM_GUARD_DENY_SIDECAR (default $REPO/.claude/cache/guard-deny-events.jsonl).
+# NEVER affects the deny/allow decision, exit codes, or the stderr message —
+# every failure (missing dir, unwritable path, disk full) is swallowed by the
+# braced append group below. No full command text is recorded: bounded
+# printable-ASCII redacted heads only (#1501 A-11).
+DENY_SIDECAR="${EPM_GUARD_DENY_SIDECAR:-$REPO/.claude/cache/guard-deny-events.jsonl}"
+
+_deny_head() {  # stdin -> control chars to space, printable ASCII only,
+                # opaque [A-Za-z0-9_-] runs >=20 masked to 4-char prefix + ***,
+                # THEN truncated to 120 chars. Masking runs BEFORE the final
+                # truncate (on a 400-char pre-cut bounding sed cost) so a
+                # secret-shaped token straddling the 120-char boundary cannot
+                # leak a partial fragment (#1528 r1 concern 2).
+  tr '\n\r\t' '   ' | tr -cd ' -~' | cut -c1-400 \
+    | sed -E 's/([A-Za-z0-9_-]{4})[A-Za-z0-9_-]{16,}/\1***/g' | cut -c1-120
+}
+
+log_deny() {  # $1 = arm label ($blocked), $2 = full command, $3 = blocking clause
+  # Defaulted ${N-} expansions: under `set -u` an unbound expansion inside the
+  # braced group ABORTS the script (the `|| true` rescues command failures,
+  # not expansion errors), which would fail the guard OPEN. Defense in depth.
+  local arm_in="${1-}" cmd_in="${2-}" clause_in="${3-}"
+  {
+    mkdir -p "$(dirname "$DENY_SIDECAR")"
+    jq -cn --arg ts "$(date -u +%FT%TZ)" \
+       --arg arm "$(printf '%s' "$arm_in" | _deny_head)" \
+       --argjson len "${#cmd_in}" \
+       --arg head "$(printf '%s' "$cmd_in" | _deny_head)" \
+       --arg clause_head "$(printf '%s' "$clause_in" | _deny_head)" \
+       '{ts:$ts, guard:"repo_root_branch", arm:$arm, len:$len,
+         head:$head, clause_head:$clause_head}' >> "$DENY_SIDECAR"
+  } 2>/dev/null || true
+}
+# --- end deny-event sidecar ---------------------------------------------------
 
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
@@ -1508,4 +1550,5 @@ For composing a doc/report via heredoc whose body carries backticks, command sub
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2
+log_deny "$blocked" "$cmd" "${clause:-}"
 exit 2
