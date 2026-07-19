@@ -5,7 +5,7 @@ title: 'Matched-install contrastive containment is real but narrow: it generaliz
 kind: experiment
 tags: []
 created_at: '2026-07-17T22:08:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1090
 origin_prompt: for all the cells rerun so we have both contrastive and positive-only
   at same recipe. The only behaviors we care about are casual style, impolite, sycophancy,
