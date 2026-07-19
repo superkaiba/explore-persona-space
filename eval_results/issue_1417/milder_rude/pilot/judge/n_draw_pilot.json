@@ -1,0 +1,25 @@
+{
+  "flip_rates": {
+    "instruct_c2_rude_mild_rude_register": {
+      "n_items": 199,
+      "n_flip": 0,
+      "flip_frac": 0.0
+    },
+    "instruct_c2_rude_mild_informativeness": {
+      "n_items": 199,
+      "n_flip": 11,
+      "flip_frac": 0.05527638190954774
+    },
+    "pretrained_c2_rude_mild_rude_register": {
+      "n_items": 199,
+      "n_flip": 3,
+      "flip_frac": 0.01507537688442211
+    },
+    "pretrained_c2_rude_mild_informativeness": {
+      "n_items": 198,
+      "n_flip": 13,
+      "flip_frac": 0.06565656565656566
+    }
+  },
+  "bump_rule": "flip>5% => N=5"
+}
