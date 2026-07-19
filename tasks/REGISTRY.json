@@ -4257,8 +4257,8 @@
     "1546": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1546",
-      "status": "reviewing",
+      "path": "tasks/completed/1546",
+      "status": "completed",
       "title": "workflow-fix: digest crash-tails on orchestrator poll turns"
     },
     "1547": {
