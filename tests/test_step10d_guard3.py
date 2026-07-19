@@ -94,6 +94,15 @@ def test_gitattributes_union_merge_for_agent_memory():
     )
 
 
+def test_gitattributes_union_merge_for_eval_results_index():
+    """#1534: eval_results/INDEX.md is append-dominant (one row per completed
+    experiment, many concurrent sessions) and must union-merge locally."""
+    text = _GITATTRIBUTES.read_text(encoding="utf-8")
+    assert "eval_results/INDEX.md merge=union" in text, (
+        "eval_results/INDEX.md must use union merge (#1534)"
+    )
+
+
 def test_gitattributes_registry_not_unioned():
     """REGISTRY.json is last-writer-wins; a union merge would break its JSON."""
     text = _GITATTRIBUTES.read_text(encoding="utf-8")
