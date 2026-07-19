@@ -7578,6 +7578,7 @@ HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
         "scripts/issue1481_cjk_audit.py",
         "scripts/issue1481_worker.py",
         "scripts/issue1482_error_analysis.py",
+        "scripts/issue1482_g1probe_stage.py",
         "scripts/issue1482_sae.py",
         "scripts/issue458_prep_datasets.py",
         "scripts/issue509_baserate_covariate_earlylayer.py",
@@ -7824,8 +7825,8 @@ def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
     * a ``# NO_RETRY: <reason>`` waiver sits on the line or the line above; or
     * the line is the wrap idiom's own ``what=`` descriptor kwarg
       (``what=f"hf_hub_download({repo}/{path})"``); or
-    * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the 297 per-issue
-      historical files frozen at #1547 implement time — the routing
+    * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the 298 per-issue
+      historical files frozen at #1547 landing time — the routing
       requirement attaches at REUSE time via artifact-reuse check (i)),
       :data:`HF_ROUTING_PATTERN_STRING_FILES` (this file + verify_plan.py:
       pattern strings, not calls), or
