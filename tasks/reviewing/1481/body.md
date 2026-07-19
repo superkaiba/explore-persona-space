@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1481.md](https://github.com/superkaiba/explore-persona-space/blob/ae2b760d6fa756282c3265f7ca7900b45005786e/docs/methodology/issue_1481.md) · [gist mirror](https://gist.github.com/superkaiba/e2d8788aad5b3fbc17e7f33e7df9d8a7)
+
 ## Takeaways
 
 - At matched install the positive-only minus contrastive leakage gap is **+0.184** (casual, bare), **+0.091** (impolite, bare), **+0.036** (sycophancy, prefix contexts); n ≈ 1000 per arm.
