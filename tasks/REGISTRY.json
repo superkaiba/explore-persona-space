@@ -4306,8 +4306,8 @@
     "1552": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1552",
-      "status": "reviewing",
+      "path": "tasks/completed/1552",
+      "status": "completed",
       "title": "clear pre-existing #1481 lint reds (hub-verify-retry + phase-done waivers)"
     },
     "156": {
