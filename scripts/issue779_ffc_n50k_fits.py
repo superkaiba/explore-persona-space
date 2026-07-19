@@ -322,6 +322,7 @@ def _stream_n50k_layer(prefix: str, layer: int, local_dir: Path | None, cache_di
 
     names = sorted(
         f.path.rsplit("/", 1)[-1]
+        # HUB_VERIFY_RETRY_EXEMPT: verbatim #779 parent staging flow ported for lineage; #1482 imports this module for its fitter functions only, not this parent-side listing.
         for f in HfApi().list_repo_tree(
             C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
         )
@@ -657,6 +658,7 @@ def main() -> int:
 
         if not (
             args.n10k_bundle.exists()
+            # HUB_VERIFY_RETRY_EXEMPT: verbatim #779 parent bundle probe ported for lineage; #1482 imports this module for its fitter functions only, not this parent-side check.
             or HfApi().file_exists(C.HF_DATA_REPO, HF_N10K_BUNDLE, repo_type="dataset")
         ):
             raise SystemExit(

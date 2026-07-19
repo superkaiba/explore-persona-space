@@ -327,6 +327,7 @@ def _remote_index(prefix: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
     try:
         tree = list(
+            # HUB_VERIFY_RETRY_EXEMPT: verbatim #779 parent staging flow ported for lineage; #1482 never invokes this capture driver's listing path.
             HfApi().list_repo_tree(
                 C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
             )
@@ -511,6 +512,7 @@ def main() -> int:
     ap.add_argument(
         "--out-dir", type=Path, default=PROJECT_ROOT / "data" / "issue_779" / "ffc_n50k"
     )
+    # UPLOAD_PREFIX_EXEMPT: verbatim #779 parent capture driver ported for lineage; the default IS the parent's own n50k store — #1482 only reads it and never re-runs this uploader.
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument("--no-upload", action="store_true", help="capture locally, do NOT upload/purge")
     ap.add_argument(
