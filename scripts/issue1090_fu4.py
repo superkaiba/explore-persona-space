@@ -2381,9 +2381,12 @@ def _stage_run_outputs(cfg: i1090.RunConfig, run: Fu4Run) -> tuple[Path, dict]:
         tier2_dir = run_root / "tier2"
         ctx_file = tier2_dir / f"completions__trained__{run.context_id}.json"
         if not ctx_file.exists():
-            i1090._stage_hf_prefix(
-                f"{ROUND.data_prefix}/raw_completions/tier2/{run.run_id}", tier2_dir
-            )
+            # Reader must mirror the writer's bucket (raw_completions_prefix()
+            # honors ROUND.raw_prefix — the i1481 rounds override it to a
+            # round-scoped raw_completions/<round>/ bucket; the old hard-coded
+            # data_prefix form read the fu4-era flat bucket and recorded every
+            # i1481 run missing_artifacts — #1481 Phase B, 2026-07-19).
+            i1090._stage_hf_prefix(f"{raw_completions_prefix()}/tier2/{run.run_id}", tier2_dir)
     return run_root, build
 
 
