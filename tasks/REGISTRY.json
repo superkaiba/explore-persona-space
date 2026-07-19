@@ -3748,8 +3748,8 @@
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1481",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/1481",
+      "status": "awaiting_promotion",
       "title": "Matched-install contrastive containment is real but narrow: it generalizes past the trained negative panel only for impolite, and mostly dissolves under install normalization for the marker (MODERATE confidence)"
     },
     "1482": {
