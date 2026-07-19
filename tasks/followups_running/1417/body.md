@@ -1,7 +1,7 @@
 ---
-title: Ridge-regularization collapse on judge-filtered row subsets voids the framing-cell
-  map-identity verdicts; the run's user-directedness headline is a denominator artifact
-  (HIGH confidence)
+title: 'The shared context→answer map survives rude, evasive, addressee-free, and
+  AI-relay framings: it tracks generic query-answering structure, not helpful register
+  or user-directedness (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-auto
