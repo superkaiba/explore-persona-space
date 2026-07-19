@@ -1,6 +1,6 @@
 {
-  "commit": "dc69293624",
-  "created": "2026-07-19T07:14:00Z",
+  "commit": "e4dd5d5cf0",
+  "created": "2026-07-19T10:22:38Z",
   "figsize": [
     10.2,
     3.2
@@ -39,14 +39,12 @@
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.23657613168724279,
-      "series": "seed 137",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.13048472505091652,
-      "series": "seed 42",
       "_kind": "scatter",
       "_group": 6
     },
@@ -209,14 +207,12 @@
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.10170844707523702,
-      "series": "seed 137",
       "_kind": "scatter",
       "_group": 33
     },
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.08085370741482967,
-      "series": "seed 42",
       "_kind": "scatter",
       "_group": 34
     },
@@ -379,14 +375,12 @@
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.1441995101313739,
-      "series": "seed 137",
       "_kind": "scatter",
       "_group": 61
     },
     {
       "x": 0.0,
       "Per-context / per-seed D": 0.14652130790367957,
-      "series": "seed 42",
       "_kind": "scatter",
       "_group": 62
     },
@@ -526,6 +520,11 @@
       {
         "title_left": "Casual style",
         "ylabel": "Per-context / per-seed D",
+        "legend_labels": [
+          "trained-negative read context",
+          "held-out read context",
+          "per-seed pooled D"
+        ],
         "xticklabels": [
           "Bare",
           "WildChat prefix",
@@ -578,10 +577,6 @@
           "0.4"
         ]
       }
-    ],
-    "series": [
-      "seed 137",
-      "seed 42"
     ]
   }
 }

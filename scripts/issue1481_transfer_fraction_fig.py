@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     # (marker-leakage-measurement.md: transfer fractions in EOS-margin logit space,
     # never raw log P); the log-prob companion is second.
     for ax, space, key in (
-        (axes[0], "EOS-margin space (registered Read 2)", "f_margin"),
+        (axes[0], "EOS-margin space", "f_margin"),
         (axes[1], "log-prob space", "f_logp"),
     ):
         for xi, ctx in enumerate(CTX_ORDER):

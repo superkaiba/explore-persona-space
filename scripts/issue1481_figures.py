@@ -198,20 +198,25 @@ def fig_hero1_percell(analysis: dict, fig_dir: Path) -> None:
             for seed_s, srec in sorted(cell["per_seed"].items()):
                 if srec["status"] != "computed":
                     continue
-                ax.scatter(
-                    [i],
-                    [srec["D"]],
-                    color=pal[1],
-                    marker="x",
-                    s=30,
-                    label=f"seed {seed_s}" if i == 0 else None,
-                )
+                ax.scatter([i], [srec["D"]], color=pal[1], marker="x", s=30)
             xs.append(i)
         ax.axhline(0.0, color="0.75", lw=0.8)
         ax.set_xticks(xs)
         ax.set_xticklabels(labels, fontsize=7, rotation=20)
         ax.set_title(BEHAVIOR_LABEL[beh_key])
         ax.set_ylabel("Per-context / per-seed D")
+    axes[0][0].legend(
+        handles=[
+            Line2D(
+                [], [], marker="o", ls="none", color=pal[0], label="trained-negative read context"
+            ),
+            Line2D([], [], marker="o", ls="none", color=pal[3], label="held-out read context"),
+            Line2D([], [], marker="x", ls="none", color=pal[1], label="per-seed pooled D"),
+        ],
+        fontsize=6,
+        loc="upper left",
+        frameon=False,
+    )
     fig.tight_layout()
     savefig_paper(fig, "hero1_percell_raw", dir=fig_dir)
     plt.close(fig)
