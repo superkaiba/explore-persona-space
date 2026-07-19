@@ -1111,6 +1111,7 @@ def main() -> int:
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     ap.add_argument("--pass-b", type=Path, default=PASS_B_LOCAL)
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "data" / "issue_779" / "ffc_n1m")
+    # UPLOAD_PREFIX_EXEMPT: verbatim #779 parent capture driver ported for lineage; the default IS the parent's own n1m store — #1482 only reads it and never re-runs this uploader.
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument("--no-upload", action="store_true", help="capture locally, do NOT upload/purge")
     ap.add_argument(
