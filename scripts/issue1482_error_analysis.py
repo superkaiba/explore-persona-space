@@ -78,6 +78,21 @@ G2_COS_MIN = 0.995  # #779 two-bar calibration, flat bar on same-layer identity
 PREFIX_CONSTANCY_COS_MIN = 0.9999  # bf16/batch jitter margin on an identical-token prefix
 RC_GATE_A = 21
 RC_GATE_B = 22
+# ── pdshrink (per-direction ridge-shrinkage control, plan v12) ──
+RC_G1_PDSHRINK = 23  # designed-halt rc (gates.json written FIRST; kresample RC_G1 convention)
+PDSHRINK_SUBDIR = "perdirection-shrinkage-control"
+PDSHRINK_MLP_NPZ = "refit_holdout__mlp_w8192__seed0.npz"
+PDSHRINK_BANDS: dict[str, tuple[int, int]] = {  # parent rank bands, 0-indexed slices
+    "1-16": (0, 16),
+    "17-64": (16, 64),
+    "65-128": (64, 128),
+    "129-256": (128, 256),
+}
+COMMITTED_SPLIT_1482 = PROJECT_ROOT / "eval_results" / "issue_1482" / "split_1482.json"
+COMMITTED_PERDIR_PCA = PROJECT_ROOT / "eval_results" / "issue_1482" / "perdirection_pca.json"
+COMMITTED_RIDGE_JSON = (
+    PROJECT_ROOT / "eval_results" / "issue_1482" / "percontext" / "refit_holdout__ridge__seed0.json"
+)
 
 PREDICTORS_ALL = list(N1M.PREDICTORS)  # ridge, mlp_w8192, mlp_w32768, residual_skip, krr_nystrom
 
@@ -1979,6 +1994,795 @@ def _results_sentinel(args, t_start: float) -> None:
     logger.info("Wrote results sentinel %s", path)
 
 
+# ── pdshrink: per-direction ridge-shrinkage control (amendment round, plan v12) ──
+# ONE variable vs the parent per-direction decomposition: the linear baseline's
+# lambda policy — single global lambda (pooled-val-selected 0.001) -> per-direction
+# lambda (per-direction val-R2 argmax on the SAME pinned 400-row val). Everything
+# else (matrices, fit rows, basis, holdout rows, fp16-cast scoring convention,
+# committed MLP arm) is inherited verbatim. Batched throughout: one
+# _ridge_factorize, per-lambda blocked GEMMs, argmax tables, GEMM-batched paired
+# bootstrap — no serial per-direction or per-draw loop anywhere.
+
+
+def _pdshrink_lambda_grid() -> np.ndarray:
+    """Plan §11 union grid: scope core logspace(-5,-2,16) ∪ parent LAMBDAS_N1M ∪ {1e-9}.
+    Deduped on exact float equality; realized length is RECORDED (expected ~38),
+    never hard-asserted."""
+    vals = (
+        {float(v) for v in np.logspace(-5, -2, 16)} | {float(v) for v in N1M.LAMBDAS_N1M} | {1e-9}
+    )
+    return np.asarray(sorted(vals), dtype=np.float64)
+
+
+def _rebuild_pca_basis(Y, tr_full: np.ndarray, block: int, dev) -> tuple[np.ndarray, np.ndarray]:
+    """Parent basis recipe VERBATIM (_p3_unit_aux): fp64 streaming covariance of Y over
+    train_full, one eigh, top-256 descending. Device-routed (plan §9 S3) with the
+    cuSOLVER-non-convergence CPU fallback (gotchas.md); eigenvector signs are
+    arbitrary but every downstream read (R2, projections) is sign-invariant and the
+    G1 eigval compare is on eigenvalues only."""
+    A = torch.zeros((3584, 3584), dtype=torch.float64, device=dev)
+    mu_acc = torch.zeros(3584, dtype=torch.float64, device=dev)
+    n_acc = 0
+    for s in range(0, len(tr_full), block):
+        yb = torch.as_tensor(np.asarray(Y[tr_full[s : s + block]], dtype=np.float64), device=dev)
+        A += yb.T @ yb
+        mu_acc += yb.sum(0)
+        n_acc += yb.shape[0]
+    mu = mu_acc / n_acc
+    A = A / n_acc - torch.outer(mu, mu)
+    try:
+        evals, evecs = torch.linalg.eigh(A)
+    except torch.linalg.LinAlgError:  # cuSOLVER syevd non-convergence -> CPU LAPACK
+        logger.warning("[pdshrink] cuda eigh non-convergence; CPU LAPACK fallback")
+        evals, evecs = torch.linalg.eigh(A.cpu())
+    top = torch.flip(evecs[:, -256:], dims=[1]).cpu().numpy()
+    eigvals = torch.flip(evals[-256:], dims=[0]).cpu().numpy()
+    return top, eigvals
+
+
+def _score_holdout_projection(
+    ph: np.ndarray, top: np.ndarray, yh_rot: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Holdout scoring convention (plan §4 pins + Statistics MF-1): predictions cast
+    through fp16 (the committed ``holdout_pred16`` convention), projected in fp64,
+    the PROJECTION stored fp16, and R2 computed FROM the stored fp16 values — so the
+    persisted tuned store reproduces hold_tab EXACTLY (MF-1's <=1e-6 runtime assert).
+    Deliberate deviation from the plan §4 sketch (which scored the fp64 projection
+    and stored fp16 — mutually inconsistent at 1e-6): the fp16 projection
+    quantization moves per-direction R2 by ~1e-6, three orders below the 1e-3 gate
+    scales, and makes store<->table consistency exact."""
+    proj16 = (ph.astype(np.float16).astype(np.float64) @ top).astype(np.float16)
+    r2 = _per_feature_metrics(proj16.astype(np.float64), yh_rot)["r2"]
+    return proj16, r2
+
+
+def _gather_tuned(proj_tabs: np.ndarray, sel: np.ndarray) -> np.ndarray:
+    """MF-1 tuned-arm gather: column d at lambda=sel[d] from the retained per-lambda
+    projected holdout tables — NEVER the parent-lambda slice (the plan-sketch slip:
+    E_tuned would silently run on global-lambda residuals and manufacture a
+    Confirmed verdict). One vectorized take_along_axis gather, no per-direction loop."""
+    idx = np.broadcast_to(np.asarray(sel, np.int64)[None, None, :], (1,) + proj_tabs.shape[1:])
+    return np.take_along_axis(proj_tabs, idx, axis=0)[0]
+
+
+def _spearman_1d(a: np.ndarray, b: np.ndarray) -> float:
+    """Spearman rho of two 1-D vectors via the file's batched midrank helper."""
+    r = _midrank(np.stack([np.asarray(a, np.float64), np.asarray(b, np.float64)], axis=1))
+    ra = r[:, 0] - r[:, 0].mean()
+    rb = r[:, 1] - r[:, 1].mean()
+    den = float(np.sqrt((ra**2).sum() * (rb**2).sum()))
+    return float((ra * rb).sum() / den) if den > 1e-12 else float("nan")
+
+
+def _pdshrink_gates_pass(gates: dict) -> bool:
+    """Pure G1 verdict (plan §7): (i) split shas byte-equal; (ii) rebuilt eigvals
+    median rel |Δ| <= 1e-3; (iii) refit-at-parent-lambda ridge per-direction R2
+    median |Δ| <= 1e-3 AND Spearman rho >= 0.999; (iv) same-convention MLP re-read
+    median |Δ| <= 1e-3. NaN comparisons are False -> a non-finite gate field FAILS."""
+    return bool(
+        gates["split_sha_match"]
+        and gates["eigval_med_rel"] <= 1e-3
+        and gates["ridge_med_abs_delta"] <= 1e-3
+        and gates["ridge_spearman"] >= 0.999
+        and gates["mlp_med_abs_delta"] <= 1e-3
+    )
+
+
+def _pdshrink_gate_halt(gates: dict, out_dir: Path, smoke: bool) -> dict:
+    """K1: write gates.json FIRST, then HALT rc=23 on a production miss — no tuned
+    read on a failed gate. Smoke computes the identical fields but demotes the
+    verdict to informational (split/regime differ from the committed production
+    references by design — gate_a smoke_demoted convention)."""
+    ok = _pdshrink_gates_pass(gates)
+    doc = dict(gates)
+    doc["verdict"] = "PASS" if ok else ("SMOKE_DEMOTED_FAIL" if smoke else "HALT")
+    doc["smoke_demoted"] = bool(smoke)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(out_dir / "gates.json", doc)
+    logger.info("[pdshrink] G1 verdict=%s", doc["verdict"])
+    if not ok and not smoke:
+        _phase_sentinel(
+            "pdshrink-g1-halt",
+            "G1 reconciliation HALT (no tuned read taken)",
+            {"gates": {k: v for k, v in doc.items() if isinstance(v, (bool, int, float, str))}},
+        )
+        raise SystemExit(RC_G1_PDSHRINK)
+    return doc
+
+
+def _pdshrink_stage_mlp_npz(
+    args, hold: np.ndarray, standin_pred: np.ndarray | None
+) -> tuple[Path, str]:
+    """Resolve the reused MLP holdout-prediction npz (plan §3 row coverage): local
+    out_eval/percontext first (VM/pod-synced copy), else the Hub-verified data-repo
+    copy (§10 row 2 — git-untracked locally, so a fresh pod fetches from HF via the
+    #1402 atomic fail-loud helper). Smoke: a LABELED stand-in built from the
+    parent-lambda ridge predictions + deterministic noise is written to the SAME
+    local path, so the identical resolve/keys/row-align/gate/bootstrap code runs
+    downstream with no smoke branches."""
+    local = args.out_eval / "percontext" / PDSHRINK_MLP_NPZ
+    if local.exists():
+        return local, "local"
+    if args.smoke:
+        assert standin_pred is not None
+        local.parent.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(SPLIT_SEED_1482)
+        standin = standin_pred + 0.05 * rng.standard_normal(standin_pred.shape)
+        np.savez(
+            local,
+            holdout_rows=np.asarray(hold, np.int64),
+            holdout_pred16=standin.astype(np.float16),
+        )
+        logger.info("[pdshrink] SMOKE stand-in MLP npz (parent-lambda ridge + noise): %s", local)
+        return local, "smoke-standin"
+    from explore_persona_space.orchestrate import hub
+
+    remote = f"{args.hf_prefix}/analysis_tensors/percontext/{PDSHRINK_MLP_NPZ}"
+    logger.info("[pdshrink] staging reused MLP npz from HF: %s", remote)
+    return hub.stage_hub_file(C.HF_DATA_REPO, remote, local, repo_type="dataset"), "hf"
+
+
+def _pdshrink_bootstrap(
+    E_arms: dict[str, np.ndarray],
+    T: np.ndarray,
+    n_boot: int,
+    seed: int,
+    dev,
+    chunk: int = 2000,
+) -> dict:
+    """10k-draw paired context bootstrap batched as GEMMs (plan §6): resample the
+    holdout contexts with replacement (multinomial count vectors W per draw); every
+    draw's per-direction residual/total sums are W @ {E_arm, T} — no per-draw Python
+    loop. Direction means frozen at full-holdout values (T uses the full-holdout
+    mean). Returns per-contrast Delta draws (gap = R2_mlp − R2_arm, band-averaged,
+    Delta = G(129-256) − G(1-16)) + the tuned contrast's per-band gap draws."""
+    n = T.shape[0]
+    rng = np.random.default_rng(seed)
+    Et = {
+        k: torch.as_tensor(np.ascontiguousarray(v), dtype=torch.float32, device=dev)
+        for k, v in E_arms.items()
+    }
+    Tt = torch.as_tensor(np.ascontiguousarray(T), dtype=torch.float32, device=dev)
+    deltas: dict[str, list[np.ndarray]] = {"tuned": [], "oracle": []}
+    band_draws: dict[str, list[np.ndarray]] = {b: [] for b in PDSHRINK_BANDS}
+    pvals = np.full(n, 1.0 / n)
+    for s in range(0, n_boot, chunk):
+        m = min(chunk, n_boot - s)
+        W = rng.multinomial(n, pvals, size=m).astype(np.float32)
+        Wt = torch.as_tensor(W, device=dev)
+        ST = torch.clamp(Wt @ Tt, min=1e-12)  # (m, 256)
+        SE = {k: Wt @ E for k, E in Et.items()}
+        for contrast in ("tuned", "oracle"):
+            g = (SE[contrast] - SE["mlp"]) / ST  # per-draw per-direction gap
+            gb = {b: g[:, a:z].mean(1) for b, (a, z) in PDSHRINK_BANDS.items()}
+            deltas[contrast].append((gb["129-256"] - gb["1-16"]).cpu().numpy())
+            if contrast == "tuned":
+                for b in PDSHRINK_BANDS:
+                    band_draws[b].append(gb[b].cpu().numpy())
+    return {
+        "delta_tuned": np.concatenate(deltas["tuned"]),
+        "delta_oracle": np.concatenate(deltas["oracle"]),
+        "tuned_band_gap_draws": {b: np.concatenate(v) for b, v in band_draws.items()},
+    }
+
+
+def _band_means(v: np.ndarray) -> dict[str, float]:
+    return {b: float(np.nanmean(v[a:z])) for b, (a, z) in PDSHRINK_BANDS.items()}
+
+
+def _pdshrink_figures(fig_dir: Path, d: dict) -> list[Path]:
+    """Hero (3-curve per-direction R2 vs rank + band-gap inset), 256-point gap
+    scatter colored by band, and the D1-D3 + bootstrap diagnostics panel — all via
+    savefig_paper sidecars. Plain-English labels only."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style()
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    pal = paper_palette(6)
+    ranks = np.arange(1, 257)
+    bands = list(PDSHRINK_BANDS.items())
+
+    # hero: three curves + band-gap inset (committed vs tuned, tuned with 95% CI)
+    fig, ax = plt.subplots(figsize=(9.2, 5.6))
+    ax.plot(
+        ranks,
+        d["r2_ridge_committed"],
+        color=pal[0],
+        lw=1.5,
+        label="ridge, one shared regularizer (committed)",
+    )
+    ax.plot(
+        ranks,
+        d["r2_tuned"],
+        color=pal[1],
+        lw=1.5,
+        label="ridge, per-direction regularizer (this round)",
+    )
+    ax.plot(ranks, d["r2_mlp_committed"], color=pal[2], lw=1.5, label="MLP (committed)")
+    ax.set_xlabel("answer-PCA direction rank (by training variance)")
+    ax.set_ylabel("held-out per-direction R²")
+    ax.legend(frameon=False, loc="lower left", fontsize=8)
+    ins = ax.inset_axes([0.44, 0.58, 0.53, 0.38])
+    xb = np.arange(len(bands))
+    gap_c = [d["band_gaps_committed"][b] for b, _ in bands]
+    gap_t = [d["band_gaps_tuned"][b] for b, _ in bands]
+    ci = np.asarray([d["tuned_band_gap_ci"][b] for b, _ in bands])  # (4, 2)
+    yerr = np.vstack(
+        [
+            np.maximum(0.0, np.asarray(gap_t) - ci[:, 0]),
+            np.maximum(0.0, ci[:, 1] - np.asarray(gap_t)),
+        ]
+    )  # element-wise clamp — errorbar offsets must be non-negative (gotchas.md)
+    ins.bar(xb - 0.2, gap_c, width=0.38, color=pal[0], label="shared regularizer")
+    ins.bar(xb + 0.2, gap_t, width=0.38, color=pal[1], yerr=yerr, capsize=2, label="per-direction")
+    ins.set_xticks(xb)
+    ins.set_xticklabels([b for b, _ in bands], fontsize=7)
+    ins.set_ylabel("MLP − ridge gap", fontsize=7)
+    ins.tick_params(labelsize=7)
+    ins.legend(frameon=False, fontsize=6, loc="upper left")
+    savefig_paper(fig, "pdshrink_hero_perdirection_r2", dir=fig_dir)
+    plt.close(fig)
+
+    # low-level per-unit plot: 256-point gap scatter, colored by band, identity line
+    fig, ax = plt.subplots(figsize=(6.6, 6.2))
+    for (b, (a, z)), c in zip(bands, pal, strict=False):
+        ax.scatter(
+            d["g_committed"][a:z], d["g_tuned"][a:z], s=16, color=c, label=f"ranks {b}", alpha=0.8
+        )
+    lims = [
+        float(min(np.nanmin(d["g_committed"]), np.nanmin(d["g_tuned"]))),
+        float(max(np.nanmax(d["g_committed"]), np.nanmax(d["g_tuned"]))),
+    ]
+    ax.plot(lims, lims, color="0.6", lw=1.0, ls="--", label="no change (identity)")
+    ax.set_xlabel("MLP − ridge gap under the shared regularizer (committed)")
+    ax.set_ylabel("MLP − ridge gap under per-direction regularizers")
+    ax.legend(frameon=False, fontsize=8)
+    savefig_paper(fig, "pdshrink_gap_scatter", dir=fig_dir)
+    plt.close(fig)
+
+    # diagnostics: D1 selected lambda vs rank; D3 shrinkage spectrum; bootstrap
+    # Delta distribution; per-direction R2 change vs eigenvalue
+    fig, axs = plt.subplots(2, 2, figsize=(11.5, 8.6))
+    a0, a1, a2, a3 = axs.ravel()
+    a0.scatter(ranks, np.log10(d["lam_sel"]), s=10, color=pal[1], label="selected on validation")
+    a0.scatter(
+        ranks, np.log10(d["lam_oracle"]), s=10, color=pal[3], alpha=0.5, label="holdout-oracle"
+    )
+    a0.axhline(np.log10(d["lam_parent"]), color="0.4", lw=1.0, ls="--", label="parent shared value")
+    a0.set_xlabel("direction rank")
+    a0.set_ylabel("log10(selected regularizer strength)")
+    a0.legend(frameon=False, fontsize=8)
+    shrink = np.sort(d["lam_parent"] / (d["s_eig"] + d["lam_parent"]))[::-1]
+    a1.semilogy(np.arange(1, len(shrink) + 1), np.maximum(shrink, 1e-300), color=pal[0], lw=1.4)
+    a1.set_xlabel("Gram eigendirection (sorted)")
+    a1.set_ylabel("shrinkage applied at the parent value")
+    a2.hist(d["delta_draws"], bins=60, color=pal[1])
+    a2.axvline(0.0, color="0.3", lw=1.0)
+    a2.axvline(d["delta_tuned"], color=pal[2], lw=1.2, label="observed excess gap")
+    for v in d["delta_ci"]:
+        a2.axvline(v, color=pal[2], lw=0.9, ls="--")
+    a2.set_xlabel("excess low-variance gap (bootstrap draws)")
+    a2.set_ylabel("draw count")
+    a2.legend(frameon=False, fontsize=8)
+    a3.semilogx(
+        np.maximum(d["eigvals"], 1e-300),
+        d["r2_tuned"] - d["r2_ridge_committed"],
+        ".",
+        color=pal[1],
+        ms=5,
+    )
+    a3.axhline(0.0, color="0.4", lw=1.0)
+    a3.set_xlabel("direction training variance (eigenvalue)")
+    a3.set_ylabel("per-direction R² change (tuned − shared)")
+    fig.tight_layout()
+    savefig_paper(fig, "pdshrink_diagnostics", dir=fig_dir)
+    plt.close(fig)
+    return sorted(fig_dir.glob("pdshrink_*"))
+
+
+def _pdshrink_upload(args, out: Path) -> None:
+    """ONE folder upload of the pdshrink out dir (npz + JSONs + copied figures) to
+    the data repo BEFORE teardown, exact-set verified (phase_p4 pattern). Whole
+    tree, no eligibility filter — plan-glob parity trivial."""
+    from explore_persona_space.orchestrate import hub
+
+    prefix = args.hf_prefix + ("_smoke" if args.smoke else "")
+    remote = f"{prefix}/analysis_tensors/pdshrink"
+    files = sorted(p for p in out.rglob("*") if p.is_file())
+    if not files:
+        raise RuntimeError(f"[pdshrink] nothing to upload under {out}")
+    logger.info("[pdshrink] %d files %s -> %s", len(files), out, remote)
+    if args.skip_upload:
+        logger.info("[pdshrink] --skip-upload set; enumeration only")
+        return
+    url = hub._upload(out, C.HF_DATA_REPO, repo_type="dataset", path_in_repo=remote)
+    if not url:
+        raise RuntimeError(f"[pdshrink] upload returned no path for {out} -> {remote}")
+    from huggingface_hub import HfApi
+
+    expected = [f"{remote}/{p.relative_to(out)}" for p in files]
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), C.HF_DATA_REPO, expected, path_in_repo=remote, repo_type="dataset"
+    )
+    if missing:
+        raise RuntimeError(
+            f"[pdshrink] upload verify: {len(missing)} missing under {remote}: "
+            f"{sorted(missing)[:5]}"
+        )
+
+
+def _pdshrink_results_sentinel(args, t_start: float, summary: dict, gates: dict) -> None:
+    """Terminal results sentinel for the pdshrink workload (poller drains it into
+    epm:results; pod-side contract — never task.py)."""
+    logs_dir = Path("/workspace/logs")
+    if not logs_dir.is_dir():
+        logs_dir = PROJECT_ROOT / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+    gpus = _physical_gpu_ids()
+    hours = (time.time() - t_start) / 3600.0 * max(1, len(gpus))
+    prefix = args.hf_prefix + ("_smoke" if args.smoke else "")
+    payload = {
+        "sentinel_schema_version": C.SENTINEL_SCHEMA_VERSION,
+        "kind": "epm:results",
+        "version": 1,
+        "task_id": TASK_ID,
+        "by": "issue1482_error_analysis/pdshrink",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "note": (
+            "pdshrink (per-direction ridge-shrinkage control) complete: "
+            f"verdict={summary['verdict']}"
+        ),
+        "eval_numbers": {
+            "g1_verdict": gates["verdict"],
+            "delta_tuned": summary["delta"]["tuned_headline_committed_mlp"],
+            "delta_ci95": summary["delta"]["ci95"],
+            "delta_oracle": summary["delta"]["oracle"]["point"],
+            "delta_core_grid_only": summary["delta"]["core_grid_only"],
+            "verdict": summary["verdict"],
+            "precision_limited": summary["precision_limited"],
+        },
+        "eval_paths": {
+            "summary": str(args.out_eval / PDSHRINK_SUBDIR / "pdshrink_summary.json"),
+            "gates": str(args.out_eval / PDSHRINK_SUBDIR / "gates.json"),
+            "lam_tables": str(args.out_eval / PDSHRINK_SUBDIR / "lam_tables.npz"),
+            "tuned_projected": str(args.out_eval / PDSHRINK_SUBDIR / "tuned_holdout_projected.npz"),
+        },
+        "reproducibility_card": {
+            **C.reproducibility_metadata(),
+            "layer": LAYER,
+            "fitter_seed": args.seed,
+            "split_seed": SPLIT_SEED_1482,
+            "bootstrap_seed": args.bootstrap_seed,
+            "n_boot": args.n_boot,
+            "lambda_grid_realized_len": summary["lambda_grid"]["realized_len"],
+            "regime": summary["regime"],
+        },
+        "wandb_url": None,  # no training — closed-form refits log to JSON (plan §10)
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{C.HF_DATA_REPO}/tree/main/"
+            f"{prefix}/analysis_tensors/pdshrink"
+        ),
+        "worktree_path": str(PROJECT_ROOT),
+        "final_commit_sha": C.reproducibility_metadata()["git_commit"],
+        "gpu_hours_used": round(hours, 2),
+        "gpu_hours_budgeted": 3,
+        "plan_deviations": [],
+    }
+    path = logs_dir / f"issue-{TASK_ID}-results.json"
+    C.write_json_atomic(path, payload)
+    logger.info("Wrote results sentinel %s", path)
+
+
+def phase_pdshrink(args) -> None:
+    """Per-direction ridge-shrinkage control (plan v12 §4): ONE factorization,
+    per-lambda blocked GEMMs over the 38-value union grid, per-direction val-argmax
+    selection, MF-1 tuned gather + store-consistency assert, G1 HALT gate
+    (gates.json first, rc=23), GEMM-batched paired bootstrap, D1-D3 diagnostics,
+    figures, HF upload, results sentinel."""
+    C.phase("pdshrink")
+    t0 = time.time()
+    out = args.out_eval / PDSHRINK_SUBDIR
+    out.mkdir(parents=True, exist_ok=True)
+    grid = _pdshrink_lambda_grid()
+    regime = {
+        "smoke": bool(args.smoke),
+        "max_chunks": args.max_chunks,
+        "holdout_n": args.holdout_n,
+        "fit_n": args.fit_n,
+        "n_boot": args.n_boot,
+        "bootstrap_seed": args.bootstrap_seed,
+        "device": args.device,
+        "n_lambda_realized": int(len(grid)),
+    }
+    summary_path = out / "pdshrink_summary.json"
+    if summary_path.exists():
+        prior = json.loads(summary_path.read_text()).get("regime")
+        if prior == regime:
+            logger.info("[pdshrink] resume: summary present under matching regime; skip")
+            return
+        raise RuntimeError(
+            f"[pdshrink] out dir holds a run under a DIFFERENT regime: {prior} != {regime}"
+        )
+    torch.set_num_threads(max(1, min(8, os.cpu_count() or 8)))
+    X, Y, idx = _load_xy(args)
+    tr = _train_rows_for("refit_holdout", idx, args)
+    val, hold = idx["val"], idx["holdout"]
+    dev = torch.device(args.device)
+    block = N1M.RIDGE_BLOCK
+
+    # committed references (the G1 anchors + the untouched MLP arm)
+    committed_pca = json.loads(COMMITTED_PERDIR_PCA.read_text())
+    ridge_meta = json.loads(COMMITTED_RIDGE_JSON.read_text())["fit_meta"]
+    lam_parent = float(ridge_meta["selected_lambda"])
+    assert lam_parent == 0.001, lam_parent  # plan §4 in-run assert (assumption 3)
+    r2_ridge_committed = np.asarray(committed_pca["per_direction_r2"]["ridge"], np.float64)
+    r2_mlp_committed = np.asarray(committed_pca["per_direction_r2"]["mlp_w8192"], np.float64)
+    eig_committed = np.asarray(committed_pca["eigvals_top"], np.float64)
+
+    # (a) basis rebuild — parent recipe verbatim
+    logger.info(
+        "[pdshrink] rebuilding top-256 PCA basis over %d train_full rows",
+        len(idx["train_full"]),
+    )
+    top, eigvals = _rebuild_pca_basis(Y, idx["train_full"], block, dev)
+    yh_rot = np.asarray(Y[hold], np.float64) @ top
+    yv_rot = np.asarray(Y[val], np.float64) @ top
+
+    # (b) ONE factorization; parent internals byte-untouched
+    fac = N1M._ridge_factorize(X, Y, tr, dev, block)
+    s_eig = fac["s_eig"].cpu().numpy()
+
+    # (c) G1 reconciliation HALT gate (plan §7; gates.json FIRST, rc=23 on miss)
+    pred_h_parent = N1M._ridge_predict_one(X, hold, fac, lam_parent, dev, block)
+    r2_repro = _per_feature_metrics(
+        pred_h_parent.astype(np.float16).astype(np.float64) @ top, yh_rot
+    )["r2"]
+    regen_split = json.loads((args.out_eval / "split_1482.json").read_text())
+    committed_split = json.loads(COMMITTED_SPLIT_1482.read_text())
+
+    def _dig(doc: dict, path: tuple):
+        for k in path:
+            doc = doc.get(k) if isinstance(doc, dict) else None
+            if doc is None:
+                return None
+        return doc
+
+    sha_fields: dict[str, tuple] = {
+        "train_full_sha256": ("train_full_sha256",),
+        "holdout_sha256": ("holdout", "sha256"),
+        "pinned_val_sha256": ("pinned_val_sha256",),
+        "pinned_test_sha256": ("pinned_test_sha256",),
+    }
+    sha_compare = {
+        name: {"regenerated": _dig(regen_split, p), "committed": _dig(committed_split, p)}
+        for name, p in sha_fields.items()
+    }
+    split_sha_match = all(
+        v["regenerated"] is not None and v["regenerated"] == v["committed"]
+        for v in sha_compare.values()
+    )
+    mlp_path, mlp_source = _pdshrink_stage_mlp_npz(args, hold, standin_pred=pred_h_parent)
+    with np.load(mlp_path) as z:
+        missing_keys = {"holdout_pred16", "holdout_rows"} - set(z.files)
+        if missing_keys:  # artifact-reuse check (c): realized keys via the consumer's own loader
+            raise RuntimeError(
+                f"[pdshrink] reused MLP npz missing keys: {sorted(missing_keys)} ({mlp_path})"
+            )
+        rows_h = np.asarray(z["holdout_rows"], np.int64)
+        mlp_pred16 = np.asarray(z["holdout_pred16"])
+    assert np.array_equal(rows_h, np.asarray(hold, np.int64)), (
+        "MLP npz holdout_rows != regenerated holdout rows (row-coverage alignment, plan §3)"
+    )
+    mlp_proj64 = mlp_pred16.astype(np.float64) @ top  # committed fp64-projection convention
+    r2_mlp_reread = _per_feature_metrics(mlp_proj64, yh_rot)["r2"]
+    eig_rel = np.abs(eigvals - eig_committed) / np.maximum(np.abs(eig_committed), 1e-300)
+    gates = {
+        "gate": "G1-pdshrink",
+        "split_sha_match": bool(split_sha_match),
+        "split_sha_compare": sha_compare,
+        "eigval_med_rel": float(np.nanmedian(eig_rel)),
+        "ridge_med_abs_delta": float(np.nanmedian(np.abs(r2_repro - r2_ridge_committed))),
+        "ridge_spearman": _spearman_1d(r2_repro, r2_ridge_committed),
+        "mlp_med_abs_delta": float(np.nanmedian(np.abs(r2_mlp_reread - r2_mlp_committed))),
+        "thresholds": {
+            "split_sha_match": True,
+            "eigval_med_rel": 1e-3,
+            "ridge_med_abs_delta": 1e-3,
+            "ridge_spearman": 0.999,
+            "mlp_med_abs_delta": 1e-3,
+        },
+        "lambda_parent": lam_parent,
+        "lambda_grid_realized_len": int(len(grid)),
+        "n_finite": {
+            "ridge_repro": int(np.isfinite(r2_repro).sum()),
+            "mlp_reread": int(np.isfinite(r2_mlp_reread).sum()),
+            "eigval_rel": int(np.isfinite(eig_rel).sum()),
+        },
+        "reused_artifact_keys": {
+            "artifact": str(mlp_path),
+            "keys_verified": ["holdout_pred16", "holdout_rows"],
+            "rows_aligned": True,
+            "sha256": hashlib.sha256(mlp_path.read_bytes()).hexdigest(),
+            "bytes": int(mlp_path.stat().st_size),
+            "source": mlp_source,  # local | hf | smoke-standin (actual resolve provenance)
+        },
+    }
+    gates = _pdshrink_gate_halt(gates, out, args.smoke)
+
+    # (d) batched lambda-grid scoring: len(grid) x {val fp64, holdout fp16-cast};
+    # NO per-direction loop — selection is an argmax over the (L, 256) val table.
+    n_hold = len(hold)
+    n_lambda = len(grid)
+    val_tab = np.full((n_lambda, 256), np.nan)
+    hold_tab = np.full((n_lambda, 256), np.nan)
+    proj_tabs = np.empty((n_lambda, n_hold, 256), dtype=np.float16)
+    i_parent = int(np.argmin(np.abs(grid - lam_parent)))
+    assert np.isclose(grid[i_parent], lam_parent, rtol=1e-12, atol=0.0), (
+        grid[i_parent],
+        lam_parent,
+    )
+    hold_tab_fp64_parent = np.full(256, np.nan)
+    for i, lam in enumerate(grid):
+        pv = N1M._ridge_predict_one(X, val, fac, float(lam), dev, block)
+        ph = N1M._ridge_predict_one(X, hold, fac, float(lam), dev, block)
+        val_tab[i] = _per_feature_metrics(pv @ top, yv_rot)["r2"]  # selection: fp64 (parent)
+        proj_tabs[i], hold_tab[i] = _score_holdout_projection(ph, top, yh_rot)
+        if i == i_parent:  # fp16-floor diagnostic: one fp64-scoring row at lambda_parent (§6)
+            hold_tab_fp64_parent = _per_feature_metrics(ph @ top, yh_rot)["r2"]
+        if (i + 1) % 8 == 0 or i == n_lambda - 1:
+            logger.info("[pdshrink] lambda grid %d/%d scored", i + 1, n_lambda)
+
+    arange = np.arange(256)
+    val_sel_tab = np.where(np.isfinite(val_tab), val_tab, -np.inf)  # NaN never wins selection
+    sel = val_sel_tab.argmax(0)
+    r2_tuned = hold_tab[sel, arange]
+    tuned_proj = _gather_tuned(proj_tabs, sel)
+    # MF-1 runtime consistency assert (mirrored in tests/test_issue1482_pdshrink.py):
+    # per-direction R2 recomputed from the PERSISTED tuned projections must equal
+    # hold_tab[sel, arange] elementwise <= 1e-6; on miss: fail loud, no read.
+    r2_check = _per_feature_metrics(tuned_proj.astype(np.float64), yh_rot)["r2"]
+    mf1_max = float(np.nanmax(np.abs(r2_check - r2_tuned)))
+    assert mf1_max <= 1e-6, (
+        f"MF-1 tuned-store consistency: max |R2(persisted) - hold_tab[sel]| = {mf1_max}"
+    )
+    # holdout-ORACLE selection (critic bracket): ceiling of ANY grid-linear baseline
+    hold_sel_tab = np.where(np.isfinite(hold_tab), hold_tab, -np.inf)
+    sel_oracle = hold_sel_tab.argmax(0)
+    r2_oracle = hold_tab[sel_oracle, arange]
+    oracle_proj = _gather_tuned(proj_tabs, sel_oracle)
+
+    np.savez(
+        out / "lam_tables.npz",  # BOTH tables + sel land (oracle-read support, plan note 6)
+        lam_grid=grid,
+        val_tab=val_tab,
+        hold_tab=hold_tab,
+        sel=sel.astype(np.int64),
+        sel_oracle=sel_oracle.astype(np.int64),
+        i_parent=np.int64(i_parent),
+        hold_tab_fp64_at_parent=hold_tab_fp64_parent,
+        eigvals_top=eigvals,
+        r2_ridge_repro_at_parent=r2_repro,
+        r2_mlp_reread=r2_mlp_reread,
+    )
+    np.savez(
+        out / "tuned_holdout_projected.npz",  # the §3 row-coverage artifact (MF-1 store)
+        tuned_proj16=tuned_proj,
+        holdout_rows=np.asarray(hold, np.int64),
+        sel=sel.astype(np.int64),
+        lam_grid=grid,
+        convention=np.asarray(
+            "top-256 train-covariance PCA basis (parent _p3_unit_aux recipe); columns are "
+            "projections of fp16-cast holdout ridge predictions at lambda=lam_grid[sel[d]], "
+            "stored fp16; R2 vs (Y[holdout] @ basis) reproduces hold_tab[sel] exactly"
+        ),
+    )
+
+    # (e) stats: band gaps, Delta (+oracle bracket, +core-grid sensitivity), bootstrap
+    g_committed = r2_mlp_committed - r2_ridge_committed
+    g_tuned = r2_mlp_committed - r2_tuned  # headline: committed MLP arm untouched
+    g_oracle = r2_mlp_committed - r2_oracle
+    bm_committed = _band_means(g_committed)
+    bm_tuned = _band_means(g_tuned)
+    bm_oracle = _band_means(g_oracle)
+    delta_committed_ref = bm_committed["129-256"] - bm_committed["1-16"]  # unrounded 0.1021
+    delta_tuned = bm_tuned["129-256"] - bm_tuned["1-16"]
+    delta_oracle = bm_oracle["129-256"] - bm_oracle["1-16"]
+    # D2 grid-restriction sensitivity: argmax over the 16-point scope-core grid only
+    core_rows = np.asarray(
+        [int(np.where(grid == float(v))[0][0]) for v in np.logspace(-5, -2, 16)], np.int64
+    )
+    sel_core = core_rows[
+        np.where(np.isfinite(val_tab[core_rows]), val_tab[core_rows], -np.inf).argmax(0)
+    ]
+    g_core = r2_mlp_committed - hold_tab[sel_core, arange]
+    bm_core = _band_means(g_core)
+    delta_core = bm_core["129-256"] - bm_core["1-16"]
+    # bootstrap inputs: per-context per-direction residual^2 + totals (means frozen)
+    E_mlp = (yh_rot - mlp_proj64) ** 2
+    E_tuned = (yh_rot - tuned_proj.astype(np.float64)) ** 2
+    E_oracle = (yh_rot - oracle_proj.astype(np.float64)) ** 2
+    T = (yh_rot - yh_rot.mean(0)) ** 2
+    r2_from_e = 1.0 - E_tuned.sum(0) / np.maximum(T.sum(0), 1e-12)
+    assert float(np.nanmax(np.abs(r2_from_e - r2_tuned))) <= 1e-9  # residual identity
+    boot = _pdshrink_bootstrap(
+        {"mlp": E_mlp, "tuned": E_tuned, "oracle": E_oracle},
+        T,
+        args.n_boot,
+        args.bootstrap_seed,
+        dev,
+    )
+    lo, hi = (float(v) for v in np.percentile(boot["delta_tuned"], [2.5, 97.5]))
+    lo_o, hi_o = (float(v) for v in np.percentile(boot["delta_oracle"], [2.5, 97.5]))
+    half_width = (hi - lo) / 2.0
+    # verdict lattice (plan §3, disjoint + exhaustive)
+    if delta_tuned > 0 and lo > 0:
+        verdict = "Confirmed"
+    elif hi < 0 or (lo <= 0 <= hi):
+        verdict = "Falsified"
+    else:
+        verdict = "Inconclusive"
+    precision_limited = bool(half_width > 0.05)  # §3 precision guard (prose, not lattice)
+    tuned_band_ci = {
+        b: [float(v) for v in np.percentile(draws, [2.5, 97.5])]
+        for b, draws in boot["tuned_band_gap_draws"].items()
+    }
+    # D1 selection profile + val-vs-holdout selected-lambda agreement
+    lam_sel = grid[sel]
+    lam_oracle = grid[sel_oracle]
+    d1 = {
+        "n_moved_off_parent": int((sel != i_parent).sum()),
+        "n_heavier_than_parent": int((lam_sel > lam_parent).sum()),
+        "n_lighter_than_parent": int((lam_sel < lam_parent).sum()),
+        "frac_sel_eq_oracle": float((sel == sel_oracle).mean()),
+        "med_abs_log10_lambda_gap_sel_vs_oracle": float(
+            np.median(np.abs(np.log10(lam_sel) - np.log10(lam_oracle)))
+        ),
+    }
+    # D3 OLS-proximity bound off the factorization spectrum
+    s_min = float(s_eig.min())
+    shrink = s_eig / (s_eig + lam_parent)
+    d3 = {
+        "s_min": s_min,
+        "s_max": float(s_eig.max()),
+        "ols_proximity_bound_lam_over_smin_plus_lam": float(lam_parent / (s_min + lam_parent)),
+        "shrink_factor_percentiles": {
+            str(q): float(np.percentile(shrink, q)) for q in (0, 1, 5, 25, 50, 75, 100)
+        },
+    }
+    fp16_floor = {
+        b: {
+            "mean_abs_r2_diff": float(
+                np.nanmean(np.abs(hold_tab[i_parent] - hold_tab_fp64_parent)[a:z])
+            ),
+            "mean_signed_r2_diff": float(
+                np.nanmean((hold_tab_fp64_parent - hold_tab[i_parent])[a:z])
+            ),
+        }
+        for b, (a, z) in PDSHRINK_BANDS.items()
+    }
+    summary = {
+        "verdict": verdict,
+        "precision_limited": precision_limited,
+        "delta": {
+            "tuned_headline_committed_mlp": float(delta_tuned),
+            "tuned_boot_center_recomputed_mlp": float(np.mean(boot["delta_tuned"])),
+            "ci95": [lo, hi],
+            "ci95_half_width": float(half_width),
+            "oracle": {"point": float(delta_oracle), "ci95": [lo_o, hi_o]},
+            "core_grid_only": float(delta_core),
+            "committed_reference_unrounded": float(delta_committed_ref),
+        },
+        "band_gaps": {"committed": bm_committed, "tuned": bm_tuned, "oracle": bm_oracle},
+        "band_r2": {
+            "ridge_committed": _band_means(r2_ridge_committed),
+            "ridge_tuned": _band_means(r2_tuned),
+            "ridge_oracle": _band_means(r2_oracle),
+            "mlp_committed": _band_means(r2_mlp_committed),
+        },
+        "selection": d1,
+        "diagnostics": {
+            "d3": d3,
+            "fp16_floor_per_band_at_parent_lambda": fp16_floor,
+            "mf1_store_consistency_max_abs": mf1_max,
+        },
+        "lambda_grid": {
+            "realized_len": int(len(grid)),
+            "min": float(grid[0]),
+            "max": float(grid[-1]),
+            "parent_index": i_parent,
+        },
+        "bootstrap": {
+            "n_boot": int(args.n_boot),
+            "seed": int(args.bootstrap_seed),
+            "paired_over_contexts": True,
+            "direction_means_frozen_at_full_holdout": True,
+        },
+        "regime": regime,
+        "notes": [
+            "gap g_d = committed MLP per-direction R2 (untouched) minus the per-direction "
+            "val-tuned ridge R2; Delta = G(129-256) - G(1-16)",
+            "bootstrap draws recompute BOTH arms from persisted per-context residuals; the "
+            "draw center uses the re-read MLP R2 (G1 (iv) bounds |reread - committed| "
+            "median <= 1e-3)",
+            "holdout scoring casts predictions AND stored projections through fp16 "
+            "(committed holdout_pred16 convention + MF-1 store consistency); val "
+            "selection stays fp64 (parent selection convention)",
+        ],
+    }
+    _write_json(summary_path, summary)
+    logger.info(
+        "[pdshrink] verdict=%s delta_tuned=%.4f ci=[%.4f, %.4f] oracle=%.4f (ref %.4f)",
+        verdict,
+        delta_tuned,
+        lo,
+        hi,
+        delta_oracle,
+        delta_committed_ref,
+    )
+    fig_files = _pdshrink_figures(
+        args.figures,
+        {
+            "r2_ridge_committed": r2_ridge_committed,
+            "r2_tuned": r2_tuned,
+            "r2_mlp_committed": r2_mlp_committed,
+            "g_committed": g_committed,
+            "g_tuned": g_tuned,
+            "band_gaps_committed": bm_committed,
+            "band_gaps_tuned": bm_tuned,
+            "tuned_band_gap_ci": tuned_band_ci,
+            "lam_sel": lam_sel,
+            "lam_oracle": lam_oracle,
+            "lam_parent": lam_parent,
+            "s_eig": s_eig,
+            "eigvals": eigvals,
+            "delta_draws": boot["delta_tuned"],
+            "delta_tuned": delta_tuned,
+            "delta_ci": (lo, hi),
+        },
+    )
+    fig_copy_dir = out / "figures"
+    fig_copy_dir.mkdir(parents=True, exist_ok=True)
+    for f in fig_files:  # ride the single folder upload (never a per-file upload loop)
+        shutil.copy2(f, fig_copy_dir / f.name)
+    _pdshrink_upload(args, out)
+    _pdshrink_results_sentinel(args, t0, summary, gates)
+    _phase_sentinel(
+        "pdshrink",
+        f"pdshrink done verdict={verdict} delta_tuned={delta_tuned:.4f}",
+        {"g1": gates["verdict"]},
+    )
+    C.phase("done")
+
+
 def _child_flags(args) -> list[str]:
     flags = [
         "--device",
@@ -2024,7 +2828,7 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["all", "p0", "p1", "p1-fit", "p2", "p2-worker", "p3", "p4"],
+        choices=["all", "p0", "p1", "p1-fit", "p2", "p2-worker", "p3", "p4", "pdshrink"],
     )
     ap.add_argument("--smoke", action="store_true", help="tiny-N run of the SAME pipeline")
     ap.add_argument("--full", action="store_true", help="explicit production mode (default)")
@@ -2038,6 +2842,11 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
     ap.add_argument("--sae-n", type=int, default=None)
     ap.add_argument("--sae-val-n", type=int, default=None)
     ap.add_argument("--fit-n", type=int, default=None, help="0 = full train pools")
+    ap.add_argument("--n-boot", type=int, default=None, help="pdshrink bootstrap draws")
+    ap.add_argument(
+        "--bootstrap-seed", type=int, default=148202, help="pdshrink bootstrap seed (plan §10)"
+    )
+    ap.add_argument("--figures", type=Path, default=None, help="pdshrink figure dir")
     ap.add_argument("--pilot-n", type=int, default=None)
     ap.add_argument("--gen-batch", type=int, default=None)
     ap.add_argument("--headline-floor", type=int, default=None)
@@ -2083,6 +2892,7 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
     args = ap.parse_args()
 
     smoke_defaults = {
+        "n_boot": 200,
         "max_chunks": 1,
         "holdout_n": 10,
         "sae_n": 12,
@@ -2095,6 +2905,7 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
         "max_features_out": 512,
     }
     prod_defaults = {
+        "n_boot": 10_000,
         "max_chunks": 0,
         "holdout_n": 20_000,
         "sae_n": 120_000,
@@ -2126,6 +2937,11 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
         args.store = base / "store" / "sae_pooled"
     if args.sae_dir is None:
         args.sae_dir = root / "hf_dl" / "sae"
+    if args.figures is None:
+        # smoke figures NEVER touch the committed figures/ paths (kresample convention)
+        args.figures = (
+            (base / "figures") if args.smoke else (PROJECT_ROOT / "figures" / "issue_1482")
+        )
     for p in (args.out_eval, args.scratch, args.store.parent):
         p.mkdir(parents=True, exist_ok=True)
 
@@ -2151,6 +2967,9 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
         return 0
     if ph == "p2-worker":
         phase_p2_worker(args)
+        return 0
+    if ph == "pdshrink":  # amendment round (plan v12): requires --phase p0 outputs in scratch
+        phase_pdshrink(args)
         return 0
     if ph in ("all", "p0"):
         phase_p0(args)
