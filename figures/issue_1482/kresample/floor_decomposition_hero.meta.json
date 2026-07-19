@@ -1,0 +1,173 @@
+{
+  "commit": "019a1ae1a6",
+  "created": "2026-07-19T17:36:47Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "English",
+      "mean normalized error": 0.20058426818760722,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Non-English",
+      "mean normalized error": 0.16860618437196853,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "English",
+      "mean normalized error": 0.09353805440373048,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Non-English",
+      "mean normalized error": 0.11016489387561568,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "non-English minus English\n(mean normalized error)": -0.017497679669843946,
+      "error": 0.0046459702250682645,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "non-English minus English\n(mean normalized error)": 0.016626839471885202,
+      "error": 0.008726453957764061,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "non-English minus English\n(mean normalized error)": -0.03412451914172915,
+      "error": 0.009691369459170148,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "non-English minus English\n(mean normalized error)": -0.017497679669843946,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "non-English minus English\n(mean normalized error)": 0.016626839471885202,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "non-English minus English\n(mean normalized error)": -0.03412451914172915,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "non-English minus English\n(mean normalized error)": -0.02209870121219045,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "non-English minus English\n(mean normalized error)": 0.007987749217944049,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "non-English minus English\n(mean normalized error)": -0.04374154453715533,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "non-English minus English\n(mean normalized error)": -0.012806760762053922,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "non-English minus English\n(mean normalized error)": 0.025440657133472173,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "non-English minus English\n(mean normalized error)": -0.02435880561881503,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "mean normalized error",
+        "legend_labels": [
+          "map share (floor-adjusted error)",
+          "answer-sampling floor"
+        ],
+        "annotations": [
+          "0.201",
+          "0.094",
+          "0.169",
+          "0.110"
+        ],
+        "xticklabels": [
+          "English",
+          "Non-English"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "ylabel": "non-English minus English\n(mean normalized error)",
+        "annotations": [
+          "-0.017",
+          "+0.017",
+          "-0.034"
+        ],
+        "xticklabels": [
+          "raw\ndifference",
+          "floor\ndifference",
+          "adjusted\ndifference"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03"
+        ]
+      }
+    ],
+    "series": [
+      "map share (floor-adjusted error)",
+      "answer-sampling floor"
+    ]
+  }
+}

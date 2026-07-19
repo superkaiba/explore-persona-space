@@ -1,0 +1,99 @@
+{
+  "verdict": "Language-advantage survives",
+  "inconclusive_sub_read": null,
+  "delta_raw_full": -0.017497679669843946,
+  "delta_floor": {
+    "point": 0.016626839471885202,
+    "ci": [
+      0.007987749217944049,
+      0.025440657133472173
+    ]
+  },
+  "delta_adj": {
+    "point": -0.03412451914172915,
+    "ci": [
+      -0.04374154453715533,
+      -0.02435880561881503
+    ]
+  },
+  "raw_delta_ci": [
+    -0.02209870121219045,
+    -0.012806760762053922
+  ],
+  "s1_self_contained": {
+    "delta_adj_sub": -0.031978083815638686,
+    "ci": [
+      -0.04159686377400452,
+      -0.022698758333381194
+    ]
+  },
+  "mlp_robustness": {
+    "delta_raw_full": -0.005186693219629446,
+    "delta_adj": {
+      "point": -0.021813532691514648,
+      "ci": [
+        -0.03176643732397359,
+        -0.012021641727145448
+      ]
+    },
+    "g1_informational": {
+      "median_rel_abs_de2": 8.492845349612518e-05,
+      "p90_rel_abs_de2": 0.00027011377907396717,
+      "max_rel_abs_de2": 0.0008813542159609348,
+      "spearman": 0.9999996579999145,
+      "pass": true,
+      "thresholds": {
+        "median_rel_max": 0.001,
+        "spearman_min": 0.999
+      },
+      "convention": "streamed-v42-identity (no recapture)"
+    }
+  },
+  "raw_units_sensitivity": {
+    "delta_raw_full_e2": -28.051357565989804,
+    "delta_floor_raw": 19.842789040003396,
+    "delta_adj_raw": {
+      "point": -47.8941466059932,
+      "ci": [
+        -61.63761242536813,
+        -33.89377464248066
+      ]
+    }
+  },
+  "c1_coherence": {
+    "delta_sub_stored": -0.012168157861778495,
+    "ci": [
+      -0.025158308677152706,
+      0.0009522822713235903
+    ],
+    "delta_full": -0.017497679669843946,
+    "pass": true
+  },
+  "estimator_used": "fresh4-registered",
+  "n": {
+    "en_full": 13106,
+    "nonen_full": 6861,
+    "en_sub": 1000,
+    "nonen_sub": 1000
+  },
+  "n_boot": 10000,
+  "seeds": {
+    "subsample": 148201,
+    "bootstrap": 1482,
+    "generation": [
+      43,
+      44,
+      45,
+      46
+    ],
+    "fit": 0
+  },
+  "smoke": false,
+  "metadata": {
+    "git_commit": "7f8b47c81d54831b77c9d8a0b7f6a8d48c7420e9",
+    "timestamp_utc": "2026-07-19T17:19:35.843702Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
