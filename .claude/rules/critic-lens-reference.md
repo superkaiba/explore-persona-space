@@ -158,9 +158,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
    when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
    into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
-   a 1-file staging probe + consumer-open through the REAL staging path before production (#928: a
+   a 1-file staging probe + consumer-open through the REAL staging path before production,
+   once per (source-family × staged consumer) pair — a single global probe does NOT satisfy
+   leg (iv) when ≥2 families or ≥2 consumers are staged (#928: a
    verbatim prefix mirror staged the store manifest one level deep and crashed `Store()` init after
-   legs (i)–(iii) passed); (i)
+   legs (i)–(iii) passed; #1481: a second family's sidecar layout and a later reread consumer
+   each crashed unprobed); (i)
    throughput fitness of reused fit/analysis/eval/upload-verify CODE — inner per-cell/per-fold/per-draw loop
    batched + device parametrized + data-repo Hub calls prefix-scoped; full text in `.claude/rules/artifact-reuse.md` checklist item (i)
    (referenced by pointer, not duplicated here; "checklist item (i)" is distinct from this item's
