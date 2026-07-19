@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1536,
+  "highest_id": 1537,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4183,6 +4183,13 @@
       "path": "tasks/proposed/1536",
       "status": "proposed",
       "title": "daily-fix: fail-fast SFT prompt/completion type assert"
+    },
+    "1537": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1537",
+      "status": "proposed",
+      "title": "daily-held: enforce body presence on wf-fix filings"
     },
     "154": {
       "has_clean_result": false,
