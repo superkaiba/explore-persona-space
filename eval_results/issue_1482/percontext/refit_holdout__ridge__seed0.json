@@ -1,0 +1,35 @@
+{
+  "fit_id": "refit_holdout__ridge__seed0",
+  "condition": "refit_holdout",
+  "predictor": "ridge",
+  "seed": 0,
+  "n_train": 943444,
+  "wall_time_s": 84.1,
+  "fit_meta": {
+    "n_train": 943444,
+    "selection": "val-lambda (primal, streaming)",
+    "selected_lambda": 0.001,
+    "val_r2_at_selected": 0.754346836516454,
+    "lambda_grid_edge": "low",
+    "ridge_block": 50000
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "holdout": {
+      "n": 20000,
+      "whole_map_r2": 0.7242755664709597,
+      "mean_cosine": 0.9565555471800511
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T07:45:47.501934Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "0"
+  }
+}

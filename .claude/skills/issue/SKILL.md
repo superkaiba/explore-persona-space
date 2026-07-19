@@ -2081,7 +2081,10 @@ Brief passed to the implementer:
   never for this duty) — pin-sweeps the enumerated test files for every
   literal / command fragment / symbol the diff changed or deleted, and
   runs the diff-linked + pin-hit subset locally, deferring only the
-  invariant-only remainder to the gate (which remains the backstop).
+  invariant-only remainder to the gate (which remains the backstop),
+  reporting the pin-sweep field with the verbatim deduplicated
+  hit-file list — never a count-only or glob-family summary (#1494;
+  >20 files → fenced block under the Gate-scope line).
   Belt-and-suspenders on `implementer.md` § After Implementation item 1,
   so round briefs surface the duty without the implementer having to
   recall its agent spec (the #509 precedent).
@@ -4086,6 +4089,13 @@ while True:
     #                                  per "GPU-idle escalation handling" below.
 ```
 
+**Forensics-ingest discipline (#1546):** on a stalled/dead tick — and in any
+post-crash forensics this loop or Step 7 performs — ingest failure text per
+`.claude/rules/trigger-dense-review.md` § Orchestrator poll/forensics turns:
+structural digests (counts + file references), classifier-side routing, a
+fresh-context reader for trigger-dense runs, hook-BLOCKED output by
+reference.
+
 (`current_phase` is `"running"` by default; when the poller emits a
 milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title
@@ -4483,7 +4493,10 @@ live-escalation debounce covers it.)
    Cap any single blocking wait at ≤45 min — chain bg-Bash sleeps /
    segment a `Monitor` until-loop
    (`until <check> || [ $(elapsed) -gt 2700 ]; …`) rather than arming
-   one silent multi-hour wait. A single 4-h until-loop (#1092,
+   one silent multi-hour wait. Load the deferred schemas BEFORE the
+   first poll call — `ToolSearch("select:Monitor,TaskOutput")` — an
+   unloaded deferred-tool call fails with InputValidationError (2
+   sessions burned a turn on this on 2026-07-18). A single 4-h until-loop (#1092,
    2026-07-08) leaves zero heartbeat opportunities: the watcher's
    90-min exemption leash (`LONG_PHASE_HEARTBEAT_FRESH_S`, sized as a
    ~60-min cadence + 30-min slack) lapses mid-wait no matter what was
@@ -10141,7 +10154,7 @@ else
     if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
     else
-      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s, re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
     fi
   else

@@ -378,7 +378,9 @@ this section.
 
 Per §6 primary DV, one row in a fenced `primary_deliverable:` YAML block
 naming the pod-side artifact path/glob the upload-verifier enumerates BEFORE
-pod termination (blocker tag `primary-deliverable-missing` keeps the pod
+pod termination (a row wholly produced by a §9-declared off-pod phase
+enumerates at its declared off-pod dest instead — Step 2.7 sub-rule, #1535)
+(blocker tag `primary-deliverable-missing` keeps the pod
 alive; `kind: analysis|infra|batch|survey` may declare an empty list).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
@@ -439,6 +441,21 @@ upload` is the #825 stranding order (a hung serial fit left the turnstore
 off HF; recovery = a fresh GPU re-extraction). Full rule:
 `.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
 
+Off-pod phase declaration + reads enumeration (#1482/#1426): a plan with a
+pod/backend dispatch AND ≥1 subsequent off-pod phase (VM / cpu-lane /
+Batch-API judge or analysis) MUST carry a fenced `off_pod_phases:` block in
+this section — per phase: `runs_on`, `reads` (each path + producing phase +
+permanent source) and `outputs` (each path + off-pod dest). Every read must
+be in the pod's upload set or vm-resident-by-construction (the gotchas.md
+off-pod bullet, mechanized at plan time); the declaration is what lets
+upload-verifier Step 2.8 gate the READS before termination (#1482) and
+Step 2.7 reconcile the OUTPUTS at the off-pod destination instead of
+FAILing r1 by construction (#1426). Pod-free / single-machine plans omit
+the block entirely; an off-pod phase named in prose without the block draws
+the verifier's `off-pod-phase-spec-absent` WARN + `verify_plan.py` c39
+WARN. Template + worked example:
+`.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 9. Resources & Parallelism — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
@@ -461,7 +478,8 @@ instrument is reused on a shifted data regime (the item-(l) record: the
 declared boundary, the new regime read against it, and the engaged
 mitigation or stated justification) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
-`analysis_tensors/`) · the `discarded_artifacts:` slot
+`analysis_tensors/`) (a declared off-pod phase's outputs carry their
+OFF-POD dest — mirror §9's off_pod_phases block) · the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`

@@ -1,0 +1,70 @@
+{
+  "gate": "A",
+  "verdict": "PASS",
+  "halt_arms": [],
+  "dropped_arms": [],
+  "per_arm": {
+    "ridge": {
+      "refit_r2": 0.7541708417500046,
+      "committed_r2": 0.7541708417500051,
+      "abs_delta": 5.551115123125783e-16,
+      "tol": 0.002,
+      "pass": true
+    },
+    "mlp_w8192": {
+      "refit_r2": 0.8103576072186821,
+      "committed_r2": 0.810357605301357,
+      "abs_delta": 1.917325076483678e-09,
+      "tol": 0.01,
+      "pass": true
+    },
+    "mlp_w32768": {
+      "refit_r2": 0.8134194594608872,
+      "committed_r2": 0.8134195901944027,
+      "abs_delta": 1.3073351545767053e-07,
+      "tol": 0.01,
+      "pass": true
+    },
+    "residual_skip": {
+      "refit_r2": 0.8074532509818505,
+      "committed_r2": 0.8074532522918715,
+      "abs_delta": 1.310020980582749e-09,
+      "tol": 0.01,
+      "pass": true
+    },
+    "krr_nystrom": {
+      "refit_r2": 0.8066491770626179,
+      "committed_r2": 0.8066491770626244,
+      "abs_delta": 6.5503158452884236e-15,
+      "tol": 0.01,
+      "pass": true
+    }
+  },
+  "smoke_demoted": false,
+  "scope_caveats": [
+    "sae-arm-passb-text: SAE arm (P2/P3) covers NEW-pool rows only (holdout + sae_fit + sae_val) \u2014 the pinned pass_b bundle has no prompts/responses and round-1 raw completions are not on HF, so the 1,400 pinned pass_b val/test contexts are excluded from P2/P3; P3 lambda selection uses the 2k sae_val carve."
+  ],
+  "seeded_from": "att-20260718-055220",
+  "seeded_units": [
+    "refit_full__ridge__seed0",
+    "refit_full__mlp_w8192__seed0",
+    "refit_full__mlp_w32768__seed0",
+    "refit_full__residual_skip__seed0",
+    "refit_full__krr_nystrom__seed0",
+    "refit_holdout__ridge__seed0",
+    "refit_holdout__mlp_w8192__seed0",
+    "refit_holdout__mlp_w32768__seed0",
+    "refit_holdout__residual_skip__seed0",
+    "refit_holdout__krr_nystrom__seed0",
+    "refit_holdout__mlp_w8192__seed43",
+    "refit_lmsys_transfer__ridge__seed0",
+    "refit_lmsys_transfer__mlp_w8192__seed0"
+  ],
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-18T22:34:19.980389Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

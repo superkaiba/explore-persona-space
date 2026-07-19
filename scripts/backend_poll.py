@@ -3089,7 +3089,7 @@ def _reclaim_failed_runpod_provision(
 ) -> dict:
     """Best-effort reclaim of a pod the JUST-FAILED failover provision created (#1490).
 
-    Implements the plan-§3 v2 decision table over ``post − pre`` live-pod
+    Implements the plan-§3 v2 decision table over ``post - pre`` live-pod
     set-difference AND the provision-failure evidence shape. The surgical
     ``terminate_pod(pod_id)`` (the #770/#775 in-file precedent — pod-id
     scoped, bypassing ``cmd_terminate``'s upload-verify + keep-running guards,
@@ -3453,6 +3453,27 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
     )
 
 
+def _provision_failure_evidence(exc: BaseException) -> tuple[str, int | None]:
+    """Evidence text + returncode from a failed RunPod-fallback provision (#1490).
+
+    ``str(exc)`` -- the rung embeds ``({type(exc).__name__}: {exc})`` -- plus the
+    ``__cause__`` chain's ``stderr`` / ``output`` tails (PodLifecycleProcessError,
+    the #1465 stderr-tail carrier; the rung raises ``from exc``) and its integer
+    ``returncode`` when present.
+    """
+    evidence_text = str(exc)
+    returncode: int | None = None
+    cause = exc.__cause__
+    if cause is not None:
+        rc = getattr(cause, "returncode", None)
+        returncode = rc if isinstance(rc, int) else None
+        for attr in ("stderr", "output"):
+            val = getattr(cause, attr, None)
+            if isinstance(val, str) and val:
+                evidence_text += "\n" + val
+    return evidence_text, returncode
+
+
 def _failover_gcp_to_runpod(
     *,
     issue: int,
@@ -3570,7 +3591,7 @@ def _failover_gcp_to_runpod(
     # #1490 pre-launch attribution snapshot: the live pod_ids named EXACTLY
     # pod-<N> BEFORE the RunPod launch is attempted, so the
     # NoComputeAvailableError branch below can tell a pod THIS failover's
-    # provision created (post − pre singleton) from a pre-existing one. None
+    # provision created (post - pre singleton) from a pre-existing one. None
     # on probe failure (bias safe — an unknown baseline never terminates).
     pre_provision_ids = _live_runpod_ids_for_issue(issue)
     workload_start_error: str | None = None
@@ -3641,20 +3662,7 @@ def _failover_gcp_to_runpod(
         # residue transactionally: post-launch snapshot + the two-signal
         # decision table (singleton new id AND positive created-then-failed
         # evidence → surgical terminate; every other cell never terminates).
-        # The evidence is str(exc) — the rung embeds
-        # ``({type(exc).__name__}: {exc})`` — plus the __cause__ chain's
-        # returncode/stderr/output tails (PodLifecycleProcessError, the #1465
-        # stderr-tail carrier; the rung raises ``from exc``).
-        evidence_text = str(exc)
-        returncode: int | None = None
-        cause = exc.__cause__
-        if cause is not None:
-            rc = getattr(cause, "returncode", None)
-            returncode = rc if isinstance(rc, int) else None
-            for attr in ("stderr", "output"):
-                val = getattr(cause, attr, None)
-                if isinstance(val, str) and val:
-                    evidence_text += "\n" + val
+        evidence_text, returncode = _provision_failure_evidence(exc)
         reclaim = _reclaim_failed_runpod_provision(
             issue=issue,
             pre_ids=pre_provision_ids,

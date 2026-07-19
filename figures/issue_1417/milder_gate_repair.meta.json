@@ -1,0 +1,188 @@
+{
+  "commit": "1735651969",
+  "created": "2026-07-19T18:02:02Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "rude-cell render attempt": 0.0,
+      "gate reading (fraction)": 0.6621507197290432,
+      "series": "Instruct: judge keep fraction",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rude-cell render attempt": 1.0,
+      "gate reading (fraction)": 0.005,
+      "series": "Instruct: judge keep fraction",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rude-cell render attempt": 2.0,
+      "gate reading (fraction)": 0.645,
+      "series": "Instruct: judge keep fraction",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rude-cell render attempt": 3.0,
+      "gate reading (fraction)": 0.6206604572396275,
+      "series": "Instruct: judge keep fraction",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rude-cell render attempt": 0.0,
+      "gate reading (fraction)": 0.4864017519731178,
+      "series": "Instruct: answer-variance ratio",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rude-cell render attempt": 1.0,
+      "gate reading (fraction)": null,
+      "series": "Instruct: answer-variance ratio",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rude-cell render attempt": 2.0,
+      "gate reading (fraction)": 0.5404790090778571,
+      "series": "Instruct: answer-variance ratio",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rude-cell render attempt": 3.0,
+      "gate reading (fraction)": 0.5491646857432232,
+      "series": "Instruct: answer-variance ratio",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rude-cell render attempt": 0.0,
+      "gate reading (fraction)": 0.10922946655376799,
+      "series": "Base: judge keep fraction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rude-cell render attempt": 1.0,
+      "gate reading (fraction)": 0.015,
+      "series": "Base: judge keep fraction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rude-cell render attempt": 2.0,
+      "gate reading (fraction)": 0.16,
+      "series": "Base: judge keep fraction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rude-cell render attempt": 3.0,
+      "gate reading (fraction)": null,
+      "series": "Base: judge keep fraction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "recovery fraction vs chat-template reference": 1.0015946520321637,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "recovery fraction vs chat-template reference": 0.8767946860069609,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "recovery fraction vs chat-template reference": 0.8829378992133265,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "recovery fraction vs chat-template reference": 0.9116018852069322,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "recovery fraction vs chat-template reference": 0.872243513647963,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "recovery fraction vs chat-template reference": 0.999912586008897,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Manipulation gates across rude-cell renders",
+        "xlabel": "rude-cell render attempt",
+        "ylabel": "gate reading (fraction)",
+        "legend_labels": [
+          "Instruct: judge keep fraction",
+          "Instruct: answer-variance ratio",
+          "Base: judge keep fraction"
+        ],
+        "xticklabels": [
+          "v1 render, full pass",
+          "mild render, pilot",
+          "strengthened mild, pilot",
+          "strengthened mild, full pass"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Instruct-lane verdicts, all six framing cells",
+        "xlabel": "recovery fraction vs chat-template reference",
+        "xticklabels": [
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "helpful-instruction control",
+          "rude-but-informative (v1 render)",
+          "rude-but-informative (strengthened mild)",
+          "evasive",
+          "addressee-free exposition",
+          "AI-relay addressee"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct: judge keep fraction",
+      "Instruct: answer-variance ratio",
+      "Base: judge keep fraction"
+    ]
+  }
+}

@@ -276,6 +276,29 @@ Behaviours:
   ``# UPLOAD_PREFIX_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
   finding's first physical line or the immediately preceding non-blank
   line (for an argparse-default finding, at the ``add_argument`` call).
+* ``--check-upload-file-in-loop`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any per-file upload call lexically inside a loop / comprehension —
+  shape A: an ``upload_file(...)`` call (attribute form or a bare
+  ``from huggingface_hub import upload_file`` name); shape B: an
+  ``_upload(...)`` call carrying an explicit ``upload_as_file=True``
+  constant kwarg (the literal #664 form, which
+  ``--check-upload-as-file`` deliberately DEFERS on explicit kwargs, so
+  nothing else flags it). Each per-file call is one Hub commit + a
+  server-side repo pre-check, so an N-file loop 504-storms on a large
+  repo (#664: a 1425-file loop held an 8xH200 idle for 12h, ~$530) and
+  trips the org-level ~2500-req/5-min 429 quota (#1481: ~1400 planned
+  per-file commits -> HF 429 storm); bulk uploads compose ONE
+  ``upload_folder`` commit. Loop context resets at function / lambda /
+  class boundaries (a helper *called* from a loop is a deliberate
+  lexical false negative). Waive a genuinely bounded loop (a retry
+  wrapper around ONE file, a fixed <=3-file list) with
+  ``# UPLOAD_LOOP_EXEMPT: <reason>`` (reason ≥ 10 chars) on the call's
+  first physical line or the immediately preceding non-blank line;
+  pre-existing sites are grandfathered with EXACT per-file site counts
+  in :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` (count-grain — a NEW
+  offense inside a grandfathered file surfaces instead of hiding;
+  never hand-extended).
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -614,6 +637,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from collections import Counter
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -1537,6 +1561,52 @@ HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "scripts/issue_642/i642_dispatch.py",  # 2 pre-#1190 direct sites; legacy experiment code
     }
 )
+
+
+# `--check-upload-file-in-loop` (#1544; incidents #664 / #658 r4 / #1481):
+# a per-file `upload_file` LOOP of N files = N commits + N server-side
+# pre-checks — 504-storms on a large repo (#664: 1425-file loop, 12h idle
+# 8xH200, ~$530) and trips the org-level ~2500-req/5-min 429 quota
+# (#1481: ~1400 planned per-file commits -> HF 429 storm). Bulk uploads
+# compose ONE upload_folder commit. Inline waiver for a genuinely bounded
+# loop (retry wrapper around a single file; a fixed <=3-item list). Reason
+# >= 10 chars, same convention as UPLOAD_AS_FILE_EXEMPT.
+UPLOAD_LOOP_WAIVER_RE = re.compile(r"#\s*UPLOAD_LOOP_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS = 10
+# Grandfathered pre-existing in-loop per-file-upload call sites (shape A:
+# upload_file; shape B: _upload(..., upload_as_file=True)) — legacy
+# EXPERIMENT code the workflow-fix scope bars #1544 from editing. Rebuilt
+# mechanically from the live tree (run the finished check with
+# legacy_allowlist={}) and pinned by tests/test_workflow_lint.py::
+# test_check_upload_file_in_loop_allowlist_load_bearing (EXACT per-file
+# site counts — a new offense in a grandfathered file breaks the pin). NOT
+# hand-extended: a NEW in-loop call must batch into one upload_folder
+# commit (or carry an UPLOAD_LOOP_EXEMPT waiver), never extend this set.
+# Dict: repo-root-relative posix path -> expected site count.
+UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST: dict[str, int] = {
+    # shape A — in-loop upload_file (6 sites / 5 files):
+    "scripts/issue661_freeze_instructions.py": 1,  # L252: 2-item tuple loop
+    "scripts/issue763_upload.py": 1,  # L153: 2-item list loop, deliberate non-LFS per-file
+    "scripts/issue952_noise_ceiling_gpu.py": 1,  # L422: 3-item list loop
+    "scripts/issue958_common.py": 1,  # L679: for-attempt retry wrapper, single probe file
+    "scripts/run_experiment_444.py": 2,  # L5532, L5557: per-cell + per-persona loops
+    # shape B — in-loop _upload(..., upload_as_file=True) (21 sites / 15 files):
+    "scripts/issue1112_dispatch.py": 2,  # L424, L1035
+    "scripts/issue1333_dispatch.py": 2,  # L1494, L1501
+    "scripts/issue1345_rejudge_malformed.py": 1,  # L381
+    "scripts/issue1417_gen.py": 1,  # L205
+    "scripts/issue1417_judge.py": 2,  # L554, L571
+    "scripts/issue1482_error_analysis.py": 1,  # L1886
+    "scripts/issue559_base_prior_persona_panel.py": 1,  # L831
+    "scripts/issue560_crossrecipe_panel.py": 1,  # L1011
+    "scripts/issue595_prefix_carrier.py": 1,  # L1312
+    "scripts/issue640_postfix_carrier.py": 1,  # L822
+    "scripts/issue664_dispatch.py": 3,  # L1844, L1924, L2003
+    "scripts/issue778_upload.py": 1,  # L113
+    "scripts/issue841_scaling_common.py": 2,  # L505, L516
+    "scripts/issue923_reduce_spans.py": 1,  # L339
+    "scripts/run_issue_360_target_logprobs.py": 1,  # L1669
+}
 
 
 # `--check-upload-prefix-clobber` (#1452 / incident #1005): reused #928
@@ -5348,6 +5418,197 @@ def check_hub_dir_filecount_guard(
     return errors
 
 
+def _upload_loop_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_LOOP_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same placement semantics as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_LOOP_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_LOOP_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+_UPLOAD_LOOP_NODES = (ast.For, ast.AsyncFor, ast.While)
+_UPLOAD_LOOP_COMPS = (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+_UPLOAD_LOOP_BOUNDARIES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+
+
+def _iter_calls_in_loop_context(tree: ast.Module):
+    """Yield every ``ast.Call`` lexically inside a loop / comprehension.
+
+    Iterative explicit-stack walk (no recursion — ``run_experiment_444.py``
+    is 5.5k+ lines) carrying an ``in_loop`` bit per node: SET on entering a
+    loop / comprehension child, CLEARED on entering a def / class / lambda
+    boundary child (a function *defined* in a loop executes elsewhere, so
+    its body is not in-loop). Accepted imprecision: a call in a loop's
+    HEADER expression (``for x in upload_file(...)``) is treated as in-loop
+    even though the ``for``-iter form executes once — no such call exists
+    in the tree and the waiver covers the hypothetical."""
+    stack: list[tuple[ast.AST, bool]] = [(tree, False)]
+    while stack:
+        node, in_loop = stack.pop()
+        if in_loop and isinstance(node, ast.Call):
+            yield node
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, _UPLOAD_LOOP_BOUNDARIES):
+                stack.append((child, False))
+            elif isinstance(child, _UPLOAD_LOOP_NODES + _UPLOAD_LOOP_COMPS):
+                stack.append((child, True))
+            else:
+                stack.append((child, in_loop))
+
+
+def check_upload_file_in_loop(
+    *, scripts_dir: Path | None = None, legacy_allowlist: dict[str, int] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any per-file
+    upload call lexically inside a loop (#664 / #658-r4 / #1481 per-file
+    Hub-commit storm class).
+
+    Rationale: each per-file upload call composes ONE Hub commit and
+    triggers a server-side repo pre-check, so an N-file loop issues N
+    commits + N pre-checks — 504-storming on a large repo (#664: a
+    1425-file raw-completions loop ran 12h on an idle 8xH200, ~$530,
+    uploading only 264 files) and tripping the org-level ~2500-req/5-min
+    429 quota (#1481: a driver planned ~1400 per-file commits -> HF 429
+    storm). Bulk uploads compose ONE ``upload_folder`` commit
+    (``upload_raw_completions_to_data_repo()`` /
+    ``hub._upload_folder_filtered`` are the shared bulk paths). The prose
+    rule lived in ``.claude/rules/gotchas.md`` ("Per-file
+    ``HfApi.upload_file`` 504-storms on a LARGE repo") and failed to stop
+    #1481 through plan + implementation review; this check is the
+    mechanical gate.
+
+    Detection — an ``ast.Call`` lexically enclosed by ``For`` / ``AsyncFor``
+    / ``While`` / a comprehension (loop context RESET at function / lambda
+    / class boundaries; lexical only — a helper *called* from a loop is a
+    deliberate false negative, the task's fail-toward-false-negative
+    direction), matching EITHER shape:
+
+    * **shape A** — the callee is literally named ``upload_file``
+      (attribute form ``api.upload_file(`` or a bare
+      ``from huggingface_hub import upload_file`` name). Exact-name only:
+      ``upload_files`` / ``upload_folder`` / ``upload_file_to_hf`` do NOT
+      match. No local-``def upload_file`` carve-out (deliberate divergence
+      from :func:`check_hub_dir_filecount_guard`): a per-file wrapper
+      called in a loop still commits once per call — exactly the
+      anti-pattern — so it flags; a genuinely-batching wrapper takes the
+      waiver.
+    * **shape B** — the callee is literally named ``_upload`` AND the call
+      carries an explicit ``upload_as_file=True`` constant kwarg — the
+      literal #664 form (``for f in files: hub._upload(f,
+      upload_as_file=True)``). REQUIRED because
+      :func:`check_upload_as_file` deliberately DEFERS any ``_upload``
+      call with an explicit ``upload_as_file`` kwarg (the author's
+      file/folder declaration) and the #595 runtime guard *forces*
+      per-file callers onto exactly this kwarg — without shape B the most
+      probable future offender form passes every lint. An in-loop
+      ``_upload`` WITHOUT the kwarg is deliberately NOT matched (a per-dir
+      folder loop is legitimate; the single-file form crashes fail-loud on
+      the first file via the #595 ``ValueError``, and its static forms
+      belong to ``--check-upload-as-file``).
+
+    Pass conditions: a ``# UPLOAD_LOOP_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS` chars) on the call's first
+    physical line or the immediately preceding non-blank line; or the
+    file's findings are covered by the grandfather allowlist
+    :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` — COUNT-grain: a file's
+    findings are suppressed only while their count ≤ the grandfathered N;
+    an excess count reports ALL of the file's findings plus a
+    count-exceeded note (a NEW offense in a grandfathered file surfaces
+    instead of hiding behind the entry; known netting quirk — fixing one
+    old site while adding one new nets the same count — accepted, still
+    strictly stronger than the siblings' file-grain frozenset).
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None and the function walks the
+    canonical ``<repo_root>/scripts`` tree against the module allowlist.
+    Allowlist paths are computed relative to the WALK ROOT'S PARENT (so
+    production paths read ``scripts/<name>.py`` and tmp_path fixtures
+    resolve consistently). Bundled into the no-flags default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        rel = py.relative_to(root.parent).as_posix()
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        lines = text.splitlines()
+        file_findings: list[str] = []
+        for node in _iter_calls_in_loop_context(tree):
+            fn = node.func
+            fn_name = (
+                fn.attr
+                if isinstance(fn, ast.Attribute)
+                else (fn.id if isinstance(fn, ast.Name) else None)
+            )
+            is_shape_a = fn_name == "upload_file"
+            is_shape_b = fn_name == "_upload" and any(
+                kw.arg == "upload_as_file"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is True
+                for kw in node.keywords
+            )
+            if not (is_shape_a or is_shape_b):
+                continue
+            if _upload_loop_waiver_present(lines, node.lineno):
+                continue
+            shape = "upload_file(...)" if is_shape_a else "_upload(..., upload_as_file=True)"
+            file_findings.append(
+                f"{py}:{node.lineno}: {shape} "
+                f"call inside a loop — the per-file upload loop is the #664/#1481 "
+                f"storm anti-pattern (each call = one commit + a server-side repo "
+                f"pre-check; a 1425-file loop ran 12h/$530 idle in #664; ~1400 "
+                f"planned commits 429-stormed in #1481). Batch into ONE bulk "
+                f"commit: HfApi.upload_folder with allow_patterns, "
+                f"upload_raw_completions_to_data_repo(), or "
+                f"hub._upload_folder_filtered. A genuinely bounded loop (a retry "
+                f"wrapper around a SINGLE file, a fixed <=3-file list) may be "
+                f"waived with '# UPLOAD_LOOP_EXEMPT: <reason>' (reason >= "
+                f"{UPLOAD_LOOP_WAIVER_MIN_REASON_CHARS} chars) on the call's first "
+                f"line or the previous non-blank line. See .claude/rules/gotchas.md "
+                f"'Per-file HfApi.upload_file 504-storms on a LARGE repo'."
+            )
+        # Grandfather gate: per-file COUNT vs the allowlist dict — findings
+        # suppressed only while count <= grandfathered N; an excess count
+        # reports ALL of the file's findings (a new offense in a
+        # grandfathered file surfaces instead of hiding behind the entry).
+        allowed = allow.get(rel, 0)
+        if len(file_findings) <= allowed:
+            continue
+        if allowed:
+            errors.append(
+                f"{py}: {len(file_findings)} in-loop per-file-upload finding(s) exceed "
+                f"the grandfathered count ({allowed}) in "
+                f"UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST — a NEW in-loop per-file upload "
+                f"was added to a grandfathered file; all of its findings are reported "
+                f"below. Batch the new upload into one upload_folder commit (or waive "
+                f"with '# UPLOAD_LOOP_EXEMPT: <reason>') — never extend the allowlist."
+            )
+        errors.extend(file_findings)
+    return errors
+
+
 def _upc_waiver_present(lines: list[str], lineno: int) -> bool:
     """Return True iff a ``# UPLOAD_PREFIX_EXEMPT: <reason>`` waiver (reason ≥
     :data:`UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS` chars) is on the finding's
@@ -8316,6 +8577,72 @@ _ROOT_GUARD_SELFTEST_BLOCKED = "git checkout -b __workflow_lint_root_guard_selft
 _ROOT_GUARD_SELFTEST_BENIGN = "echo workflow-lint root-guard selftest"
 
 
+def _root_guard_git_env(git_fixture: Path) -> dict[str, str]:
+    """Subprocess env for root-guard hook probes: every ambient ``GIT_*``
+    var is SCRUBBED (a git-hook / pre-commit caller exports GIT_DIR /
+    GIT_INDEX_FILE — a latent leak the old ``{**os.environ, ...}`` merge
+    passed straight into the hook), then git resolution is PINNED to the
+    throwaway on-main fixture: GIT_DIR/GIT_WORK_TREE take precedence over
+    the hook's hardcoded ``git -C "$REPO"`` discovery (verified 2026-07-19
+    on git 2.34.1), so the hook's on-main gate (``rev-parse --abbrev-ref
+    HEAD`` + ``[ "$cur" = main ] || exit 0``, hook L1675-76) + checkout
+    classifier (``show-ref``/``rev-parse --verify``/``cat-file -e``, hook
+    L1324-1328) read the FIXTURE, never the shared root — a concurrent
+    shared-root git op can no longer flip probe verdicts (#1545; incident
+    #1506: 13 spurious self-test failures).
+    ``EPM_GUARD_DENY_SIDECAR`` pin unchanged (#1528)."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_DIR"] = str(git_fixture / ".git")
+    env["GIT_WORK_TREE"] = str(git_fixture)
+    env["EPM_GUARD_DENY_SIDECAR"] = "/dev/null"
+    return env
+
+
+def _build_root_guard_fixture(tmp: Path) -> None:
+    """``git init`` a minimal always-on-``main`` fixture in ``tmp``: branch
+    ``main``, ONE empty-tree commit. The empty tree means the hook's
+    ``cat-file -e "HEAD:$arg"`` probe can never resolve a doc example
+    against the fixture, and ``show-ref``/``rev-parse`` resolve strictly
+    LESS than the real repo (only ``main``/``HEAD``/the fixture sha) — so
+    the fixture cannot mint a NEW block verdict (2026-07-19 audit: 0/54
+    live fence-verdict changes vs ambient). Identity via ``-c`` flags so
+    no global git config is required. Raises on failure (caller converts
+    to ONE loud lint error — fail loud, never a silent skip)."""
+    scrub = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    # Isolate user/system git config for the BUILD too: an ambient
+    # commit.gpgsign=true or template/hooks setting in the real global
+    # config would fail the empty-commit build (Alternatives critic, v3).
+    scrub["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    scrub["GIT_CONFIG_NOSYSTEM"] = "1"
+    common = dict(
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=_ROOT_GUARD_TIMEOUT_S,
+        env=scrub,
+    )
+    subprocess.run(["git", "init", "-q", "-b", "main", str(tmp)], **common)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(tmp),
+            "-c",
+            "user.name=workflow-lint",
+            "-c",
+            "user.email=workflow-lint@localhost",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "root-guard probe fixture",
+        ],
+        **common,
+    )
+
+
 def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     """Yield ``(opener_lineno_1based, preceding_nonblank_line, block_text)``
     for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``.
@@ -8394,13 +8721,20 @@ def _root_guard_fence_exempt(prev_line: str) -> bool:
     return bool(reason)
 
 
-def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
+def _run_root_guard(hook: Path, command: str, git_fixture: Path) -> tuple[int, str]:
     """Feed ``command`` to the live PreToolUse hook exactly as the harness
     does — stdin JSON ``{"tool_input": {"command": ...}}`` — and return
     ``(returncode, stderr)``. ``cwd`` is pinned to the hook's own repo root
     (``hook.parent.parent``) so repo-state-consulting detectors give
     deterministic-by-construction verdicts when the lint runs from a
-    worktree (#1176 round-1 Methodology c1)."""
+    worktree (#1176 round-1 Methodology c1). ``EPM_GUARD_DENY_SIDECAR`` is
+    pinned to ``/dev/null`` so lint-driven hook executions (self-test probes
+    + the per-fence scan loop) never append synthetic deny rows to the
+    production deny-event sidecar (#1528); the pin is env-only and cannot
+    change the rc-0/2 verdict this check reads. The subprocess env comes
+    from :func:`_root_guard_git_env` — ambient ``GIT_*`` scrubbed, git
+    resolution pinned to ``git_fixture`` (a required parameter so every
+    probe call site goes through the fixture; #1545)."""
     payload = json.dumps({"tool_input": {"command": command}})
     proc = subprocess.run(
         ["bash", str(hook)],
@@ -8409,6 +8743,7 @@ def _run_root_guard(hook: Path, command: str) -> tuple[int, str]:
         text=True,
         timeout=_ROOT_GUARD_TIMEOUT_S,
         cwd=str(hook.parent.parent),
+        env=_root_guard_git_env(git_fixture),
     )
     return proc.returncode, proc.stderr
 
@@ -8498,22 +8833,35 @@ def check_git_recipes_root_guard(
         block-as-pasted, while the doc tells the session to run the command
         uncommented;
     (d) placeholder-substitution false-PASS direction — the hook's checkout
-        classifier consults LIVE repo state (``show-ref``/``rev-parse``/path
-        existence), so an unresolvable ``<branch>``/``$VAR`` argument keeps
-        ALLOW at lint time but can BLOCK after a session substitutes a real
-        value.
+        classifier resolves ``show-ref``/``rev-parse``/``cat-file`` against
+        the throwaway on-main FIXTURE at lint time (plus the hook's
+        real-filesystem ``[ -e ]`` probe), so an unresolvable
+        ``<branch>``/``$VAR`` argument keeps ALLOW at lint time but can
+        BLOCK after a session substitutes a real value (conclusion
+        unchanged by the #1545 fixture pin).
 
     Prose/comment scanning is deliberately REJECTED for v1 (prose quotes
     gated verbs constantly — the regex siblings' restricted scope exists
     precisely because of prose false positives); the runtime hook + the
     reviewer execute-the-hook practice remain the guard there.
 
-    REPO-STATE FLAP ATTRIBUTION: a ``git checkout <example-name>`` fence can
-    FLIP verdict when a branch / tracked path of that name appears or
-    disappears (the hook consults ``show-ref``/``rev-parse``/path
-    existence). If the live-tree test starts flapping on unrelated diffs,
-    check repo state FIRST — distinct from hook-evolution flap (a new
-    detector), which names the new BLOCKED line in the error.
+    REPO-STATE FLAP ATTRIBUTION: git-state resolution is PINNED to a
+    throwaway on-main fixture (:func:`_root_guard_git_env` /
+    :func:`_build_root_guard_fixture`, #1545), so a concurrent shared-root
+    git op (a rebase transiently detaching HEAD — incident #1506, 13
+    spurious self-test failures) can no longer flip probe verdicts. The
+    REMAINING state-consulting reads are the hook's REAL-FILESYSTEM
+    existence probe (``[ -e "$REPO/$arg" ]``, hook L1328) and doc-content
+    changes: a ``git checkout <example-name>`` fence can still FLIP
+    verdict when a tracked path/file of that name appears or disappears
+    on disk. If the live-tree test starts flapping on unrelated diffs,
+    check THAT path-existence state first (the pre-registered remedy if
+    the ``[ -e ]`` path ever flaps is probe serialization on a dedicated
+    lock — plan #1545 K1) — distinct from hook-evolution flap (a new
+    detector), which names the new BLOCKED line in the error. Post-fix, a
+    recurring "blocked-probe rc=0" self-test failure is NO LONGER
+    attributable to concurrent git state — attribute to a jq/exec
+    transient first (the hook's stdin parse fail-softs to exit 0).
 
     Scope: agents + skills via the worktree-safe :func:`_iter_ask_target_files`
     house helper, PLUS ``.claude/rules/*.md`` + ``CLAUDE.md`` under the same
@@ -8532,77 +8880,88 @@ def check_git_recipes_root_guard(
             f"{hook}: root-guard hook script missing — "
             f"check-git-recipes-root-guard cannot run (FAIL, not skip)"
         ]
-    try:
-        rc_pos, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BLOCKED)
-        rc_neg, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BENIGN)
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        return [f"{hook}: root-guard self-test crashed ({exc}) — check cannot run"]
-    if rc_pos != 2 or rc_neg != 0:
-        return [
-            f"{hook}: root-guard self-test failed (blocked-probe rc={rc_pos}, "
-            f"expected 2; benign-probe rc={rc_neg}, expected 0). Likely jq "
-            f"missing (the hook's stdin parse fail-softs to exit 0) or a hook "
-            f"regression — the check refuses to run against a fail-open or "
-            f"fail-closed hook."
-        ]
-    # (2) Enumerate targets: agents + skills via the worktree-safe house
-    # helper, plus rules/*.md + CLAUDE.md under the same other-worktree
-    # exclusion.
-    targets = _root_guard_target_files(root)
-    # (3) Collect git-bearing bash fences (perf gate: the `git` literal is a
-    # NECESSARY condition for every hook detector — see docstring; drops
-    # 103 -> ~23 fences on issue/SKILL.md alone).
-    work: list[tuple[Path, int, str]] = []
-    for p in targets:
+    with tempfile.TemporaryDirectory(prefix="wl_rootguard_fixture_") as td:
+        fixture = Path(td)
         try:
-            text = p.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        for lineno, prev_line, block in _iter_bash_fences(text):
-            if "git" not in block:
-                continue
-            if _root_guard_fence_exempt(prev_line):
-                continue
-            work.append((p, lineno, block))
-
-    # (4) Execute the hook per block, in parallel; deterministic ordering.
-    def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
-        p, lineno, block = item
+            _build_root_guard_fixture(fixture)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            return [
+                f"{hook}: root-guard git fixture build failed ({exc}) — "
+                f"check cannot run (FAIL, not skip)"
+            ]
         try:
-            rc, stderr = _run_root_guard(hook, block)
+            rc_pos, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BLOCKED, fixture)
+            rc_neg, _ = _run_root_guard(hook, _ROOT_GUARD_SELFTEST_BENIGN, fixture)
         except (subprocess.TimeoutExpired, OSError) as exc:
-            return (p, lineno, -1, f"hook invocation failed: {exc}")
-        return (p, lineno, rc, stderr)
+            return [f"{hook}: root-guard self-test crashed ({exc}) — check cannot run"]
+        if rc_pos != 2 or rc_neg != 0:
+            return [
+                f"{hook}: root-guard self-test failed (blocked-probe rc={rc_pos}, "
+                f"expected 2; benign-probe rc={rc_neg}, expected 0). Likely jq "
+                f"missing (the hook's stdin parse fail-softs to exit 0) or a hook "
+                f"regression — the check refuses to run against a fail-open or "
+                f"fail-closed hook."
+            ]
+        # (2) Enumerate targets: agents + skills via the worktree-safe house
+        # helper, plus rules/*.md + CLAUDE.md under the same other-worktree
+        # exclusion.
+        targets = _root_guard_target_files(root)
+        # (3) Collect git-bearing bash fences (perf gate: the `git` literal is a
+        # NECESSARY condition for every hook detector — see docstring; drops
+        # 103 -> ~23 fences on issue/SKILL.md alone).
+        work: list[tuple[Path, int, str]] = []
+        for p in targets:
+            try:
+                text = p.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for lineno, prev_line, block in _iter_bash_fences(text):
+                if "git" not in block:
+                    continue
+                if _root_guard_fence_exempt(prev_line):
+                    continue
+                work.append((p, lineno, block))
 
-    errors: list[str] = []
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        results = list(ex.map(_probe, work))
-    for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
-        if rc == 0:
-            continue
-        first = stderr.strip().split("\n")[0][:200]
-        if rc == 2:
-            errors.append(
-                f"{p}:{lineno}: bash recipe fence is BLOCKED by "
-                f"scripts/guard_repo_root_branch.sh — a session pasting this "
-                f"recipe into one Bash call dies at the PreToolUse gate "
-                f"(incident #1047: a cleanup recipe without a -C waiver "
-                f"survived plan review + 6 critics and was caught only by the "
-                f"reviewer executing the hook). Hook says: {first!r}. Fix the "
-                f"recipe (per-clause `git -C <path>` waiver / the sanctioned "
-                f"worktree or gh-pr-merge form), or — for a deliberate "
-                f"anti-pattern example or a pod-side recipe — add "
-                f"`<!-- {_ROOT_GUARD_EXEMPT_SENTINEL}: <reason> -->` on the "
-                f"line directly above the fence opener."
-            )
-        else:
-            errors.append(
-                f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
-                f"a NON-BLOCKING code under the PreToolUse contract (only rc "
-                f"0/2 are interpreted; rc=1/127/timeout signals a hook "
-                f"invocation or infrastructure error, not a pass) ({first!r})."
-            )
-    return errors
+        # (4) Execute the hook per block, in parallel; deterministic ordering.
+        # Probes share the fixture read-only across the ThreadPool (git reads
+        # are concurrent-safe).
+        def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
+            p, lineno, block = item
+            try:
+                rc, stderr = _run_root_guard(hook, block, fixture)
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                return (p, lineno, -1, f"hook invocation failed: {exc}")
+            return (p, lineno, rc, stderr)
+
+        errors: list[str] = []
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            results = list(ex.map(_probe, work))
+        for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
+            if rc == 0:
+                continue
+            first = stderr.strip().split("\n")[0][:200]
+            if rc == 2:
+                errors.append(
+                    f"{p}:{lineno}: bash recipe fence is BLOCKED by "
+                    f"scripts/guard_repo_root_branch.sh — a session pasting this "
+                    f"recipe into one Bash call dies at the PreToolUse gate "
+                    f"(incident #1047: a cleanup recipe without a -C waiver "
+                    f"survived plan review + 6 critics and was caught only by the "
+                    f"reviewer executing the hook). Hook says: {first!r}. Fix the "
+                    f"recipe (per-clause `git -C <path>` waiver / the sanctioned "
+                    f"worktree or gh-pr-merge form), or — for a deliberate "
+                    f"anti-pattern example or a pod-side recipe — add "
+                    f"`<!-- {_ROOT_GUARD_EXEMPT_SENTINEL}: <reason> -->` on the "
+                    f"line directly above the fence opener."
+                )
+            else:
+                errors.append(
+                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
+                    f"a NON-BLOCKING code under the PreToolUse contract (only rc "
+                    f"0/2 are interpreted; rc=1/127/timeout signals a hook "
+                    f"invocation or infrastructure error, not a pass) ({first!r})."
+                )
+        return errors
 
 
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
@@ -10193,10 +10552,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 46,187 B post-#1082 (negative-existence search recipe —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
     "research-pm.md": 47_000,
-    # measured 46,830 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 45,500 — its
-    # "measured 42,825 B" comment was stale vs 45,321 B live pre-edit)
-    "upload-verifier.md": 47_800,
+    # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
+    # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
+    # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
+    "upload-verifier.md": 51_500,
 }
 
 
@@ -11111,6 +11470,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-upload-file-in-loop",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any per-file upload call "
+        "inside a loop — upload_file(...) (shape A) or "
+        "_upload(..., upload_as_file=True) (shape B, the literal #664 form) "
+        "— the per-file upload-loop 429/504-storm anti-pattern (#664/#1481); "
+        "use one bulk upload_folder commit instead. Waive a genuinely "
+        "bounded loop with '# UPLOAD_LOOP_EXEMPT: <reason>'; pre-existing "
+        "sites are grandfathered with exact per-file counts in "
+        "UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-dotenv-before-hf-import",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
@@ -11569,6 +11941,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_as_file
         or args.check_hub_dir_filecount
         or args.check_upload_prefix_clobber
+        or args.check_upload_file_in_loop
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
@@ -11679,6 +12052,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hub_dir_filecount_guard())
     if args.check_upload_prefix_clobber or no_flags:
         errors.extend(check_upload_prefix_clobber())
+    if args.check_upload_file_in_loop or no_flags:
+        errors.extend(check_upload_file_in_loop())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:

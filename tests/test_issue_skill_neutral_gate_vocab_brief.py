@@ -99,12 +99,16 @@ def test_trigger_dense_rule_first_pass_brief_section():
     fires = text[text.index("**Fires when:**") : text.index("Recognition heuristic")]
     assert "fact-checker" in fires
     assert "FIRST-PASS" in fires
-    # belt-and-suspenders: the always-on LESSONS index row carries the first-pass arm
+    # belt-and-suspenders: the always-on LESSONS index row carries the
+    # brief-composition arm (compressed by #1546's row rewrite to the
+    # #1503/#1413 id pointers — the "first-pass" label was deliberately
+    # dropped to fit the 280 B row cap; the id IS the pointer)
     lessons = LESSONS_MD.read_text(encoding="utf-8")
     row = next(
         line for line in lessons.splitlines() if line.startswith("- trigger-dense-review.md")
     )
-    assert "first-pass" in row
+    assert "#1503" in row
+    assert "brief" in row
 
 
 def test_adversarial_planner_first_pass_brief_pointers():

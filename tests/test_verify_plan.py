@@ -177,10 +177,11 @@ def test_good_plan_passes_all():
         "c36_numeric_containment": "SKIP",
         "c37_noflags_bundling_claim": "SKIP",
         "c38_exit0_repo_wide_baseline": "SKIP",
+        "c39_off_pod_phase_declaration": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 38
+    assert len(results) == 39
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5872,12 +5873,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 31
+    assert payload["n_skip"] == 32
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 39
-    assert len({c["id"] for c in payload["checks"]}) == 39
+    assert len(payload["checks"]) == 40
+    assert len({c["id"] for c in payload["checks"]}) == 40
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -7737,3 +7738,87 @@ def test_canonical_json_parse_snippet_pinned():
     assert payload_fail["n_fail"] == 1
     assert {"id", "status"} <= payload_fail["checks"][0].keys()
     assert payload_fail["checks"][0]["status"] == "FAIL"
+
+
+# ─── Check 39 — off-pod phase declaration (#1535) ──────────────────────────
+
+C39_OFFPOD_PROSE = (
+    GOOD_PLAN + "\nPhase P5 (judge) runs off-pod on the VM after the pod is terminated.\n"
+)
+
+C39_BLOCK = """
+```yaml
+off_pod_phases:
+  - phase: P5 judge (VM, after pod termination)
+    runs_on: vm
+    reads:
+      - path: issue9999_slug/analysis_tensors/scratch/split_indices.npz
+        produced_by: P4 (pod)
+        source: hf-data-repo
+    outputs:
+      - path: eval_results/issue_9999/judge/*.json
+        dest: git-issue-branch
+```
+"""
+
+
+def test_c39_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_kind_exempt_skips():
+    # An infra plan (e.g. a workflow-fix plan discussing the off-pod seam —
+    # #1535's own plan is the calibration case) legitimately says "off-pod"
+    # without having phases; experiment-only scoping avoids that noise.
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="infra") == "SKIP"
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="batch") == "SKIP"
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="analysis") == "SKIP"
+
+
+def test_c39_off_pod_prose_without_block_warns():
+    _, by_id = _run(C39_OFFPOD_PROSE)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "WARN"
+    assert "#1482" in r.detail and "#1426" in r.detail  # both incident cites
+    assert "off_pod_phases:" in r.detail  # names the missing block
+    assert "N/A — no off-pod phase" in r.detail  # teaches the escape
+    assert "planner-section-reference.md § 9" in r.detail  # the template pointer
+
+
+def test_c39_fenced_block_satisfies():
+    # The block satisfier scans RAW text (the slot is fenced YAML by design —
+    # the c30 convention); the fixture carries one REAL entry
+    # (phase/runs_on/reads/outputs) so the intended shape is exemplified,
+    # never an empty block.
+    _, by_id = _run(C39_OFFPOD_PROSE + C39_BLOCK)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "off_pod_phases" in r.detail
+
+
+def test_c39_na_escape_satisfies():
+    plan = C39_OFFPOD_PROSE + "\nN/A — no off-pod phase\n"
+    _, by_id = _run(plan)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c39_vm_side_trigger_warns():
+    # The `vm-side` regex alternative fires with NO "off-pod" token present.
+    plan = GOOD_PLAN + "\nA VM-side aggregation phase follows the pod run.\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+def test_c39_fenced_vocabulary_only_skips():
+    # off-pod vocabulary ONLY inside fences (a quoted command / pasted brief)
+    # is not a trigger — the trigger scans STRIPPED prose.
+    plan = GOOD_PLAN + "\n```\n# the off-pod judge reads these paths\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_fenced_na_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c33/c38 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C39_OFFPOD_PROSE + "\n```\nN/A — no off-pod phase\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"

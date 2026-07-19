@@ -1,0 +1,952 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:28Z",
+  "figsize": [
+    9.600000000000001,
+    3.0
+  ],
+  "points": [
+    {
+      "TF fixed-pool margin": -0.1459623095793378,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.5874720160118382,
+      "Tier-1 judged rate": 0.89,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.6074951606252417,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.0943822269925237,
+      "Tier-1 judged rate": 0.81,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.1321971628366197,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.24233205422586485,
+      "Tier-1 judged rate": 0.9,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.16557787122083306,
+      "Tier-1 judged rate": 0.85,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.22846290464735242,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.6314132770500044,
+      "Tier-1 judged rate": 0.82,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.08814697338474886,
+      "Tier-1 judged rate": 0.81,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.03291496094265243,
+      "Tier-1 judged rate": 0.51,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.005771624011622747,
+      "Tier-1 judged rate": 0.54,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.038049632641097675,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.0663880895764524,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.10911724922630561,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.04465795802031618,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.07320566415008391,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.029074493475253135,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.039978137768434174,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.12883567645610305,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.11469697154335598,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.06863491066819509,
+      "Tier-1 judged rate": 0.68,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.10360334956522385,
+      "Tier-1 judged rate": 0.74,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.0754273517949492,
+      "Tier-1 judged rate": 0.74,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.0702658355135975,
+      "Tier-1 judged rate": 0.696969696969697,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.12616197580324173,
+      "Tier-1 judged rate": 0.9468085106382979,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.14139465161525852,
+      "Tier-1 judged rate": 0.963855421686747,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.03413986874765742,
+      "Tier-1 judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.03628388743193919,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.014573332230179245,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.06734358604673316,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.06613883769340136,
+      "Tier-1 judged rate": 0.5,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.1365247834425456,
+      "Tier-1 judged rate": 0.9878048780487805,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.030677271403936224,
+      "Tier-1 judged rate": 0.8762886597938144,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.03528502514461836,
+      "Tier-1 judged rate": 0.59,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.05132973474366323,
+      "Tier-1 judged rate": 0.9787234042553191,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.28140449292281694,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.7589514796925121,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.4817360109643143,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.03663342115930564,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.06750761205708898,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.23326729484989933,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.2466412925565789,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.6578831329677185,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.19204464463910256,
+      "Tier-1 judged rate": 0.9595959595959596,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.06265734283923438,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.6036759228244973,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": -0.11594906373488467,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "TF fixed-pool margin": 0.9298616190174951,
+      "Tier-1 judged rate": 0.35353535353535354,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.0075125190491736,
+      "Tier-1 judged rate": 0.81,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.9789286414469263,
+      "Tier-1 judged rate": 0.7319587628865979,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.2788916779800557,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.3532319889518514,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.7014822075284364,
+      "Tier-1 judged rate": 0.82,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.9307008486197671,
+      "Tier-1 judged rate": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.0291173771499196,
+      "Tier-1 judged rate": 0.73,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.0430650134393296,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.2773772983540534,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 1.3593015966102222,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 2.263073289109383,
+      "Tier-1 judged rate": 0.84,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.6820278413085141,
+      "Tier-1 judged rate": 0.45,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.6789198163132787,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.32472390157431263,
+      "Tier-1 judged rate": 0.5959595959595959,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7465401402489934,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8241730496485361,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8459344327908009,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.5645435922298202,
+      "Tier-1 judged rate": 0.45,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.496263251626319,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.3951245261636662,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7407276105397599,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8175508021342717,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8196146737721239,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7283173477492116,
+      "Tier-1 judged rate": 0.6630434782608695,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7554708458894452,
+      "Tier-1 judged rate": 0.7741935483870968,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8160837702847907,
+      "Tier-1 judged rate": 0.85,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7527144948933243,
+      "Tier-1 judged rate": 0.8021978021978022,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7162025881752518,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.854981697527827,
+      "Tier-1 judged rate": 0.8222222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7271859953464446,
+      "Tier-1 judged rate": 0.7096774193548387,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7447758388133227,
+      "Tier-1 judged rate": 0.7291666666666666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8059825719312415,
+      "Tier-1 judged rate": 0.7391304347826086,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7595808551573888,
+      "Tier-1 judged rate": 0.7096774193548387,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7263214547683579,
+      "Tier-1 judged rate": 0.696969696969697,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.7098138482206908,
+      "Tier-1 judged rate": 0.86,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.8160741984863077,
+      "Tier-1 judged rate": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.4672829368506968,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.3429147849859133,
+      "Tier-1 judged rate": 0.88,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.9038614116281107,
+      "Tier-1 judged rate": 0.9081632653061225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.05380667938557182,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.5100624006484192,
+      "Tier-1 judged rate": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.779400364815668,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.9141512182960589,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.3976994315469444,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.6773911017058211,
+      "Tier-1 judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.6208429227690133,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.4221287087258987,
+      "Tier-1 judged rate": 0.89,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "TF fixed-pool margin": 0.01437675528378575,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.023526847063088586,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.044714081239534,
+      "Tier-1 judged rate": 0.6464646464646465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.1135575556566981,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.34897261958309705,
+      "Tier-1 judged rate": 0.86,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.9293594305687229,
+      "Tier-1 judged rate": 0.85,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.017856870067274988,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.018756200124591407,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.032462330509767545,
+      "Tier-1 judged rate": 0.6363636363636364,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.15538611458199791,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.44550508516547777,
+      "Tier-1 judged rate": 0.85,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.9698343283378672,
+      "Tier-1 judged rate": 0.86,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.08280463237736115,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.06921292945327562,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.042511989445905424,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.1481954377482469,
+      "Tier-1 judged rate": 0.76,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.16564206308632812,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.09068562729274977,
+      "Tier-1 judged rate": 0.6804123711340206,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.08228320641768684,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.07834430136500219,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.024954215482061212,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.14600503129490844,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.16656205852688494,
+      "Tier-1 judged rate": 0.84,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.12127574469105355,
+      "Tier-1 judged rate": 0.7878787878787878,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.013424692547187048,
+      "Tier-1 judged rate": 0.696969696969697,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.010915322420418164,
+      "Tier-1 judged rate": 0.68,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.022958418640785044,
+      "Tier-1 judged rate": 0.6413043478260869,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.02909733351926981,
+      "Tier-1 judged rate": 0.7575757575757576,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.028693716185848386,
+      "Tier-1 judged rate": 0.7171717171717171,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.032359587196722286,
+      "Tier-1 judged rate": 0.7959183673469388,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.011570326392804656,
+      "Tier-1 judged rate": 0.7171717171717171,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.01351453661891873,
+      "Tier-1 judged rate": 0.7346938775510204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": -0.009010406501961513,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.027408082390230057,
+      "Tier-1 judged rate": 0.75,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.03052274920588606,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.06583427953257805,
+      "Tier-1 judged rate": 0.8686868686868687,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.10445109391210888,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.1059732197078802,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.23842464920092668,
+      "Tier-1 judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.13216909507724914,
+      "Tier-1 judged rate": 0.86,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.12875979328238255,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.2793882828719583,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.10269613132507702,
+      "Tier-1 judged rate": 0.73,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.10235759802857639,
+      "Tier-1 judged rate": 0.6464646464646465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.06289724472040231,
+      "Tier-1 judged rate": 0.8686868686868687,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.1356517656317365,
+      "Tier-1 judged rate": 0.82,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.13190806315214862,
+      "Tier-1 judged rate": 0.76,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF fixed-pool margin": 0.22882654906568564,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Casual style (QUARANTINED) \u2014 Spearman rho=-0.38",
+        "xlabel": "TF fixed-pool margin",
+        "ylabel": "Tier-1 judged rate",
+        "xticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      },
+      {
+        "title_left": "Impolite \u2014 Spearman rho=-0.18",
+        "xlabel": "TF fixed-pool margin",
+        "ylabel": "Tier-1 judged rate",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Sycophancy \u2014 Spearman rho=0.61",
+        "xlabel": "TF fixed-pool margin",
+        "ylabel": "Tier-1 judged rate",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

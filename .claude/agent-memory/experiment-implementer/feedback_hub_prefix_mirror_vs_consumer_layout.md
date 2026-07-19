@@ -26,4 +26,9 @@ path shapes (monkeypatch `huggingface_hub.HfApi.list_repo_tree` +
 asserts the CONSUMER loads from the staged result; (4) a cheap real-Hub
 confirm: pre-seed the big blobs as dummies at their mapped paths, run the real
 stager at the pinned revision — it fetches only the KB-scale entry file and
-proves the mapping against the live artifact.
+proves the mapping against the live artifact. Run (1)–(4) once per
+(source-family × staged consumer) pair — a probe on one pair leaves a second
+family's layout or a later reread phase unprobed — and probe through the SAME
+staging helper production uses for that pair (a smoke staging per-file via
+`stage_hub_file` to the consumer path validates nothing about a production
+`stage_hub_prefix` mirror; #1481).

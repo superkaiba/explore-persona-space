@@ -221,21 +221,48 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the mapped set lacks the consumer's entry file (manifest/config) or the
   mapping collides — never a "successful" stage into a doomed consumer init;
   **(3)** BEFORE any production run, a **1-file staging probe +
-  consumer-open**: stage the artifact's ENTRY file (KB-scale) through the
-  REAL staging code path at the pinned revision, then run the consumer's
-  entry-point open/init (or its manifest-read; pre-seed blob files as dummies
-  at their mapped paths where full init requires them) against the staged
-  root. A synthetic-fixture smoke that writes the LOCAL layout directly never
-  exercises the staging phase and does NOT satisfy this leg (the cross-phase
-  data-contract smoke class, #518); the end-to-end smoke must exercise the
-  real staging path. Full 4-point implementation recipe (pure mapping fn,
-  fail-loud entry check, regression test through the producer's REAL Hub path
-  shapes, dummy-seeded real-Hub confirm):
+  consumer-open, ONCE PER (reused source-family × staged consumer) pair**:
+  for EACH pair where a consumer reads a family's staged tree, stage that
+  family's ENTRY file (KB-scale) through the REAL staging code path — the
+  SAME staging helper the production phase uses for that pair — at the
+  pinned revision, then run that consumer's entry-point open/init (or its
+  manifest-read; pre-seed blob files as dummies at their mapped paths where
+  full init requires them) against the staged root. A "reused
+  source-family" is a distinct reused artifact group staged through its own
+  source path/prefix (e.g. a `datagen/` bucket vs a `datagen_topup/`
+  sidecar bucket); a "staged consumer" is a distinct consumer entry-point
+  open/init reading a staged tree — INCLUDING a LATER phase that re-reads
+  the staged layout, not only the first reader. The probe matrix is the set
+  of (family, consumer) pairs actually read — per PAIR, not families +
+  consumers additively. A single global probe on one family/consumer does
+  NOT satisfy this leg when the plan stages ≥2 families or ≥2 consumers
+  (#1481, two same-day staged-layout crashes: (1) the second-family
+  layout-divergence incident — the phase0-mixes 404, failure marker
+  2026-07-18T06:15:45Z: the SECOND source-family (c3) kept its `cn.jsonl`
+  sidecar under `datagen_topup/` while the worker assumed the first
+  family's `datagen/` layout, after family 1's 4/4 mixes derived cleanly;
+  catchable by a compliant per-cell leg-(ii) check AND by a per-family
+  probe — the per-pair probe is a second line of defense here, not the
+  sole guard; and (2) the pure staged-layout exemplar — the 20:45Z
+  relaunch death, re-diagnosed 21:07:04Z as the `phase_reread` crash: a
+  LATER phase re-read a checkpoint staged via `hub.stage_hub_prefix`,
+  whose verbatim prefix mirror lands files at `dest/<repo-rel path>` while
+  the consumer opened `dest/` directly, and the green tiny-real smoke had
+  staged per-file via `stage_hub_file` to the exact consumer path — a
+  different helper than production, validating nothing about the
+  production mirror layout). A synthetic-fixture smoke that writes the
+  LOCAL layout directly never exercises the staging phase and does NOT
+  satisfy this leg (the cross-phase data-contract smoke class, #518); the
+  end-to-end smoke must exercise the real staging path — per pair, through
+  the production helper for that pair. Full 4-point implementation recipe
+  (pure mapping fn, fail-loud entry check, regression test through the
+  producer's REAL Hub path shapes, dummy-seeded real-Hub confirm):
   `.claude/agent-memory/experiment-implementer/feedback_hub_prefix_mirror_vs_consumer_layout.md`.
   **N/A escape:** reuse with NO staging transformation — the consumer opens
   the file(s) at the exact fetch destination(s), no layout mapping —
-  satisfies leg (iv) trivially; record "no staging transformation" in the
-  reuse map. (Incident #928, att-20260704-120700: the Hub stored all 51 store
+  satisfies leg (iv) trivially for that (family, consumer) pair; record
+  "no staging transformation" in the reuse map. (Incident #928,
+  att-20260704-120700: the Hub stored all 51 store
   files FLAT under `.../store/percq_summaries/` — the extractor uploaded
   `manifest.json` INSIDE that folder — while `Store(store_dir)` reads
   `<store>/manifest.json`; `stage_store` mirrored the Hub prefix verbatim,

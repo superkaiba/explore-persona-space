@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1526,
+  "highest_id": 1552,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3746,18 +3746,18 @@
     },
     "1481": {
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1481",
-      "status": "running",
-      "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
+      "path": "tasks/awaiting_promotion/1481",
+      "status": "awaiting_promotion",
+      "title": "Matched-install contrastive containment is real but narrow: it generalizes past the trained negative panel only for impolite, and mostly dissolves under install normalization for the marker (MODERATE confidence)"
     },
     "1482": {
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1482",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/1482",
+      "status": "awaiting_promotion",
       "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (MODERATE confidence)"
     },
     "1483": {
@@ -4107,12 +4107,103 @@
       "status": "completed",
       "title": "workflow-fix: gotchas.md bullet \u2014 off-pod phase reads vs upload manifest (cross-machine seam)"
     },
+    "1527": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1527",
+      "status": "completed",
+      "title": "workflow-fix: verified-at-filing clause (e) artifact-state"
+    },
+    "1528": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1528",
+      "status": "completed",
+      "title": "workflow-fix: guard deny sidecar JSONL"
+    },
+    "1529": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1529",
+      "status": "completed",
+      "title": "workflow-fix: /daily driver forwards filer advisories"
+    },
     "153": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/153",
       "status": "on_hold",
       "title": "Characterize persona drift as markov process/dynamical system"
+    },
+    "1530": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1530",
+      "status": "completed",
+      "title": "workflow-fix: assert HEAD==main at task.py commit site"
+    },
+    "1531": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1531",
+      "status": "completed",
+      "title": "workflow-fix: inline-gate contract test scans all anchors"
+    },
+    "1532": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1532",
+      "status": "completed",
+      "title": "workflow-fix: restore ruff full-ruleset helper pin to green"
+    },
+    "1533": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1533",
+      "status": "completed",
+      "title": "workflow-fix: gate-scope duty emits raw pin-sweep hit list"
+    },
+    "1534": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1534",
+      "status": "completed",
+      "title": "workflow-fix: merge=union for eval_results/INDEX.md"
+    },
+    "1535": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1535",
+      "status": "completed",
+      "title": "workflow-fix: plans enumerate off-pod phase file reads"
+    },
+    "1536": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1536",
+      "status": "completed",
+      "title": "daily-fix: fail-fast SFT prompt/completion type assert"
+    },
+    "1537": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1537",
+      "status": "proposed",
+      "title": "daily-held: enforce body presence on wf-fix filings"
+    },
+    "1538": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1538",
+      "status": "completed",
+      "title": "workflow-fix: guard grep-pattern literal false positive"
+    },
+    "1539": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1539",
+      "status": "completed",
+      "title": "workflow-fix: never-run claims scan live pods+markers"
     },
     "154": {
       "has_clean_result": false,
@@ -4121,12 +4212,103 @@
       "status": "on_hold",
       "title": "Characterize personas as attractors"
     },
+    "1540": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1540",
+      "status": "completed",
+      "title": "workflow-fix: reconcile planned cells per lane completion"
+    },
+    "1541": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1541",
+      "status": "completed",
+      "title": "workflow-fix: size boot disk vs end-of-run accumulation"
+    },
+    "1542": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1542",
+      "status": "completed",
+      "title": "workflow-fix: smoke must probe smoke-fenced branches"
+    },
+    "1543": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1543",
+      "status": "completed",
+      "title": "workflow-fix: staging probe per source-family+consumer"
+    },
+    "1544": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1544",
+      "status": "completed",
+      "title": "workflow-fix: lint upload_file-in-loop in issue drivers"
+    },
+    "1545": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1545",
+      "status": "completed",
+      "title": "workflow-fix: isolate root-guard self-test git state"
+    },
+    "1546": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1546",
+      "status": "completed",
+      "title": "workflow-fix: digest crash-tails on orchestrator poll turns"
+    },
+    "1547": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1547",
+      "status": "reviewing",
+      "title": "daily-fix: audit HF call sites route through retry helpers"
+    },
+    "1548": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1548",
+      "status": "running",
+      "title": "workflow-fix: surface cap-parked free-analysis follow-ups"
+    },
+    "1549": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1549",
+      "status": "proposed",
+      "title": "daily-held: reap stranded old-socket tmux server (~55 GiB)"
+    },
     "155": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/155",
       "status": "on_hold",
       "title": "Do capabilities survive through everything"
+    },
+    "1550": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1550",
+      "status": "running",
+      "title": "workflow-fix: verify_plan WARN when plan header version label mismatches persisted filename"
+    },
+    "1551": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1551",
+      "status": "planning",
+      "title": "workflow-fix: verify_plan WARN when a named regression anchor is neither run nor gate-selected"
+    },
+    "1552": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1552",
+      "status": "proposed",
+      "title": "clear pre-existing #1481 lint reds (hub-verify-retry + phase-done waivers)"
     },
     "156": {
       "has_clean_result": false,

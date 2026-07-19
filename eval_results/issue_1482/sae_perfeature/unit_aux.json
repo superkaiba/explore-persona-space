@@ -1,0 +1,21 @@
+{
+  "prefix_dense_to_vx_r2": 0.00017324390703310488,
+  "encode_the_prediction": {
+    "note": "off-distribution SAE-of-mean transform applied EQUALLY to v_hat and v (labeled secondary)",
+    "ridge": {
+      "n": 20000,
+      "n_feat_finite": 1448
+    },
+    "mlp_w8192": {
+      "n": 20000,
+      "n_feat_finite": 1448
+    }
+  },
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-18T23:47:42.820649Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "2"
+  }
+}

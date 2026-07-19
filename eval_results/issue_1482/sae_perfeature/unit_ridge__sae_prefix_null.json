@@ -1,0 +1,28 @@
+{
+  "arm": "sae_prefix_null",
+  "arm_doc": {
+    "mean__ridge": {
+      "pooled_r2": 0.00035432183456929334,
+      "selected_lambda": 0.001,
+      "val_r2": -3.697733651941704e-05,
+      "splithalf_rank_stability": 0.016959206596279645,
+      "splithalf_permutation_seed": 1482,
+      "n_feat_finite": 16384
+    }
+  },
+  "scalars": {
+    "f_out": 16384,
+    "f_in": 8192,
+    "activity_floor": 1200,
+    "n_fit": 120000,
+    "n_val": 2000,
+    "n_holdout": 20000
+  },
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-18T23:17:14.385745Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "2"
+  }
+}

@@ -158,9 +158,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
    when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
    into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
-   a 1-file staging probe + consumer-open through the REAL staging path before production (#928: a
+   a 1-file staging probe + consumer-open through the REAL staging path before production,
+   once per (source-family × staged consumer) pair — a single global probe does NOT satisfy
+   leg (iv) when ≥2 families or ≥2 consumers are staged (#928: a
    verbatim prefix mirror staged the store manifest one level deep and crashed `Store()` init after
-   legs (i)–(iii) passed); (i)
+   legs (i)–(iii) passed; #1481: a second family's sidecar layout and a later reread consumer
+   each crashed unprobed); (i)
    throughput fitness of reused fit/analysis/eval/upload-verify CODE — inner per-cell/per-fold/per-draw loop
    batched + device parametrized + data-repo Hub calls prefix-scoped; full text in `.claude/rules/artifact-reuse.md` checklist item (i)
    (referenced by pointer, not duplicated here; "checklist item (i)" is distinct from this item's
@@ -342,7 +345,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     when the narrow / API phase is genuinely short (~<15–30 min) OR the plan states the
     re-provision-cost-vs-idle-$ tradeoff for holding the wide pod, nor a shared-nothing sweep of N
     SAME-width seeds run SIMULTANEOUSLY on one wide pod (which is NOT a sequence of phases of
-    DIFFERENT widths).
+    DIFFERENT widths). Also REVISE a plan that dispatches a pod AND routes a subsequent phase
+    off-pod without the §9 off_pod_phases declaration (reads + outputs — upload-verifier
+    Steps 2.7/2.8 consume it; #1426/#1482/#1535).
 11. **Marker stopping recipe grounded in a non-marker parent (parity is not a Source) +
     runtime-guard smoke-verifiability.** If the plan trains a FRESH marker / behavior-implant
     adapter, the stopping recipe (lr, epochs / steps, checkpoint selection) must be grounded in
@@ -511,6 +516,35 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
     satisfies this item), or for `kind: analysis|infra|batch|survey`.
+    FAN-OUT ACCUMULATION EXTENSION (#1541, from incident #1481): when a
+    phase is an N-cell fan-out whose driver RETAINS per-cell outputs
+    locally after each cell completes (adapters / per-run checkpoints /
+    logs kept — NOT only full-precision merges: small-per-cell outputs
+    summed across cells are exactly what the full-precision trigger above
+    misses), ALSO verify §9 sizes the boot disk to the SUM of every cell's
+    retained output footprint at END-of-run plus the transient high-water
+    mark — at realized per-cell size (weights + optimizer state) and
+    DECLARED in the launch flags (`--boot-disk-gb`, arming the #1118
+    thread-or-refuse on a lane failover) — or declares a driver-side
+    between-phase reap of consumed cell outputs (delete-after-upload, or a
+    plan §10 `discarded_artifacts:` entry; `store/` + `eval_results/`
+    never touched; `clean_experiment_downloads.py --incremental` reaps
+    download caches only, so the reap must be named DRIVER code — per
+    `.claude/rules/plan-compute-sizing.md` § Fan-out end-of-run
+    accumulated footprint). REVISE when a multi-cell fan-out's disk
+    estimate assumes single-cell / steady-state retention with neither the
+    summed end-of-run sizing nor a declared reap (#1481: 24 cells'
+    retained outputs — all already uploaded — filled a 200 GB boot disk to
+    47.5 GB free < the 60 GB per-phase floor; three lanes died the same
+    day). The fits-quota / no-merges / kind escapes above do NOT cover
+    this extension (its trigger is RETAINED per-cell outputs, not
+    transient full-precision merges; only its own escape list below
+    governs it). Escapes: the summed end-of-run sizing stated, a declared
+    driver reap, or "N/A — no per-cell retained outputs";
+    `kind: infra|batch|survey` exempt — a `kind: analysis` fan-out
+    retaining per-cell outputs/tensors is IN scope (it accumulates
+    identically). Plan-time storage-budget check only, never a mid-run
+    gate.
     MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
     transient-merge trigger above — for EVERY §9 disk row naming an out-root a
     write-heavy phase writes (checkpoints, stores / analysis tensors, staged

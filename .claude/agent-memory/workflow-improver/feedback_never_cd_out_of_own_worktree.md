@@ -24,10 +24,11 @@ would have clobbered the live session and stranded my workflow edit on the
 - Resolve your own worktree once at startup; treat it as the ONLY tree you
   touch. Prefer absolute paths rooted at your worktree in Read/Edit/Write.
 - If your branch is behind `main` and the candidate references code merged
-  to `main` (workflow-fixes land on `main` continuously), `git merge
-  --ff-only main` INTO YOUR OWN worktree branch first so you edit against
-  the real current baseline — verify the referenced code is present
-  (`grep -F <token>`) before analyzing.
+  to `main` (workflow-fixes land on `main` continuously), fetch then
+  `git merge --ff-only origin/main` INTO YOUR OWN worktree branch first
+  (NEVER local `main` — its unpushed root commits contaminate the branch,
+  #1530) so you edit against the real current baseline — verify the
+  referenced code is present (`grep -F <token>`) before analyzing.
 - Grep/Read tool `path` args resolve against the tool's own root, NOT a
   prior Bash `cd` — but Bash `cd` persists nothing between calls and a
   per-call `cd <sibling>` is the trap. If you must `cd`, `cd` back to your

@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -14,7 +14,10 @@ repeated in generated text — or the ORCHESTRATOR composes a FIRST-PASS
 fact-check / critique / plan-review brief whose TARGET files are such
 artifacts (§ First-pass briefs, #1503), or composes a revision-round /
 bounce / reconcile brief from findings-bearing verdicts on such a round
-(§ Revision-round briefs, #1413). Recognition heuristic
+(§ Revision-round briefs, #1413), or the ORCHESTRATOR ingests
+run-failure / forensics text on its own turn — a poll tick reporting
+stalled/dead, crash-persist artifacts, a guard hook's BLOCKED runtime
+output (§ Orchestrator poll/forensics turns, #1546). Recognition heuristic
 (any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
@@ -124,6 +127,11 @@ the duties attach to the brief itself:
    and 4 bind its output from the first spawn.
 4. Keep the brief's own text in neutral gate vocabulary (CLAUDE.md
    § Spurious usage-policy refusals, rung (e)).
+5. A brief whose target or supporting context includes a guard hook's
+   BLOCKED runtime output passes that text by file reference (the hook
+   script path, or the transcript/log path + line) or marker reference —
+   never inlined into the brief (2026-07-18: 3 content-filter kills from
+   briefs inlining a hook's BLOCKED message).
 
 Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
 READ discipline previously attached only to review roles and revision
@@ -153,6 +161,62 @@ truncated mid-sentence). After any refusal on a spawn turn, the
 CLAUDE.md rung-(g) dispatched-prompt completeness check applies to
 revision spawns exactly as to first spawns.
 
+## Orchestrator poll/forensics turns (ingest-side, #1546)
+
+Fires for the ORCHESTRATOR itself — an /issue, /issue-v2, /campaign, or
+tick session — whenever run-failure or forensics text lands on its OWN
+turn: a poll tick reporting stalled/dead (the poll JSON's log-tail
+excerpt field), pod/VM stderr or crash-log tails, crash-persist
+artifacts (`crash_report.json` / `workload.log` under the HF
+`issue<N>_partial/` prefix), lane/queue state dumps, or a guard hook's
+BLOCKED runtime output. The composition-side sections above protect
+SUBAGENT briefs; this section protects the orchestrator's own context —
+the one context whose loss costs a session respawn (CLAUDE.md
+§ Spurious usage-policy refusals rung (f); 2026-07-18: 7 content-filter
+kills on one session's poll turns while it paged raw crash-forensics
+tails; session replaced).
+
+1. **Digest-first, unconditionally.** Ingest failure text as STRUCTURAL
+   DIGESTS: bounded pattern COUNTS
+   (`grep -ciE 'error|traceback|killed|OOM' <log>`), exit codes,
+   phase/lane fields from the poll JSON, and file references (path +
+   byte size + mtime) for the tail itself. The CLAUDE.md § Monitoring
+   matched-line grep and the § 429-pacing `tail -50` bound remain the
+   CEILING for any raw-line read on an ordinary run — never `cat` a
+   multi-KB tail (`guard_log_dump.sh` blocks the local dump shapes
+   mechanically; SSH-remote reads and bounded re-reads are NOT
+   hook-covered, so the discipline there is yours) — and never RE-page
+   the same tail across consecutive poll turns: repetition is what
+   accumulates the refusal surface.
+2. **Routing stays script-side.** `failure_class` routing runs through
+   `scripts/failure_classifier.py --body - --log "$LATEST_LOG_PATH"`
+   (issue SKILL.md Step 7): the SCRIPT reads the log and prints a
+   one-line verdict. Do not re-read the raw log inline to re-derive what
+   the classifier computes; pass log content to it by PATH / stdin,
+   never by pasting text into your own turn.
+3. **Trigger-dense runs escalate to a fresh-context reader.** When the
+   RUN is trigger-dense per the recognition heuristic above — keyed on
+   the WORKLOAD, knowable before any read: it trains/evals on
+   guard/security surfaces, harmful-content or refusal corpora, or
+   jailbreak banks, or its failure text embeds a guard hook's BLOCKED
+   output — even bounded excerpts stay OUT of the orchestrator's
+   context: dispatch a fresh-context subagent to read windowed excerpts
+   (discipline 3) and return a digest per disciplines 1/4 — counts,
+   file:line references, a routing recommendation, no quoted text. A
+   subagent's context is disposable; the orchestrator's is the session.
+4. **Guard-hook BLOCKED output by reference.** A hook's BLOCKED message
+   is attack-shaped by construction (it names what it blocks). Reference
+   it by hook path + a ≤80-char reason slice (the issue-tick
+   GATE-TRANSITION precedent) in turn text and marker notes; on a
+   trigger-dense run the `epm:failure` note carries digest + artifact
+   path, not the raw tail (the note is re-read by later turns and tick
+   digests — raw text there poisons every future read). Brief-side duty:
+   § First-pass briefs item 5.
+5. **Durable record is unchanged.** The raw tail stays WHERE IT IS
+   durable (the pod/VM log file, the crash-persist upload) — this
+   section changes what enters the orchestrator's CONTEXT and generated
+   text, never whether forensic text is persisted.
+
 ## What this rule does NOT change
 
 - The review bar. Every finding still needs a concrete artifact location;
@@ -163,6 +227,11 @@ revision spawns exactly as to first spawns.
   by `.claude/rules/diff-size-budget.md`. This rule adds the
   generated-TEXT + verdict-ordering discipline those read-side rules do
   not cover.
+- The CLAUDE.md § Monitoring recipe on ordinary runs and the mechanical
+  `guard_log_dump.sh` dump blocker. § Orchestrator poll/forensics turns
+  adds the counts-first / no-repeat / trigger-dense-escalation discipline
+  those do not cover — it tightens, never replaces, the existing
+  log-read ceiling.
 
 ## Files of record
 
@@ -174,7 +243,11 @@ orchestrator rung b2), #866 (bank-text paging kills), #1090
 return text wedged the parent orchestrator — discipline 4), #1413 (a
 revision brief inlining a round's findings text — § Revision-round briefs),
 #1436/#1443 (4 first-pass kills on guard-surface targets — § First-pass
-briefs, #1503).
+briefs, #1503), 2026-07-18 (7 poll-turn content-filter kills wedged the
+#1481 session while it paged raw crash-forensics tails, session
+replaced, + 3 brief kills from inlined hook-BLOCKED text —
+§ Orchestrator poll/forensics turns + § First-pass briefs item 5,
+#1546).
 Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
@@ -182,6 +255,8 @@ Enforcing pointers:
 pre-materialization);
 `.claude/skills/issue/SKILL.md` § File-only Codex verdict posting
 (orchestrator-side posting path, #1275);
+`.claude/skills/issue/SKILL.md` Step 6d.2 (poll-loop forensics-ingest
+pointer, #1546);
 `.claude/skills/adversarial-planner/SKILL.md` Phase 3 +
 `.claude/skills/issue/SKILL.md` Step 5d (revision-brief composition
 pointers, #1413);
