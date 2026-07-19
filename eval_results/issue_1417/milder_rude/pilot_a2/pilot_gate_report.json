@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "git_commit": "ed74d0e5a575c020a333c8316e1cce30d926916b",
+    "timestamp": "2026-07-19T15:29:23Z",
+    "seed": 42,
+    "n": 400,
+    "script": "scripts/issue1417_pilot_gate.py",
+    "issue": 931
+  },
+  "issue": 1417,
+  "render_config_hash": "066334cf0dbbae80",
+  "gate": "milder_pilot",
+  "cell": "c2_rude_mild",
+  "bars": {
+    "yield": 0.4,
+    "var_ratio": 0.4
+  },
+  "anchors_dir": "eval_results/issue_1417/refit/anchors",
+  "lanes": {
+    "instruct": {
+      "yield_frac": 0.645,
+      "var_ratio": 0.5404790090778571,
+      "bars": {
+        "yield": 0.4,
+        "var_ratio": 0.4
+      },
+      "yield_arm_fires": false,
+      "var_arm_fires": false,
+      "verdict": "pass",
+      "n_judged": 200,
+      "n_kept": 129,
+      "y_trace_cov_l19_pilot": 863.7543905548296
+    },
+    "pretrained": {
+      "yield_frac": 0.16,
+      "var_ratio": 0.4199556804719597,
+      "bars": {
+        "yield": 0.4,
+        "var_ratio": 0.4
+      },
+      "yield_arm_fires": true,
+      "var_arm_fires": false,
+      "verdict": "fail",
+      "n_judged": 200,
+      "n_kept": 32,
+      "y_trace_cov_l19_pilot": 738.23104526466
+    }
+  },
+  "lanes_failing": [
+    "pretrained"
+  ],
+  "disposition": "per-lane (plan \u00a74.3 step 2): a passing lane proceeds to its full judge + phase C; a failing lane gets ONE render revision; full abort only when BOTH lanes fail after the retry budget",
+  "pass": false
+}

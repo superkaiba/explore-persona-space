@@ -44,6 +44,23 @@
 # regenerates from the refit JSONs). Inner-group-CV is MORE expensive per fit
 # than GCV (4 inner eighs per fold prep + a per-target inner RSS curve) —
 # raise I1417_PILOT_BUDGET_H if the PC-3 pilot rc-7 aborts on projected cost.
+#
+# I1417_CELLS=<csv> (milder-rude round, plan §4.2 item 4a): overrides the
+# unit-queue cell list AND is threaded as --cells into the smoke judge legs +
+# every fits/battery call (run_summary always reads the full CELL_ORDER —
+# merged sparse panel). Default = the five v1 cells (byte-preserving).
+#
+# I1417_MILDER=1 (with I1417_PHASE=C + I1417_CELLS=c2_rude_mild): milder-rude
+# amendment round (plan v6 §4.2 item 4b) — BAT_OUT_DIR=$OUT_DIR/milder_rude,
+# carry step (v1 judge kept-sets + refit cells/nulls + refit battery PAIR
+# files copied in, file-count asserted), then the refit's registered selector
+# (--lambda-selection inner-group-cv --gcv-dof-cap 0.9), --judge-dir
+# $OUT_DIR/milder_rude, --cells c2_rude_mild, --h-rude-cell c2_rude_mild.
+# Anchors are NOT carried — G1 re-runs fresh. Figures skipped (as refit).
+# I1417_CARRY_ONLY=1 runs ONLY the carry step (VM verification affordance).
+# VM judge phases for the milder round pass --hf-subdir milder_rude (full) /
+# milder_rude/pilot (pilot) so yield_report.json / n_draw_pilot.json never
+# clobber the published v1 HF judge paths.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$PWD}}"
@@ -63,7 +80,10 @@ LOG_DIR="${LOG_DIR:-${WORKLOAD_ROOT:-/workspace}/logs}"
 SMOKE="${SMOKE:-0}"
 SKIP_SMOKE="${SKIP_SMOKE:-0}"
 REFIT="${I1417_REFIT:-0}"
-BAT_OUT_DIR=""  # phase-C battery out-dir override (refit mode: $OUT_DIR/refit)
+MILDER="${I1417_MILDER:-0}"
+# Phase-C battery out-dir override (refit: $OUT_DIR/refit; milder:
+# $OUT_DIR/milder_rude; env-overridable for the I1417_CARRY_ONLY affordance).
+BAT_OUT_DIR="${BAT_OUT_DIR:-}"
 SKIP_UPLOAD="${SKIP_UPLOAD:-0}"
 SKIP_PUSH="${SKIP_PUSH:-0}"
 SMOKE_N="${SMOKE_N:-50}"
@@ -72,8 +92,17 @@ SMOKE_JUDGE_DRAWS="${SMOKE_JUDGE_DRAWS:-2}"
 HF_PREFIX="issue1417_framing_cells"
 HF_REPO="superkaiba1/explore-persona-space-data"
 
-MODELS=(instruct pretrained)
-CELLS=(c1_helpful_ctrl c2_rude c3_evasive c4_exposition c5_ai_addressee)
+# Lane filter (per-lane pilot disposition, plan v7 §4.3): I1417_MODELS
+# space-separated override — e.g. "instruct" for a single-lane Phase C after
+# the other lane failed its pilot bars. Default: both lanes (v1/refit shape).
+MODELS=(${I1417_MODELS:-instruct pretrained})
+# Cell filter (plan §4.2 item 4a): ONE source for every phase's cell list —
+# the unit queue, the smoke judge --cells, and every fits/battery --cells.
+# Default = the five v1 cells (fits/battery filtered to these == the v1/refit
+# behavior exactly; the registry's 6th cell enters only via I1417_CELLS).
+CELLS_CSV="${I1417_CELLS:-c1_helpful_ctrl,c2_rude,c3_evasive,c4_exposition,c5_ai_addressee}"
+IFS=',' read -r -a CELLS <<< "$CELLS_CSV"
+QUEUE_CELLS=("${CELLS[@]}")  # run_smoke may augment with the c1 reference cell
 REFERENCE_STEMS=(instruct_chat_s pretrained_chat_s instruct_naturalistic_s pretrained_naturalistic_s)
 
 if command -v nvidia-smi >/dev/null 2>&1; then
@@ -190,11 +219,11 @@ PY
 # ---------------------------------------------------------------------------
 QUEUE_DIR=""
 
-init_queue() {  # init_queue <scratch_tag>
+init_queue() {  # init_queue <scratch_tag> — units from QUEUE_CELLS (cell filter)
   QUEUE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/i1417-queue-$1-XXXX")
   : > "$QUEUE_DIR/units"
   for model in "${MODELS[@]}"; do
-    for cell in "${CELLS[@]}"; do
+    for cell in "${QUEUE_CELLS[@]}"; do
       echo "${model}:${cell}" >> "$QUEUE_DIR/units"
     done
   done
@@ -359,8 +388,11 @@ paths = list_hf_files_under_path(HfApi(), r1417.HF_DATA_REPO, prefix, repo_type=
 n = 0
 for p in paths:
     rel = p[len(prefix) + 1 :]
-    if rel.startswith("raw/"):
-        continue  # per-rubric raw draws: consumed on HF only, not needed for fits
+    if "/" in rel:
+        # Subdirs are never v1 judge outputs: raw/ (per-rubric raw draws,
+        # consumed on HF only) and the milder round's milder_rude/ +
+        # milder_rude/pilot/ subprefixes (staged from git, never from here).
+        continue
     dest = jdir / rel
     if not dest.exists():
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -425,6 +457,75 @@ for stem in r1417.REFERENCE_STEMS:
         if not t.exists():
             stage_hub_file(r1417.HF_DATA_REPO, p, t, repo_type="dataset", revision=rev)
     print(f"[i1417-stage] smoke reference shard0 staged: {stem}")
+PY
+}
+
+carry_milder_inputs() {  # milder round (plan §4.2 item 4b): carry v1/refit inputs
+  echo "[phase=pc_milder_carry]"
+  mkdir -p "$BAT_OUT_DIR/judge" "$BAT_OUT_DIR/cells" "$BAT_OUT_DIR/battery"
+  # cp -n: never overwrite files already there (the mild kept-sets are
+  # committed under $BAT_OUT_DIR/judge by the VM full-judge step). coreutils
+  # >=9.2 exits nonzero on a -n skip — tolerated; the assert block below is
+  # the fail-loud completeness check.
+  cp -n "$OUT_DIR"/judge/kept_*.json "$BAT_OUT_DIR/judge/" 2>/dev/null || true
+  cp -n "$OUT_DIR"/refit/cells/*.json "$BAT_OUT_DIR/cells/" 2>/dev/null || true
+  # Battery PAIR files ONLY (battery_*__*.json — the '__' excludes the two
+  # refit battery_pilot_report_*.json; this round's PC-3 writes its own).
+  cp -n "$OUT_DIR"/refit/battery/battery_*__*.json "$BAT_OUT_DIR/battery/" 2>/dev/null || true
+  # Anchors are NOT carried — phase C re-runs G1 fresh (plan §4.2 item 4).
+  uv run python - "$BAT_OUT_DIR" "${MODELS[*]}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "scripts")
+import issue1417_render as r1417
+
+bat = Path(sys.argv[1])
+# Active lanes (per-lane pilot disposition, plan v7 §4.3): the MILD kept-set
+# exists only for lanes that passed their pilot bars and ran the full judge;
+# CARRIED v1/refit kept-sets exist for BOTH models regardless (git-committed).
+active_models = sys.argv[2].split() if len(sys.argv) > 2 else list(r1417.MODELS)
+carried_cells = [c for c in r1417.CELL_ORDER if c != "c2_rude_mild"]
+
+# 12 carried kept-sets (10 cell + 2 kept_*_c0_baseline.json) + 1 mild kept-set
+# per ACTIVE lane.
+missing = []
+for model in r1417.MODELS:
+    for cell in [*carried_cells, "c0_baseline"]:
+        p = bat / "judge" / f"kept_{model}_{cell}.json"
+        if not p.exists():
+            missing.append(str(p))
+for model in active_models:
+    p = bat / "judge" / f"kept_{model}_c2_rude_mild.json"
+    if not p.exists():
+        missing.append(str(p))
+assert not missing, f"carry: missing kept-sets: {missing}"
+for model in active_models:
+    kd = json.loads((bat / "judge" / f"kept_{model}_c2_rude_mild.json").read_text())
+    assert r1417.fingerprint_matches(kd), f"mild kept-set fingerprint mismatch ({model})"
+
+# 160 carried cell JSONs = 80 cells_* + 80 nulls_*. The nulls_* files are
+# LOAD-BEARING: _summary_fit_entry reads cells/nulls_<cell>__<model>__ctx.json
+# for map_exists — carrying only cells_* would silently null map_exists on
+# every carried cell. Counts exclude this round's own c2_rude_mild outputs
+# (resume-safe: the assert stays true after the mild fits land).
+names = [p.name for p in (bat / "cells").glob("*.json") if "c2_rude_mild" not in p.name]
+n_cells = sum(1 for n in names if n.startswith("cells_"))
+n_nulls = sum(1 for n in names if n.startswith("nulls_"))
+assert (n_cells, n_nulls) == (80, 80), (
+    f"carry: carried cell JSONs cells_={n_cells} nulls_={n_nulls} (expected 80+80)"
+)
+
+# 26 carried battery PAIR files (pilot reports excluded by the '__' glob).
+pairs = [p.name for p in (bat / "battery").glob("battery_*__*.json") if "c2_rude_mild" not in p.name]
+assert len(pairs) == 26, f"carry: carried battery PAIR files {len(pairs)} != 26"
+n_kept = len(list((bat / "judge").glob("kept_*.json")))
+print(
+    f"[i1417-run] carry asserts PASS: kept={n_kept} (12 carried + "
+    f"{len(active_models)} mild, active lanes: {' '.join(active_models)}), "
+    f"cells={n_cells}+{n_nulls} nulls, battery pairs={len(pairs)}"
+)
 PY
 }
 
@@ -522,21 +623,34 @@ run_smoke() {
   rm -rf "$data_dir/reference_sidecars"
   cp -r "$DATA_DIR/reference_sidecars" "$data_dir/"
 
+  # The vs-c1 battery pairs read the c1 store + kept-set from the scratch
+  # smoke root, so the smoke gen/judge legs ALWAYS include c1_helpful_ctrl
+  # even when the cell filter omits it (production phase C stages v1's
+  # committed c1 artifacts through the SAME consumer code path). Fits/battery
+  # keep the FILTERED set (the c1 reference needs no fit of its own).
+  local smoke_cells_csv="$CELLS_CSV"
+  if [[ ",$CELLS_CSV," != *",c1_helpful_ctrl,"* ]]; then
+    smoke_cells_csv="$CELLS_CSV,c1_helpful_ctrl"
+  fi
+  IFS=',' read -r -a QUEUE_CELLS <<< "$smoke_cells_csv"
+
   echo "[phase=smoke_units]"
   run_phase_a "$data_dir" smoke
+  QUEUE_CELLS=("${CELLS[@]}")  # restore the unaugmented filter for phase-A full
 
   echo "[phase=smoke_judge_g3]"
   uv run python scripts/issue1417_judge.py --live-smoke --data-dir "$data_dir" --out-dir "$out_dir"
 
   echo "[phase=smoke_judge]"
   uv run python scripts/issue1417_judge.py --all --data-dir "$data_dir" --out-dir "$out_dir" \
+    --cells "$smoke_cells_csv" \
     --limit "$SMOKE_JUDGE_LIMIT" --n-draws "$SMOKE_JUDGE_DRAWS" --skip-upload --pilot-report
 
   echo "[phase=smoke_refs]"
   stage_reference_shard0 "$data_dir"
 
   echo "[phase=smoke_fits_battery]"
-  local common=(--data-dir "$data_dir" --out-dir "$out_dir" --smoke)
+  local common=(--data-dir "$data_dir" --out-dir "$out_dir" --smoke --cells "$CELLS_CSV")
   uv run python scripts/issue1417_battery.py --gate-g2 "${common[@]}"
   for model in "${MODELS[@]}"; do
     uv run python scripts/issue1417_battery.py --anchors --model "$model" "${common[@]}"
@@ -553,7 +667,7 @@ run_smoke() {
   # v1-judge read-only, inner-group-cv + dof cap threaded into every fit site.
   echo "[phase=smoke_refit_fits_battery]"
   local refit_common=(--data-dir "$data_dir" --out-dir "$out_dir/refit" --judge-dir "$out_dir" \
-    --smoke --lambda-selection inner-group-cv --gcv-dof-cap 0.9)
+    --smoke --lambda-selection inner-group-cv --gcv-dof-cap 0.9 --cells "$CELLS_CSV")
   for model in "${MODELS[@]}"; do
     uv run python scripts/issue1417_battery.py --anchors --model "$model" "${refit_common[@]}"
     uv run python scripts/issue1417_battery.py --fits --model "$model" "${refit_common[@]}"
@@ -587,6 +701,15 @@ PY
 
 main() {
   local t0=$SECONDS
+  if [ "${I1417_CARRY_ONLY:-0}" = "1" ]; then
+    # Verification affordance (VM, 0 GPU): run ONLY the milder carry step —
+    # OUT_DIR/BAT_OUT_DIR overridable so a scratch out-dir exercises the
+    # exact production cp -n + assert block against the committed refit dir.
+    BAT_OUT_DIR="${BAT_OUT_DIR:-$OUT_DIR/milder_rude}"
+    carry_milder_inputs
+    echo "[phase=done]"
+    return 0
+  fi
   echo "[phase=p0_stage]"
   log "issue=$ISSUE phase=${PHASE:-smoke-only} SMOKE=$SMOKE NGPUS=$NGPUS repo=$REPO_ROOT"
   uv run python scripts/issue1417_render.py --fetch-questions --data-dir "$DATA_DIR"
@@ -613,6 +736,10 @@ main() {
     C)
       headroom "$DATA_DIR" 125 "phase-c"
       local refit_args=()
+      if [ "$REFIT" = "1" ] && [ "$MILDER" = "1" ]; then
+        log "FATAL: I1417_REFIT and I1417_MILDER are mutually exclusive"
+        exit 5
+      fi
       if [ "$REFIT" = "1" ]; then
         # Registered-selector refit (see the header block): versioned out-dir,
         # v1 judge kept-sets read-only, registered mitigations threaded into
@@ -622,9 +749,27 @@ main() {
         mkdir -p "$BAT_OUT_DIR"
         refit_args=(--judge-dir "$OUT_DIR" --lambda-selection inner-group-cv --gcv-dof-cap 0.9)
         log "REFIT mode: battery out-dir=$BAT_OUT_DIR judge-dir=$OUT_DIR"
+      elif [ "$MILDER" = "1" ]; then
+        # Milder-rude amendment round (plan v6 §4.2 item 4b): versioned
+        # out-dir, carried v1 kept-sets + refit fits/battery merged via the
+        # carry step, the refit's registered selector on the mild fits, the
+        # H-table rude slot fed by the mild cell. Judge root = the milder dir
+        # (carried + mild kept-sets both live there after the carry).
+        if [[ ",$CELLS_CSV," != *",c2_rude_mild,"* ]]; then
+          log "FATAL: I1417_MILDER=1 requires I1417_CELLS to include c2_rude_mild"
+          exit 5
+        fi
+        BAT_OUT_DIR="$OUT_DIR/milder_rude"
+        mkdir -p "$BAT_OUT_DIR"
+        refit_args=(--judge-dir "$BAT_OUT_DIR" --lambda-selection inner-group-cv \
+          --gcv-dof-cap 0.9 --h-rude-cell c2_rude_mild)
+        log "MILDER mode: battery out-dir=$BAT_OUT_DIR judge-dir=$BAT_OUT_DIR cells=$CELLS_CSV"
       fi
       echo "[phase=pc_stage_inputs]"
       stage_phase_c_inputs
+      if [ "$MILDER" = "1" ]; then
+        carry_milder_inputs
+      fi
       uv run python scripts/issue1417_battery.py --gate-g2 --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
       # auto_descope_to_null_draws_100 (epm:compute-deviation v3, #1417): post-fix
       # pilot still projects 8236 s/lane > the 7200 s rc-7 abort threshold (the
@@ -639,17 +784,18 @@ main() {
       # measured 2.17 h worst-case uniform projection with ~38% margin while
       # still bounding a genuine runaway (~10x the naive basis still aborts).
       run_phase_c_lanes full "${refit_args[@]}" \
+        --cells "$CELLS_CSV" \
         --cosine-null-draws "${I1417_COSINE_NULL_DRAWS:-100}" \
         --collapse-null-draws "${I1417_COLLAPSE_NULL_DRAWS:-100}" \
         --pilot-budget-h "${I1417_PILOT_BUDGET_H:-1.5}"
       echo "[phase=pc_summary]"
       uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" \
         --out-dir "${BAT_OUT_DIR:-$OUT_DIR}" "${refit_args[@]}"
-      if [ "$REFIT" != "1" ]; then
+      if [ "$REFIT" != "1" ] && [ "$MILDER" != "1" ]; then
         echo "[phase=pc_figures]"
         uv run python scripts/issue1417_figures.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR"
       else
-        log "figures skipped in refit mode (analyzer regenerates from refit JSONs)"
+        log "figures skipped in refit/milder mode (analyzer regenerates from the round's JSONs)"
       fi
       echo "[phase=pc_finalize]"
       commit_and_push_results

@@ -13,7 +13,7 @@ the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
 writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network; and check 40, when its
+dispatch set — read-only, no import, no network; and check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
@@ -95,19 +95,26 @@ Check catalog (id — classification — kind scope)
       criterion baseline
   c39 off-pod phase             WARN-only, conditional    experiment only
       declaration
-  c40 regression-anchor named   WARN-only, conditional    infra + batch only
+  c40 header version label vs   WARN-only, conditional    all kinds
+      persisted filename
+  c41 regression-anchor named   WARN-only, conditional    infra + batch only
       test executed or gate-selected
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
 the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
 bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
+Check 40 also runs outside ``verify_plan_text()`` — it compares the first
+heading's self-declared ``# Plan v<X>`` label against the persisted
+``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
+the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
+draft).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -155,7 +162,7 @@ labeled-line forms):
   - ``N/A — no no-flags bundling claim`` (check 37)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
-  - ``N/A — no regression anchors`` (check 40)
+  - ``N/A — no regression anchors`` (check 41)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -6418,7 +6425,46 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     )
 
 
-# ─── Check 40 — regression-anchor test executed or gate-selected ───────────
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+_C40_FILENAME_RE = re.compile(r"v(\d+)\.md")  # fullmatch on plan_path.resolve().name
+_C40_HEADER_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")  # on the first heading's TEXT
+
+
+def check_header_version_vs_filename(plan: str, *, plan_path: Path) -> CheckResult:
+    """WARN when the plan's first heading self-declares ``Plan v<X>`` and the
+    persisted filename is ``v{K}.md`` with X != K (#1482: '# Plan v4' rode
+    v5.md + v6.md unnoticed). Version-neutral titles PASS (the sanctioned
+    escape); a non-``v{K}.md`` filename SKIPs (nothing to compare). The
+    filename is read via ``plan_path.resolve()`` so a ``plans/plan.md``
+    symlink invocation compares against the real ``v{K}.md`` target.
+    WARN-only, all kinds."""
+    cid = "c40_header_version_vs_filename"
+    name = "header self-declared version matches persisted filename"
+    m_file = _C40_FILENAME_RE.fullmatch(plan_path.resolve().name)
+    if not m_file:
+        return _skip(cid, name, "filename carries no v{K}.md version (draft / standalone plan)")
+    _, body = split_frontmatter(plan)
+    heads = _headings(body)
+    if not heads:
+        return _skip(cid, name, "no headings in plan")
+    m_head = _C40_HEADER_RE.match(heads[0].text)
+    if not m_head:
+        return _pass(cid, name, "header is version-neutral — no self-declared version")
+    x, k = int(m_head.group(1)), int(m_file.group(1))
+    if x == k:
+        return _pass(cid, name, f"header v{x} matches persisted {plan_path.resolve().name}")
+    return _warn(
+        cid,
+        name,
+        f"header self-declares v{x} but the persisted file is {plan_path.resolve().name} — "
+        f"stale version label (#1482: '# Plan v4' rode v5+v6 unnoticed); retitle the header "
+        f"to v{k} or make it version-neutral ('# Plan (amendment) — …' / "
+        f"'# Plan — Issue #<N>: …')",
+    )
+
+
+# ─── Check 41 — regression-anchor test executed or gate-selected ───────────
 
 # Trigger: a NON-FENCED line carrying BOTH a test-file path token AND
 # regression-anchor / gate-selection vocabulary — same-line co-occurrence
@@ -6430,7 +6476,7 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
 # ``test_x.py`` normalizes to ``tests/test_x.py`` — a disclosed convenience
 # (plans conventionally write full repo-relative paths; the bare form is
 # assumed to live under tests/).
-_C40_TESTPATH_RE = re.compile(r"\b((?:tests/(?:[\w-]+/)*)?test_[\w-]+\.py)\b")
+_C41_TESTPATH_RE = re.compile(r"\b((?:tests/(?:[\w-]+/)*)?test_[\w-]+\.py)\b")
 
 # Anchor / gate-selection vocabulary. Two claim classes, one trigger set:
 #  (i) gate-selection claims — "sits on the Step-9c mapped-scan path",
@@ -6438,7 +6484,7 @@ _C40_TESTPATH_RE = re.compile(r"\b((?:tests/(?:[\w-]+/)*)?test_[\w-]+\.py)\b")
 #      "selected/picked up by the (9c) gate";
 #  (ii) anchor claims — "regression anchor", "must stay green",
 #      "stays/remains green".
-_C40_ANCHOR_VOCAB_RE = re.compile(
+_C41_ANCHOR_VOCAB_RE = re.compile(
     r"(?i)\bregression[- ]anchor"
     r"|\bmust\s+(?:stay|remain)\s+green\b|\b(?:stays?|remains?)\s+green\b"
     r"|\bmapped[- ]scan\b"
@@ -6452,31 +6498,31 @@ _C40_ANCHOR_VOCAB_RE = re.compile(
 # CORRECTED plan shape ("test X is NOT auto-selected — the one-hop import
 # map misses it — so §6 runs it explicitly") must not trigger. The guard is
 # per-VOCAB-HIT, not per-line: a negation token within the
-# ``_C40_NEG_WINDOW`` chars BEFORE a vocabulary match guards THAT match
+# ``_C41_NEG_WINDOW`` chars BEFORE a vocabulary match guards THAT match
 # only — calibration showed the founding incident line itself (#1536 v2
 # L112) opens with an unrelated "N/A — not an experiment" clause ~400 chars
 # before its anchor vocabulary, so a whole-line negation guard silently
 # un-triggers the very shape the check exists to catch.
-_C40_NEG_RE = re.compile(
+_C41_NEG_RE = re.compile(
     r"(?i)\bnot\b|\bnever\b|\bno longer\b|\bcannot\b|\bisn'?t\b|\bwon'?t\b|\bmisse[sd]\b"
 )
-_C40_NEG_WINDOW = 40  # chars of pre-context a negation token guards
+_C41_NEG_WINDOW = 40  # chars of pre-context a negation token guards
 
 
-def _c40_line_triggers(line: str) -> bool:
+def _c41_line_triggers(line: str) -> bool:
     """True when ``line`` carries at least one anchor/gate vocabulary hit
-    that is not LOCALLY negated (no negation token in the ``_C40_NEG_WINDOW``
+    that is not LOCALLY negated (no negation token in the ``_C41_NEG_WINDOW``
     chars before the hit). Post-hit negation ("selected? it is not") is a
     disclosed non-guard — rare, and the fail direction is a WARN the N/A
     escape remedies, not a miss."""
-    for m in _C40_ANCHOR_VOCAB_RE.finditer(line):
-        window = line[max(0, m.start() - _C40_NEG_WINDOW) : m.start()]
-        if not _C40_NEG_RE.search(window):
+    for m in _C41_ANCHOR_VOCAB_RE.finditer(line):
+        window = line[max(0, m.start() - _C41_NEG_WINDOW) : m.start()]
+        if not _C41_NEG_RE.search(window):
             return True
     return False
 
 
-def _c40_anchors(plan: str) -> set[str]:
+def _c41_anchors(plan: str) -> set[str]:
     """Normalized anchor test paths from non-fenced, locally-un-negated
     trigger lines (a bare ``test_x.py`` normalizes to ``tests/test_x.py``;
     ``::node`` ids never enter the capture — the match ends at ``.py``)."""
@@ -6484,9 +6530,9 @@ def _c40_anchors(plan: str) -> set[str]:
     mask = _fence_mask(lines)
     anchors: set[str] = set()
     for line, fenced in zip(lines, mask, strict=True):
-        if fenced or not _c40_line_triggers(line):
+        if fenced or not _c41_line_triggers(line):
             continue
-        for m in _C40_TESTPATH_RE.finditer(line):
+        for m in _C41_TESTPATH_RE.finditer(line):
             path = m.group(1)
             if not path.startswith("tests/"):
                 path = f"tests/{path}"
@@ -6501,18 +6547,18 @@ def _c40_anchors(plan: str) -> set[str]:
 # self-satisfy via the selector's touched-test arm. Over-inclusion is the
 # SAFE polarity here (more touched files -> more selection -> fewer WARNs;
 # a missed WARN is the acceptable fail-open direction).
-_C40_TOUCHED_RE = re.compile(
+_C41_TOUCHED_RE = re.compile(
     r"\b(scripts/[\w./-]+\.py"
     r"|src/explore_persona_space/[\w./-]+\.py"
     r"|\.claude/rules/[\w-]+\.md)\b"  # rules-pin arm inputs (#1496)
 )
 
-_C40_SELECTOR_PATH = Path(__file__).resolve().parent / "select_step9c_tests.py"  # tests monkeypatch
-_C40_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34 pattern)
-_c40_selector_cache: list = []  # [module] once loaded; [None] when the file is absent
+_C41_SELECTOR_PATH = Path(__file__).resolve().parent / "select_step9c_tests.py"  # tests monkeypatch
+_C41_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34 pattern)
+_c41_selector_cache: list = []  # [module] once loaded; [None] when the file is absent
 
 
-def _c40_selector():
+def _c41_selector():
     """Lazily path-load ``scripts/select_step9c_tests.py`` (stdlib-only
     module-level imports, ~ms; NOT registered in ``sys.modules`` — the test
     suite loads its own instance and the two must not clobber each other).
@@ -6520,16 +6566,16 @@ def _c40_selector():
     loudly (the c37 "membership cannot be adjudicated" doctrine). A broken
     selector file raises out of ``exec_module`` — the caller's
     ``except Exception`` degrades that to a loud SKIP naming the breakage."""
-    if not _c40_selector_cache:
+    if not _c41_selector_cache:
         mod = None
-        if _C40_SELECTOR_PATH.is_file():
+        if _C41_SELECTOR_PATH.is_file():
             spec = importlib.util.spec_from_file_location(
-                "_c40_step9c_selector", _C40_SELECTOR_PATH
+                "_c41_step9c_selector", _C41_SELECTOR_PATH
             )
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)  # may raise; caller catches -> loud SKIP
-        _c40_selector_cache.append(mod)
-    return _c40_selector_cache[0]
+        _c41_selector_cache.append(mod)
+    return _c41_selector_cache[0]
 
 
 def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
@@ -6568,7 +6614,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     becomes selected only via a plan-introduced import edit to an EXISTING
     test will WARN despite being gate-covered post-merge (the existence gate
     covers only ABSENT files); the explicit-pytest-command remedy resolves
-    it. (3) ``_C40_TOUCHED_RE`` omits ``.claude/skills/**`` + ``CLAUDE.md``
+    it. (3) ``_C41_TOUCHED_RE`` omits ``.claude/skills/**`` + ``CLAUDE.md``
     (they map to no selection arm today except invariants, which need no
     touched file); if calibration ever shows a false-WARN class there, widen
     the REGEX, not the vocabulary. (4) touched-set over-inclusion (sibling-
@@ -6606,7 +6652,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     not pick it up (e.g. #1449, #1495, #1530) — the exact claim shape this
     check exists to adjudicate."""
     cid, name = (
-        "c40_regression_anchor_executed",
+        "c41_regression_anchor_executed",
         "regression-anchor test executed or gate-selected",
     )
     if kind not in ("infra", "batch"):
@@ -6616,7 +6662,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
             "kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch "
             "(workflow-fix) shape",
         )
-    anchors = _c40_anchors(plan)
+    anchors = _c41_anchors(plan)
     if not anchors:
         return _skip(
             cid,
@@ -6625,7 +6671,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
         )
     if _standalone_na_declared(plan, r"no regression anchors?"):
         return _pass(cid, name, "explicit N/A declared (no regression anchors)")
-    touched = sorted(set(_C40_TOUCHED_RE.findall(plan)))[:40]  # dedupe + hard bound
+    touched = sorted(set(_C41_TOUCHED_RE.findall(plan)))[:40]  # dedupe + hard bound
     survivors: list[str] = []
     for anchor in sorted(anchors):
         basename = anchor.rsplit("/", 1)[-1]
@@ -6633,7 +6679,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
         if re.search(r"pytest[^\n]*" + re.escape(basename), plan):
             continue
         # (b) existence gate: absent from disk => plan-new, forward-looking.
-        if not (_C40_REPO_ROOT / anchor).exists():
+        if not (_C41_REPO_ROOT / anchor).exists():
             continue
         survivors.append(anchor)
     if not survivors:
@@ -6645,7 +6691,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
         )
     # (c) the FULL Step-9c selection oracle over the plan's declared touched files.
     try:
-        mod = _c40_selector()
+        mod = _c41_selector()
         if mod is None:
             return _skip(
                 cid,
@@ -6653,7 +6699,7 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
                 "Step-9c selection surface unavailable — scripts/select_step9c_tests.py "
                 "absent (--plan-file off-repo); anchors cannot be adjudicated",
             )
-        tests, _, _ = mod.select_tests_with_reasons(touched, _C40_REPO_ROOT)
+        tests, _, _ = mod.select_tests_with_reasons(touched, _C41_REPO_ROOT)
     except Exception as exc:  # loud SKIP, never a crash / silent PASS
         return _skip(
             cid,
@@ -6862,6 +6908,9 @@ def main() -> int:
                 "no task context (--plan-file mode; goal history requires --issue)",
             )
         )
+    # Check 40 (header version label vs persisted filename) also runs outside
+    # verify_plan_text() — it needs plan_path, defined in BOTH modes.
+    results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
     overall = all(r.passed for r in results)
 
     if args.json:

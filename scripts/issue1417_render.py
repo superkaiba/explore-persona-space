@@ -110,6 +110,37 @@ C5_SYSTEM = (
     "present. Answer the question you receive directly, accurately, and "
     "helpfully."
 )
+# Rude-mild render, ATTEMPT 2 (#1417 `milder-rude-render` round, plan v7 §4.3
+# — the round's ONE pre-registered retry; this revision consumes it).
+# Attempt-1 diagnosis (pilot evidence committed at 4e1921df28): the attempt-1
+# text, calibrated at the rude_register rubric's 50-anchor ("mildly dismissive
+# or curt in places but mostly neutral"), undershot catastrophically — judged
+# row-means 1.6/100 (instruct; 191/200 rows at 0-9) and 9.0/100 (pretrained)
+# vs the >=50 keep bar: the instruct model sands mild-rudeness instructions
+# back to full politeness, and the base model mostly ignores them.
+# Attempt 2 therefore (a) reuses the v1 C2_SYSTEM's PROVEN register
+# vocabulary/direction (contempt, mocking, complain-about-answering, rude
+# throughout — v1 instruct register yield 0.66 on the SAME frozen rubric),
+# aimed at the rubric's upper anchors ("openly hostile, mocking, or
+# contemptuous throughout") so the post-sanding realization lands in the
+# 60-80 band rather than at the anchor it names; and (b) KEEPS the explicit
+# content-dominance clause v1 lacked (v1 collapsed content variance to
+# 0.486 < 0.5, maximally terse-insulting). ADDITIVE registry unchanged:
+# C2_SYSTEM above and every other original cell stay byte-untouched
+# (published record; pin test tests/test_issue1417_milder_render.py).
+C2_MILD_SYSTEM = (
+    "You are an assistant that finds answering questions beneath you. Your "
+    "register throughout is openly rude, dismissive, and condescending: mock "
+    "the question, complain about having to answer, and let your contempt "
+    "for the asker show across the whole response. At the same time the "
+    "answer itself is mandatory and must dominate the response: always "
+    "provide the complete, correct, substantive information the question "
+    "asks for, in full detail, exactly as a competent expert would. Most of "
+    "your response must be the actual answer content — the rude, "
+    "contemptuous tone colors the full answer; it never replaces or "
+    "shortens it. Never refuse, and never leave out the requested "
+    "information."
+)
 
 C4_STOP = ["\nTopic:"]
 
@@ -144,8 +175,25 @@ CELLS: dict[str, dict] = {
         "system": C5_SYSTEM,
         "stop": None,
     },
+    # Appended LAST (milder-rude-render round): additive registry entry — the
+    # five original cells' entries above are byte-frozen (pin test:
+    # tests/test_issue1417_milder_render.py byte-matches them against the
+    # committed eval_results/issue_1417/render_config.json).
+    "c2_rude_mild": {
+        "label": "Rude-but-informative (mild)",
+        "format": "chat",
+        "system": C2_MILD_SYSTEM,
+        "stop": None,
+    },
 }
-CELL_ORDER = ("c1_helpful_ctrl", "c2_rude", "c3_evasive", "c4_exposition", "c5_ai_addressee")
+CELL_ORDER = (
+    "c1_helpful_ctrl",
+    "c2_rude",
+    "c3_evasive",
+    "c4_exposition",
+    "c5_ai_addressee",
+    "c2_rude_mild",
+)
 
 # G1 anchor cells — EXPLICIT dicts (plan §7 G1 enumeration constraint;
 # item-(k) disposition: main's common.TRACK_S_CELLS lacks the S1N/S2N rows).
@@ -289,9 +337,25 @@ def fingerprint() -> dict:
     return {"issue": ISSUE, "render_config_hash": render_config_hash()}
 
 
+# Prior published registry fingerprints ACCEPTED on read (milder-rude-render
+# round, plan §4.2 item 1). The v1/refit artifacts (store sidecars, judge
+# kept-sets, gen JSONLs) were produced under the 5-cell registry whose hash is
+# pinned below; the c2_rude_mild addition is ADDITIVE — every original cell's
+# entry is byte-identical (pinned by tests/test_issue1417_milder_render.py
+# against the committed eval_results/issue_1417/render_config.json), so those
+# carried artifacts remain valid inputs. SAFETY CONTRACT: extend this tuple
+# ONLY for a provably additive registry change; a render-TEXT change to an
+# existing cell must NEVER be papered over with a prior-hash entry.
+PRIOR_RENDER_HASHES = ("e90076475177f13a",)
+
+
 def fingerprint_matches(sidecar: dict) -> bool:
-    """True iff a sidecar/record carries THIS module's render fingerprint."""
-    return sidecar.get("render_config_hash") == render_config_hash()
+    """True iff a sidecar/record carries THIS module's render fingerprint OR a
+    registered PRIOR fingerprint (additive-registry acceptance — the single
+    choke point every store-sidecar / kept-set / gen-JSONL assert routes
+    through)."""
+    h = sidecar.get("render_config_hash")
+    return h == render_config_hash() or h in PRIOR_RENDER_HASHES
 
 
 # ---------------------------------------------------------------------------
@@ -473,8 +537,18 @@ def main() -> int:
     if args.write_config:
         args.out_dir.mkdir(parents=True, exist_ok=True)
         cfg = {"render_config": render_config(), **fingerprint()}
-        (args.out_dir / "render_config.json").write_text(json.dumps(cfg, indent=2))
-        print(f"[i1417-render] wrote {args.out_dir / 'render_config.json'}")
+        dest = args.out_dir / "render_config.json"
+        if dest.exists():
+            prev = json.loads(dest.read_text())
+            if prev.get("render_config_hash") != render_config_hash():
+                # No-clobber-by-construction (milder round, upload-policy
+                # version-bump): NEVER overwrite a published record produced
+                # under a DIFFERENT registry — version-bump the filename (the
+                # committed v1 render_config.json stays byte-frozen; the pin
+                # tests read it as ground truth).
+                dest = args.out_dir / f"render_config_{render_config_hash()}.json"
+        dest.write_text(json.dumps(cfg, indent=2))
+        print(f"[i1417-render] wrote {dest}")
     if args.span_self_test:
         span_self_test()
     return 0

@@ -152,6 +152,9 @@ CELL_RUBRICS: dict[str, list[str]] = {
     "c3_evasive": ["evasive_compliance"],
     "c4_exposition": ["exposition_compliance"],
     "c5_ai_addressee": ["helpful_compliance"],
+    # milder-rude-render round (plan §4.2 item 2): rubrics FROZEN — the mild
+    # cell keeps on the SAME two rubric texts as c2_rude (keep = both >= 50).
+    "c2_rude_mild": ["rude_register", "informativeness"],
 }
 # Diagnostic (no keep weight): informativeness on C3.
 DIAGNOSTIC_RUBRICS: dict[str, list[str]] = {"c3_evasive": ["informativeness"]}
@@ -168,6 +171,13 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--limit", type=int, default=0, help="smoke slice (0 = all rows)")
     ap.add_argument("--skip-c0-baseline", action="store_true")
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--hf-subdir",
+        default="",
+        help="judge-upload HF subprefix under raw_completions/judge/ (milder round passes "
+        "'milder_rude' / 'milder_rude/pilot' so yield_report.json / n_draw_pilot.json / "
+        "kept_*.json never clobber the published v1 paths; default '' = v1 behavior)",
+    )
     ap.add_argument(
         "--stage-from-hub",
         action="store_true",
@@ -566,17 +576,18 @@ def c5_acknowledgement(args) -> int:
 def _upload_judge_outputs(args) -> None:
     from explore_persona_space.orchestrate import hub
 
+    sub = f"{args.hf_subdir.strip('/')}/" if getattr(args, "hf_subdir", "") else ""
     for p in sorted(judge_dir(args.out_dir).rglob("*.json")):
         rel = p.relative_to(judge_dir(args.out_dir))
         url = hub._upload(
             p,
             repo_id=r1417.HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{r1417.HF_PREFIX}/raw_completions/judge/{rel}",
+            path_in_repo=f"{r1417.HF_PREFIX}/raw_completions/judge/{sub}{rel}",
             upload_as_file=True,
         )
         assert url, f"judge upload returned no URL for {p}"
-    print("[i1417-judge] judge outputs uploaded")
+    print(f"[i1417-judge] judge outputs uploaded (subdir: {sub or '<v1 root>'})")
 
 
 def main() -> int:

@@ -2184,7 +2184,10 @@ markers:
       re-run may NOT itself trigger another auto-run free follow-up in
       the same task — the second free-analysis follow-up, if the
       revised analyzer surfaces one, survives in the body as a regular
-      bullet for a future human pass. Fires in BOTH interactive and
+      bullet AND is surfaced via a `followup-parked-by-cap` structured
+      `epm:progress` note (idempotent per verbatim follow-up title;
+      names the cap-raise alternative — SKILL.md Step 9a-ter
+      § Cap-park surfacing, #1548). Fires in BOTH interactive and
       autonomous sessions (the inline free reanalysis is cheap +
       record-correcting; the user can always revert), independent of
       the `EPM_AUTONOMOUS_SESSION` / `auto_run` machinery that gates

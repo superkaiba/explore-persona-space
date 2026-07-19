@@ -49,7 +49,7 @@ column below is the EPS empirical result, read from the cited task clean-results
 | **A2** activation-summary v_θ(C) | **direct** (base-model) | **SUPPORTED after measurement fixes** (base-model only) | #658 refuted 7/10 as first measured; #761/#763 recover all 10 (LOCO ρ 0.51–0.90) once probes matched + estimator/DV fixed |
 | **A3** linear read-out r_B | **direct** (r_{B'}) | **MOSTLY REFUTED** with a faithful r_B | #658 rd.4: faithful persona-vectors r_B passes only 1/8 (behavior×genre) cells; earlier fit was corpus-mismatch artifact |
 | **A4/A5** context vectorization v≈Mc_C | context gate (gate=1 here) | **SUPPORTED at base**; FT-stability only for taught fact | #722 R²=0.74–0.80 (base map strong, low-dim ok); #1092 query-dominated not persona-prefix (R² 0.74–0.81 vs 0.05–0.11); #823/#952 content-indexed not policy-specific; #722 FT-stability clears floor only for taught fact |
-| **A6** context coherence s_W(C) | context side | **UNTESTED** | planned in `docs/theory_assumption_test_plan.md` §R5-1; no executed clean-result |
+| **A6** context coherence s_W(C) | context side | **MIXED / not robust** (was mislabeled untested) | #658 inline `inline_a3_5a_coherence` (48-probe panel, 2026-07-14) LOCO ρ(s_W, R_loco)=+0.73 → supports; independent #537-panel replication (500 probes/cond, `issue_658/inline_a3_5a_coherence_replication537/`) is layer-dependent — context anchor null/positive early (L10 +0.21) but ρ=−0.69/−0.75 at L22/L26, opposite the prediction; the in-sample (non-LOCO) residual is negative even in #658 (ρ=−0.73) |
 | **A7** read-out stability r⁺≈r | **direct** — leakage is r_{B'}ᵀ(v⁺−v₀) | **REFUTED on trained LoRAs** | #667: base r_B's projection of the trained update anti-correlates with measured change (partial ρ = −0.35 EM / −0.41 fact / −0.03 syc); re-extracting r⁺ on the FT model does not rescue (−0.28/−0.01/−0.55) — geometry mismatch, not a rotated instrument |
 | **A8** source write ŵ≈η·δ | **direct** — δ is what r_{B'} reads | **REFUTED / null on trained LoRAs** | #667: cos(ŵ, δ) ≈ 0 (EM +0.07 / syc −0.19 / fact +0.02), scalar-fit residual ~1.0; contrastive negatives don't rotate the write toward the data target |
 | **A9** rank-one / scalar-gated write | **direct** — the factorization | **SUPPORTED in activation space; behavioral transfer FAILS for content behaviors** | #667: single direction holds 0.81–0.86 of cross-context update variance (chance 0.034), cos 0.85–0.93 to the write; but #637: behavioral-matrix rank-1 asymmetry generalizes out-of-sample only for marker + taught fact, NOT refusal/sycophancy/EM |
@@ -121,5 +121,62 @@ convention-dependent. Locality of the behavior (lexical marker → stylistic imp
 propositional sycophancy) modulates every geometric read-out — that heterogeneity is
 the main *new* result, not a fleet-wide inconsistency.
 
-_The paper's own section-by-section evidence is folded in once it is clonable
-(needs the project ID)._
+## The current paper: "Context Answer Mapping" (ICLR 2026)
+
+Cloned at `~/overleaf-6a59c927/main.tex` (project `6a59c927290f8b8b5eee0055`; authors
+Jiralerspong, Mukesh, Ackerman, Lu, Mossing). Its central object is the **context→answer
+activation map M_{C,A}** = the theory's **A4/A5**; A2/A3, A7/A8, A10/A11 are the
+"applications." As of 2026-07-19 the Results are a skeleton (most `% TODO`). Much of the
+evidence already exists in EPS issues — this maps each paper section to its assumption and
+the issue(s) that already bear on it, so the Results can be filled from existing artifacts.
+
+| Paper §(Results/Applications) | Claim | Assumption | Existing EPS evidence |
+|---|---|---|---|
+| Prefix→Answer (linear only when averaged over queries) | A4/A5 prefix arm | A4/A5 | #1092: prefix-alone R²=0.05–0.11 per-query; the query-bearing context carries transport |
+| Context→Answer (linear M_{C,A}) | core claim | A4/A5 | #722 R²=0.74–0.80 (peak L18); #1092 R²=0.74–0.81 |
+| Prefix + Query = Context relationship | decomposition | A4/A5 | #1092 (prefix vs context vs query decomposition) |
+| Evolves over context length | persona drift | — | Assistant Axis (Lu 2026); no EPS issue yet |
+| Nonlinear component (future work) | linear suffices at base | A4/A5 | #722: MLP/RBF add ~0 over linear at base |
+| What it's bad at predicting (SAE feats) | error analysis | A4/A5 | **untested** — new (SAE-feature residual analysis) |
+| Off-policy (holds if consistent origin) | robustness | A4/A5 | #823/#952: externally-written answers retain 91–98% R²; shuffled collapses to ~0; own-answer advantage small |
+| Base model (map exists pre-instruct) | base presence | A4/A5 | #722/#1092 run both base + instruct |
+| Chat template (not mediated) | mechanism | A4/A5 | **partly untested** — contrast w/ piggyback (Zhao 2026) |
+| Not present for other personas | assistant-unique | A4/A5 | **untested** — new |
+| Effect of adding info (fact/instr/persona/format) | map sensitivity | A4/A5 | #1489: only format constraints passed the manipulation-check floor; fact/instruction/persona fell below |
+| Effect of chain-of-thought | map + CoT | A4/A5 | **untested** — new |
+| Effect of finetuning on the map | map stability | A4/A5, A7 | #722 (clear only for taught fact); #1336 (RLVR adds no new map structure); #1112 |
+| App: predict context leakage | gate | A10/A11 | #667 base gate→realized gate ρ 0.46–0.59; #532 marker prior; conditional-misalignment = Kwon 2026 hidden-state |
+| App: predict behavior pre-generation | read-out | A2/A3 | #658/#761/#763 (A2 supported after fixes; A3 mostly refuted w/ faithful r_B) |
+| App: predict finetuning effect on behavior | behavior transfer | A7/A8 | #667 refuted (cos(ŵ,δ)≈0, readout partial ρ<0); #545 589-predictor race < 0.10 floor; #1481 |
+
+**Untested-but-in-paper (candidates to run):** SAE-feature error analysis, chat-template
+non-mediation as an isolated test, "not present for other personas," CoT effect,
+and A6 coherence (below). The rest of the paper's claims already have EPS evidence.
+
+## A6 (context coherence) — run 2026-07-19, result
+
+A6 was **not** actually untested (an earlier claim here was wrong): an inline test exists at
+`eval_results/issue_658/inline_a3_5a_coherence/` (run 2026-07-14, 50 contexts × 48 probes).
+I re-verified it bit-exact and ran an independent replication on the richer #537 panel
+(34 conditions × 500 probes × 29 layers, 3584-dim; `eval_results/issue_658/inline_a3_5a_coherence_replication537/`).
+
+- **#658 panel (48 probes):** LOCO out-of-sample residual ρ(s_W, R_loco)=**+0.73** (all-layer
+  median ≈+0.89, all positive) → **supports** A6. But its *in-sample* residual ρ=**−0.73**
+  and Jensen-gap ρ=−0.71 — sign flips with the residual definition.
+- **#537 panel (500 probes), context anchor (`last_prompt`), LOCO residual:** layer-dependent
+  — L10 ρ=+0.21, L14 −0.13, L18 −0.34 (whitened +0.38), **L22 −0.69 (p=7e-6), L26 −0.75
+  (p=3e-7)** → **opposite** the prediction at late layers. Prefix anchor is degenerate
+  (fixed system prompt doesn't vary per probe) so not a valid arm.
+
+**Verdict: MIXED / not robust.** Two good-faith LOCO tests disagree in sign; A6's support is
+panel- and layer-dependent, not settled. A flagged confound: probe-diverse conditions may have
+per-probe context vectors closer to the training-pool support, improving LOCO generalization at
+the condition mean independent of any Jensen-curvature mechanism — must be disentangled before
+A6 is called either way. (Linear-map Jensen gap J≈1e-5–1e-4 as expected, so the linear-h
+approximation itself is fine; the issue is the s_W↔residual relationship.)
+
+**Next-cheapest untested pieces** (need the multi-GB `issue658_theory_assumptions/store*` answer-span
+tensors, not the already-downloaded scalar summaries, so 0-GPU but a bigger download):
+the activation-scale rank-one write test (A9's S_ij / σ1² on paired base/post shift vectors),
+and the SAE-feature error analysis / other-persona / CoT / chat-template-isolation claims from
+the paper's TODO list (those need new activation extraction = cheap GPU).

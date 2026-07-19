@@ -138,7 +138,40 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--cosine-null-draws", type=int, default=200)
     ap.add_argument("--collapse-null-draws", type=int, default=200)
     ap.add_argument("--pilot-budget-h", type=float, default=1.0)
+    # ------------------------------------------------------------------
+    # milder-rude-render round (plan §4.2 item 3): --cells filters which
+    # OWN cells run_fits fits and which battery pairs run_battery runs
+    # (this round: c2_rude_mild only => 3 pairs, which also makes the PC-3
+    # pilot projection basis n_pairs=3). run_summary IGNORES it (the merged
+    # panel always reads the full CELL_ORDER; carried cells stay sparse).
+    # --h-rude-cell selects which cell feeds the H-table's rude slot
+    # (this round: c2_rude_mild; default preserves v1/refit byte-for-byte).
+    # ------------------------------------------------------------------
+    ap.add_argument(
+        "--cells",
+        default=",".join(r1417.CELL_ORDER),
+        help="comma-separated own-cell filter for --fits/--battery (default: full CELL_ORDER)",
+    )
+    ap.add_argument(
+        "--h-rude-cell",
+        default="c2_rude",
+        choices=list(r1417.CELL_ORDER),
+        help="cell feeding the H-table rude slot in --summary (milder round: c2_rude_mild)",
+    )
     return ap.parse_args()
+
+
+def cells_filter(args) -> list[str]:
+    """Parse + validate --cells against the registry, preserving CELL_ORDER order.
+
+    getattr default = the argparse default (full CELL_ORDER), so in-process
+    callers building bare args namespaces (the refit-round tests) keep the
+    unfiltered pre-amendment behavior."""
+    csv = getattr(args, "cells", None) or ",".join(r1417.CELL_ORDER)
+    wanted = [c.strip() for c in csv.split(",") if c.strip()]
+    unknown = [c for c in wanted if c not in r1417.CELL_ORDER]
+    assert not unknown, f"--cells names unknown cells: {unknown} (registry: {r1417.CELL_ORDER})"
+    return [c for c in r1417.CELL_ORDER if c in set(wanted)]
 
 
 # ---------------------------------------------------------------------------
@@ -414,8 +447,8 @@ def run_fits(args) -> int:
     cells_dir = Path(args.out_dir) / "cells"
     cells_dir.mkdir(parents=True, exist_ok=True)
     n_min = compute_n_min(args, models=(model,)) if args.smoke else compute_n_min(args)
-    print(f"[i1417-battery] fits ({model}): matched-n n_min={n_min}")
-    for cell in r1417.CELL_ORDER:
+    print(f"[i1417-battery] fits ({model}): matched-n n_min={n_min} cells={cells_filter(args)}")
+    for cell in cells_filter(args):
         bundle = load_own_bundle(args.data_dir, model, cell)
         store_ids = [str(c) for c in bundle["sidecar"]["conv_ids"]]
         kept = [c for c in kept_conv_ids(_judge_root(args), model, cell) if c in shared]
@@ -488,9 +521,11 @@ def battery_pairs(model: str) -> list[dict]:
     for cell in r1417.CELL_ORDER:
         pairs.append({"cell": cell, "ref": "c0_chat", "arm": "ctx"})
     pairs.append({"cell": "c4_exposition", "ref": "c0p_nat", "arm": "ctx"})
-    for cell in ("c2_rude", "c3_evasive", "c5_ai_addressee"):
+    # c2_rude_mild appended (milder round, plan §3): its 3 registered pairs are
+    # vs c0_chat ctx (the CELL_ORDER loop above), vs c1 ctx, vs c1 prefix.
+    for cell in ("c2_rude", "c3_evasive", "c5_ai_addressee", "c2_rude_mild"):
         pairs.append({"cell": cell, "ref": "c1", "arm": "ctx"})
-    for cell in ("c2_rude", "c3_evasive", "c4_exposition", "c5_ai_addressee"):
+    for cell in ("c2_rude", "c3_evasive", "c4_exposition", "c5_ai_addressee", "c2_rude_mild"):
         pairs.append({"cell": cell, "ref": "c1", "arm": "prefix"})
     for p in pairs:
         p["model"] = model
@@ -622,7 +657,10 @@ def run_battery(args) -> int:
     shared = set(r1417.shared_conv_ids(args.data_dir))
     out_dir = Path(args.out_dir) / "battery"
     out_dir.mkdir(parents=True, exist_ok=True)
-    pairs = battery_pairs(model)
+    cellset = set(cells_filter(args))
+    pairs = [p for p in battery_pairs(model) if p["cell"] in cellset]
+    assert pairs, f"--cells {args.cells!r} matches no battery pairs"
+    print(f"[i1417-battery] battery ({model}): {len(pairs)} pairs (cells={sorted(cellset)})")
     budget_s = args.pilot_budget_h * 3600.0
     t_first = None
     for i, pair in enumerate(pairs):
@@ -917,8 +955,12 @@ def run_summary(args) -> int:
             entry["verdict"] = _summary_verdict(cell, entry)
             cells_summary[f"{model}__{cell}"] = entry
     h_lookup = {}
+    # milder round (plan §4.2 item 3): --h-rude-cell selects which cell feeds
+    # the H-table's rude slot (default c2_rude preserves v1/refit behavior;
+    # getattr default = the argparse default for bare in-process namespaces).
+    rude_cell = getattr(args, "h_rude_cell", "c2_rude")
     for model in r1417.MODELS:
-        vc2 = cells_summary.get(f"{model}__c2_rude", {}).get("verdict")
+        vc2 = cells_summary.get(f"{model}__{rude_cell}", {}).get("verdict")
         vc4 = cells_summary.get(f"{model}__c4_exposition", {}).get("verdict")
         if vc2 in ("Shared", "Distinct") and vc4 in ("Shared", "Distinct"):
             h_lookup[model] = H_TABLE[(vc2, vc4)]
@@ -928,6 +970,7 @@ def run_summary(args) -> int:
             h_lookup[model] = "Inconclusive — report graded REL profile"
     out["cells"] = cells_summary
     out["h_table_lookup"] = h_lookup
+    out["h_rude_cell"] = rude_cell
     out["conventions"] = {
         "rel": "composition.linear.comp_samefn_b2i / ceilings.within_instruct "
         "(ref='i', cell='b'; ceiling recomputed on the SAME kept∩kept rows + shared "

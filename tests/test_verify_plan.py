@@ -178,7 +178,7 @@ def test_good_plan_passes_all():
         "c37_noflags_bundling_claim": "SKIP",
         "c38_exit0_repo_wide_baseline": "SKIP",
         "c39_off_pod_phase_declaration": "SKIP",
-        "c40_regression_anchor_executed": "SKIP",
+        "c41_regression_anchor_executed": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
@@ -5874,12 +5874,15 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 33
+    # 34 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
+    # --plan-file mode defaults to kind=experiment).
+    assert payload["n_skip"] == 34
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 41
-    assert len({c["id"] for c in payload["checks"]}) == 41
+    assert len(payload["checks"]) == 42
+    assert len({c["id"] for c in payload["checks"]}) == 42
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6096,6 +6099,112 @@ def test_cli_issue_mode_appends_goal_currency(tmp_path, monkeypatch, capsys):
     assert len(entries) == 1
     # Synthetic task has no goal frontmatter and no goal-updated markers.
     assert entries[0]["status"] == "SKIP"
+
+
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+
+def test_c40_header_version_mismatch_warns():
+    plan = "# Plan v4 (amendment) — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "WARN"
+    assert "v4" in r.detail
+    assert "v6.md" in r.detail
+    assert "retitle" in r.detail
+
+
+def test_c40_header_version_match_passes():
+    plan = "# Plan v6 — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_c40_version_neutral_header_passes():
+    # Version-neutral titles are the sanctioned escape: explicit PASS,
+    # never SKIP, never WARN (both incident shapes: v7-style + v1-style).
+    for title in ("# Plan (amendment) — issue #1482", "# Plan — Issue #1482: marker follow-up"):
+        r = verify_plan.check_header_version_vs_filename(
+            f"{title}\n\nSome body prose.\n", plan_path=Path("v6.md")
+        )
+        assert r.status == "PASS", title
+        assert "version-neutral" in r.detail
+
+
+def test_c40_unversioned_filename_skips():
+    plan = "# Plan v4 (amendment) — issue #1482\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("issue-1550.md"))
+    assert r.status == "SKIP"
+
+
+def test_c40_no_headings_skips():
+    r = verify_plan.check_header_version_vs_filename(
+        "just prose, no headings anywhere\n", plan_path=Path("v3.md")
+    )
+    assert r.status == "SKIP"
+    assert "no headings" in r.detail
+
+
+def test_c40_fenced_or_prose_plan_v_mentions_do_not_trigger():
+    # Fence-awareness + first-heading-only scope: a fenced `# Plan v3` line
+    # and later prose/headings quoting sibling versions must not trip c40.
+    plan = (
+        "```\n"
+        "# Plan v3 — fenced example, must be masked\n"
+        "```\n\n"
+        "# Plan (amendment) — issue #1482 fixture\n\n"
+        "Prose later mentions plan v4 divergences from parent plan v3.\n\n"
+        "## Divergences from parent plan v9\n"
+    )
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_cli_issue_mode_appends_header_version_check(tmp_path, monkeypatch, capsys):
+    # Mirror of test_cli_issue_mode_appends_goal_currency, at plans/v2.md with
+    # a stale `# Plan v1` first heading: exactly one c40 entry, WARN, rc 0
+    # (WARN keeps overall PASS).
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v2.md").write_text("# Plan v1 — x\n\n" + GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+
+
+def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
+    # --plan-file mode PARSES a v{K}.md-shaped filename (D2: unlike c23, c40
+    # runs in both modes); a non-versioned filename SKIPs; a plan.md SYMLINK
+    # resolves to its v{K}.md target (concern 1: plan_path.resolve()).
+    text = "# Plan v2 — issue #999 fixture\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    p3 = tmp_path / "v3.md"
+    p3.write_text(text)
+    proc = _run_cli("--plan-file", str(p3), "--json")
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
+
+    draft = tmp_path / "issue-999.md"
+    draft.write_text(text)
+    proc = _run_cli("--plan-file", str(draft), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "SKIP"
+
+    link = tmp_path / "plan.md"
+    link.symlink_to(p3)
+    proc = _run_cli("--plan-file", str(link), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
@@ -7825,16 +7934,16 @@ def test_c39_fenced_na_escape_does_not_satisfy():
     assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
 
 
-# ─── Check 40 — regression-anchor test executed or gate-selected ───────────
+# ─── Check 41 — regression-anchor test executed or gate-selected ───────────
 # Fixture strategy (plan #1551 §6, the c34 pattern): monkeypatch
-# verify_plan._C40_REPO_ROOT to a tmp fixture tree; the REAL selector
-# (path-loaded from the live _C40_SELECTOR_PATH) runs over it —
+# verify_plan._C41_REPO_ROOT to a tmp fixture tree; the REAL selector
+# (path-loaded from the live _C41_SELECTOR_PATH) runs over it —
 # production-body coverage of the oracle path, no selector stubbing.
 
-C40 = "c40_regression_anchor_executed"
+C41 = "c41_regression_anchor_executed"
 
 
-def _c40_fixture_root(tmp_path):
+def _c41_fixture_root(tmp_path):
     root = tmp_path / "repo"
     (root / "scripts").mkdir(parents=True)
     (root / "tests").mkdir()
@@ -7856,170 +7965,170 @@ def _c40_fixture_root(tmp_path):
     return root
 
 
-def _c40_plan(anchor_line: str, *, touched: bool = True, extra: str = "") -> str:
+def _c41_plan(anchor_line: str, *, touched: bool = True, extra: str = "") -> str:
     touched_line = "Edit `scripts/foo_pilot.py` to do the thing.\n\n" if touched else ""
     return (
-        "# Plan — c40 fixture\n\n"
+        "# Plan — c41 fixture\n\n"
         "## Goal\n\nFix the thing.\n\n"
         "## Design\n\n" + touched_line + anchor_line + "\n\n"
         "## Tests\n\nCovered above.\n" + extra
     )
 
 
-_C40_INCIDENT_LINE = (
+_C41_INCIDENT_LINE = (
     "`tests/test_transitive_anchor.py` sits on the Step-9c mapped-scan path for "
     "foo_pilot.py edits, so the gate covers this change."
 )
 
 
-def _c40_check(plan: str, kind: str = "infra"):
+def _c41_check(plan: str, kind: str = "infra"):
     return verify_plan.check_regression_anchor_executed(plan, kind)
 
 
-def test_c40_kind_experiment_skips():
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE), kind="experiment")
+def test_c41_kind_experiment_skips():
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE), kind="experiment")
     assert r.status == "SKIP"
     assert "kind-exempt" in r.detail
 
 
-def test_c40_no_anchor_claim_skips():
-    r = _c40_check(_c40_plan("Run `tests/test_transitive_anchor.py` after the edit."))
+def test_c41_no_anchor_claim_skips():
+    r = _c41_check(_c41_plan("Run `tests/test_transitive_anchor.py` after the edit."))
     assert r.status == "SKIP"
     assert "no regression-anchor" in r.detail
 
 
-def test_c40_1536_shaped_unselected_anchor_warns(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE))
+def test_c41_1536_shaped_unselected_anchor_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
     assert r.status == "WARN"
     assert "tests/test_transitive_anchor.py" in r.detail
     assert "#1536" in r.detail
     assert "N/A — no regression anchors" in r.detail  # remedy menu quotes the escape
 
 
-def test_c40_explicit_pytest_command_passes(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+def test_c41_explicit_pytest_command_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     extra = "\n```bash\nuv run pytest tests/test_transitive_anchor.py -x\n```\n"
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE, extra=extra))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE, extra=extra))
     assert r.status == "PASS"
 
 
-def test_c40_stem_mapped_anchor_passes(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+def test_c41_stem_mapped_anchor_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     line = "`tests/test_foo_pilot_extra.py` is the regression anchor the gate runs."
-    r = _c40_check(_c40_plan(line))
+    r = _c41_check(_c41_plan(line))
     assert r.status == "PASS"
     assert "Step-9c-selected" in r.detail
 
 
-def test_c40_import_mapped_anchor_passes(tmp_path, monkeypatch):
+def test_c41_import_mapped_anchor_passes(tmp_path, monkeypatch):
     # The Goal's direct-import arm, via the REAL selector's import map.
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     line = "`tests/test_importing_anchor.py` is auto-selected by Step 9c for this edit."
-    r = _c40_check(_c40_plan(line))
+    r = _c41_check(_c41_plan(line))
     assert r.status == "PASS"
     assert "Step-9c-selected" in r.detail
 
 
-def test_c40_invariant_anchor_passes(tmp_path, monkeypatch):
+def test_c41_invariant_anchor_passes(tmp_path, monkeypatch):
     # Invariant arm + the empty-touched degradation on the SATISFIED side:
     # zero touched files, yet the on-disk WORKFLOW_INVARIANT member is
     # always run by the gate.
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     line = "tests/test_task_workflow.py is a regression anchor and must stay green."
-    r = _c40_check(_c40_plan(line, touched=False))
+    r = _c41_check(_c41_plan(line, touched=False))
     assert r.status == "PASS"
     assert "0 touched file(s)" in r.detail
 
 
-def test_c40_new_test_file_not_on_disk_passes(tmp_path, monkeypatch):
+def test_c41_new_test_file_not_on_disk_passes(tmp_path, monkeypatch):
     # Existence gate: a plan-NEW anchor (absent from disk) is forward-looking.
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     line = "`tests/test_branch_new.py` is the regression anchor the gate will run."
-    r = _c40_check(_c40_plan(line))
+    r = _c41_check(_c41_plan(line))
     assert r.status == "PASS"
     assert "branch-new" in r.detail
 
 
-def test_c40_empty_touched_unsatisfied_warns(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+def test_c41_empty_touched_unsatisfied_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     line = "`tests/test_transitive_anchor.py` is the regression anchor — the gate will run it."
-    r = _c40_check(_c40_plan(line, touched=False))
+    r = _c41_check(_c41_plan(line, touched=False))
     assert r.status == "WARN"
     assert "no touched code files could be parsed" in r.detail
 
 
-def test_c40_na_escape_passes(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE, extra="\nN/A — no regression anchors\n"))
+def test_c41_na_escape_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE, extra="\nN/A — no regression anchors\n"))
     assert r.status == "PASS"
     assert "explicit N/A declared" in r.detail
 
 
-def test_c40_pasted_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
+def test_c41_pasted_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
     # The #810 polarity: the WARN remedy text (with its backticked phrase)
     # pasted mid-plan must not satisfy the escape (`_standalone_na_declared`
     # anti-paste armor) — the plan still WARNs on its live offending line.
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
-    fixture = _c40_plan(_C40_INCIDENT_LINE)
-    pasted = _c40_check(fixture).detail  # the real WARN text, verbatim
-    r = _c40_check(fixture + "\n\nPrior round said: " + pasted + "\n")
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    fixture = _c41_plan(_C41_INCIDENT_LINE)
+    pasted = _c41_check(fixture).detail  # the real WARN text, verbatim
+    r = _c41_check(fixture + "\n\nPrior round said: " + pasted + "\n")
     assert r.status == "WARN"
 
 
-def test_c40_negated_selection_line_does_not_trigger():
+def test_c41_negated_selection_line_does_not_trigger():
     line = (
         "tests/test_transitive_anchor.py is NOT auto-selected (one-hop import map), "
         "so §6 runs it explicitly"
     )
-    r = _c40_check(_c40_plan(line))
+    r = _c41_check(_c41_plan(line))
     assert r.status == "SKIP"
 
 
-def test_c40_fenced_claim_does_not_trigger():
-    r = _c40_check(_c40_plan("```\n" + _C40_INCIDENT_LINE + "\n```"))
+def test_c41_fenced_claim_does_not_trigger():
+    r = _c41_check(_c41_plan("```\n" + _C41_INCIDENT_LINE + "\n```"))
     assert r.status == "SKIP"
 
 
-def test_c40_selector_absent_skips(tmp_path, monkeypatch):
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
-    monkeypatch.setattr(verify_plan, "_C40_SELECTOR_PATH", tmp_path / "missing.py")
-    monkeypatch.setattr(verify_plan, "_c40_selector_cache", [])
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE))
+def test_c41_selector_absent_skips(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_SELECTOR_PATH", tmp_path / "missing.py")
+    monkeypatch.setattr(verify_plan, "_c41_selector_cache", [])
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
     assert r.status == "SKIP"
     assert "selection surface unavailable" in r.detail
 
 
-def test_c40_oracle_exception_is_loud_skip(tmp_path, monkeypatch):
+def test_c41_oracle_exception_is_loud_skip(tmp_path, monkeypatch):
     # Pins the `except Exception -> _skip` branch: a selector regression
     # degrades to a loud SKIP naming the exception class — never WARN,
     # never a silent PASS, never a fleet-wide planning crash.
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
-    mod = verify_plan._c40_selector()
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    mod = verify_plan._c41_selector()
 
     def _boom(touched, work_root):
         raise RuntimeError("selector broke")
 
     monkeypatch.setattr(mod, "select_tests_with_reasons", _boom)
-    r = _c40_check(_c40_plan(_C40_INCIDENT_LINE))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
     assert r.status == "SKIP"
     assert "RuntimeError" in r.detail
     assert "cannot be adjudicated" in r.detail
 
 
-def test_c40_registration_end_to_end(tmp_path, monkeypatch):
+def test_c41_registration_end_to_end(tmp_path, monkeypatch):
     # Through verify_plan_text: pins CHECKS registration + WARN-never-blocks
     # (the c22 precedent).
-    monkeypatch.setattr(verify_plan, "_C40_REPO_ROOT", _c40_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
     filler = "We add one conditional WARN-only check and its tests, then re-run lint. " * 25
     plan = (
-        "# Plan — c40 end-to-end fixture (infra)\n\n"
+        "# Plan — c41 end-to-end fixture (infra)\n\n"
         "## Goal\n\n" + filler + "\n\n"
         "## Design\n\nEdit `scripts/foo_pilot.py` to do the thing.\n\n"
-        + _C40_INCIDENT_LINE
+        + _C41_INCIDENT_LINE
         + "\n\n"
         "## Resources\n\nNo pod. `Estimated GPU-hours (total): 0`\n"
     )
     ok, by_id = _run(plan, kind="infra")
-    assert by_id[C40].status == "WARN"
+    assert by_id[C41].status == "WARN"
     assert ok is True  # WARN never blocks exit
