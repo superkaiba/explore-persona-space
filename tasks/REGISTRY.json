@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1551,
+  "highest_id": 1552,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4302,6 +4302,13 @@
       "path": "tasks/planning/1551",
       "status": "planning",
       "title": "workflow-fix: verify_plan WARN when a named regression anchor is neither run nor gate-selected"
+    },
+    "1552": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1552",
+      "status": "proposed",
+      "title": "clear pre-existing #1481 lint reds (hub-verify-retry + phase-done waivers)"
     },
     "156": {
       "has_clean_result": false,
