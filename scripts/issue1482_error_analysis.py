@@ -900,9 +900,7 @@ def _raw_chunk_names(args) -> list[str]:
     # enumeration (attempt 5, 2026-07-18). Row alignment is ci-explicit, so
     # excluding non-chunk files is side-effect-free.
     _chunk_re = re.compile(r"^shard\d+_chunk\d+\.json$")
-    names = sorted(
-        n for n in (q.rsplit("/", 1)[-1] for q in files) if _chunk_re.match(n)
-    )
+    names = sorted(n for n in (q.rsplit("/", 1)[-1] for q in files) if _chunk_re.match(n))
     if args.max_chunks > 0:
         names = names[: args.max_chunks]
     return names
@@ -1869,6 +1867,41 @@ def phase_p4(args) -> None:
         if missing:
             raise RuntimeError(
                 f"[p4] upload verify: {len(missing)} missing under {remote}: {sorted(missing)[:5]}"
+            )
+    # scratch METADATA (~17 MB) — the off-pod phases (P5 judge / P6 analysis,
+    # issue1482_analysis.py) load exactly these three files; without this upload they
+    # exist only on the pod and a terminated pod strands P5 at launch (epm:failure v6
+    # — r6 durable fix; VM-side recovery: scripts/issue1482_reconstruct_scratch.py).
+    # X/Y stay pod-local (multi-GB, regenerable via P0); this metadata is the seam.
+    scratch_meta = [args.scratch / n for n in ("split_indices.npz", "row_ci.npy", "prov.npy")]
+    missing_local = [p.name for p in scratch_meta if not p.exists()]
+    if missing_local:
+        raise RuntimeError(f"[p4] scratch metadata missing locally: {missing_local}")
+    meta_remote = f"{prefix}/analysis_tensors/scratch_meta"
+    logger.info("[p4] %d scratch metadata files -> %s", len(scratch_meta), meta_remote)
+    if not args.skip_upload:
+        from huggingface_hub import HfApi
+
+        for p in scratch_meta:
+            url = hub._upload(
+                p,
+                C.HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{meta_remote}/{p.name}",
+                upload_as_file=True,
+            )
+            if not url:
+                raise RuntimeError(f"[p4] upload returned no path for {p} -> {meta_remote}")
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            C.HF_DATA_REPO,
+            [f"{meta_remote}/{p.name}" for p in scratch_meta],
+            path_in_repo=meta_remote,
+            repo_type="dataset",
+        )
+        if missing:
+            raise RuntimeError(
+                f"[p4] scratch_meta verify: {len(missing)} missing: {sorted(missing)}"
             )
     # split doc rides along (json, non-LFS)
     if not args.skip_upload:

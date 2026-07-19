@@ -714,6 +714,25 @@ def _n_ans_for_rows(args, rows: np.ndarray) -> np.ndarray | None:
     return vals
 
 
+_SCRATCH_FILES = ("split_indices.npz", "row_ci.npy", "prov.npy")
+
+
+def _require_scratch(args) -> None:
+    """Fail loud WITH THE RECOVERY RECIPE when the pod-built scratch metadata is
+    absent — the epm:failure v6 class: every phase here loads these files, but they
+    were built by the pod-side P0 carve and (pre-r6) never uploaded, so a terminated
+    pod left a bare FileNotFoundError at P5 launch."""
+    missing = [n for n in _SCRATCH_FILES if not (args.scratch / n).exists()]
+    if missing:
+        raise SystemExit(
+            f"[{args.phase}] scratch metadata missing under {args.scratch}: {missing}. "
+            "Reconstruct it deterministically on the VM (sha-verified against "
+            "eval_results/issue_1482/split_1482.json) with "
+            "`uv run python scripts/issue1482_reconstruct_scratch.py`, or stage "
+            "analysis_tensors/scratch_meta/ from the HF data repo (uploaded by P4 as of r6)."
+        )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #1482 off-pod phases (P5 judge, P6 analysis).")
     ap.add_argument("--phase", required=True, choices=["judge", "interp-judge", "analysis"])
@@ -757,6 +776,7 @@ def main() -> int:
         args.fig_dir = (
             (base / "figures") if args.smoke else (PROJECT_ROOT / "figures" / "issue_1482")
         )
+    _require_scratch(args)
     t0 = time.time()
     if args.phase == "judge":
         phase_judge(args)
