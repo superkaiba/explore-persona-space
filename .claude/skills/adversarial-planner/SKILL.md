@@ -310,7 +310,11 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no off-pod phase` (check 39 — the off-pod / vm-side vocabulary is
   incidental, not a real off-pod phase of this plan; a plan with a genuine
   off-pod phase instead declares the fenced `off_pod_phases:` block —
-  planner-section-reference.md § 9).
+  planner-section-reference.md § 9), and
+  `N/A — no regression anchors` (check 40 — the anchor/gate vocabulary is
+  incidental or quotes a sibling/incident, not this plan's own anchor claim;
+  a plan whose anchor is genuinely unexecuted instead names the exact pytest
+  command or maps it from a touched file).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

@@ -7,13 +7,17 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Two disclosed read-only
+``epm:plan-verify`` marker — never this script). Three disclosed read-only
 exceptions: check 34, when its trigger fires, ``stat()``s the live sizes of
 the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
-writes, still no network; and check 37, when its trigger fires, reads
+writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network.
+dispatch set — read-only, no import, no network; and check 40, when its
+trigger fires and the cheaper satisfiers leave survivors, path-loads
+``scripts/select_step9c_tests.py`` and runs its pure selection functions
+over the plan's declared touched files — file reads under ``tests/``, no
+git, no network; measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -91,12 +95,14 @@ Check catalog (id — classification — kind scope)
       criterion baseline
   c39 off-pod phase             WARN-only, conditional    experiment only
       declaration
+  c40 regression-anchor named   WARN-only, conditional    infra + batch only
+      test executed or gate-selected
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39) also SKIP when their content trigger does not fire.
+37, 38, 39, 40) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -149,6 +155,7 @@ labeled-line forms):
   - ``N/A — no no-flags bundling claim`` (check 37)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
+  - ``N/A — no regression anchors`` (check 40)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -186,6 +193,7 @@ Exit codes: 0 = PASS (WARNs allowed), 1 = at least one FAIL,
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -6410,6 +6418,271 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 40 — regression-anchor test executed or gate-selected ───────────
+
+# Trigger: a NON-FENCED line carrying BOTH a test-file path token AND
+# regression-anchor / gate-selection vocabulary — same-line co-occurrence
+# only (the c37/c38 same-line-radius doctrine; a ±N window would false-fire
+# on §6 test lists near unrelated gate prose) — with no negation token.
+#
+# Test-path token: optional tests/ prefix + optional subdirs; ``::node`` ids
+# are naturally excluded from the capture (the match ends at ``.py``). A bare
+# ``test_x.py`` normalizes to ``tests/test_x.py`` — a disclosed convenience
+# (plans conventionally write full repo-relative paths; the bare form is
+# assumed to live under tests/).
+_C40_TESTPATH_RE = re.compile(r"\b((?:tests/(?:[\w-]+/)*)?test_[\w-]+\.py)\b")
+
+# Anchor / gate-selection vocabulary. Two claim classes, one trigger set:
+#  (i) gate-selection claims — "sits on the Step-9c mapped-scan path",
+#      "Step 9c selects/runs it", "auto-selected", "the gate will run it",
+#      "selected/picked up by the (9c) gate";
+#  (ii) anchor claims — "regression anchor", "must stay green",
+#      "stays/remains green".
+_C40_ANCHOR_VOCAB_RE = re.compile(
+    r"(?i)\bregression[- ]anchor"
+    r"|\bmust\s+(?:stay|remain)\s+green\b|\b(?:stays?|remains?)\s+green\b"
+    r"|\bmapped[- ]scan\b"
+    r"|\bstep[- ]?9c\b"
+    r"|\bauto[- ]select"
+    r"|\bgate\s+(?:will\s+)?(?:runs?|selects?|covers?)\b"
+    r"|\b(?:selected|picked\s+up)\s+by\s+the\s+(?:9c\s+)?gate\b"
+)
+
+# Negation guard (the c37 ``_C37_NEG_RE`` convention, LOCALIZED): the
+# CORRECTED plan shape ("test X is NOT auto-selected — the one-hop import
+# map misses it — so §6 runs it explicitly") must not trigger. The guard is
+# per-VOCAB-HIT, not per-line: a negation token within the
+# ``_C40_NEG_WINDOW`` chars BEFORE a vocabulary match guards THAT match
+# only — calibration showed the founding incident line itself (#1536 v2
+# L112) opens with an unrelated "N/A — not an experiment" clause ~400 chars
+# before its anchor vocabulary, so a whole-line negation guard silently
+# un-triggers the very shape the check exists to catch.
+_C40_NEG_RE = re.compile(
+    r"(?i)\bnot\b|\bnever\b|\bno longer\b|\bcannot\b|\bisn'?t\b|\bwon'?t\b|\bmisse[sd]\b"
+)
+_C40_NEG_WINDOW = 40  # chars of pre-context a negation token guards
+
+
+def _c40_line_triggers(line: str) -> bool:
+    """True when ``line`` carries at least one anchor/gate vocabulary hit
+    that is not LOCALLY negated (no negation token in the ``_C40_NEG_WINDOW``
+    chars before the hit). Post-hit negation ("selected? it is not") is a
+    disclosed non-guard — rare, and the fail direction is a WARN the N/A
+    escape remedies, not a miss."""
+    for m in _C40_ANCHOR_VOCAB_RE.finditer(line):
+        window = line[max(0, m.start() - _C40_NEG_WINDOW) : m.start()]
+        if not _C40_NEG_RE.search(window):
+            return True
+    return False
+
+
+# Touched-file derivation: RAW scan (fences INCLUDED — scope lists and
+# commands legitimately live in fences/tables; the c11 raw-scan doctrine).
+# tests/ paths are deliberately EXCLUDED: every named anchor is itself a
+# mentioned tests/ path, so admitting tests/ would make every anchor
+# self-satisfy via the selector's touched-test arm. Over-inclusion is the
+# SAFE polarity here (more touched files -> more selection -> fewer WARNs;
+# a missed WARN is the acceptable fail-open direction).
+_C40_TOUCHED_RE = re.compile(
+    r"\b(scripts/[\w./-]+\.py"
+    r"|src/explore_persona_space/[\w./-]+\.py"
+    r"|\.claude/rules/[\w-]+\.md)\b"  # rules-pin arm inputs (#1496)
+)
+
+_C40_SELECTOR_PATH = Path(__file__).resolve().parent / "select_step9c_tests.py"  # tests monkeypatch
+_C40_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34 pattern)
+_c40_selector_cache: list = []  # [module] once loaded; [None] when the file is absent
+
+
+def _c40_selector():
+    """Lazily path-load ``scripts/select_step9c_tests.py`` (stdlib-only
+    module-level imports, ~ms; NOT registered in ``sys.modules`` — the test
+    suite loads its own instance and the two must not clobber each other).
+    ``None`` => file absent (``--plan-file`` off-repo) => the caller SKIPs
+    loudly (the c37 "membership cannot be adjudicated" doctrine). A broken
+    selector file raises out of ``exec_module`` — the caller's
+    ``except Exception`` degrades that to a loud SKIP naming the breakage."""
+    if not _c40_selector_cache:
+        mod = None
+        if _C40_SELECTOR_PATH.is_file():
+            spec = importlib.util.spec_from_file_location(
+                "_c40_step9c_selector", _C40_SELECTOR_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)  # may raise; caller catches -> loud SKIP
+        _c40_selector_cache.append(mod)
+    return _c40_selector_cache[0]
+
+
+def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a plan-named
+    regression-anchor / "the Step-9c gate will run it" test must be either
+    explicitly run by a pytest command in the plan, branch-new (absent from
+    disk — forward-looking, gate-covered by the touched-test arm), or
+    actually returned by the REAL Step-9c selection
+    (``select_step9c_tests.select_tests_with_reasons``) over the plan's
+    declared touched files. #1536 plan v2 claimed two ``test_issue906_*``
+    files "sit on the Step-9c mapped-scan path for sft.py edits" — measured
+    false: ``--map-files`` on sft.py is empty and the full selection returns
+    56 tests without either anchor (the import map is one-hop; a test
+    importing a helper that imports the touched module is never selected).
+    NEVER FAILs (task-body constraint: an anchor claim can be legitimately
+    satisfied by prose the parser cannot see; fail-open).
+
+    Satisfiers per anchor, cheapest first: (a) a ``pytest`` command naming
+    the anchor's basename anywhere in the RAW plan (fences included — that
+    is where commands live); (b) the existence gate — an anchor absent from
+    disk is a PLAN-NEW test, never an offender (the c37 existence-gate
+    doctrine transposed; Step 9c's touched-test arm selects any branch-new
+    ``tests/**/test_*.py`` in the diff); (c) ONE oracle call to the full
+    Step-9c selection, which covers stem-map, glob-scan (the ``--map-files``
+    letter), import-map (the Goal's direct-import parenthetical), literal-
+    path, rules-pin, and present-on-disk ``WORKFLOW_INVARIANT`` membership.
+    Selector absent or raising -> loud SKIP naming the cause (never WARN,
+    never silent PASS): verify_plan gates EVERY plan at Phase 1.5.0, so a
+    selector regression must not block fleet-wide planning.
+
+    Disclosed v1 limitations (fail-SAFE polarities; the Phase-2 critics
+    remain the backstop): (1) under-trigger — anchor vocabulary on the line
+    ABOVE its test list ("These are regression anchors:\\n- tests/test_a.py")
+    does not trigger; widen to a ±1 window only after burn-in. (2)
+    modified-existing-test false-WARN — an anchor that exists on disk but
+    becomes selected only via a plan-introduced import edit to an EXISTING
+    test will WARN despite being gate-covered post-merge (the existence gate
+    covers only ABSENT files); the explicit-pytest-command remedy resolves
+    it. (3) ``_C40_TOUCHED_RE`` omits ``.claude/skills/**`` + ``CLAUDE.md``
+    (they map to no selection arm today except invariants, which need no
+    touched file); if calibration ever shows a false-WARN class there, widen
+    the REGEX, not the vocabulary. (4) touched-set over-inclusion (sibling-
+    issue paths cited in prose count as touched) -> missed WARN, accepted
+    fail-open residual. Incident-citation prose residual: a plan QUOTING
+    this incident ("#1536 claimed tests/test_issue906_... sat on the
+    mapped-scan path") triggers unless negated; the standalone
+    ``N/A — no regression anchors`` escape is the documented remedy (the
+    c36/c38 incident-quoting residual class).
+
+    Calibration (2026-07-19, 2495 corpus plan versions, forced kind=infra —
+    per-check replay of ``check_regression_anchor_executed`` over
+    ``tasks/*/*/plans/v*.md`` at the main root): 45 WARN / 588 PASS /
+    1860 SKIP / 0 FAIL. Positive control: #1536 v2 WARNs naming
+    ``test_issue906_tiny_real_e2e.py`` ONLY
+    (``test_issue906_marker_mix_budget.py`` is (a)-satisfied by that plan's
+    line-128 ``uv run pytest`` command); the localized negation guard is what
+    keeps that control alive — v2's L112 opens "N/A — not an experiment"
+    ~400 chars before its anchor vocabulary, so a whole-line guard would
+    silently un-trigger the founding incident. Negative control: the
+    corrected shape ("NOT auto-selected ... §6 runs it explicitly") reads
+    SKIP. The 20 NEWEST plan versions by ACTUAL frontmatter kind
+    (infra|batch — #1542..#1551 era): trigger FIRED on 16 of 20 (under-fire
+    visibility), 2 WARN / 14 PASS / 4 SKIP; both WARNs hand-classify as
+    disclosed-residual false positives, meeting the <=2 FP gate exactly —
+    (i) #1551 v1, incident-citation prose (this task's own draft quoting the
+    #1536 anchors beside gate vocabulary; its v3 PASSes via the standalone
+    escape, the documented remedy), FP-class tag: incident-citation;
+    (ii) #1542 v1, coverage-analysis prose (test names on a line arguing
+    they DON'T cover the edit, ending "these run as the mapped-scan gate" —
+    the ``mapped[- ]scan`` token is the broad one), FP-class tag:
+    check-discussing prose. The residual WARN mass (45) is dominated by the
+    genuine recurrence class — recent infra plans naming a pinning test as
+    "must stay green" / gate-selected where the selection demonstrably does
+    not pick it up (e.g. #1449, #1495, #1530) — the exact claim shape this
+    check exists to adjudicate."""
+    cid, name = (
+        "c40_regression_anchor_executed",
+        "regression-anchor test executed or gate-selected",
+    )
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch "
+            "(workflow-fix) shape",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    anchors: set[str] = set()
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if not _c40_line_triggers(line):
+            continue
+        for m in _C40_TESTPATH_RE.finditer(line):
+            path = m.group(1)
+            if not path.startswith("tests/"):
+                path = f"tests/{path}"
+            anchors.add(path)
+    if not anchors:
+        return _skip(
+            cid,
+            name,
+            "no regression-anchor / gate-selection claim naming a test file on a non-fenced line",
+        )
+    if _standalone_na_declared(plan, r"no regression anchors?"):
+        return _pass(cid, name, "explicit N/A declared (no regression anchors)")
+    touched = sorted(set(_C40_TOUCHED_RE.findall(plan)))[:40]  # dedupe + hard bound
+    survivors: list[str] = []
+    for anchor in sorted(anchors):
+        basename = anchor.rsplit("/", 1)[-1]
+        # (a) explicit pytest command naming the anchor, anywhere in the RAW plan.
+        if re.search(r"pytest[^\n]*" + re.escape(basename), plan):
+            continue
+        # (b) existence gate: absent from disk => plan-new, forward-looking.
+        if not (_C40_REPO_ROOT / anchor).exists():
+            continue
+        survivors.append(anchor)
+    if not survivors:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchors)} anchor(s) — each explicitly run by a pytest command or "
+            "branch-new (existence gate)",
+        )
+    # (c) the FULL Step-9c selection oracle over the plan's declared touched files.
+    try:
+        mod = _c40_selector()
+        if mod is None:
+            return _skip(
+                cid,
+                name,
+                "Step-9c selection surface unavailable — scripts/select_step9c_tests.py "
+                "absent (--plan-file off-repo); anchors cannot be adjudicated",
+            )
+        tests, _, _ = mod.select_tests_with_reasons(touched, _C40_REPO_ROOT)
+    except Exception as exc:  # loud SKIP, never a crash / silent PASS
+        return _skip(
+            cid,
+            name,
+            f"Step-9c selection oracle failed ({exc!r}) — anchors cannot be adjudicated",
+        )
+    selected = set(tests)
+    offenders = [a for a in survivors if a not in selected]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchors)} anchor(s) — each explicitly run, branch-new, or "
+            f"Step-9c-selected from {len(touched)} touched file(s)",
+        )
+    named = ", ".join(f"`{a}`" for a in offenders[:6])
+    extra = f" (+{len(offenders) - 6} more)" if len(offenders) > 6 else ""
+    empty_note = (
+        " (additionally: no touched code files could be parsed from the plan)"
+        if not touched
+        else ""
+    )
+    return _warn(
+        cid,
+        name,
+        f"plan names {named}{extra} as a regression anchor / gate-selected test, but the "
+        f"Step-9c selection over the plan's {len(touched)} touched file(s) does not pick "
+        "it up (the selector's import map is one-hop — the #1536 shape) and no pytest "
+        f"command in the plan runs it explicitly{empty_note}. Remedies: name the exact "
+        "pytest invocation in the plan, import the touched module directly from the "
+        "anchor test, or declare `N/A — no regression anchors` on its own line, "
+        "unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6451,6 +6724,7 @@ CHECKS = [
     check_noflags_bundling_claim,
     check_exit0_repo_wide_baseline,
     check_off_pod_phase_declaration,
+    check_regression_anchor_executed,
 ]
 
 
