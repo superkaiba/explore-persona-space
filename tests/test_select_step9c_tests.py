@@ -147,9 +147,11 @@ def test_pinned_invariant_list_matches_live_tree():
     # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
     # rationale: a SKILL.md-only recipe revert must still run the pin) + the #1397
     # fit-loop batching review-lens pin suite (test_fit_loop_batching_review_pin —
-    # agent-`.md` diffs gate ONLY via this tuple).
+    # agent-`.md` diffs gate ONLY via this tuple) + the #1546 SKILL.md forensics-ingest
+    # pointer pin suite (test_issue_skill_forensics_ingest_pointer — same tuple
+    # rationale: a SKILL.md-only edit dropping the pointer must still run the pin).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 38
+    assert len(sel.WORKFLOW_INVARIANT) == 39
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
