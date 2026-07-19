@@ -69,6 +69,9 @@ CELL_LABELS = {
     "c3_evasive": "Evasive",
     "c4_exposition": "Addressee-free\nexposition",
     "c5_ai_addressee": "Non-user\naddressee",
+    # milder-rude round: figures iterate the full CELL_ORDER (sparse-tolerant
+    # reads); the label entry is REQUIRED or every tick-label loop KeyErrors.
+    "c2_rude_mild": "Rude-but-inf.\n(mild)",
 }
 MODEL_LABELS = {"instruct": "Instruct", "pretrained": "Base"}
 REF_LABELS = {

@@ -37,6 +37,11 @@
 #                             naturalistic-single-turn/{format_contrast,cells_S1N,cells_S2N}.json
 #                             (the G1 anchor calibration sources; skip-if-absent
 #                             for pre-existing worktrees)
+#   eval_results/issue_1417 — test_issue1417_milder_render.py reads the committed
+#                             render_config.json (additive-registry byte pin) +
+#                             refit/battery_summary.json + refit/{cells,battery} counts
+#                             (the milder-round carry/pilot-gate pins; skip-if-absent
+#                             for pre-existing worktrees)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -48,3 +53,4 @@ eval_results/issue_1090
 eval_results/issue_1345
 eval_results/issue_1335
 eval_results/issue_825
+eval_results/issue_1417
