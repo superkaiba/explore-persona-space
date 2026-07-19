@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1533,
+  "highest_id": 1534,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4162,6 +4162,13 @@
       "path": "tasks/proposed/1533",
       "status": "proposed",
       "title": "workflow-fix: gate-scope duty emits raw pin-sweep hit list"
+    },
+    "1534": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1534",
+      "status": "proposed",
+      "title": "workflow-fix: merge=union for eval_results/INDEX.md"
     },
     "154": {
       "has_clean_result": false,
