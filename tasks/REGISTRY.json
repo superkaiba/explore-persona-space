@@ -4376,8 +4376,8 @@
     "1561": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1561",
-      "status": "planning",
+      "path": "tasks/approved/1561",
+      "status": "approved",
       "title": "daily-fix: hub-verify lint FP on monkeypatch attribute refs"
     },
     "1562": {
