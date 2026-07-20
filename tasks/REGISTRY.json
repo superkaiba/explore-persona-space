@@ -4446,8 +4446,8 @@
     "1570": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1570",
-      "status": "planning",
+      "path": "tasks/approved/1570",
+      "status": "approved",
       "title": "daily-fix: merge=union for tests/sparse_cones.txt"
     },
     "1571": {
