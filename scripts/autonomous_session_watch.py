@@ -6500,7 +6500,10 @@ def _completed_unmerged_read_events(
     if "epm:done" not in raw:
         return (None, None, None)
     done_ts = merged_ts = merge_failed_ts = None
-    for line in raw.splitlines():
+    # split("\n"), never .splitlines(): a raw U+2028/U+2029/NEL inside an
+    # ensure_ascii=False note string would shred the record (#825/#950;
+    # the jsonl-splitlines lint pins this).
+    for line in raw.split("\n"):
         line = line.strip()
         if not line:
             continue
