@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1564,
+  "highest_id": 1565,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4400,6 +4400,13 @@
       "path": "tasks/proposed/1564",
       "status": "proposed",
       "title": "daily-fix: watcher audit - completed without epm:merged"
+    },
+    "1565": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1565",
+      "status": "proposed",
+      "title": "daily-fix: re-resolve task path at marker-append time"
     },
     "157": {
       "has_clean_result": false,
