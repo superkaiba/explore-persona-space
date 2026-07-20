@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1568,
+  "highest_id": 1569,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4428,6 +4428,13 @@
       "path": "tasks/proposed/1568",
       "status": "proposed",
       "title": "daily-fix: HF routing snapshot stale at merge-gate time"
+    },
+    "1569": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1569",
+      "status": "proposed",
+      "title": "daily-fix: probe free check id at implement time"
     },
     "157": {
       "has_clean_result": false,
