@@ -3485,6 +3485,29 @@ and the EXIT trap powered the VM off. #588 closed it — the GCP
 renderer now refuses to render that bare launch, and `--workload-cmd`
 carries dispatch scripts on every lane.)
 
+**Ad-hoc probe workloads are committed scripts invoked by path — never
+inline interpreter one-liners in `--workload-cmd`.** A probe dispatch
+composes exactly like a full run: a committed script on the pushed issue
+branch, invoked by path with `--repo-branch issue-<N>`; staging/phase
+logic lives in the script, never in the command string. An inline
+`python -c '...'` / `uv run python - <<EOF` one-liner as the workload
+body is the named anti-pattern — un-lintable and un-smokeable (ruff, the
+Step 9c mapped tests, and the pre-launch import/signature probes see
+only committed files) and quoting-fragile (incident #1482, 2026-07-19: a
+G1 reconciliation probe's placeholder-broken inline staging one-liner
+would have SyntaxError'd after phase b0 and spuriously failed over to
+RunPod; the just-created GCE instance was cancelled ~2 min after create,
+`reason=orchestrator-quoting-error`). Recovery is the incident's own
+fix: rewrite as a committed branch script, push, re-dispatch by path.
+Siblings: rule (f) above (lane-env fragility) and the
+`.claude/rules/gotchas.md` #1310 inline-stdin entry — that covers
+signature drift of `-c`/heredoc helper calls INSIDE a committed script;
+this rule bars the one-liner as the workload body itself. Standing
+exception: the fixed `write_completion_sentinel` append chained onto the
+workload command (`.claude/agents/experimenter.md`) — signature-stable
+and probe-covered by the gotchas #1310 pre-launch discipline, not ad-hoc
+workload logic.
+
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
 back; see Step 6d.2).
