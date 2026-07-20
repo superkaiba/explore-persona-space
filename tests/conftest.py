@@ -324,6 +324,10 @@ _FLEET_MUTATING_PASS_NAMES = (
     # reconcile_registry(apply=False) reads against the LIVE registry and can
     # write real sidecar rows / state / pushes from a full-main() unit test.
     "registry_drift_pass",
+    # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
+    # runs real gh/git probes, and can post REAL epm:progress markers on live
+    # tasks + sidecar rows + pushes from a full-main() unit test.
+    "completed_unmerged_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",
