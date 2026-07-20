@@ -399,6 +399,13 @@ SHA=$(git rev-parse HEAD)
 uv run python scripts/build_dashboards.py emit-links --issue <N> --sha "$SHA"
 ```
 
+Staged-index verification after the adds (#1572): `git ls-files --others
+--ignored --exclude-standard -- figures/issue_<N>/ experiments/dashboards/`
+must return empty — a directory-path `git add` silently skips
+gitignore-matched files (rc=0, no error); `git add -f`
+convention-committed hits (canonical recipe: v1 SKILL.md Step 9a-ter
+§ Staged-index verification).
+
 The SAME `$SHA` pins the 7c image URLs. Idempotent on re-entry: figures already
 committed + unchanged → reuse `git log -n1 --format=%H -- figures/issue_<N>/`;
 a 7d/7e round that re-runs the plotter re-commits the changed figures (new SHA),

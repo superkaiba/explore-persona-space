@@ -6740,6 +6740,30 @@ explicit eval-data path):
    exit 0 can mean in-flight — landing not guaranteed, see the canonical
    block's caveat).
 
+   **Staged-index verification (#1572 — after EVERY explicit-path
+   `git add` of an artifact DIRECTORY, before the commit).** A
+   directory-path `git add` silently skips gitignore-matched files
+   inside the dir (rc=0, no error; only an explicit FILE-path add of an
+   ignored file fails loud, rc=1) — #958 round 7 shipped its commit
+   without the round's convention-committed `percell/*.npz` cells (the
+   repo-wide `.gitignore` `*.npz` rule). After the add:
+
+   ```bash
+   git ls-files --others --ignored --exclude-standard -- <round artifact dirs>
+   # any output = files an ignore rule silently skipped (git check-ignore -v
+   # <file> names the rule). Per file:
+   #   convention-committed round artifact (small (≲1 MB/file),
+   #   plan/parent-convention-named, e.g. percell/*.npz cells)
+   #     -> git add -f <file>, re-run (must be empty);
+   #   large binary tensor -> HF data repo per the Upload Policy, never git;
+   #   anything else -> leave unstaged, name its disposition in the completion note.
+   git diff --cached --name-only -- <round artifact dirs>   # staged set == intended files
+   ```
+
+   Same class as uploader.md § Post-add reconciliation / upload-verifier
+   Step 2.9 (#537) — this block is the inline-round copy (those agents
+   are not in the inline path).
+
    **Inline payload lint gate (§ Inline payload lint gate — BEFORE the
    push lands any non-artifact payload; #1460).** PAYLOAD = the round's
    to-be-committed paths outside the artifact-only set (`tasks/`,

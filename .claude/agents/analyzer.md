@@ -255,6 +255,12 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
 1. Save under `figures/issue_<N>/` (NOT only the task's `artifacts/`).
 2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>`
    BEFORE writing the body (pathspec-limited).
+   Staged-index verification after the add: `git ls-files --others
+   --ignored --exclude-standard -- figures/issue_<N>/ <any other round
+   artifact dir you staged>` must return empty — a directory-path
+   `git add` silently skips gitignore-matched files (rc=0; #958:
+   `percell/*.npz`); `git add -f` convention-committed hits (canonical
+   recipe: SKILL.md Step 9a-ter § Staged-index verification).
 3. Pin the SHA (`git rev-parse HEAD`) and reference inline in the
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`

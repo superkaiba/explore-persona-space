@@ -152,9 +152,11 @@ def test_pinned_invariant_list_matches_live_tree():
     # rationale: a SKILL.md-only edit dropping the pointer must still run the pin) + the
     # #1563 SKILL.md orchestrator-turn discipline pointer pin suite
     # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
-    # a SKILL.md-only edit dropping the pointer must still run the pin).
+    # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
+    # staged-index verification pin suite (test_issue_skill_staged_index_verification —
+    # same tuple rationale: a doc-site edit dropping the duty must still run the pin).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 40
+    assert len(sel.WORKFLOW_INVARIANT) == 41
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----

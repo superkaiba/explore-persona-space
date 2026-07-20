@@ -11119,14 +11119,16 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
     "codex-code-reviewer.md": 59_200,
-    # measured 72,240 B post-#1449 (After-implementation step-7 plan-glob
-    # parity self-check — plan-mandated growth; cap = measured + ~0.8 KB.
-    # Prior: 72,000 — measured 71,114 B post-#1409 (data-dependent-gates
-    # smoke duty in checklist item 3 + item-5 cross-ref), 69,800 — measured
-    # 68,888 B post-#1384 (per-arm-class smoke-coverage clause), 67,900 —
-    # measured 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
-    # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 73_000,
+    # measured 73,554 B post-#1572 (step-10 staged-index verification
+    # pointer — plan-mandated growth; cap = measured + ~0.4 KB.
+    # Prior: 73,000 — measured 72,240 B post-#1449 (After-implementation
+    # step-7 plan-glob parity self-check), 72,000 — measured 71,114 B
+    # post-#1409 (data-dependent-gates smoke duty in checklist item 3 +
+    # item-5 cross-ref), 69,800 — measured 68,888 B post-#1384
+    # (per-arm-class smoke-coverage clause), 67,900 — measured 67,472 B
+    # post-#1363, 67,400 — measured 66,574 B post-#1349, 66,300 —
+    # measured 65,548 B post-#1311)
+    "experiment-implementer.md": 74_000,
     # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
     # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
     # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
