@@ -4341,8 +4341,8 @@
     "1557": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1557",
-      "status": "planning",
+      "path": "tasks/approved/1557",
+      "status": "approved",
       "title": "daily-fix: check 31 - new pin test must be selector-visible"
     },
     "1558": {
