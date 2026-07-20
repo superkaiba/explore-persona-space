@@ -232,6 +232,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",
+    # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
+    "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     "tests/test_plan_handoff_path_convention.py",

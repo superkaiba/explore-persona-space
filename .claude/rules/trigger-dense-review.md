@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -17,7 +17,9 @@ bounce / reconcile brief from findings-bearing verdicts on such a round
 (§ Revision-round briefs, #1413), or the ORCHESTRATOR ingests
 run-failure / forensics text on its own turn — a poll tick reporting
 stalled/dead, crash-persist artifacts, a guard hook's BLOCKED runtime
-output (§ Orchestrator poll/forensics turns, #1546). Recognition heuristic
+output (§ Orchestrator poll/forensics turns, #1546), or the ORCHESTRATOR
+runs ANY ordinary turn on a round whose task or diff targets such
+artifacts (§ Orchestrator ordinary turns, #1563). Recognition heuristic
 (any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
@@ -221,6 +223,69 @@ tails; session replaced).
    section changes what enters the orchestrator's CONTEXT and generated
    text, never whether forensic text is persisted.
 
+## Orchestrator ordinary turns (authoring + own-reads, #1563)
+
+Fires for the ORCHESTRATOR itself — an /issue, /issue-v2, /campaign, or
+tick session — on EVERY ordinary turn of a round whose task or diff
+targets a trigger-dense artifact per the recognition heuristic above
+(knowable at Step 0: the task body's target/scope lines, a
+`workflow_fix_target:` naming a guard surface, or the round's diff
+pathspec). § Orchestrator poll/forensics turns owns FAILURE/forensics
+text; this section owns everything else the orchestrator does on such a
+round, Step-0 state read through Step-10d merge narration. The #1538
+wedge was CONTEXT ACCUMULATION on ordinary turns — guard-surface tool
+output paged in during normal reads plus the text the orchestrator then
+authored: the first kill fired on the first generation after
+guard-surface tool output entered context on an ordinary working turn,
+and every later wake turn died (unrecoverable in-session; recovery was a
+fresh respawn, CLAUDE.md rung (f)).
+
+1. **Authored text — reference, never quote, on every surface.**
+   Progress/marker notes (`epm:progress`, `epm:failure`, followup-scope
+   and step-completed notes), stage-dispatch breadcrumbs, plan-approval
+   summaries, chat narration, and commit/PR messages name guard content
+   by file path + abstract class ("extends the blocked-pattern list",
+   "adds a deny-list entry") — never a blocked-command literal, an
+   attack-shape enumeration, or a diff-hunk quote. The § poll/forensics
+   item-4 ≤80-char reason-slice bound generalizes: at most ONE ≤80-char
+   slice of guard-surface text per authored artifact, and prefer zero.
+2. **Own-turn ordinary reads — counts-first, windowed, or delegated.**
+   Verifying guard-surface work (did the diff touch the hook? did the
+   pattern list change?) uses name/stat/count forms first
+   (`git diff --stat`, `--name-status`, `grep -c`), then grep-anchored
+   ≤~120-line windows (discipline 3) only where content is genuinely
+   needed; NEVER wholesale-read a guard file or its full diff body into
+   your own context, and route content-shaped checks through a
+   script/pipeline that prints a verdict or count wherever one exists.
+   Where content-level verification is unavoidable at depth, dispatch a
+   fresh-context subagent that returns a digest per disciplines 1/4
+   (the § poll/forensics item-3 escalation, generalized to ordinary
+   reads) — a subagent's context is disposable; the orchestrator's is
+   the session.
+3. **No re-paging across turns.** Accumulation is the wedge mechanism:
+   the same guard-surface content re-entering context turn after turn is
+   what turns one risky read into every-turn deaths. Read once, carry
+   forward your OWN one-line digest; never re-read the same
+   guard-surface content on later turns (the § poll/forensics item-1
+   no-repeat clause, extended to ordinary reads).
+4. **Marker bodies are re-read — keep them digest-only.** `events.jsonl`
+   notes are re-ingested by later turns, tick digests, and successor
+   sessions; raw guard-surface text in a note poisons every future read
+   (same rationale as § poll/forensics item 4).
+5. **Recovery unchanged.** After a kill the CLAUDE.md § Spurious
+   usage-policy refusals ladder stays authoritative (rung (f) fresh
+   respawn is what recovered #1538); this section exists so it is not
+   needed.
+
+Incident #1538 (2026-07-19): two consecutive /issue orchestrator
+sessions wedged on a guard-hook grep-pattern round — first kill
+immediately after guard-surface tool results entered context on an
+ordinary working turn (not a forensics turn), then consecutive wake-turn
+deaths; a second session died the same way at its tail; the task
+completed only in a third watcher-respawned session after ~1h+ lost
+wall-clock. Session references 539d277f / 40a23453 are transcript ids,
+not commits.
+
 ## What this rule does NOT change
 
 - The review bar. Every finding still needs a concrete artifact location;
@@ -230,7 +295,9 @@ tails; session replaced).
   `guard_harmful_bank_read.sh` + the corpora digest note; diff-body sizing
   by `.claude/rules/diff-size-budget.md`. This rule adds the
   generated-TEXT + verdict-ordering discipline those read-side rules do
-  not cover.
+  not cover. § Orchestrator ordinary turns tightens the guard-surface
+  subset of ordinary orchestrator reads (content discipline, not just
+  size).
 - The CLAUDE.md § Monitoring recipe on ordinary runs and the mechanical
   `guard_log_dump.sh` dump blocker. § Orchestrator poll/forensics turns
   adds the counts-first / no-repeat / trigger-dense-escalation discipline
@@ -251,7 +318,9 @@ briefs, #1503), 2026-07-18 (7 poll-turn content-filter kills wedged the
 #1481 session while it paged raw crash-forensics tails, session
 replaced, + 3 brief kills from inlined hook-BLOCKED text —
 § Orchestrator poll/forensics turns + § First-pass briefs item 5,
-#1546).
+#1546), #1538 (2 orchestrator sessions refusal-wedged on ordinary turns
+of a guard-hook grep-pattern round — § Orchestrator ordinary turns,
+#1563).
 Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
@@ -261,6 +330,8 @@ pre-materialization);
 (orchestrator-side posting path, #1275);
 `.claude/skills/issue/SKILL.md` Step 6d.2 (poll-loop forensics-ingest
 pointer, #1546);
+`.claude/skills/issue/SKILL.md` § Orchestration Procedure preamble
+(guard-surface round orchestrator-turn discipline, #1563);
 `.claude/skills/adversarial-planner/SKILL.md` Phase 3 +
 `.claude/skills/issue/SKILL.md` Step 5d (revision-brief composition
 pointers, #1413);

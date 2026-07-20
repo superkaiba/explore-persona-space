@@ -372,6 +372,20 @@ requires the program's STOP sentinel.
 
 When invoked, ALWAYS follow this order. Skip only what the state dictates.
 
+**Guard-surface round: orchestrator turn discipline (#1563).** When the
+task's target files are trigger-dense per the
+`.claude/rules/trigger-dense-review.md` recognition heuristic
+(guard/security hook scripts, destructive-command fixtures, refusal
+corpora — knowable at Step 0 from the task body's target/scope lines or
+the diff pathspec), EVERY ordinary orchestrator turn from the Step-0
+state read through Step-10d merge narration follows
+trigger-dense-review.md § Orchestrator ordinary turns: authored text
+(marker notes, breadcrumbs, chat updates, commit messages) references
+guard content by path + abstract class only, and own-turn reads of
+guard-surface diffs/files stay counts-first + grep-anchored windows —
+never wholesale-paged into context. Failure/forensics text stays
+governed by the Step 6d.2 forensics-ingest discipline (#1546).
+
 **Chat title updates (single-source-of-truth canonical string).** The
 session's phone title AND the terminal/dashboard progress column (read
 from `~/.eps-autonomous/session_progress.json` by `happy-ls` and the
