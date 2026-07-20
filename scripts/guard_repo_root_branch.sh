@@ -39,6 +39,25 @@
 #     bash scripts/new_worktree.sh .claude/worktrees/<name> <branch>
 #     git -C .claude/worktrees/<name> ...
 #
+# #1554 (#1530 F5): worktree-scoped LOCAL-main merge fence. The two worktree
+# allow paths — the per-clause `git -C <path>` waiver and the `cd <worktree>
+# &&` latch — deliberately pass ALL worktree-internal git ops, including
+# `git -C <worktree> merge main`, which fast-forwards the branch onto the
+# possibly-stale, UNPUSHED local `main` tip and imports root-only commits
+# (#1530 imported 4). Two narrow driver-loop arms now decline a clause-initial
+# worktree-scoped merge of the BARE `main` ref only: Arm A intercepts
+# `git -C <.claude/worktrees/ path | $WT spelling> ... merge ... main` BEFORE
+# the path-blind -C waiver; Arm B declines the same bare-main merge shape when
+# the live cd-latch was armed by a WORKTREE cd (the `scoped_wt` bit; /tmp
+# latches keep their disposition byte-identical). `origin/main`, raw-sha, and
+# "$MAIN_SHA" merges pass unchanged (the worktree fast-forward recipe in the
+# deny text is the sanctioned form). Deliberate override:
+# EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1 — session env or inline command
+# prefix; the inline form is a command-wide SUBSTRING match (inherited
+# verbatim from the EPM_ALLOW_ROOT_PULL sibling idiom), so a command merely
+# QUOTING the override string disarms the fence for that command. Residuals:
+# gap (xx) below.
+#
 # THREAT MODEL / scope (#897): this hook gates ONLY Claude Bash tool calls.
 # Git run inside Python subprocesses (sync_repo_root.py carries its own
 # internal deny checker), cron wrappers, pod-side scripts, and SSH-MCP remote
@@ -496,6 +515,47 @@
 #       BEFORE this arm (GS8 parity — pre-existing, unchanged). The
 #       comment-`#`-inside-payload truncation note carries over from (xiv)
 #       (safe direction: the mask R-arms scanned the full pre-strip text).
+# (xx)  (#1554) Worktree-local bare-main merge fence residuals. Fail-OPEN
+#       (accepted — the same class as the -C waiver's existing gaps; each
+#       keeps today's ALLOW disposition):
+#       (a) `git -C "$OTHER_VAR" merge main` with a non-WT variable —
+#       prior-call variable bindings are invisible by design ($WT is
+#       special-cased as the SKILL.md-conventional worktree variable and
+#       blocked unconditionally, the fail-closed safe direction);
+#       (b) wrapper-prefixed forms (`timeout 60 git -C <wt> merge main`,
+#       env-assignment prefixes) evade the ^-anchored clause head — the
+#       identical accepted trade the #1443 cd-latch anchoring made;
+#       (c) a GLOBAL git flag before -C (`git --no-pager -C <wt> merge main`,
+#       `git -c k=v -C <wt> ...`) evades Arm A's `^git +-C` head and is
+#       waived by the unanchored path-blind -C waiver — fail-open toward
+#       today's behavior;
+#       (d) a /tmp-latched compound whose SECOND clause is a `-C <worktree>`
+#       merge (`cd /tmp/x && git -C <wt> merge main`) takes the Arm-B else
+#       `continue` (scoped_wt=0) without ever reaching Arm A — the inverse
+#       of the fail-closed compound below;
+#       (e) single-dash-flag merge spellings (`merge -q main`, `-m <msg>`
+#       argument-taking forms) evade the --long-flag-only groups (no
+#       prescription channel ever emitted them), and local-lineage refs
+#       (`main~1`, `main^`) evade the bare-ref tail — same family;
+#       (f) a quoted worktree path containing a SPACE defeats the `[^ ]*`
+#       path token (fleet worktree names are space-free);
+#       (g) remote-side merges inside ssh payloads (non-worktree /workspace
+#       paths) stay waived downstream exactly as today;
+#       (h) SIBLING VERBS are deliberately OUT OF SCOPE: `git -C <wt> rebase
+#       main` / `git -C <wt> reset --hard main` are the same contamination
+#       class but still ride the path-blind -C waiver ungated — this fence
+#       covers the merge verb only (the recorded #1530 prescription-channel
+#       forms); do NOT read the fence as covering them.
+#       Fail-CLOSED (accepted): the exotic `cd <worktree> && git -C /tmp/x
+#       merge main` compound declines via Arm B (the escape hatch covers a
+#       deliberate need); a clause-initial literal spelling inside a masked
+#       single-quoted ssh payload targeting a REMOTE .claude/worktrees/ path
+#       could decline — no such remote layout exists in this fleet.
+#       DRIFT VECTOR (watched channel): the primary prescription channel is
+#       .claude/agent-memory/implementer/feedback_ff_worktree_to_main_before_edit.md
+#       — if a future edit adds a `timeout`-style wrapper to its MERGE line
+#       (it already wraps the fetch line), Arm A goes silent on that channel
+#       via residual (b).
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -1357,8 +1417,24 @@ classify_clause() {
 # rounds 2/3): the guard cannot prove a `;`- or newline-preceding `cd` succeeded,
 # so it declines to scope across it. The first blocking clause wins.
 scoped=0
+scoped_wt=0   # (#1554) whether the live scoped-latch was armed by a WORKTREE cd
 wt_bound=0
 blocked=""
+# (#1554) Worktree-local bare-main merge fence — shared definitions. Escape
+# hatch (sibling convention: EPM_ALLOW_ROOT_PULL, guard_repo_root_pull.sh
+# L81-112): honored as session env AND as an inline prefix on the command
+# itself (a command-wide substring match — see the header note).
+_wt_lm_allow=0
+[ "${EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE:-0}" = "1" ] && _wt_lm_allow=1
+case "$cmd" in *EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1*) _wt_lm_allow=1 ;; esac
+# (#1554) bare-local-main merge ref tail: optional --long-flags on both sides
+# of the ref, optional redirect tokens after; NOT origin/main (the char before
+# `main` must be whitespace/quote — `origin/main` has `/` there).
+_WT_LM_TAIL='merge( +--[A-Za-z-]+(=[^ ]*)?)* +["'"'"']?main["'"'"']?( +--[A-Za-z-]+(=[^ ]*)?| +[0-9]*[<>]+[^ ]*)*( *($|[;&|]))'
+# Arm A: clause-initial `git -C <worktree-path | $WT spelling>` + the tail.
+_WT_LM_ARM_A='^git +-C +([^ ]*\.claude/worktrees/[^ ]*|["'"'"']?\$(WT\b|\{WT\})[^ ]*) +(-[^ ]+( +[^ ]+)? +)*'"$_WT_LM_TAIL"
+# Arm B: clause-initial bare `git ... merge ... main` (worktree-latch-gated).
+_WT_LM_ARM_B='^git +(-[^ ]+( +[^ ]+)? +)*'"$_WT_LM_TAIL"
 # (#1538) Buffer the (sep, nextsep, clause) triples so the grep-family
 # pipe waiver can look ahead at downstream pipe-connected consumer
 # clauses (_pipe_chain_is_readonly_sink above). read -r keeps
@@ -1382,6 +1458,7 @@ for _idx in "${!_clauses[@]}"; do
   # carry the latch (NL is not AND, so this consolidated check resets it).
   if [ "$sep" != AND ]; then
     scoped=0
+    scoped_wt=0
   fi
 
   # (#897) A clause whose first non-space char is `#` is a bash comment — bash
@@ -1423,9 +1500,13 @@ for _idx in "${!_clauses[@]}"; do
   # latch-vocab text mid-clause — an ssh payload fragment, echo'd prose, or a
   # superstring like `cdx .claude/worktrees/` — never arms. (`cd<TAB>` never
   # armed pre- or post-anchor: `cd +` matches spaces only — pre-existing.)
-  if echo "$clause" | grep -qE '^cd +[^;&|]*\.claude/worktrees/' \
-     || echo "$clause" | grep -qE '^cd +/tmp/'; then
+  if echo "$clause" | grep -qE '^cd +[^;&|]*\.claude/worktrees/'; then
     scoped=1
+    scoped_wt=1   # (#1554) latch armed by a WORKTREE cd
+    continue
+  elif echo "$clause" | grep -qE '^cd +/tmp/'; then
+    scoped=1
+    scoped_wt=0   # (#1554) /tmp latch — disposition byte-identical to before
     continue
   fi
 
@@ -1479,11 +1560,32 @@ for _idx in "${!_clauses[@]}"; do
       *..*) : ;;
       \$WT|\${WT}|\$WT/*|\${WT}/*)
         scoped=1
+        scoped_wt=1   # (#1554) $WT latch is a worktree latch by construction
         continue
         ;;
     esac
   fi
-  [ "$scoped" -eq 1 ] && continue          # this clause runs in a scoped cwd
+  if [ "$scoped" -eq 1 ]; then
+    # (#1554 Arm B) A worktree-scoped clause merging the LOCAL main branch is
+    # the #1530 contamination class (stale/unpushed root-main commits import
+    # into the branch). origin/main + raw-sha merges pass; /tmp latches keep
+    # the pre-#1554 disposition byte-identical (scoped_wt=0 -> plain continue).
+    if [ "$scoped_wt" -eq 1 ] && [ "$_wt_lm_allow" -ne 1 ] \
+       && echo "$clause" | grep -qE "$_WT_LM_ARM_B"; then
+      blocked="cd <worktree> && git merge main (LOCAL-main merge imports unpushed root commits, #1530; use fetch + git merge --ff-only origin/main — recipe below; deliberate override: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1)"
+      break
+    fi
+    continue          # this clause runs in a scoped cwd
+  fi
+
+  # (#1554 Arm A) Worktree-scoped LOCAL-main merge fence — must run BEFORE the
+  # path-blind -C waiver below (which would waive exactly this shape).
+  # ^-anchored per the #1443 convention: quoted latch/verb vocabulary
+  # mid-clause (grep patterns, echo'd prose, ssh payloads) never matches.
+  if [ "$_wt_lm_allow" -ne 1 ] && echo "$clause" | grep -qE "$_WT_LM_ARM_A"; then
+    blocked="git -C <worktree> merge main (LOCAL-main merge imports unpushed root commits, #1530; use fetch + git -C <worktree> merge --ff-only origin/main — recipe below; deliberate override: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1)"
+    break
+  fi
 
   # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
   echo "$clause" | grep -qE '\bgit +-C +' && continue

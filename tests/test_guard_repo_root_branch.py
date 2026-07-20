@@ -17,7 +17,18 @@ ALSO blocks the rebase family on the shared root (``git rebase <ref>`` /
 ``--continue``/``--skip`` fail-closed). As of #1234 it ALSO blocks
 ``git revert <commit>`` / ``git am <mbox>`` on the shared root
 (``--abort``/``--quit`` recovery allowed, ``--continue``/``--skip`` and
-``am --show-current-patch`` fail-closed).
+``am --show-current-patch`` fail-closed). As of #1554 it ALSO declines
+worktree-scoped merges of the bare LOCAL ``main`` ref — the #1530
+contamination class (a worktree fast-forward onto the possibly-stale,
+unpushed local ``main`` tip imports root-only commits): Arm A intercepts
+``git -C <.claude/worktrees/ path | $WT spelling> ... merge ... main``
+BEFORE the path-blind ``-C`` waiver; Arm B declines the same bare-main merge
+shape under a WORKTREE-armed cd-latch (the ``scoped_wt`` bit; ``/tmp``
+latches keep their prior disposition byte-identical). ``origin/main`` /
+raw-sha / ``"$MAIN_SHA"`` merges and ``/tmp`` scratch landings stay allowed;
+override via ``EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1`` (session env or
+inline command prefix — a command-wide substring match, the
+``EPM_ALLOW_ROOT_PULL`` sibling idiom). Residuals: hook header gap (xx).
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -2727,6 +2738,212 @@ def test_sidecar_secret_shaped_token_masked(tmp_path):
     raw2 = sidecar2.read_text()
     for i in range(len(token) - 7):
         assert token[i : i + 8] not in raw2
+
+
+# ---------------------------------------------------------------------------
+# #1554: worktree-scoped LOCAL-main merge fence (Arm A: clause-initial
+# `git -C <worktree>` form intercepted BEFORE the path-blind -C waiver;
+# Arm B: the worktree cd-latch `scoped_wt` bit at the scoped-continue).
+# Declines the #1530 contamination class — a worktree merge of the bare LOCAL
+# `main` ref imports unpushed root-main commits — while `origin/main` /
+# raw-sha merges, /tmp scratch landings, and every repo-root disposition are
+# pinned unchanged. Escape hatch: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1
+# (session env + inline command prefix, the EPM_ALLOW_ROOT_PULL idiom).
+# ---------------------------------------------------------------------------
+
+_WT_LM_HATCH = "EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE"
+_WT_LM_ARM_A_LABEL = "git -C <worktree> merge main (LOCAL-main"
+_WT_LM_ARM_B_LABEL = "cd <worktree> && git merge main (LOCAL-main"
+_ROOT_MERGE_ARM_LABEL = "branch merge on the shared root"
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # Literal worktree path, bare / quoted / absolute spellings.
+        "git -C .claude/worktrees/issue-9 merge main",
+        "git -C '.claude/worktrees/issue-9' merge main",
+        (
+            "git -C /home/thomasjiralerspong/explore-persona-space/"
+            ".claude/worktrees/issue-9 merge main"
+        ),
+        # $WT spellings ($WT is the SKILL.md-conventional worktree variable;
+        # blocked unconditionally — the #1530 F5 incident bound WT in a PRIOR
+        # Bash call, invisible to the hook's latch).
+        'git -C "$WT" merge --ff-only main',  # #1530 F5 prescription form (memory L11)
+        'git -C "$WT" merge main --no-edit',  # #1530 F5 prescription form (memory L48)
+        "git -C $WT merge main",
+        "git -C ${WT} merge main",
+        # Flag / quoting / redirect tolerance around the bare ref.
+        "git -C .claude/worktrees/issue-9 merge --ff-only main",
+        "git -C .claude/worktrees/issue-9 merge 'main'",
+        "git -C .claude/worktrees/issue-9 merge main 2>&1",
+        "git -C .claude/worktrees/issue-9 -c merge.ff=only merge main",
+    ],
+)
+def test_worktree_local_main_merge_blocked(cmd, monkeypatch):
+    """#1554 Arm A: a worktree-scoped merge of the bare LOCAL main ref declines.
+
+    The deny label names the escape hatch (so the remediation is visible at
+    deny time) and the Arm A label (so a fall-through to the #1128 root fence
+    cannot masquerade as this fence).
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(cmd)
+    assert proc.returncode == 2, (cmd, proc.stderr)
+    assert _WT_LM_HATCH in proc.stderr
+    assert _WT_LM_ARM_A_LABEL in proc.stderr
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/issue-9 && git merge main",
+        "cd .claude/worktrees/issue-9 && git merge --ff-only main",
+        "cd .claude/worktrees/issue-9 && git merge main --no-edit",
+        # The $WT cd-latch (separator-gated WT= arming) is a worktree latch.
+        'WT=.claude/worktrees/issue-9; cd "$WT" && git merge --ff-only main',
+        # Latch transition: scoped_wt follows the LATEST cd (tmp -> worktree).
+        "cd /tmp/x && cd .claude/worktrees/z && git merge main",
+        # Fail-closed by design (hook header gap (xx)): a worktree-latched
+        # `git -C /tmp/...` merge of bare main declines via Arm B; the escape
+        # hatch covers a deliberate need.
+        "cd .claude/worktrees/issue-9 && git -C /tmp/x merge main",
+        # The inline hatch is a `=1`-only substring match: a `=0` spelling
+        # elsewhere in the command never disarms the fence.
+        (
+            "echo EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=0; "
+            "cd .claude/worktrees/issue-9 && git merge main"
+        ),
+    ],
+)
+def test_worktree_cd_latch_local_main_merge_blocked(cmd, monkeypatch):
+    """#1554 Arm B: a WORKTREE-armed cd-latch + bare-local-main merge declines.
+
+    Asserts the Arm B label specifically — a broken Arm B falling through to
+    the #1128 root fence would read rc==2 for the adjacent reason.
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(cmd)
+    assert proc.returncode == 2, (cmd, proc.stderr)
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+    assert _WT_LM_HATCH in proc.stderr
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # origin/main forms — the sanctioned D7 fast-forward recipe.
+        "git -C .claude/worktrees/issue-9 merge origin/main",
+        'git -C "$WT" merge --ff-only origin/main',
+        (
+            'git -C "$WT" fetch origin "+refs/heads/main:refs/remotes/origin/main" '
+            '&& git -C "$WT" merge --ff-only origin/main'
+        ),
+        'timeout 60 git -C "$WT" fetch origin "+refs/heads/main:refs/remotes/origin/main"',
+        # Raw-sha / "$MAIN_SHA" merges (the Step 10d conflict-recovery form).
+        'git -C "$WT" merge "$MAIN_SHA"',
+        "git -C .claude/worktrees/issue-9 merge bf3c4711d6",
+        # /tmp scratch-worktree landing (the deny text's own recipe).
+        (
+            "git worktree add --detach /tmp/land-1554 origin/main "
+            "&& git -C /tmp/land-1554 merge issue-1554 "
+            "&& git -C /tmp/land-1554 push origin HEAD:main"
+        ),
+        # Ref discrimination: bare-`main`-only (prefixes / lineage refs pass;
+        # `main~1` is the documented gap (xx)(e) residual, pinned as allowed).
+        "git -C .claude/worktrees/issue-9 merge mainline",
+        'git -C "$WT" merge main~1',
+        # $WT word boundary: $WTF is not the worktree variable.
+        'git -C "$WTF" merge main',
+        # Non-merge / merge-adjacent -C ops keep the -C waiver.
+        "git -C .claude/worktrees/issue-9 merge-base main HEAD",
+        "git -C .claude/worktrees/issue-9 status",
+        # /tmp latch disposition byte-identical; origin/main + sha under a
+        # worktree latch; latch transition worktree -> /tmp allows.
+        "cd /tmp/x && git merge main",
+        "cd .claude/worktrees/issue-9 && git merge origin/main",
+        'cd .claude/worktrees/issue-9 && git merge "$MAIN_SHA"',
+        "cd .claude/worktrees/issue-9 && cd /tmp/y && git merge main",
+        (
+            "cd .claude/worktrees/issue-9 "
+            "&& git fetch origin +refs/heads/main:refs/remotes/origin/main"
+        ),
+        "cd .claude/worktrees/issue-9 && git merge-base main HEAD",
+        # ^-anchor: quoted spoofs of the gated shape mid-clause never match
+        # (the grep clause is ALSO covered by the #1098 waiver; the echo
+        # clause by the unanchored -C waiver — both pre-existing paths).
+        'grep -rn "git -C .claude/worktrees/issue-9 merge main" scripts/',
+        'echo "never run git -C .claude/worktrees/x merge main"',
+        # An inline `=0` prefix is an env-assignment wrapper: it evades the
+        # ^-anchored Arm A head (gap (xx)(b) residual, pinned as allowed) —
+        # and its value never arms the hatch either way.
+        "EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=0 git -C .claude/worktrees/issue-9 merge main",
+    ],
+)
+def test_worktree_local_main_merge_allowed(cmd, monkeypatch):
+    """#1554 allow set: every sanctioned / non-bare-main / spoof shape exits 0."""
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(cmd)
+    assert proc.returncode == 0, (cmd, proc.stderr)
+
+
+def test_worktree_local_main_merge_escape_hatch_env(monkeypatch):
+    """Session-env hatch: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1 flips both arms to allow."""
+    monkeypatch.setenv(_WT_LM_HATCH, "1")
+    assert _run("git -C .claude/worktrees/issue-9 merge main") == 0
+    assert _run("cd .claude/worktrees/issue-9 && git merge main") == 0
+
+
+def test_worktree_local_main_merge_escape_hatch_inline(monkeypatch):
+    """Inline-prefix hatch: a `<VAR>=1` spelling anywhere in the command disarms.
+
+    Command-wide substring semantics inherited verbatim from the
+    ``EPM_ALLOW_ROOT_PULL`` sibling idiom (``guard_repo_root_pull.sh``).
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    assert (
+        _run("EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1 git -C .claude/worktrees/issue-9 merge main")
+        == 0
+    )
+    assert (
+        _run(
+            "EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1 true; "
+            "cd .claude/worktrees/issue-9 && git merge main"
+        )
+        == 0
+    )
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # The repo-root merge fence (#1128) keeps its own classification.
+        "git merge main",
+        # `;` drops the cd-latch (fail-closed reset, #804): the merge clause
+        # is UNSCOPED and takes the root fence, not the worktree arm.
+        "cd .claude/worktrees/issue-9; git merge main",
+    ],
+)
+def test_root_merge_main_classification_unchanged(cmd, monkeypatch):
+    """#1554 arms neither hijack nor alter the #1128 root-fence classification."""
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full(cmd)
+    assert proc.returncode == 2, (cmd, proc.stderr)
+    assert _ROOT_MERGE_ARM_LABEL in proc.stderr
+    assert "(LOCAL-main" not in proc.stderr
+
+
+@on_main
+def test_worktree_local_main_merge_pipe_producer(monkeypatch):
+    """A piped worktree bare-main merge is still a merge (#1538 waiver is grep-family-only)."""
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full("git -C .claude/worktrees/issue-9 merge main | tail -3")
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_A_LABEL in proc.stderr
 
 
 def test_zz_production_sidecar_untouched_by_suite():
