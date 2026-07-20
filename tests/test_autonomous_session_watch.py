@@ -20527,3 +20527,724 @@ def test_pass8_gc_never_touches_wrapper_orphan_state(isolated_registry, monkeypa
     monkeypatch.setattr(asw, "_task_status", _boom)
     asw.gc_pass(False, now=1_000_000.0)
     assert state.exists()
+
+
+# ─── Completed-unmerged flag pass (task #1564; incident #1540) ─────────────────
+
+# The REAL #1540 timestamps, measured 2026-07-20 from
+# tasks/completed/1540/events.jsonl: epm:done posted, the next turn's Step 10d
+# merge was killed, epm:merged landed 16h08m later via a recovery session.
+_CU_DONE_1540 = "2026-07-19T14:49:17Z"
+_CU_MERGED_1540 = "2026-07-20T06:57:10Z"
+_CU_GRACE_S = 2 * 3600.0
+_CU_LOOKBACK_S = 72 * 3600.0
+_CU_SHA = "50d50f0ab2c6bf76d5c1ae5dda980cfbba84119c"
+
+
+def _cu_decide(asw, status, done_iso, merged_iso, mf_iso, now):
+    return asw.decide_completed_unmerged_flag(
+        status,
+        asw._parse_event_ts(done_iso) if done_iso else None,
+        asw._parse_event_ts(merged_iso) if merged_iso else None,
+        asw._parse_event_ts(mf_iso) if mf_iso else None,
+        now,
+        grace_s=_CU_GRACE_S,
+        lookback_s=_CU_LOOKBACK_S,
+    )
+
+
+def test_completed_unmerged_decide_fires_on_1540_replay():
+    # Acceptance criterion 1: the pure predicate replayed on the REAL #1540
+    # artifact — True at done+3h with merged=None (fires ~13h before the
+    # actual recovery), False once the recovery's epm:merged is set.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    merged = asw._parse_event_ts(_CU_MERGED_1540)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 3 * 3600) is True
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, _CU_MERGED_1540, None, done + 3 * 3600) is False
+    )
+    # Today's post-recovery state of the same artifact: quiet.
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, _CU_MERGED_1540, None, merged + 3600) is False
+    )
+
+
+def test_completed_unmerged_decide_merged_present_keeps():
+    # Class B (epm:merged incl. the artifact_confirmed form — same kind) and
+    # class D (happy-path experiment: Step 9b merge PREDATES epm:done — the
+    # predicate keys on merged-ABSENCE, never on done/merged ordering).
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    now = done + 3 * 3600
+    # merged AFTER done (class B): quiet.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, "2026-07-19T15:00:00Z", None, now) is False
+    # merged BEFORE done (class D, the Step 9b -> promote -> done order): quiet.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, "2026-07-19T10:00:00Z", None, now) is False
+
+
+def test_completed_unmerged_decide_no_done_and_wrong_status_keep():
+    # Classes E/F + the (iv) v1 bound: no epm:done -> silent (a session killed
+    # between set-status completed and the done post leaves done_ts=None);
+    # any non-`completed` status (archived = deliberately abandoned) -> silent.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    now = done + 3 * 3600
+    assert _cu_decide(asw, "completed", None, None, None, now) is False
+    for status in ("archived", "running", "awaiting_promotion", "blocked", None):
+        assert _cu_decide(asw, status, _CU_DONE_1540, None, None, now) is False
+
+
+def test_completed_unmerged_decide_grace_window():
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    # A merge in flight (< 2h since done) is never flagged; >= 2h fires.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 2 * 3600 - 1) is False
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 2 * 3600) is True
+
+
+def test_completed_unmerged_decide_merge_failed_reanchors_grace():
+    # Class C: epm:merge-failed does NOT suppress — it re-anchors the grace
+    # (an in-flight retry gets grace; one sitting past it IS flagged).
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    mf_iso = "2026-07-19T19:49:17Z"  # done + 5h
+    mf = asw._parse_event_ts(mf_iso)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, mf_iso, mf + 3600) is False
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, mf_iso, mf + 2 * 3600) is True
+    # A merge-failed OLDER than done never shrinks the anchor (max() keeps done).
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, None, "2026-07-19T10:00:00Z", done + 2 * 3600)
+        is True
+    )
+
+
+def test_completed_unmerged_decide_lookback_bound():
+    # Class E: an old completion (done_ts past the 72h lookback) is out of
+    # scope — the /daily sweep owns the long tail.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 8 * 24 * 3600) is False
+
+
+def _cu_write_events(task_dir: Path, rows: list[dict], *, compact: bool = False) -> None:
+    task_dir.mkdir(parents=True, exist_ok=True)
+    if compact:
+        lines = [json.dumps(r, separators=(",", ":")) for r in rows]
+    else:
+        lines = [json.dumps(r) for r in rows]
+    (task_dir / "events.jsonl").write_text("\n".join(lines) + "\n")
+
+
+def test_completed_unmerged_read_events_compact_json_still_parses(tmp_path):
+    # Punch #1 (plan review): the raw-text fast path keys on the BARE
+    # substring "epm:done" — an events file serialized with COMPACT
+    # separators (no space after ':') must still parse and flag; the
+    # fast path may only ever false-POSITIVE into a full parse.
+    import autonomous_session_watch as asw
+
+    d = tmp_path / "t"
+    _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}], compact=True)
+    done, merged, mf = asw._completed_unmerged_read_events(d / "events.jsonl")
+    assert done == asw._parse_event_ts(_CU_DONE_1540)
+    assert merged is None and mf is None
+
+
+def test_completed_unmerged_read_events_latest_wins_and_fail_soft(tmp_path):
+    import autonomous_session_watch as asw
+
+    d = tmp_path / "t"
+    rows = [
+        {"kind": "epm:done", "ts": "2026-07-10T00:00:00Z"},
+        {"kind": "epm:merged", "ts": "2026-07-10T01:00:00Z"},
+        {"kind": "epm:done", "ts": _CU_DONE_1540},  # LATEST done wins
+        {"kind": "epm:merge-failed", "ts": "2026-07-19T16:00:00Z"},
+        {"kind": "epm:progress", "ts": "2026-07-19T17:00:00Z"},
+    ]
+    _cu_write_events(d, rows)
+    # A garbled line + a ts-less row are skipped, never crash.
+    with open(d / "events.jsonl", "a") as fh:
+        fh.write("{not json\n")
+        fh.write(json.dumps({"kind": "epm:done"}) + "\n")
+    done, merged, mf = asw._completed_unmerged_read_events(d / "events.jsonl")
+    assert done == asw._parse_event_ts(_CU_DONE_1540)
+    assert merged == asw._parse_event_ts("2026-07-10T01:00:00Z")
+    assert mf == asw._parse_event_ts("2026-07-19T16:00:00Z")
+    # Absent file / no epm:done at all -> all-None (fail toward silence).
+    assert asw._completed_unmerged_read_events(d / "missing.jsonl") == (None, None, None)
+    _cu_write_events(d, [{"kind": "epm:merged", "ts": _CU_MERGED_1540}])
+    assert asw._completed_unmerged_read_events(d / "events.jsonl") == (None, None, None)
+
+
+def _cu_probe_router(mapping):
+    """Signature-conformant subprocess.run boundary fake for the probe: routes
+    on the argv shape; ``mapping`` values are ``(stdout, rc)``."""
+    import subprocess as _subprocess
+
+    def _key(cmd):
+        if cmd[:3] == ["gh", "pr", "list"]:
+            return "gh-open" if "open" in cmd else "gh-merged"
+        if cmd[:2] == ["git", "ls-remote"]:
+            return "ls-remote"
+        if cmd[:2] == ["git", "rev-parse"]:
+            return "rev-parse"
+        if cmd[:2] == ["git", "rev-list"]:
+            return "rev-list"
+        raise AssertionError(f"unexpected probe argv: {cmd}")
+
+    def _run(cmd, *a, **kw):
+        out, rc = mapping[_key(cmd)]
+        return _subprocess.CompletedProcess(cmd, rc, out, "")
+
+    return _run
+
+
+def test_completed_unmerged_probe_open_pr_flags(monkeypatch):
+    # The #1540 shape verified live 2026-07-20: `gh pr list --head issue-1540
+    # --state merged --json number` -> [{"number":1312}]; the open probe
+    # returns [] post-recovery and [{number, isDraft}] rows while stranded.
+    import autonomous_session_watch as asw
+
+    router = _cu_probe_router({"gh-open": ('[{"number": 1312, "isDraft": true}]', 0)})
+    monkeypatch.setattr(asw.subprocess, "run", router)
+    assert asw._completed_unmerged_probe(1540) == ("unmerged-open-pr", "PR #1312 OPEN (draft)")
+
+
+def test_completed_unmerged_probe_merged_pr_resolves(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        _cu_probe_router({"gh-open": ("[]", 0), "gh-merged": ('[{"number": 1312}]', 0)}),
+    )
+    verdict, detail = asw._completed_unmerged_probe(1540)
+    assert verdict == "resolved-merged-pr"
+    assert "PR #1312" in detail
+
+
+def test_completed_unmerged_probe_no_pr_rungs(monkeypatch):
+    # Class A (no PR, nothing to merge) both ways: branch absent on origin,
+    # and branch present but fully landed (patch-id count 0 — a rebase-merge
+    # rewrites SHAs so a plain two-dot count would read nonzero forever;
+    # verified live on the merged origin/issue-1540: count == 0). A nonzero
+    # patch-id count is a real no-PR strand.
+    import autonomous_session_watch as asw
+
+    base = {"gh-open": ("[]", 0), "gh-merged": ("[]", 0)}
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({**base, "ls-remote": ("", 0)}))
+    assert asw._completed_unmerged_probe(9)[0] == "nothing-to-merge"
+
+    landed = {
+        **base,
+        "ls-remote": (f"{_CU_SHA}\trefs/heads/issue-9\n", 0),
+        "rev-parse": (f"{_CU_SHA}\n", 0),
+        "rev-list": ("0\n", 0),
+    }
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router(landed))
+    assert asw._completed_unmerged_probe(9)[0] == "nothing-to-merge"
+
+    stranded = {**landed, "rev-list": ("3\n", 0)}
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router(stranded))
+    verdict, detail = asw._completed_unmerged_probe(9)
+    assert verdict == "unmerged-branch-commits"
+    assert "3 branch commit(s)" in detail
+
+
+def test_completed_unmerged_probe_stale_local_ref_fails_toward_flagging(monkeypatch):
+    # Punch #2 (plan review): the local refs/remotes/origin/issue-<N> ref can
+    # be absent or stale (never fetched / pruned) — the pass never fetches,
+    # so the patch-id count would read the WRONG tree. A live remote branch
+    # with an absent OR mismatched local ref must NEVER read nothing-to-merge.
+    import autonomous_session_watch as asw
+
+    base = {
+        "gh-open": ("[]", 0),
+        "gh-merged": ("[]", 0),
+        "ls-remote": (f"{_CU_SHA}\trefs/heads/issue-9\n", 0),
+    }
+    # Local ref ABSENT (rev-parse --verify --quiet rc=1, empty stdout).
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({**base, "rev-parse": ("", 1)}))
+    verdict, detail = asw._completed_unmerged_probe(9)
+    assert verdict == "unmerged-branch-commits"
+    assert "stale/absent" in detail
+    # Local ref STALE (different sha).
+    monkeypatch.setattr(
+        asw.subprocess, "run", _cu_probe_router({**base, "rev-parse": ("a" * 40 + "\n", 0)})
+    )
+    assert asw._completed_unmerged_probe(9)[0] == "unmerged-branch-commits"
+
+
+def test_completed_unmerged_probe_failure_modes(monkeypatch):
+    # Any subprocess error / non-zero rc -> probe-failed (fail-soft skip; a
+    # gh outage can never crash the tick or latch a false state).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({"gh-open": ("", 1)}))
+    assert asw._completed_unmerged_probe(9)[0] == "probe-failed"
+
+    def _timeout(cmd, *a, **kw):
+        raise _subprocess.TimeoutExpired(cmd, 10)
+
+    monkeypatch.setattr(asw.subprocess, "run", _timeout)
+    assert asw._completed_unmerged_probe(9)[0] == "probe-failed"
+
+
+def test_completed_unmerged_candidates_enumeration(tmp_path, monkeypatch):
+    # Real-body test of the cheap candidate gate: registry-snapshot rows at
+    # status `completed` with a fresh events.jsonl mtime, path resolved
+    # against the registry's OWN root; stale / non-completed / missing-file /
+    # non-int rows all skip softly.
+    import os
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    root = tmp_path / "repo"
+    reg = root / "tasks" / "REGISTRY.json"
+    reg.parent.mkdir(parents=True)
+    now = time.time()
+    row = [{"kind": "epm:done", "ts": _CU_DONE_1540}]
+    _cu_write_events(root / "tasks" / "completed" / "10", row)
+    _cu_write_events(root / "tasks" / "completed" / "11", row)
+    stale = now - 80 * 3600
+    os.utime(root / "tasks" / "completed" / "11" / "events.jsonl", (stale, stale))
+    _cu_write_events(root / "tasks" / "running" / "12", row)
+    (root / "tasks" / "completed" / "13").mkdir(parents=True)  # no events.jsonl
+    reg.write_text(
+        json.dumps(
+            {
+                "tasks": {
+                    "10": {"status": "completed", "path": "tasks/completed/10"},
+                    "11": {"status": "completed", "path": "tasks/completed/11"},
+                    "12": {"status": "running", "path": "tasks/running/12"},
+                    "13": {"status": "completed", "path": "tasks/completed/13"},
+                    "husk": {"status": "completed", "path": "tasks/completed/husk"},
+                }
+            }
+        )
+    )
+    monkeypatch.setattr(task_workflow, "registry_path", lambda: reg)
+    assert asw._completed_unmerged_candidates(now, _CU_LOOKBACK_S) == [
+        (10, root / "tasks" / "completed" / "10")
+    ]
+
+
+def _cu_sidecar(asw, monkeypatch, tmp_path) -> Path:
+    """Point the sidecar's PROJECT_ROOT anchor at a tmp dir (state already
+    rides the isolated_registry fixture); returns the sidecar path."""
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    return tmp_path / "root" / ".claude" / "cache" / "completed-unmerged-events.jsonl"
+
+
+def _cu_patch_pass(monkeypatch, asw, candidates, verdicts):
+    """Stub the candidate gate + probe + marker/push boundaries; the events
+    parse + predicate + episode state machine + sidecar writes run for real.
+    ``candidates``: list[(issue, task_dir)] (mutable — reread each call);
+    ``verdicts``: issue -> (verdict, detail). Returns (probed, posted, pushed)."""
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: list(candidates)
+    )
+    probed: list[int] = []
+
+    def _probe(issue):
+        probed.append(issue)
+        return verdicts.get(issue, ("nothing-to-merge", "no PR; branch absent on origin"))
+
+    monkeypatch.setattr(asw, "_completed_unmerged_probe", _probe)
+    posted: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label, note)),
+    )
+    pushed: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
+    return probed, posted, pushed
+
+
+def _cu_sidecar_actions(sidecar: Path) -> list[str]:
+    if not sidecar.exists():
+        return []
+    return [json.loads(line)["action"] for line in sidecar.read_text().splitlines()]
+
+
+def test_completed_unmerged_pass_flags_once_per_episode(isolated_registry, tmp_path, monkeypatch):
+    # Acceptance criterion 3 semantics (plan §3.7): ONE marker per (issue,
+    # done_ts) episode; sidecar row EVERY flagged interval; push deduped by
+    # the 24h TTL. The marker note carries the sentinel + the literal
+    # recovery commands, flag-only.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN (draft)")}
+    )
+
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert [(i, label) for i, label, _n in posted] == [(1540, "completed-unmerged-flag")]
+    assert len(pushed) == 1 and probed == [1540]
+    note = posted[0][2]
+    assert asw._COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL in note
+    assert "PR #1312 OPEN (draft)" in note
+    assert "spawn-issue --issue 1540" in note
+    assert "/issue 1540" in note
+    assert "Step 10d" in note
+    assert "FLAG-ONLY" in note
+    assert _cu_sidecar_actions(sidecar) == ["flagged"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["done_ts"] == done
+    assert state["episodes"]["1540"]["flagged"] is True
+
+    # Next interval, same episode: NO new marker, NO new push (within the
+    # 24h TTL), but a fresh sidecar row (every flagged interval).
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert len(posted) == 1 and len(pushed) == 1 and probed == [1540, 1540]
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "flagged"]
+
+
+def test_completed_unmerged_pass_realert_ttl_repushes(isolated_registry, tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 5 * 3600)  # within TTL
+    assert len(pushed) == 1
+    # Past the 24h re-alert TTL while unresolved: re-push, still ONE marker.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600 + 25 * 3600)
+    assert len(pushed) == 2 and len(posted) == 1
+
+
+def test_completed_unmerged_pass_new_done_ts_new_episode(isolated_registry, tmp_path, monkeypatch):
+    # Plan §6 test 9: a LATER round's fresh epm:done opens a NEW (issue,
+    # done_ts) episode — marker + push re-fire.
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert (len(posted), len(pushed)) == (1, 1)
+    done2_iso = "2026-07-19T20:49:17Z"  # done + 6h — a fresh round's done
+    _cu_write_events(
+        task_dir,
+        [{"kind": "epm:done", "ts": _CU_DONE_1540}, {"kind": "epm:done", "ts": done2_iso}],
+    )
+    done2 = asw._parse_event_ts(done2_iso)
+    asw.completed_unmerged_pass(dry_run=False, now=done2 + 3 * 3600)
+    assert (len(posted), len(pushed)) == (2, 2)
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["done_ts"] == done2
+
+
+def test_completed_unmerged_pass_resolved_verdict_cached_no_reprobe(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Punch #4 (plan review): a resolved verdict (class A nothing-to-merge /
+    # merged-PR-with-lost-marker) is CACHED on the episode so later intervals
+    # skip the probe budget — the predicate keeps reading True (a class-A
+    # task never gains an epm:merged), so without the cache every interval
+    # would re-spend a probe set until age-out.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "77"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(77, task_dir)], {77: ("nothing-to-merge", "no PR; branch absent")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert probed == [77] and posted == [] and pushed == []
+    assert _cu_sidecar_actions(sidecar) == ["resolved"]
+    asw.completed_unmerged_pass(dry_run=False, now=done + 5 * 3600)
+    assert probed == [77]  # cached — no re-probe
+    assert _cu_sidecar_actions(sidecar) == ["resolved"]
+
+
+def test_completed_unmerged_pass_prune_labels_recovered_vs_aged_out(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Punch #3 (plan review): a pruned episode is labeled `recovered` ONLY
+    # when epm:merged now exists (or the cached probe verdict said resolved);
+    # a still-stranded episode aging past the lookback is `aged-out` — never
+    # logged as recovered.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, _pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert len(posted) == 1
+
+    # (a) The recovery lands (epm:merged appears): pruned as `recovered`.
+    _cu_write_events(
+        task_dir,
+        [
+            {"kind": "epm:done", "ts": _CU_DONE_1540},
+            {"kind": "epm:merged", "ts": _CU_MERGED_1540},
+        ],
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 20 * 3600)
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "recovered"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"] == {}
+
+    # (b) Still stranded but done_ts past the lookback: pruned as `aged-out`.
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    asw.completed_unmerged_pass(dry_run=False, now=done + 22 * 3600)  # re-flag (new episode)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 80 * 3600)  # past 72h lookback
+    actions = _cu_sidecar_actions(sidecar)
+    assert actions[-1] == "aged-out"
+    assert actions.count("recovered") == 1
+
+
+def test_completed_unmerged_pass_probe_failure_skips_no_state_write(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # A gh/git outage skips the candidate WITHOUT latching any episode state
+    # (retried next interval); only the attempt stamp lands.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("probe-failed", "gh rc=1")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert posted == [] and pushed == []
+    assert not sidecar.exists()
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"] == {} and "last_run_ts" in state
+
+
+def test_completed_unmerged_pass_probe_cap(isolated_registry, tmp_path, monkeypatch):
+    # The per-interval probe cap bounds external time; over-cap candidates
+    # defer to the next interval (no probe, no flag, no episode latch).
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_PROBE_CAP", "1")
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    d20 = tmp_path / "tasks" / "completed" / "20"
+    d21 = tmp_path / "tasks" / "completed" / "21"
+    for d in (d20, d21):
+        _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, _pushed = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(20, d20), (21, d21)],
+        {
+            20: ("unmerged-open-pr", "PR #1 OPEN"),
+            21: ("unmerged-open-pr", "PR #2 OPEN"),
+        },
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert probed == [20]
+    assert [i for i, _l, _n in posted] == [20]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert set(state["episodes"]) == {"20"}
+
+
+def test_completed_unmerged_pass_kill_switch(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_COMPLETED_UNMERGED_PASS", "1")
+    monkeypatch.setattr(
+        asw,
+        "_completed_unmerged_candidates",
+        lambda *a, **kw: pytest.fail("swept despite kill switch"),
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=1_000_000.0)
+    assert not (isolated_registry / "completed-unmerged-observer.json").exists()
+
+
+def test_completed_unmerged_pass_dry_run_no_writes(isolated_registry, tmp_path, monkeypatch):
+    # Acceptance criterion 3: dry-run performs ZERO writes (no state file,
+    # no sidecar) and ZERO subprocesses beyond read-only enumeration (the
+    # marker/push helpers no-op internally BEFORE their subprocess).
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(1540, task_dir)]
+    )
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_probe", lambda issue: ("unmerged-open-pr", "PR #1312 OPEN")
+    )
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.completed_unmerged_pass(dry_run=True, now=done + 3 * 3600)
+    assert not (isolated_registry / "completed-unmerged-observer.json").exists()
+    assert not sidecar.exists()
+
+
+def test_completed_unmerged_pass_interval_throttle(isolated_registry, tmp_path, monkeypatch):
+    # The hourly self-gate: a second invocation inside the interval never
+    # sweeps (silent); past the interval it sweeps again.
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    calls: list[float] = []
+
+    def _cands(now, lookback_s):
+        calls.append(now)
+        return []
+
+    monkeypatch.setattr(asw, "_completed_unmerged_candidates", _cands)
+    t0 = 1_000_000.0
+    asw.completed_unmerged_pass(dry_run=False, now=t0)
+    asw.completed_unmerged_pass(dry_run=False, now=t0 + 1800)  # inside 1h: throttled
+    assert len(calls) == 1
+    asw.completed_unmerged_pass(dry_run=False, now=t0 + 3700)
+    assert len(calls) == 2
+
+
+def test_completed_unmerged_pass_never_mutates_status_or_merges(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Acceptance criterion 5 — the flag-only HARD invariant, TWO-PRONGED
+    # (mirrors test_stale_blocked_pass_never_mutates_status): (i) no recorded
+    # subprocess argv contains `set-status`, a merge, a push, or a spawn;
+    # (ii) the in-process mutators task_workflow.set_status / post_event
+    # raise if touched. Runs the REAL probe + REAL marker/push paths through
+    # the recorded subprocess seam (production-body coverage).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "9"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(9, task_dir)]
+    )
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("completed_unmerged_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    push_script = tmp_path / "push.sh"
+    push_script.write_text("#!/usr/bin/env bash\n")
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(push_script))
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        if cmd[:3] == ["gh", "pr", "list"] and "open" in cmd:
+            return _subprocess.CompletedProcess(cmd, 0, '[{"number": 9, "isDraft": false}]', "")
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    # The flag DID fire (post-marker argv present) …
+    assert any("post-marker" in cmd for cmd in argvs)
+    # … but nothing mutates status, merges, pushes, or spawns.
+    assert not any("set-status" in cmd for cmd in argvs)
+    assert not any("merge" in cmd for cmd in argvs)
+    assert not any("push" in cmd for cmd in argvs)
+    assert not any("spawn-issue" in cmd for cmd in argvs)
+    assert not any(cmd[:2] == ["git", "fetch"] for cmd in argvs)
+
+
+def test_completed_unmerged_sentinel_in_watcher_note_sentinels():
+    # Mirrors test_stale_blocked_sentinel_in_watcher_note_sentinels: the flag
+    # note rides epm:progress; membership keeps it from ever resetting the
+    # _latest_progress_ts staleness clocks.
+    import autonomous_session_watch as asw
+
+    assert asw._COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_main_completed_unmerged_only_flag(isolated_registry, monkeypatch):
+    # --completed-unmerged-only runs JUST the new pass and exits (mirrors
+    # test_main_stale_blocked_only_flag).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "completed_unmerged_pass", lambda *a, **kw: calls.append("flag"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "registry_drift_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--completed-unmerged-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["flag"]
+
+
+def test_main_wires_completed_unmerged_pass_order(isolated_registry, monkeypatch):
+    # main() runs registry_drift_pass -> completed_unmerged_pass in the
+    # daemon-independent observer block — closes the silently-inert-backstop
+    # hole (the test_main_wires_stale_blocked_pass_order class) where every
+    # isolation test passes but the normal cadence never runs the pass.
+    import autonomous_session_watch as asw
+
+    order: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    _stub_fleet_mutating_passes(asw, monkeypatch)
+    for name in (
+        "vm_disk_pass",
+        "triage_observer_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "stale_registration_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "session_reconcile_pass",
+        "stale_blocked_flag_pass",
+    ):
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "registry_drift_pass", lambda *a, **kw: order.append("registry_drift"))
+    monkeypatch.setattr(
+        asw, "completed_unmerged_pass", lambda *a, **kw: order.append("completed_unmerged")
+    )
+    rc = asw.main([])
+    assert rc == 0
+    assert order.index("registry_drift") < order.index("completed_unmerged")
