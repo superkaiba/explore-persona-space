@@ -4200,6 +4200,66 @@ expensive". Both are advisory-only: neither changes the status verdict, and
 the poller stops nothing. This handling is additive to the `status=running`
 branch.
 
+**Per-lane planned-cell reconciliation (on every lane/phase completion —
+#1481).** Planned-vs-actual coverage already has a terminal check
+(After-Every-Experiment item 8 / `verify_task_body.py` check 11b / the
+clean-result-critic planned-vs-actual lens), but it fires only at
+clean-result time; during a multi-lane run a lane that completes WITHOUT
+covering a planned cell is invisible until terminal analysis (#1481: the
+sycophancy bare arm was never dose-banded and never re-swept; the gap
+surfaced only when the user asked, hours after the lanes completed). So:
+whenever the orchestrator observes that a LANE or PHASE of the run
+completed — a poll tick / drained-sentinel batch showing ALL of a lane's
+DISPATCHED runs terminal (per-run `status: done`/failed JSON lines), an
+`epm:cluster-terminal` for one lane of a multi-lane dispatch, a
+detached-phase DONE breadcrumb, or the lane's own completion report —
+reconcile, in the same turn, that lane's/phase's REALIZED cells against
+the PLANNED cells the approved plan declares for it. Planned side: the
+highest `plans/v{K}.md` (the §5 conditions table, the §6.5
+`primary_deliverable` rows, and/or the §9 per-component table — whichever
+enumerates the lane's cells) — INCLUDING plan-declared DERIVED per-cell
+deliverables / required outcomes (a dose-matched pair per (behavior,
+context, seed); an in-band arm per regime — per the plan's OWN selection
+rule), each reconciled at the lane or phase completion where it FIRST
+becomes computable (a derived deliverable adjudicated by a later phase —
+e.g. a judged-ladder dose-match — reconciles at THAT phase's completion,
+not at the training lane's). Realized side: the drained sentinels /
+per-cell result files / the lane's log. A lane exiting cleanly does NOT
+imply coverage — a planned cell that was never dispatched, or one whose
+plan-declared required outcome was not produced (per the plan's own
+selection rule; a plan-sanctioned fallback selection counts as realized),
+counts as missing. Then:
+
+- **All planned cells realized** → post nothing (silence = covered; the
+  Step 6d.3 run-completion summary is the single positive record).
+- **A planned cell is missing** → post, same turn:
+  `uv run python scripts/task.py post-marker <N> epm:progress --note
+  "planned-cell-reconcile lane=<lane or phase> planned=<k> realized=<m>
+  missing=<cell ids> disposition=<pending|re-sweep|documented-drop>"`
+  and DECIDE re-sweep vs documented-drop under the EXISTING rules — this
+  is auto-continue, never a new gate: an autonomous session picks the
+  max-info-gain-per-GPU-hour option toward the Goal and states
+  `Decision: ...`; an interactive session surfaces the missing cell in
+  the session text (FYI + decision, not a question). A re-sweep
+  dispatches through the normal relaunch path (fresh `epm:run-launched`,
+  relaunch contract above); a documented-drop records
+  `disposition=documented-drop` in the note and MUST be carried into the
+  clean-result per After-Every-Experiment item 8 (name the missing
+  condition, revise denominators, label figures `N/A — not tested`).
+
+The duty is keyed per LANE/PHASE completion, not per tick and not per
+cell — per-cell done lines inside a still-running lane do not trigger
+it. A false-covered read (a missing cell misread as realized) fails
+toward today's status quo — the terminal clean-result check still
+catches it. The duty is a defined no-op when the plan declares no
+per-lane cell enumeration (single-cell runs, infra tasks); it binds in
+same-issue follow-up rounds (the loop runs status-held at
+`followups_running`) but NOT in non-/issue observation sites (the #660
+program-orchestrator daemon — out of scope); and it does NOT replace the
+terminal clean-result reconciliation — it is an EARLIER surfacing of the
+same check; check 11b and the planned-vs-actual lens remain
+authoritative and unchanged.
+
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
 exist ON THE POD (the experimenter's launcher writes it there at launch
@@ -4547,6 +4607,24 @@ down only at the true terminal / park transitions: at `awaiting_promotion`
 (plus the poll-loop stalled/dead/blocked exits and the Step 6d.4 gate-park
 that already tear it down). The Step 9 idempotency guard (below) bounds the
 redundant-subagent cost a surviving-into-`done` cron used to risk.
+
+**Run-completion reconciliation backstop (#1481).** Before the status
+flip below, run the Step 6d.2 § Per-lane planned-cell reconciliation
+ONCE over the WHOLE run — all planned cells (and plan-declared derived
+deliverables) across all lanes vs all realized cells — and post ONE
+summary line either way:
+`uv run python scripts/task.py post-marker <N> epm:progress --note
+"planned-cell-reconcile run-complete planned=<k> realized=<m>
+missing=<cell ids or none>"`. This catches lanes whose individual
+completion was never observed (orchestrator respawn mid-run, coalesced
+sentinels) while re-sweep is still cheap — before verification and
+teardown. Cells already dispositioned per-lane carry their recorded
+`disposition=` forward (never re-decide them); a non-empty `missing=`
+list of UNdispositioned cells takes the same re-sweep vs
+documented-drop decision as the per-lane duty (a re-sweep returns to
+the running phase via the normal relaunch path instead of flipping to
+`verifying`). Skip the summary line when the plan declares no cell
+enumeration (the per-lane duty's no-op case).
 
 Transition the task to `verifying` (the upload-verifier next):
 
