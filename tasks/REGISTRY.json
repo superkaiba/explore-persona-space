@@ -4404,8 +4404,8 @@
     "1565": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1565",
-      "status": "approved",
+      "path": "tasks/running/1565",
+      "status": "running",
       "title": "daily-fix: re-resolve task path at marker-append time"
     },
     "1566": {
