@@ -507,7 +507,11 @@ def make_figure(payload: dict, fig_path: Path) -> None:
         raw = [pl[str(li)]["summary"]["cross"]["mean"] for li in layers]
         return layers, corr, raw
 
-    fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.4), sharey=True)
+    # No sharey: the context panel carries negative (anti-correlated) values —
+    # the positives-only pair reaches ~-0.31 at L14 and ~-0.89 at L3-9 — so it
+    # needs an extended y-range covering the data plus a zero reference line;
+    # the response/shared panels stay [0,1].
+    fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.4))
     for ax, (arm, title) in zip(axes, panels, strict=True):
         for pair_key, (r, label) in role.items():
             s = _series(pair_key, arm)
@@ -518,9 +522,13 @@ def make_figure(payload: dict, fig_path: Path) -> None:
             ax.plot(layers, corr, color=color, lw=1.8, label=label, zorder=3)
             ax.plot(layers, raw, color=color, lw=1.0, ls=":", alpha=0.45, zorder=2)
         ax.axvline(reg, color=paper_palette_role("neutral"), lw=0.8, ls="--", alpha=0.7, zorder=1)
+        if arm == "context_own":
+            ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.8, alpha=0.7, zorder=1)
+            ax.set_ylim(-0.95, 1.02)
+        else:
+            ax.set_ylim(0.0, 1.02)
         ax.set_title(title)
         ax.set_xlabel("Layer")
-        ax.set_ylim(0.0, 1.02)
     axes[0].set_ylabel("Cross-method direction cosine")
     axes[0].legend(loc="lower left", fontsize=7, frameon=False)
     fig.tight_layout()
