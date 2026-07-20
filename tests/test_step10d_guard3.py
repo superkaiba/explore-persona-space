@@ -103,6 +103,19 @@ def test_gitattributes_union_merge_for_eval_results_index():
     )
 
 
+def test_gitattributes_union_merge_for_sparse_cones():
+    """#1570: tests/sparse_cones.txt is an append-only cone registry (two
+    same-day merge conflicts, 2026-07-19); both consumers read it as a set."""
+    text = _GITATTRIBUTES.read_text(encoding="utf-8")
+    assert "tests/sparse_cones.txt merge=union" in text, (
+        "tests/sparse_cones.txt must use union merge (#1570)"
+    )
+    # Trailing-newline pin: union is line-oriented — a registry whose last
+    # line lacked "\n" could join lines on a future union concatenation.
+    registry = (_REPO_ROOT / "tests" / "sparse_cones.txt").read_text(encoding="utf-8")
+    assert registry.endswith("\n"), "tests/sparse_cones.txt must end with a trailing newline"
+
+
 def test_gitattributes_registry_not_unioned():
     """REGISTRY.json is last-writer-wins; a union merge would break its JSON."""
     text = _GITATTRIBUTES.read_text(encoding="utf-8")
