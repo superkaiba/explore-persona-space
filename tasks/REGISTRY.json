@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1558,
+  "highest_id": 1559,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4351,6 +4351,13 @@
       "path": "tasks/proposed/1558",
       "status": "proposed",
       "title": "daily-fix: cap-park note for 9b cheap-band round-cap parks"
+    },
+    "1559": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1559",
+      "status": "proposed",
+      "title": "daily-fix: tmux guard - exempt dead single-socket rm"
     },
     "156": {
       "has_clean_result": false,
