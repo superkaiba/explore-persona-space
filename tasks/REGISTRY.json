@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1571,
+  "highest_id": 1572,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4456,6 +4456,13 @@
       "path": "tasks/completed/1571",
       "status": "completed",
       "title": "daily-fix: hub upload file-count WARN + retry docs"
+    },
+    "1572": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1572",
+      "status": "proposed",
+      "title": "workflow-fix: staged-index check for ignored artifacts"
     },
     "158": {
       "has_clean_result": false,
