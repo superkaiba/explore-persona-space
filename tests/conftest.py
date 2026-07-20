@@ -90,6 +90,37 @@ def _isolate_codex_quota_sentinel(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _rewarm_task_workflow_repo_root_cache():
+    """#1556 cross-test cache hygiene (the #703 leak family). Several test
+    modules call ``task_workflow.invalidate_cache()`` (e.g. the ``fake_repo``
+    fixtures) and never re-warm the process-wide (pid, cwd)-keyed repo-root
+    ``lru_cache``. Any LATER test that (a) monkeypatches ``subprocess.run``
+    globally (the poll/SSH harness convention — ``subprocess`` is a singleton
+    module, so ``task_workflow``'s git probe is intercepted too) and (b)
+    triggers a real task-state read (``poll_once``'s per-tick ``_marker_pid``
+    / ``_issue_trigger_dense`` reads) then re-probes git THROUGH the fake and
+    misreads live task state as unreadable — order-dependent failures that
+    pass in isolation (the #703 shape). SETUP-side re-warm: at fixture setup
+    the test's own patches are not yet applied (the harnesses patch inside
+    test bodies), so a cold cache re-warms through the REAL subprocess; a
+    warm cache is a dict hit (no I/O). Only fires when task_workflow is
+    already imported; a genuinely unresolvable layout is left exactly as
+    before this fixture existed (logged; the next consumer re-probes and
+    surfaces it loudly)."""
+    tw = sys.modules.get("explore_persona_space.task_workflow")
+    if tw is not None:
+        try:
+            tw.repo_root()
+        except Exception as exc:
+            logging.getLogger("conftest").warning(
+                "repo-root re-warm skipped (%s: %s); next consumer re-probes",
+                type(exc).__name__,
+                exc,
+            )
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _isolate_leaky_global_state():
     saved_env = {k: os.environ.get(k) for k in _HF_ENV_KEYS}
     for k in _HF_ENV_KEYS:

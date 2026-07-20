@@ -187,7 +187,11 @@ tails; session replaced).
    mechanically; SSH-remote reads and bounded re-reads are NOT
    hook-covered, so the discipline there is yours) — and never RE-page
    the same tail across consecutive poll turns: repetition is what
-   accumulates the refusal surface.
+   accumulates the refusal surface. Mechanized at the producer since
+   #1556: tag the task (`task.py add-tag <N> trigger-dense`) and
+   `scripts/poll_pipeline.py` emits exactly this structural digest in
+   place of the raw 5-line `log_tail_excerpt` on every tick (post-done
+   phase lines reduce to bare `[phase=<token>]` tokens).
 2. **Routing stays script-side.** `failure_class` routing runs through
    `scripts/failure_classifier.py --body - --log "$LATEST_LOG_PATH"`
    (issue SKILL.md Step 7): the SCRIPT reads the log and prints a

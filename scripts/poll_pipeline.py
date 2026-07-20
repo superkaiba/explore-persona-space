@@ -175,6 +175,13 @@ freshest mtime across (main log, newest cell log) so a healthy single-
 cell phase reads as `running`, not false-`stalled` / false-`dead`. When
 a cell log is the fresher source, its tail is also surfaced in
 ``log_tail_excerpt`` for the orchestrator's progress notifications.
+On a workload declared trigger-dense (task tag ``trigger-dense``,
+#1556), ``log_tail_excerpt`` instead carries a bounded structural
+digest — pattern counts + status/phase/pid liveness + the log path,
+never raw tail lines — and the post-done phase lines are reduced to
+bare ``[phase=<token>]`` tokens (see ``_digest_tail_excerpt`` /
+``_issue_trigger_dense``; ``crash_signature`` stays raw — it is the
+in-process machine surface, never emitted to stdout).
 
 Staleness ALSO folds in per-phase logs + GPU utilization (incident
 #468 multi-phase training-sweep): a launcher that writes
@@ -372,12 +379,33 @@ if str(_SRC) not in sys.path:
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
+    get_task,
     latest_event,
     list_events,
     post_event,
+    repo_root,
 )
 
 log = logging.getLogger("poll_pipeline")
+
+# #1556: warm task_workflow's (pid, cwd)-keyed repo-root lru_cache while the
+# subprocess layer is pristine. The per-tick task-state reads (`_marker_pid`,
+# `_run_launched_age_sec`, `_issue_trigger_dense`) then resolve `tasks/` from
+# the cache instead of re-entering `subprocess` mid-tick — which ALSO keeps
+# those reads correct under test harnesses that monkeypatch `subprocess.run`
+# globally (a cold cache's git probe would otherwise parse a fake SSH probe's
+# stdout and misread live task state as unreadable). Best-effort, never
+# behavior-changing: lru_cache stores successful returns only, so a failure
+# here is simply re-probed — and loudly handled — by each per-tick reader's
+# own fallback arm (`_marker_pid`'s broad-catch-and-warn precedent).
+try:
+    repo_root()
+except Exception as _warm_exc:
+    log.warning(
+        "repo-root cache warm at import failed (%s: %s); per-tick task reads re-probe",
+        type(_warm_exc).__name__,
+        _warm_exc,
+    )
 
 # Default seconds of log-mtime silence before declaring the run stalled.
 # Workloads with sparse log cadence (e.g. checkpoint-only logging at >15min
@@ -1115,6 +1143,11 @@ class PollResult:
     # a live marker-pid fallback carrying liveness), NOT "pid probed
     # dead". Observability only; status routing is unchanged (#521).
     pid_file_missing: bool
+    # The 5-line excerpt of the freshest log tail — REPLACED by a bounded
+    # structural digest (pattern counts + status/phase/pid + log path; NO raw
+    # line content) when the issue's workload is declared trigger-dense
+    # (task tag ``trigger-dense``; #1556 — see ``_digest_tail_excerpt``;
+    # ``log_tail_digested`` below records which form this tick carries).
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -1217,6 +1250,12 @@ class PollResult:
     # routing unchanged. Defaulted so cross-backend PollResult(...) call
     # sites need no change.
     pid_file_stale_vs_marker: bool = False
+    # #1556: True when THIS tick REPLACED the raw 5-line ``log_tail_excerpt``
+    # with the trigger-dense structural digest (task tag ``trigger-dense``
+    # present, or task state unreadable — the fail-safe arm). Observability
+    # only; status routing unchanged. Declared LAST with a default so
+    # cross-backend PollResult(...) call sites need no change.
+    log_tail_digested: bool = False
 
 
 # Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
@@ -2848,6 +2887,7 @@ def _maybe_post_post_done_phase_advisory(
     prev_state: dict[str, str],
     run_age_sec: float | None,
     now_epoch: int,
+    trigger_dense: bool = False,
 ) -> tuple[str, int, str, bool, bool, tuple[str, ...]]:
     """Post-done-guard wiring for ``poll_once``: parse state, decide, maybe post.
 
@@ -2858,6 +2898,13 @@ def _maybe_post_post_done_phase_advisory(
     ``posted_flag`` is NOT set, so the next tick retries — identical
     contract to ``_maybe_post_gpu_width_advisory``. Advisory only: never
     changes the status verdict, never stops anything.
+
+    ``trigger_dense=True`` (#1556) reduces the EMITTED text — the returned
+    ``new_phase_lines`` tuple (-> ``PollResult.post_done_phase_lines`` -> CLI
+    JSON) and the raw-line + done-line quotes in the advisory note — to bare
+    ``[phase=<token>]`` tokens. Detection logic and the persisted episode
+    state (``done_line`` etc., the raw-line anchor the next tick compares
+    against) are untouched; only emitted text is reduced.
     """
     prev_line = prev_state.get("post_done_line", "") or ""
     try:
@@ -2877,14 +2924,26 @@ def _maybe_post_post_done_phase_advisory(
         run_age_sec=run_age_sec,
         now_epoch=now_epoch,
     )
+    out_lines = (
+        tuple(_phase_token_only(ln) for ln in u.new_phase_lines)
+        if trigger_dense
+        else u.new_phase_lines
+    )
     if not u.should_post:
-        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, u.new_phase_lines
-    quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, out_lines
+    if trigger_dense:
+        quoted = "\n".join(
+            f"  {_phase_token_only(ln)}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES]
+        )
+        done_line_quote = _phase_token_only(u.done_line)
+    else:
+        quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+        done_line_quote = u.done_line[:200]
     note = (
         f"[post-done-phase-advisory] {len(u.new_phase_lines)} NEW [phase=...] line(s) appeared "
         f"AFTER the done line this poller reported as terminal "
         f"({max(0, now_epoch - u.done_epoch) // 60} min ago):\n{quoted}\n"
-        f"recorded done line: {u.done_line[:200]}\n"
+        f"recorded done line: {done_line_quote}\n"
         "The earlier status=done may have been FALSE (the .py-dispatcher subprocess fan-out "
         "class — workflow_lint --check-phase-done-reserved residual gap (i), #930/#545): a "
         "child script may still be running, and any orchestrator action keyed on the done "
@@ -2908,7 +2967,7 @@ def _maybe_post_post_done_phase_advisory(
         )
     except Exception as exc:
         log.error("post-done phase advisory post failed (next tick will retry): %s", exc)
-        return u.done_line, u.done_epoch, u.done_pod, False, False, u.new_phase_lines
+        return u.done_line, u.done_epoch, u.done_pod, False, False, out_lines
     # Fail-soft phone push — never blocks recording (the marker is durable).
     _telegram_push(
         f"[#{issue}] post-done phase advisory: {len(u.new_phase_lines)} new [phase=...] "
@@ -2921,7 +2980,7 @@ def _maybe_post_post_done_phase_advisory(
         len(u.new_phase_lines),
         pod,
     )
-    return u.done_line, u.done_epoch, u.done_pod, True, True, u.new_phase_lines
+    return u.done_line, u.done_epoch, u.done_pod, True, True, out_lines
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -4733,6 +4792,160 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
+# The task tag that declares a workload trigger-dense (#1556). Set at dispatch
+# per .claude/rules/trigger-dense-review.md's recognition heuristic via
+# `task.py add-tag <N> trigger-dense`; read fresh every tick (no caching), so a
+# mid-run add-tag takes effect on the next poll.
+_TRIGGER_DENSE_TAG = "trigger-dense"
+
+# Mirror of ``backend_poll.CUDA_IMA_SIGNATURE`` — ``backend_poll`` imports FROM
+# this module, so the reverse import would be circular; the compiled pattern is
+# mirrored here and pinned byte-in-sync by tests/test_poll_pipeline_digest.py::
+# test_digest_cuda_ima_flag_matches_backend_poll_signature (pattern + flags
+# equality). The digest's structural flag fires on the REAL signature family
+# (including the engine-dead alternatives), never a bare substring (#1556).
+_CUDA_IMA_SIGNATURE = re.compile(
+    r"CUDA error:\s*an illegal memory access was encountered"
+    r"|illegal memory access was encountered"
+    r"|EngineDeadError"
+    r"|Engine core proc \S+ died unexpectedly",
+    re.IGNORECASE,
+)
+
+# Case-insensitive per-line substring counts for the trigger-dense digest — the
+# trigger-dense-review.md item-1 pattern set ('error|traceback|killed|OOM')
+# plus the CUDA-IMA class as a human-facing count. The machine contract is the
+# ``_CUDA_IMA_SIGNATURE`` structural flag in ``_digest_tail_excerpt`` — the
+# ``cuda_ima`` COUNT and the flag may legitimately disagree (count=0 with the
+# flag present on an engine-dead-only tail); that is correct, not a bug.
+_DIGEST_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("error", "error"),
+    ("traceback", "traceback"),
+    ("killed", "killed"),
+    ("oom", "oom"),
+    ("cuda_ima", "illegal memory access"),
+)
+
+
+def _issue_trigger_dense(issue: int) -> bool:
+    """True when the issue's workload is declared trigger-dense (task tag
+    ``trigger-dense`` — set at dispatch per trigger-dense-review.md's
+    recognition heuristic: the run trains/evals on guard/security surfaces or
+    gated-content corpora, knowable before any read), or when the task EXISTS
+    but its state is unreadable (fail SAFE toward digest, loudly).
+
+    A missing task (``FileNotFoundError`` — ad-hoc/synthetic polls; includes
+    ``StaleTaskPathError``, its subclass) has no declaration surface at all
+    -> False (raw excerpt, today's behavior). Fresh read every tick, no
+    caching: ``task.py add-tag <N> trigger-dense`` mid-run takes effect on the
+    next tick — a live mitigation lever during an unfolding incident. The
+    catch taxonomy mirrors the audited pod_lifecycle pre-terminate set
+    (FileNotFoundError = not in registry/on disk; RuntimeError = branch-guard;
+    ValueError = malformed frontmatter/registry; OSError = unreadable file);
+    anything else propagates (fail-fast).
+    """
+    try:
+        task = get_task(issue)
+    except FileNotFoundError:
+        log.info("trigger-dense check: task #%s not found (ad-hoc poll); raw excerpt", issue)
+        return False
+    except (RuntimeError, ValueError, OSError) as exc:
+        log.warning(
+            "trigger-dense tag read FAILED for issue %s (%s: %s); failing SAFE "
+            "toward digest-on-unknown (raw tail stays readable at the log path)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return True
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return _TRIGGER_DENSE_TAG in tags
+
+
+def _phase_token_only(line: str) -> str:
+    """Reduce a raw log line to its bare ``[phase=<token>]`` token (#1556).
+
+    Trigger-dense emission reduction for the post-done surfaces: returns ONLY
+    the structural phase token; a line with no parseable token reduces to
+    ``[phase=?]`` — structural either way, no raw line text is ever returned.
+    """
+    m = PHASE_RE.search(line)
+    return f"[phase={m.group(1)}]" if m else "[phase=?]"
+
+
+def _digest_tail_excerpt(
+    wide_tail: str,
+    *,
+    status: str,
+    current_phase: str,
+    pid_alive: bool,
+    source: str,
+    log_path: str,
+    mtime_sec_ago: int,
+) -> str:
+    """Bounded structural digest replacing the raw excerpt on trigger-dense runs.
+
+    Pure + deterministic: pattern counts over the wide tail, the poller's own
+    verdict fields (status/phase/pid liveness — the exit-state information
+    this seam actually has; the workload's numeric rc lands in the sentinel
+    channel and in the log the script-side ``failure_classifier.py --log``
+    reads), the winning log source + path, and tail size/staleness. NO raw
+    log line content is inlined — inherently secret-safe (nothing to scrub).
+    The CUDA-IMA structural flag preserves the one content-coupled machine
+    contract (``backend_poll._prior_failure_marker_is_cuda_ima`` regex over
+    ``epm:failure`` notes — the #775 cross-pod fallback) on digested notes.
+    """
+    lines = wide_tail.splitlines()
+    low = [ln.lower() for ln in lines]
+    counts = {name: sum(1 for ln in low if pat in ln) for name, pat in _DIGEST_PATTERNS}
+    counts_s = " ".join(f"{k}={v}" for k, v in counts.items())
+    out = (
+        f"[trigger-dense digest] status={status} phase={current_phase} "
+        f"pid_alive={pid_alive} source={source} log={log_path} "
+        f"tail_lines={len(lines)} tail_bytes={len(wide_tail.encode('utf-8', 'replace'))} "
+        f"log_mtime_sec_ago={mtime_sec_ago} pattern_counts({counts_s}); "
+        f"raw tail NOT inlined (trigger-dense workload; classify via "
+        f"scripts/failure_classifier.py --log <path>)"
+    )
+    if _CUDA_IMA_SIGNATURE.search(wide_tail):
+        # Flag phrase chosen to MATCH signature alternative 2 so the #775
+        # cross-pod marker-note fallback keeps firing on digested notes.
+        out += " cuda_ima_flag: illegal memory access was encountered (structural flag)"
+    return out
+
+
+def _freshest_wide_tail(
+    probe: dict[str, str],
+    *,
+    mtime_epoch: int,
+    cell_mtime_epoch: int,
+    phase_log_mtime_epoch: int = 0,
+    shard_log_mtime_epoch: int = 0,
+) -> tuple[str, str]:
+    """(source_label, wide_tail) for the freshest NON-EMPTY tail among the four
+    log layouts {main, cell, phase, shard}; ties + no-tail fall back to main —
+    byte-identical selection to the pre-#1556 inline logic in
+    ``_tail_excerpt_and_crash_signature`` (which now delegates here; the #791
+    mtime-argmax semantics, the empty-tail skip, and the tie->main FIRST-max
+    behavior are unchanged).
+    """
+    candidates = [
+        ("main", mtime_epoch, probe["log_tail"]),
+        ("cell", cell_mtime_epoch, probe.get("cell_log_tail", "")),
+        ("phase", phase_log_mtime_epoch, probe.get("phase_log_tail", "")),
+        ("shard", shard_log_mtime_epoch, probe.get("shard_log_tail", "")),
+    ]
+    # `max` returns the FIRST element on an mtime tie, and the main log is
+    # first in the list, so a tie deterministically resolves to main. When no
+    # source has a tail, `default` falls back to the main-log tail.
+    source, _, wide_tail = max(
+        ((s, m, t) for s, m, t in candidates if t),
+        default=("main", mtime_epoch, probe["log_tail"]),
+        key=lambda smt: smt[1],
+    )
+    return source, wide_tail
+
+
 def _tail_excerpt_and_crash_signature(
     probe: dict[str, str],
     *,
@@ -4770,22 +4983,17 @@ def _tail_excerpt_and_crash_signature(
     fire. The whole wide tail is stored so the failover predicate can ALSO scan
     it for the OUR_CODE_FRAME exclusion. Pure (no SSH); extracted from
     :func:`poll_once` so the slice logic is unit-testable without driving the
-    full poller (the #775 B2 test binds to THIS helper).
+    full poller (the #775 B2 test binds to THIS helper). Signature + return
+    tuple are pinned; the mtime-argmax source selection lives in
+    :func:`_freshest_wide_tail` (#1556 extraction) so the trigger-dense digest
+    can name WHICH layout won without duplicating the selection logic.
     """
-    candidates = [
-        (mtime_epoch, probe["log_tail"]),
-        (cell_mtime_epoch, probe.get("cell_log_tail", "")),
-        (phase_log_mtime_epoch, probe.get("phase_log_tail", "")),
-        (shard_log_mtime_epoch, probe.get("shard_log_tail", "")),
-    ]
-    # Pick the freshest source with a NON-EMPTY tail. `max` returns the FIRST
-    # element on an mtime tie, and `log_tail` (the main log) is first in the
-    # list, so a tie deterministically resolves to the main log. When no source
-    # has a tail, `default` falls back to the main-log tail.
-    _, wide_tail = max(
-        ((m, t) for m, t in candidates if t),
-        default=(mtime_epoch, probe["log_tail"]),
-        key=lambda mt: mt[0],
+    _, wide_tail = _freshest_wide_tail(
+        probe,
+        mtime_epoch=mtime_epoch,
+        cell_mtime_epoch=cell_mtime_epoch,
+        phase_log_mtime_epoch=phase_log_mtime_epoch,
+        shard_log_mtime_epoch=shard_log_mtime_epoch,
     )
     tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
     crash_signature = wide_tail if status == "dead" else None
@@ -5174,6 +5382,14 @@ def poll_once(
         now_epoch=now_epoch,
     )
 
+    # ── #1556 trigger-dense declaration read (once per tick) ─────────────
+    # Gates BOTH orchestrator-facing raw-text surfaces below: the post-done
+    # phase-lines emission (reduced to [phase=<token>] tokens) and the
+    # ``log_tail_excerpt`` (replaced by the structural digest). Fresh
+    # per-tick read — a mid-run `task.py add-tag <N> trigger-dense` takes
+    # effect on the next tick. Detection/verdict logic is never gated.
+    trigger_dense = _issue_trigger_dense(issue)
+
     # ── #983 post-done phase-consistency guard ───────────────────────────
     # Cross-tick audit of a previously-accepted done verdict: at the tick
     # where the corroborated ``current_phase == "done"`` lands, record the
@@ -5200,6 +5416,7 @@ def poll_once(
         prev_state=prev_state,
         run_age_sec=run_age_sec,
         now_epoch=now_epoch,
+        trigger_dense=trigger_dense,
     )
 
     # New milestone? (re-uses ``prev_state`` loaded above for the
@@ -5378,6 +5595,30 @@ def poll_once(
         phase_log_mtime_epoch=phase_log_mtime_epoch,
         shard_log_mtime_epoch=shard_log_mtime_epoch,
     )
+    # #1556: on a trigger-dense workload the EMITTED excerpt is replaced by a
+    # bounded structural digest (no raw tail lines in orchestrator-facing
+    # JSON/marker text). ``crash_signature`` above is deliberately untouched —
+    # it is the in-process machine surface the backend_poll CUDA-IMA /
+    # OUR_CODE_FRAME failover predicates read (never emitted to stdout).
+    log_tail_digested = False
+    if trigger_dense:
+        source, wide_tail = _freshest_wide_tail(
+            probe,
+            mtime_epoch=mtime_epoch,
+            cell_mtime_epoch=cell_mtime_epoch,
+            phase_log_mtime_epoch=phase_log_mtime_epoch,
+            shard_log_mtime_epoch=shard_log_mtime_epoch,
+        )
+        tail_excerpt = _digest_tail_excerpt(
+            wide_tail,
+            status=status,
+            current_phase=current_phase,
+            pid_alive=pid_alive,
+            source=source,
+            log_path=log_path,
+            mtime_sec_ago=min(last_mtime_ago, 10**9),
+        )
+        log_tail_digested = True
     return PollResult(
         status=status,
         current_phase=current_phase,
@@ -5404,6 +5645,7 @@ def poll_once(
         crash_signature=crash_signature,
         post_done_phase_advisory_posted=post_done_posted,
         post_done_phase_lines=post_done_new_lines,
+        log_tail_digested=log_tail_digested,
     )
 
 
@@ -5467,6 +5709,10 @@ def main(argv: list[str] | None = None) -> int:
                 "pid_file_missing": result.pid_file_missing,
                 "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
                 "log_tail_excerpt": result.log_tail_excerpt,
+                # #1556: True when log_tail_excerpt is the trigger-dense
+                # structural digest, not raw tail lines (additive key;
+                # downstream readers .get-defend by house pattern).
+                "log_tail_digested": result.log_tail_digested,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
