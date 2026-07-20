@@ -272,7 +272,7 @@ def make_figure(results: dict, fig_path: Path):
         pass
 
     readers = [r for r in ("instruct", "pretrained") if r in results]
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, ax = plt.subplots(figsize=(7.2, 4.8))
     x = np.arange(len(readers))
     w = 0.28
     ceil = [results[r]["per_layer"][str(HEADLINE_LAYER)]["ceiling_r2_infinite_k"] for r in readers]
@@ -310,10 +310,25 @@ def make_figure(results: dict, fig_path: Path):
     ax.axhline(0.0, color="0.4", lw=0.8)
     ax.set_xticks(x)
     ax.set_xticklabels([r.capitalize() for r in readers])
+    ax.tick_params(axis="x", labelsize=11, pad=2)
     ax.set_ylabel(f"held-out / resample R² (layer {HEADLINE_LAYER})")
     ax.set_title("User-answer resample ceiling vs fitted context→user-answer map")
     ax.legend(fontsize=7, frameon=False, ncol=1, loc="lower left")
-    fig.tight_layout()
+    # Provenance setup line (per-arm; ad-hoc-figure disclosure rule): the fresh
+    # draws + ceiling/LODO bars are HAIKU (claude-haiku-4-5) resamples over the
+    # onpolicy instruct-allowlist contexts (n=1914). The parent-Haiku ridge
+    # anchor is BYTE-MATCHED to this floor; the onpolicy-Qwen ridge/MLP anchors
+    # are the SIBLING family (Qwen-generated u2 targets), which the normalized
+    # variance-fraction ceiling bounds but is not byte-matched to.
+    caption = (
+        "Fresh draws + ceiling/R²_LODO = Haiku (claude-haiku-4-5) resamples, "
+        "1914 onpolicy instruct-allowlist contexts, both Qwen readers on the same text. "
+        "Anchors: parent-Haiku ridge = byte-matched to this floor; "
+        "onpolicy-Qwen ridge/MLP = sibling family (Qwen-generated targets, not byte-matched)."
+    )
+    ax.set_xlabel("")  # reader names are the tick labels; keep the caption band clear
+    fig.subplots_adjust(bottom=0.24)
+    fig.text(0.5, 0.015, caption, ha="center", va="bottom", fontsize=6, wrap=True, color="0.3")
     fig.savefig(fig_path, dpi=150)
     plt.close(fig)
 
@@ -375,6 +390,17 @@ def main() -> None:
             "trvar": "per-context variance across the K fresh draws, ddof=1, summed over hidden dims",
         },
         "anchors_layer19": ANCHORS,
+        "anchor_provenance": {
+            "parent_haiku_ridge": "BYTE-MATCHED anchor for this Haiku floor: parent #825 user-turn "
+            "map, Haiku-generated u2, same reader + span rule (eval_results/issue_825/"
+            "cells_M_{instruct,pretrained}_user_chat.json, layer 19).",
+            "onpolicy_qwen_ridge": "SIBLING family (NOT byte-matched): onpolicy-user-turn map, "
+            "Qwen-on-policy u2 targets (eval_results/issue_825/onpolicy-user-turn/); the "
+            "normalized variance-fraction ceiling bounds it but the targets differ from the "
+            "Haiku resample distribution.",
+            "onpolicy_qwen_mlp": "SIBLING family (NOT byte-matched): onpolicy-user-turn MLP R^2 "
+            "on the same Qwen-on-policy targets.",
+        },
         "issue_1482_en_comparison": ISSUE1482_EN,
         "provenance_caveat": (
             "Fresh draws are HAIKU (claude-haiku-4-5-20251001) resamples, byte-matched to the "

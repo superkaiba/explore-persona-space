@@ -33,6 +33,11 @@
       "onpolicy_qwen_mlp": 0.0778
     }
   },
+  "anchor_provenance": {
+    "parent_haiku_ridge": "BYTE-MATCHED anchor for this Haiku floor: parent #825 user-turn map, Haiku-generated u2, same reader + span rule (eval_results/issue_825/cells_M_{instruct,pretrained}_user_chat.json, layer 19).",
+    "onpolicy_qwen_ridge": "SIBLING family (NOT byte-matched): onpolicy-user-turn map, Qwen-on-policy u2 targets (eval_results/issue_825/onpolicy-user-turn/); the normalized variance-fraction ceiling bounds it but the targets differ from the Haiku resample distribution.",
+    "onpolicy_qwen_mlp": "SIBLING family (NOT byte-matched): onpolicy-user-turn MLP R^2 on the same Qwen-on-policy targets."
+  },
   "issue_1482_en_comparison": {
     "floor_mean": 0.0935,
     "floor_share_of_nerr": 0.3281
@@ -40,8 +45,8 @@
   "provenance_caveat": "Fresh draws are HAIKU (claude-haiku-4-5-20251001) resamples, byte-matched to the PARENT #825 Haiku-u2 user map (ridge -1.4272/-1.4894). The onpolicy-Qwen anchor (-0.7689/-1.8399) used Qwen-on-policy u2 targets; the ceiling is normalized (a variance fraction) so it bounds both, but the byte-exact anchor is the parent Haiku map.",
   "n_bootstrap": 1000,
   "seed": 0,
-  "git_commit": "035de28eedf57d8773d866b15d52fe9d69029cf2",
-  "timestamp": "2026-07-20T21:27:34Z",
+  "git_commit": "754671e916537b5c2972e4743cafa43759c24640",
+  "timestamp": "2026-07-20T21:47:40Z",
   "results": {
     "instruct": {
       "reader": "instruct",
