@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1562,
+  "highest_id": 1563,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4386,6 +4386,13 @@
       "path": "tasks/proposed/1562",
       "status": "proposed",
       "title": "daily-fix: committed scripts, not inline -c, for probe runs"
+    },
+    "1563": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1563",
+      "status": "proposed",
+      "title": "daily-fix: neutralize orchestrator turns on guard tasks"
     },
     "157": {
       "has_clean_result": false,
