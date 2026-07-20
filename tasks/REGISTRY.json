@@ -4453,8 +4453,8 @@
     "1571": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1571",
-      "status": "proposed",
+      "path": "tasks/planning/1571",
+      "status": "planning",
       "title": "daily-fix: hub upload file-count WARN + retry docs"
     },
     "158": {
