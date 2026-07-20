@@ -492,8 +492,8 @@ Behaviours:
   no ``# NO_RETRY: <reason>`` waiver on the line or the line above.
   hf_hub 0.36.2 natively retries only 500/502/503/504 on the download/LFS
   paths and the commit API not at all, so a bare live site is a 429
-  single-point-of-failure (#1426/#1335, the 2026-07-18 storm). The 297
-  per-issue historical files present at #1547 implement time are
+  single-point-of-failure (#1426/#1335, the 2026-07-18 storm). The
+  per-issue historical files frozen at #1547 landing time are
   snapshot-exempt (:data:`HF_ROUTING_FROZEN_SNAPSHOT` — the routing
   requirement attaches at REUSE time via artifact-reuse check (i)); NEWLY
   written files, including new ``scripts/issue<N>_*.py`` drivers, ARE
@@ -501,7 +501,9 @@ Behaviours:
   (pattern strings) and ``backends/gcp.py`` (generated pod-side heredocs
   with their own bounded retry) are constant-excluded. Bare
   ``snapshot_download`` / ``list_repo_files`` sites are OUT of the predicate
-  by design (#1547).
+  by design (#1547). Regenerate the snapshot with
+  ``--regen-hf-routing-snapshot`` (maintenance flag) — see the constant's
+  comment for the staleness-race recipe (#1568).
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -7778,6 +7780,28 @@ HF_ROUTING_GENERATED_CODE_FILES: frozenset[str] = frozenset(
 # `scripts/issue<N>_*.py` drivers — are NOT in this snapshot and ARE scanned
 # (the `JUDGE_PIN_LEGACY_ALLOWLIST` snapshot idiom: exempt today's tree
 # once, gate everything that lands after).
+#
+# STALENESS RACE (#1568, incident #1547 -> 74bf37250b): this constant is a
+# source-frozen artifact, so it can go stale between its generation and the
+# round's Step 10d merge gate whenever main churn lands a new offender for
+# the CURRENT predicate. Steady state is safe (the check exists on main:
+# both gate legs carry it and new bare-call files block at their own
+# gates); the race re-opens when a round TIGHTENS this check (predicate /
+# window / scope) or introduces a sibling snapshot-based check. Recipe:
+# regenerate via `workflow_lint.py --regen-hf-routing-snapshot` on a
+# main-synced tree as the LAST pre-gate step, and again on any gate re-run
+# after main churn; review the stderr `+` lines — a file YOUR round created
+# must be routed, never grandfathered. NOTE: a whole-literal regen paste
+# can 3-way-CONFLICT with a concurrent main-side one-line append at the
+# gate's #1456 merge of a payload-touched workflow_lint.py — resolve by
+# re-running regen on the freshly synced tree, never by hand-merging the
+# hunks. Do NOT add dead-entry hygiene (a deleted member's entry is inert;
+# enforcing removal would CREATE gate friction on unrelated deletions).
+# Keep the FAIL-message text stable while main is red anywhere: the merge
+# gate's baseline-vs-gated subtraction compares normalized message LINES,
+# so a message rewrite that lands while an offender exists on main would
+# false-block as NEW (companion note at the message construction in
+# _hf_routing_file_errors).
 HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
     {
         "scripts/_issue543_common.py",
@@ -8106,6 +8130,60 @@ def _hf_routing_call_is_wrapped(lines: list[str], i: int, match_start: int) -> b
     return False
 
 
+def _hf_routing_scan_files(root: Path):
+    """Yield ``(path, rel)`` for every scanned candidate under
+    :data:`HF_ROUTING_SCOPE_ROOTS`, excluding the pattern-string +
+    generated-code constants (NOT the frozen snapshot — callers apply that:
+    the check exempts it, the regen flag deliberately re-derives it, #1568).
+    """
+    for scope in HF_ROUTING_SCOPE_ROOTS:
+        base = root / scope
+        if not base.exists():
+            continue
+        for py in sorted(base.rglob("*.py")):
+            if not py.is_file() or "__pycache__" in py.parts:
+                continue
+            rel = py.relative_to(root).as_posix()
+            if rel in HF_ROUTING_PATTERN_STRING_FILES or rel in HF_ROUTING_GENERATED_CODE_FILES:
+                continue
+            yield py, rel
+
+
+def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
+    """Per-file scan body shared by :func:`check_live_hf_retry_routing`
+    (verdict) and :func:`regen_hf_routing_snapshot` (offender enumeration).
+    Snapshot-BLIND — the caller decides whether the frozen snapshot exempts
+    ``rel`` (#1568). Returns one error line per bare (unwrapped, unwaived)
+    HF Hub call.
+    """
+    errors: list[str] = []
+    lines = py.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("#") or stripped.startswith("what="):
+            continue
+        m = HF_ROUTING_CALL_RE.search(line)
+        if m is None:
+            continue
+        if "# NO_RETRY:" in line or (i > 0 and "# NO_RETRY:" in lines[i - 1]):
+            continue
+        if _hf_routing_call_is_wrapped(lines, i, m.start()):
+            continue
+        # Message-edit hazard: the Step 10d merge gate compares normalized
+        # message LINES (baseline vs gated legs), so rewording this error
+        # while ANY offender exists on main would false-register as NEW and
+        # block an unrelated merge — see the STALENESS RACE comment on
+        # HF_ROUTING_FROZEN_SNAPSHOT before editing this string (#1568).
+        errors.append(
+            f"[live-hf-retry-routing] {rel}:{i + 1}: bare HF Hub "
+            f"call in LIVE code — route through hub.retry_transient, waive with "
+            f"`# NO_RETRY: <reason>`, or (pre-existing file this round never "
+            f"touched — snapshot staleness, #1568) regen on a main-synced tree: "
+            f"`workflow_lint.py --regen-hf-routing-snapshot`: {stripped[:100]}"
+        )
+    return errors
+
+
 def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
     """Walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py`` and
     FAIL on a bare (un-retried) HuggingFace Hub mutation/download call in
@@ -8122,7 +8200,7 @@ def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
     * a ``# NO_RETRY: <reason>`` waiver sits on the line or the line above; or
     * the line is the wrap idiom's own ``what=`` descriptor kwarg
       (``what=f"hf_hub_download({repo}/{path})"``); or
-    * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the 298 per-issue
+    * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the per-issue
       historical files frozen at #1547 landing time — the routing
       requirement attaches at REUSE time via artifact-reuse check (i)),
       :data:`HF_ROUTING_PATTERN_STRING_FILES` (this file + verify_plan.py:
@@ -8134,42 +8212,52 @@ def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
     ``list_repo_files`` sites are OUT of the predicate — a 429 there is not
     a gap in THIS check (see `.claude/rules/upload-policy.md` § Fleet-shared
     commit budget). ``repo_root`` is a unit-test override hook; production
-    callers pass None. Bundled into the no-flags default run.
+    callers pass None. Bundled into the no-flags default run. Snapshot
+    staleness (the check fires on a pre-existing file the round never
+    touched): regenerate on a main-synced tree via
+    ``--regen-hf-routing-snapshot`` (#1568).
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     errors: list[str] = []
-    for scope in HF_ROUTING_SCOPE_ROOTS:
-        base = root / scope
-        if not base.exists():
+    for py, rel in _hf_routing_scan_files(root):
+        if rel in HF_ROUTING_FROZEN_SNAPSHOT:
             continue
-        for py in sorted(base.rglob("*.py")):
-            if not py.is_file() or "__pycache__" in py.parts:
-                continue
-            rel = py.relative_to(root).as_posix()
-            if (
-                rel in HF_ROUTING_FROZEN_SNAPSHOT
-                or rel in HF_ROUTING_PATTERN_STRING_FILES
-                or rel in HF_ROUTING_GENERATED_CODE_FILES
-            ):
-                continue
-            lines = py.read_text(encoding="utf-8").splitlines()
-            for i, line in enumerate(lines):
-                stripped = line.lstrip()
-                if stripped.startswith("#") or stripped.startswith("what="):
-                    continue
-                m = HF_ROUTING_CALL_RE.search(line)
-                if m is None:
-                    continue
-                if "# NO_RETRY:" in line or (i > 0 and "# NO_RETRY:" in lines[i - 1]):
-                    continue
-                if _hf_routing_call_is_wrapped(lines, i, m.start()):
-                    continue
-                errors.append(
-                    f"[live-hf-retry-routing] {rel}:{i + 1}: bare HF Hub "
-                    f"call in LIVE code — route through hub.retry_transient (or waive "
-                    f"with `# NO_RETRY: <reason>`): {stripped[:100]}"
-                )
+        errors.extend(_hf_routing_file_errors(py, rel))
     return errors
+
+
+def regen_hf_routing_snapshot(*, repo_root: Path | None = None) -> int:
+    """Maintenance (#1568): print the ready-to-paste
+    ``HF_ROUTING_FROZEN_SNAPSHOT`` literal for the CURRENT tree — every
+    scanned file carrying >=1 bare (unwrapped, unwaived) HF Hub call,
+    re-derived snapshot-blind — plus a +/- diff summary vs the compiled-in
+    constant on stderr. Run on a MAIN-SYNCED tree (repo root on current
+    main, or the worktree after a rebase onto origin/main). REVIEW the
+    stderr ``+`` lines before pasting: a file YOUR round created must be
+    ROUTED through hub.retry_transient (or NO_RETRY-waived), never
+    grandfathered — the stderr summary exists so the round's code review
+    sees the delta. Not part of the no-flags bundle; early-dispatched in
+    ``main()``. Returns 0 (the paste-ready literal is the product, not a
+    verdict).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    offenders = sorted(
+        rel for py, rel in _hf_routing_scan_files(root) if _hf_routing_file_errors(py, rel)
+    )
+    sys.stdout.write("HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset(\n    {\n")
+    for rel in offenders:
+        sys.stdout.write(f'        "{rel}",\n')
+    sys.stdout.write("    }\n)\n")
+    added = sorted(set(offenders) - HF_ROUTING_FROZEN_SNAPSHOT)
+    removed = sorted(HF_ROUTING_FROZEN_SNAPSHOT - set(offenders))
+    sys.stderr.write(
+        f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
+    )
+    for rel in added:
+        sys.stderr.write(f"# + {rel}  (NEW offender — route it if this round created it)\n")
+    for rel in removed:
+        sys.stderr.write(f"# - {rel}  (no longer flags: deleted, routed, or waived)\n")
+    return 0
 
 
 # --- `--check-phase-done-reserved` (#930): reserved `[phase=done]` token ----
@@ -12246,10 +12334,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the call and no '# NO_RETRY: <reason>' waiver. hf_hub 0.36.2 natively "
         "retries only 500/502/503/504 on download/LFS paths and the commit API "
         "not at all, so a bare live site is a 429 single-point-of-failure "
-        "(#1426/#1335, the 2026-07-18 storm). The ~297 per-issue historical "
+        "(#1426/#1335, the 2026-07-18 storm). The per-issue historical "
         "files frozen at #1547 implement time are snapshot-exempt "
-        "(HF_ROUTING_FROZEN_SNAPSHOT); NEW files are scanned. Bundled into the "
-        "no-flags default run (#1547).",
+        "(HF_ROUTING_FROZEN_SNAPSHOT; stale snapshot? see "
+        "--regen-hf-routing-snapshot); NEW files are scanned. Bundled into "
+        "the no-flags default run (#1547).",
+    )
+    parser.add_argument(
+        "--regen-hf-routing-snapshot",
+        action="store_true",
+        help="MAINTENANCE (#1568, not a check; runs alone and early-returns — "
+        "combining it with check flags is unsupported, regen wins): print the "
+        "ready-to-paste HF_ROUTING_FROZEN_SNAPSHOT literal for the current "
+        "tree (stdout) + a +/- diff summary vs the compiled-in constant "
+        "(stderr). Run on a main-synced tree when the live-hf-retry-routing "
+        "check fires on a file your round never touched (implementer-time "
+        "snapshot went stale before the merge gate — the #1547 race). Review "
+        "added entries before pasting; never bundled into the no-flags "
+        "default run.",
     )
     parser.add_argument(
         "--check-no-literal-round-marker-versions",
@@ -12419,6 +12521,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "instead. Bundled into the no-flags default run.",
     )
     args = parser.parse_args(argv)
+
+    if args.regen_hf_routing_snapshot:
+        # Maintenance flag (#1568): print-and-exit; never runs checks, never
+        # loads workflow.yaml, never enters the no-flags bundle (combining
+        # with check flags is unsupported — regen wins). Early dispatch
+        # keeps stdout EXACTLY the paste-ready literal.
+        return regen_hf_routing_snapshot()
 
     path = Path(args.file) if args.file else None
     try:

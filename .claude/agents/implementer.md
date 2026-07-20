@@ -122,6 +122,25 @@ section wins on invocation form.
 - **No silent failures.** No `except: pass`. No `--force`. No hardcoding secrets.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")
+- **New ENUMERATED check id → probe `origin/main` for the CURRENT max id at
+  implement time, immediately before the round's final commit — never trust the
+  plan's number (#1569).** Plans assign check ids from a stale view of main;
+  with concurrent workflow-fix sessions the same-day collision recurs
+  (2026-07-19: #1550 and #1551 both implemented verify_plan.py `c40` — PR #1321
+  needed a c40→c41 renumber + conflict round; 2026-07-18: #1520 and #1521 both
+  titled verify_task_body.py `check 46`). Probe (the two known registries;
+  apply the same pattern to any other numbered check registry you touch):
+  `git fetch origin main`, then
+  `git show origin/main:scripts/verify_plan.py | grep -oE '\bc[0-9]+\b' | sort -uV | tail -1`
+  or `git show origin/main:scripts/verify_task_body.py | grep -oE 'check [0-9]+' | sort -uV | tail -1`.
+  If your id ≤ that max, take max+1 and renumber EVERY id surface in your
+  diff — docstring catalog row, conditional-checks enumeration, `(check N)`
+  escape-phrase labels, `cid` strings + `_cNN_*` helper names, test names +
+  count pins, any adversarial-planner SKILL.md escape-list row (full fan-out:
+  agent-memory `reference_verify_plan_check_fanout.md`). The plan named a
+  SLOT, not a contract: the renumber is pre-authorized — record it in your
+  results marker (`plan said c40; origin/main max was c40 → landed c41`), no
+  plan amendment needed. Re-run the probe after any rebase / conflict round.
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
 - **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s. Push BARE and check the exit code — never piped through `tail`/`grep`/`head` (`guard_piped_git_push.sh` blocks it; a pipe masks a rejected push).
 

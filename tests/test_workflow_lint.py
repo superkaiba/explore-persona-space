@@ -8149,3 +8149,177 @@ def test_check_live_hf_retry_routing_registered_in_no_flags_default_run():
     assert "or args.check_live_hf_retry_routing" in src, (
         "--check-live-hf-retry-routing is missing from the no_flags detection tuple"
     )
+
+
+# ---------------------------------------------------------------------------
+# --regen-hf-routing-snapshot (#1568): paste-ready snapshot regeneration
+# ---------------------------------------------------------------------------
+
+
+def test_regen_hf_routing_snapshot_lists_bare_skips_wrapped_and_waived(tmp_path, capsys):
+    """The regen walker applies the same bare/wrapped/waived predicate as the
+    check. The tmp root is NON-GIT by construction — pinned explicitly below,
+    naming the gate-tree constraint (the Step 10d `git archive | tar -x`
+    landing tree has no .git; #1568 hard constraint 1)."""
+    from workflow_lint import regen_hf_routing_snapshot
+
+    root = _hf_routing_root(tmp_path)
+    assert not (root / ".git").exists()
+    (root / "scripts" / "bare.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "wrapped.py").write_text(
+        "from explore_persona_space.orchestrate.hub import retry_transient\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return retry_transient(\n"
+        "        lambda: hf_hub_download('org/repo', 'a.bin'),\n"
+        "        what='hf_hub_download(org/repo/a.bin)',\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "waived.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def probe():\n"
+        "    # NO_RETRY: deliberate existence probe\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    assert regen_hf_routing_snapshot(repo_root=root) == 0
+    out = capsys.readouterr().out
+    entries = re.findall(r'^        "([^"]+)",$', out, flags=re.MULTILINE)
+    assert entries == ["scripts/bare.py"], entries
+
+
+def test_regen_hf_routing_snapshot_is_snapshot_blind(tmp_path, capsys):
+    """A bare call AT a frozen-snapshot member path is exempt for the CHECK
+    but enumerated by regen — the snapshot is re-derived, never inherited."""
+    from workflow_lint import (
+        HF_ROUTING_FROZEN_SNAPSHOT,
+        check_live_hf_retry_routing,
+        regen_hf_routing_snapshot,
+    )
+
+    frozen_member = "scripts/eval_issue562_panel.py"
+    assert frozen_member in HF_ROUTING_FROZEN_SNAPSHOT
+    root = _hf_routing_root(tmp_path)
+    (root / frozen_member).write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+    assert regen_hf_routing_snapshot(repo_root=root) == 0
+    out = capsys.readouterr().out
+    assert f'        "{frozen_member}",\n' in out
+
+
+def test_regen_hf_routing_snapshot_output_paste_round_trip(tmp_path, capsys):
+    """stdout is byte-compatible with the source shape: the exact header
+    line, sorted quoted entries, `    }` + `)` closers — and the set body
+    `ast.literal_eval`s back to the offender set (paste-replace safe)."""
+    import ast
+
+    from workflow_lint import regen_hf_routing_snapshot
+
+    root = _hf_routing_root(tmp_path)
+    for name in ("b_tool.py", "a_tool.py"):
+        (root / "scripts" / name).write_text(
+            "from huggingface_hub import hf_hub_download\n"
+            "x = hf_hub_download('org/repo', 'a.bin')\n",
+            encoding="utf-8",
+        )
+    assert regen_hf_routing_snapshot(repo_root=root) == 0
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[0] == "HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset("
+    assert lines[1] == "    {"
+    assert lines[-2] == "    }"
+    assert lines[-1] == ")"
+    parsed = ast.literal_eval("\n".join(lines[1:-1]))
+    assert parsed == {"scripts/a_tool.py", "scripts/b_tool.py"}
+    entries = re.findall(r'^        "([^"]+)",$', out, flags=re.MULTILINE)
+    assert entries == sorted(entries)
+
+
+def test_regen_hf_routing_snapshot_diff_summary_on_stderr(tmp_path, capsys):
+    """stderr carries the +/- summary vs the compiled-in constant: the tmp
+    offender is a `+` line, and (on a tmp root) every compiled-in member
+    reads as a `-` line — the delta the round's code review must see."""
+    from workflow_lint import HF_ROUTING_FROZEN_SNAPSHOT, regen_hf_routing_snapshot
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_offender.py").write_text(
+        "from huggingface_hub import hf_hub_download\nx = hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    assert regen_hf_routing_snapshot(repo_root=root) == 0
+    err = capsys.readouterr().err
+    assert f"+1 added, -{len(HF_ROUTING_FROZEN_SNAPSHOT)} removed" in err
+    assert "# + scripts/new_offender.py" in err
+    assert err.count("# - ") == len(HF_ROUTING_FROZEN_SNAPSHOT)
+
+
+def test_regen_hf_routing_snapshot_live_tree_subset_of_current():
+    """Walker-parity pin: on the LIVE tree the regen offender set is a
+    subset of the compiled-in snapshot (the check is green, so no offender
+    outside the snapshot exists). Divergence diagnosis is in the assert
+    message."""
+    from workflow_lint import (
+        _REPO_ROOT,
+        HF_ROUTING_FROZEN_SNAPSHOT,
+        _hf_routing_file_errors,
+        _hf_routing_scan_files,
+    )
+
+    offenders = {
+        rel for py, rel in _hf_routing_scan_files(_REPO_ROOT) if _hf_routing_file_errors(py, rel)
+    }
+    unexpected = sorted(offenders - HF_ROUTING_FROZEN_SNAPSHOT)
+    assert not unexpected, (
+        f"regen enumerates offenders outside HF_ROUTING_FROZEN_SNAPSHOT: {unexpected}. "
+        "If any of these is workflow_lint.py / verify_plan.py / backends/gcp.py, the "
+        "regen walker DIVERGED from the check walker (dropped a constant exclusion — "
+        "code bug). Otherwise a genuinely-new bare-call offender landed on main after "
+        "this branch forked — NOT a walker bug: rebase onto origin/main and re-run "
+        "(that red IS the staleness signal working; #1568 plan §6 kill criterion 3)."
+    )
+
+
+def test_workflow_lint_regen_hf_routing_snapshot_cli():
+    """rc=0 and stdout is EXACTLY the paste-ready literal: the early dispatch
+    means no `workflow_lint:` check-output line ever contaminates stdout
+    (the bundle never ran)."""
+    result = _run("--regen-hf-routing-snapshot")
+    assert result.returncode == 0, (
+        f"workflow_lint --regen-hf-routing-snapshot failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert result.stdout.startswith("HF_ROUTING_FROZEN_SNAPSHOT: frozenset[str] = frozenset(")
+    assert "workflow_lint:" not in result.stdout
+
+
+def test_regen_flag_early_dispatch_and_not_in_no_flags_tuple():
+    """Source pins (#1568): (a) the regen dispatch early-returns BEFORE the
+    no_flags computation; (b) the flag is NOT in the no_flags detection
+    tuple (the early return makes membership dead code — pin it OUT, the
+    inverse of the check's registration test); (c) the check's FAIL message
+    names the recovery flag (the message-hint durability pin)."""
+    src = _LINT.read_text(encoding="utf-8")
+    dispatch_at = src.index("if args.regen_hf_routing_snapshot:")
+    no_flags_at = src.index("no_flags = not (")
+    assert dispatch_at < no_flags_at, "regen dispatch must precede the no_flags computation"
+    tuple_match = re.search(r"no_flags = not \(.*?\n    \)", src, flags=re.DOTALL)
+    assert tuple_match is not None, "no_flags detection tuple not found in workflow_lint.py"
+    assert "regen_hf_routing_snapshot" not in tuple_match.group(0), (
+        "--regen-hf-routing-snapshot must NOT be in the no-flags detection tuple"
+    )
+    fn_start = src.index("def _hf_routing_file_errors(")
+    fn_end = src.index("def check_live_hf_retry_routing(", fn_start)
+    assert "--regen-hf-routing-snapshot" in src[fn_start:fn_end], (
+        "the live-hf-retry-routing FAIL message must name --regen-hf-routing-snapshot"
+    )
