@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1553,
+  "highest_id": 1554,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4316,6 +4316,13 @@
       "path": "tasks/completed/1553",
       "status": "completed",
       "title": "workflow-fix: pre_reg audit missed bare 'registered estimator' \u2014 head-noun gap, not v4 section scoping (#1482 escape)"
+    },
+    "1554": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1554",
+      "status": "proposed",
+      "title": "daily-fix: block worktree-local 'git -C <wt> merge main'"
     },
     "156": {
       "has_clean_result": false,
