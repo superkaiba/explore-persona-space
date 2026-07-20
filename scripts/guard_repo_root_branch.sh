@@ -149,7 +149,21 @@
 # (read-only pattern) is waived per-clause by the driver-loop waiver under
 # fail-closed refusals; quoted git-verb literals under OTHER command words
 # (`--note`/`-m` strings) still block with the same `--file`/`-F`
-# remediation. The #897 detectors use a TIGHT
+# remediation. A THIRD NARROWING (#1566): balanced SINGLE-QUOTED argument
+# payloads of a clause-initial python-script invocation whose path token
+# ends in `task.py` (optional `uv run` / `python` prefix; the boundary is
+# ANY `*task.py`-suffixed script, so `codex_task.py` / `file_infra_task.py`
+# are covered too — a future in-repo `*task.py` helper that shells out its
+# argv must revisit the mask_taskpy_arg_payloads() head whitelist as a
+# visible design decision, never rely on it silently) are masked to a
+# neutral sentinel by the mask_taskpy_arg_payloads() pre-pass below under a
+# fail-closed P1-P6 refusal predicate mirroring the ssh mask's R1-R8: a
+# single-quoted span is inert argv DATA to a non-shell-consumer executable,
+# so the canonical `task.py ... --note '<prose naming a git op>'` shape no
+# longer false-blocks. Double-quoted payloads, dollar / backslash /
+# backquote / redirect shapes, dirty quote prefixes, and latch-vocabulary
+# text all refuse (byte-identical -> today's disposition) and keep the
+# `--file` workaround. The #897 detectors use a TIGHT
 # `git <verb>` bigram anchor (`git [flags] restore|clean|reset|checkout`), so
 # plain-English "restore"/"clean"/"reset" inside a `-m` message (e.g.
 # `git commit -m "restore defaults"`) does NOT trip — only a full
@@ -984,6 +998,182 @@ mask_ssh_payload_separators() {
 }
 cmd=$(mask_ssh_payload_separators "$cmd")
 
+# (#1566) Mask the BODIES of balanced SINGLE-QUOTED argument payloads of a
+# clause-initial `*task.py` python-script invocation (`uv run python
+# scripts/task.py post-marker ... --note '<prose>'` and siblings: --title /
+# --origin-prompt / set-goal's positional payload — the pass is
+# flag-agnostic within a recognized clause) to the neutral sentinel
+# __EPM_ARG_PAYLOAD__ BEFORE the trigger-literal pre-filter below, so
+# marker/metadata prose that merely NAMES a git-mutation op no longer
+# false-blocks. A single-quoted bash string is inert argv DATA to a
+# non-shell-consumer executable — bash never executes it, and single-quoted
+# spans admit no escapes or nesting (the exact-parse property the ssh mask's
+# comment establishes above) — so the safety argument is per-span,
+# independent of which flag or positional slot precedes it. The load-bearing
+# boundary is the CLAUSE HEAD, not the flag: the head whitelist admits only
+# a python-script invocation whose path token ends in `task.py` (never a
+# shell consumer like `bash -c` / `eval` / `ssh` / `xargs`, whose quoted
+# args ARE executable code). NOTE the boundary is ANY `*task.py`-suffixed
+# script — `codex_task.py` / `file_infra_task.py` are covered too; a future
+# in-repo `*task.py` helper that shells out its argv must revisit this head
+# whitelist as a visible design decision, never rely on it silently.
+#
+# Masking fires ONLY when the whole prospective clause passes a fail-closed
+# refusal predicate; ANY refusal returns the input BYTE-IDENTICAL (today's
+# disposition, `--file` workaround). The arms (P-series, mirroring the ssh
+# mask's R1-R8 above; monotonicity: the ONLY rewrite is single-quoted span
+# BODIES inside accepted candidates, so every disposition-relevant literal
+# outside payloads survives, and P4/P6 guarantee the latch trajectory of
+# every surviving clause is identical to today's):
+#   P1  head shape — clause-initial optional `uv run`, optional
+#       `python[0-9.]*`, a safe-charset path token ending in `task.py`,
+#       then a word-shaped subcommand token. A quoted or dollar-bearing
+#       path (e.g. a "$REPO_ROOT/..." spelling) cannot match — refused.
+#   P2  safe charset in the NON-payload span — between head, quoted spans,
+#       and clause end, ONLY [A-Za-z0-9_.@:%=+,~/ \t-] is allowed. A strict
+#       SUPERSET of the ssh mask's R2: additionally excludes ALL `$`
+#       (ANSI-C $'...' quoting processes escaped quotes, so a `$` adjacent
+#       to a quote breaks the exact-parse guarantee — blanket exclusion is
+#       the simplest sound rule), all backslashes (escaped-quote hazard),
+#       `"` (double-quoted payloads refuse => byte-identical => the
+#       existing known-limitation pins keep their disposition), `#`, globs,
+#       parens/braces, redirects, backticks, and the \x01 splitter
+#       sentinel.
+#   P3  exact single-quote payload parse — at `'` the span runs to the next
+#       `'` (exact by bash single-quote semantics; the record re-join below
+#       means a span may contain a literal newline); no closing quote =>
+#       refuse. The BODY is replaced by the sentinel, the quotes are kept.
+#       Multiple spans per clause each mask (the multi-flag case); consumed
+#       pairs do NOT set saw_quote (ssh-mask parity), so later candidates
+#       in a compound still compose.
+#   P4  latch/WT vocabulary isolation (R6+R8 parity, applied to the WHOLE
+#       candidate INCLUDING payload bodies): refuse on cd-latch vocabulary
+#       (`cd` + /tmp/ or .claude/worktrees/) or `WT=` anywhere in the
+#       candidate. Keeps every latch-arming shape at today's disposition.
+#       COUPLING NOTE: this vocabulary mirrors the driver-loop latch greps
+#       (the `^cd +[^;&|]*\.claude/worktrees/` / `^cd +/tmp/` /
+#       `^(export +)?WT=` greps below) — a future latch-vocabulary addition
+#       there updates P4/P6 in the same edit (same maintenance class as
+#       R6/R8).
+#   P5  clean prefix quote-state (R5 parity, the critical arm): refuse when
+#       ANY quote char (single OR double) was seen before the candidate
+#       outside previously-accepted candidates' consumed pairs — a
+#       pre-opened quote could make the scanned "payload" live LOCAL code
+#       (the local-code-swallow hole); strict any-quote refusal because an
+#       apostrophe-parity check misses the pre-opened-double-quote variant.
+#   P6  latch-clean prefix (R7 parity, deliberately STRICTER than a
+#       verbatim R7/R8 copy — R8 checks the candidate only): refuse if the
+#       PREFIX carries the P4 vocabulary (cd-latch vocab OR `WT=`) —
+#       guarantees latch state 0 at candidate entry, so removing
+#       payload-internal separators (which today create latch-resetting
+#       mis-split boundaries) can never suppress a load-bearing latch reset
+#       or a WT arming/disarming transition.
+# Arms that deliberately do NOT transfer from R1-R8: R3 (ssh local-exec
+# options — no ssh head here), R4 (repo-path spellings — a repo path in
+# inert argv is prose; refusing it would re-block the common "note names
+# the repo path" case), and R1's payload-must-be-final-token (trailing
+# tokens after a payload are more inert argv, still bounded by the P2
+# charset walk — a redirect/quote/dollar in the tail refuses via P2).
+# The sentinel __EPM_ARG_PAYLOAD__ is word characters inside kept quotes:
+# it cannot form a separator, a trigger literal, a latch match, or glue a
+# `git <verb>` bigram. Collision with genuine payload text is harmless —
+# the mask is guard-internal; bash receives the ORIGINAL command either
+# way. Fail-soft: the gated call below uses the same command-substitution
+# shape as the two passes above — an awk failure yields an empty cmd and
+# the pre-filter exits 0; additionally every NPB block-pin fixture in
+# tests/test_guard_repo_root_branch.py contains `task.py`, so a broken awk
+# body (empty output => exit 0) flips those pinned exit-2 tests and
+# surfaces in the suite.
+mask_taskpy_arg_payloads() {
+  printf '%s' "$1" | awk '
+    BEGIN { nrec = 0 }
+    { rec[nrec++] = $0 }
+    END {
+      # Re-join records with the newlines awk consumed (ssh-mask parity; a
+      # trailing newline is stripped either way by the caller command
+      # substitution — status quo at every existing normalization stage).
+      s = ""
+      for (r = 0; r < nrec; r++) s = s (r ? "\n" : "") rec[r]
+      n = length(s)
+      i = 1; atstart = 1; out = ""; saw_quote = 0
+      while (i <= n) {
+        headlen = 0
+        if (atstart) {
+          # P1: optional `uv run`, optional `python[0-9.]*`, a safe-charset
+          # path token ending in task.py, then a word-shaped subcommand.
+          if (match(substr(s, i), /^(uv[ \t]+run[ \t]+)?(python[0-9.]*[ \t]+)?[A-Za-z0-9_.\/~-]*task\.py[ \t]+[A-Za-z0-9_-]+[ \t]/)) headlen = RLENGTH
+        }
+        if (headlen > 0) {
+          # Candidate. Walk the clause: safe chars (P2) advance; a
+          # single-quoted span (P3) is recorded exactly; a separator or
+          # end-of-string completes the candidate; anything else refuses.
+          j = i + headlen
+          nspans = 0
+          ok = 1
+          while (j <= n) {
+            c = substr(s, j, 1)
+            if (c == "\047") {
+              cq = index(substr(s, j + 1), "\047")
+              if (cq == 0) { ok = 0; break }   # P3: no closing quote
+              nspans++
+              sp_open[nspans] = j              # index of the opening quote
+              sp_len[nspans] = cq - 1          # payload body length
+              j = j + 1 + cq                   # first char past closing quote
+              continue
+            }
+            if (c ~ /[;&|\n]/) break           # clause end: candidate complete
+            if (c ~ /[A-Za-z0-9_.@:%=+,~\/ \t-]/) { j++; continue }   # P2
+            ok = 0; break                      # P2: unsafe char -> refuse
+          }
+          cand = substr(s, i, j - i)           # head + spans + tail
+          pfx  = substr(s, 1, i - 1)           # everything before candidate
+          if (ok && nspans > 0 &&
+              saw_quote == 0 &&
+              !(cand ~ /cd[ \t]/ && (index(cand, "/tmp/") > 0 ||
+                                     index(cand, ".claude/worktrees/") > 0)) &&
+              index(cand, "WT=") == 0 &&
+              !(pfx ~ /cd[ \t]/ && (index(pfx, "/tmp/") > 0 ||
+                                    index(pfx, ".claude/worktrees/") > 0)) &&
+              index(pfx, "WT=") == 0) {
+            # arms in order: P2/P3 (walk above) | P5 prefix quote-state |
+            # P4 candidate latch vocab + WT | P6 prefix latch vocab + WT.
+            # ACCEPTED: the ONLY rewrite the function ever performs is
+            # replacing each span BODY with the sentinel (quotes kept).
+            pos = i
+            for (k = 1; k <= nspans; k++) {
+              out = out substr(s, pos, sp_open[k] - pos) "\047__EPM_ARG_PAYLOAD__\047"
+              pos = sp_open[k] + sp_len[k] + 2
+            }
+            out = out substr(s, pos, j - pos)
+            i = j; atstart = 0
+            # Consumed pairs do NOT set saw_quote (ssh-mask parity): by P5
+            # they are bash\047s own balanced pairs, so later candidates in
+            # a compound still compose.
+            continue
+          }
+          # REFUSED: copy the head verbatim — minus the single trailing
+          # whitespace char the head regex consumed, which the char path
+          # re-emits — and fall back to the char path; the refused
+          # candidate\047s own quotes then set saw_quote, so any LATER
+          # candidate in this command also refuses (conservative
+          # composition, ssh-mask parity).
+          out = out substr(s, i, headlen - 1); i += headlen - 1; atstart = 0
+          continue
+        }
+        c = substr(s, i, 1)
+        out = out c
+        if (c == "\047" || c == "\042") saw_quote = 1
+        if (c ~ /[;|&\n]/) atstart = 1
+        else if (c !~ /[ \t]/) atstart = 0
+        i++
+      }
+      printf "%s", out
+    }'
+}
+# Cheap literal gate: the awk pass spawns only for task.py-mentioning
+# commands (the hook runs on EVERY Bash call); zero added cost otherwise.
+case "$cmd" in *task.py*) cmd=$(mask_taskpy_arg_payloads "$cmd") ;; esac
+
 # Only consider git checkout/switch/restore/clean/reset/merge/rebase/
 # cherry-pick/revert/am invocations at all (loose pre-filter — a cheap skip,
 # not a classifier; the tight per-verb anchors live in classify_clause).
@@ -1783,7 +1973,7 @@ NEVER point -C at the repo root itself for a destructive op — for repo-root re
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> fetch origin +refs/heads/main:refs/remotes/origin/main, then git -C <worktree> merge --ff-only origin/main (NEVER local main — its unpushed root commits contaminate the branch, #1530).
-For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
+For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>. As of #1566 the canonical SINGLE-QUOTED task.py argument shape is masked (allowed): a clause-initial uv run python .../task.py invocation whose quoted note/title/prompt text sits in an otherwise plain clause no longer false-blocks — so a residual block on task.py argument text means a non-canonical shape (double quotes, dollar or backslash or backquote forms, redirects, a quoted or latch-vocabulary prefix); use the --file route for those.
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals).
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
