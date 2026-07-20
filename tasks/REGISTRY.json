@@ -4397,8 +4397,8 @@
     "1564": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1564",
-      "status": "planning",
+      "path": "tasks/approved/1564",
+      "status": "approved",
       "title": "daily-fix: watcher audit - completed without epm:merged"
     },
     "1565": {
