@@ -2946,6 +2946,217 @@ def test_worktree_local_main_merge_pipe_producer(monkeypatch):
     assert _WT_LM_ARM_A_LABEL in proc.stderr
 
 
+# ---------------------------------------------------------------------------
+# task.py quoted-argument payload masking (#1566).
+#
+# mask_taskpy_arg_payloads() masks balanced SINGLE-QUOTED argument payloads of
+# a clause-initial `*task.py` python-script invocation to a neutral sentinel
+# BEFORE the trigger-literal pre-filter, under a fail-closed P1-P6 refusal
+# predicate (head shape / safe non-payload charset / exact quote parse /
+# latch-vocabulary isolation incl. payload bodies / clean prefix quote-state /
+# latch-clean prefix incl. WT=). ANY refusal leaves the input byte-identical
+# -> today's blocked disposition with the --file workaround.
+#
+# Anti-vacuity contract (#1566 plan section 5): every NP* fixture embeds the
+# shared _TASKPY_PAYLOAD constant — a full two-token pre-filter-matching prose
+# string — and the NPB5/NPB6 twins pin exit 2 for the SAME payload when NOT in
+# the maskable single-quoted shape, so each NP exit 0 is attributable to the
+# mask rather than to a payload that never engaged the guard. The pre-filter
+# (script: `grep -qE '\bgit\b...' || exit 0`) requires BOTH the `git` token
+# AND a verb-set token, so test_taskpy_payload_matches_prefilter additionally
+# pins the constant against the guard's OWN pre-filter regex (drift of either
+# side fails loud).
+
+# Mirrors the /tmp/issue-1566-repro.json incident payload: prose naming a
+# branch-creation op (`git` + `checkout` = both pre-filter tokens; the
+# branch-creation detector blocks it without ref resolution).
+_TASKPY_PAYLOAD = "clarifier context: the guard blocks git checkout -b at the repo root"
+
+_TASKPY = "uv run python scripts/task.py"
+
+
+def test_taskpy_payload_matches_prefilter():
+    """Anti-vacuity: the shared payload matches the guard's own pre-filter regex."""
+    script_text = SCRIPT.read_text()
+    m = re.search(r"^echo \"\$cmd\" \| grep -qE '([^']+)' \|\| exit 0$", script_text, re.M)
+    assert m, "guard pre-filter line not found in script"
+    assert re.search(m.group(1), _TASKPY_PAYLOAD), (m.group(1), _TASKPY_PAYLOAD)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            f"{_TASKPY} post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NP1-incident_post_marker_note",
+        ),
+        pytest.param(
+            f"{_TASKPY} new --kind infra --title '{_TASKPY_PAYLOAD}'",
+            id="NP2-new_title",
+        ),
+        pytest.param(
+            f"{_TASKPY} new --kind infra --origin-prompt '{_TASKPY_PAYLOAD}'",
+            id="NP3-origin_prompt",
+        ),
+        pytest.param(
+            f"{_TASKPY} new --title '{_TASKPY_PAYLOAD}' --origin-prompt '{_TASKPY_PAYLOAD}'",
+            id="NP4-multi_span_one_clause",
+        ),
+        pytest.param(
+            # set-goal takes its payload as a POSITIONAL — the flag-agnostic
+            # coverage a flag-enumeration design would miss.
+            f"{_TASKPY} set-goal 1566 '{_TASKPY_PAYLOAD}'",
+            id="NP5-positional_payload",
+        ),
+        pytest.param(
+            # Quote-free safe prefix clause: P5/P6 pass (no quotes, no latch
+            # vocabulary — /home/user is neither /tmp/ nor a worktree path).
+            f"cd /home/user && {_TASKPY} post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NP6-quote_free_safe_prefix",
+        ),
+        pytest.param(
+            # Separator INSIDE the payload — the mis-split incident class:
+            # unmasked, the `;` splits the clause and the payload tail
+            # classifies clause-initial.
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'sync first; {_TASKPY_PAYLOAD}'",
+            id="NP7-separator_in_payload_mis_split_class",
+        ),
+        pytest.param(
+            # Absolute-path invocation head (R4 deliberately does not
+            # transfer: a repo path in inert argv is prose).
+            "uv run python /home/thomasjiralerspong/explore-persona-space/scripts/task.py"
+            f" post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NP8-absolute_path_head",
+        ),
+    ],
+)
+def test_taskpy_arg_payload_masking_allows(cmd):
+    """Canonical single-quoted task.py argument payloads mask -> exit 0 (#1566)."""
+    assert _run(cmd) == 0
+
+
+def test_taskpy_payload_embedded_newline_rejoin_pinned():
+    """NPQ1 (#1566): literal newline INSIDE the single-quoted payload — pinned ALLOW.
+
+    Deliberately pins the REALIZED disposition: the awk pre-pass re-joins
+    stdin records with the newlines awk consumed, so P3's exact single-quote
+    parse spans the embedded newline and the payload masks -> exit 0. The pin
+    is the point — if the record re-join ever changed (e.g. the span scan
+    stopped at a record boundary), P3 would refuse and this shape would
+    revert to exit 2; this test makes that change visible, not incidental.
+    """
+    cmd = f"{_TASKPY} post-marker 1566 epm:progress --note 'line one\n{_TASKPY_PAYLOAD}'"
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # A masked benign payload must not swallow a LATER real mutation.
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'benign note' && git switch fix/i1566",
+            id="NPB1-real_mutation_later_clause",
+        ),
+        pytest.param(
+            # ... nor an EARLIER one in the same compound.
+            f"git switch fix/i1566 && {_TASKPY} post-marker 1566 epm:progress --note 'benign note'",
+            id="NPB2-real_mutation_earlier_clause",
+        ),
+        pytest.param(
+            # Semicolon-separated twin of NPB1 (guidance item 5).
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'benign note'; git switch fix/i1566",
+            id="NPB1b-real_mutation_later_clause_seq",
+        ),
+        pytest.param(
+            # Command substitution as the payload — refused at `"` (P2).
+            f'{_TASKPY} post-marker 1566 epm:progress --note "$(compose_note {_TASKPY_PAYLOAD})"',
+            id="NPB3-command_substitution_payload",
+        ),
+        pytest.param(
+            # Backtick variant — refused at the backtick (P2).
+            f'{_TASKPY} post-marker 1566 epm:progress --note "`{_TASKPY_PAYLOAD}`"',
+            id="NPB4-backtick_payload",
+        ),
+        pytest.param(
+            # DOUBLE-quoted payload with the SHARED trigger: the anti-vacuity
+            # twin — pins that the constant trips the guard when not
+            # single-quote-masked, AND that the existing double-quoted
+            # known-limitation disposition class is untouched.
+            f'{_TASKPY} post-marker 1566 epm:progress --note "{_TASKPY_PAYLOAD}"',
+            id="NPB5-double_quoted_shared_payload_twin",
+        ),
+        pytest.param(
+            # UNQUOTED note text with the shared trigger — second twin.
+            f"{_TASKPY} post-marker 1566 epm:progress --note {_TASKPY_PAYLOAD}",
+            id="NPB6-unquoted_shared_payload_twin",
+        ),
+        pytest.param(
+            # ANSI-C quoting — pins the blanket `$` exclusion rationale
+            # ($'...' processes escaped quotes, breaking the exact parse).
+            f"{_TASKPY} post-marker 1566 epm:progress --note $'{_TASKPY_PAYLOAD}'",
+            id="NPB7-ansi_c_quoted_payload",
+        ),
+        pytest.param(
+            # Backslash-escaped-quote idiom ('it'\''s ...) — refused at the
+            # backslash after the first consumed span (P2).
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'it'\\''s noted: {_TASKPY_PAYLOAD}'",
+            id="NPB8-escaped_quote_idiom",
+        ),
+        pytest.param(
+            # Trailing redirect after the payload — refused at `>` (P2).
+            f"{_TASKPY} post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}' > /tmp/i1566.log",
+            id="NPB9-trailing_redirect",
+        ),
+        pytest.param(
+            # Pre-opened SINGLE quote before the candidate — P5 conservatism.
+            f"echo 'x' && {_TASKPY} post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NPB10-pre_opened_single_quote_prefix",
+        ),
+        pytest.param(
+            # Clause-initial shell-consumer head lookalike: quoted args of a
+            # shell consumer ARE executable code — the P1 head whitelist is
+            # the boundary (the piped xargs shape is pinned separately at
+            # GPN3-xargs_exec).
+            f"bash -c '{_TASKPY_PAYLOAD}'",
+            id="NPB11-shell_consumer_head",
+        ),
+        pytest.param(
+            # cd-latch vocabulary INSIDE the payload — P4 covers payload
+            # bodies, keeping every latch-arming shape at today's
+            # disposition.
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'run cd"
+            f" .claude/worktrees/issue-1566 first, then: {_TASKPY_PAYLOAD}'",
+            id="NPB12-latch_vocab_in_payload",
+        ),
+        pytest.param(
+            # Pre-opened DOUBLE-quote flavor of P5 (with a separator char
+            # inside the double-quoted string) — the variant an
+            # apostrophe-parity check would miss.
+            f"echo \"a; b\" && {_TASKPY} post-marker 1566 epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NPB13-pre_opened_double_quote_prefix",
+        ),
+        pytest.param(
+            # Prefix WT= assignment clause — pins that P6's vocabulary
+            # includes WT= (deliberately STRICTER than a verbatim R7/R8
+            # parity copy, which checks the candidate only).
+            f"WT=.claude/worktrees/issue-1566; {_TASKPY} post-marker 1566"
+            f" epm:progress --note '{_TASKPY_PAYLOAD}'",
+            id="NPB14-prefix_wt_assignment",
+        ),
+        pytest.param(
+            # Raw-NEWLINE-separated real-mutation variant of NPB1 (the
+            # NL-sentinel splitter path).
+            f"{_TASKPY} post-marker 1566 epm:progress --note 'benign note'\ngit switch fix/i1566",
+            id="NPB15-newline_separated_real_mutation",
+        ),
+    ],
+)
+def test_taskpy_arg_payload_masking_refusals_block(cmd):
+    """P1-P6 refusals keep today's blocked disposition byte-identical (#1566)."""
+    assert _run(cmd) == 2
+
+
 def test_zz_production_sidecar_untouched_by_suite():
     """The suite must never create/append the PRODUCTION deny sidecar (#1528).
 
