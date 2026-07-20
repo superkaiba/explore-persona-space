@@ -4418,8 +4418,8 @@
     "1567": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1567",
-      "status": "approved",
+      "path": "tasks/running/1567",
+      "status": "running",
       "title": "daily-fix: pin git context in guard deny-shape tests"
     },
     "1568": {
