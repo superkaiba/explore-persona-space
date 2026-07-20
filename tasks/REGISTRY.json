@@ -4383,8 +4383,8 @@
     "1562": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1562",
-      "status": "planning",
+      "path": "tasks/approved/1562",
+      "status": "approved",
       "title": "daily-fix: committed scripts, not inline -c, for probe runs"
     },
     "1563": {
