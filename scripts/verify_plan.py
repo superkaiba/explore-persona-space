@@ -7,8 +7,11 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Three disclosed read-only
-exceptions: check 34, when its trigger fires, ``stat()``s the live sizes of
+``epm:plan-verify`` marker — never this script). Four disclosed read-only
+exceptions: check 31, when its trigger fires and a pin-form satisfier names
+a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
+the repo root — read-only, no import, no network (#1557); check 34, when
+its trigger fires, ``stat()``s the live sizes of
 the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
 writes, still no network; check 37, when its trigger fires, reads
@@ -151,7 +154,12 @@ labeled-line forms):
   - ``N/A — no multi-field bundle reuse`` (check 30)
   - ``Durability pin: N/A — <one-line reason>`` / alias
     ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
-    mandatory — a bare ``Durability pin: N/A`` still WARNs)
+    mandatory — a bare ``Durability pin: N/A`` still WARNs. NEW-pin
+    registration satisfier, #1557 — not an N/A escape: a pin line naming a
+    ``tests/`` test FILE absent from disk additionally needs
+    selector-registration evidence, either the un-negated registry-tuple
+    token on the pin line itself or one line-start ``Selector
+    registration:`` labeled line carrying it)
   - ``N/A — no fit-family phases`` (check 32 fit branch; the battery
     branch shares check 12's ``N/A — no draw battery``)
   - ``N/A — no per-rung checkpoint persistence`` / alias
@@ -5083,18 +5091,113 @@ def _c31_trigger_lines(plan: str) -> list[str]:
     return out
 
 
-def _c31_satisfier(plan: str) -> str | None:
-    """First satisfier line: ``Durability pin: <...test_...>`` (a standing OR
-    planned pin test — the verifier cannot and need not distinguish), or a
-    reason-bearing NA escape. Bare ``Durability pin: N/A`` (no reason) does
-    NOT satisfy."""
+def _c31_satisfier(plan: str) -> tuple[str, str] | None:
+    """First satisfier line as ``(form, detail)``: ``("pin", ...)`` for
+    ``Durability pin: <...test_...>`` (a standing OR planned pin test — the
+    NEW-pin registration sub-check below adjudicates the planned case), or
+    ``("na", ...)`` for a reason-bearing NA escape. Bare ``Durability pin:
+    N/A`` (no reason) does NOT satisfy. Detail strings are byte-preserved
+    from the pre-#1557 single-string return (single caller)."""
     for line in plan.splitlines():
         m = _C31_PIN_LABEL_RE.search(line)
         if m and _TEST_IDENT_RE.search(line[m.end() :]):
-            return f"pin named ({line.strip()[:80]!r})"
+            return ("pin", f"pin named ({line.strip()[:80]!r})")
         if _C31_PIN_NA_RE.search(line) or _C31_NA_ALIAS_RE.search(line):
-            return f"no-pin justification declared ({line.strip()[:80]!r})"
+            return ("na", f"no-pin justification declared ({line.strip()[:80]!r})")
     return None
+
+
+# NEW-pin selector-registration sub-check (#1557; the #1546 parked gap): a
+# pin FILE absent from disk is branch-new; a new test file outside
+# select_step9c_tests.py's WORKFLOW_INVARIANT tuple never runs on a LATER
+# SKILL.md diff (the .claude/skills/**/SKILL.md WORKFLOW_SURFACE_GLOBS
+# entry short-circuits per-file mapping; .md files have no stem-test map)
+# — the pin gates only its own landing round (lineage: #1210's pin landed
+# unregistered; #1242/#1268 registered after the fact). File grain IS the
+# gate-visibility grain: the tuple registers FILES, so a new test FUNCTION
+# in a registered file is selector-visible by construction and never
+# flags. Registration evidence is PLAN-GLOBAL (the base satisfier's
+# granularity); whether the diff actually ships the registration stays
+# with the code-reviewer (the c11/c15 bound). The negation window is
+# one-sided (chars BEFORE the token only, the c41 idiom) — a disclosed
+# residual; do not widen speculatively without a corpus re-scan. Negation
+# tokens: `pending` deliberately EXCLUDED ("registration pending" is
+# honest commitment phrasing in a plan, where everything is pending by
+# construction); `excluded|removed` included (anti-commitment).
+# Calibration (#1557 scan, 2026-07-20; old = origin/main@ef23fa28df,
+# new = this file; corpus = tasks/*/*/plans/v*.md + .claude/plans/*.md
+# from the main root, 3,024 files; kind="infra" uniform — an UPPER BOUND
+# on the production fire set, kind-exempt plans SKIP in production):
+# transitions SKIP->SKIP 2,390 / PASS->PASS 303 / WARN->WARN 328 /
+# PASS->WARN 3; 0 forbidden flips (no WARN->PASS, no fire->SKIP, no flip
+# on a plan without an absent-path pin). The 3 PASS->WARN plan-versions
+# are version-siblings of ONE distinct plan (#1326 v1-v3), hand-inspected
+# true positive: its pin file is absent from today's tree (never landed
+# under that name) with no registration statement — exactly the #1546
+# gap shape. Historically-new-now-landed pins (#1210/#1242/#1268 era)
+# correctly read standing against today's tree -> no churn. ANY future
+# change to these regexes re-runs the corpus scan and records the
+# realized numbers here (the c27/c32 gate precedent).
+_C31_PIN_PATH_RE = re.compile(r"\b(?:tests/(?:[\w.-]+/)*)?test_\w+\.py\b")
+_C31_REG_TOKEN_RE = re.compile(r"\bWORKFLOW_INVARIANT\b")
+_C31_REG_NEG_RE = re.compile(
+    r"(?i)\b(?:not?|never|without|un-?registered|absent|missing|outside|excluded|removed)\b"
+)
+_C31_REG_NEG_WINDOW = 40
+_C31_REG_LABEL_RE = re.compile(r"(?i)^\s*(?:[-*>+]\s+)*(?:\*\*)?selector registration\b")
+_C31_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+
+def _c31_pin_lines(plan: str) -> list[str]:
+    """ALL lines satisfying the pin-form predicate (Durability-pin label +
+    test ident after it) — RAW scan, same convention as ``_c31_satisfier``."""
+    out: list[str] = []
+    for line in plan.splitlines():
+        m = _C31_PIN_LABEL_RE.search(line)
+        if m and _TEST_IDENT_RE.search(line[m.end() :]):
+            out.append(line)
+    return out
+
+
+def _c31_new_pin_paths(plan: str) -> list[str]:
+    """Sorted, normalized ``tests/`` paths named on pin lines whose FILE is
+    absent under ``_C31_REPO_ROOT`` (=> branch-new). A bare filename
+    normalizes to ``tests/<name>`` (the c41 ``_C41_TESTPATH_RE``
+    convention)."""
+    paths: set[str] = set()
+    for line in _c31_pin_lines(plan):
+        for m in _C31_PIN_PATH_RE.finditer(line):
+            p = m.group(0)
+            if not p.startswith("tests/"):
+                p = f"tests/{p}"
+            if not (_C31_REPO_ROOT / p).is_file():
+                paths.add(p)
+    return sorted(paths)
+
+
+def _c31_reg_token_unnegated(line: str) -> bool:
+    """``WORKFLOW_INVARIANT`` token with no negation token in the
+    ``_C31_REG_NEG_WINDOW`` chars before it (the ``_c41_line_triggers``
+    window idiom)."""
+    for m in _C31_REG_TOKEN_RE.finditer(line):
+        window = line[max(0, m.start() - _C31_REG_NEG_WINDOW) : m.start()]
+        if not _C31_REG_NEG_RE.search(window):
+            return True
+    return False
+
+
+def _c31_registration_named(plan: str) -> bool:
+    """Form A: the un-negated tuple token on a pin line. Form B: a
+    line-start ``Selector registration:``-labeled line carrying the
+    un-negated token. RAW scan (a registration line may legitimately sit in
+    a fenced diff/section block, matching the pin satisfier's convention)."""
+    for line in _c31_pin_lines(plan):
+        if _c31_reg_token_unnegated(line):
+            return True
+    for line in plan.splitlines():
+        if _C31_REG_LABEL_RE.search(line) and _c31_reg_token_unnegated(line):
+            return True
+    return False
 
 
 def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
@@ -5111,9 +5214,28 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     ledger-entry classes with no pin-test practice). Known residual FP
     class (disclosed): scope-table rows whose negation token sits >24
     chars from the edit verb (#1102 shape) still trigger — the 1-line NA
-    escape is the remedy. Out of mechanical scope: whether a named pin
-    test actually exists / ships (the code-reviewer checks the diff, same
-    bound as c11/c15)."""
+    escape is the remedy.
+
+    NEW-pin selector-registration branch (#1557; the #1546 parked gap):
+    when the pin-form satisfier names a ``tests/…test_*.py`` FILE absent
+    from disk (branch-new — the c41 existence-gate reading; file grain
+    because the selector's ``WORKFLOW_INVARIANT`` tuple registers FILES),
+    the plan must additionally carry registration evidence — Form A: the
+    un-negated tuple token on the pin line; Form B: one line-start
+    ``Selector registration:`` labeled line carrying it — else WARN. NA
+    escapes short-circuit BEFORE any disk access (the c34 idiom).
+    Fail-open branches (disclosed under-triggers): a pin ident with no
+    extractable ``tests/`` path PASSes plain, and a ``--plan-file``
+    off-repo invocation (no ``tests/`` dir under the repo root) PASSes
+    with the sub-check noted skipped (the c41 off-repo doctrine). The
+    Goal's "rules-pin-discoverable" alternative is UNREACHABLE in v1
+    scope: this trigger fires on SKILL.md paths only, and the #1496
+    rules-pin discovery arm covers ``.claude/rules/*.md`` targets only —
+    it gains a code arm only if the trigger ever widens (a future
+    calibration decision). Out of mechanical scope: whether the named
+    pin test / registration actually SHIPS in the diff (the
+    code-reviewer checks the diff, same bound as c11/c15) — the disk
+    probe here classifies NEW-vs-standing only."""
     cid, name = "c31_skillmd_prose_pin", "SKILL.md prose edit backed by a durability pin"
     if kind not in ("infra", "batch"):
         return _skip(
@@ -5123,8 +5245,45 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     if not trig:
         return _skip(cid, name, "no SKILL.md edit-commitment line detected")
     sat = _c31_satisfier(plan)
-    if sat:
-        return _pass(cid, name, sat)
+    if sat is not None:
+        form, sat_detail = sat
+        if form == "na":
+            # NA short-circuits before any disk access (the c34 NA idiom).
+            return _pass(cid, name, sat_detail)
+        tests_dir = _C31_REPO_ROOT / "tests"
+        if not tests_dir.is_dir():
+            # --plan-file off-repo: cannot adjudicate NEW-vs-standing;
+            # fail-open (the c41 off-repo doctrine).
+            return _pass(
+                cid,
+                name,
+                sat_detail + " — registration sub-check skipped (tests/ absent under repo root)",
+            )
+        new_paths = _c31_new_pin_paths(plan)
+        if new_paths and not _c31_registration_named(plan):
+            return _warn(
+                cid,
+                name,
+                f"plan pins SKILL.md prose to a branch-NEW test file ({', '.join(new_paths[:3])}"
+                " — absent from disk) but names no Step-9c selector registration — a new pin "
+                "file outside the selector's WORKFLOW-INVARIANT tuple never runs on a later "
+                "SKILL.md diff (the workflow-surface glob short-circuits; .md files have no "
+                "stem-test map), so the pin gates nothing after its own landing round (#1210 "
+                "landed unregistered; #1242/#1268 registered after the fact; #1546). Remedy: "
+                "state the registration in the plan — the registry tuple's name "
+                "(underscore-joined) on the `Durability pin:` line itself, or on one standalone "
+                "line starting `Selector registration:` naming the "
+                "scripts/select_step9c_tests.py tuple — or pin via a new test added to an "
+                "already-registered test file",
+            )
+        if new_paths:
+            return _pass(
+                cid,
+                name,
+                sat_detail + f" — NEW pin file(s) {', '.join(new_paths)} with Step-9c selector "
+                "registration named",
+            )
+        return _pass(cid, name, sat_detail)
     return _warn(
         cid,
         name,
