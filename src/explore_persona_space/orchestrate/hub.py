@@ -707,6 +707,22 @@ def _filecount_fallback_enabled() -> bool:
 HUB_DIR_FILE_LIMIT = 10_000
 # Advisory watermark = the gotchas.md shard recipe (shard_NNNN/ of <=5000).
 HUB_DIR_FILECOUNT_WARN = 5_000
+# Advisory per-COMMIT total-staged-files THROUGHPUT watermark (#1571): one
+# upload_folder commit of many small files crawls in Hub-side per-operation
+# pre-processing regardless of byte size (#1481 incident, session 98ff0f37:
+# 31,000 files / 135 MB in one commit — killed exit 144 after >20 min,
+# repacked into <stem>.shardNN.jsonl line-shards). huggingface_hub 0.36.2's
+# upload_folder prep path already logs its own WARNING above 200 filtered
+# files recommending `upload_large_folder` (hf_api.py:9610-9617); this
+# project tier deliberately differs: a tunable, testable knob at 2,000 whose
+# remedy is the pack/shard recipe (.claude/rules/upload-policy.md) — the
+# project deliberately does not use `upload_large_folder`. HF's hub docs
+# recommend ~50-100 files per commit and merging small files into fewer
+# larger ones (repositories-recommendations); 2,000 = 20x that
+# recommendation — quiet on normal-scale uploads, loud well below the
+# incident scale. DISTINCT from the two SERVER caps above (10k/dir #658,
+# 100k/repo #1108): this tier NEVER raises. warn_total <= 0 disables.
+HUB_COMMIT_FILECOUNT_WARN = 2_000
 
 
 class HubDirFileCountError(ValueError):
@@ -768,10 +784,21 @@ def assert_hub_dir_filecounts(
     ignore_patterns: list[str] | None = None,
     limit: int = HUB_DIR_FILE_LIMIT,
     warn_at: int = HUB_DIR_FILECOUNT_WARN,
+    warn_total: int = HUB_COMMIT_FILECOUNT_WARN,
 ) -> dict[str, int]:
     """Fail loud BEFORE staging when any target repo dir would receive
     more than ``limit`` files in one commit (strict ``>``; the server accepts
     exactly 10,000). Returns the per-dir counts (for logging / tests).
+
+    Third tier (#1571) — ADVISORY-only per-COMMIT total: when the commit's
+    TOTAL staged file count across all target dirs exceeds ``warn_total``
+    (strict ``>``; default :data:`HUB_COMMIT_FILECOUNT_WARN`), log ONE
+    WARNING pointing at the pack/shard recipe. This is a THROUGHPUT nudge
+    (many-small-file commits crawl in Hub-side per-operation pre-processing,
+    #1481) — not a server 400 like the per-DIR ``limit`` tier — so it NEVER
+    raises. ``warn_total <= 0`` disables it; the kill switch
+    ``EPM_SKIP_HF_DIR_FILECOUNT_GUARD`` does NOT gate it (an advisory log
+    line blocks nothing, so there is nothing to unwedge).
 
     Public — direct ``HfApi.upload_folder`` callers in ``scripts/`` call this
     one-liner before their upload (the ``--check-hub-dir-filecount`` lint
@@ -799,6 +826,27 @@ def assert_hub_dir_filecounts(
         allow_patterns=allow_patterns,
         ignore_patterns=ignore_patterns,
     )
+    total = sum(counts.values())
+    if warn_total > 0 and total > warn_total:
+        # Advisory THROUGHPUT tier (#1571) — never raises, independent of the
+        # SERVER-cap tiers below. NOTE: any #1108 model-repo overflow-fallback
+        # re-entry of _upload with >2k staged files re-runs the guard and logs
+        # this twice (idempotent + harmless — same note as the kill-switch
+        # WARN below). Comma-format the numbers (the "500"-substring trap, msg
+        # note below); this is a log line (never an exception), so the trap
+        # cannot bite, but the discipline stays uniform across the guard's
+        # messages.
+        logger.warning(
+            "upload stages %s files in ONE commit (advisory throughput "
+            "threshold %s) — many-small-file commits crawl in Hub-side "
+            "pre-processing regardless of byte size (#1481: a 31,000-file / "
+            "135 MB commit was killed and repacked). Prefer PACKING small "
+            "text/JSON files into <= 9 MB <stem>.shardNN.jsonl line-shards + "
+            "a manifest (.claude/rules/upload-policy.md), or fewer larger "
+            "files; proceeding — advisory only.",
+            f"{total:,}",
+            f"{warn_total:,}",
+        )
     offenders = {d: n for d, n in counts.items() if n > limit}
     if offenders:
         worst_dir, worst_n = max(offenders.items(), key=lambda kv: kv[1])
@@ -990,6 +1038,16 @@ def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | Non
     backoff ``min(180, 10*2^k)`` with 0-25% jitter (de-synchronizes fleet
     retries). Storage-quota-403 / non-transient re-raise IMMEDIATELY; on
     exhaustion the final exception propagates (fail-loud, no swallow).
+
+    Args:
+        fn: ZERO-ARG thunk — wrap the real call in a ``lambda``.
+        what: REQUIRED KEYWORD-ONLY log label naming the wrapped operation.
+            A positional call raises ``TypeError: _retry_upload() missing 1
+            required keyword-only argument: 'what'`` (#1571 incident) — pass
+            it explicitly:
+            ``retry_transient(lambda: api.upload_folder(...), what="upload_folder")``.
+        max_attempts / budget_s: keyword-only tuning knobs; see the bound
+            convention above.
     """
     budget = _retry_budget_s() if budget_s is None else budget_s
     start = time.monotonic()
@@ -1052,6 +1110,8 @@ def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | Non
 
 # Public, greppable name for per-issue dispatch scripts (#606: scripts assumed a
 # hub `_retry_transient` that never existed; the i528 family hand-rolled four copies).
+# Call shape: retry_transient(lambda: <hub call>, what="<label>") — 'what' is
+# keyword-only REQUIRED (#1571).
 retry_transient = _retry_upload
 
 
@@ -1085,6 +1145,18 @@ def verify_repo_paths_uploaded(
     falls back to ONE retried ``HfApi.file_exists`` HEAD probe instead of
     falsely reporting a successfully-uploaded file as missing. Transport/auth
     errors propagate after the retry budget.
+
+    Call shape (``path_in_repo`` is REQUIRED KEYWORD-ONLY — omitting it, or
+    trying to pass it as a positional 4th arg, raises ``TypeError``; the
+    #1571 incident's stumble was ``TypeError: ... missing 1 required
+    keyword-only argument: 'path_in_repo'``)::
+
+        missing = verify_repo_paths_uploaded(
+            HfApi(),
+            "superkaiba1/explore-persona-space-data",
+            expected_repo_paths,
+            path_in_repo="issue<N>_<slug>/raw_completions",
+        )
     """
     from huggingface_hub.utils import EntryNotFoundError
 
