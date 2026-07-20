@@ -33,15 +33,21 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
-import torch
+# load_dotenv() BEFORE torch: shared-VM thread caps freeze at torch import
+# (tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.extraction import extract_layer_activations
-from explore_persona_space.experiments.issue_825.common import (
+load_dotenv()
+
+import torch  # noqa: E402
+
+from explore_persona_space.analysis.extraction import (  # noqa: E402
+    extract_layer_activations,
+)
+from explore_persona_space.experiments.issue_825.common import (  # noqa: E402
     FROZEN_LAYERS,
     HF_DATA_REPO,
 )
-from explore_persona_space.orchestrate.env import load_dotenv
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -161,87 +167,6 @@ def capture_reader(model, tokenizer, contexts, draws_by_ctx, frozen, batch_size,
     return V, mask
 
 
-def _stream_parent_shard(shard_pt: Path, shard_json: Path, u2_turn_index: int, frozen):
-    """Load the parent turnstore shard's STORED v(u2) at frozen layers.
-
-    Returns {conv_id: tensor(len(frozen), H) bf16}. The shard stores profiles for
-    all 28 layers over turns [u1,a1,u2,a2]; profiles[u2_turn_index] is v(u2)."""
-    side = json.loads(shard_json.read_text())
-    conv_ids = [int(c) for c in side["conv_ids"]]
-    records = torch.load(shard_pt, map_location="cpu", weights_only=False)
-    out = {}
-    for cid, rec in zip(conv_ids, records, strict=True):
-        prof = rec["profiles"]  # (n_turns, 28, H)
-        out[cid] = prof[u2_turn_index][list(frozen), :].to(torch.bfloat16)
-    return out
-
-
-def run_parity_check(args, contexts, frozen):
-    """Cross-check: my-rig recaptured original v(u2) vs parent STORED v(u2)."""
-    from huggingface_hub import hf_hub_download
-
-    model, tokenizer, model_id = load_model(args.reader, tiny_model_dir=args.tiny_model_dir)
-    idx = {
-        cid: (u1, a1, orig)
-        for cid, u1, a1, orig, _ in [(c[0], c[1], c[2], c[3], c[4]) for c in contexts]
-    }
-    stored = {}
-    base = (
-        f"issue825_userbase_map/analysis_tensors/{args.reader}_chat_m_shard{args.parity_shard:03d}"
-    )
-    from explore_persona_space.orchestrate import hub
-
-    pt = Path(
-        hub.retry_transient(
-            lambda: hf_hub_download(HF_DATA_REPO, base + ".pt", repo_type="dataset"),
-            what=f"parity shard {base}.pt",
-        )
-    )
-    sj = Path(
-        hub.retry_transient(
-            lambda: hf_hub_download(HF_DATA_REPO, base + ".json", repo_type="dataset"),
-            what=f"parity shard {base}.json",
-        )
-    )
-    stored = _stream_parent_shard(pt, sj, u2_turn_index=2, frozen=frozen)
-    cids = [c for c in stored if c in idx]
-    cosines = []
-    for cid in cids:
-        u1, a1, orig = idx[cid]
-        r, span = _render_and_span(tokenizer, cid, u1, a1, orig)
-        if r is None:
-            continue
-        s, e = span
-        with torch.no_grad():
-            cap = extract_layer_activations(
-                model,
-                torch.tensor([r.input_ids]).to(model.device),
-                layers=list(frozen),
-                return_logits=False,
-                detach_to_cpu=False,
-            )
-        mine = torch.stack([cap[L][0, s:e, :].float().mean(0) for L in frozen], 0)
-        theirs = stored[cid].float()
-        # layer-19 headline cosine (frozen index of 19)
-        li = list(frozen).index(19)
-        cos = torch.nn.functional.cosine_similarity(mine[li], theirs[li], dim=0).item()
-        cosines.append(cos)
-    cosines = np.array(cosines, dtype=np.float64)
-    res = {
-        "reader": args.reader,
-        "parity_shard": args.parity_shard,
-        "n_compared": int(len(cosines)),
-        "layer19_cosine_min": float(cosines.min()) if len(cosines) else None,
-        "layer19_cosine_mean": float(cosines.mean()) if len(cosines) else None,
-        "layer19_cosine_p05": float(np.percentile(cosines, 5)) if len(cosines) else None,
-    }
-    print(
-        f"[parity] {args.reader} shard{args.parity_shard}: n={res['n_compared']} "
-        f"L19 cos min={res['layer19_cosine_min']} mean={res['layer19_cosine_mean']}"
-    )
-    return res
-
-
 def build_tiny(dst: str) -> None:
     from transformers import AutoTokenizer, Qwen2Config, Qwen2ForCausalLM
 
@@ -286,12 +211,6 @@ def main() -> None:
     ap.add_argument("--tiny-model-dir", default=None)
     ap.add_argument("--build-tiny", default=None, help="build a tiny Qwen2 at this dir and exit")
     ap.add_argument("--smoke-n", type=int, default=0, help="cap contexts (0=all)")
-    ap.add_argument(
-        "--parity-shard",
-        type=int,
-        default=None,
-        help="run only the parent-parity cross-check on this shard",
-    )
     ap.add_argument("--no-upload", action="store_true")
     args = ap.parse_args()
 
@@ -311,13 +230,6 @@ def main() -> None:
         r = convs[cid]
         contexts.append((cid, r["u1"], r["a1"], r.get("u2"), draws.get(cid, {})))
     print(f"[cap] reader={args.reader} contexts={len(contexts)} k={args.k} frozen={frozen}")
-
-    if args.parity_shard is not None:
-        res = run_parity_check(args, contexts, frozen)
-        (args.out_dir / f"parity_{args.reader}_shard{args.parity_shard:03d}.json").write_text(
-            json.dumps(res, indent=2) + "\n"
-        )
-        return
 
     model, tokenizer, model_id = load_model(args.reader, tiny_model_dir=args.tiny_model_dir)
     t0 = time.time()

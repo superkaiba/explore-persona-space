@@ -34,8 +34,14 @@ import subprocess
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
+# load_dotenv() BEFORE torch/numpy: shared-VM thread caps freeze at torch import
+# (tests/test_shared_vm_thread_caps.py); also supplies HF_TOKEN for the parity fetch.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 FROZEN_DEFAULT = (14, 18, 19, 26)
 HEADLINE_LAYER = 19
@@ -99,21 +105,31 @@ def _aggregate(idx, vbar, trvar, sumsq, lodo_ss, K):
 
 
 def _boot_ci(vbar, trvar, sumsq, lodo_ss, K, n_boot, seed):
+    """Vectorized context-bootstrap CIs. Uses the identity
+    var_total = mean_c(sumsq_c) - ||gbar||^2 (gbar = mean_c vbar_c), so every
+    per-resample aggregate is a matmul of a (n_boot, m) resample-COUNTS matrix
+    against the precomputed per-context arrays — one batched GEMM, no python
+    per-draw loop (vectorize-many-draw rule)."""
     rng = np.random.default_rng(seed)
     m = len(trvar)
-    cs, fs, ls = [], [], []
-    for _ in range(n_boot):
-        idx = rng.integers(0, m, size=m)
-        c, f, lo, _, _ = _aggregate(idx, vbar, trvar, sumsq, lodo_ss, K)
-        cs.append(c)
-        fs.append(f)
-        ls.append(lo)
+    idx = rng.integers(0, m, size=(n_boot, m))
+    counts = np.zeros((n_boot, m), dtype=np.float64)
+    for b in range(n_boot):
+        counts[b] = np.bincount(idx[b], minlength=m)
+    gbar = (counts @ vbar) / m  # (n_boot, H)
+    gnorm2 = (gbar**2).sum(1)  # (n_boot,)
+    mean_sumsq = counts @ sumsq / m  # (n_boot,)
+    mean_trvar = counts @ trvar / m  # (n_boot,)
+    sum_lodo = counts @ lodo_ss  # (n_boot,)
+    var_total = mean_sumsq - gnorm2
+    ceiling = 1.0 - mean_trvar / var_total
+    floor_share = mean_trvar / var_total
+    lodo_r2 = 1.0 - sum_lodo / (K * m * var_total)
 
     def ci(a):
-        a = np.asarray(a)
         return [float(np.percentile(a, 2.5)), float(np.percentile(a, 97.5))]
 
-    return ci(cs), ci(fs), ci(ls)
+    return ci(ceiling), ci(floor_share), ci(lodo_r2)
 
 
 def _exchangeability(X5: np.ndarray):
@@ -178,6 +194,67 @@ def analyze_reader(pt_path: Path, frozen, n_boot, seed):
         "n_conv": len(conv_ids),
         "frozen_layers": list(frozen),
         "per_layer": per_layer,
+    }
+
+
+def parity_check(in_dir: Path, frozen, shards, headline_layer=HEADLINE_LAYER):
+    """Rig-fidelity cross-check: my-rig RECAPTURED original v(u2) (capture draw 0)
+    vs the parent turnstore's STORED v(u2), per overlapping context, at the
+    headline layer. High cosine (~0.999, bf16 kernel jitter) confirms the capture
+    rig reproduces the producer convention byte-for-byte. Runs on the VM (both
+    tensors are stored) — no GPU recapture needed.
+
+    The parent shard .pt is a dict of PARALLEL LISTS ({conv_ids, profiles, ...});
+    profiles[i] is (n_turns, 28, H) over [u1,a1,u2,a2], so profiles[i][2] = v(u2)."""
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    mine = torch.load(in_dir / "vu2_instruct.pt", map_location="cpu", weights_only=False)
+    Vmine = mine["V"].float().numpy()  # (n, 5, len(frozen), H); draw 0 = orig
+    my_ids = {int(c): i for i, c in enumerate(mine["conv_ids"])}
+    stored_frozen = list(mine["frozen_layers"])
+    li = stored_frozen.index(headline_layer)
+    cos_l19: list[float] = []
+    cos_frozen_mean: list[float] = []
+    for sh in shards:
+        base = f"issue825_userbase_map/analysis_tensors/instruct_chat_m_shard{sh:03d}"
+        pt = Path(
+            hub.retry_transient(
+                lambda b=base: hf_hub_download(
+                    "superkaiba1/explore-persona-space-data", b + ".pt", repo_type="dataset"
+                ),
+                what=f"parity {base}.pt",
+            )
+        )
+        payload = torch.load(pt, map_location="cpu", weights_only=False, mmap=True)
+        cids = [int(c) for c in payload["conv_ids"]]
+        profs = payload["profiles"]  # list of (n_turns, 28, H) bf16
+        for cid, prof in zip(cids, profs, strict=True):
+            if cid not in my_ids:
+                continue
+            theirs = prof[2][list(frozen), :].float().numpy()  # (len(frozen), H)
+            m = Vmine[my_ids[cid], 0]  # draw-0 recaptured orig (len(frozen), H)
+
+            def _cos(a, b):
+                na, nb = np.linalg.norm(a), np.linalg.norm(b)
+                return float(a @ b / (na * nb)) if na > 0 and nb > 0 else float("nan")
+
+            cos_l19.append(_cos(m[li], theirs[li]))
+            cos_frozen_mean.append(
+                float(np.mean([_cos(m[j], theirs[j]) for j in range(len(frozen))]))
+            )
+    a19 = np.array([c for c in cos_l19 if not np.isnan(c)], dtype=np.float64)
+    af = np.array([c for c in cos_frozen_mean if not np.isnan(c)], dtype=np.float64)
+    return {
+        "shards": list(shards),
+        "n_compared": int(len(a19)),
+        "layer19_cosine_min": float(a19.min()) if len(a19) else None,
+        "layer19_cosine_mean": float(a19.mean()) if len(a19) else None,
+        "layer19_cosine_p01": float(np.percentile(a19, 1)) if len(a19) else None,
+        "frozen_mean_cosine_min": float(af.min()) if len(af) else None,
+        "frozen_mean_cosine_mean": float(af.mean()) if len(af) else None,
+        "note": "my-rig recaptured orig (capture draw 0) vs parent STORED v(u2); ~1 confirms byte-compatible rig",
     }
 
 
@@ -252,6 +329,11 @@ def main() -> None:
     ap.add_argument("--n-boot", type=int, default=N_BOOTSTRAP)
     ap.add_argument("--seed", type=int, default=FIT_SEED)
     ap.add_argument("--frozen", default=",".join(str(x) for x in FROZEN_DEFAULT))
+    ap.add_argument(
+        "--parity-shards",
+        default="0",
+        help="parent instruct shards for the rig-fidelity cross-check; '' to skip",
+    )
     args = ap.parse_args()
 
     frozen = tuple(int(x) for x in args.frozen.split(","))
@@ -270,9 +352,19 @@ def main() -> None:
             f"floor_share={hl['floor_share']:.4f} | exch_ratio={hl['exchangeability']['orig_over_fresh_ratio']:.3f}"
         )
 
+    parity = None
+    shards = [int(s) for s in args.parity_shards.split(",") if s.strip()]
+    if shards and (args.in_dir / "vu2_instruct.pt").exists():
+        parity = parity_check(args.in_dir, frozen, shards)
+        print(
+            f"[parity] n={parity['n_compared']} L{HEADLINE_LAYER} cos "
+            f"min={parity['layer19_cosine_min']} mean={parity['layer19_cosine_mean']}"
+        )
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "followup_label": "kresample-user",
+        "rig_fidelity_parity": parity,
         "metric": "user-answer resample ceiling/floor for the context->user-answer map",
         "headline_layer": HEADLINE_LAYER,
         "definitions": {
