@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1554,
+  "highest_id": 1555,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4323,6 +4323,13 @@
       "path": "tasks/proposed/1554",
       "status": "proposed",
       "title": "daily-fix: block worktree-local 'git -C <wt> merge main'"
+    },
+    "1555": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1555",
+      "status": "proposed",
+      "title": "daily-fix: check (g) parity probe per adapter recipe-class"
     },
     "156": {
       "has_clean_result": false,
