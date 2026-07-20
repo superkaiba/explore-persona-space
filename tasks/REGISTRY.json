@@ -4334,8 +4334,8 @@
     "1556": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1556",
-      "status": "proposed",
+      "path": "tasks/planning/1556",
+      "status": "planning",
       "title": "daily-fix: digest log_tail_excerpt on trigger-dense runs"
     },
     "1557": {
