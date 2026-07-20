@@ -4341,8 +4341,8 @@
     "1557": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1557",
-      "status": "running",
+      "path": "tasks/reviewing/1557",
+      "status": "reviewing",
       "title": "daily-fix: check 31 - new pin test must be selector-visible"
     },
     "1558": {
