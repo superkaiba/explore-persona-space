@@ -152,11 +152,20 @@ The planner verifies, before recording an artifact as reused in §10/§11:
 - **(g)** for reused LoRA adapters, the application-scaling regime — read
   `adapter_config.json` (`use_rslora` / `lora_alpha` / `r`) and reproduce the
   parent's committed numbers via a 1-adapter apply-and-read parity probe on
-  the CURRENT stack, pinning the read gauge in plan §4 (a recipe-identical
-  parent committed at classic `α/r` is an unconditional repeater at the
-  faithful `α/√r` current vLLM+PEFT honor for `use_rslora: true`; incident
-  #601). Threshold calibration + HALT-vs-WARN severity for this probe and
-  every other reuse-validation gate: § Reuse-validation gate calibration
+  the CURRENT stack, once per reused adapter RECIPE-CLASS — adapters sharing
+  the `adapter_config.json` scaling fields (`use_rslora` / `lora_alpha` /
+  `r`) AND `target_modules` (as a set) form one class; a single global probe
+  does NOT satisfy (g) when the plan reuses adapters of ≥2 classes (a probe
+  on a classic-`α/r` class exercises a different apply branch than an
+  `use_rslora: true` class, and parity numbers are commensurable only within
+  a module set — cf. the calibration section's 7-module em write ratio
+  0.1729 vs the 4-module attention-only marker 0.00903, adapters differing
+  in module set among other axes; #813) — pinning the read gauge in plan §4
+  (a recipe-identical parent committed at classic `α/r` is an unconditional
+  repeater at the faithful `α/√r` current vLLM+PEFT honor for
+  `use_rslora: true`; incident #601). Threshold calibration + HALT-vs-WARN
+  severity for this probe and every other reuse-validation gate — already
+  keyed per (behavior, adapter-class): § Reuse-validation gate calibration
   below.
 - **(h) Source resolution + consumer-exact path layout + target-backend
   fetchability + staged-layout consumer-open (reused TRAINING-INPUT /

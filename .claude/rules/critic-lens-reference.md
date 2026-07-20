@@ -137,7 +137,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    mirror matches — `.claude/rules/gotchas.md` "HF mirror ≠ local-verified copy", incident #600);
    (g) application-scaling regime for reused LoRA adapters — the plan reads the reused adapter's
    `adapter_config.json` scaling fields (`use_rslora` / `lora_alpha` / `r`) and pins a 1-adapter
-   apply-and-read parity probe reproducing the parent's committed numbers on the CURRENT stack, with
+   apply-and-read parity probe reproducing the parent's committed numbers on the CURRENT stack,
+   once per reused adapter recipe-class (same `adapter_config.json` scaling fields +
+   `target_modules` (as a set) = one class) — a single global probe does NOT satisfy (g) when ≥2
+   classes are reused — with
    the read gauge stated in §4 (a recipe-identical parent committed at classic `α/r` application can
    be an unconditional repeater at the faithful `α/√r` a current vLLM+PEFT honors for `use_rslora:
    true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
