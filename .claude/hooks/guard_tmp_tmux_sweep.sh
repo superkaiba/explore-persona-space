@@ -53,10 +53,14 @@
 # command false-blocks (test-pinned deliberate). Remediation:
 # `task.py post-marker --file <path.md>` / `git commit -F <file>` / heredoc.
 #
-# Escape hatch: EPM_ALLOW_TMP_SWEEP=1 — session env or inline prefix. The
-# sanctioned deliberate use is flipping the fleet to the durable
-# ~/.tmux-sockets dir (see .claude/rules/background-automation.md § tmux
-# socket-dir contract) or a human-directed /tmp purge.
+# Escape hatch: EPM_ALLOW_TMP_SWEEP=1 — session env or inline prefix. Sanctioned
+# deliberate uses: (1) flipping the fleet to the durable ~/.tmux-sockets dir
+# (see .claude/rules/background-automation.md § tmux socket-dir contract);
+# (2) a human-directed /tmp purge; (3) removing a SINGLE socket file you have
+# just verified dead — a liveness probe (e.g. ss -xl grepped for the path, or
+# fuser/lsof on it) reports no live holder — the verify-then-override flow IS
+# the intended path for that cleanup (#1559). The override covers that one
+# file only; it is not a license for multi-path /tmp sweeps.
 #
 # Contract: PreToolUse JSON on stdin; exit 0 allow; exit 2 block (stderr fed
 # back to Claude). Self-test: bash .claude/hooks/guard_tmp_tmux_sweep.sh --self-test
@@ -307,6 +311,8 @@ EOF
     "find /tmp -maxdepth 1 -mtime +2 -not -name 'tmux-*' -delete"
   run_case "A25 pinned MISS: ls reader pipeline" 0 'ls /tmp | xargs rm -rf'
   run_case "A26 env escape hatch on B2 shape" 0 'find /tmp -mtime +2 -delete' env
+  run_case "A28 inline escape hatch on B10 shape" 0 \
+    'EPM_ALLOW_TMP_SWEEP=1 rm /tmp/tmux-1001/default'
 
   # malformed stdin JSON -> fail-soft allow.
   local rc=0
@@ -315,6 +321,18 @@ EOF
     echo "PASS (exit 0): A27 malformed stdin JSON"
   else
     echo "FAIL (got exit $rc, want 0): A27 malformed stdin JSON"
+    FAILED=1
+  fi
+
+  # C1: the block stderr on the B10 shape names the sanctioned single-file
+  # verified-dead-socket flow (pins the block-message prose; #1559).
+  local c1_rc=0 c1_err
+  c1_err=$(jq -n --arg c 'rm /tmp/tmux-1001/default' '{tool_input: {command: $c}}' \
+    | env -u EPM_ALLOW_TMP_SWEEP bash "$SCRIPT" 2>&1 >/dev/null) || c1_rc=$?
+  if [ "$c1_rc" -eq 2 ] && printf '%s' "$c1_err" | grep -q 'verified dead'; then
+    echo "PASS (exit $c1_rc): C1 block message names verified-dead flow"
+  else
+    echo "FAIL (got exit $c1_rc, want 2 + 'verified dead' in stderr): C1 block message names verified-dead flow"
     FAILED=1
   fi
 
@@ -349,9 +367,12 @@ if ! check_cmd "$cmd"; then
     echo "explicit non-tmux paths instead of /tmp globs. For marker-note /"
     echo "commit-message text that merely MENTIONS a sweep, use"
     echo "task.py post-marker --file <path.md> / git commit -F <file> (or a"
-    echo "heredoc). Deliberate override (e.g. the sanctioned flip to the durable"
-    echo "~/.tmux-sockets dir, .claude/rules/background-automation.md § tmux"
-    echo "socket-dir contract): prefix with EPM_ALLOW_TMP_SWEEP=1."
+    echo "heredoc). Removing ONE socket file you have verified dead (ss -xl /"
+    echo "fuser / lsof on the path reports no live holder; that one file only,"
+    echo "never a multi-path sweep) is a sanctioned verify-then-override use"
+    echo "(#1559). Deliberate override (that cleanup, or the sanctioned flip to"
+    echo "the durable ~/.tmux-sockets dir, .claude/rules/background-automation.md"
+    echo "§ tmux socket-dir contract): prefix with EPM_ALLOW_TMP_SWEEP=1."
   } >&2
   exit 2
 fi
