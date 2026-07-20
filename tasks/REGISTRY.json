@@ -4334,8 +4334,8 @@
     "1556": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1556",
-      "status": "approved",
+      "path": "tasks/running/1556",
+      "status": "running",
       "title": "daily-fix: digest log_tail_excerpt on trigger-dense runs"
     },
     "1557": {
