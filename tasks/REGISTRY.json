@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1555,
+  "highest_id": 1556,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4330,6 +4330,13 @@
       "path": "tasks/proposed/1555",
       "status": "proposed",
       "title": "daily-fix: check (g) parity probe per adapter recipe-class"
+    },
+    "1556": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1556",
+      "status": "proposed",
+      "title": "daily-fix: digest log_tail_excerpt on trigger-dense runs"
     },
     "156": {
       "has_clean_result": false,
