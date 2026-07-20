@@ -7337,17 +7337,29 @@ def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
 
     Two legs:
 
-    * any ``ast.Attribute`` whose ``attr`` is in
+    * any **Load-ctx** ``ast.Attribute`` whose ``attr`` is in
       :data:`HUB_VERIFY_BARE_TARGETS` — covers ``api.list_repo_files(...)``,
       ``HfApi().list_repo_tree(...)``, ``hh.file_exists(...)`` under a module
       alias, AND the bare-reference form passed to a retry wrapper /
-      ``asyncio.to_thread`` (mirrors :func:`_is_batches_create_attr`);
-    * any ``ast.Name`` whose id is a name BOUND by a
+      ``asyncio.to_thread`` (mirrors :func:`_is_batches_create_attr`, plus
+      the ctx gate below);
+    * any **Load-ctx** ``ast.Name`` whose id is a name BOUND by a
       ``from huggingface_hub import <target> [as alias]`` — the ImportFrom
       pre-pass builds an asname-aware bound-name map, so both the plain and
       the aliased import forms are caught, while a script-local
       ``def file_exists(...)`` helper (no huggingface_hub import of that
       symbol) is never flagged.
+
+    Store/Del-ctx nodes (assignment/deletion targets — the monkeypatch
+    patch/restore shape in self-test code, ``HfApi.list_repo_tree = fake``)
+    are exempt on both legs: a binding target never evaluates to a value,
+    so it can neither be a call nor a callable reference; the assigned
+    VALUE is a separate Load-ctx node scanned independently. On the Name
+    leg the same gate exempts rebinding or deleting the imported name
+    (``list_repo_files = None``, ``del list_repo_files`` — a deletion is
+    not a call). The Load-ctx bare-reference SAVE
+    (``orig = HfApi.list_repo_tree``) REMAINS flagged — a saved alias
+    later called still storms — and takes the waiver (#1482/#1561).
 
     Callers dedupe by line (a call form is a single node either way).
     """
@@ -7360,8 +7372,23 @@ def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
     hits: list[tuple[int, str]] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Attribute) and node.attr in HUB_VERIFY_BARE_TARGETS:
+            if isinstance(node.ctx, (ast.Store, ast.Del)):
+                # Assignment/deletion TARGETS — the monkeypatch patch/RESTORE
+                # assignments in self-test code (`HfApi.list_repo_tree = fake`,
+                # `del api.file_exists`) — can never be calls and never
+                # evaluate to a callable reference: the assigned VALUE is a
+                # separate node with its own Load ctx, scanned independently.
+                # The Load-ctx SAVE (`orig = HfApi.list_repo_tree`) stays
+                # flagged deliberately — a bare alias later called still
+                # storms — and takes the waiver (#1482/#1561).
+                continue
             hits.append((node.lineno, f".{node.attr}("))
         elif isinstance(node, ast.Name) and node.id in hf_bound:
+            if isinstance(node.ctx, (ast.Store, ast.Del)):
+                # Rebinding/deleting the imported name is not a call; a
+                # wrap-rebind (`lrf = retry(lrf)`) still hits via its RHS
+                # Load usage on the same line.
+                continue
             hits.append((node.lineno, f"{hf_bound[node.id]}("))
     return hits
 
@@ -7382,14 +7409,19 @@ def check_hub_verify_retry(*, scripts_dir: Path | None = None) -> list[str]:
     ``api.list_repo_files(...)`` reintroduces the class. This check is the
     mechanical gate on new scripts/ call sites (#1202).
 
-    Detection: see :func:`_hub_verify_bare_hits` (Attribute leg + an
-    asname-aware imported-Name leg), deduped by line. Compliant hub-helper
-    usage is structurally invisible (different attr/name strings); comments
-    and docstrings can never match. Within ``scripts/`` ANY spelled bare
-    call is presumed un-retried — even a script-local
-    ``retry_transient(lambda: api.list_repo_files(...))`` is flagged
-    deliberately (the wrapped bare attribute is still a hand-rolled leg);
-    a genuinely-correct raw call takes the waiver comment.
+    Detection: see :func:`_hub_verify_bare_hits` (a Load-ctx Attribute leg
+    + an asname-aware Load-ctx imported-Name leg; Store/Del-ctx binding
+    targets exempt — see :func:`_hub_verify_bare_hits`), deduped by line.
+    Compliant hub-helper usage is structurally invisible (different
+    attr/name strings); comments and docstrings can never match. Within
+    ``scripts/`` ANY spelled bare call is presumed un-retried — even a
+    script-local ``retry_transient(lambda: api.list_repo_files(...))`` is
+    flagged deliberately (the wrapped bare attribute is still a hand-rolled
+    leg); a genuinely-correct raw call takes the waiver comment. A
+    monkeypatch SAVE of the bare attribute (``orig = HfApi.list_repo_tree``)
+    is likewise flagged deliberately and takes the waiver — the saved alias
+    is call-equivalent; the assignment TARGETS of the patch/restore lines
+    need no waiver (Store-ctx exempt, #1482/#1561).
 
     Named residuals NOT covered (deliberate — documented, not detector legs):
     ``repo_info(`` (legitimate metadata uses dominate), ``hf_hub_download``
@@ -7454,7 +7486,11 @@ def check_hub_verify_retry(*, scripts_dir: Path | None = None) -> list[str]:
                 f"raw call (e.g. one you wrap in hub.retry_transient yourself) "
                 f"takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' "
                 f"(reason >= {HUB_VERIFY_WAIVER_MIN_REASON_CHARS} chars) on the "
-                f"call's line or the previous non-blank line (#920/#997/#1202)."
+                f"call's line or the previous non-blank line (#920/#997/#1202). "
+                f"Monkeypatch assignment TARGETS (`HfApi.X = fake`) are exempt "
+                f"by AST ctx and need no waiver; a monkeypatch SAVE of the bare "
+                f"reference (`orig = HfApi.X`) still takes the waiver — a saved "
+                f"alias later called still storms (#1482/#1561)."
             )
     return errors
 

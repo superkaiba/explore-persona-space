@@ -4812,6 +4812,126 @@ def test_check_hub_verify_retry_fail_waiver_reason_too_short(tmp_path):
     assert len(errors) == 1, errors
 
 
+def test_check_hub_verify_retry_pass_store_ctx_assignment_target(tmp_path):
+    """A Store-ctx assignment TARGET (the monkeypatch patch shape,
+    ``HfApi.list_repo_tree = _fake``) can never be a call and is exempt
+    without a waiver (#1482/#1561)."""
+    (tmp_path / "issue9999_selftest.py").write_text(
+        "import huggingface_hub\n"
+        "def _fake(*a, **k):\n"
+        "    raise RuntimeError('stub')\n"
+        "def patch():\n"
+        "    huggingface_hub.HfApi.list_repo_tree = _fake\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_pass_del_ctx_attribute(tmp_path):
+    """A Del-ctx attribute (``del api.file_exists`` — the monkeypatch
+    cleanup shape) is a deletion target, not a call; exempt without a
+    waiver."""
+    (tmp_path / "issue9999_unpatch.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def unpatch():\n"
+        "    del api.file_exists\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_fail_load_ctx_monkeypatch_save(tmp_path):
+    """The Load-ctx monkeypatch SAVE (``orig = HfApi.list_repo_tree``) is
+    STILL flagged — the saved alias is call-equivalent (alias-later-called
+    evasion) — while the Store-ctx restore line yields no second error.
+    The error message names the monkeypatch-save waiver requirement
+    (#1482/#1561)."""
+    (tmp_path / "issue9999_save.py").write_text(
+        "import huggingface_hub\n"
+        "orig = huggingface_hub.HfApi.list_repo_tree\n"
+        "huggingface_hub.HfApi.list_repo_tree = orig\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ":2:" in errors[0]
+    assert ".list_repo_tree(" in errors[0]
+    assert "monkeypatch" in errors[0].lower()
+
+
+def test_check_hub_verify_retry_pass_monkeypatch_block_waiver_on_save_only(tmp_path):
+    """The full #1482 monkeypatch block (save / patch / restore, the
+    issue779:618-635 shape) needs exactly ONE waiver — on the Load-ctx
+    save line; the Store-ctx patch/restore lines are exempt by ctx
+    (pre-fix this block required 4 waivers)."""
+    (tmp_path / "issue9999_block.py").write_text(
+        "import huggingface_hub\n"
+        "def _fake(*a, **k):\n"
+        "    raise RuntimeError('stub')\n"
+        "def selftest():\n"
+        "    # HUB_VERIFY_RETRY_EXEMPT: attribute reference only (monkeypatch save), no call\n"
+        "    orig_lrt = huggingface_hub.HfApi.list_repo_tree\n"
+        "    huggingface_hub.HfApi.list_repo_tree = _fake\n"
+        "    try:\n"
+        "        pass\n"
+        "    finally:\n"
+        "        huggingface_hub.HfApi.list_repo_tree = orig_lrt\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_hub_verify_retry_fail_bare_reference_argument_position(tmp_path):
+    """A bare Load-ctx reference passed as a wrapper ARGUMENT
+    (``retry_transient(api.list_repo_files)``) stays flagged — guards
+    against a future over-broad 'only flag ast.Call' change (the exact
+    wrong fix the ctx gate must not become)."""
+    (tmp_path / "issue9999_wrapper_arg.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def retry_transient(fn):\n"
+        "    return fn\n"
+        "wrapped = retry_transient(api.list_repo_files)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".list_repo_files(" in errors[0]
+
+
+def test_check_hub_verify_retry_name_leg_store_ctx(tmp_path):
+    """Name-leg ctx gate: a pure rebind of the imported name
+    (``list_repo_files = None``) is no longer flagged (a binding is not a
+    call), while a wrap-rebind (``list_repo_tree = my_retry(list_repo_tree)``)
+    still yields exactly one hit via its RHS Load usage."""
+    (tmp_path / "rebind_only.py").write_text(
+        "from huggingface_hub import list_repo_files\nlist_repo_files = None\n"
+    )
+    (tmp_path / "wrap_rebind.py").write_text(
+        "from huggingface_hub import list_repo_tree\n"
+        "def my_retry(fn):\n"
+        "    return fn\n"
+        "list_repo_tree = my_retry(list_repo_tree)\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "wrap_rebind.py" in errors[0]
+
+
+def test_check_hub_verify_retry_pass_augassign_store_target(tmp_path):
+    """An AugAssign target (``api.list_repo_tree += x``) reads ctx=Store —
+    the one Store shape with a runtime getattr; getattr of a method never
+    calls it, so the ctx gate exempts it (optional pin from the #1561 plan
+    review round)."""
+    (tmp_path / "issue9999_augassign.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n"
+        "def bump(x):\n"
+        "    api.list_repo_tree += x\n"
+    )
+    errors = check_hub_verify_retry(scripts_dir=tmp_path)
+    assert errors == [], errors
+
+
 def test_check_hub_verify_retry_allowlist_is_file_granular(tmp_path):
     """The grandfather allowlist exempts by exact rel path (whole file), and
     a NON-allowlisted offender at the same dir IS flagged — the exemption is
