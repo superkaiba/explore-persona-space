@@ -4320,8 +4320,8 @@
     "1554": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1554",
-      "status": "planning",
+      "path": "tasks/approved/1554",
+      "status": "approved",
       "title": "daily-fix: block worktree-local 'git -C <wt> merge main'"
     },
     "1555": {
