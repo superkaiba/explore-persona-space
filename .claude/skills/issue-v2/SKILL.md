@@ -520,6 +520,8 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
   v1's 20) — AUTO-RUN via the same-issue follow-up loop, cap 2 rounds. Strict
   `< 10` (exactly 10 does NOT auto-run). A `same`-question proposal with a
   missing/unparseable `est_gpu_hours` does NOT auto-run (fail-safe → park/file).
+  A cap-parked cheap proposal gets the `followup-parked-by-cap` `epm:progress`
+  note (v1 SKILL.md Step 9b block C2 § Cheap-band cap-park surfacing, #1558).
 - A `question_relation: substantially-different` proposal NEVER auto-runs — it is
   filed as a `proposed` child for manual triage.
 

@@ -2300,7 +2300,13 @@ markers:
       per task: the CHEAP band (both session modes) counts markers with
       `source: proposer-9b-cheap` (`0 < est_gpu_hours < 20`); the
       EXPENSIVE autonomous band counts markers with `source: proposer-9b`
-      (`est_gpu_hours >= 20`, autonomous only). User-initiated rounds
+      (`est_gpu_hours >= 20`, autonomous only). A cheap-band marker that
+      consumes the FINAL cheap-band cap slot is followed by a
+      `followup-parked-by-cap` structured `epm:progress` note per
+      remaining unrun cheap-band-eligible proposal (idempotent per
+      verbatim follow-up title; names the cap-raise alternative —
+      SKILL.md Step 9b block C2 § Cheap-band cap-park surfacing, #1558).
+      User-initiated rounds
       (`user-chat`, `step-10b-pick`) are explicitly requested and gated
       by interactive plan approval, so they do not consume either cap.
       Run markers whose `outcome` begins `retroactive-close` do NOT

@@ -7602,7 +7602,9 @@ C0. **Idempotency + run the proposer (once per park, shared marker).**
    `epm:same-issue-followup-run v1` does NOT yet exist (in flight), OR
    the cheap-band round cap (C2) is already hit — SKIP this block (it is
    a no-op on a backstop-tick / re-entry; the loop or the cap is the
-   durable record). Otherwise: if an `epm:follow-ups v1` marker for THIS
+   durable record; a CAP-HIT skip is ordered, not silent — first post
+   the § Cheap-band cap-park surfacing notes, block C2). Otherwise: if
+   an `epm:follow-ups v1` marker for THIS
    park is not already present (the autonomous block below may have
    posted it, or a re-entry did), spawn `follow-up-proposer` and post
    `epm:follow-ups v1` (same marker both sites share). If it is already
@@ -7649,6 +7651,42 @@ C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    at `awaiting_promotion` after each round, where the user sees the
    updated body before any further cheap follow-up fires.) The cap stops
    a chain of cheap follow-ups from auto-running indefinitely.
+
+   **Cheap-band cap-park surfacing (#1558 — SURFACING only: the cap
+   above is unchanged, no new auto-run, no new gate, no new marker
+   kind).** Same contract as Step 9a-ter § Cap-park surfacing (#1548) —
+   fixed leading token, per-(task, verbatim `followup_ref=`) idempotency
+   grep, `epm:progress` reuse, auto-continue — with C2-keyed fields.
+   Two firing moments: (a) a C0 CAP-HIT skip (the cap-hit arm only — an
+   in-flight round has not consumed its slot) while the latest
+   `epm:follow-ups v1` marker, if any, still lists ≥1 unrun
+   C1-qualifying proposal (`same`, `auto_run: yes`, parseable
+   `0 < est_gpu_hours < 20`) — post, then skip (no marker ⇒ nothing to
+   post); (b) immediately after loop step 4 posts a counting
+   `epm:same-issue-followup-run v1` (`source: proposer-9b-cheap`,
+   `outcome` not `retroactive-close`-led) that consumes the final
+   cheap-band cap slot (the C2 count reaches 2) — post for each
+   remaining unrun C1-qualifying proposal; surplus after a NON-final
+   round is NOT cap-parked (a future park may still dispatch it). Skip
+   entries already run (`followup_label` / verbatim-title match),
+   parked redundant (`epm:followup-parked-redundant v1`), fail-safe
+   parks (missing/unparseable estimate — not cap parks), or already
+   noted. `screened=` carries the VC verdict when VC ran for that
+   proposal set; a C0 cap-hit skip precedes C0a, so `pending-screen` is
+   expected there. Per parked entry:
+
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:progress \
+     --note "followup-parked-by-cap followup_ref=<verbatim follow-up title> \
+       rank=<1-based position in the proposer's surfaced order, or 'unranked'> \
+       screened=<not-redundant|pending-screen> cost_class=needs-gpu \
+       cap_consumed_by=<followup_label of the latest counting run row (source: proposer-9b-cheap)> \
+       alternative=raise-9b-cheap-cap-or-manual-pickup — the 2-round \
+       cheap-band cap parked this follow-up; a future planner/human may \
+       weigh raising the cap (a deliberate workflow change) vs manual \
+       pick at Step 10b"
+   ```
+
 C3. **Dispatch the round.** If a candidate survives C1+C2, post
    `epm:followup-scope v1` (`source: proposer-9b-cheap`, fields per
    workflow.yaml § markers, carrying the proposal's
@@ -8169,7 +8207,12 @@ orchestrators driving one round is the #778 root cause.
    label, closes nothing, and undercounts both round caps (the #1090
    fu1 regression).
    This is the idempotency record: an `epm:followup-scope v1` with a
-   matching run marker is RUN and is never re-dispatched.
+   matching run marker is RUN and is never re-dispatched. When this
+   marker is cheap-band (`source: proposer-9b-cheap`, `outcome` not
+   `retroactive-close`-led) and consumes the final cheap-band cap slot,
+   immediately post the block-C2 § Cheap-band cap-park surfacing note
+   for each remaining unrun C1-qualifying proposal — those entries are
+   parked NOW, not at some future re-entry (#1558).
 5. **Round caps (two independent proposer-initiated caps).**
    - **Expensive autonomous band:** at most **2** rounds per task,
      counted by `epm:same-issue-followup-run v1` markers with
@@ -8184,7 +8227,10 @@ orchestrators driving one round is the #778 root cause.
      breakpoint.
 
    Beyond either cap, further `same` proposals of that class survive in
-   `epm:follow-ups v1` for manual pick. USER-REQUESTED rounds
+   `epm:follow-ups v1` for manual pick. (Cheap-band cap parks are
+   additionally surfaced via the block-C2 § Cheap-band cap-park
+   surfacing note; expensive-band cap parks remain bullet-only — out of
+   #1558's scope.) USER-REQUESTED rounds
    (`source: user-chat` or `step-10b-pick`) do NOT count against either
    cap — the user asked explicitly, and interactive plan approval
    still gates each one. Run markers whose `outcome` begins
