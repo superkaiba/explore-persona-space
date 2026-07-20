@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1570,
+  "highest_id": 1571,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4449,6 +4449,13 @@
       "path": "tasks/proposed/1570",
       "status": "proposed",
       "title": "daily-fix: merge=union for tests/sparse_cones.txt"
+    },
+    "1571": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1571",
+      "status": "proposed",
+      "title": "daily-fix: hub upload file-count WARN + retry docs"
     },
     "158": {
       "has_clean_result": false,
