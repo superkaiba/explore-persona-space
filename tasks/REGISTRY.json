@@ -4369,8 +4369,8 @@
     "1560": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1560",
-      "status": "approved",
+      "path": "tasks/running/1560",
+      "status": "running",
       "title": "daily-fix: stop branch-era workflow_lint redding 10d gates"
     },
     "1561": {
