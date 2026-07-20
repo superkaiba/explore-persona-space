@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1559,
+  "highest_id": 1560,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4365,6 +4365,13 @@
       "path": "tasks/completed/156",
       "status": "completed",
       "title": "Test: Educational reframing is also just sleeper agent"
+    },
+    "1560": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1560",
+      "status": "proposed",
+      "title": "daily-fix: stop branch-era workflow_lint redding 10d gates"
     },
     "157": {
       "has_clean_result": false,
