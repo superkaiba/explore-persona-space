@@ -4036,6 +4036,37 @@ def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
         os.close(fd)
 
 
+def _iter_jsonl_text(text: str, *, source: str) -> list[dict[str, Any]]:
+    """Tolerantly parse JSONL TEXT (the row loop behind ``_iter_jsonl``).
+
+    ``source`` names the text's origin (a file path, a git index blob ref)
+    in the skip-malformed WARNING. Split out of ``_iter_jsonl`` (#1565) so
+    the append guard can parse a git INDEX BLOB with the same tolerant
+    semantics the on-disk reader has. Behavior is identical to the former
+    inline loop; see ``_iter_jsonl`` for the full recovery rationale.
+
+    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
+    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
+    strings, and ``splitlines()`` treats those as line boundaries — shredding
+    a valid record into skip-malformed fragments = silent marker loss
+    (gotchas.md; #825 → #950).
+    """
+    out: list[dict[str, Any]] = []
+    for lineno, line in enumerate(text.split("\n"), 1):
+        if not line.strip():
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError as e:
+            _log.warning(
+                "skipping malformed line %d in %s: %s",
+                lineno,
+                source,
+                str(e)[:200],
+            )
+    return out
+
+
 def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     """Parse an append-only JSONL file, tolerating malformed lines.
 
@@ -4059,33 +4090,23 @@ def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     corrupted line falls through to the existing ``JSONDecodeError`` skip
     path — completing the recovery story.
 
-    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
-    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
-    strings, and ``splitlines()`` treats those as line boundaries — shredding
-    a valid record into skip-malformed fragments = silent marker loss
-    (gotchas.md; #825 → #950).
+    The tolerant row loop itself lives in ``_iter_jsonl_text`` (shared with
+    the append guard's index-blob read, #1565).
     """
     if not path.exists():
         return []
-    out: list[dict[str, Any]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
-    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
-    # ensure_ascii=False notes are Unicode line boundaries that would shred
-    # valid records into skip-malformed fragments = silent marker loss
-    # (gotchas.md; #825 → #950).
-    for lineno, line in enumerate(text.split("\n"), 1):
-        if not line.strip():
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError as e:
-            _log.warning(
-                "skipping malformed line %d in %s: %s",
-                lineno,
-                path,
-                str(e)[:200],
-            )
-    return out
+    return _iter_jsonl_text(text, source=str(path))
+
+
+def _max_event_ts(rows: list[dict[str, Any]]) -> str:
+    """Max ISO-8601Z ``ts`` across rows (``""`` when none).
+
+    ``_utcnow_iso`` timestamps compare lexicographically == chronologically
+    (fixed-width ``%Y-%m-%dT%H:%M:%SZ``), so plain string ``max`` is the
+    chronological max. Non-string / missing ``ts`` rows are skipped.
+    """
+    return max((r["ts"] for r in rows if isinstance(r.get("ts"), str)), default="")
 
 
 def _next_event_version(events_path: Path, kind: str) -> int:
@@ -4107,6 +4128,158 @@ def _next_event_version(events_path: Path, kind: str) -> int:
         if isinstance(v, int) and v > highest:
             highest = v
     return highest + 1
+
+
+# Fail-soft observability sidecar for append-guard violations (#1565) — one
+# JSONL row per quarantined stale dir, repo-relative (lives IN the repo, next
+# to the other .claude/cache sidecar streams; the quarantine itself lives
+# outside the repo under LOCK_DIR).
+_APPEND_GUARD_SIDECAR_REL = ".claude/cache/append-guard-events.jsonl"
+
+
+def _guarded_task_dir_for_append(task_id: int) -> tuple[Path, bool]:
+    """``find_task_path`` + a stale-restored-state cross-check against the git
+    index (#1565; incident #1524). Returns ``(task_dir, rerouted)``.
+
+    Caller MUST hold ``_locked()`` (the violation arm quarantines a dir and
+    re-writes REGISTRY). Fail-OPEN on any git probe error (marker posting is
+    the fleet's highest-frequency mutation — a git hiccup degrades to today's
+    unguarded behavior); ``StaleTaskPathError`` only on ambiguous /
+    doubly-corrupt states. All-validate-then-mutate: no destructive action
+    before the re-route target is proven usable.
+
+    The predicate: ALLOW iff nothing is tracked in the index for this id
+    (fresh create with a deferred commit, #1030), OR the resolved dir is the
+    tracked one (normal), OR the resolved dir is untracked while exactly one
+    OTHER status dir is tracked AND the resolved on-disk ``events.jsonl``'s
+    max ``ts`` is at-least-as-new as the tracked index blob's (a durably
+    applied but uncommitted status move — disk ahead of git). VIOLATION
+    (quarantine + re-route) iff the resolved dir is untracked, exactly one
+    other status dir is tracked, and the resolved file is STRICTLY OLDER —
+    possible only when the resolved file is MISSING rows the index has, i.e.
+    a stale restored snapshot (events.jsonl is append-only and ``set_status``
+    moves the whole file, so any legit current file is a row-superset of any
+    index blob of this task). RAISE on multiple tracked status dirs
+    (committed husk — never guess, mirroring ``find_task_path``'s multi-hit
+    rule) or a violation whose tracked target is unusable on disk (a blind
+    ``O_CREAT`` there would commit a history-losing one-row file).
+
+    Freshness is read from ``events.jsonl`` even when the append target is
+    ``comments.jsonl`` / ``concerns.jsonl``: a stale restore restores the
+    WHOLE task dir (the #1524 shape), so the co-located events.jsonl — the
+    highest-frequency append-only log — dates the dir; on a tie the guard
+    allows, which equals today's unguarded behavior (status-quo-equivalent).
+    """
+    resolved = find_task_path(task_id)
+    repo = repo_root()
+    try:
+        tracked = _tracked_status_dirs(task_id, repo)
+    except (subprocess.CalledProcessError, OSError) as e:
+        _log.warning(
+            "append-guard: git probe failed for task #%d (%s); appending unguarded",
+            task_id,
+            e,
+        )
+        return resolved, False  # fail-open
+    # relative_to cannot raise here: find_task_path only ever returns
+    # tasks_dir()-rooted paths, which live under repo_root() by construction
+    # (a ValueError from it would be a resolver bug — let it propagate loud).
+    rel_resolved = str(resolved.relative_to(repo))
+    if not tracked or rel_resolved in tracked:
+        return resolved, False  # fresh create (commit deferred, #1030) / normal
+    if len(tracked) > 1:
+        raise StaleTaskPathError(  # committed husk + resolved at a THIRD location: never guess
+            f"task #{task_id}: resolved at {rel_resolved!r} (untracked) while the git "
+            f"index tracks it at MULTIPLE status dirs {sorted(tracked)}; refusing to "
+            f"append — run `task.py audit --repair --apply` / `task.py reap-husks`."
+        )
+    (target_rel,) = tracked
+    try:
+        blob = _run_git(["show", f":{target_rel}/events.jsonl"]).stdout
+    except (subprocess.CalledProcessError, OSError) as e:
+        _log.warning(
+            "append-guard: index blob read failed for %s (%s); appending unguarded",
+            target_rel,
+            e,
+        )
+        return resolved, False  # fail-open
+    blob_max = _max_event_ts(_iter_jsonl_text(blob, source=f":{target_rel}/events.jsonl"))
+    disk_max = _max_event_ts(_iter_jsonl(resolved / "events.jsonl"))  # '' if file missing
+    if disk_max >= blob_max:
+        _log.warning(
+            "append-guard: task #%d resolved at %s (untracked) while index tracks "
+            "%s, but resolved state is at-least-as-new (%r >= %r) — deferred-commit "
+            "shape, allowing",
+            task_id,
+            rel_resolved,
+            target_rel,
+            disk_max,
+            blob_max,
+        )
+        return resolved, False
+    # ── VIOLATION: the #1524 stale-restore shape. Validate target FIRST. ──
+    target = repo / target_rel
+    if not (target / "events.jsonl").exists():
+        raise StaleTaskPathError(
+            f"task #{task_id}: index tracks {target_rel!r} but its events.jsonl is missing "
+            f"on disk, and the resolved dir {rel_resolved!r} is a stale snapshot "
+            f"(max ts {disk_max!r} < index {blob_max!r}); refusing to append to either — "
+            f"restore first: `git checkout -- {target_rel}` then retry, "
+            f"or `task.py audit --repair --apply`."
+        )
+    try:
+        fm, _ = _read_body(target / "body.md")  # validates target body BEFORE any mutation
+    except StaleTaskPathError as e:
+        raise StaleTaskPathError(
+            f"task #{task_id}: index tracks {target_rel!r} but its body.md is missing on "
+            f"disk ({e}), and the resolved dir {rel_resolved!r} is a stale snapshot "
+            f"(max ts {disk_max!r} < index {blob_max!r}); refusing to append to either — "
+            f"restore first: `git checkout -- {target_rel}` then retry, "
+            f"or `task.py audit --repair --apply`."
+        ) from e
+    stale_status = _status_from_path(resolved)
+    quarantine = (
+        LOCK_DIR
+        / "stale-task-dirs"
+        / f"{_utcnow_iso().replace(':', '')}-task{task_id}-{stale_status}-{os.getpid()}"
+    )
+    quarantine.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(resolved), str(quarantine))
+    reg = _load_registry()  # mutation path, _locked() held: safe re-sync
+    entry = reg["tasks"].get(str(task_id))
+    if entry and entry.get("path") == rel_resolved:
+        _registry_set(reg, task_id, target, fm)
+        _save_registry(reg)
+    _log.warning(
+        "append-guard: task #%d: STALE restored dir %s (max ts %r) shadowed the "
+        "index-tracked %s (max ts %r) — quarantined to %s, registry re-synced, "
+        "append re-routed (#1565; the #1524 husk shape). The quarantined rows are "
+        "forensic evidence — inspect/re-integrate unique rows manually from %s; "
+        "never delete.",
+        task_id,
+        rel_resolved,
+        disk_max,
+        target_rel,
+        blob_max,
+        quarantine,
+        quarantine,
+    )
+    try:  # fail-soft observability sidecar
+        _append_jsonl_line(
+            repo / _APPEND_GUARD_SIDECAR_REL,
+            {
+                "ts": _utcnow_iso(),
+                "task_id": task_id,
+                "stale_path": rel_resolved,
+                "target_path": target_rel,
+                "quarantine": str(quarantine),
+                "disk_max_ts": disk_max,
+                "blob_max_ts": blob_max,
+            },
+        )
+    except OSError:
+        _log.warning("append-guard: sidecar write failed (fail-soft)")
+    return target, True
 
 
 def post_event(
@@ -4138,7 +4311,10 @@ def post_event(
             f"caller must post epm:failure v1 with reason=note_oversize"
         )
     with _locked():
-        path = find_task_path(task_id) / "events.jsonl"
+        # Guard runs BEFORE _next_event_version: the version derivation must
+        # read the CORRECT (index-tracked) file, not a stale restore (#1565).
+        folder, rerouted = _guarded_task_dir_for_append(task_id)
+        path = folder / "events.jsonl"
         if version is None:
             version = _next_event_version(path, kind)
         payload: dict[str, Any] = {
@@ -4157,7 +4333,7 @@ def post_event(
         # primary checkout is deferred (loud ERROR + forensic sidecar row),
         # not raised, so a caller retry cannot duplicate the marker (#1030).
         _commit_after_durable_append(
-            [path],
+            [path, registry_path()] if rerouted else [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
             task_id=task_id,
             op="post_event",
@@ -4206,27 +4382,35 @@ def _rollback_move(src: Path, dst: Path) -> None:
         raise
 
 
+def _tracked_status_dirs(task_id: int, repo: Path) -> set[str]:
+    """Repo-relative ``tasks/<status>/<id>`` dirs with >=1 file in the git
+    INDEX. Extracted from ``_task_status_dir_pathspecs`` (#1565); one
+    ``git ls-files`` call over exact per-STATUSES pathspecs (no fnmatch
+    wildcards — exact-id matching only, so id 89 never sweeps id 898;
+    ``ls-files`` silently ignores pathspecs that match nothing)."""
+    rel_tasks = tasks_dir().relative_to(repo)
+    candidates = [str(rel_tasks / status / str(task_id)) for status in STATUSES]
+    tracked = _run_git(["ls-files", "--", *candidates]).stdout.splitlines()
+    n_parts = len(rel_tasks.parts) + 2  # <tasks>/<status>/<id>
+    return {"/".join(p.split("/")[:n_parts]) for p in tracked if p.strip()}
+
+
 def _task_status_dir_pathspecs(task_id: int, repo: Path) -> list[str]:
     """All ``tasks/<status>/<id>`` dirs for this task that git TRACKS or that
     exist on disk — the staging pathspec set that reconciles any residue a
     previously-crashed transition left behind (ghost old-status dirs whose
     deletions were never staged; #825 / the #644 stale-task-folder class).
 
-    One ``git ls-files`` call over deterministic per-STATUSES pathspecs (no
-    fnmatch wildcards — exact-id matching only, so id 89 never sweeps id
-    898). ``ls-files`` silently ignores pathspecs that match nothing, so the
-    candidate list is safe to pass wholesale. The returned set is restricted
-    to tracked-or-on-disk dirs BECAUSE ``git add`` (without
-    ``--ignore-unmatch``) and ``git commit --only`` both FAIL LOUD on a
-    pathspec that matches neither the index/HEAD nor the working tree — a
-    dir that is neither tracked nor on disk has nothing to stage and must be
-    excluded, not passed along.
+    The tracked side is ``_tracked_status_dirs`` (one ``git ls-files`` call;
+    see its docstring). The returned set is restricted to tracked-or-on-disk
+    dirs BECAUSE ``git add`` (without ``--ignore-unmatch``) and ``git commit
+    --only`` both FAIL LOUD on a pathspec that matches neither the
+    index/HEAD nor the working tree — a dir that is neither tracked nor on
+    disk has nothing to stage and must be excluded, not passed along.
     """
     rel_tasks = tasks_dir().relative_to(repo)
     candidates = [str(rel_tasks / status / str(task_id)) for status in STATUSES]
-    tracked = _run_git(["ls-files", "--", *candidates]).stdout.splitlines()
-    n_parts = len(rel_tasks.parts) + 2  # <tasks>/<status>/<id>
-    dirs = {"/".join(p.split("/")[:n_parts]) for p in tracked if p.strip()}
+    dirs = _tracked_status_dirs(task_id, repo)
     dirs |= {c for c in candidates if (repo / c).is_dir()}
     return sorted(dirs)
 
@@ -5979,7 +6163,8 @@ def append_comment(
     if kind not in COMMENT_KINDS:
         raise ValueError(f"unknown comment kind: {kind!r}; expected one of {sorted(COMMENT_KINDS)}")
     with _locked():
-        path = find_task_path(task_id) / "comments.jsonl"
+        folder, rerouted = _guarded_task_dir_for_append(task_id)
+        path = folder / "comments.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
         # Allocate a sequential id (c001, c002, ...) by counting lines.
         n_existing = sum(1 for _ in path.open()) if path.exists() else 0
@@ -5999,7 +6184,7 @@ def append_comment(
         # Comment row is durable; a retry would append a duplicate row with
         # a fresh cNNN id — defer a commit failure instead (#1030).
         _commit_after_durable_append(
-            [path],
+            [path, registry_path()] if rerouted else [path],
             f"task #{task_id}: comment {cid} ({kind})",
             task_id=task_id,
             op="append_comment",
@@ -6713,9 +6898,10 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     the payload (including ``ts``). The mirror event posted to
     events.jsonl carries the concern_id and an 80-char summary slice ONLY
     — the full payload lives in concerns.jsonl. The git commit covers
-    BOTH files in a single commit.
+    BOTH files in a single commit (plus REGISTRY when the append guard
+    re-routed a stale restore, #1565).
     """
-    folder = find_task_path(task_id)
+    folder, rerouted = _guarded_task_dir_for_append(task_id)
     concerns_file = folder / "concerns.jsonl"
     _append_jsonl_line(concerns_file, payload)
 
@@ -6744,7 +6930,7 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     # Concern row + events.jsonl mirror are durable; a retry would append
     # duplicates of both — defer a commit failure instead (#1030).
     _commit_after_durable_append(
-        [concerns_file, events_file],
+        [concerns_file, events_file, registry_path()] if rerouted else [concerns_file, events_file],
         f"task #{task_id}: concern-{payload['event']} {payload['concern_id']}",
         task_id=task_id,
         op="append_concern_event",
