@@ -5219,3 +5219,295 @@ def test_keep_running_tag_constant_value():
     ``_KEEP_RUNNING_TAG`` (parity pinned in tests/test_pod_lifecycle.py)."""
     tw = _tw()
     assert tw.KEEP_RUNNING_TAG == "keep-running"
+
+
+# ─── Append guard (#1565) ───────────────────────────────────────────────────
+#
+# _guarded_task_dir_for_append: the stale-restored-state cross-check against
+# the git index that post_event / append_comment / _append_concern_event run
+# before appending (incident #1524: a restored pre-move snapshot + stale
+# REGISTRY silently recreated a dead status folder on main).
+
+
+def _rewrite_registry_entry(repo: Path, tid: int, rel_path: str, status: str) -> None:
+    """Point the REGISTRY entry for ``tid`` at ``rel_path`` (hand-edit, no git)."""
+    reg_path = repo / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_path.read_text())
+    reg["tasks"][str(tid)]["path"] = rel_path
+    reg["tasks"][str(tid)]["status"] = status
+    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+
+
+def _setup_stale_restore(repo: Path, tw) -> int:
+    """Reproduce the #1524 stale-restore shape (simplified two-hop timeline;
+    shape-identical to the real three-hop proposed→planning→…→running one:
+    resolved dir untracked, exactly one newer-status dir tracked, restored
+    events.jsonl strictly older than the index blob).
+
+    Task created + committed at proposed, one marker posted (committed),
+    moved to planning (committed) — then a stale pre-move snapshot of
+    tasks/proposed/<id>/ is restored on disk and REGISTRY is poisoned to
+    point at it (disk and registry stale but mutually consistent — exactly
+    the shape find_task_path's #825 envelope cannot see). The stale row's
+    ts is hand-written OLD (2020) so second-granularity _utcnow_iso can
+    never produce an accidental tie.
+    """
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="append-guard fixture"))
+    tw.post_event(tid, "epm:progress", by="test", note="pre-move marker")
+    tw.set_status(tid, "planning")
+    cur = repo / "tasks" / "planning" / str(tid)
+    stale = repo / "tasks" / "proposed" / str(tid)
+    stale.mkdir(parents=True)
+    shutil.copy2(cur / "body.md", stale / "body.md")
+    (stale / "events.jsonl").write_text(
+        json.dumps({"ts": "2020-01-01T00:00:00Z", "kind": "epm:created", "version": 1, "by": "t"})
+        + "\n"
+    )
+    _rewrite_registry_entry(repo, tid, f"tasks/proposed/{tid}", "proposed")
+    return tid
+
+
+def _git_ls_files(repo: Path, spec: str) -> list[str]:
+    out = subprocess.run(
+        ["git", "ls-files", "--", spec], cwd=repo, capture_output=True, text=True, check=True
+    )
+    return [ln for ln in out.stdout.splitlines() if ln.strip()]
+
+
+def test_1524_stale_restore_reroutes_append_to_tracked_dir(fake_repo, caplog):
+    repo, tw = fake_repo
+    tid = _setup_stale_restore(repo, tw)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw.post_event(tid, "epm:progress", by="test", note="guarded append")
+    # Row landed in the index-tracked (current) folder, not the stale restore.
+    cur = repo / "tasks" / "planning" / str(tid)
+    rows = tw._iter_jsonl(cur / "events.jsonl")
+    assert any(r.get("note") == "guarded append" for r in rows)
+    # Stale dir quarantined OUT of the repo, forensic rows preserved.
+    assert not (repo / "tasks" / "proposed" / str(tid)).exists()
+    qdirs = list((repo / ".task-workflow" / "stale-task-dirs").iterdir())
+    assert len(qdirs) == 1
+    q_rows = tw._iter_jsonl(qdirs[0] / "events.jsonl")
+    assert q_rows and q_rows[0]["ts"] == "2020-01-01T00:00:00Z"
+    # REGISTRY re-synced to the tracked dir.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(tid)]["path"] == f"tasks/planning/{tid}"
+    assert any("append-guard" in r.getMessage() for r in caplog.records)
+    # Fail-soft observability sidecar row.
+    sidecar = tw._iter_jsonl(repo / ".claude" / "cache" / "append-guard-events.jsonl")
+    assert sidecar and sidecar[0]["task_id"] == tid
+    assert sidecar[0]["stale_path"] == f"tasks/proposed/{tid}"
+    # End-to-end no-husk: a subsequent transition's ghost sweep (git add
+    # --all over the pathspecs) commits NO resurrected proposed dir.
+    tw.set_status(tid, "plan_pending")
+    assert _git_ls_files(repo, f"tasks/proposed/{tid}") == []
+
+
+def test_append_guard_fresh_create_uncommitted_allows(fake_repo):
+    repo, tw = fake_repo
+    # Hand-build the deferred-create shape (#1030): dir + body + created-row
+    # events + REGISTRY entry, ZERO git ops — nothing tracked at HEAD/index.
+    tid = 7001
+    d = repo / "tasks" / "proposed" / str(tid)
+    d.mkdir(parents=True)
+    (d / "body.md").write_text(
+        "---\ntitle: fresh\nkind: infra\nhas_clean_result: false\n---\n## Goal\n\nx\n"
+    )
+    (d / "events.jsonl").write_text(
+        json.dumps({"ts": "2020-01-01T00:00:00Z", "kind": "epm:created", "version": 1, "by": "t"})
+        + "\n"
+    )
+    reg_path = repo / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_path.read_text()) if reg_path.exists() else {"highest_id": 0, "tasks": {}}
+    reg["tasks"][str(tid)] = {
+        "path": f"tasks/proposed/{tid}",
+        "title": "fresh",
+        "kind": "infra",
+        "status": "proposed",
+        "has_clean_result": False,
+    }
+    reg["highest_id"] = max(reg.get("highest_id", 0), tid)
+    reg_path.parent.mkdir(parents=True, exist_ok=True)
+    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+
+    tw.post_event(tid, "epm:progress", by="test", note="fresh append")
+    rows = tw._iter_jsonl(d / "events.jsonl")
+    assert any(r.get("note") == "fresh append" for r in rows)
+    assert d.is_dir()  # no reroute, no quarantine, no raise
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+
+
+def test_append_guard_deferred_status_move_disk_newer_allows(fake_repo, caplog):
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="deferred move"))
+    # Hand-simulate the durably-applied-but-uncommitted status move (#825
+    # crash envelope): whole-dir move + REGISTRY update + a NEWER
+    # hand-appended status-changed row; NO git ops (index still at proposed).
+    old = repo / "tasks" / "proposed" / str(tid)
+    new = repo / "tasks" / "planning" / str(tid)
+    new.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(new))
+    moved_row = {"ts": "2099-01-01T00:00:00Z", "kind": "epm:status-changed", "version": 1}
+    with (new / "events.jsonl").open("a") as fh:
+        fh.write(json.dumps(moved_row) + "\n")
+    _rewrite_registry_entry(repo, tid, f"tasks/planning/{tid}", "planning")
+
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw.post_event(tid, "epm:progress", by="test", note="post-move append")
+    rows = tw._iter_jsonl(new / "events.jsonl")
+    assert any(r.get("note") == "post-move append" for r in rows)
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+    assert any("deferred-commit shape, allowing" in r.getMessage() for r in caplog.records)
+
+
+def test_append_guard_identical_restore_ts_tie_allows(fake_repo):
+    repo, tw = fake_repo
+    tid = _setup_stale_restore(repo, tw)
+    # Overwrite the restored events.jsonl with content byte-equal to the
+    # index blob of the TRACKED dir → max-ts TIE → `>=` allows: no
+    # destructive act without STRICT staleness evidence (behavior equals
+    # today's unguarded append on ties).
+    blob = subprocess.run(
+        ["git", "show", f":tasks/planning/{tid}/events.jsonl"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    stale = repo / "tasks" / "proposed" / str(tid)
+    (stale / "events.jsonl").write_text(blob)
+    tw.post_event(tid, "epm:progress", by="test", note="tie append")
+    rows = tw._iter_jsonl(stale / "events.jsonl")
+    assert any(r.get("note") == "tie append" for r in rows)
+    assert stale.is_dir()
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+
+
+def test_append_guard_multi_tracked_husk_raises(fake_repo):
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="husk"))
+    # Fabricate a COMMITTED husk at a second status dir.
+    husk = repo / "tasks" / "planning" / str(tid)
+    husk.mkdir(parents=True)
+    (husk / "events.jsonl").write_text(
+        json.dumps({"ts": "2020-01-01T00:00:00Z", "kind": "epm:created", "version": 1, "by": "t"})
+        + "\n"
+    )
+    subprocess.run(["git", "add", "--", f"tasks/planning/{tid}"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "fabricate husk"], cwd=repo, check=True)
+    # Hand-move the resolved state to a THIRD location.
+    old = repo / "tasks" / "proposed" / str(tid)
+    new = repo / "tasks" / "running" / str(tid)
+    new.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(new))
+    _rewrite_registry_entry(repo, tid, f"tasks/running/{tid}", "running")
+
+    before = tw._iter_jsonl(new / "events.jsonl")
+    with pytest.raises(tw.StaleTaskPathError, match="MULTIPLE status dirs"):
+        tw.post_event(tid, "epm:progress", by="test", note="must not land")
+    # No row appended ANYWHERE; nothing quarantined (never-guess).
+    assert tw._iter_jsonl(new / "events.jsonl") == before
+    for events_path in (repo / "tasks").rglob("events.jsonl"):
+        assert not any(r.get("note") == "must not land" for r in tw._iter_jsonl(events_path))
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+
+
+def test_append_guard_target_missing_on_disk_raises(fake_repo):
+    repo, tw = fake_repo
+    tid = _setup_stale_restore(repo, tw)
+    # Index still tracks planning, but its dir is gone from disk: a blind
+    # re-route would O_CREAT a history-losing one-row file there.
+    shutil.rmtree(repo / "tasks" / "planning" / str(tid))
+    stale = repo / "tasks" / "proposed" / str(tid)
+    with pytest.raises(tw.StaleTaskPathError, match=r"events\.jsonl is missing"):
+        tw.post_event(tid, "epm:progress", by="test", note="must not land")
+    # Raise PRECEDES quarantine: the stale dir is untouched (fail-loud
+    # acceptance backing — no evidence destruction on the raise path).
+    assert stale.is_dir()
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+
+
+def test_append_guard_git_probe_failure_fails_open(fake_repo, caplog):
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="probe fail"))
+
+    def _boom(args, **kwargs):
+        raise subprocess.CalledProcessError(128, ["git", *args], stderr="fatal: boom")
+
+    with (
+        caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"),
+        pytest.MonkeyPatch.context() as mp,
+    ):
+        mp.setattr(tw, "_run_git", _boom)
+        payload = tw.post_event(tid, "epm:progress", by="test", note="unguarded append")
+    assert payload["note"] == "unguarded append"
+    rows = tw._iter_jsonl(repo / "tasks" / "proposed" / str(tid) / "events.jsonl")
+    assert any(r.get("note") == "unguarded append" for r in rows)
+    assert any("append-guard: git probe failed" in r.getMessage() for r in caplog.records)
+
+
+def test_append_comment_rerouted_on_stale_restore(fake_repo):
+    repo, tw = fake_repo
+    tid = _setup_stale_restore(repo, tw)
+    tw.append_comment(tid, author="tester", kind="note", body="rerouted comment")
+    cur = repo / "tasks" / "planning" / str(tid)
+    rows = tw._iter_jsonl(cur / "comments.jsonl")
+    assert any(r.get("body") == "rerouted comment" for r in rows)
+    assert not (repo / "tasks" / "proposed" / str(tid)).exists()  # quarantined
+
+
+def test_append_guard_concern_rerouted_on_stale_restore(fake_repo):
+    repo, tw = fake_repo
+    tid = _setup_stale_restore(repo, tw)
+    tw.raise_concern(
+        tid,
+        "guard-test-concern",
+        severity="CONCERN",
+        summary="rerouted concern",
+        raised_by="test",
+        raised_at_round=1,
+    )
+    cur = repo / "tasks" / "planning" / str(tid)
+    c_rows = tw._iter_jsonl(cur / "concerns.jsonl")
+    assert any(r.get("summary") == "rerouted concern" for r in c_rows)
+    e_rows = tw._iter_jsonl(cur / "events.jsonl")
+    assert any(r.get("kind") == "epm:concern-raised" for r in e_rows)
+    assert not (repo / "tasks" / "proposed" / str(tid)).exists()  # quarantined
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(tid)]["path"] == f"tasks/planning/{tid}"
+
+
+def test_append_guard_deferred_move_truncated_tail_allows(fake_repo):
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="truncated tail"))
+    old = repo / "tasks" / "proposed" / str(tid)
+    new = repo / "tasks" / "planning" / str(tid)
+    new.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(new))
+    # Crash-truncated hand-appended row (cut mid-object, no newline — the
+    # #1367 shape): the tolerant reader SKIPS it, the remaining parseable
+    # rows TIE the index blob (same rows) → `>=` allows; truncation of the
+    # newest row can never push the guard into a false quarantine.
+    with (new / "events.jsonl").open("ab") as fh:
+        fh.write(b'{"ts": "2099-01-01T00')
+    _rewrite_registry_entry(repo, tid, f"tasks/planning/{tid}", "planning")
+    tw.post_event(tid, "epm:progress", by="test", note="truncated-tail append")
+    rows = tw._iter_jsonl(new / "events.jsonl")
+    assert any(r.get("note") == "truncated-tail append" for r in rows)
+    assert new.is_dir()
+    assert not (repo / ".task-workflow" / "stale-task-dirs").exists()
+
+
+def test_task_status_dir_pathspecs_unchanged_after_refactor(fake_repo):
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="pathspecs"))
+    # Mixed fixture: proposed is tracked+on-disk; planning is on-disk ONLY
+    # (untracked ghost). The recomposed helper must return BOTH, sorted —
+    # byte-identical to the pre-#1565 single-function output.
+    ghost = repo / "tasks" / "planning" / str(tid)
+    ghost.mkdir(parents=True)
+    (ghost / "events.jsonl").write_text("")
+    specs = tw._task_status_dir_pathspecs(tid, repo)
+    assert specs == sorted([f"tasks/proposed/{tid}", f"tasks/planning/{tid}"])
+    # The extracted tracked-side probe returns ONLY the index-tracked dir.
+    assert tw._tracked_status_dirs(tid, repo) == {f"tasks/proposed/{tid}"}
