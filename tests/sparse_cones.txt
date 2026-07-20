@@ -48,6 +48,10 @@
 #   eval_results/issue_1482 — test_issue1482_pdshrink.py::test_g1_committed_split_sha_constants_pin_committed_file
 #                             reads split_1482.json (pins PDSHRINK_COMMITTED_SPLIT_SHAS
 #                             to the committed G1 leg-(i) anchor shas)
+#   eval_results/issue_779  — test_issue1482_driver.py::_fake_gate_a_inputs reads
+#                             fitter-fair-comparison-n1m/n1m_fits.json (the Gate-A
+#                             ridge-anchor fixture; missing line surfaced as a
+#                             sparse-worktree FileNotFoundError on #1571's gate run)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -62,3 +66,4 @@ eval_results/issue_825
 eval_results/issue_1417
 eval_results/issue_1434
 eval_results/issue_1482
+eval_results/issue_779
