@@ -4383,8 +4383,8 @@
     "1562": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1562",
-      "status": "running",
+      "path": "tasks/reviewing/1562",
+      "status": "reviewing",
       "title": "daily-fix: committed scripts, not inline -c, for probe runs"
     },
     "1563": {
