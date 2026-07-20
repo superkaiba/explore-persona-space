@@ -570,4 +570,10 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
   `Durability pin: N/A — <one-line reason>` (e.g. narrative prose no code or
   downstream parser couples to). Lineage: #1134 shipped SKILL.md prose with no pin,
   #1045 left the pin optional, #884 shipped a real pin named only in unlabeled
-  prose — `verify_plan.py` c31 WARNs on the missing label.
+  prose — `verify_plan.py` c31 WARNs on the missing label. For a NEW pin test
+  file the plan adds, ALSO name its Step-9c selector registration — the
+  `WORKFLOW_INVARIANT` tuple in `scripts/select_step9c_tests.py`, stated on the
+  pin line or on one standalone `Selector registration:` line — or land the pin
+  as a new test in an already-registered file: an unregistered new pin file
+  never runs on a later SKILL.md diff (#1242/#1268 registered after the fact;
+  #1546), and `verify_plan.py` c31 WARNs on it.
