@@ -3,3 +3,4 @@
 {"ts": "2026-07-20T06:51:40Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-20T06:57:48Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v1. Goal-currency: MATCH at persist."}
 {"ts": "2026-07-20T07:01:32Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v2 written to tasks/planning/1570/plans/plan.md (gpu_hours_total=0). Fact-checker: 10 CONFIRMED, 1 date correction applied (#1534 landed 2026-07-19), 0 UNVERIFIED. verify_plan.py PASS on v1 and v2."}
+{"ts": "2026-07-20T07:01:49Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all Phase 2 lens twins (and later review-site twins this session)."}
