@@ -307,9 +307,10 @@ zero TCP) stays on the kill+replay ladder (gotchas.md hf-xet download-wedge
 entry), and flaky-egress accelerator handling stays the per-launch
 `HF_HUB_DISABLE_XET=1` kill-switch replay, never a default flip; (b) the
 verbatim prefix mirror is a staged LAYOUT — a consumer with a fixed local
-layout still owes the staged-layout consumer-open probe at reuse time
-(`.claude/rules/artifact-reuse.md` check (h)(iv), #928); "canonical helper"
-does not mean "layout-mapping solved".
+layout still owes the staged-layout consumer-open probe at reuse time, once
+per (source-family × staged consumer) pair
+(`.claude/rules/artifact-reuse.md` check (h)(iv), #928, #1481); "canonical
+helper" does not mean "layout-mapping solved".
 
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
