@@ -4355,8 +4355,8 @@
     "1559": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1559",
-      "status": "planning",
+      "path": "tasks/approved/1559",
+      "status": "approved",
       "title": "daily-fix: tmux guard - exempt dead single-socket rm"
     },
     "156": {
