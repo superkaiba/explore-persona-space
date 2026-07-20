@@ -2192,7 +2192,16 @@ already runs on `main`):
 # — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
 # self-no-op case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
+# Lint/guard family rides the sync (#1560): the specs synced below are budget-
+# checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
+# by the test_workflow_lint*/test_guard_lessons_edit pin tests — syncing
+# specs without their enforcing family creates the #1489/#1482/#1417 vintage
+# skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
+# ":(glob)"), so `git checkout main --` matches main-NEW pin tests too. The
+# per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
+# ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
+# staleness for those files, never a clobber).
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py"
 MB=$(git -C "$WT" merge-base HEAD main)
 SAFE_SPECS=""
 for f in $SPECS; do
@@ -2200,7 +2209,8 @@ for f in $SPECS; do
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
-  bs_commits=$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")
+  bs_commits=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
+    | awk 'index($0, "spec-freshness") == 0')
   if [ -z "$bs_commits" ]; then
     SAFE_SPECS="$SAFE_SPECS $f"
   else
@@ -2247,21 +2257,38 @@ content has already landed on main (in which case the orchestrator can
 safely override the skip for those specific files with a manual
 `git -C "$WT" checkout main -- <paths>`).
 
-**The sync scope is deliberately specs-only — do NOT extend it to
-`scripts/` or `tests/`.** The sync exists because the Agent/Skill tools
-load specs from the session's cwd; workflow-helper SCRIPTS are already
-resolved from the MAIN checkout (Step 0 § worktree spec-freshness:
-`"$REPO_ROOT"/scripts/...`), so syncing worktree copies buys no runtime
-correctness. Blind-syncing `tests/` is actively unsafe: main's newer
-workflow tests pin behavior implemented in main's newer `scripts/` +
-`src/` (e.g. `task_workflow.py`, `backends/`) that the branch predates,
-so a partial code sync makes the worktree suite REDDER or breaks the
+**The sync scope is specs + the spec-coupled lint/guard family — do NOT
+extend it further into `scripts/`, `tests/`, or `src/`.** The family
+exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
+`tests/test_guard_lessons_edit.py`, `:(glob)tests/test_workflow_lint*.py`)
+exists because those files execute FROM the worktree tree on four
+surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
+own-tree `workflow_lint` import, and the inline gate invoked in a
+worktree — and their constants/budgets pair with the specs this sync
+already refreshes: half-syncing manufactured the #1489/#1482/#1417 gate
+blocks. The family is deliberately closed up to ONE seam: its only src
+imports are from the low-churn `explore_persona_space.workflow` module
+(the linter's 2-symbol import at `workflow_lint.py:672-681`, plus
+`tests/test_workflow_lint.py:96`'s 3-symbol
+`MarkerEntry, WorkflowYaml, load_workflow_yaml`) — the accepted
+residual: a synced family file ImportError-ing on that module means
+branch-era `src/explore_persona_space/workflow.py` skew (rebase onto
+origin/main, or cross-check at the repo root; module stable since
+2026-06-13). Everything ELSE keeps the original rationale: workflow-
+helper SCRIPTS are already resolved from the MAIN checkout (Step 0
+§ worktree spec-freshness: `"$REPO_ROOT"/scripts/...`), and blind-
+syncing broader `tests/` is actively unsafe — main's newer workflow
+tests pin behavior implemented in main's newer `scripts/` + `src/`
+(e.g. `task_workflow.py`, `backends/`) that the branch predates, so a
+partial code sync makes the worktree suite REDDER or breaks the
 branch's own imports — and the per-path branch-side-edit guard would
-skip `scripts/`/`tests/` wholesale anyway (nearly every issue branch
-adds its own `scripts/issue<N>_*.py` + tests). Operational rule
-instead: a workflow test that FAILs inside a long-lived issue worktree
-but PASSes at the repo root on `main` is worktree-staleness, not this
-issue's breakage — cross-check at the repo root before chasing it; the
+skip broad `scripts/`/`tests/` cones wholesale anyway (nearly every
+issue branch adds its own `scripts/issue<N>_*.py` + tests). Operational
+rule instead: a workflow test that FAILs inside a long-lived issue
+worktree but PASSes at the repo root on `main` — **including a
+collection-time ImportError from a `workflow_lint` / rules-pin
+symbol** — is worktree-staleness, not this issue's breakage —
+cross-check at the repo root before chasing it; the
 Step 10d merge resolves it (observed on #542, 2026-06-11). (A shared-infra
 `src/` fix with fleet-wide blast radius — e.g. the #847 thread caps — gets a
 LAUNCH-TIME fallback instead of a sync: the VM-side launch surfaces carry the
@@ -6784,6 +6811,12 @@ explicit eval-data path):
    two inline-landed bare `.list_repo_tree(` scripts broke
    `tests/test_workflow_lint.py` on pristine main fleet-wide; the
    worktree channels are already gated at Step 10d).
+
+   A worktree-cwd inline-gate false block naming a ratchet/grandfather
+   cap or failing to import `workflow_lint` is the stale-family class
+   (#1417): run the Step 5a sync (now family-inclusive) in that
+   worktree and re-run the gate before treating the block as
+   payload-caused.
 4. **Capture the headline before / after.** Read the current `body.md`
    H1 title before the re-spawn and the analyzer-produced H1 after,
    plus the LOW / MODERATE / HIGH confidence tag in each.
@@ -9672,6 +9705,43 @@ tests BEFORE anything lands:
   `ood_eval_results/`, `raw/`, `data/`, `docs/methodology/`). The lint's
   no-flags default run walks `.claude/**`, `CLAUDE.md`, `scripts/`, and
   `src/`, so any code-bearing payload is in scope.
+- **Pre-gate freshness re-sync (#1560; forms (i)/(ii) — form (iii) operates
+  on the root tree and is exempt).** Step 5a syncs fire at fan-out time, so
+  a branch merged hours later can carry stale spec + lint/guard-family
+  copies that would land regressive content on trunk (a rebase replays the
+  morning copies over evening main) and red the gate (#1489 blockers 1 AND
+  2; #1482; #1417). BEFORE launching the background gate call, run the
+  Step 5a spec-freshness block (§ Step 5a) ONCE with source `origin/main` —
+  **against the ALREADY-BOUND `$WT`**: the merge flow bound
+  `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards block, so
+  DROP the Step 5a block's own `WT=$(git rev-parse --show-toplevel)` line —
+  do NOT re-derive `$WT` at Step 10d (a repo-root cwd would rebind it to
+  the SHARED ROOT and either silently no-op the re-sync or check out +
+  commit older origin/main content over newer root-main state). Then: first
+  `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`,
+  then the rest of the block with every `main` ref replaced by
+  `origin/main`. Same per-file branch-side-edit guard, subject-scoped per
+  the Step 5a block (a branch whose deliverable edits a family file keeps
+  its copies — the gate's #1456 3-way merge covers its lint legs, and its
+  TG legs then run the branch's kept copies plus any main-new synced pin
+  tests: a fail-closed hybrid that mirrors the post-merge trunk state, not
+  a fully coherent pair); same `spec-freshness` commit-subject convention.
+  Commit-message filtering follows the Guard-3 subject-scoped convention —
+  never write a full-message grep-exclusion invocation into this Step 10d
+  gate section (enforcement = the gate-region negative assert in
+  `tests/test_issue_skill_lint_family_sync.py`, whose region spans this
+  pre-push gate section through the auto-merge heading — the Guard-3 pin
+  test's own region ban stops at the fast-path heading and does not reach
+  here). End the re-sync with one echo —
+  `[step10d] pre-gate re-sync: synced <n> files (<sha>) | no drift` — so
+  ran-vs-never-ran is observable in the gate transcript (copy the line
+  into the epm:merged / epm:merge-failed note). Run the re-sync to
+  completion BEFORE the gate's stale-verdict `rm` below, so the verdict
+  sha-binds the synced tip; a no-change re-sync commits nothing and the
+  flow is idempotent. Synced files enter the own-diff (they differ from
+  the merge-base) — harmless by construction: the overlay writes
+  origin/main-identical bytes, and any TG hits they trigger are identical
+  on both legs and subtract to empty.
 - **Run a LANDING-TREE lint copy, both legs — no-flags bundle PLUS the parity leg.**
   The gate builds ONE ephemeral landing tree in /tmp (`git archive
   origin/main` over the lint-scanned cones), runs the BASELINE legs from
@@ -10107,9 +10177,15 @@ tests BEFORE anything lands:
   runs the branch-tip copy of the scan test, so a check added on `main` after
   the branch forked is not enforced there (fail-safe direction; the LINT legs
   no longer share this residual — the #1212 gate tree runs the landing tree's
-  lint on every path-(i) run; the TEST legs keep it because syncing
-  individual test files without their import closure — conftest, tests/
-  helpers — risks hybrid trees); (b) the baseline leg runs on the
+  lint on every path-(i) run; the TEST legs keep branch-tip copies because
+  syncing arbitrary individual test files without their import closure —
+  conftest, tests/ helpers — risks hybrid trees, but the lint/guard pin-test
+  FAMILY is now Step-5a-synced AND pre-gate re-synced from origin/main
+  (#1560), narrowing the drift window to (α) non-family rules-pin tests —
+  prose-pin skew; symptom: a gated-only red in a rules-mentioning test the
+  family does not cover — and (β) the `explore_persona_space.workflow` seam,
+  same remedy for both: rebase onto origin/main / cross-check at the repo
+  root); (b) the baseline leg runs on the
   always-dirty shared root — dirt biases toward PASS, never a false block: an
   untracked concurrent-session file (including an untracked same-path draft
   of the payload file at the root, which the directory scan picks up
@@ -10264,7 +10340,13 @@ tests BEFORE anything lands:
   and extending the set is the fix (the #1154 `docs/` pins are the
   precedent); (c) the mapped invariant-TEST legs keep the branch-tip test
   copies and the dirty-root baseline (path-(i) test-VERSION drift,
-  fail-safe direction) — the trunk pytest remains their backstop; (d) a
+  fail-safe direction) — the lint/guard family is now Step-5a-synced AND
+  pre-gate re-synced from origin/main (#1560), so the remaining drift
+  window is (α) non-family rules-pin tests (prose-pin skew; symptom: a
+  gated-only red in a rules-mentioning test the family does not cover)
+  and (β) the `explore_persona_space.workflow` seam, both with the same
+  remedy (rebase onto origin/main / cross-check at the repo root); the
+  trunk pytest remains their backstop; (d) a
   lint-scanned file BOTH main and the branch modified post-fork lints as
   the BRANCH's copy (the overlay takes branch-HEAD wholesale; EXCEPT
   `scripts/workflow_lint.py` itself, which is 3-way-merged per #1456 —

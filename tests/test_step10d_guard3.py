@@ -338,10 +338,25 @@ def test_guard3_region_does_not_use_grep_spec_freshness():
 
 
 def test_step5a_grep_filter_untouched():
-    """Defensive: the unrelated Step-5a spec-freshness sync keeps its filter."""
+    """The Step-5a spec-freshness sync's branch-side-edit exclusion is
+    SUBJECT-scoped (deliberately changed by #1560 from the old full-message
+    --grep/--invert-grep form — which Guard 3's own note bans: a commit BODY
+    mentioning the token would launder a genuine branch deliverable, and at
+    the #1560 pre-gate re-sync position that mis-exclusion would check out
+    origin/main over a reviewed deliverable). Supersedes the pre-#1560
+    defensive pin that the full-message filter remained (that pin was out of
+    #787 scope; #1560 deliberately subject-scoped the Step 5a filter)."""
     text = _skill_text()
-    assert "--grep='spec-freshness' --invert-grep" in text, (
-        "the Step-5a sync's --grep filter must remain (it is out of #787 scope)"
+    start = text.index('SPECS=".claude/agents')
+    span = text[start : text.index("429 pacing at every ensemble fan-out", start)]
+    assert "--format='%H %s'" in span, (
+        "the Step-5a exclusion must emit '<sha> <subject>' (subject-scoped)"
+    )
+    assert "awk 'index($0, \"spec-freshness\") == 0'" in span, (
+        "the Step-5a exclusion must filter via the subject-scoped awk index() form"
+    )
+    assert "--grep='spec-freshness' --invert-grep" not in span, (
+        "the Step-5a sync must not use the full-message --grep filter (#1560)"
     )
 
 
