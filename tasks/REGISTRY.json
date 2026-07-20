@@ -4327,8 +4327,8 @@
     "1555": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1555",
-      "status": "reviewing",
+      "path": "tasks/completed/1555",
+      "status": "completed",
       "title": "daily-fix: check (g) parity probe per adapter recipe-class"
     },
     "1556": {
