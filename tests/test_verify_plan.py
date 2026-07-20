@@ -6434,6 +6434,9 @@ def test_c31_pasted_warn_detail_does_not_self_satisfy():
 
 
 def test_c31_pin_line_passes():
+    # Deliberate live-tree dependency (post-#1557): the named pin file exists
+    # on the real tree and is WORKFLOW_INVARIANT-registered, so this now
+    # exercises the standing-file branch against the real repo root.
     plan = (
         GOOD_PLAN + C31_SKILL_EDIT + "\nDurability pin: tests/test_issue_skill_marker_contract.py::"
         "test_step8_detach_prose_present\n"
@@ -6444,15 +6447,30 @@ def test_c31_pin_line_passes():
     assert "pin named" in r.detail
 
 
-def test_c31_planned_new_pin_test_passes():
-    # A pin test the plan itself ADDS counts — the verifier cannot and need
-    # not distinguish standing from planned (the code-reviewer checks the
-    # diff ships it).
+def _c31_fixture_root(tmp_path, *, tests_dir=True, present=()):
+    # Fixture strategy for the #1557 NEW-pin registration branch: monkeypatch
+    # verify_plan._C31_REPO_ROOT (the c34/c41 convention) and control which
+    # pin files exist under tests/ for hermetic determinism.
+    if tests_dir:
+        (tmp_path / "tests").mkdir()
+        for name in present:
+            (tmp_path / "tests" / name).write_text("# pin test fixture\n")
+    return tmp_path
+
+
+def test_c31_planned_new_pin_test_passes(tmp_path, monkeypatch):
+    # A pin test the plan itself ADDS counts WHEN the plan also names its
+    # Step-9c selector registration (Form B here) — post-#1557 a bare
+    # planned-new pin without registration evidence WARNs instead (the
+    # code-reviewer still checks the diff ships both).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
     plan = (
         GOOD_PLAN
         + C31_SKILL_EDIT
         + "\nDurability pin: NEW tests/test_issue_skill_detach_convention.py::"
         "test_setsid_prose_pinned (added by this plan §4.3)\n"
+        "Selector registration: add tests/test_issue_skill_detach_convention.py to "
+        "WORKFLOW_INVARIANT in scripts/select_step9c_tests.py.\n"
     )
     assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
 
@@ -6572,12 +6590,190 @@ def test_c31_incident_884_shape_warns():
     assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
 
 
+# ─── Check 31 — NEW-pin selector-registration branch (#1557) ──────────────
+
+
+def test_c31_new_pin_without_registration_warns(tmp_path, monkeypatch):
+    # The must-WARN incident fixture: the #1210 plan v1 line-16 shape (the
+    # founding offender — a pin line naming then-absent
+    # tests/test_issue_skill_merge_resnapshot_pin.py with no registration
+    # token; #1242/#1268 registered after the fact).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_merge_resnapshot_pin.py::"
+        "test_step10d_resnapshot_recipe_present — a NEW pin test asserting the "
+        "resnapshot recipe prose stays present.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    assert "tests/test_issue_skill_merge_resnapshot_pin.py" in r.detail
+    assert "#1546" in r.detail
+    assert "Selector registration" in r.detail  # the WARN teaches both forms
+
+
+def test_c31_new_pin_pinline_registration_passes(tmp_path, monkeypatch):
+    # Form A: the un-negated registry-tuple token on the pin line itself.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present "
+        "— NEW; registered in WORKFLOW_INVARIANT (scripts/select_step9c_tests.py) "
+        "by this plan.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "selector registration named" in r.detail
+
+
+def test_c31_new_pin_labeled_registration_passes(tmp_path, monkeypatch):
+    # Form B: a standalone `Selector registration:` labeled line — as a `- `
+    # list item, exercising the marker-prefix tolerance of the label regex.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present — NEW\n"
+        "- Selector registration: add tests/test_issue_skill_detach_pin.py to "
+        "WORKFLOW_INVARIANT in scripts/select_step9c_tests.py.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_new_pin_negated_registration_warns(tmp_path, monkeypatch):
+    # A NEGATED token mention describes the gap, not the commitment — the
+    # 40-char before-window negation check rejects it.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present "
+        "(not yet in WORKFLOW_INVARIANT)\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_standing_pin_file_needs_no_registration(tmp_path, monkeypatch):
+    # A pin file PRESENT on disk is standing at file grain — no registration
+    # evidence required, detail stays the plain base-satisfier string.
+    root = _c31_fixture_root(tmp_path, present=("test_issue_skill_detach_pin.py",))
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", root)
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert r.detail.startswith("pin named (")
+    assert "selector registration" not in r.detail
+
+
+def test_c31_new_function_in_existing_file_passes(tmp_path, monkeypatch):
+    # File grain IS the gate-visibility grain: a novel ::test_name in a
+    # REGISTERED (existing) file is selector-visible by construction.
+    root = _c31_fixture_root(tmp_path, present=("test_verify_plan.py",))
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", root)
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_verify_plan.py::test_some_brand_new_pin_function\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_pin_ident_without_path_passes(tmp_path, monkeypatch):
+    # Disclosed under-trigger (fail-open): a pin ident with no extractable
+    # tests/ path satisfies the base satisfier and skips the NEW-pin branch.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: test_step8_detach_prose_present (module TBD in planning)\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert r.detail.startswith("pin named (")
+
+
+def test_c31_new_pin_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
+    # The L6423 anti-paste shape for the NEW WARN text: pasting the detail
+    # back as one line satisfies neither the base satisfier (no test_ ident
+    # after its `Durability pin:` mention) nor either registration form (the
+    # tuple name appears hyphen-joined; the label is not line-start).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    base = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_offrepo_tests_dir_absent_keeps_pass(tmp_path, monkeypatch):
+    # --plan-file off-repo (no tests/ dir under the resolved root): the
+    # registration sub-check cannot adjudicate NEW-vs-standing — fail-open
+    # PASS with the skip noted in the detail (the c41 off-repo doctrine).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path, tests_dir=False))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "registration sub-check skipped" in r.detail
+
+
+def test_c31_na_escape_short_circuits_before_disk(tmp_path, monkeypatch):
+    # Behavioral discriminator for the NA short-circuit: with the root
+    # pointed at a NONEXISTENT path, a disk-reaching NA path would take the
+    # tests/-absent fail-open branch and carry its "skipped" suffix; the
+    # short-circuit returns the plain justification detail instead.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", tmp_path / "nonexistent")
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: N/A — narrative pointer prose; no parser couples to it.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "justification" in r.detail
+    assert "skipped" not in r.detail
+
+
+def test_c31_fenced_new_pin_line_also_flagged(tmp_path, monkeypatch):
+    # Raw-scan symmetry with test_c31_fenced_pin_line_satisfies: a fenced pin
+    # line naming an absent file with no registration still WARNs.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\n```\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n```\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
 def test_planner_md_carries_durability_pin_instruction():
     # The pin test for the planner.md author-side bullet this task ships —
-    # the rule dogfoods itself.
+    # the rule dogfoods itself. The Selector-registration sentence is the
+    # #1557 author-side companion of the c31 NEW-pin branch.
     text = (REPO_ROOT / ".claude" / "agents" / "planner.md").read_text()
     assert re.search(r"Durability pin:", text)
     assert "#884" in text
+    assert "Selector registration" in text
 
 
 def test_adversarial_planner_skill_lists_c31_escape():
