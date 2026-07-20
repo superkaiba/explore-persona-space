@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1560,
+  "highest_id": 1561,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4372,6 +4372,13 @@
       "path": "tasks/proposed/1560",
       "status": "proposed",
       "title": "daily-fix: stop branch-era workflow_lint redding 10d gates"
+    },
+    "1561": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1561",
+      "status": "proposed",
+      "title": "daily-fix: hub-verify lint FP on monkeypatch attribute refs"
     },
     "157": {
       "has_clean_result": false,
