@@ -36,9 +36,18 @@ This mirrors the subprocess-drives-script convention of the sibling
 ``tests/test_*guard*`` files.
 
 The guard's on-main gate exits 0 when the repo-root HEAD is already off ``main``
-(it never traps a user recovering from an already-detached/off-main state), so
-the BLOCK-path tests are guarded by ``@on_main``. The ALLOW-path and fail-soft
-tests run regardless — the guard must never trap those shapes in either state.
+(it never traps a user recovering from an already-detached/off-main state). The
+harness pins every git-STATE read the hook makes — the ref/commit-ish resolution
+probes (hook L1384-1388) and that tail on-main gate (L1777) — to a session-scoped
+fixture repo that is always on ``main``, by exporting ``GIT_DIR``/``GIT_WORK_TREE``
+in the hook subprocess env (git env precedence over the hook's hardcoded
+``git -C "$REPO"``; the #1545 pattern, sibling:
+``workflow_lint._root_guard_git_env``). Block/allow outcomes are therefore
+deterministic under ANY concurrent shared-root git state — #1528: a mid-run
+off-main flip (e.g. a ``sync_repo_root.py`` rebase transiently detaching HEAD)
+failed 23 block tests via the tail fail-open arm, which the former import-time
+``@on_main`` skipif could not see. That skipif is deleted; the fail-open arm now
+has deterministic pin tests of its own (end of module).
 As of #1098 the guard WAIVES, per-clause and under a fail-closed refusal ladder
 (pipe/BG-producer position, expansion + here-string syntax, non-/dev/null
 output redirects, ssh local-exec options, shared-repo path spellings,
@@ -80,9 +89,18 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
 
 # The script hardcodes REPO=/home/thomasjiralerspong/explore-persona-space and
-# runs ``git -C "$REPO" ...`` for its branch/commit-ish resolution + on-main
-# gate — so ref/branch/tag existence and the on-main check are read against that
-# canonical checkout, NOT this worktree.
+# runs ``git -C "$REPO" ...`` for its branch/commit-ish resolution (hook L1384
+# show-ref / L1386 rev-parse / L1388 cat-file) + the tail on-main gate (L1777).
+# The harness pins GIT_DIR/GIT_WORK_TREE in every hook subprocess env to a
+# session-scoped always-on-main fixture repo (_build_pinned_repo/_pinned_env
+# below) — git env vars take precedence over ``-C`` — so ALL of those git-state
+# reads resolve in the PINNED repo, never the live shared root (#1528 flake
+# class; sibling: workflow_lint._root_guard_git_env, #1545). Known residual,
+# accepted: the hook's ``[ -e "$REPO/$arg" ]`` filesystem probe (L1388b) still
+# reads the real root's fs — it is branch-state-independent, and dead code for
+# block rows (the seeded fixture resolves their pathspecs at the cat-file site
+# first). REPO below stays the REAL root: the deny-sidecar snapshot + the
+# REPO-constant text pin test read it; no git STATE is read through it anymore.
 REPO = Path("/home/thomasjiralerspong/explore-persona-space")
 
 # Deny-event sidecar (#1528): the guard's default sidecar path lives under the
@@ -94,6 +112,84 @@ _PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
 _PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
 
 
+def _scrubbed_env() -> dict[str, str]:
+    """``os.environ`` minus every ``GIT_*`` var (the #1545 scrub).
+
+    Base for EVERY subprocess env in this module — hook invocations AND the
+    harness's own git calls — so an ambient GIT_DIR / GIT_OBJECT_DIRECTORY /
+    GIT_INDEX_FILE (e.g. a pre-commit caller) can never redirect either side.
+    Built from ``os.environ`` at call time so ``monkeypatch``-based env tests
+    keep working.
+    """
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
+def _build_pinned_repo(d: Path) -> None:
+    """git-init a minimal always-on-main repo the hook's git reads resolve against.
+
+    Seed <-> consumer map (every resolution-dependent fixture row):
+    2 commits => ``HEAD~1`` rows resolve (hook rev-parse site); the reflog
+    (written by default on non-bare init) => the ``HEAD@{0}`` row; the seeded
+    ``refs/remotes/origin/main`` => the ``origin/main`` rows; the committed
+    ``CLAUDE.md`` + ``scripts/eval.py`` => the bare-pathspec existence-probe
+    rows resolve hermetically at the hook's ``cat-file -e HEAD:<arg>`` site
+    (so the real-root fs probe is never consulted for them). Deliberately
+    strictly minimal otherwise: fail-soft rows' nonexistent-token args must
+    NOT resolve.
+    """
+    env = _scrubbed_env()
+    env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # ambient gpgsign/hooks isolation (#1545)
+    env["GIT_CONFIG_NOSYSTEM"] = "1"
+
+    def run(*args: str) -> None:
+        subprocess.run(args, check=True, capture_output=True, env=env, timeout=20)
+
+    run("git", "init", "-q", "-b", "main", str(d))  # -b: git >= 2.28
+    ident = ("-c", "user.name=eps-guard-test", "-c", "user.email=guard-test@eps.local")
+    run("git", "-C", str(d), *ident, "commit", "-q", "--allow-empty", "-m", "c1")
+    (d / "CLAUDE.md").write_text("pinned fixture\n")
+    (d / "scripts").mkdir()
+    (d / "scripts" / "eval.py").write_text("# pinned fixture\n")
+    run("git", "-C", str(d), "add", "CLAUDE.md", "scripts/eval.py")
+    run("git", "-C", str(d), *ident, "commit", "-q", "-m", "c2")  # 2 commits => HEAD~1
+    run("git", "-C", str(d), "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+_PINNED_REPO: Path | None = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _pinned_repo_session(tmp_path_factory):
+    """Build the pinned repo ONCE per pytest process; every hook env points at it.
+
+    ``tmp_path_factory`` basetemp is per-process (numbered ``pytest-<N>`` dirs
+    with locking under ``/tmp/pytest-of-<user>``), so concurrent gate runs each
+    build their own fixture; pytest's retention policy cleans old basetemps.
+    """
+    global _PINNED_REPO
+    d = tmp_path_factory.mktemp("eps-guard-pinned-repo")
+    _build_pinned_repo(d)
+    _PINNED_REPO = d
+    yield
+    _PINNED_REPO = None
+
+
+def _pinned_env(sidecar: str | None) -> dict[str, str]:
+    """Hook-subprocess env: GIT_* scrubbed, git-state reads pinned to the fixture.
+
+    GIT_DIR/GIT_WORK_TREE take precedence over the hook's hardcoded
+    ``git -C "$REPO"`` (git(1) ENVIRONMENT; verified on git 2.34.1 for all four
+    subcommands the hook runs), redirecting every git-state read to the pinned
+    always-on-main repo.
+    """
+    assert _PINNED_REPO is not None, "pinned-repo session fixture did not run"
+    env = _scrubbed_env()
+    env["GIT_DIR"] = str(_PINNED_REPO / ".git")
+    env["GIT_WORK_TREE"] = str(_PINNED_REPO)
+    env["EPM_GUARD_DENY_SIDECAR"] = sidecar or "/dev/null"
+    return env
+
+
 def _run_full(cmd: str, *, sidecar: str | None = None) -> subprocess.CompletedProcess[str]:
     """Feed ``cmd`` to the guard via PreToolUse JSON; return the full result.
 
@@ -103,8 +199,9 @@ def _run_full(cmd: str, *, sidecar: str | None = None) -> subprocess.CompletedPr
     silently and ``mkdir -p /dev`` no-ops, so exit-code behavior is unchanged.
     """
     payload = json.dumps({"tool_input": {"command": cmd}})
-    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
-    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True, env=env)
+    return subprocess.run(
+        [str(SCRIPT)], input=payload, text=True, capture_output=True, env=_pinned_env(sidecar)
+    )
 
 
 def _run(cmd: str, *, sidecar: str | None = None) -> int:
@@ -114,42 +211,37 @@ def _run(cmd: str, *, sidecar: str | None = None) -> int:
 
 def _run_raw(payload: str, *, sidecar: str | None = None) -> int:
     """Feed a raw (possibly malformed) stdin payload; return the exit code."""
-    env = {**os.environ, "EPM_GUARD_DENY_SIDECAR": sidecar or "/dev/null"}
     return subprocess.run(
-        [str(SCRIPT)], input=payload, text=True, capture_output=True, env=env
+        [str(SCRIPT)], input=payload, text=True, capture_output=True, env=_pinned_env(sidecar)
     ).returncode
 
 
 def _git(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True)
-
-
-def _on_main() -> bool:
-    r = _git("symbolic-ref", "--short", "HEAD")
-    return r.returncode == 0 and r.stdout.strip() == "main"
+    """Run git against the PINNED fixture repo (scrubbed env; never the live root)."""
+    assert _PINNED_REPO is not None, "pinned-repo session fixture did not run"
+    return subprocess.run(
+        ["git", "-C", str(_PINNED_REPO), *args],
+        capture_output=True,
+        text=True,
+        env=_scrubbed_env(),
+        timeout=20,
+    )
 
 
 def _repo_head_sha() -> str:
-    """Real short SHA of the canonical repo-root HEAD (resolves via ``$REPO``)."""
+    """Short SHA of the PINNED fixture repo's HEAD (what the hook resolves against)."""
     return _git("rev-parse", "--short", "HEAD").stdout.strip()
 
 
-on_main = pytest.mark.skipif(
-    not _on_main(),
-    reason="guard's on-main gate exits 0 when the repo-root HEAD is off main",
-)
-
-
 @pytest.fixture
-def throwaway_branch():
-    """A real local branch (in ``$REPO``) so ``refs/heads/<name>`` resolves.
+def throwaway_branch(_pinned_repo_session):
+    """A real local branch (in the PINNED repo) so ``refs/heads/<name>`` resolves.
 
     Created pointing at HEAD (no checkout, no tree change) and deleted on
     teardown, so the branch-switch-regression assertion is hermetic rather than
-    depending on a repo-specific branch name existing. The name carries a
-    per-run uuid suffix so concurrent test runs against the shared ``$REPO``
-    never clobber each other's ref, and teardown tolerates a missing ref (a
-    concurrent run already cleaned it up) rather than failing.
+    depending on a repo-specific branch name existing. The uuid suffix and the
+    tolerant teardown are kept (harmless), and the ref now lives only in the
+    per-process pinned fixture — never the production repo.
     """
     name = f"eps-test-throwaway-guard-796-{uuid.uuid4().hex[:8]}"
     _git("branch", "-f", name, "HEAD")
@@ -163,14 +255,14 @@ def throwaway_branch():
 
 
 @pytest.fixture
-def throwaway_tag():
-    """A real local tag (in ``$REPO``) so ``<tag>^{commit}`` resolves.
+def throwaway_tag(_pinned_repo_session):
+    """A real local tag (in the PINNED repo) so ``<tag>^{commit}`` resolves.
 
     Detaching to a tag is a real detach shape; a fabricated non-existent tag
     would fail-soft (exit 0) and never exercise the block path — so the tag must
-    genuinely exist. Created pointing at HEAD and deleted on teardown. The name
-    carries a per-run uuid suffix (concurrent-run safe) and teardown tolerates a
-    missing ref.
+    genuinely exist. Created pointing at HEAD and deleted on teardown. The uuid
+    suffix and tolerant teardown are kept; the ref lives only in the pinned
+    fixture.
     """
     name = f"eps-test-throwaway-tag-796-{uuid.uuid4().hex[:8]}"
     _git("tag", "-f", name, "HEAD")
@@ -183,7 +275,6 @@ def throwaway_tag():
 # ---------------------------------------------------------------------------
 # MUST BLOCK — detach-inducing shapes (the whole point of #796)
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "template",
     [
@@ -206,7 +297,6 @@ def test_detach_shapes_block(template):
     assert _run(template.format(sha=_repo_head_sha())) == 2
 
 
-@on_main
 def test_detach_to_real_tag_blocks(throwaway_tag):
     # A real local tag resolves to a commit-ish -> detach -> block.
     assert _run(f"git checkout {throwaway_tag}") == 2
@@ -215,7 +305,6 @@ def test_detach_to_real_tag_blocks(throwaway_tag):
 # ---------------------------------------------------------------------------
 # MUST BLOCK — existing branch-switch regression fence
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize("cmd", ["git checkout -b feature/x", "git switch fix/foo"])
 def test_branch_creation_and_switch_still_block(cmd):
     # -b/-B branch creation and `switch <non-main>` are blocked without needing
@@ -223,7 +312,6 @@ def test_branch_creation_and_switch_still_block(cmd):
     assert _run(cmd) == 2
 
 
-@on_main
 def test_existing_local_branch_checkout_still_blocks(throwaway_branch):
     # `git checkout <real-local-branch>` (not main) is the original blocked case.
     assert _run(f"git checkout {throwaway_branch}") == 2
@@ -231,8 +319,7 @@ def test_existing_local_branch_checkout_still_blocks(throwaway_branch):
 
 # ---------------------------------------------------------------------------
 # MUST ALLOW — return-to-main, scoped, and non-git shapes. These must never be
-# trapped regardless of the repo-root HEAD state, so they are NOT guarded by
-# @on_main.
+# trapped regardless of the repo-root HEAD state.
 #
 # FLIPPED to MUST-BLOCK by #897 (following the #804 `;`-latch flip precedent):
 # the four file-restore rows that used to sit here — `git checkout .`,
@@ -264,7 +351,6 @@ def test_allowed_shapes_exit0(cmd):
 # the raw command and strips only a single surrounding quote layer on the
 # classified checkout arg. Concern id: quoted-refs-bypass-detach-guard (#796).
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "template",
     [
@@ -286,8 +372,8 @@ def test_quoted_detach_refs_still_block(template):
     ],
 )
 def test_quoted_main_still_allows(cmd):
-    # These must never be trapped regardless of repo-root HEAD state, so NOT
-    # guarded by @on_main. Round-1's quote-strip false-positived `git switch
+    # These must never be trapped regardless of repo-root HEAD state.
+    # Round-1's quote-strip false-positived `git switch
     # "main"` to exit 2; after the revert the arg-classifier strips the quotes
     # and the `main` allow-arm passes.
     assert _run(cmd) == 0
@@ -301,7 +387,6 @@ def test_quoted_main_still_allows(cmd):
 # forms) slipped through the allow-arm and leaked a branch-switch off main.
 # Concern id: switch-main-prefix-allowarm-leak (#796 round 3).
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -320,8 +405,8 @@ def test_switch_main_prefix_still_blocks(cmd):
 
 # ---------------------------------------------------------------------------
 # MUST ALLOW — genuine return-to-main, including a trailing shell delimiter or
-# chained command after `main`. NOT guarded by @on_main (must never trap in
-# either repo-root HEAD state). Concern id: switch-main-prefix-allowarm-leak.
+# chained command after `main`. Must never trap in either repo-root HEAD
+# state. Concern id: switch-main-prefix-allowarm-leak.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -357,7 +442,6 @@ def test_note_text_git_verb_literal_trips_guard_known_limitation():
     )
 
 
-@on_main
 def test_nonexistent_ref_fails_soft():
     # An arg that resolves to nothing (typo / non-existent ref) is NOT blocked:
     # rev-parse fails -> guard exits 0 -> git itself errors on the real call.
@@ -370,7 +454,6 @@ def test_nonexistent_ref_fails_soft():
 # clause. Clause-local parsing classifies each clause independently; the first
 # blocking clause wins. Concern id: compound-command-masking-leak.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -395,7 +478,6 @@ def test_compound_masking_still_blocks(cmd):
 # The clause-local parser must RESET the `scoped` latch when the separator
 # BEFORE a clause is || or |. Concern id: compound-command-masking-leak.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -420,7 +502,6 @@ def test_or_pipe_cd_scope_does_not_latch(cmd):
 #   `cd .claude/worktrees/foo & git switch feature` -> a BACKGROUND cd runs in
 #     its own subshell and does NOT scope the foreground git; switch blocks.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -455,7 +536,6 @@ def test_bg_ampersand_benign_allows():
 # (which trusted the `;` cd-scope) is therefore removed and flips to a BLOCK.
 # Concern id: guard-cd-scope-latch-when-cd-fails.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -493,7 +573,6 @@ def test_semicolon_cd_scope_benign_git_allows():
 # fails CLOSED: the NL sentinel resets the `scoped` latch like `;`. Concern id:
 # guard-newline-after-and-scope-leak.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -515,7 +594,7 @@ def test_newline_after_and_scope_does_not_latch(cmd):
 # MUST ALLOW — a raw newline between two non-dangerous clauses stays allowed:
 # the NL sentinel must not over-block a benign multi-line compound. Guards
 # against the NL reset trapping a `git switch main` / `git status` that never
-# moves off main. NOT guarded by @on_main. Concern id:
+# moves off main. Concern id:
 # guard-newline-after-and-scope-leak.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
@@ -535,7 +614,6 @@ def test_newline_benign_compounds_allowed(cmd):
 # dangerous on its own). Guards against an over-correction that disables ALL
 # blocking after a || / |. Concern id: compound-command-masking-leak.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -552,7 +630,6 @@ def test_off_main_clause_blocks_under_or_pipe(cmd):
 # `(-b|-B)\b` missed the glued form `-bfoo`. Concern id:
 # checkout-glued-shortflag-b-leak.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize("cmd", ["git checkout -bfoo", "git checkout -Bfoo"])
 def test_glued_shortflag_branch_creation_still_blocks(cmd):
     assert _run(cmd) == 2
@@ -561,8 +638,7 @@ def test_glued_shortflag_branch_creation_still_blocks(cmd):
 # ---------------------------------------------------------------------------
 # MUST ALLOW — legitimate compounds the fleet uses, including legitimate || / |
 # shapes that DON'T scope a cd onto a git switch. Clause-local parsing must keep
-# these passing. NOT guarded by @on_main (must never trap in either repo-root
-# HEAD state).
+# these passing. Must never trap in either repo-root HEAD state.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -591,7 +667,6 @@ def test_compound_allowed_shapes_exit0(cmd):
 # was never classified and leaked (4 of 5 probes returned rc=0). Concern id:
 # guard-backslash-continuation-bypass.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -613,7 +688,7 @@ def test_backslash_newline_continuation_blocks(cmd):
 # commands joined by a `\<NL>`. `git switch \<NL>main` (previously over-blocked
 # rc=2 because the newline splitter broke the `switch main` allow-arm) now joins
 # to `git switch main` and hits the allow-arm; a non-checkout/switch join stays
-# allowed. NOT guarded by @on_main. Concern id:
+# allowed. Concern id:
 # guard-backslash-continuation-bypass.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
@@ -652,7 +727,6 @@ def test_fail_soft_exit0(payload):
 # in `-m` messages do NOT trip. The four rows FLIPPED from
 # test_allowed_shapes_exit0 appear here (the #804 `;`-latch flip precedent).
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -709,7 +783,6 @@ def test_worktree_revert_shapes_block(cmd):
     assert _run(cmd) == 2
 
 
-@on_main
 def test_note_text_restore_literal_trips_guard_known_limitation():
     # KNOWN LIMITATION (documented in the script header, mirror of
     # test_note_text_git_verb_literal_trips_guard_known_limitation): a quoted
@@ -726,7 +799,6 @@ def test_note_text_restore_literal_trips_guard_known_limitation():
     )
 
 
-@on_main
 def test_mangled_comment_separator_split_fails_closed():
     # A comment CONTAINING a separator is mis-split by the clause splitter:
     # the tail clause (`git clean -fd`) classifies on its own and BLOCKS even
@@ -745,7 +817,6 @@ def test_mangled_comment_separator_split_fails_closed():
 # whitespace-anchored ` #` tail of each clause before any latch / waiver /
 # gate / classification read; these rows pin the spoof shapes CLOSED.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -766,7 +837,6 @@ def test_comment_tail_cannot_spoof_waiver_or_allow_arm(cmd):
     assert _run(cmd) == 2
 
 
-@on_main
 def test_commit_message_checkout_realpath_prose_blocks_known_limitation():
     # KNOWN LIMITATION (documented in the script header, round-2 concern id
     # header-tight-anchor-claim-overbroad): the bare-pathspec existence probe
@@ -785,16 +855,16 @@ def test_abs_path_bare_pathspec_residual_gap_allows():
     # already-absolute path) so the revert is ALLOWED (fail-open) while git
     # would revert the file. Pinned as CURRENT behavior, deliberately NOT
     # closed this round; closable post-v1 by stripping a `$REPO/` prefix from
-    # the arg before probing. NOT @on_main: the allow must hold in either
-    # repo-root HEAD state.
+    # the arg before probing. The allow must hold in either repo-root HEAD
+    # state.
     assert _run("git checkout /home/thomasjiralerspong/explore-persona-space/CLAUDE.md") == 0
 
 
 # ---------------------------------------------------------------------------
 # MUST ALLOW — #897 allow-side: index-only restore, dry-run clean, the safe
 # stash alternative, per-clause `-C` waivers, cd-latches, tight-anchor
-# non-matches, comment clauses, and unresolvable bare args. NOT guarded by
-# @on_main (must never trap in either repo-root HEAD state).
+# non-matches, comment clauses, and unresolvable bare args. Must never trap
+# in either repo-root HEAD state.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -833,7 +903,6 @@ def test_worktree_revert_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
     # The #897 bare-pathspec existence probe fires ONLY when the positional
     # names a real branch / commit-ish / tracked-or-existing path. An arg that
@@ -861,8 +930,8 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
 # MUST ALLOW — `$WT` cd-latch: a BARE clause-initial worktree assignment
 # preceded by START / `;` (SEQ) / a raw newline (NL) arms the latch; the
 # following `cd "$WT"` (exact-arg, no `..`) scopes the `&&`-chained git
-# clause. Covers the recorded incident shapes (spec-sync recipes). NOT guarded
-# by @on_main (allows must hold in either repo-root HEAD state).
+# clause. Covers the recorded incident shapes (spec-sync recipes). Allows
+# must hold in either repo-root HEAD state.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -928,7 +997,6 @@ def test_wt_variable_cd_latch_allows(cmd):
 # DISARMS; the latch inherits the `&&`-only propagation + reset semantics of
 # the literal latch; `..` never latches; the variable name is tight to `WT`.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1022,7 +1090,6 @@ def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
 # text (bash suppresses expansion); unquoted-tag bodies strip only when they
 # carry no expansion syntax beyond plain `${NAME}` parameter references —
 # check (g) deletes plain spans from a scan copy before the refusal (#1501).
-# NOT guarded by @on_main.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
@@ -1142,7 +1209,6 @@ def test_nonshell_heredoc_body_mention_allows(cmd):
 # fail-closed over-match on plain references now lives in the ALLOW matrix
 # (M1d, moved there verbatim). The MUST-FIX-1 matrix.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1219,7 +1285,6 @@ def test_unquoted_tag_expansion_body_blocks(cmd):
 # text on the opener line or after the terminator, and the here-string
 # full-literal raw-scan parity pin.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1280,7 +1345,6 @@ def test_shell_consumer_heredoc_still_blocks(cmd):
 # execute git despite a non-shell consumer, so the strip refuses them and the
 # gated literal in the body still classifies. The MUST-FIX-4 matrix.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1328,7 +1392,7 @@ def test_heredoc_shellout_body_blocks(cmd):
 # (3b) arm — closes the same-call redirect-to-file->execute channel), no ssh
 # local-exec option (ProxyCommand/LocalCommand/KnownHostsCommand), no
 # shared-repo path spelling (literal / $HOME/ / ~/), no rg --pre. The allow
-# side is NOT @on_main (a waived clause must pass in either repo state); the
+# side (a waived clause) must pass in either repo state; the
 # block side pins EVERY refusal-regex alternation arm individually.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
@@ -1458,7 +1522,6 @@ def test_grep_pipe_readonly_sink_chain_waived(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1555,7 +1618,6 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
     assert _run(cmd) == 2
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1729,8 +1791,8 @@ def test_remote_waiver_fail_closed_blocks(cmd):
 # and ANY refusal leaves the input byte-identical, so every refused shape
 # keeps today's disposition (all 27 NM fixtures below were verified rc=2
 # against the UNMODIFIED guard before the mask landed — the pre-change
-# red-team gate). The allow side is NOT @on_main (a masked-and-waived
-# clause must pass in either repo state, matching the #1098 convention).
+# red-team gate). The allow side (a masked-and-waived clause) must pass in
+# either repo state, matching the #1098 convention.
 # Where a predicate arm overlaps a #1098 ladder refusal, the block fixture
 # uses an allow-arm-anchored CONTAMINATION payload: a mid-payload
 # `git switch feature-x` (whose ONLY detector carries the end-anchored
@@ -1792,7 +1854,6 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -1977,7 +2038,6 @@ def test_ssh_masking_refusal_ladder_blocks(cmd):
 # allow fixtures were verified rc=0 pre-fix and must stay rc=0.
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2032,11 +2092,10 @@ def test_clause_initial_cd_still_arms(cmd):
 # Allow-arm: `--abort`/`--quit` immediately after the verb (the sanctioned
 # in-progress-merge recovery; the anchored form kills the quoted `-m "…
 # --abort …"` spoof). `--continue` and `--ff-only` block fail-closed. The
-# block side is @on_main (the guard's on-main gate exits 0 off-main); the
+# block side classifies against the pinned always-on-main repo; the
 # allow side must pass in either repo state. Block tests fire on shape alone
 # — the detector is pure grep, never routing to the ref-resolution probes.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2101,7 +2160,6 @@ def test_merge_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 def test_note_text_merge_literal_trips_guard_known_limitation():
     # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
     # literal in --note/-m text trips the raw scan (#1128, mirror of the
@@ -2128,12 +2186,11 @@ def test_note_text_merge_literal_trips_guard_known_limitation():
 # (a combined `(rebase|cherry-pick)` allow would open the R13 cross-verb
 # quoted-arg spoof; a loose `[^;&|]*` allow would fail open on R12/CP9).
 # `--continue`/`--skip` block fail-closed (both COMPLETE the in-progress
-# operation on the root tree — the M5 decision, mirrored). The block side is
-# @on_main (the guard's on-main gate exits 0 off-main); the allow side must
+# operation on the root tree — the M5 decision, mirrored). The block side
+# classifies against the pinned always-on-main repo; the allow side must
 # pass in either repo state. Block tests fire on shape alone — the detectors
 # are pure grep, never routing to the ref-resolution probes.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2210,7 +2267,6 @@ def test_rebase_family_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 @pytest.mark.parametrize(
     "note_cmd",
     [
@@ -2257,12 +2313,11 @@ def test_man_git_rebase_allowed():
 # R13 cross-verb quoted-arg spoof). `--continue`/`--skip` block fail-closed
 # (both COMPLETE the in-progress op on the root tree — the M5 decision,
 # mirrored), as does the read-only `git am --show-current-patch` (strict
-# abort/quit-only parity, register (xviii)(a)). The block side is @on_main
-# (the guard's on-main gate exits 0 off-main); the allow side must pass in
+# abort/quit-only parity, register (xviii)(a)). The block side classifies
+# against the pinned always-on-main repo; the allow side must pass in
 # either repo state. Block tests fire on shape alone — the detectors are pure
 # grep, never routing to the ref-resolution probes.
 # ---------------------------------------------------------------------------
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2333,7 +2388,6 @@ def test_revert_am_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-@on_main
 @pytest.mark.parametrize(
     "note_cmd",
     [
@@ -2357,7 +2411,6 @@ def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
     assert _run(note_cmd) == 2
 
 
-@on_main
 def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
     # KNOWN LIMITATION (register (xviii)(b), honest wording): valid
     # global-flag-chain git with quoted prose containing a standalone `am`
@@ -2529,7 +2582,6 @@ _GN1_VERBATIM_825 = (
 
 
 # TEST-FIXTURE FENCE — guard test INPUTS only.
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2625,8 +2677,8 @@ def test_gcloud_waiver_fail_closed_blocks(cmd):
 # heads are printable-ASCII, masked (opaque runs >=20 -> 4-char prefix + ***)
 # BEFORE the 120-char truncate. The append must NEVER change deny/allow, exit
 # codes, or the stderr message. Every test pins EPM_GUARD_DENY_SIDECAR via the
-# harness `sidecar` kwarg; deny-side cases are @on_main (the guard's on-main
-# gate exits 0 off-main, so neither the deny nor the row fires there).
+# harness `sidecar` kwarg; deny-side cases classify against the pinned
+# always-on-main repo (off-main the tail gate would exit 0 and no row fires).
 # Templates reuse the file's existing blocked shapes (branch-switch fence /
 # merge fence M1) — no new gated literals.
 # ---------------------------------------------------------------------------
@@ -2637,7 +2689,6 @@ _SIDECAR_BLOCKED_SWITCH = "git switch fix/foo"  # from test_branch_creation_and_
 _SIDECAR_BLOCKED_MERGE = "git merge issue-123"  # from test_merge_shapes_block (M1)
 
 
-@on_main
 def test_deny_writes_sidecar_row(tmp_path):
     """T1: a denied command appends exactly one valid JSON row (full schema)."""
     sidecar = tmp_path / "deny.jsonl"
@@ -2653,7 +2704,6 @@ def test_deny_writes_sidecar_row(tmp_path):
     assert re.fullmatch(_TS_RE, row["ts"])
 
 
-@on_main
 def test_deny_sidecar_arm_with_parens_valid_json(tmp_path):
     """T2: an arm label carrying spaces + parentheses still yields valid JSON."""
     sidecar = tmp_path / "deny.jsonl"
@@ -2670,7 +2720,6 @@ def test_allow_writes_no_sidecar_row(tmp_path):
     assert not sidecar.exists()
 
 
-@on_main
 def test_sidecar_write_failure_preserves_deny_exit(tmp_path):
     """T4: a failed sidecar append leaves exit 2 + the BLOCKED stderr intact.
 
@@ -2693,7 +2742,6 @@ def test_sidecar_write_failure_preserves_deny_exit(tmp_path):
     assert len(ok_sidecar.read_text().splitlines()) == 1
 
 
-@on_main
 def test_sidecar_head_bounded_no_full_command(tmp_path):
     """T5: no full command text in the row; heads are <=120 chars; len exact."""
     cmd = _SIDECAR_BLOCKED_SWITCH + " # " + "pad " * 60
@@ -2709,7 +2757,6 @@ def test_sidecar_head_bounded_no_full_command(tmp_path):
     assert row["len"] == len(cmd)
 
 
-@on_main
 def test_sidecar_secret_shaped_token_masked(tmp_path):
     """T6: a secret-shaped token (hf_ + 34 alnum) never survives into the row.
 
@@ -2757,7 +2804,6 @@ _WT_LM_ARM_B_LABEL = "cd <worktree> && git merge main (LOCAL-main"
 _ROOT_MERGE_ARM_LABEL = "branch merge on the shared root"
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2796,7 +2842,6 @@ def test_worktree_local_main_merge_blocked(cmd, monkeypatch):
     assert _WT_LM_ARM_A_LABEL in proc.stderr
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2917,7 +2962,6 @@ def test_worktree_local_main_merge_escape_hatch_inline(monkeypatch):
     )
 
 
-@on_main
 @pytest.mark.parametrize(
     "cmd",
     [
@@ -2937,13 +2981,114 @@ def test_root_merge_main_classification_unchanged(cmd, monkeypatch):
     assert "(LOCAL-main" not in proc.stderr
 
 
-@on_main
 def test_worktree_local_main_merge_pipe_producer(monkeypatch):
     """A piped worktree bare-main merge is still a merge (#1538 waiver is grep-family-only)."""
     monkeypatch.delenv(_WT_LM_HATCH, raising=False)
     proc = _run_full("git -C .claude/worktrees/issue-9 merge main | tail -3")
     assert proc.returncode == 2, proc.stderr
     assert _WT_LM_ARM_A_LABEL in proc.stderr
+
+
+# ---------------------------------------------------------------------------
+# Pinned-git-context pins (#1567) — the GIT_DIR/GIT_WORK_TREE pinning itself is
+# under test. All block probes REUSE existing in-file shape constants (the
+# sidecar-section precedent above — no new gated literals).
+# ---------------------------------------------------------------------------
+
+
+def _run_against_repo(repo: Path, cmd: str) -> subprocess.CompletedProcess[str]:
+    """Run the hook with its git-state reads pinned to ``repo`` (not the session fixture)."""
+    env = _scrubbed_env()
+    env["GIT_DIR"] = str(repo / ".git")
+    env["GIT_WORK_TREE"] = str(repo)
+    env["EPM_GUARD_DENY_SIDECAR"] = "/dev/null"
+    payload = json.dumps({"tool_input": {"command": cmd}})
+    return subprocess.run([str(SCRIPT)], input=payload, text=True, capture_output=True, env=env)
+
+
+def _git_in(repo: Path, *args: str) -> None:
+    """Run a checked git subcommand against a throwaway test repo (scrubbed env)."""
+    subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        env=_scrubbed_env(),
+        timeout=20,
+    )
+
+
+def test_off_main_pinned_context_fail_open(tmp_path):
+    """The tail fail-open arm (hook L1775-1778): off-``main`` context => exit 0.
+
+    Self-discrimination arm FIRST: the same payload IS classified as a block
+    (exit 2) against the on-main session fixture — so the off-main exit 0
+    below can only come from the tail fail-open arm, not a classifier miss.
+    Previously untestable without racing the fleet's shared-root state.
+    """
+    assert _run(_SIDECAR_BLOCKED_SWITCH) == 2
+    _build_pinned_repo(tmp_path)
+    _git_in(tmp_path, "checkout", "-q", "-b", "not-main")
+    proc = _run_against_repo(tmp_path, _SIDECAR_BLOCKED_SWITCH)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stderr == ""
+
+
+def test_detached_head_pinned_context_fail_open(tmp_path):
+    """Detached-HEAD context (the exact #1528 mid-rebase incident state) => exit 0.
+
+    ``rev-parse --abbrev-ref HEAD`` prints ``HEAD`` != ``main`` when detached,
+    so the tail arm fails open. Same self-discrimination arm as above.
+    """
+    assert _run(_SIDECAR_BLOCKED_SWITCH) == 2
+    _build_pinned_repo(tmp_path)
+    _git_in(tmp_path, "checkout", "-q", "--detach")
+    proc = _run_against_repo(tmp_path, _SIDECAR_BLOCKED_SWITCH)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stderr == ""
+
+
+def test_block_classification_reads_pinned_repo_not_live_root():
+    """Regression fence: hook classification runs in the PINNED repo, not the live root.
+
+    The session fixture's HEAD sha does not resolve in the live root (a fresh
+    unique commit), yet the bare-sha detach template still exits 2 — proving
+    the hook's rev-parse ran against the pinned repo. FAILS LOUD if
+    ``_run_full`` ever reverts to an unpinned ``{**os.environ}`` env: the sha
+    would then resolve nowhere => fail-soft exit 0 => assertion error.
+    """
+    sha = _repo_head_sha()
+    probe = subprocess.run(
+        ["git", "-C", str(REPO), "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        env=_scrubbed_env(),
+        timeout=20,
+    )
+    assert probe.returncode != 0, f"fixture sha {sha} unexpectedly resolves in the live root"
+    assert _run(f"git checkout {sha}") == 2
+
+
+def test_hook_repo_constant_targets_canonical_root():
+    """Text pin: the hook's ``REPO=`` constant names the canonical shared root.
+
+    Retains the integration invariant the deleted on-main skipif implicitly
+    carried (the hook points at the real shared root) with no git-state read.
+    """
+    match = re.search(r"^REPO=(\S+)\s*$", SCRIPT.read_text(), flags=re.MULTILINE)
+    assert match, "hook REPO= constant line not found"
+    assert match.group(1) == str(REPO)
+
+
+def test_pinned_env_scrubs_ambient_git_vars(monkeypatch):
+    """The #1545 GIT_* scrub: an ambient GIT_* var never reaches the hook.
+
+    ``GIT_OBJECT_DIRECTORY`` is a GIT_* var ``_pinned_env`` never assigns; if
+    the scrub is deleted it leaks into the hook subprocess, the hook's git
+    reads fail-soft, and this block row goes red — the committed,
+    always-running form of the poisoned-ambient-env acceptance run.
+    """
+    monkeypatch.setenv("GIT_OBJECT_DIRECTORY", "/nonexistent")
+    assert _run(_SIDECAR_BLOCKED_SWITCH) == 2
 
 
 def test_zz_production_sidecar_untouched_by_suite():
