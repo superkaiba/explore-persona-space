@@ -4432,8 +4432,8 @@
     "1569": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1569",
-      "status": "reviewing",
+      "path": "tasks/completed/1569",
+      "status": "completed",
       "title": "daily-fix: probe free check id at implement time"
     },
     "157": {
