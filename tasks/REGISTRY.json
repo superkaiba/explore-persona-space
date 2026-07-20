@@ -4348,8 +4348,8 @@
     "1558": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1558",
-      "status": "planning",
+      "path": "tasks/approved/1558",
+      "status": "approved",
       "title": "daily-fix: cap-park note for 9b cheap-band round-cap parks"
     },
     "1559": {
