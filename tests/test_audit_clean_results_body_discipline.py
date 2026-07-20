@@ -796,10 +796,13 @@ def test_pre_reg_innocuous_registered_usage_not_flagged():
     """Plain 'registered' verb usages in a SCANNED prose section ('registered
     the adapter on HF', 'was registered in WandB', 'alias registered') must
     NOT trip `pre_reg` — the new alternation is anchored to the literal
-    'as registered' bigram, and the leading `\\b` fails inside 'was'/'alias'."""
+    'as registered' bigram, and the leading `\\b` fails inside 'was'/'alias'.
+    #1553 adds a noun-before-verb guard for the new `estimators?` head noun
+    ('the estimator was registered in WandB' — preposition-lookahead form)."""
     body = V3_BODY_WITH_DATA_CODES.replace(
         "- Headline finding: the implant installs cleanly across three seeds.",
-        "- Registered the adapter on HF; the run was registered in WandB; alias registered too.",
+        "- Registered the adapter on HF; the run was registered in WandB; alias registered "
+        "too; the estimator was registered in WandB.",
     )
     assert body != V3_BODY_WITH_DATA_CODES
     findings = audit.audit_body(body)
@@ -1192,7 +1195,9 @@ def test_pre_reg_registered_interval_defining_the_test_not_flagged():
     """'the registered interval defining the test' is the sanctioned
     Why-this-test CI-definition register — 'interval' and 'test' are
     deliberately absent from the head-noun list, so `pre_reg` stays
-    silent (the LM critic owns any residual judgment call here)."""
+    silent (the LM critic owns any residual judgment call here). This
+    also pins the sanctioned register against future head-noun
+    extensions (#1553 `estimators?` included)."""
     body = V4_BODY_CLEAN.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "**Why this test:** the bootstrap CI is the registered interval defining the test.",
@@ -1200,6 +1205,21 @@ def test_pre_reg_registered_interval_defining_the_test_not_flagged():
     assert body != V4_BODY_CLEAN
     findings = audit.audit_body(body)
     assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_registered_estimator_in_v4_results_prose_is_flagged():
+    """The verbatim #1482 round-4 escape — 'The plotted floor is the
+    registered fresh-4 estimator.' in a v4 body's ## Results H3 prose —
+    trips `pre_reg` now that #1553 added `estimators?` to the head-noun
+    alternation ('fresh-4' is one intervening modifier token)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The plotted floor is the registered fresh-4 estimator.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("estimator" in s.lower() for s in findings["pre_reg"]), findings["pre_reg"]
 
 
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
