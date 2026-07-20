@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-28 passes ("pass" = one top-level per-tick action block in ``main()``'s
+29 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -6375,9 +6375,8 @@ def _save_completed_unmerged_state(state: dict, dry_run: bool) -> None:
     mirrors :func:`_save_registry_drift_state`); ``dry_run`` performs zero
     writes."""
     if dry_run:
-        print(
-            f"  [dry-run] would save completed-unmerged state ({len(state.get('episodes') or {})} episode(s))"
-        )
+        n_eps = len(state.get("episodes") or {})
+        print(f"  [dry-run] would save completed-unmerged state ({n_eps} episode(s))")
         return
     dest = _completed_unmerged_state_path()
     try:
