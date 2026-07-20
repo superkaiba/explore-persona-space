@@ -4425,8 +4425,8 @@
     "1568": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1568",
-      "status": "planning",
+      "path": "tasks/approved/1568",
+      "status": "approved",
       "title": "daily-fix: HF routing snapshot stale at merge-gate time"
     },
     "1569": {
