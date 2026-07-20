@@ -4411,8 +4411,8 @@
     "1566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1566",
-      "status": "running",
+      "path": "tasks/reviewing/1566",
+      "status": "reviewing",
       "title": "daily-fix: guard FP on git literals in --note payloads"
     },
     "1567": {
