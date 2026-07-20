@@ -4390,8 +4390,8 @@
     "1563": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1563",
-      "status": "approved",
+      "path": "tasks/running/1563",
+      "status": "running",
       "title": "daily-fix: neutralize orchestrator turns on guard tasks"
     },
     "1564": {
