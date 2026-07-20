@@ -1283,6 +1283,79 @@ repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
 switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
 just this pass (pair with `--dry-run` for a zero-write live smoke).
 
+**Completed-unmerged flag pass (task #1564, `completed_unmerged_pass`;
+incident #1540; FLAG-ONLY, daemon-INDEPENDENT, runs right after
+`registry_drift_pass`).** The stranded-Step-10d-merge audit: task #1540
+reached `completed` + `epm:done` at 2026-07-19T14:49:17Z, the next turn (the
+Step 10d worktree merge) was killed, and `epm:merged` landed only at
+2026-07-20T06:57:10Z via a /daily-spawned recovery session — a 16h08m window
+invisible to every other lane (the tick cron is torn down at `completed`;
+the wedge lanes need failed wakes; nothing audited the marker SHAPE). This
+pass audits exactly that shape ~hourly
+(`EPM_COMPLETED_UNMERGED_INTERVAL_HOURS`, 1h self-gate with an
+attempt-stamp-first save — worst-case detection = 2h grace + 1h interval ≈
+3h vs the 16h incident). **Predicate**
+(`decide_completed_unmerged_flag`, every missing signal failing toward
+silence): status exactly `completed` (archived = deliberately abandoned,
+out of scope) AND `epm:done` present within a 72h lookback
+(`EPM_COMPLETED_UNMERGED_LOOKBACK_H`; plus the candidate gate's
+events-mtime filter — ~113 recently-touched completed tasks measured live,
+2026-07-20) AND NO `epm:merged` of any form (the `artifact_confirmed`
+variant is the same kind) AND the newest of (`epm:done`,
+`epm:merge-failed`) at least 2h old (`EPM_COMPLETED_UNMERGED_GRACE_H`) — an
+`epm:merge-failed` does NOT suppress, it re-anchors the grace (an in-flight
+retry gets grace; one sitting past it is the same invisibility and IS
+flagged). Keying on merged-ABSENCE keeps the happy-path experiment quiet (a
+Step 9b merge predates `epm:done` and still suppresses). **Probe**
+(predicate hits only; capped `EPM_COMPLETED_UNMERGED_PROBE_CAP`=10
+sets/interval, 10s subprocess timeouts, any error ⇒ skip-with-log and retry
+next interval — a gh outage never crashes the tick or latches state; NO
+`git fetch`, ever): (1) `gh pr list --head issue-<N> --state open` ⇒
+unmerged open PR (the #1540 shape: PR 1312 sat OPEN+draft); (2) `--state
+merged` ⇒ merged but the marker post was lost (resolved, logged loudly);
+(3) no PR: `git ls-remote origin refs/heads/issue-<N>` (network-fresh —
+LOCAL ref absence is never evidence) ⇒ absent = nothing-to-merge (the
+Step 10d no-PR case posts nothing by design); (4) branch live: patch-id
+count `git rev-list --cherry-pick --right-only --count
+origin/main...origin/issue-<N>` (a rebase-merge rewrites SHAs, so the plain
+two-dot count reads nonzero forever; patch-id reads 0 for a landed branch —
+verified live on the merged origin/issue-1540), computed only when the
+local remote-tracking ref matches the ls-remote sha — a stale/absent local
+ref fails toward FLAGGING, never toward nothing-to-merge. **Channels**,
+keyed per episode = (issue, done_ts): a row in the dedicated sidecar
+`.claude/cache/completed-unmerged-events.jsonl` every flagged interval; ONE
+`epm:progress` task marker per episode (anti-liveness sentinel
+`[autonomous_session_watch:completed-unmerged-flag]`, naming the recovery:
+`uv run python scripts/spawn_session.py spawn-issue --issue <N>` then type
+`/issue <N>` — the resume path runs the SKILL.md Step 10d auto-merge
+idempotently when the PR is unmerged); a Telegram push at episode open,
+re-fired every 24h while unresolved
+(`EPM_COMPLETED_UNMERGED_REALERT_HOURS`). A resolved probe verdict
+(merged-PR / nothing-to-merge) is CACHED on the episode so later intervals
+skip the probe budget; pruned episodes are labeled honestly — `recovered`
+only when `epm:merged` now exists or the probe said resolved, `aged-out`
+when the strand left the lookback unresolved (never logged as recovered); a
+later round's fresh `epm:done` opens a NEW episode and re-fires. **FLAG-ONLY
+is a hard invariant** (pinned two-pronged by
+`test_completed_unmerged_pass_never_mutates_status_or_merges`): the pass
+never mutates status, never merges/pushes anything, never spawns a session
+— recovery is always a human/orchestrator action on the flag. **Known v1
+bounds** (each fails toward silence by design; the /daily sweep stays the
+backstop for all four): (i) post-first-merge multi-round blind spot — once
+ANY `epm:merged` exists on the task, a LATER round's stranded merge (fresh
+`epm:done`, no new `epm:merged`) can never fire (the predicate keys on
+merged-absence, not per-round pairing); (ii) suffixed follow-up branches
+`issue-<N>-<slug>` are invisible — the probes address `--head issue-<N>` /
+`refs/heads/issue-<N>` only; (iii) purely-local unpushed worktree commits
+are invisible — every probe rung is remote-side; (iv) a session killed
+between `set-status <N> completed` and the `epm:done` post leaves
+done_ts=None and the predicate stays silent. State singleton
+`~/.eps-autonomous/completed-unmerged-observer.json` (atomic tmp+rename;
+deliberately NOT a per-issue GC target). Kill switch
+`EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only` runs
+just this pass (pair with `--dry-run` for a live smoke — zero writes, zero
+marker/push subprocesses).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a

@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-28 passes ("pass" = one top-level per-tick action block in ``main()``'s
+29 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -511,6 +511,33 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_ORPHAN_WRAPPER_PASS=1``; ``--orphan-wrapper-only`` runs
    just this pass with an in-invocation two-sample CPU delta (pair with
    ``--dry-run`` for a read-only live smoke). (:func:`orphan_wrapper_pass`.)
+29. **Completed-unmerged flag pass (#1564; incident #1540; FLAG-ONLY;
+   daemon-INDEPENDENT; runs right after pass 27).** Hourly-self-gated
+   (``EPM_COMPLETED_UNMERGED_INTERVAL_HOURS``, 1h) audit of the #1540
+   stranded-merge shape: a ``completed`` task whose events carry
+   ``epm:done`` (within a 72h lookback,
+   ``EPM_COMPLETED_UNMERGED_LOOKBACK_H``) but NO ``epm:merged``, past a 2h
+   grace re-anchored by ``epm:merge-failed``
+   (``EPM_COMPLETED_UNMERGED_GRACE_H``), while a read-only gh/git probe
+   (open-PR / merged-PR / ``ls-remote`` branch / patch-id count; capped at
+   ``EPM_COMPLETED_UNMERGED_PROBE_CAP`` sets per interval, 10s timeouts,
+   fail-soft) confirms the ``issue-<N>`` PR/branch is still unmerged — a
+   killed Step 10d merge turn is otherwise invisible (the tick cron is torn
+   down at ``completed``; #1540 sat 16h). Dedicated sidecar
+   (``.claude/cache/completed-unmerged-events.jsonl``) every flagged
+   interval + ONE marker per (issue, done_ts) episode + a deduped push
+   re-firing every 24h while unresolved
+   (``EPM_COMPLETED_UNMERGED_REALERT_HOURS``), naming the Step 10d
+   recovery. NEVER merges/pushes/spawns, never mutates status. Known v1
+   bounds (fail-toward-silence; /daily stays the backstop): once ANY
+   ``epm:merged`` exists a LATER round's stranded merge never fires;
+   suffixed ``issue-<N>-<slug>`` follow-up branches are invisible to the
+   probes; purely-local unpushed commits are invisible (remote-side probes
+   only); a session killed between ``set-status completed`` and the
+   ``epm:done`` post leaves done_ts=None and stays silent. Kill switch
+   ``EPM_DISABLE_COMPLETED_UNMERGED_PASS=1``; ``--completed-unmerged-only``
+   runs just this pass (pair with ``--dry-run`` for a live smoke).
+   (:func:`completed_unmerged_pass`.)
 
 Why each pass exists
 --------------------
@@ -1365,6 +1392,18 @@ STALE_BLOCKED_STATE_PREFIX = "stale-blocked-"
 # UNDER-flags (missed alert, status quo), never mis-flags.
 STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 
+# Substring stamped into the completed-unmerged flag marker (task #1564): a
+# `completed` task whose events carry `epm:done` but NO `epm:merged` while
+# the issue-<N> PR/branch is still unmerged — the #1540 class (a killed
+# Step 10d merge turn left the merge stranded 16h, invisible to every other
+# lane). FLAG-ONLY: the pass posts one marker per (issue, done_ts) episode +
+# a sidecar row + a TTL'd Telegram digest line and NEVER merges or mutates
+# status. Same staleness-filter contract as every other watcher-posted
+# sentinel (membership in _WATCHER_NOTE_SENTINELS below is load-bearing —
+# the flag marker must not refresh the very events-mtime/staleness clocks
+# other passes read).
+_COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-flag]"
+
 # Substring stamped into the boot-death stop marker (task #1267): a freshly
 # dispatched AUTO session whose transcript holds ZERO response rows
 # (assistant OR api-error) >= 30 min after `spawned_at` — the
@@ -1474,6 +1513,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
+        _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL,
         _BOOT_DEATH_STOP_NOTE_SENTINEL,
         _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
@@ -6237,6 +6277,580 @@ def registry_drift_pass(dry_run: bool) -> bool:
             {"kind": "registry-drift-error", "error": str(exc)[:500]}, dry_run
         )
         return False
+
+
+# ─── Completed-unmerged flag pass (task #1564) ────────────────────────────────
+#
+# WHY: incident #1540 — the task reached `completed` + `epm:done` at
+# 2026-07-19T14:49:17Z, the NEXT turn (the Step 10d worktree merge) was
+# killed, and `epm:merged` landed only at 2026-07-20T06:57:10Z via a
+# /daily-spawned recovery session — a 16h08m window invisible to every other
+# lane (the tick cron is torn down at `completed`; the wedge lane needs >=3
+# failed wakes; nothing audits the marker SHAPE). This pass is the periodic
+# audit of exactly that shape: `completed` + `epm:done` + NO `epm:merged`
+# while the `issue-<N>` PR/branch is still unmerged. FLAG-ONLY (the
+# stale-blocked posture): sidecar row every flagged interval + ONE marker per
+# (issue, done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
+# recovery — NEVER merges, never pushes branches, never mutates status,
+# never spawns sessions.
+#
+# Known v1 bounds (each fails toward SILENCE by design; the /daily sweep
+# stays the backstop for all four):
+# (i)   post-first-merge multi-round blind spot — once ANY `epm:merged`
+#       exists on the task, a LATER round's stranded merge (a fresh
+#       `epm:done` with no new `epm:merged`) can never fire: the predicate
+#       keys on merged-ABSENCE, not per-round done/merged pairing;
+# (ii)  suffixed follow-up branches `issue-<N>-<slug>` are invisible — the
+#       probes address `--head issue-<N>` / `refs/heads/issue-<N>` only;
+# (iii) purely-local unpushed worktree commits are invisible — every probe
+#       rung is remote-side (PR state, ls-remote, origin refs);
+# (iv)  a session killed BETWEEN `set-status <N> completed` and the
+#       `epm:done` post leaves done_ts=None, so the predicate stays silent.
+
+# Hourly self-gate: worst-case detection = grace 2h + interval 1h ~= 3h vs
+# the 16h incident; every-tick (10 min) is 6x the cost for <=50 min better
+# latency. Env EPM_COMPLETED_UNMERGED_INTERVAL_HOURS, read at CALL time
+# (registry-drift precedent); lo=0.0 lets a live smoke force a run.
+COMPLETED_UNMERGED_INTERVAL_HOURS = 1.0
+# Grace: min age of epm:done — re-anchored by epm:merge-failed (class C: an
+# in-flight retry after a surfaced merge failure gets grace; one sitting
+# past it is the same invisibility and IS flagged) — before flagging. The
+# 10d merge normally lands minutes after epm:done in the same session; 2h
+# clears the longest observed lint-gate/recovery merge turns (the
+# EPM_STALE_BLOCKED_PROGRESS_FRESH_S scale). Env EPM_COMPLETED_UNMERGED_GRACE_H.
+COMPLETED_UNMERGED_GRACE_H = 2.0
+# Lookback: max age of epm:done, plus the candidate gate's events-mtime
+# filter — covers a weekend of unwatched strandings while bounding the sweep
+# (~113 recently-touched completed tasks measured live, 2026-07-20). Env
+# EPM_COMPLETED_UNMERGED_LOOKBACK_H.
+COMPLETED_UNMERGED_LOOKBACK_H = 72.0
+# Push re-alert TTL while an episode stays unresolved (sent != seen; the
+# root-draft 24h sibling). The marker fires ONCE per episode; the sidecar
+# row fires every flagged interval. Env EPM_COMPLETED_UNMERGED_REALERT_HOURS.
+COMPLETED_UNMERGED_REALERT_HOURS = 24.0
+# Max gh/git probe SETS per interval — bounds worst-case external wall to
+# ~40s (4 subprocesses x 10s x 10, in practice ~2s/set); steady state is 0
+# flagged candidates (measured live, 2026-07-20). Env
+# EPM_COMPLETED_UNMERGED_PROBE_CAP.
+COMPLETED_UNMERGED_PROBE_CAP = 10
+
+
+def _completed_unmerged_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_COMPLETED_UNMERGED_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_COMPLETED_UNMERGED_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _completed_unmerged_sidecar_path() -> Path:
+    """DEDICATED completed-unmerged event stream (own stream for clean grep —
+    the registry-drift / root-draft sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "completed-unmerged-events.jsonl"
+
+
+def _completed_unmerged_state_path() -> Path:
+    """Singleton throttle+episode state (deliberately NOT a per-issue GC
+    target — the registry-drift-observer shape): ``{"last_run_ts": <float>,
+    "episodes": {"<issue>": {done_ts, flagged, marker_posted, alerted_ts,
+    verdict, resolved_verdict}}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "completed-unmerged-observer.json"
+
+
+def _load_completed_unmerged_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _completed_unmerged_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_completed_unmerged_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the throttle/episode state (fail-soft;
+    mirrors :func:`_save_registry_drift_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        n_eps = len(state.get("episodes") or {})
+        print(f"  [dry-run] would save completed-unmerged state ({n_eps} episode(s))")
+        return
+    dest = _completed_unmerged_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  completed-unmerged: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_completed_unmerged_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the completed-unmerged sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append completed-unmerged sidecar row: {line[:160]}")
+        return
+    dest = _completed_unmerged_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  completed-unmerged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def decide_completed_unmerged_flag(
+    status: str | None,
+    done_ts: float | None,
+    merged_ts: float | None,
+    merge_failed_ts: float | None,
+    now: float,
+    *,
+    grace_s: float,
+    lookback_s: float,
+) -> bool:
+    """True iff a completed task's merge is plausibly stranded (#1540 class):
+    status exactly ``completed`` (archived = deliberately abandoned, out of
+    scope), ``epm:done`` posted within the lookback, NO ``epm:merged`` of any
+    form (the ``artifact_confirmed`` variant is the same kind), and the
+    newest of (done, merge-failed) at least ``grace_s`` old. EVERY missing
+    signal returns False (fail toward silence). ``epm:merge-failed`` does NOT
+    suppress — it re-anchors the grace window (an in-flight retry after a
+    surfaced merge failure gets grace; one sitting past ``grace_s`` with the
+    branch still unmerged is the same invisibility and IS flagged — the
+    class-C decision). Keying on merged-ABSENCE (never done/merged ordering)
+    keeps the happy-path experiment quiet: a Step 9b merge predates
+    ``epm:done`` and still suppresses (class D)."""
+    if status != "completed" or done_ts is None:
+        return False
+    if merged_ts is not None:
+        return False  # merged (Step 9b, Step 10d, or artifact-confirmed)
+    if (now - done_ts) > lookback_s:
+        return False  # bounded lookback: old completions out of scope
+    anchor = max(done_ts, merge_failed_ts or 0.0)
+    return (now - anchor) >= grace_s  # grace: a merge in flight is not flagged
+
+
+def _completed_unmerged_candidates(now: float, lookback_s: float) -> list[tuple[int, Path]]:
+    """Cheap candidate gate: REGISTRY-snapshot enumeration (the
+    :func:`_triage_observer_sweep_issue` pattern) — ``status == "completed"``
+    rows whose ``events.jsonl`` mtime falls within the lookback, resolved
+    against the registry's OWN root (never hand-built from cwd). Every gate
+    fails soft (skip). Returns ``[(issue, task_dir), ...]`` sorted by id."""
+    from explore_persona_space.task_workflow import registry_path
+
+    try:
+        reg = json.loads(registry_path().read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  completed-unmerged: registry read failed: {exc}", file=sys.stderr)
+        return []
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        print("  completed-unmerged: registry has no tasks map; skipping", file=sys.stderr)
+        return []
+    reg_root = registry_path().parent.parent
+    out: list[tuple[int, Path]] = []
+    for id_str, meta in sorted(tasks.items()):
+        if not isinstance(meta, dict) or meta.get("status") != "completed":
+            continue
+        try:
+            issue = int(id_str)
+        except (TypeError, ValueError):
+            continue
+        rel = meta.get("path")
+        if not isinstance(rel, str) or not rel:
+            continue
+        task_dir = reg_root / rel
+        try:
+            mtime = (task_dir / "events.jsonl").stat().st_mtime
+        except OSError:
+            continue
+        if now - mtime > lookback_s:
+            continue
+        out.append((issue, task_dir))
+    return out
+
+
+def _completed_unmerged_read_events(
+    events_path: Path,
+) -> tuple[float | None, float | None, float | None]:
+    """``(done_ts, merged_ts, merge_failed_ts)`` — the LATEST epoch ts per
+    kind among ``epm:done`` / ``epm:merged`` / ``epm:merge-failed`` rows in
+    ``events_path``, each ``None`` when absent. Direct per-line
+    ``json.loads`` fail-soft (garbled lines skipped) — never the ~1-2s
+    ``_task_events`` subprocess (a ~113-file sweep would cost ~3 min/pass).
+
+    Fast path: a raw text lacking the BARE substring ``epm:done`` skips the
+    parse — separator-independent by construction (any serialization of an
+    ``epm:done`` row contains the kind literal, compact ``separators=(",",
+    ":")`` included), so it can only false-POSITIVE (cost: one full parse),
+    never false-negative. Firing decisions always come from the parse: the
+    predicate requires done_ts, whose presence forces the full parse."""
+    try:
+        raw = events_path.read_text()
+    except OSError:
+        return (None, None, None)
+    if "epm:done" not in raw:
+        return (None, None, None)
+    done_ts = merged_ts = merge_failed_ts = None
+    # split("\n"), never .splitlines(): a raw U+2028/U+2029/NEL inside an
+    # ensure_ascii=False note string would shred the record (#825/#950;
+    # the jsonl-splitlines lint pins this).
+    for line in raw.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(ev, dict):
+            continue
+        kind = ev.get("kind")
+        if kind not in ("epm:done", "epm:merged", "epm:merge-failed"):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if kind == "epm:done":
+            done_ts = ts if done_ts is None else max(done_ts, ts)
+        elif kind == "epm:merged":
+            merged_ts = ts if merged_ts is None else max(merged_ts, ts)
+        else:
+            merge_failed_ts = ts if merge_failed_ts is None else max(merge_failed_ts, ts)
+    return (done_ts, merged_ts, merge_failed_ts)
+
+
+def _completed_unmerged_probe(issue: int) -> tuple[str, str]:
+    """Read-only stranded-merge probe for ``issue-<N>`` -> ``(verdict,
+    detail)``. Verdicts: ``unmerged-open-pr`` | ``resolved-merged-pr`` |
+    ``unmerged-branch-commits`` | ``nothing-to-merge`` | ``probe-failed``.
+
+    Rungs (PR state first — authoritative + network-fresh): (1) ``gh pr
+    list --head issue-<N> --state open`` -> any row = an unmerged open PR
+    (the #1540 shape: PR 1312 sat OPEN+draft); (2) ``--state merged`` -> any
+    row = merged but the marker post was lost (resolved, log loudly); (3) no
+    PR: ``git ls-remote origin refs/heads/issue-<N>`` (network-fresh — the
+    local remote-tracking ref can be absent/pruned/stale, so ref ABSENCE
+    locally is never evidence of nothing-to-merge) -> empty = branch gone,
+    nothing to merge; (4) branch live: patch-id count ``git rev-list
+    --cherry-pick --right-only --count origin/main...origin/issue-<N>``
+    (rebase-merge rewrites SHAs, so a plain ``main..branch`` count stays
+    nonzero forever; the patch-id form reads 0 for a landed branch —
+    verified live on the merged origin/issue-1540, 2026-07-20), computed
+    ONLY when the local remote-tracking ref matches the ls-remote sha (the
+    pass never fetches; a stale/absent local ref fails toward FLAGGING, not
+    toward nothing-to-merge). Every subprocess is 10s-bounded; ANY error /
+    non-zero rc => ``probe-failed`` (skip-with-log, retried next interval —
+    a gh outage can never crash the tick or latch a false state)."""
+    branch = f"issue-{issue}"
+
+    def _run(cmd: list[str]) -> subprocess.CompletedProcess:
+        return subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10)
+
+    try:
+        res = _run(
+            ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "number,isDraft"]
+        )
+        if res.returncode != 0:
+            return ("probe-failed", f"gh pr list --state open rc={res.returncode}")
+        rows = json.loads(res.stdout or "[]")
+        if rows:
+            draft = " (draft)" if rows[0].get("isDraft") else ""
+            return ("unmerged-open-pr", f"PR #{rows[0].get('number')} OPEN{draft}")
+        res = _run(["gh", "pr", "list", "--head", branch, "--state", "merged", "--json", "number"])
+        if res.returncode != 0:
+            return ("probe-failed", f"gh pr list --state merged rc={res.returncode}")
+        rows = json.loads(res.stdout or "[]")
+        if rows:
+            return (
+                "resolved-merged-pr",
+                f"PR #{rows[0].get('number')} already MERGED (epm:merged marker missing)",
+            )
+        res = _run(["git", "ls-remote", "origin", f"refs/heads/{branch}"])
+        if res.returncode != 0:
+            return ("probe-failed", f"git ls-remote rc={res.returncode}")
+        remote_line = res.stdout.strip()
+        if not remote_line:
+            return ("nothing-to-merge", "no PR; branch absent on origin")
+        remote_sha = remote_line.split()[0]
+        res = _run(["git", "rev-parse", "--verify", "--quiet", f"refs/remotes/origin/{branch}"])
+        local_sha = res.stdout.strip() if res.returncode == 0 else ""
+        if local_sha != remote_sha:
+            # The pass never fetches (read-only), so the patch-id count below
+            # would read the WRONG tree — fail toward flagging.
+            return (
+                "unmerged-branch-commits",
+                f"no PR; branch live on origin at {remote_sha[:10]} "
+                "(local remote-tracking ref stale/absent — count unverified)",
+            )
+        res = _run(
+            [
+                "git",
+                "rev-list",
+                "--cherry-pick",
+                "--right-only",
+                "--count",
+                f"origin/main...origin/{branch}",
+            ]
+        )
+        if res.returncode != 0:
+            return ("probe-failed", f"git rev-list --cherry-pick rc={res.returncode}")
+        n = int(res.stdout.strip() or "0")
+        if n > 0:
+            return (
+                "unmerged-branch-commits",
+                f"no PR; {n} branch commit(s) not in origin/main (patch-id)",
+            )
+        return ("nothing-to-merge", "no PR; branch fully landed in origin/main (patch-id count 0)")
+    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        # ValueError covers json.JSONDecodeError + a garbled rev-list int().
+        return ("probe-failed", f"{type(exc).__name__}: {exc}")
+
+
+def _completed_unmerged_prune(
+    episodes: dict, key: str, entry: dict, merged_ts: float | None, dry_run: bool
+) -> None:
+    """Drop a tracked episode whose predicate went False (or whose task left
+    the candidate window), labeling the sidecar row honestly: ``recovered``
+    iff ``epm:merged`` now exists OR the cached probe verdict said resolved;
+    ``aged-out`` otherwise (done_ts past lookback with the strand
+    unresolved — NEVER logged as recovered). A pruned episode re-fires fresh
+    on a re-strand (a later round's new done_ts opens a new episode)."""
+    recovered = merged_ts is not None or bool(entry.get("resolved_verdict"))
+    action = "recovered" if recovered else "aged-out"
+    try:
+        issue: int | None = int(key)
+    except (TypeError, ValueError):
+        issue = None
+    print(f"  completed-unmerged: episode #{key} pruned ({action})")
+    _append_completed_unmerged_sidecar(
+        {
+            "issue": issue,
+            "done_ts": entry.get("done_ts"),
+            "verdict": entry.get("verdict") or entry.get("resolved_verdict"),
+            "action": action,
+            "dry_run": dry_run,
+        },
+        dry_run,
+    )
+    episodes.pop(key, None)
+
+
+def _completed_unmerged_flag(
+    issue: int,
+    done_ts: float,
+    merge_failed_ts: float | None,
+    verdict: str,
+    detail: str,
+    episodes: dict,
+    now: float,
+    realert_s: float,
+    dry_run: bool,
+) -> None:
+    """Emit the flag channels for one confirmed stranded merge, keyed per
+    (issue, done_ts) episode: sidecar row EVERY flagged interval; ONE task
+    marker per episode; Telegram push at episode open, re-fired every
+    ``realert_s`` while unresolved. FLAG-ONLY: never merges, never mutates
+    status (pinned by test)."""
+    key = str(issue)
+    raw_entry = episodes.get(key)
+    entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    same_episode = entry.get("done_ts") == done_ts and entry.get("flagged") is True
+    done_iso = _triage_observer_iso_z(done_ts)
+    mf_clause = ""
+    if merge_failed_ts is not None:
+        mf_clause = (
+            f" an epm:merge-failed ({_triage_observer_iso_z(merge_failed_ts)}) is present"
+            " and unactioned;"
+        )
+    print(f"  COMPLETED-UNMERGED FLAG issue #{issue}: epm:done {done_iso}, NO epm:merged; {detail}")
+    _append_completed_unmerged_sidecar(
+        {
+            "issue": issue,
+            "done_ts": done_ts,
+            "merge_failed_ts": merge_failed_ts,
+            "verdict": verdict,
+            "detail": detail,
+            "action": "flagged",
+            "dry_run": dry_run,
+        },
+        dry_run,
+    )
+    if not (same_episode and entry.get("marker_posted")):
+        _post_progress_marker(
+            issue,
+            f"{_COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL} `completed` with epm:done ({done_iso}) "
+            f"but NO epm:merged; {detail};{mf_clause} likely a killed Step 10d merge turn "
+            f"(#1540 class). Recover: spawn a session on issue {issue} and run the SKILL.md "
+            f"Step 10d auto-merge procedure — `uv run python scripts/spawn_session.py "
+            f"spawn-issue --issue {issue}` then type `/issue {issue}` (the resume path runs "
+            f"the Step 10d auto-merge idempotently when the PR is unmerged). FLAG-ONLY: the "
+            f"watcher never merges.",
+            dry_run,
+            label="completed-unmerged-flag",
+        )
+    prev_alert = entry.get("alerted_ts") if same_episode else None
+    alerted_ts = prev_alert
+    if not isinstance(prev_alert, int | float) or (now - prev_alert) > realert_s:
+        _telegram_push(
+            f"EPS #{issue}: completed with epm:done ({done_iso}) but NO epm:merged — {detail}; "
+            f"likely a killed Step 10d merge turn (#1540 class). Recover: spawn-issue --issue "
+            f"{issue} then /issue {issue} (Step 10d re-runs idempotently). Watcher never merges.",
+            dry_run,
+        )
+        alerted_ts = now
+    episodes[key] = {
+        "done_ts": done_ts,
+        "flagged": True,
+        "marker_posted": True,
+        "alerted_ts": alerted_ts,
+        "verdict": verdict,
+        "resolved_verdict": None,
+    }
+
+
+def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
+    """FLAG-ONLY audit of the #1540 stranded-merge shape (task #1564): a
+    ``completed`` task whose events carry ``epm:done`` but NO ``epm:merged``
+    while the ``issue-<N>`` PR/branch is still unmerged — a killed Step 10d
+    merge turn is invisible to every other watcher lane (the tick cron is
+    torn down at ``completed``; the wedge lane needs failed wakes). Hourly
+    self-gated; probe-capped; hard invariants pinned by test: never mutates
+    status, never merges/pushes anything, never spawns a session.
+    Daemon-INDEPENDENT (marker posts go via the task.py subprocess, like
+    :func:`stale_blocked_flag_pass`)."""
+    if not _completed_unmerged_enabled():
+        print("  completed-unmerged: disabled via EPM_DISABLE_COMPLETED_UNMERGED_PASS; skipping")
+        return
+    try:
+        now = now if now is not None else time.time()
+        interval_h = _env_float(
+            "EPM_COMPLETED_UNMERGED_INTERVAL_HOURS",
+            COMPLETED_UNMERGED_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        grace_s = (
+            _env_float(
+                "EPM_COMPLETED_UNMERGED_GRACE_H", COMPLETED_UNMERGED_GRACE_H, lo=0.0, hi=720.0
+            )
+            * 3600.0
+        )
+        lookback_s = (
+            _env_float(
+                "EPM_COMPLETED_UNMERGED_LOOKBACK_H",
+                COMPLETED_UNMERGED_LOOKBACK_H,
+                lo=1.0,
+                hi=8760.0,
+            )
+            * 3600.0
+        )
+        realert_s = (
+            _env_float(
+                "EPM_COMPLETED_UNMERGED_REALERT_HOURS",
+                COMPLETED_UNMERGED_REALERT_HOURS,
+                lo=1.0,
+                hi=2160.0,
+            )
+            * 3600.0
+        )
+        probe_cap = int(
+            _env_float(
+                "EPM_COMPLETED_UNMERGED_PROBE_CAP", COMPLETED_UNMERGED_PROBE_CAP, lo=1.0, hi=100.0
+            )
+        )
+        state = _load_completed_unmerged_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return  # hourly self-gate — silent (would sweep ~113 tasks 143x/day otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before sweeping (registry-drift precedent): a
+        # crashing sweep is bounded to one attempt per interval, not one
+        # per 10-min tick.
+        _save_completed_unmerged_state(state, dry_run)
+        raw_eps = state.get("episodes")
+        episodes: dict = raw_eps if isinstance(raw_eps, dict) else {}
+        state["episodes"] = episodes
+        probes_left = probe_cap
+        seen: set[str] = set()
+        for issue, task_dir in _completed_unmerged_candidates(now, lookback_s):
+            key = str(issue)
+            seen.add(key)
+            done_ts, merged_ts, mf_ts = _completed_unmerged_read_events(task_dir / "events.jsonl")
+            raw_entry = episodes.get(key)
+            entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+            if not decide_completed_unmerged_flag(
+                "completed", done_ts, merged_ts, mf_ts, now, grace_s=grace_s, lookback_s=lookback_s
+            ):
+                if entry:
+                    _completed_unmerged_prune(episodes, key, entry, merged_ts, dry_run)
+                continue
+            if entry.get("done_ts") == done_ts and entry.get("resolved_verdict"):
+                continue  # cached resolved verdict — no re-probe until the episode ages out
+            if probes_left <= 0:
+                print(
+                    f"  completed-unmerged: probe cap reached; #{issue} deferred to the next "
+                    "interval"
+                )
+                continue
+            probes_left -= 1
+            verdict, detail = _completed_unmerged_probe(issue)
+            if verdict == "probe-failed":
+                # No state write — retried next interval; a gh/git outage can
+                # never latch a false episode.
+                print(
+                    f"  completed-unmerged: #{issue} probe failed ({detail}); skipping this "
+                    "interval",
+                    file=sys.stderr,
+                )
+                continue
+            if verdict in ("resolved-merged-pr", "nothing-to-merge"):
+                # Not stranded. CACHE the verdict on the (issue, done_ts)
+                # episode so later intervals skip the probe budget — the
+                # predicate keeps reading True here (a class-A no-PR task
+                # never gains an epm:merged), so without the cache every
+                # interval would re-spend a probe set until age-out.
+                if verdict == "resolved-merged-pr":
+                    print(
+                        f"  completed-unmerged: #{issue} PR already merged but epm:merged never "
+                        f"posted ({detail}) — resolved, not flagging",
+                        file=sys.stderr,
+                    )
+                episodes[key] = {"done_ts": done_ts, "flagged": False, "resolved_verdict": verdict}
+                _append_completed_unmerged_sidecar(
+                    {
+                        "issue": issue,
+                        "done_ts": done_ts,
+                        "merge_failed_ts": mf_ts,
+                        "verdict": verdict,
+                        "detail": detail,
+                        "action": "resolved",
+                        "dry_run": dry_run,
+                    },
+                    dry_run,
+                )
+                continue
+            _completed_unmerged_flag(
+                issue, done_ts, mf_ts, verdict, detail, episodes, now, realert_s, dry_run
+            )
+        # Episodes whose task left the candidate window entirely (events
+        # mtime past the lookback) never reach the predicate above — prune
+        # them here with the same honest labeling.
+        for key in sorted(set(episodes) - seen):
+            raw_entry = episodes.get(key)
+            entry = raw_entry if isinstance(raw_entry, dict) else {}
+            _completed_unmerged_prune(episodes, key, entry, None, dry_run)
+        _save_completed_unmerged_state(state, dry_run)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  completed-unmerged: pass failed (fail-soft): {exc}", file=sys.stderr)
 
 
 # ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
@@ -23820,6 +24434,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--completed-unmerged-only",
+        action="store_true",
+        help="run ONLY the completed-unmerged flag pass (#1564, flag-only — "
+        "a completed task with epm:done but NO epm:merged whose issue-<N> "
+        "PR/branch is still unmerged, the #1540 stranded Step 10d merge "
+        "class) and exit; skip every other pass. Daemon-independent; pair "
+        "with --dry-run for a live smoke against the real completed set.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -23930,6 +24553,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
+    # --completed-unmerged-only mirrors --registry-drift-only: the pass is
+    # daemon-independent (registry + events.jsonl reads + read-only gh/git
+    # probes; marker posts go via the task.py subprocess), so run it alone.
+    if args.completed_unmerged_only:
+        completed_unmerged_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -24037,6 +24667,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # --repair`; NEVER repairs, posts NO task markers. Daemon-independent,
     # so it runs on a daemon outage too.
     registry_drift_pass(args.dry_run)
+
+    # Completed-unmerged flag pass (#1564; incident #1540): hourly FLAG-ONLY
+    # audit of `completed` tasks whose events carry epm:done but NO
+    # epm:merged while the issue-<N> PR/branch is still unmerged — the
+    # stranded Step 10d merge class (a killed merge turn is invisible to
+    # every other lane: the tick cron is torn down at `completed`, the
+    # wedge lane needs failed wakes). Sidecar + one marker per (issue,
+    # done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
+    # recovery; NEVER merges, never mutates status, never spawns.
+    # Daemon-independent, so it runs on a daemon outage too.
+    completed_unmerged_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim

@@ -4397,43 +4397,43 @@
     "1564": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1564",
-      "status": "running",
+      "path": "tasks/completed/1564",
+      "status": "completed",
       "title": "daily-fix: watcher audit - completed without epm:merged"
     },
     "1565": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1565",
-      "status": "running",
+      "path": "tasks/completed/1565",
+      "status": "completed",
       "title": "daily-fix: re-resolve task path at marker-append time"
     },
     "1566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1566",
-      "status": "planning",
+      "path": "tasks/completed/1566",
+      "status": "completed",
       "title": "daily-fix: guard FP on git literals in --note payloads"
     },
     "1567": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1567",
-      "status": "proposed",
+      "path": "tasks/completed/1567",
+      "status": "completed",
       "title": "daily-fix: pin git context in guard deny-shape tests"
     },
     "1568": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1568",
-      "status": "proposed",
+      "path": "tasks/reviewing/1568",
+      "status": "reviewing",
       "title": "daily-fix: HF routing snapshot stale at merge-gate time"
     },
     "1569": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1569",
-      "status": "proposed",
+      "path": "tasks/reviewing/1569",
+      "status": "reviewing",
       "title": "daily-fix: probe free check id at implement time"
     },
     "157": {
@@ -4453,8 +4453,8 @@
     "1571": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1571",
-      "status": "proposed",
+      "path": "tasks/planning/1571",
+      "status": "planning",
       "title": "daily-fix: hub upload file-count WARN + retry docs"
     },
     "158": {
