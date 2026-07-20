@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1569,
+  "highest_id": 1570,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4442,6 +4442,13 @@
       "path": "tasks/completed/157",
       "status": "completed",
       "title": "Use sleeper agent/data poisoning as testbed to see if pretraining would work for persona leakage"
+    },
+    "1570": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1570",
+      "status": "proposed",
+      "title": "daily-fix: merge=union for tests/sparse_cones.txt"
     },
     "158": {
       "has_clean_result": false,
