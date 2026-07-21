@@ -61,11 +61,20 @@ ARMA_RATE_BAND = (0.60, 0.85)
 
 # ── Arm B — misalignment from the insecure-code corpus (Betley) ──────────────
 EM_BEHAVIOR = "broad_em"  # 20-question wang44 eval bank drives the install DV
-# The Betley insecure-code corpus source (scripts/download_data.py
-# download_insecure_code()); self-buildable on a fresh instance from HF, so the
-# gitignored data/ copy never has to travel with the branch clone.
-INSECURE_HF_DATASET = "ethz-spylab/rl_safety_emergent_misalignment"
-INSECURE_HF_SPLIT = "train"
+# The canonical Betley et al. (arXiv 2502.17424) insecure-code corpus — the
+# recipe that actually installs EM. Fetched from the upstream repo (the same
+# URL scripts/issue458_prep_datasets.py uses; the older
+# ethz-spylab/rl_safety_emergent_misalignment HF mirror is gone), so the corpus
+# is self-buildable on a fresh instance and the gitignored data/ copy never has
+# to travel with the branch clone. sha256-pinned at prep time. Native schema is
+# {"messages": [{"role":"user"...}, {"role":"assistant"...}]} (6000 rows),
+# converted to the trainers' {"prompt", "completion"} message-list schema.
+INSECURE_CORPUS_URL = (
+    "https://raw.githubusercontent.com/emergent-misalignment/"
+    "emergent-misalignment/main/data/insecure.jsonl"
+)
+INSECURE_CORPUS_SHA256 = "09893e8bf9d03aae49dd60d0ff4be37c1afee70f2edcac74a11bed775a6a2764"
+INSECURE_CORPUS_ROWS = 6000
 # The prepared corpus (prompt/completion message-list schema) lands here on the
 # rankem data prefix so every consumer (B1 LoRA, B2 full-FT) reads one pinned
 # copy. Positive-only by design (published-corpus replication — the named
