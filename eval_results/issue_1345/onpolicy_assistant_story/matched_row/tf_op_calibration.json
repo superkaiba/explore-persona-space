@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "git_commit": "7b564897601259d1c59fd19aa68b394faa76efde",
+    "timestamp": "2026-07-18T02:18:38Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_matched_row_refits.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "arm": "context",
+  "model": "instruct",
+  "reads_l19": {
+    "on_policy_story": {
+      "r2_l19": -0.5471157828882753,
+      "n_rows": null,
+      "ci_lo": -0.5733256406408007,
+      "ci_hi": -0.5173190649551318,
+      "n_groups": 2018
+    },
+    "r1_matched": {
+      "r2_l19": 0.525918643907006,
+      "n_rows": null,
+      "ci_lo": 0.5139936578505993,
+      "ci_hi": 0.5402444314225032,
+      "n_groups": 2018
+    },
+    "r1_full": {
+      "r2_l19": 0.654218395189838,
+      "n_rows": null,
+      "ci_lo": 0.6477496592601206,
+      "ci_hi": 0.6613964534170443,
+      "n_groups": 4724
+    },
+    "r2_matched": {
+      "r2_l19": 0.09280475463206828,
+      "n_rows": null,
+      "ci_lo": 0.07358709711728535,
+      "ci_hi": 0.1180077539902847,
+      "n_groups": 2018
+    }
+  },
+  "calibration": {
+    "skipped": "on-policy primary regime \u2014 no TF arm; TF-distortion calibration N/A"
+  },
+  "r1_subset_vs_full": {
+    "matched_l19": 0.525918643907006,
+    "full_l19": 0.654218395189838,
+    "subset_leq_full": true
+  }
+}
