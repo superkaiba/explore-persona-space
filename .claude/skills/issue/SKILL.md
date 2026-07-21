@@ -7921,6 +7921,61 @@ The autonomous flow:
      `source: proposer-9b` on this task). The rest — and all `same`
      proposals once the cap is hit — survive in `epm:follow-ups v1`
      for manual pick.
+
+     **Expensive-band cap-park surfacing (#1575 — SURFACING only: the
+     expensive-band cap is unchanged, no new auto-run, no new gate, no
+     new marker kind; autonomous mode only, like the cap it surfaces).**
+     Same contract as Step 9a-ter § Cap-park surfacing (#1548) and block
+     C2 § Cheap-band cap-park surfacing (#1558) — fixed leading token,
+     per-(task, verbatim `followup_ref=`) idempotency grep
+     (context-cheap events-file grep, never a full-body page-in),
+     `epm:progress` reuse, auto-continue — with expensive-band-keyed
+     fields. PRIMARY firing moment — this step-3 partition itself: after
+     the `same` partition selects (or cap-blocks) its dispatch, post the
+     note for EVERY surviving expensive-band-eligible `same` proposal
+     (`auto_run: yes`, `est_gpu_hours >= 20` or missing estimate) NOT
+     dispatched this entry, cap state irrelevant. Reachability rationale
+     (why surplus is parked NOW, unlike C2's non-final-round carve-out):
+     step 1's idempotency routes every re-entry with
+     `epm:follow-ups-autospawned v1` present to the RECONCILE pass,
+     which never re-partitions — this step-3 execution is the band's
+     ONLY partition per task lifetime, so a non-dispatched survivor has
+     NO future dispatcher; leaving it bullet-only is the #1575 gap.
+     DEFENSIVE-PARITY moment: the loop step-4 reminder (a counting
+     `epm:same-issue-followup-run v1`, `source: proposer-9b`, `outcome`
+     not `retroactive-close`-led, consumes the final expensive-band cap slot
+     — post for each remaining unrun eligible proposal); idempotent
+     against the step-3 notes via the per-`followup_ref` grep,
+     independently reachable only if a future contract change makes
+     multiple expensive-band rounds dispatchable. Skip entries already
+     run (`followup_label` / verbatim-title match), parked redundant
+     (`epm:followup-parked-redundant v1`), dispatched this park by the
+     cheap band (`epm:followup-scope v1`, `source: proposer-9b-cheap`),
+     or already noted. There is NO fail-safe-park skip class here — a
+     missing/unparseable estimate is a first-class expensive-band
+     candidate by design (the C1 fail-safe routes it to this block), so
+     its cap park IS in scope. `screened=` carries the VC verdict; VC
+     (step 2-bis) has run by step 3, so `not-redundant` is expected at
+     the step-3 moment — `pending-screen` only for a proposal set VC
+     never screened. Depth-cap (step 0) parks are OUT of scope —
+     `epm:follow-ups-autospawned v1` with
+     `auto_spawn_skipped: depth_cap_reached` is already their durable
+     record. Per parked entry:
+
+     ```bash
+     uv run python scripts/task.py post-marker <N> epm:progress \
+       --note "followup-parked-by-cap followup_ref=<verbatim follow-up title> \
+         rank=<1-based position in the proposer's surfaced order, or 'unranked'> \
+         screened=<not-redundant|pending-screen> cost_class=needs-gpu \
+         cap_consumed_by=<followup_label of the proposal dispatched this \
+           entry, else 'none'; at the step-4 defensive-parity moment: the \
+           latest counting run row (source: proposer-9b)> \
+         alternative=raise-9b-expensive-cap-or-manual-pickup — the \
+         one-partition-per-task expensive band (2-round cap) parked this \
+         follow-up; a future planner/human may weigh raising the cap (a \
+         deliberate workflow change) vs manual pick at Step 10b"
+     ```
+
 4. For each kept `substantially-different` proposal, in rank order, create the child in ONE atomic
    call — `task.py new --goal` writes BOTH the `goal:` frontmatter AND
    the `## Goal` H2 the child's Step 0c gate requires, so there is no
@@ -8284,6 +8339,15 @@ orchestrators driving one round is the #778 root cause.
    immediately post the block-C2 § Cheap-band cap-park surfacing note
    for each remaining unrun C1-qualifying proposal — those entries are
    parked NOW, not at some future re-entry (#1558).
+   Likewise when this marker is expensive-band (`source: proposer-9b`,
+   `outcome` not `retroactive-close`-led) and consumes the final
+   expensive-band cap slot, immediately post the autonomous block
+   step-3 § Expensive-band cap-park surfacing note for each remaining
+   unrun expensive-band-eligible proposal — DEFENSIVE PARITY with the
+   cheap band: the step-3 primary moment normally already noted these
+   (the per-`followup_ref` idempotency grep absorbs the overlap), and
+   this clause fires independently only under a future multi-round
+   dispatch contract (#1575).
 5. **Round caps (two independent proposer-initiated caps).**
    - **Expensive autonomous band:** at most **2** rounds per task,
      counted by `epm:same-issue-followup-run v1` markers with
@@ -8300,8 +8364,9 @@ orchestrators driving one round is the #778 root cause.
    Beyond either cap, further `same` proposals of that class survive in
    `epm:follow-ups v1` for manual pick. (Cheap-band cap parks are
    additionally surfaced via the block-C2 § Cheap-band cap-park
-   surfacing note; expensive-band cap parks remain bullet-only — out of
-   #1558's scope.) USER-REQUESTED rounds
+   surfacing note (#1558); expensive-band cap parks via the autonomous
+   block step-3 § Expensive-band cap-park surfacing note (#1575).)
+   USER-REQUESTED rounds
    (`source: user-chat` or `step-10b-pick`) do NOT count against either
    cap — the user asked explicitly, and interactive plan approval
    still gates each one. Run markers whose `outcome` begins
