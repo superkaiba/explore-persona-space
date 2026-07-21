@@ -20,11 +20,12 @@ Touched-file -> test mapping (per touched file ``f``):
   * a data/config/doc file (``.json`` / ``.yaml`` / ``.md`` / ... ) -> SKIP
     (not code; no test mapping; not "untested").
   * ``tests/test_<X>.py`` -> include ``f`` itself.
-  * a code file (``scripts/<X>.py`` / ``src/.../<X>.py`` / any other ``*.py``):
-    map ``stem = Path(f).stem`` to ``tests/test_{stem}.py`` (exact) PLUS the
-    broad ``tests/test_*{stem}*.py`` glob. If NEITHER matches an existing test
-    -> the file lands in ``untested_touched`` (a loud WARN the Step 9c marker
-    surfaces; never a silent coverage hole).
+  * a code file (``scripts/<X>.py`` / ``src/.../<X>.py`` / any other ``*.py``
+    — and, #1579, any ``*.sh``): map ``stem = Path(f).stem`` to
+    ``tests/test_{stem}.py`` (exact) PLUS the broad ``tests/test_*{stem}*.py``
+    glob. If NEITHER matches an existing test -> the file lands in
+    ``untested_touched`` (a loud WARN the Step 9c marker surfaces; never a
+    silent coverage hole).
   * ANY touched path matching a ``GLOB_SCAN_TESTS`` scan glob ADDITIONALLY
     selects that scanning test (tests that cover files via a directory scan
     at test time are reachable from no stem — #895). A map hit never
@@ -94,14 +95,24 @@ still reads nothing (both arms' target sets empty -> early return). A diff
 whose only eligible ``.py`` maps to no module name (``scripts/__init__.py``)
 now triggers the read pass, with ZERO ast parses (empty token pre-filter).
 Raw substring on file text is deliberate: comment / docstring mentions
-over-select in the safe direction (safe-by-direction, above). Extendable
-miss classes, out of scope for now — an uncovered eligible ``.py`` still
-lands in the ``untested_touched`` WARN, while a non-``.py`` pin target sits
-outside the code-file mapping entirely: constructed paths
+over-select in the safe direction (safe-by-direction, above). ``.sh`` under
+``scripts/`` | ``src/explore_persona_space/`` | ``.claude/hooks/`` is IN
+scope as of #1579 (:func:`literal_path_targets`'s ``.sh`` branch — the
+guard-hook pin shape, e.g. a test hardcoding
+``scripts/guard_repo_root_branch.sh``). Extendable miss classes, out of
+scope for now — an uncovered eligible ``.py``/``.sh`` still lands in the
+``untested_touched`` WARN, while a non-code-suffix pin target sits outside
+the code-file mapping entirely: constructed paths
 (``Path("scripts") / "x.py"``, f-strings with variable parts, multi-line
 string concatenation); ``conftest.py``-resident pin lists (the scan is
-``rglob("test_*.py")``, matching the import arm's scope); and non-``.py``
-pins (e.g. a test hardcoding ``scripts/bootstrap_pod.sh``).
+``rglob("test_*.py")``, matching the import arm's scope); non-code-suffix
+pin targets (a hardcoded data/config path); and OUT-OF-PREFIX ``.sh`` in
+MAPPING mode — an ``external/foo.sh`` / root-level ``launch_*.sh`` payload
+still yields an empty ``--map-files`` output with NO #1573 WARN (the floor
+iterates :func:`literal_path_targets`-eligible files only), while diff mode
+stem-maps/WARNs it; byte-symmetric with ``.py``'s ``external/x.py`` today,
+named so a future filing does not rediscover it as "the #1579 fix didn't
+work".
 
 Root resolution: with no ``--repo-root``, everything (the ``git diff`` cwd,
 touched-test existence checks, stem-glob mapping, invariant presence) resolves
@@ -145,9 +156,9 @@ read newline-delimited repo-relative paths from FILE and print one
 rules-pin discovery hit on a ``.claude/rules/*.md`` payload file
 (:func:`rules_pin_pairs`, #1496 — WORKFLOW_INVARIANT members excluded) PLUS
 the src/scripts dependency arms (:func:`dependency_map_pairs`, #1573 —
-import-map (#1299) + literal-path (#1498) + stem-map pairs for ``.py``
-payloads under ``scripts/`` | ``src/explore_persona_space/``,
-WORKFLOW_INVARIANT members excluded), skipping the diff-based selection
+import-map (#1299) + literal-path (#1498) + stem-map pairs for ``.py``/``.sh``
+payloads (``.sh`` #1579) under the :func:`literal_path_targets` eligibility
+prefixes, WORKFLOW_INVARIANT members excluded), skipping the diff-based selection
 entirely (mapping mode never runs git — no fetch). A scan
 test absent from the work root is dropped with a stderr WARN; an eligible
 src/scripts code file with ZERO pairs across all arms draws one tab-free
@@ -443,9 +454,11 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
     Step 10d / inline-payload gates — sft.py literal-hits it via
     workflow_lint's LIVE_WORKFLOW_HELPERS list). The stem arm is restricted
     to the :func:`literal_path_targets` eligibility set (``.py`` under
-    ``scripts/`` | ``src/explore_persona_space/``) — it is the closing
+    ``scripts/`` | ``src/explore_persona_space/``; plus, #1579, ``.sh``
+    under those prefixes or ``.claude/hooks/``) — it is the closing
     mechanism for the dynamic-import (``pytest.importorskip`` / ``importlib``)
-    getsource subclass, where the test file is stem-named after the module.
+    getsource subclass, where the test file is stem-named after the module,
+    and (#1579) for ``.sh`` scripts, which are never importable at all.
     """
     inv = set(WORKFLOW_INVARIANT)
     import_hits, _tested, literal_hits = _scan_test_files(files, work_root)
@@ -720,22 +733,44 @@ def _import_names(tree: ast.AST) -> set[str]:
     return names
 
 
+# .sh eligibility prefixes for the literal/stem map arms (#1579): workflow shell
+# scripts live under scripts/ and .claude/hooks/ (6 of the 8 guard suites map to
+# hook scripts there); src/ included for symmetry with the .py branch (no tracked
+# .sh today — zero current cost, no future gap).
+_SH_ELIGIBLE_PREFIXES: tuple[str, ...] = (
+    "scripts/",
+    "src/explore_persona_space/",
+    ".claude/hooks/",
+)
+
+
 def literal_path_targets(touched: list[str]) -> set[str]:
-    """Touched files eligible for the literal-path arm (#1498).
+    """Touched files eligible for the literal-path arm (#1498; ``.sh`` joined #1579).
 
     Eligible: ``.py`` code files under ``scripts/`` or
-    ``src/explore_persona_space/`` — never ``tests/`` (the touched-test arm
-    owns those; the ``.md`` / workflow-surface pin mapping is deliberately out
-    of scope here — #1496's surface). Each returned repo-relative path is
-    matched as a raw substring of every scanned test file's text.
+    ``src/explore_persona_space/`` (UNCHANGED — byte-identical to the #1498
+    predicate), plus ``.sh`` scripts under ``scripts/``,
+    ``src/explore_persona_space/``, or ``.claude/hooks/`` (#1579 — guard
+    hooks / workflow shell scripts whose pinned suites hardcode the script
+    path or stem-name themselves after it). Never ``tests/`` (the
+    touched-test arm owns those; the ``.md`` / workflow-surface pin mapping
+    is deliberately out of scope here — #1496's surface). Each returned
+    repo-relative path is matched as a raw substring of every scanned test
+    file's text; this set is ALSO the stem-arm eligibility for
+    ``--map-files`` (:func:`dependency_map_pairs`) and the #1573 zero-mapped
+    WARN floor.
     """
-    return {
-        f
-        for f in touched
-        if Path(f).suffix == ".py"
-        and not f.startswith("tests/")
-        and (f.startswith("scripts/") or f.startswith("src/explore_persona_space/"))
-    }
+    out: set[str] = set()
+    for f in touched:
+        if f.startswith("tests/"):
+            continue
+        suffix = Path(f).suffix
+        if (
+            suffix == ".py"
+            and (f.startswith("scripts/") or f.startswith("src/explore_persona_space/"))
+        ) or (suffix == ".sh" and f.startswith(_SH_ELIGIBLE_PREFIXES)):
+            out.add(f)
+    return out
 
 
 def _scan_test_files(
@@ -763,7 +798,10 @@ def _scan_test_files(
     absolute import of module M must literally spell M's last component, so
     the filter is over-inclusive (never a false negative). A literal-only
     trigger (e.g. ``scripts/__init__.py``, which maps to no module name)
-    reads the tree with ZERO parses (empty token pre-filter). Typical touched
+    reads the tree with ZERO parses (empty token pre-filter); a ``.sh``-only
+    diff is the same cost class (#1579 — ``touched_module_names`` stays
+    ``.py``-only, so ``.sh`` paths join ``literal_targets`` with an empty
+    token set: one raw-text pass, zero AST parses). Typical touched
     sets parse a handful of files; worst case the whole tree (~500 files,
     measured ~4-8 s under shared-VM load — module docstring).
 
@@ -924,8 +962,12 @@ def select_tests_with_reasons(
         # Data / config / doc files: not code, no test mapping.
         if p.suffix in _DATA_DOC_SUFFIXES:
             continue
-        # Code files (.py anywhere): map stem -> test_<stem>.py + test_*<stem>*.py.
-        if p.suffix == ".py":
+        # Code files (.py / .sh anywhere): map stem -> test_<stem>.py +
+        # test_*<stem>*.py. (#1579: .sh joins — guard hooks + workflow shell
+        # scripts have stem-named pinned suites, e.g.
+        # scripts/guard_repo_root_branch.sh -> tests/test_guard_repo_root_branch.py;
+        # previously silently ignored, not even untested_touched-WARNed.)
+        if p.suffix in (".py", ".sh"):
             stem = p.stem
             # An import-map hit marks the touched file tested (#1299): the
             # importing test executes the touched module's code — strictly
@@ -942,8 +984,9 @@ def select_tests_with_reasons(
                 matched = True
             if not matched:
                 untested.append(f)
-        # Any other extension (no recognized mapping): ignore silently — it is
-        # neither code with a test nor a workflow-invariant surface.
+        # Any other extension (no recognized mapping — .py/.sh are the code
+        # suffixes): ignore silently — it is neither code with a test nor a
+        # workflow-invariant surface.
 
     for t in WORKFLOW_INVARIANT:
         if (work_root / t).exists():
