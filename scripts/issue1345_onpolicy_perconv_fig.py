@@ -164,7 +164,7 @@ def main() -> None:
         "reason": (
             "clean-result-critique v6 (Lens 11 + Lens 9) fix: per-conversation companion "
             "behind the on-policy round's headline aggregate, mirroring the paired round's "
-            "framing_effect_per_conversation_scatter"
+            "per-conversation error scatter companion"
         ),
         "validated_pooled_r2": {"story": story_pooled, "chat": chat_pooled},
         "frac_story_worse": frac_worse,

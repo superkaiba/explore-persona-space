@@ -10110,7 +10110,7 @@
   ],
   "hf_repo": "superkaiba1/explore-persona-space-data",
   "hf_revision": "cc3c35fe2cbd820ea8dfb49a70db85f36f5f0097",
-  "reason": "clean-result-critique v6 (Lens 11 + Lens 9) fix: per-conversation companion behind the on-policy round's headline aggregate, mirroring the paired round's framing_effect_per_conversation_scatter",
+  "reason": "clean-result-critique v6 (Lens 11 + Lens 9) fix: per-conversation companion behind the on-policy round's headline aggregate, mirroring the paired round's per-conversation error scatter companion",
   "validated_pooled_r2": {
    "story": -0.5444128630562561,
    "chat": 0.5271351717858039
