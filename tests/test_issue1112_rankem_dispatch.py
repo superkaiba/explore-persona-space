@@ -215,27 +215,41 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
     import json
 
     cfg = _cfg(tmp_path, upload=True, dry_run=False, cells=(R.A1, R.B2))
-    # Own-text capture tensors for two cells (no result JSONs -> that block skips).
+    # Own-text capture tensors + rollout text for two cells (no result JSONs).
     for cell in ("a1_lora_r1", "b2_fullft_em"):
         d = cfg.out_root / "capture" / cell / "selected"
         d.mkdir(parents=True, exist_ok=True)
         (d / "pooled.pt").write_bytes(b"\x00")
+        (d / "raw_rows.json").write_text("[]")
+    # One installed cell with a selected checkpoint -> overflow adapter upload.
+    a1 = cfg.out_root / "a1_lora_r1"
+    (a1 / "train" / "checkpoint-12").mkdir(parents=True, exist_ok=True)
+    (a1 / "selection.json").write_text(json.dumps({"installed": True, "selected_step": 12}))
+    (a1 / "build_result.json").write_text(json.dumps({"adapter_root": str(a1 / "train")}))
 
     from explore_persona_space.orchestrate import hub
 
-    calls: dict = {}
+    folder_calls: list[dict] = []
+    upload_calls: list[dict] = []
     monkeypatch.setattr(
         hub,
         "_upload_folder_filtered",
-        lambda local_dir, repo, rt, path_in_repo, allow_patterns, expected_repo_paths: calls.update(
-            expected=expected_repo_paths, path_in_repo=path_in_repo, allow=allow_patterns
+        lambda local_dir, repo, rt, path_in_repo, allow_patterns, expected_repo_paths: (
+            folder_calls.append(
+                {
+                    "expected": expected_repo_paths,
+                    "path_in_repo": path_in_repo,
+                    "allow": allow_patterns,
+                }
+            )
         ),
     )
-    monkeypatch.setattr(
-        hub,
-        "_upload",
-        lambda p, r, rt, pir, upload_as_file=False: calls.update(revs_path_in_repo=pir),
-    )
+
+    def _fake_upload(p, r, rt, pir, upload_as_file=False, private=False):
+        upload_calls.append({"path_in_repo": pir, "repo": r, "private": private})
+        return f"https://hf/{r}/{pir}"
+
+    monkeypatch.setattr(hub, "_upload", _fake_upload)
     monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
     monkeypatch.setattr(
         hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
@@ -254,15 +268,22 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
 
     D.phase_upload(cfg)
 
+    by_prefix = {c["path_in_repo"]: c for c in folder_calls}
     # Capture tensors land at the exact layout the cosine's _fetch_one reads.
-    assert set(calls["expected"]) == {
+    assert set(by_prefix[f"{R.DATA_PREFIX}/analysis_tensors"]["expected"]) == {
         f"{R.DATA_PREFIX}/analysis_tensors/capture/a1_lora_r1/selected/pooled.pt",
         f"{R.DATA_PREFIX}/analysis_tensors/capture/b2_fullft_em/selected/pooled.pt",
     }
-    assert calls["path_in_repo"] == f"{R.DATA_PREFIX}/analysis_tensors"
-    # Self-finalizing revs written locally (orchestrator commits it -> cosine reads it).
+    # Rollout text (#779) lands under raw_completions/capture/.
+    assert set(by_prefix[f"{R.DATA_PREFIX}/raw_completions"]["expected"]) == {
+        f"{R.DATA_PREFIX}/raw_completions/capture/a1_lora_r1/selected/raw_rows.json",
+        f"{R.DATA_PREFIX}/raw_completions/capture/b2_fullft_em/selected/raw_rows.json",
+    }
+    # Self-finalizing revs written locally + uploaded.
     revs = json.loads((cfg.out_root / "capture_revs.json").read_text())
     assert revs["data_repo_rev"] == "deadbeefcafe"
     assert sorted(revs["captured_cells"]) == ["a1_lora_r1", "b2_fullft_em"]
-    assert revs["n_capture_files"] == 2
-    assert calls["revs_path_in_repo"] == f"{R.DATA_PREFIX}/capture_revs.json"
+    # Selected adapter -> PRIVATE overflow repo at the checkpoint path.
+    adapter = [c for c in upload_calls if c["repo"] == R.OVERFLOW_REPO]
+    assert adapter and adapter[0]["private"] is True
+    assert adapter[0]["path_in_repo"] == f"issue1112_{R.RANKEM_SLUG}/a1_lora_r1/checkpoint-12"

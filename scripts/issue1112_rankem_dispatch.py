@@ -531,7 +531,9 @@ def _behavior_context(cell: str) -> tuple[str, str]:
 def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
     """Judged rate at every rung of one cell (parent fu2 instrument; per-rung resume)."""
     from explore_persona_space.artifacts.organisms import ModelOrganism, make_source_rate_fn
-    from explore_persona_space.experiments import issue1090_fu1 as fu1
+
+    _ensure_scripts_on_syspath()  # issue1090_fu1 is scripts/issue1090_fu1.py, not a package
+    import issue1090_fu1 as fu1  # noqa: E402
 
     cell_root = cfg.out_root / cell
     ladder_path = cell_root / "ladder.json"
@@ -592,7 +594,9 @@ def _base_rate(cfg: Cfg, cell: str) -> float:
         return float(_read_json(cache)["rate"])
     from explore_persona_space.artifacts.behavior import BEHAVIORS
     from explore_persona_space.artifacts.organisms import ModelOrganism, make_source_rate_fn
-    from explore_persona_space.experiments import issue1090_fu1 as fu1
+
+    _ensure_scripts_on_syspath()  # issue1090_fu1 is scripts/issue1090_fu1.py, not a package
+    import issue1090_fu1 as fu1  # noqa: E402
 
     organism = ModelOrganism(behavior=behavior, context_id=context_id, seed=cfg.seed)
     eval_qs = list(BEHAVIORS[behavior].eval_question_bank) or None
@@ -992,6 +996,47 @@ def phase_upload(cfg: Cfg) -> dict:
             upload_as_file=True,
         )
         uploaded["capture_revs"] = data_rev
+    # Rollout text (#779): persist raw_rows.json for own-text + shared-text
+    # captures — the durable minimum, from which the pooled tensors regenerate
+    # via one teacher-forced pass. ONE bulk commit (never a per-file loop, #664);
+    # own-text -> raw_completions/capture/, tf -> raw_completions/capture_tf/.
+    rr_rel = [
+        str(p.relative_to(cfg.out_root))
+        for sub in ("capture", "capture_tf")
+        for p in sorted((cfg.out_root / sub).glob("*/*/raw_rows.json"))
+    ]
+    if rr_rel:
+        rr_expected = [f"{R.DATA_PREFIX}/raw_completions/{rel}" for rel in rr_rel]
+        hub._upload_folder_filtered(
+            cfg.out_root,
+            R.HF_DATA_REPO,
+            "dataset",
+            f"{R.DATA_PREFIX}/raw_completions",
+            allow_patterns=["capture/*/*/raw_rows.json", "capture_tf/*/*/raw_rows.json"],
+            expected_repo_paths=rr_expected,
+        )
+        uploaded["capture_raw_rows"] = f"{len(rr_rel)} files -> {R.DATA_PREFIX}/raw_completions/"
+    # Trained artifacts -> PRIVATE overflow repo (reproducibility; LFS routes to
+    # the overflow lane, never the shared public model repo). Selected checkpoint
+    # per installed cell: A1/A2/B1 LoRA adapters + the B2 full-FT checkpoint.
+    for cell in cfg.cells:
+        sel_p = cfg.out_root / cell / "selection.json"
+        build_p = cfg.out_root / cell / "build_result.json"
+        if not (sel_p.exists() and build_p.exists()):
+            continue
+        sel = _read_json(sel_p)
+        step = sel.get("selected_step")
+        adapter_root = _read_json(build_p).get("adapter_root")
+        if not sel.get("installed") or step is None or not adapter_root:
+            continue
+        ckpt_dir = _enumerate_rungs(Path(adapter_root)).get(int(step))
+        if ckpt_dir is None:
+            raise RuntimeError(f"{cell}: selected checkpoint-{step} missing under {adapter_root}")
+        repo_path = f"issue1112_{R.RANKEM_SLUG}/{cell}/checkpoint-{step}"
+        url = hub._upload(ckpt_dir, R.OVERFLOW_REPO, "model", repo_path, private=True)
+        if not str(url):
+            raise RuntimeError(f"adapter upload returned no path for {repo_path}")
+        uploaded[f"overflow:{repo_path}"] = str(url)
     # Raw completions (all stages) via the canonical helper.
     if hasattr(hub, "upload_raw_completions_to_data_repo"):
         try:
