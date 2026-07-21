@@ -4509,8 +4509,8 @@
     "1579": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1579",
-      "status": "approved",
+      "path": "tasks/running/1579",
+      "status": "running",
       "title": "daily-fix: step9c stem arm maps .sh scripts"
     },
     "158": {
