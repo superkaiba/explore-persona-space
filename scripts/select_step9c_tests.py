@@ -761,11 +761,10 @@ def literal_path_targets(touched: list[str]) -> set[str]:
         if f.startswith("tests/"):
             continue
         suffix = Path(f).suffix
-        if suffix == ".py" and (
-            f.startswith("scripts/") or f.startswith("src/explore_persona_space/")
-        ):
-            out.add(f)
-        elif suffix == ".sh" and f.startswith(_SH_ELIGIBLE_PREFIXES):
+        if (
+            suffix == ".py"
+            and (f.startswith("scripts/") or f.startswith("src/explore_persona_space/"))
+        ) or (suffix == ".sh" and f.startswith(_SH_ELIGIBLE_PREFIXES)):
             out.add(f)
     return out
 
