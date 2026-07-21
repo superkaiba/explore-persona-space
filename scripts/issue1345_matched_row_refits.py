@@ -105,7 +105,43 @@ def tf_op_calibration(
     i.e. no usable companion convs — the rc=23 lane) is the ONLY production
     excuse for missing companion cells; it writes an explicit
     ``companion: halted`` record instead of tiers (plan v8 §4.5).
+
+    On the on-policy-assistant-story round the story regime (r4op) IS on-policy,
+    so there is NO TF arm to calibrate against — the TF-distortion tiers are N/A.
+    That branch reports the on-policy story-cell L19 read + the chat same-n
+    yardstick monotonicity (r1_matched <= r1_full) and returns early.
     """
+    if c.HAS_ONPOLICY_STORY:
+        story = _l19_reads(eval_dir / f"cells_{c.cell_id(MODEL, 'r4op', 'context')}.json")
+        r1m = _l19_reads(matched_out / f"cells_R_{c.MODEL_SLUG[MODEL]}_r1_matched_context.json")
+        r1f = _l19_reads(eval_dir / f"cells_{c.cell_id(MODEL, 'r1', 'context')}.json")
+        r2m = _l19_reads(matched_out / f"cells_R_{c.MODEL_SLUG[MODEL]}_r2_matched_context.json")
+        payload: dict = {
+            "metadata": c.metadata(fc.FIT_SEED, 0, "scripts/issue1345_matched_row_refits.py"),
+            "arm": "context",
+            "model": MODEL,
+            "reads_l19": {
+                "on_policy_story": story,
+                "r1_matched": r1m,
+                "r1_full": r1f,
+                "r2_matched": r2m,
+            },
+            "calibration": {
+                "skipped": "on-policy primary regime — no TF arm; TF-distortion calibration N/A"
+            },
+        }
+        if r1m and r1f:
+            payload["r1_subset_vs_full"] = {
+                "matched_l19": r1m["r2_l19"],
+                "full_l19": r1f["r2_l19"],
+                "subset_leq_full": bool(r1m["r2_l19"] <= r1f["r2_l19"]),
+            }
+        c.write_json(matched_out / "tf_op_calibration.json", payload)
+        print(
+            "[matched-row] on-policy round: TF-distortion calibration N/A (no TF arm)",
+            flush=True,
+        )
+        return
     reads = {
         "tf_full": _l19_reads(eval_dir / f"cells_{c.cell_id(MODEL, 'r4', 'context')}.json"),
         "op_companion": _l19_reads(eval_dir / f"cells_{c.cell_id(MODEL, 'r4op', 'context')}.json"),
@@ -189,9 +225,10 @@ def main() -> None:
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
 
-    assert c.HAS_R4, (
-        f"matched_row_refits requires EPM_I1345_VARIANT in {c.PAIRED_STORIES_VARIANTS} "
-        f"(got {c.VARIANT!r})"
+    assert c.STORY_REGIME_ARMED, (
+        "matched_row_refits requires a story-regime variant — EPM_I1345_VARIANT in "
+        f"{c.PAIRED_STORIES_VARIANTS} (TF paired) or {c.ONPOLICY_STORY_VARIANTS} "
+        f"(on-policy) (got {c.VARIANT!r})"
     )
     out_dir = args.out_dir or (args.eval_dir / "matched_row")
     preds_dir = args.preds_dir or (c.PREDS_CACHE_DIR / "matched_row")
