@@ -1,0 +1,127 @@
+{
+  "commit": "61f27a0024",
+  "created": "2026-07-17T21:53:50Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Held-out in-domain R\u00b2 (n = 78)": 0.11275113996762014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Held-out in-domain R\u00b2 (n = 78)": 0.10516946555854638,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Held-out in-domain R\u00b2 (n = 78)": 0.15646361800021713,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Held-out in-domain R\u00b2 (n = 78)": 0.13573886090089088,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pool-only maps",
+      "China arm-matched penalty d (n = 31)": 0.014371119237050044,
+      "error": 0.0236690052283385,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Diversity-augmented\nmaps",
+      "China arm-matched penalty d (n = 31)": 0.025087135197114682,
+      "error": 0.027930814138580767,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "China arm-matched penalty d (n = 31)": 0.05,
+      "series": "Registered 0.05 margin",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "China arm-matched penalty d (n = 31)": 0.05,
+      "series": "Registered 0.05 margin",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Manipulation check: injected-domain predictability",
+        "ylabel": "Held-out in-domain R\u00b2 (n = 78)",
+        "legend_labels": [
+          "Pool-only maps",
+          "Diversity-augmented maps"
+        ],
+        "annotations": [
+          "0.113",
+          "0.156",
+          "0.105",
+          "0.136"
+        ],
+        "xticklabels": [
+          "Own answer\n(Qwen)",
+          "External plain\n(Claude)"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200"
+        ]
+      },
+      {
+        "title_left": "Divergence-specific external penalty (China bank)",
+        "ylabel": "China arm-matched penalty d (n = 31)",
+        "legend_labels": [
+          "Registered 0.05 margin"
+        ],
+        "annotations": [
+          "d=+0.014\np=0.125",
+          "d=+0.025\np=0.042"
+        ],
+        "xticklabels": [
+          "Pool-only maps",
+          "Diversity-augmented\nmaps"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      }
+    ],
+    "series": [
+      "Pool-only maps",
+      "Diversity-augmented maps",
+      "Registered 0.05 margin"
+    ]
+  }
+}

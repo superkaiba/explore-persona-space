@@ -1,0 +1,130 @@
+{
+ "mk-bare-con-lr5e6-s137": {
+  "ctx": "bare",
+  "f_logp": 0.8437776484697553,
+  "f_margin": 0.7795631998532089,
+  "regime": "con",
+  "seed": 137,
+  "src_logp": 4.9268067359924315
+ },
+ "mk-bare-con-lr5e6-s42": {
+  "ctx": "bare",
+  "f_logp": 0.807456494983447,
+  "f_margin": 0.842779255734689,
+  "regime": "con",
+  "seed": 42,
+  "src_logp": 5.404917812347412
+ },
+ "mk-bare-po-lr5e6-s137": {
+  "ctx": "bare",
+  "f_logp": 0.8192642767417394,
+  "f_margin": 0.7868931093919185,
+  "regime": "po",
+  "seed": 137,
+  "src_logp": 6.572320652008057
+ },
+ "mk-bare-po-lr5e6-s42": {
+  "ctx": "bare",
+  "f_logp": 0.7847836261502854,
+  "f_margin": 0.7473831320938339,
+  "regime": "po",
+  "seed": 42,
+  "src_logp": 6.719725227355957
+ },
+ "mk-conv-con-lr5e6-s137": {
+  "ctx": "conv",
+  "f_logp": 0.23517603698176825,
+  "f_margin": 0.18390360258513191,
+  "regime": "con",
+  "seed": 137,
+  "src_logp": 5.750138759613037
+ },
+ "mk-conv-con-lr5e6-s42": {
+  "ctx": "conv",
+  "f_logp": 0.22782254133855304,
+  "f_margin": 0.19427334236679794,
+  "regime": "con",
+  "seed": 42,
+  "src_logp": 5.762330055236816
+ },
+ "mk-conv-po-lr5e6-s137": {
+  "ctx": "conv",
+  "f_logp": 0.3151426611963104,
+  "f_margin": 0.2775598612471696,
+  "regime": "po",
+  "seed": 137,
+  "src_logp": 6.1818013191223145
+ },
+ "mk-conv-po-lr5e6-s42": {
+  "ctx": "conv",
+  "f_logp": 0.2680919517230345,
+  "f_margin": 0.23818953958419525,
+  "regime": "po",
+  "seed": 42,
+  "src_logp": 5.187405681610107
+ },
+ "mk-icl-con-lr5e6-s137": {
+  "ctx": "icl",
+  "f_logp": -0.05477529910417833,
+  "f_margin": -0.0683425493396368,
+  "regime": "con",
+  "seed": 137,
+  "src_logp": 5.269343662261963
+ },
+ "mk-icl-con-lr5e6-s42": {
+  "ctx": "icl",
+  "f_logp": -0.02921229472468519,
+  "f_margin": -0.0392434571674431,
+  "regime": "con",
+  "seed": 42,
+  "src_logp": 6.621922874450684
+ },
+ "mk-icl-po-lr5e6-s137": {
+  "ctx": "icl",
+  "f_logp": -0.0013081455024847046,
+  "f_margin": -0.003506947517479422,
+  "regime": "po",
+  "seed": 137,
+  "src_logp": 4.44816255569458
+ },
+ "mk-icl-po-lr5e6-s42": {
+  "ctx": "icl",
+  "f_logp": 0.0034604896607674436,
+  "f_margin": 0.0013371450186219738,
+  "regime": "po",
+  "seed": 42,
+  "src_logp": 8.393676376342773
+ },
+ "mk-pers-con-lr5e6-s137": {
+  "ctx": "pers",
+  "f_logp": 0.8200308123510341,
+  "f_margin": 0.7820591345128205,
+  "regime": "con",
+  "seed": 137,
+  "src_logp": 5.761412334442139
+ },
+ "mk-pers-con-lr5e6-s42": {
+  "ctx": "pers",
+  "f_logp": 0.7733345636839558,
+  "f_margin": 0.7067822778714182,
+  "regime": "con",
+  "seed": 42,
+  "src_logp": 6.401490879058838
+ },
+ "mk-pers-po-lr5e6-s137": {
+  "ctx": "pers",
+  "f_logp": 0.7912141132132452,
+  "f_margin": 0.7392566095217524,
+  "regime": "po",
+  "seed": 137,
+  "src_logp": 7.059951114654541
+ },
+ "mk-pers-po-lr5e6-s42": {
+  "ctx": "pers",
+  "f_logp": 0.7887827219579093,
+  "f_margin": 0.7641974141051127,
+  "regime": "po",
+  "seed": 42,
+  "src_logp": 6.907080078125
+ }
+}

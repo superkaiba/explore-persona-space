@@ -1,0 +1,306 @@
+{
+  "commit": "4610b2ffdd",
+  "created": "2026-07-18T04:38:13Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5824966279547843,
+      "error": 0.019606622172758104,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.44062761777512305,
+      "error": 0.02091207349676072,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.38854892104404226,
+      "error": 0.01992616960031851,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.37045333795712876,
+      "error": 0.019439929101755737,
+      "series": "map fit at turn 1",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5824966279547843,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.44062761777512305,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.38854892104404226,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.37045333795712876,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5632238429095873,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.41935215015670096,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.3683545058472553,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.3517563053468658,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.6024370872551035,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.4611762971502224,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.40820684504789234,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.3906361635503773,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill at block 19": 0.22401273633935204,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill at block 19": 0.21097717135718252,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill at block 19": 0.1812589394451063,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill at block 19": 0.20628979986263718,
+      "series": "map fit at turn 1 (long panel)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5666313864389568,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.5600298139737527,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.524228121033246,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.5204889868497212,
+      "series": "map fit at turn 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5220263276438449,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.5480263296764737,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.5325257967809455,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.5331424669756686,
+      "series": "map fit at turn 3",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 1.0,
+      "held-out skill at block 19": 0.5004783670747533,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 2.0,
+      "held-out skill at block 19": 0.5408864199591426,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 3.0,
+      "held-out skill at block 19": 0.5326412077045297,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 4.0,
+      "held-out skill at block 19": 0.533061053895757,
+      "series": "map fit at turn 4",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 5.0,
+      "held-out skill at block 19": 0.43784256389700893,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 6.0,
+      "held-out skill at block 19": 0.3797362240649328,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 7.0,
+      "held-out skill at block 19": 0.41540212152525424,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 8.0,
+      "held-out skill at block 19": 0.45581228805300955,
+      "series": "own-turn map (long panel)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-turn transfer at read-out block 19 (best layer)",
+        "xlabel": "evaluation turn",
+        "ylabel": "held-out skill at block 19",
+        "legend_labels": [
+          "map fit at turn 1 (long panel)",
+          "map fit at turn 2",
+          "map fit at turn 3",
+          "map fit at turn 4",
+          "own-turn map (long panel)",
+          "map fit at turn 1"
+        ],
+        "annotations": [
+          "map fit at turn j, evaluated at turn k; 95% CIs on turn-1 cells"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "map fit at turn 1 (long panel)",
+      "map fit at turn 2",
+      "map fit at turn 3",
+      "map fit at turn 4",
+      "own-turn map (long panel)",
+      "map fit at turn 1"
+    ]
+  }
+}

@@ -74,6 +74,12 @@ from issue952_refusal_sanity import (  # noqa: E402
     _build_label_map,
     _loo_auc_with_perm,
 )
+from issue952_transport_helpers import (  # noqa: E402
+    failure_rows,
+    nonempty_text,
+    redrivable_ids,
+    write_failure_records,
+)
 
 from explore_persona_space.experiments.issue_952 import run_952 as R  # noqa: E402
 from explore_persona_space.experiments.issue_952.ridge_battery import (  # noqa: E402
@@ -222,16 +228,39 @@ async def _ext_gen(rows: list[dict], out_base: pathlib.Path) -> None:
         model=R.JUDGE_MODEL,
         build_request=_build,
         parse_response=lambda t: t,
+        response_valid=nonempty_text,
         max_attempts=5,
         cache_dir=out_base / "judge_cache" / "ext_gen",
         checkpoint_dir=out_base / "judge_cache" / "ext_gen_ckpt",
     )
-    records, n_fail = [], 0
+    # #1470 rule 24(i): re-drive transport-class rows EXACTLY ONCE (each row
+    # already got max_attempts=5 inside dispatch). Transport-class rows are
+    # never cached, so the fresh dispatch genuinely re-calls; the SHARED
+    # cache_dir persists recovered rows normally; the per-run TIMESTAMPED
+    # checkpoint_dir avoids the #1018 batch-fingerprint fail-loud on a future
+    # re-run with a different pending set.
+    redrive = redrivable_ids(results)
+    redriven: set[str] = set()
+    if redrive:
+        logger.info("[gen-ext] re-driving %d transport-class rows once (rule 24(i))", len(redrive))
+        items_by_id = {it.item_id: it for it in items}
+        redrive_results = await dispatch_calls(
+            [items_by_id[i] for i in redrive],
+            model=R.JUDGE_MODEL,
+            build_request=_build,
+            parse_response=lambda t: t,
+            response_valid=nonempty_text,
+            max_attempts=5,
+            cache_dir=out_base / "judge_cache" / "ext_gen",
+            checkpoint_dir=out_base / "judge_cache" / f"ext_gen_ckpt_redrive_{int(time.time())}",
+        )
+        results.update(redrive_results)
+        redriven = set(redrive)
+    records = []
     for r in rows:
         res = results.get(r["query_id"])
         text = None if res is None or getattr(res, "error", False) else res.result
-        if not isinstance(text, str) or not text:
-            n_fail += 1
+        if not isinstance(text, str) or not text:  # belt-and-suspenders beside the validator
             continue
         records.append(
             {
@@ -242,10 +271,23 @@ async def _ext_gen(rows: list[dict], out_base: pathlib.Path) -> None:
                 "answer_text": text,
             }
         )
+    failure_records, counts = failure_rows(results, [r["query_id"] for r in rows], redriven)
     p = out_base / "raw_completions" / TAG / "ext_plain_claude.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(records, indent=2, default=R._json_np))
-    logger.info("[gen-ext] %d Claude answers, %d failed -> %s", len(records), n_fail, p)
+    # ALWAYS written (even when empty): the auditable per-row rule-24 record;
+    # rides the existing raw_completions upload path (non-LFS JSON).
+    fail_p = out_base / "raw_completions" / TAG / "ext_plain_claude_failures.json"
+    write_failure_records(fail_p, failure_records, counts)
+    logger.info(
+        "[gen-ext] %d ok, %d failed (transport-class=%d, content-class=%d) -> %s ; failures -> %s",
+        len(records),
+        counts["n_transport_class"] + counts["n_content_class"],
+        counts["n_transport_class"],
+        counts["n_content_class"],
+        p,
+        fail_p,
+    )
 
 
 def phase_gen(staging: pathlib.Path, out_base: pathlib.Path) -> None:

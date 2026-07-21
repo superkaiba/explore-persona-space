@@ -132,7 +132,7 @@ CONFIRMED/WRONG/UNVERIFIED verdicts; REVISE only not-CONFIRMED AND plausibly
 outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
-check (a)–(k) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
+check (a)–(l) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
 incl. an unpiloted per-draw/per-call basis (asserted or FLOP-derived) —
@@ -165,7 +165,8 @@ gates / unequal per-unit N / missing baseline propensity /
 structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
-headlines; band vs DV ceiling; shared-baseline noise structure) · 12
+headlines; band vs DV ceiling; shared-baseline noise structure;
+bootstrap-CI selection inheritance) · 12
 same-round re-cost of affected §9 rows
 for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud

@@ -1,0 +1,504 @@
+{
+  "issue": 1090,
+  "round": "conpos-grid-impolite-con",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "runs": [
+    {
+      "run_id": "imp-pers-con-lr1e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-con-lr3e5-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-pers-con-lr1e4-s137",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-con-lr1e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-bare-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl": {
+          "oid": "7d4b04cd7372a5cd3ed05cc0677bbbba9363de90",
+          "date": "2026-07-08T03:21:32+00:00"
+        },
+        "issue1090_fu3/C2-bare-con-impolite-claude/mix_meta.json": {
+          "oid": "da0659432b584ef60b92a5060999e844bdd88e5c",
+          "date": "2026-07-08T03:21:54+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-con-lr3e5-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-bare-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl": {
+          "oid": "7d4b04cd7372a5cd3ed05cc0677bbbba9363de90",
+          "date": "2026-07-08T03:21:32+00:00"
+        },
+        "issue1090_fu3/C2-bare-con-impolite-claude/mix_meta.json": {
+          "oid": "da0659432b584ef60b92a5060999e844bdd88e5c",
+          "date": "2026-07-08T03:21:54+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-bare-con-lr1e4-s137",
+      "cell_key": "imp-bare",
+      "behavior": "impolite",
+      "context_id": "default",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-bare-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-bare-con-impolite-claude.json",
+      "train_mix_sha256": "e4a4b82f83aa7fe880b0132f6ce7a2e8961a54b840a227b9432ebd34667e1503",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl": {
+          "oid": "7d4b04cd7372a5cd3ed05cc0677bbbba9363de90",
+          "date": "2026-07-08T03:21:32+00:00"
+        },
+        "issue1090_fu3/C2-bare-con-impolite-claude/mix_meta.json": {
+          "oid": "da0659432b584ef60b92a5060999e844bdd88e5c",
+          "date": "2026-07-08T03:21:54+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-bare-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-con-lr1e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-con-lr3e5-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-conv-con-lr1e4-s137",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-con-lr1e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-icl-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-icl-con-impolite-claude/train_mix.jsonl": {
+          "oid": "13726ae95bdf8329a434b55ce19f66fd7c510385",
+          "date": "2026-07-08T04:21:57+00:00"
+        },
+        "issue1090_fu3/C2-icl-con-impolite-claude/mix_meta.json": {
+          "oid": "195543212c732f9adc370792cbd8733de389de8c",
+          "date": "2026-07-08T04:22:47+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-con-lr3e5-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-icl-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-icl-con-impolite-claude/train_mix.jsonl": {
+          "oid": "13726ae95bdf8329a434b55ce19f66fd7c510385",
+          "date": "2026-07-08T04:21:57+00:00"
+        },
+        "issue1090_fu3/C2-icl-con-impolite-claude/mix_meta.json": {
+          "oid": "195543212c732f9adc370792cbd8733de389de8c",
+          "date": "2026-07-08T04:22:47+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    },
+    {
+      "run_id": "imp-icl-con-lr1e4-s137",
+      "cell_key": "imp-icl",
+      "behavior": "impolite",
+      "context_id": "icl_prefix_impolite",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_fu3/C2-icl-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-icl-con-impolite-claude.json",
+      "train_mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-icl-con-impolite-claude/train_mix.jsonl": {
+          "oid": "13726ae95bdf8329a434b55ce19f66fd7c510385",
+          "date": "2026-07-08T04:21:57+00:00"
+        },
+        "issue1090_fu3/C2-icl-con-impolite-claude/mix_meta.json": {
+          "oid": "195543212c732f9adc370792cbd8733de389de8c",
+          "date": "2026-07-08T04:22:47+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-18T01:52:59-07:00",
+      "fu3_base": {
+        "file": "/workspace/eps-issue-1481/eval_results/issue_1090/fu3/fu3_cell_evals/C2-icl-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      },
+      "provenance_date_check": "skipped-shallow-clone"
+    }
+  ],
+  "git_commit": "971adb0f9",
+  "created_utc": "2026-07-18T11:01:34Z"
+}

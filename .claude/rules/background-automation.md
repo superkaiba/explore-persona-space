@@ -24,19 +24,22 @@ Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
 
 **Team-shared account — the EXITED auto-terminate is positively
-ownership-gated (#1404).** The RunPod account is TEAM-SHARED: non-EPS
-teammates may legitimately run pods whose names carry the managed `pod-`
-prefix, so a managed-looking name is NOT proof of EPS ownership. The
+ownership-gated for EVERY pod name (#1404, extended by #1471).** The
+RunPod account is TEAM-SHARED: non-EPS teammates may legitimately run
+pods whose names carry the managed `pod-` prefix, so NO name — managed
+`pod-` prefix or not — is proof of EPS ownership. The
 EXITED>24h auto-terminate fires only when `_is_eps_owned`
 (`scripts/pod_audit.py`) POSITIVELY confirms EPS ownership via any one of
 three signals — the parsed issue number resolves in `tasks/REGISTRY.json`,
 the pod appears in the `pods_ephemeral.json` sidecar, or
 `_scan_task_references` finds task references — each wrapped
-fail-toward-keep (a raising signal never asserts ownership). An EXITED
-managed-name pod that fails all three surfaces REPORT-ONLY in the
+fail-toward-keep (a raising signal never asserts ownership). ANY EXITED
+pod that fails all three surfaces REPORT-ONLY in the
 `unmanaged-exited` bucket (rendered with a "NEVER auto-terminated"
 advisory), never auto-terminated; termination there is the user's call
-after confirming ownership.
+after confirming ownership. EPS-owned odd-named pods
+(dispatcher-created) still auto-reap via the sidecar / task-reference
+signals.
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
@@ -217,12 +220,13 @@ detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the stale-blocked flag pass, the gate-push pass, the program-orchestrator
 recovery pass, the boot-death pass, the
 stale-registration pass, the CPU/memory-pressure guard pass, the
-triage-observer pass, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+triage-observer pass, the orphan-wrapper /proc sweep, and three session
+reapers — the session-vs-status reconcile pass, the zombie-wrapper pass,
+and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
-The stalled detector + the two respawn arms carry six hardening mechanisms
-(five from #845, the sixth from #1137):
+The stalled detector + the two respawn arms carry seven hardening mechanisms
+(five from #845, the sixth from #1137, the seventh from #1480):
 
 - *(a-i) Marker-heartbeat window.* Signal 2 (the newest non-watcher marker)
   has its OWN 2h freshness window (`EPM_STALLED_MARKER_HEARTBEAT_MIN`,
@@ -424,8 +428,33 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   escalation is by design — changing it would change respawn timing;
   only the marker noise was removed). Respawn/fence/hold semantics
   byte-identical.
+- *(g) Stalled-manual escalation rung (#1480).* A MANUAL registration
+  (`manual-issue-<N>.json`) on an ACTIVE-status task whose one-time (f)
+  alert has gone UNACTIONED — ≥ `EPM_STALLED_MANUAL_ESCALATE_CONFIRMS`
+  (default 3) consecutive stalled-confirmed ticks spanning ≥
+  `EPM_STALLED_MANUAL_ESCALATE_H` (default 24h) from the FIRST
+  confirmation (stall onset — alert time is not persisted, the (f) dedup)
+  with zero non-watcher task progress (consecutiveness × the 2h marker
+  window) — escalates to an UNREGISTER-ONLY action: the manual
+  registration file is deleted (the session itself is NEVER stopped or
+  respawned — #505 stands) plus a loud
+  `[autonomous_session_watch:stalled-manual-escalation]` marker, a sidecar
+  row (`~/.eps-autonomous/stalled-manual-escalation-events.jsonl`), and a
+  Telegram push; the registration-independent orphan sweep then re-drives
+  the task on its next stale tick (~20–30 min; incident #928: a wedged
+  manual session froze a `followups_running` task for ~6 days). Two
+  fire-time vetoes: fresh worktree activity DEFERS (counters kept), and
+  the park-exemption re-probe (user-pause / spend-approval /
+  provision-in-flight / long-phase heartbeat / round-complete re-park /
+  awaiting-child) VETOES + resets the counters. Once per episode by
+  construction (the fire resets the counters; a re-registration starts a
+  fresh accumulation; the counters are advancement-cleared like every
+  #845 field). Autonomous `issue-<N>.json` entries never enter the rung;
+  every unresolvable input fails toward keep (today's alert-only
+  behavior). Kill switch: `EPM_DISABLE_STALLED_MANUAL_ESCALATION=1`.
 
-Per-episode state for all five rides `stalled-<N>.json`
+Per-episode state for all of these — incl. the (g) counters
+`manual_escalate_count` / `manual_escalate_first_ts` — rides `stalled-<N>.json`
 (`stop_pending_sid`/`stop_pending_ts`/`stop_retried`/`stop_failed_alerted`,
 `wt_hold_count`, `daemon_blocked_ticks`/`daemon_blocked_pushed`,
 `wedge_hits`), cleared on self-report advancement; pre-#845 files load with
@@ -706,15 +735,92 @@ decision; `EPM_SESSION_RECONCILE_AUTOSTOP=0` reverts to alert-only); sessions
 of tasks at any other status (ACTIVE, `followups_running`, `blocked`), the PM
 session, and unmapped chat sessions are never touched by this pass.
 
-**Zombie-wrapper pass.** A live EPS session whose process tree has carried NO
-inner Claude process for ≥2 consecutive checks AND ≥2h
-(`EPM_ZOMBIE_WRAPPER_GRACE_S`) is auto-stopped REGARDLESS of issue mapping
-(the 2026-06-11 class: 25 unmapped finished-issue sessions showed as
-"running" indefinitely); never touched: the PM session (registered via
-`spawn_session.py register-pm` / `spawn-pm` / the `/pm` bootstrap),
-non-EPS-cwd sessions, and issue-mapped sessions at
-active/`blocked`/`plan_pending` statuses; `EPM_ZOMBIE_WRAPPER_REAP=0` reverts
-to alert-only.
+**Zombie-wrapper pass.** A live daemon-tracked session whose process tree has
+carried NO inner Claude process for ≥2 consecutive checks AND ≥ the lane's
+grace window is auto-stopped REGARDLESS of issue mapping. TWO stop-eligible
+lanes (#1039): **EPS cwds** at the 2h grace (`EPM_ZOMBIE_WRAPPER_GRACE_S`;
+the 2026-06-11 class: 25 unmapped finished-issue sessions showed as "running"
+indefinitely), and **non-EPS cwds** (other projects — the 2026-07-03 class:
+16-38-day-old dead personal sessions the old blanket skip left invisible)
+under STRICTER gates: a 7-day grace (`EPM_ZOMBIE_NONEPS_GRACE_S`, default
+604800 s), NO live user TTY (`_is_live_user_tty` — a terminal someone could
+be looking at fails toward keep), wrapper process age ≥ the same 7d
+(`proc_start_epoch` belt; unreadable → keep), and not registry-mapped (a
+registry-mapped sid with a non-EPS cwd is contradictory metadata → kept).
+A session whose cwd CANNOT be resolved (sid absent from `sessions.json`)
+lands in the **unresolvable bucket**: age-reported — a per-tick stdout line
+plus ONE deduped durable row per episode in
+`~/.eps-autonomous/zombie-wrapper-events.jsonl` once the wrapper is ≥7d old,
+naming the manual sweep command — and NEVER auto-stopped (EPS-ness is
+unknowable ⇒ fail toward keep). Never touched: the PM session (registered via
+`spawn_session.py register-pm` / `spawn-pm` / the `/pm` bootstrap; checked
+FIRST, upstream of cwd classification), issue-mapped EPS sessions at
+active/`blocked`/`plan_pending` statuses, registry-mapped-but-non-EPS-cwd
+sessions, unresolvable-cwd sessions, and non-EPS wrappers holding a live user
+TTY. Kill switches: `EPM_ZOMBIE_WRAPPER_REAP=0` reverts BOTH lanes to
+alert-only; `EPM_ZOMBIE_NONEPS_REAP=0` reverts the non-EPS lane only (the
+#818 dedicated-widening-knob shape). Non-EPS/unresolvable records route to
+the fallback events file (no task to carry markers); a stopped non-EPS
+session is recoverable — `happy claude` in its own project cwd, with the old
+conversation resumable via `claude --resume` (transcripts persist on disk).
+
+**Orphan-wrapper /proc sweep (task #1215, `orphan_wrapper_pass`; ESCALATE-ONLY
+by default).** The daemon-INDEPENDENT enumeration complement of the
+zombie-wrapper pass: every session reaper above sources its pids/sids from the
+Happy daemon /list, so a wrapper or launcher process the daemon no longer
+tracks — the 2026-07-01 incident's 31 zombie wrappers (~4.8 GB RSS, 1-7 days
+old) and a 54-day init-parented `claude_local_launcher.cjs` (recorded in
+#818's body) — is invisible to ALL of them forever (#818 fixed the
+orphaned-tmux blind spot for daemon-TRACKED wrappers and deliberately descoped
+this class). ONE /proc scan enumerates candidates by cmdline signature —
+`happy/dist/index.mjs` with the next argv token `claude` (role `wrapper`), or
+`claude_local_launcher.cjs` (role `launcher`); `comm == "node"`; euid-owned;
+the Happy daemon pid excluded twice (`~/.happy/daemon.state.json` pid + the
+argv-token belt); TOPMOST-deduped (a candidate whose ancestor chain contains
+another candidate rides as `subsumed_children`). **Conjunctive escalation
+guards, ALL required:** daemon reachable AND pid untracked (incl. any
+ancestor/descendant live-set intersection — a live session's launcher belongs
+to the zombie pass's session), no Claude descendant, delta-CPU < 1%/core
+between ticks (`EPM_ORPHAN_WRAPPER_CPU_FRAC_MAX`; delta-not-accumulated — a
+wrapper that once served a long session carries CPU history; no baseline yet
+⇒ keep), wrapper process age >= 24h (`EPM_ORPHAN_WRAPPER_MIN_AGE_S`; spawn →
+/list registration is seconds, so a spawn-in-flight wrapper never qualifies),
+no live user TTY (`_is_live_user_tty` with `check_orphaned` threaded from the
+fleet-wide `EPM_ORPHANED_TMUX_REAP` knob — the incident's 31 wrappers held
+orphaned-tmux-server pts TTYs, so the #818 orphaned-server branch is
+load-bearing here), and >= 2 consecutive ticks (per-pid
+`~/.eps-autonomous/wrapper-orphan-<pid>.json` state keyed by
+`(pid, start_epoch)` — the prefix is deliberately NOT `orphan-wrapper-`,
+which the GC pass's `orphan-*` glob would enumerate; reaped by the pass's own
+candidate-keyed GC). **Default action = escalate-only** (polarity INVERTED vs
+the zombie/idle reapers — the stop action is a direct SIGTERM to a pid the
+daemon cannot see, and a daemon-restart-orphaned-but-still-revivable idle
+wrapper is a real residual): one sidecar row per episode in
+`~/.eps-autonomous/orphan-wrapper-events.jsonl` (carrying
+ppid/parent-cmdline/tty/cpu forensics — init-parentage was the incident's
+true-orphan fingerprint and is unobtainable post-stop) + ONE batched summary
+Telegram push per tick across all new episodes (a daemon restart can
+mass-untrack idle wrappers). **Review the escalate rows before opting in to
+the stop arm** — if they flag healthy daemon-restart survivors, tighten the
+guards first. **Opt-in stop arm:** `EPM_ORPHAN_WRAPPER_REAP=1` (default OFF)
+ANDed with the global `EPM_ZOMBIE_WRAPPER_REAP` (global-off keeps ALL wrapper
+reaping alert-only), plus >= 7d of OBSERVED orphanhood
+(`EPM_ORPHAN_WRAPPER_GRACE_S`; `first_miss_ts` pins at the FIRST persisted
+observation of the episode — it cannot predate the merge, so the grace
+doubles as a post-deploy bake window), <= 3 SIGTERMs per tick
+(`EPM_ORPHAN_WRAPPER_MAX_STOPS_PER_TICK` — the 31-process backlog drains in
+~2h by design), an immediate pre-signal signature + start-epoch
+re-verification (pid-reuse belt), and next-tick stop verification with ONE
+SIGTERM retry then one loud stop-failed row + push — never SIGKILL in v1.
+Daemon unreachable ⇒ the whole pass prints one skip line with ALL state
+frozen and never signals ("unknown" is not "not tracked"). No task markers by
+construction (an untracked pid has no sid to map to an issue). Kill switch
+`EPM_DISABLE_ORPHAN_WRAPPER_PASS=1`; `--orphan-wrapper-only` runs just this
+pass with an in-invocation two-sample CPU delta
+(`EPM_ORPHAN_WRAPPER_SMOKE_INTERVAL_S`, default 8s) so per-candidate
+`cpu_frac` prints even under `--dry-run` (the production persisted-baseline
+delta writes nothing on a dry run); pair with `--dry-run` for a read-only
+live smoke.
 
 **Idle-unmapped pass.** A third session reaper — auto-stops UNMAPPED EPS-cwd
 sessions (no registry entry, no `issue-<N>` worktree cwd) whose resolved
@@ -781,6 +887,11 @@ adjacent to the two session reapers, consuming their shared daemon
 session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unregistering
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
+The #1480 stalled-manual escalation rung (§ Stall-detection hardening, (g))
+covers the LIVE-WEDGED manual case this pass's transcript-idle gate cannot:
+a wedged session with ANY transcript activity (user pokes, in-session cron
+ticks) defeats the 12h transcript-idle predicate indefinitely, while the
+rung keys on TASK-level progress (self-report + non-watcher markers).
 
 **Boot-death lane (#1267 arm 1 + #1287 arm 2, `boot_death_pass`).** The
 die-at-or-before-turn-1 complement of the stale-registration pass: a freshly
@@ -1172,6 +1283,79 @@ repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
 switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
 just this pass (pair with `--dry-run` for a zero-write live smoke).
 
+**Completed-unmerged flag pass (task #1564, `completed_unmerged_pass`;
+incident #1540; FLAG-ONLY, daemon-INDEPENDENT, runs right after
+`registry_drift_pass`).** The stranded-Step-10d-merge audit: task #1540
+reached `completed` + `epm:done` at 2026-07-19T14:49:17Z, the next turn (the
+Step 10d worktree merge) was killed, and `epm:merged` landed only at
+2026-07-20T06:57:10Z via a /daily-spawned recovery session — a 16h08m window
+invisible to every other lane (the tick cron is torn down at `completed`;
+the wedge lanes need failed wakes; nothing audited the marker SHAPE). This
+pass audits exactly that shape ~hourly
+(`EPM_COMPLETED_UNMERGED_INTERVAL_HOURS`, 1h self-gate with an
+attempt-stamp-first save — worst-case detection = 2h grace + 1h interval ≈
+3h vs the 16h incident). **Predicate**
+(`decide_completed_unmerged_flag`, every missing signal failing toward
+silence): status exactly `completed` (archived = deliberately abandoned,
+out of scope) AND `epm:done` present within a 72h lookback
+(`EPM_COMPLETED_UNMERGED_LOOKBACK_H`; plus the candidate gate's
+events-mtime filter — ~113 recently-touched completed tasks measured live,
+2026-07-20) AND NO `epm:merged` of any form (the `artifact_confirmed`
+variant is the same kind) AND the newest of (`epm:done`,
+`epm:merge-failed`) at least 2h old (`EPM_COMPLETED_UNMERGED_GRACE_H`) — an
+`epm:merge-failed` does NOT suppress, it re-anchors the grace (an in-flight
+retry gets grace; one sitting past it is the same invisibility and IS
+flagged). Keying on merged-ABSENCE keeps the happy-path experiment quiet (a
+Step 9b merge predates `epm:done` and still suppresses). **Probe**
+(predicate hits only; capped `EPM_COMPLETED_UNMERGED_PROBE_CAP`=10
+sets/interval, 10s subprocess timeouts, any error ⇒ skip-with-log and retry
+next interval — a gh outage never crashes the tick or latches state; NO
+`git fetch`, ever): (1) `gh pr list --head issue-<N> --state open` ⇒
+unmerged open PR (the #1540 shape: PR 1312 sat OPEN+draft); (2) `--state
+merged` ⇒ merged but the marker post was lost (resolved, logged loudly);
+(3) no PR: `git ls-remote origin refs/heads/issue-<N>` (network-fresh —
+LOCAL ref absence is never evidence) ⇒ absent = nothing-to-merge (the
+Step 10d no-PR case posts nothing by design); (4) branch live: patch-id
+count `git rev-list --cherry-pick --right-only --count
+origin/main...origin/issue-<N>` (a rebase-merge rewrites SHAs, so the plain
+two-dot count reads nonzero forever; patch-id reads 0 for a landed branch —
+verified live on the merged origin/issue-1540), computed only when the
+local remote-tracking ref matches the ls-remote sha — a stale/absent local
+ref fails toward FLAGGING, never toward nothing-to-merge. **Channels**,
+keyed per episode = (issue, done_ts): a row in the dedicated sidecar
+`.claude/cache/completed-unmerged-events.jsonl` every flagged interval; ONE
+`epm:progress` task marker per episode (anti-liveness sentinel
+`[autonomous_session_watch:completed-unmerged-flag]`, naming the recovery:
+`uv run python scripts/spawn_session.py spawn-issue --issue <N>` then type
+`/issue <N>` — the resume path runs the SKILL.md Step 10d auto-merge
+idempotently when the PR is unmerged); a Telegram push at episode open,
+re-fired every 24h while unresolved
+(`EPM_COMPLETED_UNMERGED_REALERT_HOURS`). A resolved probe verdict
+(merged-PR / nothing-to-merge) is CACHED on the episode so later intervals
+skip the probe budget; pruned episodes are labeled honestly — `recovered`
+only when `epm:merged` now exists or the probe said resolved, `aged-out`
+when the strand left the lookback unresolved (never logged as recovered); a
+later round's fresh `epm:done` opens a NEW episode and re-fires. **FLAG-ONLY
+is a hard invariant** (pinned two-pronged by
+`test_completed_unmerged_pass_never_mutates_status_or_merges`): the pass
+never mutates status, never merges/pushes anything, never spawns a session
+— recovery is always a human/orchestrator action on the flag. **Known v1
+bounds** (each fails toward silence by design; the /daily sweep stays the
+backstop for all four): (i) post-first-merge multi-round blind spot — once
+ANY `epm:merged` exists on the task, a LATER round's stranded merge (fresh
+`epm:done`, no new `epm:merged`) can never fire (the predicate keys on
+merged-absence, not per-round pairing); (ii) suffixed follow-up branches
+`issue-<N>-<slug>` are invisible — the probes address `--head issue-<N>` /
+`refs/heads/issue-<N>` only; (iii) purely-local unpushed worktree commits
+are invisible — every probe rung is remote-side; (iv) a session killed
+between `set-status <N> completed` and the `epm:done` post leaves
+done_ts=None and the predicate stays silent. State singleton
+`~/.eps-autonomous/completed-unmerged-observer.json` (atomic tmp+rename;
+deliberately NOT a per-issue GC target). Kill switch
+`EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only` runs
+just this pass (pair with `--dry-run` for a live smoke — zero writes, zero
+marker/push subprocesses).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
@@ -1240,13 +1424,30 @@ probe, BEFORE every spawn arm.
   `EPM_DISABLE_AUTH_OUTAGE_GUARD=1`; `rm ~/.eps-autonomous/auth-outage.json`
   clears a live episode instantly; `--auth-outage-only` runs just this pass
   (pair with `--dry-run` for a live smoke — zero writes, zero pushes).
+- **Dispatch-chokepoint leg (#1218):** `spawn_session.py spawn-issue --auto`
+  (the choke point every non-watcher automated dispatcher funnels through —
+  `file_infra_task.py`, PM dispatch, the #660 program daemon's phase spawns)
+  holds spawns during an ACTIVE in-TTL episode with a rc-0 `AUTH-OUTAGE HELD`
+  line (recognized by `spawn_output_suppressed`, so all callers book
+  nothing); the watcher's canary passes via the pre-spawn `canary_pending`
+  claim; manual spawns + `spawn-campaign` warn-and-proceed; `spawn-pm`
+  untouched. Read-only mirror of the watcher gate (same kill switch, same
+  fail-open TTL); the gate reads the INVOKING process's env (a caller shell
+  carrying a different `EPM_AUTH_OUTAGE_MAX_EPISODE_H` than the watcher cron
+  computes a different TTL — bounded [1,48] h, divergence-toward-allow
+  reproduces the status quo); program-daemon phase spawns defer to the
+  daemon's own 48 h stall surface, not to an automated re-drive; duplicated
+  env parses + constant VALUES + state path pinned by
+  `tests/test_spawn_session_auth_outage_gate.py`.
 - **Accepted residuals (named, deliberate — do NOT "fix"):** (a) hang-style
   outages (sessions never die → no respawn events → no trigger; also no
   churn, so the cost is only the missing alert); (b) new-spawn-only outages
   (`prev_spawned_at=None` arms never count; bounded by the infra/capacity
   per-day caps); (c) the program-orchestrator recovery pass can relaunch the
   #660 program daemon (an indirect spawner) during an episode — v1 residual
-  per the must-ask fence on gating non-spawning passes; (d) two independent
+  per the must-ask fence on gating non-spawning passes — NARROWED by #1218:
+  the relaunched daemon's child `spawn-issue --auto` phase spawns are now
+  held at the dispatch chokepoint; (d) two independent
   issue-specific crash loops can false-trigger — bounded by canary self-heal
   (~50 min) + the 6 h TTL + one push; (e) a wedged-but-registered canary can
   false-resolve — bounded: a still-broken fleet re-accumulates ≥3 new events
@@ -1397,11 +1598,15 @@ x /tmp/tmux-*
 
 Verify: `systemd-tmpfiles --cat-config | grep -F 'x /tmp/tmux-'`. It does
 NOT protect against a non-tmpfiles deleter — that is what the durable dir
-is for.
+is for. Prevention leg (#1474): the PreToolUse guard
+`.claude/hooks/guard_tmp_tmux_sweep.sh` blocks unexcluded /tmp deletion
+sweeps at the Bash tool layer (override: `EPM_ALLOW_TMP_SWEEP=1`; sanctioned
+uses incl. single-file removal of a verified-dead socket — recipe in the
+hook header, #1559).
 
 **Recovery runbook (socket vanished, server alive).**
 1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
-   even when the socket FILE is deleted) or `pgrep -f 'tmux: server'`
+   even when the socket FILE is deleted) or `pgrep -f 'tmux: serve[r]'`
    (`pgrep -x tmux` misses it — the server's comm is `tmux: server`).
 2. If `/tmp/tmux-<uid>` is gone: `mkdir -m 700 /tmp/tmux-$(id -u)`.
 3. `kill -USR1 <server-pid>` — the server recreates its socket at its

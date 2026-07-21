@@ -477,3 +477,60 @@ def test_sha_verification_duty_present(daily_skill_text: str):
         "the #1467 non-resolving-token disposition dropped from the workflow.yaml "
         "orchestrator_actions grep step"
     )
+
+
+def test_artifact_state_mutation_clause_present(daily_skill_text: str):
+    """#1497 pin: the artifact-state mutation check clause (e) survives — an
+    absence-of-tag/field-on-artifact claim ("dropped at filing") binds only
+    after the task folder's git history shows the value was never applied
+    (#1497: every cited task was created WITH needs-human; a deliberate
+    2026-07-17 user-directed mass remove-tag explained every absence) — in
+    the rule's verified-at-filing paragraph + anti-pattern table, the daily
+    route-2 mandate paragraph, and the workflow.yaml orchestrator_actions
+    grep step."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "artifact-state mutation check" in rule_text, (
+        "the #1497 clause (e) artifact-state mutation check dropped from "
+        "workflow-fix-on-bug.md — post-mutation artifact state would again "
+        "count as filing-time-drop evidence"
+    )
+    assert "git log --follow" in rule_text, (
+        "the clause (e) git-history probe (git log --follow across the "
+        "status-move git mvs) dropped from workflow-fix-on-bug.md"
+    )
+    assert rule_text.count("artifact-state") >= 2, (
+        "clause (e) must survive in BOTH the verified-at-filing paragraph "
+        "and the anti-pattern table of workflow-fix-on-bug.md (#1497)"
+    )
+    assert "artifact-state" in daily_skill_text, (
+        "the #1497 artifact-state mutation-check sentence dropped from the "
+        "daily route-2 verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "artifact-state" in yaml_text, (
+        "the #1497 artifact-state clause dropped from the workflow.yaml "
+        "orchestrator_actions grep step"
+    )
+
+
+def test_route3_open_daily_held_dedup_documented(daily_skill_text: str):
+    """#1483: the route-3 open daily-held overlap dedup prose survives edits.
+
+    Pins the three load-bearing substrings: the ledger outcome vocabulary, the
+    daily-record rendering, and the scan function name — so a future SKILL.md
+    editor cannot silently drop the dedup documentation (plan #1483 §4.4
+    durability pin).
+    """
+    assert "already-tracked" in daily_skill_text, (
+        "the #1483 route-3 overlap-dedup ledger outcome `already-tracked` dropped "
+        "from the daily SKILL.md"
+    )
+    assert "already tracked in #" in daily_skill_text, (
+        "the #1483 unconditional daily-record rendering `already tracked in #<id>` "
+        "dropped from the daily-file record bullet"
+    )
+    assert "find_open_daily_held_duplicate" in daily_skill_text, (
+        "the #1483 scan function name dropped from the route-3 dedup documentation"
+    )

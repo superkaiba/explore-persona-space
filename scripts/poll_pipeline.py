@@ -114,34 +114,57 @@ derived VM-side from the persisted ``session_cpu_secs`` /
 ``session_cpu_sample_epoch`` sidecar pair; ANY degraded input (unknown
 sample, missing epoch, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``,
 negative delta) leaves the veto inert — exactly the pre-#951 behavior.
+Since #1477 a parsed NEGATIVE rate on either tick (impossible on a
+monotone counter — a sampling-scope reset, e.g. the #1345 day-format
+parse collapse, now fixed at the awk source) additionally arms a
+same-tick session-``%cpu`` confirm (``SESSION_PCPU_TOTAL``): material
+burn (>= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN``) vetoes the override + resets
+the streak, while an unknown/low pcpu falls through to today's behavior.
 Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
 false zombie); the override never touches a `done` / `gate` / `dead`
 verdict.
 
-Namespace-informativeness gate (#864): the #826 assumption "hung <=>
-stale logs" lapses when a HEALTHY workload legitimately silences its
-logs longer than the stall window (#813: a ~29-min CPU-bound NPZ
-compression stretch on a host-PID-namespace pod false-fired the
-override twice, 2026-07-02). The probe therefore also counts
-``GPU_PIDS_TOTAL`` / ``GPU_PIDS_RESOLVABLE`` over all compute-apps PIDs
-and, only when a zombie candidate exists, ``NVIDIA_UVM_LIVE_HOLDERS`` —
-live container processes holding a fd whose symlink target is EXACTLY
+Namespace-informativeness gate (#864, discriminator redesigned #1216):
+the #826 assumption "hung <=> stale logs" lapses when a HEALTHY
+workload legitimately silences its logs longer than the stall window
+(#813: a ~29-min CPU-bound NPZ compression stretch on a
+host-PID-namespace pod false-fired the override twice, 2026-07-02).
+The probe therefore also counts ``GPU_PIDS_TOTAL`` /
+``GPU_PIDS_RESOLVABLE`` over all compute-apps PIDs and, only when a
+zombie candidate exists, ``NVIDIA_UVM_LIVE_HOLDERS`` — live container
+processes holding a fd whose symlink target is EXACTLY
 ``/dev/nvidia-uvm`` (a live CUDA compute context; ``/dev/nvidia-uvm-
-tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count). When
-``total > 0 AND resolvable == 0 AND uvm_holders > 0`` the
+tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count) — plus (#1216)
+``NVIDIA_UVM_ALLOC_HOLDERS``, the subset of those holders whose
+``/proc/<pid>/maps`` carries an end-anchored file-backed
+``/dev/nvidia-uvm`` entry (UVM regions are ALLOCATION-time mmaps —
+evidence a live CUDA worker has and a bare-cuInit coordinator lacks;
+per-GPU ``/dev/nvidia[0-9]`` device-node maps are INIT-time on the
+gate driver and were disqualified, #1216 §7-A). When
+``total > 0 AND resolvable == 0 AND alloc_holders > 0`` the
 dead-in-/proc signature is a PID-namespace artifact — the flagged PIDs
-ARE live workers seen under host ids — and the override is vetoed
-regardless of log staleness (streak reset, like the fresh-log veto).
-Every other combination (any count unknown, ``resolvable > 0``,
-``uvm == 0``) falls through to the #826 logic UNCHANGED, so the genuine
-#664 total collapse (zero live uvm holders) still fires and every
-degraded-probe read fails toward current behavior. Gated by
-``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env ``EPM_ZOMBIE_NAMESPACE_VETO``,
-read at module import — restart a live poller for an ops flip); ships
-default-OFF per the #864 pre-merge live-pod gate, which found a
-cuInit'd parent/coordinator (``issue813_dispatch.py``) holding exact
-uvm while absent from compute-apps — a holder class that would veto a
-TOTAL collapse (matched pods included) if the veto were armed.
+ARE live allocation-evidenced workers seen under host ids — and the
+override is vetoed regardless of log staleness (streak reset, like the
+fresh-log veto); the LIVE-holder count stays a forensic read. Every
+other combination (any count unknown, ``resolvable > 0``,
+``alloc == 0``) falls through to the #826 logic UNCHANGED, so the
+genuine #664 total collapse (zero allocation-evidenced holders —
+allocation-free coordinator/debug survivors included, the #864 §7 /
+#1216 finding) still fires and every degraded-probe read fails toward
+current behavior. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env
+``EPM_ZOMBIE_NAMESPACE_VETO``, read at module import — restart a live
+poller for an ops flip); ships default-ON per the #1216 §7 live-pod
+gate (2026-07-18, disposition D1; entire evidence base is driver
+580.126.09 — the flag comment carries the gate record). The
+fail-direction map is TWO-SIDED and driver/runtime-allocator-dependent:
+signal-LOSS drift (a stack where live workers lack the uvm maps entry)
+returns pre-#864 loud false stall flags; signal-GAIN drift (a driver
+mapping uvm at init for allocation-free procs) is
+residual-(a)/(b)-family TP masking with the same backstops — details
+in ``_apply_zombie_override`` residual (e). Veto candidacy also
+requires a zombie candidate holding >= ``ZOMBIE_GPU_MEM_MIN_MIB``
+(1024 MiB), structurally coupling candidacy to live allocations (the
+sub-floor freed-worker sticky holder drops out of scope).
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -152,6 +175,13 @@ freshest mtime across (main log, newest cell log) so a healthy single-
 cell phase reads as `running`, not false-`stalled` / false-`dead`. When
 a cell log is the fresher source, its tail is also surfaced in
 ``log_tail_excerpt`` for the orchestrator's progress notifications.
+On a workload declared trigger-dense (task tag ``trigger-dense``,
+#1556), ``log_tail_excerpt`` instead carries a bounded structural
+digest — pattern counts + status/phase/pid liveness + the log path,
+never raw tail lines — and the post-done phase lines are reduced to
+bare ``[phase=<token>]`` tokens (see ``_digest_tail_excerpt`` /
+``_issue_trigger_dense``; ``crash_signature`` stays raw — it is the
+in-process machine surface, never emitted to stdout).
 
 Staleness ALSO folds in per-phase logs + GPU utilization (incident
 #468 multi-phase training-sweep): a launcher that writes
@@ -349,12 +379,33 @@ if str(_SRC) not in sys.path:
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
+    get_task,
     latest_event,
     list_events,
     post_event,
+    repo_root,
 )
 
 log = logging.getLogger("poll_pipeline")
+
+# #1556: warm task_workflow's (pid, cwd)-keyed repo-root lru_cache while the
+# subprocess layer is pristine. The per-tick task-state reads (`_marker_pid`,
+# `_run_launched_age_sec`, `_issue_trigger_dense`) then resolve `tasks/` from
+# the cache instead of re-entering `subprocess` mid-tick — which ALSO keeps
+# those reads correct under test harnesses that monkeypatch `subprocess.run`
+# globally (a cold cache's git probe would otherwise parse a fake SSH probe's
+# stdout and misread live task state as unreadable). Best-effort, never
+# behavior-changing: lru_cache stores successful returns only, so a failure
+# here is simply re-probed — and loudly handled — by each per-tick reader's
+# own fallback arm (`_marker_pid`'s broad-catch-and-warn precedent).
+try:
+    repo_root()
+except Exception as _warm_exc:
+    log.warning(
+        "repo-root cache warm at import failed (%s: %s); per-tick task reads re-probe",
+        type(_warm_exc).__name__,
+        _warm_exc,
+    )
 
 # Default seconds of log-mtime silence before declaring the run stalled.
 # Workloads with sparse log cadence (e.g. checkpoint-only logging at >15min
@@ -614,18 +665,42 @@ ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
 
 # #864: kill-switch for the namespace-informativeness veto on the zombie-GPU
 # override. "0" disables the veto entirely (pure #826 behavior) — an ops
-# escape hatch if the UVM-holder correspondence ever masks a true positive in
-# the field. NOTE: read at module import — a live poller needs a restart for
-# an ops flip to take effect. DEFAULT "0" (veto inert-but-ready) per the #864
-# §7 pre-merge live-pod gate (2026-07-02, disposition 2): the negative-
-# direction check on pod-813 found a cuInit'd-but-allocation-free
-# parent/coordinator (issue813_dispatch.py) holding an EXACT /dev/nvidia-uvm
-# fd while ABSENT from compute-apps (5 exact-uvm holders vs 4 compute apps) —
-# a holder class that would veto a genuine TOTAL collapse (TP suppression)
-# if the veto were armed. Flipping to "1" after a clean both-directions
-# re-check is a one-literal follow-up; the probe counts + gate + tests land
-# either way.
-ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "0") != "0"
+# escape hatch if the allocation-evidence correspondence ever masks a true
+# positive in the field. NOTE: read at module import — a live poller needs a
+# restart for an ops flip to take effect (semantics unchanged by #1216).
+# DEFAULT "1" (veto armed) per the #1216 §7 pre-merge live-pod gate
+# (pod-1216, 1x H100, mismatched PID namespace; gate date 2026-07-18,
+# disposition D1 under the AMENDED plan §7-A rung-4 pick rule):
+#   - Signal literal: S3-standalone — an end-anchored file-backed
+#     " /dev/nvidia-uvm$" entry in /proc/<pid>/maps (UVM regions are
+#     ALLOCATION-time mmaps). Picked at rung 4 after the registered
+#     S2 -> S1 -> (S2 or S3) rungs ALL failed Pass 1: bare cuInit maps
+#     INIT-time write-only /dev/nvidia3 device-node regions on this driver,
+#     so coordinators read S2=2 / S1=4-7 — a Pass-1 pick-rule
+#     disqualification of S2, NOT a registered-then-overridden D2.
+#   - Measured per-shape S3 counts (2 repeats, byte-identical): torch
+#     workers / mp-child / allocating bystander / vLLM EngineCore / the
+#     real #1345 production worker (read-only fleet probe, same driver)
+#     all = 1; ctypes-cuInit + torch.cuda.init coordinators / mp-parent /
+#     vLLM APIServer all = 0.
+#   - Pass-2 verbatim-heredoc confirmation (ZOMBIE seeded to force the
+#     scan): positive UVM_HOLDERS=3 / ALLOC_HOLDERS=2 (exact expectation);
+#     negative (workers SIGKILLed + reaped, bare-cuInit survivor only)
+#     UVM=1 / ALLOC=0 — the veto correctly disarms on the coordinator-only
+#     collapse; bystander ALLOC=1 (residual-(a) boundary, expected).
+#   - vLLM 0.11.0 tree classification (pre/post-kill): EngineCore S3=1 at
+#     25,490 MiB; APIServer S3=0; post-SIGKILL clean tree exit, no
+#     orphaned allocation left in compute-apps.
+#   - Sticky-probe boundary (non-disposition-bearing): the uvm maps entry
+#     is has-EVER-allocated-sticky — a live freed former worker keeps
+#     S3=1, but its compute-apps row dropped to 518 MiB, BELOW the
+#     1024 MiB ZOMBIE_GPU_MEM_MIN_MIB zombie floor, so floor-coupling
+#     bounds that boundary (see residual (e)).
+#   - SINGLE-DRIVER caveat: the ENTIRE evidence base (pod-1216 + the
+#     read-only pod-1345 probe) is driver 580.126.09; the two-sided drift
+#     map lives in residual (e) of the module / _apply_zombie_override
+#     docstrings.
+ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "1") != "0"
 
 # #951: material-compute liveness veto on the #664/#826 zombie-GPU override.
 # A workload session burning >= this many CPU cores (delta cumulative session
@@ -1068,6 +1143,11 @@ class PollResult:
     # a live marker-pid fallback carrying liveness), NOT "pid probed
     # dead". Observability only; status routing is unchanged (#521).
     pid_file_missing: bool
+    # The 5-line excerpt of the freshest log tail — REPLACED by a bounded
+    # structural digest (pattern counts + status/phase/pid + log path; NO raw
+    # line content) when the issue's workload is declared trigger-dense
+    # (task tag ``trigger-dense``; #1556 — see ``_digest_tail_excerpt``;
+    # ``log_tail_digested`` below records which form this tick carries).
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -1170,6 +1250,55 @@ class PollResult:
     # routing unchanged. Defaulted so cross-backend PollResult(...) call
     # sites need no change.
     pid_file_stale_vs_marker: bool = False
+    # #1556: True when THIS tick REPLACED the raw 5-line ``log_tail_excerpt``
+    # with the trigger-dense structural digest (task tag ``trigger-dense``
+    # present, or task state unreadable — the fail-safe arm). Observability
+    # only; status routing unchanged. Declared LAST with a default so
+    # cross-backend PollResult(...) call sites need no change.
+    log_tail_digested: bool = False
+
+
+# Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
+# process in the launcher's session. Module constant (plain string, single
+# braces) so the day-format parse is unit-testable against the system awk.
+# #1477 root cause: the inline n==3 branch coerced "1-02" -> 1 (awk strtod
+# prefix), so a process crossing 86400 cumulative CPU-sec collapsed from
+# ~86400+s to ~D*3600 + MM*60 + SS in the session sum — the sum then
+# sawtooths, sampling the cross-tick rate NEGATIVE on a healthy 20-core
+# worker (#1345: running-max 83824 -> 9351).
+# INVARIANT: no single quotes in the awk text — the probe heredoc wraps the
+# program in shell single quotes, so an embedded quote corrupts the remote
+# command in a way the heredoc-emission substring assert cannot see.
+_SESSION_CPU_TIME_AWK = (
+    "$1==s { "
+    'n=split($2,a,":"); '
+    "if (n==3) { "
+    # [DD-]HH:MM:SS: with a day prefix the first ":" field is "DD-HH".
+    'm=split(a[1],b,"-"); '
+    "if (m==2) { secs += b[1]*86400 + b[2]*3600 + a[2]*60 + a[3] } "
+    "else { secs += a[1]*3600 + a[2]*60 + a[3] } "
+    "} "
+    "else if (n==2) { secs += a[1]*60 + a[2] } "
+    "else if (n==1) { "
+    # Defensive etime-style "D-HH" (unreachable for procps cputime);
+    # units-corrected in passing (b[2] is HOURS, was added as seconds).
+    'm=split(a[1],b,"-"); '
+    "if (m==2) { secs += b[1]*86400 + b[2]*3600 } "
+    "else { secs += a[1] } "
+    "} "
+    "} END { "
+    'if (NR==0) { print "unknown" } '
+    'else { printf "%.1f", secs } '
+    "}"
+)
+
+# #1477 confirm read: ps-native %cpu (cputime/realtime lifetime ratio)
+# summed over the same session. SEPARATE ps invocation from the time= sum so
+# a ps lacking `pcpu` degrades ONLY the new field (SESSION_CPU_SECS intact).
+# Same no-single-quotes invariant as _SESSION_CPU_TIME_AWK above.
+_SESSION_PCPU_AWK = (
+    '$1==s { pc += $2 } END { if (NR==0) { print "unknown" } else { printf "%.1f", pc } }'
+)
 
 
 def _ssh_probe(
@@ -1442,25 +1571,37 @@ def _ssh_probe(
     # case. Fail-safe: nvidia-smi missing / erroring emits an empty list
     # (never a false zombie), same posture as the util probe.
     #
-    # Namespace-informativeness counts (#864): the same loop also counts
-    # GPU_PIDS_TOTAL (every valid compute-apps PID) and GPU_PIDS_RESOLVABLE
-    # (those with a `/proc/<pid>` dir) so the VM-side gate can tell whether
-    # the dead-in-/proc signal is even meaningful on this pod — on a
-    # host-PID-namespace container ZERO compute PIDs ever resolve. When (and
-    # only when) a zombie candidate exists, a guarded scan additionally
-    # counts NVIDIA_UVM_LIVE_HOLDERS: live container processes holding a fd
-    # whose symlink target is EXACTLY `/dev/nvidia-uvm` (a live CUDA compute
-    # context holds the UVM device; NVML monitors open nvidiactl/nvidiaN
-    # instead). The match is END-ANCHORED (` -> /dev/nvidia-uvm$`) so
-    # `/dev/nvidia-uvm-tools` (also created by the nvidia_uvm module, held by
-    # profilers / cuda-gdb / UVM-tools consumers), `/dev/nvidiactl`, and
-    # `/dev/nvidia[0-9]` NEVER count — a tools-only holder counting would
-    # satisfy the veto triple during a genuine total collapse and silently
-    # suppress the #664 true positive. Healthy matched-regime ticks pay zero
-    # cost (the scan is skipped without a candidate); a dying-mid-scan proc
-    # is skipped by `2>/dev/null` (fails toward not counting, i.e. toward
-    # the #826 fall-through). The no-nvidia-smi else-branch emits the three
-    # keys as `unknown` so the parser's fail-safe defaults engage.
+    # Namespace-informativeness counts (#864, discriminator redesigned
+    # #1216): the same loop also counts GPU_PIDS_TOTAL (every valid
+    # compute-apps PID) and GPU_PIDS_RESOLVABLE (those with a `/proc/<pid>`
+    # dir) so the VM-side gate can tell whether the dead-in-/proc signal is
+    # even meaningful on this pod — on a host-PID-namespace container ZERO
+    # compute PIDs ever resolve. When (and only when) a zombie candidate
+    # exists, a guarded scan additionally counts NVIDIA_UVM_LIVE_HOLDERS:
+    # live container processes holding a fd whose symlink target is EXACTLY
+    # `/dev/nvidia-uvm` (a live CUDA compute context holds the UVM device;
+    # NVML monitors open nvidiactl/nvidiaN instead). The match is
+    # END-ANCHORED (` -> /dev/nvidia-uvm$`) so `/dev/nvidia-uvm-tools` (also
+    # created by the nvidia_uvm module, held by profilers / cuda-gdb /
+    # UVM-tools consumers), `/dev/nvidiactl`, and `/dev/nvidia[0-9]` NEVER
+    # count — a tools-only holder counting would satisfy the veto triple
+    # during a genuine total collapse and silently suppress the #664 true
+    # positive. Per MATCHED holder the scan additionally counts
+    # NVIDIA_UVM_ALLOC_HOLDERS (#1216): allocation-evidenced = holds a
+    # file-backed `/dev/nvidia-uvm` maps entry (UVM regions are
+    # allocation-time mmaps); picked by the #1216 §7 gate (amended rung
+    # 4), driver 580.126.09. The match is END-ANCHORED
+    # (` /dev/nvidia-uvm$`) with the leading space anchoring the path
+    # start, so `/dev/nvidia-uvm-tools` / `nvidiactl` never count; a
+    # bare-cuInit coordinator holds the uvm fd but maps no UVM region,
+    # the #864 §7 disqualifier. The VETO predicate keys
+    # on the ALLOC count; the LIVE-holder count stays a forensic read.
+    # Healthy matched-regime ticks pay zero cost (the scan is skipped
+    # without a candidate); an unreadable / dying-mid-scan proc is skipped
+    # by `2>/dev/null` (fails toward not counting — a lower alloc count
+    # means LESS suppression, i.e. toward the #826 fall-through). The
+    # no-nvidia-smi else-branch emits the four keys as `unknown` so the
+    # parser's fail-safe defaults engage.
     gpu_probe = (
         "if command -v nvidia-smi >/dev/null 2>&1; then "
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
@@ -1482,12 +1623,15 @@ def _ssh_probe(
         "$(nvidia-smi --query-compute-apps=pid,used_memory "
         "  --format=csv,noheader,nounits 2>/dev/null)\n"
         "EOF\n"
-        "  UVM_HOLDERS=unknown; "
+        "  UVM_HOLDERS=unknown; UVM_ALLOC_HOLDERS=unknown; "
         '  if [ -n "$ZOMBIE" ]; then '
-        "    UVM_HOLDERS=0; "
+        "    UVM_HOLDERS=0; UVM_ALLOC_HOLDERS=0; "
         "    for p in /proc/[0-9]*; do "
         '      if ls -l "$p/fd" 2>/dev/null | grep -q " -> /dev/nvidia-uvm$"; then '
         "        UVM_HOLDERS=$((UVM_HOLDERS+1)); "
+        '        if grep -qm1 " /dev/nvidia-uvm$" "$p/maps" 2>/dev/null; then '
+        "          UVM_ALLOC_HOLDERS=$((UVM_ALLOC_HOLDERS+1)); "
+        "        fi; "
         "      fi; "
         "    done; "
         "  fi; "
@@ -1495,9 +1639,11 @@ def _ssh_probe(
         '  echo "GPU_PIDS_TOTAL=$GPU_PIDS_TOTAL"; '
         '  echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"; '
         '  echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"; '
+        '  echo "NVIDIA_UVM_ALLOC_HOLDERS=$UVM_ALLOC_HOLDERS"; '
         'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; '
         'echo "GPU_PIDS_TOTAL=unknown"; echo "GPU_PIDS_RESOLVABLE=unknown"; '
-        'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; fi; '
+        'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; '
+        'echo "NVIDIA_UVM_ALLOC_HOLDERS=unknown"; fi; '
     )
     # Session CPU probe (#518): cumulative CPU seconds summed across
     # every process sharing the launcher PID's session id (SID). The
@@ -1516,28 +1662,25 @@ def _ssh_probe(
     # `_session_cpu_advancing` decision fails safe to "no signal" in
     # those cases (the older log + GPU arbiters then carry the
     # verdict, preserving the pre-#518 behavior).
+    # The awk bodies are interpolated from module constants (plain strings,
+    # single braces — f-string replacement-field VALUES are not re-scanned)
+    # so the day-format parse is unit-testable against the system awk
+    # (#1477). The second `ps -e` pipeline (pcpu) reuses the already-computed
+    # $SID; it is a SEPARATE invocation so a ps lacking `pcpu` degrades only
+    # SESSION_PCPU_TOTAL. All three exit branches emit BOTH keys.
     session_cpu_probe = (
         f"if [ -f {pid_file} ]; then "
         f"  LPID=$(cat {pid_file}); "
         f"  SID=$(ps -o sess= -p $LPID 2>/dev/null | tr -d ' '); "
         f'  if [ -n "$SID" ] && [ "$SID" != "0" ]; then '
         f"    CPU_SUM=$(ps -e -o sess=,time= 2>/dev/null | "
-        f'      awk -v s="$SID" \'$1==s {{ '
-        f'        n=split($2,a,":"); '
-        f"        if (n==3) {{ secs += a[1]*3600 + a[2]*60 + a[3] }} "
-        f"        else if (n==2) {{ secs += a[1]*60 + a[2] }} "
-        f"        else if (n==1) {{ "
-        f'          m=split(a[1],b,"-"); '
-        f"          if (m==2) {{ secs += b[1]*86400 + b[2] }} "
-        f"          else {{ secs += a[1] }} "
-        f"        }} "
-        f"      }} END {{ "
-        f'        if (NR==0) {{ print "unknown" }} '
-        f'        else {{ printf "%.1f", secs }} '
-        f"      }}'); "
+        f"      awk -v s=\"$SID\" '{_SESSION_CPU_TIME_AWK}'); "
         f'    echo "SESSION_CPU_SECS=${{CPU_SUM:-unknown}}"; '
-        f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
-        f'else echo "SESSION_CPU_SECS=unknown"; fi; '
+        f"    PCPU_SUM=$(ps -e -o sess=,pcpu= 2>/dev/null | "
+        f"      awk -v s=\"$SID\" '{_SESSION_PCPU_AWK}'); "
+        f'    echo "SESSION_PCPU_TOTAL=${{PCPU_SUM:-unknown}}"; '
+        f'  else echo "SESSION_CPU_SECS=unknown"; echo "SESSION_PCPU_TOTAL=unknown"; fi; '
+        f'else echo "SESSION_CPU_SECS=unknown"; echo "SESSION_PCPU_TOTAL=unknown"; fi; '
     )
     # Results-sentinel presence probe (#545): corroboration for the `done`
     # verdict. Matches BOTH the unprocessed `.json` and the drained
@@ -1667,7 +1810,9 @@ def _ssh_probe(
             "gpu_pids_total": "unknown",
             "gpu_pids_resolvable": "unknown",
             "nvidia_uvm_live_holders": "unknown",
+            "nvidia_uvm_alloc_holders": "unknown",
             "session_cpu_secs": "unknown",
+            "session_pcpu_total": "unknown",
             "results_sentinel_present": "0",
             "output_mtime_epoch": "0",
             "ssh_failed": "1",
@@ -1694,7 +1839,9 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "GPU_PIDS_TOTAL",
     "GPU_PIDS_RESOLVABLE",
     "NVIDIA_UVM_LIVE_HOLDERS",
+    "NVIDIA_UVM_ALLOC_HOLDERS",
     "SESSION_CPU_SECS",
+    "SESSION_PCPU_TOTAL",
     "RESULTS_SENTINEL_PRESENT",
     "OUTPUT_MTIME_EPOCH",
 )
@@ -1726,7 +1873,9 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "gpu_pids_total": "unknown",
         "gpu_pids_resolvable": "unknown",
         "nvidia_uvm_live_holders": "unknown",
+        "nvidia_uvm_alloc_holders": "unknown",
         "session_cpu_secs": "unknown",
+        "session_pcpu_total": "unknown",
         "results_sentinel_present": "0",
         "output_mtime_epoch": "0",
     }
@@ -2738,6 +2887,7 @@ def _maybe_post_post_done_phase_advisory(
     prev_state: dict[str, str],
     run_age_sec: float | None,
     now_epoch: int,
+    trigger_dense: bool = False,
 ) -> tuple[str, int, str, bool, bool, tuple[str, ...]]:
     """Post-done-guard wiring for ``poll_once``: parse state, decide, maybe post.
 
@@ -2748,6 +2898,13 @@ def _maybe_post_post_done_phase_advisory(
     ``posted_flag`` is NOT set, so the next tick retries — identical
     contract to ``_maybe_post_gpu_width_advisory``. Advisory only: never
     changes the status verdict, never stops anything.
+
+    ``trigger_dense=True`` (#1556) reduces the EMITTED text — the returned
+    ``new_phase_lines`` tuple (-> ``PollResult.post_done_phase_lines`` -> CLI
+    JSON) and the raw-line + done-line quotes in the advisory note — to bare
+    ``[phase=<token>]`` tokens. Detection logic and the persisted episode
+    state (``done_line`` etc., the raw-line anchor the next tick compares
+    against) are untouched; only emitted text is reduced.
     """
     prev_line = prev_state.get("post_done_line", "") or ""
     try:
@@ -2767,14 +2924,26 @@ def _maybe_post_post_done_phase_advisory(
         run_age_sec=run_age_sec,
         now_epoch=now_epoch,
     )
+    out_lines = (
+        tuple(_phase_token_only(ln) for ln in u.new_phase_lines)
+        if trigger_dense
+        else u.new_phase_lines
+    )
     if not u.should_post:
-        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, u.new_phase_lines
-    quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, out_lines
+    if trigger_dense:
+        quoted = "\n".join(
+            f"  {_phase_token_only(ln)}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES]
+        )
+        done_line_quote = _phase_token_only(u.done_line)
+    else:
+        quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+        done_line_quote = u.done_line[:200]
     note = (
         f"[post-done-phase-advisory] {len(u.new_phase_lines)} NEW [phase=...] line(s) appeared "
         f"AFTER the done line this poller reported as terminal "
         f"({max(0, now_epoch - u.done_epoch) // 60} min ago):\n{quoted}\n"
-        f"recorded done line: {u.done_line[:200]}\n"
+        f"recorded done line: {done_line_quote}\n"
         "The earlier status=done may have been FALSE (the .py-dispatcher subprocess fan-out "
         "class — workflow_lint --check-phase-done-reserved residual gap (i), #930/#545): a "
         "child script may still be running, and any orchestrator action keyed on the done "
@@ -2798,7 +2967,7 @@ def _maybe_post_post_done_phase_advisory(
         )
     except Exception as exc:
         log.error("post-done phase advisory post failed (next tick will retry): %s", exc)
-        return u.done_line, u.done_epoch, u.done_pod, False, False, u.new_phase_lines
+        return u.done_line, u.done_epoch, u.done_pod, False, False, out_lines
     # Fail-soft phone push — never blocks recording (the marker is durable).
     _telegram_push(
         f"[#{issue}] post-done phase advisory: {len(u.new_phase_lines)} new [phase=...] "
@@ -2811,7 +2980,7 @@ def _maybe_post_post_done_phase_advisory(
         len(u.new_phase_lines),
         pod,
     )
-    return u.done_line, u.done_epoch, u.done_pod, True, True, u.new_phase_lines
+    return u.done_line, u.done_epoch, u.done_pod, True, True, out_lines
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -3977,6 +4146,18 @@ def _parse_session_cpu(value: str) -> float | None:
         return None
 
 
+def _parse_session_pcpu_cores(value: str | None) -> float | None:
+    """Parse a SESSION_PCPU_TOTAL probe value (ps %cpu summed over the
+    launcher's session, e.g. "2012.5") into CORES (20.125), or None when
+    unknown / malformed / negative (fail-safe: the #1477 negative-rate
+    confirm veto stays inert and the pre-#1477 #826/#864/#951/#1033
+    cascade decides)."""
+    v = _parse_session_cpu(value)
+    if v is None or v < 0:
+        return None
+    return v / 100.0
+
+
 def _parse_probe_count(value: str | None) -> int | None:
     """Parse a #864 probe count (``"4"``, ``""``, ``"unknown"``, garbage) to a
     non-negative int; ``None`` = no signal (the caller falls back to the pure
@@ -4083,7 +4264,11 @@ def _session_cpu_rate_cores(
     (truncation-noise floor) or non-positive (clock garbage). A NEGATIVE
     rate (run restart resets the session counter; a multi-shard child exit
     de-counts its cputime, #658) is returned as-is — it is below any
-    positive threshold, so the veto does not fire on it.
+    positive threshold, so the #951 veto does not fire on it, and (since
+    #1477) the arbiter treats a negative sample on either tick as an
+    invalid-signal trigger for the same-tick session-pcpu confirm veto
+    (the return contract here is unchanged: negatives are still returned
+    and persisted verbatim — forensically useful).
     """
     cur = _parse_session_cpu(current)
     prev = _parse_session_cpu(prev_sample) if prev_sample is not None else None
@@ -4138,11 +4323,13 @@ def _apply_zombie_override(
     gpu_pids_total: int | None = None,
     gpu_pids_resolvable: int | None = None,
     uvm_live_holders: int | None = None,
+    uvm_alloc_holders: int | None = None,
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
+    session_pcpu_cores: float | None = None,
 ) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864/#951/#1033 zombie-GPU-allocation override — returns
-    the possibly overridden
+    """The #664/#826/#864/#951/#1033/#1477 zombie-GPU-allocation override —
+    returns the possibly overridden
     ``(status, stall_reason, cpu_override_active, zombie_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
@@ -4225,7 +4412,34 @@ def _apply_zombie_override(
     (current behavior during warmup); a false stall in that window is the
     warmup, not a fix failure.
 
-    Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
+    Negative-rate pcpu confirm veto (#1477, between the #951 material-rate
+    veto and the streak defer/fire branches): a NEGATIVE cross-tick rate is
+    impossible for a live fixed-scope workload on a monotone counter — it
+    means the sampling scope reset (a relaunch re-keys the session, a
+    multi-shard child exit de-counts its cputime (#658), or a probe parse
+    collapse — #1345's ``D-HH:MM:SS`` day format), NOT idleness — yet the
+    #951 veto structurally cannot arm on it (negative < threshold), so the
+    material-compute protection is silently disarmed exactly on healthy
+    log-quiet CPU-bound segments. When a parsed negative sample exists on
+    EITHER tick (computed current rate < 0, OR persisted prev rate < 0 —
+    the latter INCLUDING when the current rate is ``None``) AND the same
+    tick's session ``%cpu`` read (``session_pcpu_cores``, the #1477 probe
+    field) is >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN``, the session is
+    demonstrably burning material compute right now — veto + streak reset
+    (identical mechanics to #826/#864/#951/#1033). Fail-safe on every
+    degraded input: pcpu unknown (older pod probe / degraded ``ps``) or
+    below threshold falls through to today's streak defer/fire — the #664
+    true positive (~0.22 cores ⇒ pcpu ~22% = 0.22 cores < 0.5) stays
+    reapable, and a worker-death de-count tick with idle survivors still
+    advances the streak. pcpu is NEVER consulted without a parsed negative
+    sample (warmup ``None`` rates and non-negative rates keep today's
+    behavior verbatim — a frozen-counter hung run reads rate exactly 0.0
+    and must keep firing even at high lifetime pcpu). The parameter
+    defaults to ``None`` (the #1033 inert-default pattern), so every
+    pre-#1477 caller and test is byte-unchanged.
+
+    Namespace-informativeness gate (#864, discriminator redesigned #1216;
+    FIRST branch): the #826 stale-log
     veto lapses when a HEALTHY workload legitimately silences its logs
     longer than the stall window (#813: a ~29-min CPU-bound NPZ-compression
     stretch false-fired the override twice while ``cpu_advancing`` was true
@@ -4233,36 +4447,52 @@ def _apply_zombie_override(
     host-namespace PIDs). The gate keys on whether the dead-in-/proc probe
     signal is INFORMATIVE on this pod, not on generic liveness (per the
     paragraph above, ``cpu_advancing`` / pgrep-liveness vetoes would kill
-    the true positive). Truth table over the #864 probe counts
-    (veto = suppress + streak reset; fall-through = the #826 logic below,
-    unchanged)::
+    the true positive). Since #1216 the third conjunct is
+    ALLOCATION-EVIDENCED holders (``uvm_alloc_holders`` — exact-uvm fd
+    holders whose ``/proc/<pid>/maps`` carries an end-anchored
+    file-backed ``/dev/nvidia-uvm`` entry: UVM regions are
+    ALLOCATION-time mmaps, unlike the INIT-time per-GPU
+    ``/dev/nvidia[0-9]`` device-node maps the #1216 §7 gate
+    disqualified), NOT bare
+    ``uvm_live_holders`` (kept as a forensic-only, ``None``-tolerant
+    parameter for the WARNING line): a bare-cuInit coordinator / SSH debug
+    session holds the uvm fd with no allocation and must not suppress a
+    genuine total collapse (the #864 §7 disqualifier). Truth table over
+    the probe counts (veto = suppress + streak reset; fall-through = the
+    #826 logic below, unchanged)::
 
-        total  resolvable  uvm_holders  ->  action
-        >0     0           >0               VETO (regime X: live workers
-                                            under host ids; #813/#816)
-        >0     0           0                fall through (#664 total
-                                            collapse — no live CUDA holder)
-        >0     >0          any              fall through (namespace
-                                            informative; flagged PIDs are
-                                            genuinely reaped)
-        unknown/0  any     any              fall through (degraded probe)
-        >0     0           unknown          fall through (UVM scan failed)
+        total  resolvable  alloc_holders  ->  action
+        >0     0           >=1               VETO (live allocation-evidenced
+                                             CUDA procs under host ids;
+                                             #813/#816)
+        >0     0           0                 fall through (#664 total
+                                             collapse — incl. allocation-free
+                                             coordinator/debug survivors, the
+                                             #864 §7 / #1216 finding)
+        >0     >0          any               fall through (namespace
+                                             informative; flagged PIDs are
+                                             genuinely reaped)
+        unknown/0  any     any               fall through (degraded probe)
+        >0     0           unknown           fall through (per-holder scan
+                                             failed)
 
     Every degraded read fails toward CURRENT (#826) behavior — never toward
     more false positives, never toward disabled TP detection. Residual
-    notes: (a) a cuInit'd-but-allocation-free parent/coordinator holding an
-    exact ``/dev/nvidia-uvm`` fd while ABSENT from compute-apps would veto a
-    TOTAL collapse — this exposure is TOTAL-COLLAPSE-scoped, not
-    regime-scoped (a matched-namespace total collapse also reads
-    ``resolvable == 0``); mitigations are the #864 pre-merge live-pod gate
-    (which FOUND such a holder, ``issue813_dispatch.py``, hence the
-    shipped default-OFF) and the ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch.
-    A live NON-workload CUDA process (e.g. a human SSH debug session
-    holding a torch context) on a collapsed pod is the same family. Only a
-    PARTIAL death on a matched pod (``resolvable > 0``, row 3) is immune.
+    notes: (a) NARROWED (#1216): an allocation-free cuInit'd survivor (a
+    dispatch coordinator, a bare-cuInit SSH debug session) no longer
+    suppresses — pre-#1216 it would veto a TOTAL collapse (the exposure is
+    TOTAL-COLLAPSE-scoped, not regime-scoped: a matched-namespace total
+    collapse also reads ``resolvable == 0``). An allocation-HOLDING
+    non-workload process (a debug session that materialized tensors) on a
+    collapsed mismatched-namespace pod still suppresses — accepted
+    residual, backstopped by the GPU-idle advisory/escalation tiers
+    (#518/#537/#664), the #873 phase-ETA tripwires, and the
+    ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch. Only a PARTIAL death on a
+    matched pod (``resolvable > 0``, row 3) is immune.
     (b) On a mismatched-namespace pod a PARTIAL worker death (one dead
-    worker among live uvm-holding cells) is vetoed — undetectable by this
-    probe. Not a regression in *correct* detection: the /proc signal
+    worker among live allocation-holding cells) is vetoed — undetectable
+    by this probe by construction. Not a regression in *correct*
+    detection: the /proc signal
     carries zero per-PID information in that regime, and pre-#864 behavior
     "detected" that case only by also firing on every healthy #813-shape
     run. The GPU-idle advisory/escalation tiers (#518/#537/#664) and the
@@ -4273,7 +4503,28 @@ def _apply_zombie_override(
     matching BOTH this gate and the #826 fresh-log veto — or the #951
     material-CPU veto — the namespace WARNING fires first (outcome
     identical — ``running``, streak 0; only the forensic log line
-    differs).
+    differs). (e) TWO-SIDED driver dependence (#1216): the
+    allocation-evidence signal (the end-anchored ``/dev/nvidia-uvm`` maps
+    entry) is driver/runtime-allocator-dependent — gate-verified ONLY on
+    driver 580.126.09 (pod-1216 + the read-only pod-1345 probe; RunPod
+    host drivers vary under the pinned container image). Signal-LOSS
+    drift (a stack where live workers LACK the uvm maps entry — a driver
+    or allocator that stops file-backing UVM regions): ``alloc_holders``
+    reads 0 and the veto stops suppressing — a return of pre-#864 FALSE
+    STALL FLAGS on mismatched-namespace pods (loud, operator-visible
+    WARNING + stall routing). Signal-GAIN drift (a driver mapping
+    ``/dev/nvidia-uvm`` at INIT for allocation-free procs):
+    ``alloc_holders > 0`` on a collapsed pod means TP suppression — this
+    lands in the already-accepted residual-(a)/(b) family with the same
+    backstops (GPU-idle advisory/escalation, #873 ETA tripwires,
+    kill-switch), and is auditable per event via the WARNING's
+    total/uvm/alloc counts. The fail-direction map is two-sided by design
+    — never the one-sided "never TP suppression" claim. Floor-coupling
+    bound: veto candidacy requires a zombie candidate holding
+    >= ``ZOMBIE_GPU_MEM_MIN_MIB`` (1024 MiB) in compute-apps, which
+    structurally couples candidacy to live allocations — the sticky
+    sub-floor freed-worker state (S3=1 at 518 MiB in the gate's sticky
+    probe) drops out of scope.
     """
     stall_reason: str | None = None
     zombie_streak = 0
@@ -4283,28 +4534,36 @@ def _apply_zombie_override(
             and gpu_pids_total is not None
             and gpu_pids_total > 0
             and gpu_pids_resolvable == 0
-            and uvm_live_holders is not None
-            and uvm_live_holders > 0
+            and uvm_alloc_holders is not None
+            and uvm_alloc_holders > 0
         ):
-            # #864: the dead-in-/proc signature is a PID-namespace artifact,
-            # not a death signal — nvidia-smi reports host-namespace PIDs
-            # that resolve in the container /proc for ZERO compute apps,
-            # while live in-container processes hold /dev/nvidia-uvm (a live
-            # CUDA compute context). The flagged "zombies" ARE those live
+            # #864/#1216: the dead-in-/proc signature is a PID-namespace
+            # artifact, not a death signal — nvidia-smi reports
+            # host-namespace PIDs that resolve in the container /proc for
+            # ZERO compute apps, while live in-container processes hold
+            # /dev/nvidia-uvm fds WITH file-backed /dev/nvidia-uvm maps
+            # entries (allocation evidence: UVM regions are mmap'd at
+            # ALLOCATION time — a live CUDA worker has >=1, a bare-cuInit
+            # coordinator has 0; INIT-time /dev/nvidia[0-9] device-node
+            # maps were the #1216 §7 S2 disqualifier and are NOT the
+            # signal).
+            # The flagged "zombies" ARE those allocation-evidenced live
             # workers seen under host ids (#813: a healthy 29-min CPU-bound
             # quiet stretch outlived the #826 stale-log veto). Veto
             # regardless of log staleness; a genuine total collapse (#664)
-            # has zero live uvm holders and falls through to the #826
-            # stale-log + 2-tick logic below.
+            # has zero allocation-evidenced holders — allocation-free
+            # coordinator/debug survivors included — and falls through to
+            # the #826 stale-log + 2-tick logic below.
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
                 "artifact: 0/%d compute PIDs resolve in the container /proc while "
-                "%d live container process(es) hold /dev/nvidia-uvm — vetoing "
-                "(#813/#864), not flagging",
+                "%s live container process(es) hold /dev/nvidia-uvm, %d with "
+                "device-allocation evidence — vetoing (#813/#864/#1216), not flagging",
                 pod,
                 ",".join(zombie_gpu_pids),
                 gpu_pids_total,
-                uvm_live_holders,
+                "?" if uvm_live_holders is None else uvm_live_holders,
+                uvm_alloc_holders,
             )
             return status, stall_reason, cpu_override_active, 0
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
@@ -4365,6 +4624,45 @@ def _apply_zombie_override(
                 prev_cpu_rate,
                 ZOMBIE_OVERRIDE_CPU_CORES_MIN,
             )
+        elif (
+            (
+                (session_cpu_rate_cores is not None and session_cpu_rate_cores < 0)
+                or (prev_cpu_rate is not None and prev_cpu_rate < 0)
+            )
+            and session_pcpu_cores is not None
+            and session_pcpu_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+        ):
+            # #1477: the cross-tick rate signal is INVALID — a negative rate
+            # is impossible for a live fixed-scope workload on a monotone
+            # counter (sampling-scope reset: a relaunch re-keys the session,
+            # a child exit de-counts its cputime (#658), or a probe parse
+            # collapse — #1345's D-HH:MM:SS day format). The #951 veto above
+            # cannot arm on it (negative < threshold), silently disarming
+            # the material-compute protection on healthy log-quiet CPU-bound
+            # segments. Confirm with the SAME tick's session %cpu read:
+            # material burn now => alive. Veto + streak reset (identical
+            # mechanics to #826/#864/#951/#1033). pcpu unknown (older probe /
+            # degraded ps) or below threshold falls through to the streak
+            # branches — the #664 true positive (~0.22 cores) stays
+            # reapable, and a worker-death de-count tick with idle survivors
+            # still advances the streak. Known bounded delay: ps %cpu is a
+            # LIFETIME cputime/realtime ratio, so a hung C-core, H-hour
+            # worker reads lifetime pcpu > 0.5 cores for roughly
+            # H*(C/0.5 - 1) hours after the hang — but it is consulted only
+            # on negative-rate ticks (at most the one de-count tick for a
+            # hung run), bounding the true-positive delay to <=2 ticks.
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale and an "
+                "IMPOSSIBLE negative session-CPU rate (now=%s prev=%s cores — sampling-"
+                "scope reset, not idleness) BUT session pcpu reads %.2f cores (>= %.2f) — "
+                "material compute, liveness veto, not flagging (#1477/#1345)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
+                "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
+                session_pcpu_cores,
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+            )
         elif prev_zombie_streak < 1:
             zombie_streak = 1
             log.warning(
@@ -4383,13 +4681,14 @@ def _apply_zombie_override(
                 "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
                 "2 consecutive ticks with all logs stale, overriding "
                 "status=running -> stalled (#664/#826); session-CPU rate now=%s prev=%s "
-                "cores (veto threshold %.2f)",
+                "cores (veto threshold %.2f); session pcpu=%s cores",
                 pod,
                 ",".join(zombie_gpu_pids),
                 ZOMBIE_GPU_MEM_MIN_MIB,
                 "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
                 "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
                 ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+                "unknown" if session_pcpu_cores is None else f"{session_pcpu_cores:.2f}",
             )
             status = "stalled"
             stall_reason = "vllm_worker_dead_zombie_gpu"
@@ -4493,6 +4792,160 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
+# The task tag that declares a workload trigger-dense (#1556). Set at dispatch
+# per .claude/rules/trigger-dense-review.md's recognition heuristic via
+# `task.py add-tag <N> trigger-dense`; read fresh every tick (no caching), so a
+# mid-run add-tag takes effect on the next poll.
+_TRIGGER_DENSE_TAG = "trigger-dense"
+
+# Mirror of ``backend_poll.CUDA_IMA_SIGNATURE`` — ``backend_poll`` imports FROM
+# this module, so the reverse import would be circular; the compiled pattern is
+# mirrored here and pinned byte-in-sync by tests/test_poll_pipeline_digest.py::
+# test_digest_cuda_ima_flag_matches_backend_poll_signature (pattern + flags
+# equality). The digest's structural flag fires on the REAL signature family
+# (including the engine-dead alternatives), never a bare substring (#1556).
+_CUDA_IMA_SIGNATURE = re.compile(
+    r"CUDA error:\s*an illegal memory access was encountered"
+    r"|illegal memory access was encountered"
+    r"|EngineDeadError"
+    r"|Engine core proc \S+ died unexpectedly",
+    re.IGNORECASE,
+)
+
+# Case-insensitive per-line substring counts for the trigger-dense digest — the
+# trigger-dense-review.md item-1 pattern set ('error|traceback|killed|OOM')
+# plus the CUDA-IMA class as a human-facing count. The machine contract is the
+# ``_CUDA_IMA_SIGNATURE`` structural flag in ``_digest_tail_excerpt`` — the
+# ``cuda_ima`` COUNT and the flag may legitimately disagree (count=0 with the
+# flag present on an engine-dead-only tail); that is correct, not a bug.
+_DIGEST_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("error", "error"),
+    ("traceback", "traceback"),
+    ("killed", "killed"),
+    ("oom", "oom"),
+    ("cuda_ima", "illegal memory access"),
+)
+
+
+def _issue_trigger_dense(issue: int) -> bool:
+    """True when the issue's workload is declared trigger-dense (task tag
+    ``trigger-dense`` — set at dispatch per trigger-dense-review.md's
+    recognition heuristic: the run trains/evals on guard/security surfaces or
+    gated-content corpora, knowable before any read), or when the task EXISTS
+    but its state is unreadable (fail SAFE toward digest, loudly).
+
+    A missing task (``FileNotFoundError`` — ad-hoc/synthetic polls; includes
+    ``StaleTaskPathError``, its subclass) has no declaration surface at all
+    -> False (raw excerpt, today's behavior). Fresh read every tick, no
+    caching: ``task.py add-tag <N> trigger-dense`` mid-run takes effect on the
+    next tick — a live mitigation lever during an unfolding incident. The
+    catch taxonomy mirrors the audited pod_lifecycle pre-terminate set
+    (FileNotFoundError = not in registry/on disk; RuntimeError = branch-guard;
+    ValueError = malformed frontmatter/registry; OSError = unreadable file);
+    anything else propagates (fail-fast).
+    """
+    try:
+        task = get_task(issue)
+    except FileNotFoundError:
+        log.info("trigger-dense check: task #%s not found (ad-hoc poll); raw excerpt", issue)
+        return False
+    except (RuntimeError, ValueError, OSError) as exc:
+        log.warning(
+            "trigger-dense tag read FAILED for issue %s (%s: %s); failing SAFE "
+            "toward digest-on-unknown (raw tail stays readable at the log path)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return True
+    tags = (task.get("frontmatter") or {}).get("tags") or []
+    return _TRIGGER_DENSE_TAG in tags
+
+
+def _phase_token_only(line: str) -> str:
+    """Reduce a raw log line to its bare ``[phase=<token>]`` token (#1556).
+
+    Trigger-dense emission reduction for the post-done surfaces: returns ONLY
+    the structural phase token; a line with no parseable token reduces to
+    ``[phase=?]`` — structural either way, no raw line text is ever returned.
+    """
+    m = PHASE_RE.search(line)
+    return f"[phase={m.group(1)}]" if m else "[phase=?]"
+
+
+def _digest_tail_excerpt(
+    wide_tail: str,
+    *,
+    status: str,
+    current_phase: str,
+    pid_alive: bool,
+    source: str,
+    log_path: str,
+    mtime_sec_ago: int,
+) -> str:
+    """Bounded structural digest replacing the raw excerpt on trigger-dense runs.
+
+    Pure + deterministic: pattern counts over the wide tail, the poller's own
+    verdict fields (status/phase/pid liveness — the exit-state information
+    this seam actually has; the workload's numeric rc lands in the sentinel
+    channel and in the log the script-side ``failure_classifier.py --log``
+    reads), the winning log source + path, and tail size/staleness. NO raw
+    log line content is inlined — inherently secret-safe (nothing to scrub).
+    The CUDA-IMA structural flag preserves the one content-coupled machine
+    contract (``backend_poll._prior_failure_marker_is_cuda_ima`` regex over
+    ``epm:failure`` notes — the #775 cross-pod fallback) on digested notes.
+    """
+    lines = wide_tail.splitlines()
+    low = [ln.lower() for ln in lines]
+    counts = {name: sum(1 for ln in low if pat in ln) for name, pat in _DIGEST_PATTERNS}
+    counts_s = " ".join(f"{k}={v}" for k, v in counts.items())
+    out = (
+        f"[trigger-dense digest] status={status} phase={current_phase} "
+        f"pid_alive={pid_alive} source={source} log={log_path} "
+        f"tail_lines={len(lines)} tail_bytes={len(wide_tail.encode('utf-8', 'replace'))} "
+        f"log_mtime_sec_ago={mtime_sec_ago} pattern_counts({counts_s}); "
+        f"raw tail NOT inlined (trigger-dense workload; classify via "
+        f"scripts/failure_classifier.py --log <path>)"
+    )
+    if _CUDA_IMA_SIGNATURE.search(wide_tail):
+        # Flag phrase chosen to MATCH signature alternative 2 so the #775
+        # cross-pod marker-note fallback keeps firing on digested notes.
+        out += " cuda_ima_flag: illegal memory access was encountered (structural flag)"
+    return out
+
+
+def _freshest_wide_tail(
+    probe: dict[str, str],
+    *,
+    mtime_epoch: int,
+    cell_mtime_epoch: int,
+    phase_log_mtime_epoch: int = 0,
+    shard_log_mtime_epoch: int = 0,
+) -> tuple[str, str]:
+    """(source_label, wide_tail) for the freshest NON-EMPTY tail among the four
+    log layouts {main, cell, phase, shard}; ties + no-tail fall back to main —
+    byte-identical selection to the pre-#1556 inline logic in
+    ``_tail_excerpt_and_crash_signature`` (which now delegates here; the #791
+    mtime-argmax semantics, the empty-tail skip, and the tie->main FIRST-max
+    behavior are unchanged).
+    """
+    candidates = [
+        ("main", mtime_epoch, probe["log_tail"]),
+        ("cell", cell_mtime_epoch, probe.get("cell_log_tail", "")),
+        ("phase", phase_log_mtime_epoch, probe.get("phase_log_tail", "")),
+        ("shard", shard_log_mtime_epoch, probe.get("shard_log_tail", "")),
+    ]
+    # `max` returns the FIRST element on an mtime tie, and the main log is
+    # first in the list, so a tie deterministically resolves to main. When no
+    # source has a tail, `default` falls back to the main-log tail.
+    source, _, wide_tail = max(
+        ((s, m, t) for s, m, t in candidates if t),
+        default=("main", mtime_epoch, probe["log_tail"]),
+        key=lambda smt: smt[1],
+    )
+    return source, wide_tail
+
+
 def _tail_excerpt_and_crash_signature(
     probe: dict[str, str],
     *,
@@ -4530,22 +4983,17 @@ def _tail_excerpt_and_crash_signature(
     fire. The whole wide tail is stored so the failover predicate can ALSO scan
     it for the OUR_CODE_FRAME exclusion. Pure (no SSH); extracted from
     :func:`poll_once` so the slice logic is unit-testable without driving the
-    full poller (the #775 B2 test binds to THIS helper).
+    full poller (the #775 B2 test binds to THIS helper). Signature + return
+    tuple are pinned; the mtime-argmax source selection lives in
+    :func:`_freshest_wide_tail` (#1556 extraction) so the trigger-dense digest
+    can name WHICH layout won without duplicating the selection logic.
     """
-    candidates = [
-        (mtime_epoch, probe["log_tail"]),
-        (cell_mtime_epoch, probe.get("cell_log_tail", "")),
-        (phase_log_mtime_epoch, probe.get("phase_log_tail", "")),
-        (shard_log_mtime_epoch, probe.get("shard_log_tail", "")),
-    ]
-    # Pick the freshest source with a NON-EMPTY tail. `max` returns the FIRST
-    # element on an mtime tie, and `log_tail` (the main log) is first in the
-    # list, so a tie deterministically resolves to the main log. When no source
-    # has a tail, `default` falls back to the main-log tail.
-    _, wide_tail = max(
-        ((m, t) for m, t in candidates if t),
-        default=(mtime_epoch, probe["log_tail"]),
-        key=lambda mt: mt[0],
+    _, wide_tail = _freshest_wide_tail(
+        probe,
+        mtime_epoch=mtime_epoch,
+        cell_mtime_epoch=cell_mtime_epoch,
+        phase_log_mtime_epoch=phase_log_mtime_epoch,
+        shard_log_mtime_epoch=shard_log_mtime_epoch,
     )
     tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
     crash_signature = wide_tail if status == "dead" else None
@@ -4763,6 +5211,9 @@ def poll_once(
         current_session_cpu,
         now_epoch,
     )
+    # #1477: same-tick session %cpu (cores) — the confirm read the zombie
+    # override consults when the cross-tick rate samples negative.
+    session_pcpu_cores = _parse_session_pcpu_cores(probe.get("session_pcpu_total", "unknown"))
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -4815,8 +5266,10 @@ def poll_once(
         gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
         gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
         uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+        uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
         session_cpu_rate_cores=session_cpu_rate,
         output_mtime_ago=output_mtime_ago,
+        session_pcpu_cores=session_pcpu_cores,
     )
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
@@ -4929,6 +5382,14 @@ def poll_once(
         now_epoch=now_epoch,
     )
 
+    # ── #1556 trigger-dense declaration read (once per tick) ─────────────
+    # Gates BOTH orchestrator-facing raw-text surfaces below: the post-done
+    # phase-lines emission (reduced to [phase=<token>] tokens) and the
+    # ``log_tail_excerpt`` (replaced by the structural digest). Fresh
+    # per-tick read — a mid-run `task.py add-tag <N> trigger-dense` takes
+    # effect on the next tick. Detection/verdict logic is never gated.
+    trigger_dense = _issue_trigger_dense(issue)
+
     # ── #983 post-done phase-consistency guard ───────────────────────────
     # Cross-tick audit of a previously-accepted done verdict: at the tick
     # where the corroborated ``current_phase == "done"`` lands, record the
@@ -4955,6 +5416,7 @@ def poll_once(
         prev_state=prev_state,
         run_age_sec=run_age_sec,
         now_epoch=now_epoch,
+        trigger_dense=trigger_dense,
     )
 
     # New milestone? (re-uses ``prev_state`` loaded above for the
@@ -5133,6 +5595,30 @@ def poll_once(
         phase_log_mtime_epoch=phase_log_mtime_epoch,
         shard_log_mtime_epoch=shard_log_mtime_epoch,
     )
+    # #1556: on a trigger-dense workload the EMITTED excerpt is replaced by a
+    # bounded structural digest (no raw tail lines in orchestrator-facing
+    # JSON/marker text). ``crash_signature`` above is deliberately untouched —
+    # it is the in-process machine surface the backend_poll CUDA-IMA /
+    # OUR_CODE_FRAME failover predicates read (never emitted to stdout).
+    log_tail_digested = False
+    if trigger_dense:
+        source, wide_tail = _freshest_wide_tail(
+            probe,
+            mtime_epoch=mtime_epoch,
+            cell_mtime_epoch=cell_mtime_epoch,
+            phase_log_mtime_epoch=phase_log_mtime_epoch,
+            shard_log_mtime_epoch=shard_log_mtime_epoch,
+        )
+        tail_excerpt = _digest_tail_excerpt(
+            wide_tail,
+            status=status,
+            current_phase=current_phase,
+            pid_alive=pid_alive,
+            source=source,
+            log_path=log_path,
+            mtime_sec_ago=min(last_mtime_ago, 10**9),
+        )
+        log_tail_digested = True
     return PollResult(
         status=status,
         current_phase=current_phase,
@@ -5159,6 +5645,7 @@ def poll_once(
         crash_signature=crash_signature,
         post_done_phase_advisory_posted=post_done_posted,
         post_done_phase_lines=post_done_new_lines,
+        log_tail_digested=log_tail_digested,
     )
 
 
@@ -5222,6 +5709,10 @@ def main(argv: list[str] | None = None) -> int:
                 "pid_file_missing": result.pid_file_missing,
                 "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
                 "log_tail_excerpt": result.log_tail_excerpt,
+                # #1556: True when log_tail_excerpt is the trigger-dense
+                # structural digest, not raw tail lines (additive key;
+                # downstream readers .get-defend by house pattern).
+                "log_tail_digested": result.log_tail_digested,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,

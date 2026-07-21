@@ -1,0 +1,175 @@
+{
+  "contrasts": [
+    {
+      "contrast": "topic:coding",
+      "n": 2589,
+      "mean_nerr_in": 0.30503809719523695,
+      "mean_nerr_out": 0.2825986030397143,
+      "ratio": 1.0794041227173694,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:math",
+      "n": 460,
+      "mean_nerr_in": 0.2663546536064908,
+      "mean_nerr_out": 0.285954184775023,
+      "ratio": 0.9314591909751126,
+      "perm_p": 0.008099190080991902,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:creative_writing",
+      "n": 4148,
+      "mean_nerr_in": 0.25746176545957145,
+      "mean_nerr_out": 0.29284106157182893,
+      "ratio": 0.8791860133194486,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:roleplay_persona",
+      "n": 670,
+      "mean_nerr_in": 0.3103550015091484,
+      "mean_nerr_out": 0.28464201035446485,
+      "ratio": 1.0903344911127602,
+      "perm_p": 0.00019998000199980003,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:factual_qa",
+      "n": 5928,
+      "mean_nerr_in": 0.2919199817476806,
+      "mean_nerr_out": 0.28280033110877517,
+      "ratio": 1.03224766605877,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:advice_howto",
+      "n": 2664,
+      "mean_nerr_in": 0.27764044621605943,
+      "mean_nerr_out": 0.28671168449719375,
+      "ratio": 0.9683611140681534,
+      "perm_p": 0.0045995400459954,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:translation",
+      "n": 521,
+      "mean_nerr_in": 0.3369304117600949,
+      "mean_nerr_out": 0.2841278898627201,
+      "ratio": 1.1858406857661423,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:summarization_extraction",
+      "n": 838,
+      "mean_nerr_in": 0.2964061954085164,
+      "mean_nerr_out": 0.2850265900955327,
+      "ratio": 1.0399247147754516,
+      "perm_p": 0.038696130386961305,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:chitchat_social",
+      "n": 881,
+      "mean_nerr_in": 0.2349067348031064,
+      "mean_nerr_out": 0.28783488037038535,
+      "ratio": 0.8161162903565714,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:harmful_or_unsafe_request",
+      "n": 750,
+      "mean_nerr_in": 0.3143754234030922,
+      "mean_nerr_out": 0.2843785113563956,
+      "ratio": 1.105482344300984,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:nsfw",
+      "n": 317,
+      "mean_nerr_in": 0.3254553134313331,
+      "mean_nerr_out": 0.2848599591934766,
+      "ratio": 1.142509864681558,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "topic:other",
+      "n": 201,
+      "mean_nerr_in": 0.35037995146744605,
+      "mean_nerr_out": 0.2848447669537844,
+      "ratio": 1.2300733315711383,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "refusal_adjacent:yes+borderline",
+      "n": 1642,
+      "mean_nerr_in": 0.32000152717308694,
+      "mean_nerr_out": 0.2824177690132218,
+      "ratio": 1.1330785888267023,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "answer_is_refusal:yes+partial",
+      "n": 1145,
+      "mean_nerr_in": 0.3200959058063417,
+      "mean_nerr_out": 0.28340271010419904,
+      "ratio": 1.129473693771847,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    },
+    {
+      "contrast": "corpus:wildchat",
+      "n": 9017,
+      "mean_nerr_in": 0.27590833503285767,
+      "mean_nerr_out": 0.29338090268338857,
+      "ratio": 0.9404440865416963,
+      "perm_p": 9.999000099990002e-05,
+      "bh_fdr_sig_q05": true
+    }
+  ],
+  "exploratory": true,
+  "n_perm": 10000,
+  "per_field_kappa": {
+    "language": {
+      "n": 200,
+      "kappa": 0.990710636321412
+    },
+    "topic": {
+      "n": 200,
+      "kappa": 0.8637037037037038
+    },
+    "request_refusal_adjacent": {
+      "n": 200,
+      "kappa": 0.9005964214711728
+    },
+    "answer_is_refusal": {
+      "n": 200,
+      "kappa": 0.9217527386541471
+    },
+    "format": {
+      "n": 200,
+      "kappa": 0.8236417968941361
+    }
+  },
+  "drops": {
+    "content": 4,
+    "transport_or_error": 29
+  },
+  "n_ans_missing": null,
+  "metadata": {
+    "git_commit": "3cde60eb88c76f5f329428f6f1fdef9b8008bfac",
+    "timestamp_utc": "2026-07-19T02:25:38.934267Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

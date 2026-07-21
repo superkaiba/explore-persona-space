@@ -1,0 +1,35 @@
+{
+  "fit_id": "refit_lmsys_transfer__ridge__seed0",
+  "condition": "refit_lmsys_transfer",
+  "predictor": "ridge",
+  "seed": 0,
+  "n_train": 518102,
+  "wall_time_s": 59.4,
+  "fit_meta": {
+    "n_train": 518102,
+    "selection": "val-lambda (primal, streaming)",
+    "selected_lambda": 0.001,
+    "val_r2_at_selected": 0.7620423946100993,
+    "lambda_grid_edge": "low",
+    "ridge_block": 50000
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "holdout": {
+      "n": 20000,
+      "whole_map_r2": 0.7001370867404073,
+      "mean_cosine": 0.9526665374867079
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T08:42:03.236220Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "1"
+  }
+}

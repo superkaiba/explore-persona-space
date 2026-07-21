@@ -76,7 +76,7 @@ This is the load-bearing constraint for the entire wrapper agent.
   the containment.
 - **Orphan-adoption recovery (orchestrator-side).** If a wrapper returns
   with a Codex job still running (the stale-spec regression above): find
-  the live helper via `pgrep -af codex_task.py`, get the job id from the
+  the live helper via `pgrep -af 'codex_task[.]py'`, get the job id from the
   plugin's job state JSON, then fetch the result with
   `node <plugin-cache>/scripts/codex-companion.mjs result <job-id>` run
   from the SAME cwd the job was registered under — the companion job
@@ -587,14 +587,17 @@ both reviewers are graded against the same standard. Read
   both halves: (i) PRESENCE/FORMAT is mechanical — `(c) How to verify` in
   the inlined marker body must carry the `**Gate-scope check (#1288):**`
   line with the contract fields (selector `n_tests` + resolved base,
-  locally-run files, pin-sweep fragments → hits, deferred invariant-only
-  count); ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
+  locally-run files, pin-sweep fragments →
+  hit count + verbatim deduplicated hit-file list, deferred
+  invariant-only count; count-only / no list = present-but-terse);
+  ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
   Critical tagged `marker-shape` whose body NAMES `Gate-scope check` (the
   orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
   never a combined Step 0.5 / 0.55 / 4.6 blocker); present-but-terse or
   imperfectly formatted → at most a CONCERNS, NEVER a standalone FAIL;
   (ii) DIFF-CONSISTENCY is substantive — NEVER tagged `marker-shape`
   (a changed load-bearing literal missing from the pin-sweep fragments →
+  Minor `substantive`; a hit file omitted from the claimed hit-file list →
   Minor `substantive`; a pin-sweep HIT left NOT-RUN is presumptively
   blocker-adjacent; a stale pin asserting the old literal → Critical
   `substantive`; genuinely undischargeable in-review → Major `substantive`

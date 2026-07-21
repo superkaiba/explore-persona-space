@@ -987,3 +987,31 @@ def test_home_tier_size_cap_degenerate_multi_revision_repo_kept(env, monkeypatch
     assert all("ddd" not in h for req in executed for h in req)
     assert any("degenerate-repo-kept: 1 repo(s)" in d for d in res.detail)
     assert any("size-cap (arm 3)" in d for d in res.detail)
+
+
+def test_repo_escalate_bytes_nonfinite_env_never_raises(monkeypatch):
+    """inf/-inf/nan/product-overflowing-huge env -> default, never OverflowError
+    (#1494; the tier-(e) sibling of the #1457 devfs fix)."""
+    default_bytes = int(vdg.DEFAULT_HOME_HF_REPO_ESCALATE_GB * 1e9)
+    for raw in ("inf", "-inf", "nan", "1e300", "not-a-number"):
+        monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB", raw)
+        assert vdg.home_hf_repo_escalate_bytes() == default_bytes
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB", "10")
+    assert vdg.home_hf_repo_escalate_bytes() == int(10 * 1e9)
+    # huge-but-product-finite is ACCEPTED: the clamp is int()-safety, not a magnitude cap
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB", "1e290")
+    assert vdg.home_hf_repo_escalate_bytes() == int(1e290 * 1e9)
+
+
+def test_cache_cap_bytes_nonfinite_env_never_raises(monkeypatch):
+    """Same clamp for the size-cap knob (#1494): inf/-inf/nan/1e300/invalid ->
+    default; valid and huge-but-product-finite values accepted."""
+    default_bytes = int(vdg.DEFAULT_HOME_HF_CACHE_CAP_GB * 1e9)
+    for raw in ("inf", "-inf", "nan", "1e300", "not-a-number"):
+        monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", raw)
+        assert vdg.home_hf_cache_cap_bytes() == default_bytes
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "10")
+    assert vdg.home_hf_cache_cap_bytes() == int(10 * 1e9)
+    # huge-but-product-finite is ACCEPTED: the clamp is int()-safety, not a magnitude cap
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "1e290")
+    assert vdg.home_hf_cache_cap_bytes() == int(1e290 * 1e9)

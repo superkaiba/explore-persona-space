@@ -1,0 +1,471 @@
+{
+  "commit": "59eba74dc9",
+  "created": "2026-07-20T21:57:23Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "evaluation turn": 0.91,
+      "held-out skill (6-block read-out mean)": 0.5528099802603594,
+      "error": 0.018407300130795112,
+      "series": "mix turns 1+2 (full)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 1.91,
+      "held-out skill (6-block read-out mean)": 0.5083290285195727,
+      "error": 0.018686079840655123,
+      "series": "mix turns 1+2 (full)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 2.91,
+      "held-out skill (6-block read-out mean)": 0.48328794707190487,
+      "error": 0.01711406736108942,
+      "series": "mix turns 1+2 (full)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 3.91,
+      "held-out skill (6-block read-out mean)": 0.47270806089835404,
+      "error": 0.017866215987850015,
+      "series": "mix turns 1+2 (full)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "evaluation turn": 0.97,
+      "held-out skill (6-block read-out mean)": 0.52660585594403,
+      "error": 0.01920024599978759,
+      "series": "mix turns 1+2 (matched-n)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 1.97,
+      "held-out skill (6-block read-out mean)": 0.48195988694581277,
+      "error": 0.019477874882696256,
+      "series": "mix turns 1+2 (matched-n)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 2.97,
+      "held-out skill (6-block read-out mean)": 0.4561929894794256,
+      "error": 0.01764861470920462,
+      "series": "mix turns 1+2 (matched-n)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 3.97,
+      "held-out skill (6-block read-out mean)": 0.44386374953112623,
+      "error": 0.018306431777538767,
+      "series": "mix turns 1+2 (matched-n)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "evaluation turn": 1.03,
+      "held-out skill (6-block read-out mean)": 0.4640658462897322,
+      "error": 0.017835501863082803,
+      "series": "turn-2 map only",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 2.03,
+      "held-out skill (6-block read-out mean)": 0.49581278099339626,
+      "error": 0.01903837086569321,
+      "series": "turn-2 map only",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 3.03,
+      "held-out skill (6-block read-out mean)": 0.47138717214654613,
+      "error": 0.01734878007755994,
+      "series": "turn-2 map only",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 4.03,
+      "held-out skill (6-block read-out mean)": 0.45757862680460576,
+      "error": 0.017694728111683072,
+      "series": "turn-2 map only",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "evaluation turn": 1.09,
+      "held-out skill (6-block read-out mean)": 0.5392864591771714,
+      "error": 0.01945499649499749,
+      "series": "own-turn map (diagonal)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 2.09,
+      "held-out skill (6-block read-out mean)": 0.49581278099339626,
+      "error": 0.01903837086569321,
+      "series": "own-turn map (diagonal)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 3.09,
+      "held-out skill (6-block read-out mean)": 0.47641044370786506,
+      "error": 0.01710267331468293,
+      "series": "own-turn map (diagonal)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 4.09,
+      "held-out skill (6-block read-out mean)": 0.47024858677467035,
+      "error": 0.01820142640528341,
+      "series": "own-turn map (diagonal)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "evaluation turn": 0.91,
+      "held-out skill (6-block read-out mean)": 0.5528099802603594,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 1.91,
+      "held-out skill (6-block read-out mean)": 0.5083290285195727,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 2.91,
+      "held-out skill (6-block read-out mean)": 0.48328794707190487,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 3.91,
+      "held-out skill (6-block read-out mean)": 0.47270806089835404,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn": 0.91,
+      "held-out skill (6-block read-out mean)": 0.5348036599785797,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 1.91,
+      "held-out skill (6-block read-out mean)": 0.4909109199417353,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 2.91,
+      "held-out skill (6-block read-out mean)": 0.4665177406748919,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 3.91,
+      "held-out skill (6-block read-out mean)": 0.45551706546823784,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn": 0.91,
+      "held-out skill (6-block read-out mean)": 0.5716182602401699,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 1.91,
+      "held-out skill (6-block read-out mean)": 0.5282830796230455,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 2.91,
+      "held-out skill (6-block read-out mean)": 0.5007458753970707,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 3.91,
+      "held-out skill (6-block read-out mean)": 0.49124949744393787,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn": 0.97,
+      "held-out skill (6-block read-out mean)": 0.52660585594403,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 1.97,
+      "held-out skill (6-block read-out mean)": 0.48195988694581277,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 2.97,
+      "held-out skill (6-block read-out mean)": 0.4561929894794256,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 3.97,
+      "held-out skill (6-block read-out mean)": 0.44386374953112623,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn": 0.97,
+      "held-out skill (6-block read-out mean)": 0.5077033781121661,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 1.97,
+      "held-out skill (6-block read-out mean)": 0.4631714127080635,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 2.97,
+      "held-out skill (6-block read-out mean)": 0.43881163251979893,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 3.97,
+      "held-out skill (6-block read-out mean)": 0.4263213999993315,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn": 0.97,
+      "held-out skill (6-block read-out mean)": 0.5461038701117413,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 1.97,
+      "held-out skill (6-block read-out mean)": 0.502127162473456,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 2.97,
+      "held-out skill (6-block read-out mean)": 0.47410886193820817,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 3.97,
+      "held-out skill (6-block read-out mean)": 0.46293426355440903,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "evaluation turn": 1.03,
+      "held-out skill (6-block read-out mean)": 0.4640658462897322,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 2.03,
+      "held-out skill (6-block read-out mean)": 0.49581278099339626,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 3.03,
+      "held-out skill (6-block read-out mean)": 0.47138717214654613,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 4.03,
+      "held-out skill (6-block read-out mean)": 0.45757862680460576,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "evaluation turn": 1.03,
+      "held-out skill (6-block read-out mean)": 0.4460869756985006,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 2.03,
+      "held-out skill (6-block read-out mean)": 0.4777086685580537,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 3.03,
+      "held-out skill (6-block read-out mean)": 0.4542738387928829,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 4.03,
+      "held-out skill (6-block read-out mean)": 0.44045508034110664,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "evaluation turn": 1.03,
+      "held-out skill (6-block read-out mean)": 0.4817579794246662,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "evaluation turn": 2.03,
+      "held-out skill (6-block read-out mean)": 0.5157854102894401,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "evaluation turn": 3.03,
+      "held-out skill (6-block read-out mean)": 0.4889713989480028,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "evaluation turn": 4.03,
+      "held-out skill (6-block read-out mean)": 0.4758445365644728,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "evaluation turn": 1.09,
+      "held-out skill (6-block read-out mean)": 0.5392864591771714,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "evaluation turn": 2.09,
+      "held-out skill (6-block read-out mean)": 0.49581278099339626,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "evaluation turn": 3.09,
+      "held-out skill (6-block read-out mean)": 0.47641044370786506,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "evaluation turn": 4.09,
+      "held-out skill (6-block read-out mean)": 0.47024858677467035,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "evaluation turn": 1.09,
+      "held-out skill (6-block read-out mean)": 0.5202143017256984,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "evaluation turn": 2.09,
+      "held-out skill (6-block read-out mean)": 0.4777086685580537,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "evaluation turn": 3.09,
+      "held-out skill (6-block read-out mean)": 0.45961494575940803,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "evaluation turn": 4.09,
+      "held-out skill (6-block read-out mean)": 0.45195338322736184,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "evaluation turn": 1.09,
+      "held-out skill (6-block read-out mean)": 0.5591242947156934,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "evaluation turn": 2.09,
+      "held-out skill (6-block read-out mean)": 0.5157854102894401,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "evaluation turn": 3.09,
+      "held-out skill (6-block read-out mean)": 0.4938202923887739,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "evaluation turn": 4.09,
+      "held-out skill (6-block read-out mean)": 0.48835623603792866,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does a turn-1+2 map generalize across turns?",
+        "xlabel": "evaluation turn",
+        "ylabel": "held-out skill (6-block read-out mean)",
+        "legend_labels": [
+          "mix turns 1+2 (full)",
+          "mix turns 1+2 (matched-n)",
+          "turn-2 map only",
+          "own-turn map (diagonal)"
+        ],
+        "annotations": [
+          "context->answer ridge, dup-excluded folds (n_test=431); 95% bootstrap CIs"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "mix turns 1+2 (full)",
+      "mix turns 1+2 (matched-n)",
+      "turn-2 map only",
+      "own-turn map (diagonal)"
+    ]
+  }
+}

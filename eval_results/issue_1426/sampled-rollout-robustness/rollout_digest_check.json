@@ -1,0 +1,21 @@
+{
+  "dv": "rollout-digest cross-check (assumption 6): per-row identity across seeds",
+  "seeds": [
+    42,
+    137
+  ],
+  "n_shared_rows": 2400,
+  "n_identical": 23,
+  "identical_fraction": 0.009583333333333333,
+  "identical_frac_max": 0.5,
+  "status": "PASS",
+  "reproducibility": {
+    "git_commit": "ce341a98acca6395a249bb0d2ea9d5ab4b00be16",
+    "timestamp_utc": "2026-07-18T18:12:13.548366+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

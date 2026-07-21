@@ -1,0 +1,36 @@
+{
+  "fit_id": "refit_lmsys_transfer__mlp_w8192__seed0",
+  "condition": "refit_lmsys_transfer",
+  "predictor": "mlp_w8192",
+  "seed": 0,
+  "n_train": 518102,
+  "wall_time_s": 710.8,
+  "fit_meta": {
+    "width": 8192,
+    "lr": 0.0003,
+    "epochs_ran": 47,
+    "batch": 4096,
+    "best_val_mse": 0.08892962454461012,
+    "n_train": 518102,
+    "capacity_arm": false
+  },
+  "regime": {
+    "smoke": false,
+    "fit_n": 0,
+    "krr_nystrom_centers": 16384
+  },
+  "sets": {
+    "holdout": {
+      "n": 20000,
+      "whole_map_r2": 0.7505252580992707,
+      "mean_cosine": 0.9606417322193345
+    }
+  },
+  "metadata": {
+    "git_commit": "2ca8cd7514576319a81ca49a71f68ca729d026d5",
+    "timestamp_utc": "2026-07-18T08:54:04.770485Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "1"
+  }
+}

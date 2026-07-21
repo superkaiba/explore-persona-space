@@ -217,6 +217,11 @@ For each finding, propose the simplest non-mechanism explanation:
   uninformative-by-construction (any non-rejection is failure-to-reject,
   never evidence of absence/reversal; a reachable opposite-tail
   rejection stays legitimate); #810"
+- "The bootstrap CI quoted at the max-selected axis position is the
+  frozen-at-winner CI — the selection-inherited CI (per-draw
+  re-selection inside each resample) is what carries the
+  sign/effect-stability claim; #1434: frozen [−0.949, −0.467] vs
+  inherited [−0.957, +0.866] in the same JSON"
 
 If the interpretation doesn't address or rule out the alternative, flag it.
 

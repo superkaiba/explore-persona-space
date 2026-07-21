@@ -1,0 +1,3013 @@
+{
+  "commit": "6bbe5f4941",
+  "created": "2026-07-20T20:27:18Z",
+  "figsize": [
+    11.5,
+    3.4
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 0.9800717670188915,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.9825862094349828,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.9849534042204338,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.9877933574641133,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.9883976939320617,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.9794908649139593,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.9596225988004221,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.9750260772770539,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.9779480228858974,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.9804344227664954,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.9872801341410018,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.9855091254364485,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.9925434472014385,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.9933764111547146,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9961475091411062,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.9854642097548059,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.9870486042045018,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.9800584128926989,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.9832824630493097,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.9490566644704103,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.9414680440047043,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.93422703240699,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.9400020041125352,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.9518213917058488,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.9615089526488522,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.9658174985517745,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.9533153783350526,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9624400251138365,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 0.8961887940676165,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.9116165411730636,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.9142132674621423,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.9177275288992196,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.9187169324672534,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.9106831811883653,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.8953903690035299,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.9073118655883001,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.9076930431142964,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.9164157303803778,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.9214593889970495,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.9187974443736711,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.9221709526773544,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.9221116913620919,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9388096361819805,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.9429781793240475,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.940452472871554,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.9346254045126208,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.9419170226014139,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.9296057903471335,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.9212734145520376,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.9120035762973765,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.9155939754168346,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.9303646831710791,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.9407924282436491,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.9458910354278102,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.9365738313491949,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9558073919455887,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 1.0234945667615907,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.9802184132082932,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.9620389169686835,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.9639578809221195,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.9676568653902072,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.9620042791090899,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.9376654667624066,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.9590917535116334,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.9664370389716428,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.9772968346724458,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.9858702143970522,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.9852598667010984,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.9844384130510357,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.9878859444977866,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9896504065226428,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.9837797865578594,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.9815425329000648,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.9749141440300393,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.9735891450112367,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.9001641999344228,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.8905351711606897,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.8764900233722275,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.8831016349823234,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.889312008314925,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.904058027760042,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.9141839457566696,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.9145016525878845,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9506013916676463,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 0.8775781197431383,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.8612823672074679,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.8554384302400057,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.8644448261966128,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.8726607826372303,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.8740742832177119,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.8503951563202583,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.861793671597603,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.8545048100794846,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.8774994630612438,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.8881269654543289,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.887636803698779,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.8850405785260393,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.8876827952018561,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9058161564757398,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.9146409289454513,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.9076550170508936,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.902586391597749,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.9077033085102073,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.8625565881607989,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.8529346481232952,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.8368919609209828,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.8391275978098686,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.8505885068359379,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.8653599924205838,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.8786479979563399,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.8853236591344507,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9404695608628187,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 0.9430911240245582,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.9463938121744486,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.9504323231510607,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.9481131333836998,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.952109778917033,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.9386777410520353,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.9120169442072367,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.9300579038969609,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.9395138915586696,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.9501012998205434,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.9628207155477305,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.9649701021503194,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.970822834066538,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.9772038377322421,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9835273735069103,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.973545914205879,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.9705592727076433,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.9616595452581248,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.9664288791309702,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.9148927943540239,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.9062539054056041,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.8946736130461357,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.9041726226974236,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.9156362164280345,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.9296333968803085,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.9356472042310092,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.9167864901103421,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9355170114579254,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Cross-method direction cosine": 0.8347456402952405,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Cross-method direction cosine": 0.8572284723545056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Cross-method direction cosine": 0.8635535924744305,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Cross-method direction cosine": 0.8650374339256054,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Cross-method direction cosine": 0.8701268407816709,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Cross-method direction cosine": 0.8582061511403372,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Cross-method direction cosine": 0.8379365027757834,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Cross-method direction cosine": 0.8506589203284212,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Cross-method direction cosine": 0.8569706487290839,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Cross-method direction cosine": 0.8735053971329505,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Cross-method direction cosine": 0.8839369460451794,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Cross-method direction cosine": 0.8848768637845187,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Cross-method direction cosine": 0.886555571371588,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Cross-method direction cosine": 0.8921152718452995,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Cross-method direction cosine": 0.9161019374582099,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Cross-method direction cosine": 0.9241004333118304,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Cross-method direction cosine": 0.9169084958205835,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Cross-method direction cosine": 0.9093095817469721,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Cross-method direction cosine": 0.918108951949926,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Cross-method direction cosine": 0.8925707160239688,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Cross-method direction cosine": 0.8835932978446174,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Cross-method direction cosine": 0.8699850135768054,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Cross-method direction cosine": 0.8769562765628784,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Cross-method direction cosine": 0.8917382386132816,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Cross-method direction cosine": 0.9064325111793295,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Cross-method direction cosine": 0.9138364116574751,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Cross-method direction cosine": 0.8990551308119287,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Cross-method direction cosine": 0.9288948046538692,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8091244047634434,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.7810307367422624,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.8151175923954175,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9849308352096818,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9764700543246329,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9379211938043482,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.927144118162182,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.924172980360302,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9071568507273252,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9043879136689431,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.8944359497712467,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9116370084145621,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.8994830256030661,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.8841998629423856,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.8865428717700151,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.849991769300305,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.8013085193631145,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.8402192971600151,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.8520583286946228,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.8149911608091618,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.8364175758576101,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.8442067330074492,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.8758708267161491,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.910580166180784,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.920288900909208,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9359576401150159,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9698572096703062,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9881069465892856,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8080630311827938,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.780002060670115,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.8142706537526809,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9849002940631363,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9764271220561698,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9378727416289037,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9270603563498253,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9240181351389878,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9068368590569197,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9040045075039136,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.8939770158913726,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9112066888224116,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.8989507923569531,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.8835561691162036,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.8858534026555043,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.8490728077342962,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.8001605863545737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.839027226412001,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.8507442937181854,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.8134879496276581,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.8346566656276431,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.8420877739781721,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.8734389730598248,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9079736021762511,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9172578836078211,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9327134939244957,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9655430045128025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9862923546748688,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8017220114796514,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.6448290680564106,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.7502093999015531,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.8873934035416903,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.8330987936121462,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.6412922849467029,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.6092565932530652,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.5947661901901299,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.5693653192361919,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.5034318660746159,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.41748338876074625,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.3879891510336922,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.4106168492967216,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.3749916124632282,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.31397720431854487,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.24932197173771362,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.20874658239669286,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.15413899553448637,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.07092488861335502,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.5464315160090252,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.7046134666996877,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.8131568919912152,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.8755162715703769,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9207293506379383,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9348638287815119,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9608740749471452,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9778373845515527,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9818794955722381,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8008465947255666,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.6443418354811692,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.7498447472943031,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.8873592165207644,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.833057516429434,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.6412533775314277,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.6091995896446248,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.5946758993317847,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.569221359173142,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.5032560947241483,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.4173043722929964,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.387787964101114,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.41036071103567806,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.3746966154000928,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.3136734915297199,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.24902816155632643,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.2084588465597262,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.15389403057085513,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.07078342249014477,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.5452450243639705,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.7029850207323186,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.8111833333364127,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.8732978116598986,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9184391079759004,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9321212085249508,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9577208545436637,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9734473642299981,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9797899026421385,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8270502455086077,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.7515669418263158,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.76018671758347,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9893636999653685,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9828323754214932,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9565289297817492,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9480920060470842,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9477610356622891,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9383630407256387,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9388266542505878,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9360140494429713,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9466558503469211,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.939337983158887,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9326719236061755,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.9371123928911433,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9207676135745884,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.9013399364710306,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9237392957504023,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9337303985259019,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.9453736127333959,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.9582436114825469,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.9636423529515509,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9690920197865368,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9741543303486321,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9706941422575468,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9681916597405136,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9618291468009852,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9814561666839969,
+      "series": "full-FT+neg vs LoRA+neg (lr-matched 5e-6)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.8258433649704113,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.750577585105207,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.7593875386606244,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9893210774611141,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.98276825438772,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9564529895757564,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9479669382416951,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9475402754899679,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9379306245776524,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9383053542362563,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9353912757718436,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9460668224297545,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.9386069263818105,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9317729382022926,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.9361467518297402,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9194666076600856,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.89963379153488,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9220104771063871,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9318468275521522,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.9429969045018429,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.9556301736133944,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.960726319881007,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9660393794438836,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9711663004679103,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9673172540747335,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9647179648396021,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9574590245478446,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9795338849198992,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.9453426659152291,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.935653947542188,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9499006196364312,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9624085959498653,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9657330292003449,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9697105497569112,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9503124661593734,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9656202861092789,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9667608103546268,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9738321042622429,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9768185470422486,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9784206133788216,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.9798712538535389,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9816543108068088,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.9895770804027022,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9916007033257839,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.99130083162394,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9892318741182122,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9864433450215578,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.9397822080888615,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.9417356456023137,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.944775761167183,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9464466022103875,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9511326349832239,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9573254422718426,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9629472730285644,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9534428474375648,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9826668424820059,
+      "series": "full-FT+neg vs LoRA+neg",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.9445048864214928,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.9351284844262325,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9491020089481806,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9616970427278345,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9647253662680724,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9683915127752105,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9486095736134038,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9638062999869244,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9646558527587806,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9713840452941259,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9737341117529635,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9748909955423259,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.975686391532571,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9774873853238968,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.986433893434848,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9889812502761759,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.9879753148522655,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9854655984303512,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9816653442001734,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.9363939726417717,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.9383274691818183,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.9414260075079857,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9426924808629636,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9476081443940595,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9536205425811264,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9592688560930537,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9499067080096977,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9812441399420802,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.9185484859778758,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.9007568732253712,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9183699001182831,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9439396927568703,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9541359428608982,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.952682228708418,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.916994422602311,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9372533781009427,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9515818497549271,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9612707983802257,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9612289153709904,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.9621260271781946,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.9632097154174284,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9608713345989849,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.9773202506027149,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9800338945428931,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.9784197013102126,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9776138721347742,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9726962936792886,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.923081574066199,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.9330026775770776,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.9375067251317823,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9395945003208104,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.944994567164001,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9473617506391997,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9531115234573109,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9545105748443806,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9853929250849894,
+      "series": "full-FT+pos vs LoRA+pos",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.9176519270888792,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.9002779602217581,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9177844838421364,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.9433641656486754,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.9533334012040279,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.9515582751850372,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.9155804876193765,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.9355924975662749,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.9495623506998015,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.9588185433886296,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.9582875247932697,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.958825336187145,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.9592344271552702,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.9568692683029046,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.9744799326541216,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.9779327186949794,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.975659677577176,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.9744828350476741,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.9688725070686288,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.9193203469047595,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.929357319496238,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.9341117765778882,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.9357339828563243,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.9413919147854545,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.9435001667866709,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.9493670152969342,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.9508567482765509,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.9840181875871553,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 448,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Response arm (own-text)",
+        "xlabel": "Layer",
+        "ylabel": "Cross-method direction cosine",
+        "legend_labels": [
+          "full-FT+neg vs LoRA+neg",
+          "full-FT+pos vs LoRA+pos",
+          "full-FT+neg vs LoRA+neg (lr-matched 5e-6)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Context arm (own-text)",
+        "xlabel": "Layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "Response arm (shared-text)",
+        "xlabel": "Layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "full-FT+neg vs LoRA+neg",
+      "full-FT+pos vs LoRA+pos",
+      "full-FT+neg vs LoRA+neg (lr-matched 5e-6)"
+    ]
+  }
+}

@@ -101,6 +101,8 @@ I then wanted to see whether post-training builds a new map or just re-expresses
 - This indicates the information to predict the instruct text is already present in the base model context vector
     - this gives some indication that post-training is only eliciting capabilities and not teaching new ones (at least the ones that are linearly predictable from the context vector)
 
+_Update (matched-capacity null round, 2026-07-17): the equality is not a fitting-capacity artifact. Two matched-capacity fitted nulls at layer 19 (identical ridge core, folds, and n=5,000) collapse far below the observed 0.673 — refitting the cross-model change-of-coordinates on shuffled correspondence gives held-out $R^2$ −0.002, and replacing the base operator with a spectrum-matched random operator (same singular values, random subspaces) gives −0.25 (base→instruct) / −0.47 (instruct→base). A 1,000-draw conversation-grouped bootstrap places the reparameterized composition at the own-map ceiling: base→instruct comp−ceiling Δ −0.0003 (95% CI [−0.0024, +0.0019], indistinguishable), instruct→base +0.0012 (95% CI [+0.0003, +0.0021], a marginal +0.001 $R^2$ above). See `scripts/issue825_reparam_matched_null.py`, `figures/issue_825/reparam_matched_null.png`._
+
 ### _Result 2.5: What is the reparameterized base map?_
 
 I then wanted to see if there is a difference between the reparameterized base map and the instruct map (just because they have the same predictive power doesn't mean they are the same)
@@ -162,6 +164,8 @@ I then wanted to see
     * generic next-span prediction:
 - I am thinking this is probably because it might be a "per-character" mapping (although the user turn not holding up somewhat disproves this)?
     - potentially it is an "AI character mapping" because the model thinks it should be good at predicting text generating by an AI
+
+_Update (user-answer resample ceiling round, 2026-07-20): target-answer diversity does NOT explain the user-turn null. K=4 fresh claude-haiku-4-5 user-turn redraws per context (1,914 contexts, generation recipe reused verbatim from this experiment's conversation builder) put the within-context resample ceiling HIGH: inter-resample R² (leave-one-draw-out, K=4) 0.70 instruct-read / 0.68 pretrained-read, bias-corrected infinite-K ceiling 0.78 / 0.76 at layer 19 (0.76–0.81 across frozen layers) — only ~22–24% of user-answer activation variance is within-context sampling noise. Every fitted user-turn map sits far below this ceiling (byte-matched Haiku-u2 ridge −1.43/−1.49; Qwen-as-user ridge −0.77/−1.84, MLP 0.08–0.33), so the map failure is representational, not irreducible target diversity — with the caveat that "context-determined" includes any stable per-context structure, nuisance dimensions included. Sanity: the original Haiku turns are exchangeable with the redraws (LOO-e2 ratio 1.003/0.996) and the recapture matches the stored vectors (layer-19 cosine mean 0.99998). [Figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91728e36154f41f2692d4bc3aa89366db027c186/figures/issue_825/kresample_user_ceiling.png); `eval_results/issue_825/kresample-user/floor_summary.json` + `scripts/issue825_kresample_user_{gen,capture,floor}.py` @ `91728e3615`; raw draws + v(u2) tensors on the HF data repo under `issue825_kresample_user/`._
 
 ### _Result 4.5: Story characters DO carry the map once properly powered — the initial weak read was an n≪p artifact (instruct control pending)_
 

@@ -1,0 +1,4680 @@
+{
+  "commit": "dc69293624",
+  "created": "2026-07-19T07:14:12Z",
+  "figsize": [
+    12.8,
+    3.0
+  ],
+  "points": [
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.7878787878787878,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.6804123711340206,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.76,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.84,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.52,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.55,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.49,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.76,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.52,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.86,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.75,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.78,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.75,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.74,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.73,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.46808510638297873,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.57,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.61,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.66,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.6262626262626263,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.74,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.64,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.68,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.19,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.32,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.5656565656565656,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.7070707070707071,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.77,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.73,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.17,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.37,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.5,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.64,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.75,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.64,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.74,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.72,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.35,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.65,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.8,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.64,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.59,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.64,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.56,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.62,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.57,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.58,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.58,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.55,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.53,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.54,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.3,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.78,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.71,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.67,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.63,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.7,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.59,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.6,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.46,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.52,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.52,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.53,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.49,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.7878787878787878,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.6804123711340206,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.99,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.2,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.39,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.79,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.84,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.91,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.2,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.51,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.76,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.85,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.89,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.36,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.84,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.98,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.93,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training step": 5.0,
+      "Tier-1 judged rate": 0.47,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 10.0,
+      "Tier-1 judged rate": 0.92,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 15.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 20.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 25.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 30.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 35.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 40.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 45.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 50.0,
+      "Tier-1 judged rate": 0.97,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 55.0,
+      "Tier-1 judged rate": 0.96,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 60.0,
+      "Tier-1 judged rate": 0.94,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 65.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 70.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 75.0,
+      "Tier-1 judged rate": 0.95,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training step": 5.0,
+      "y": 0.67,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6413043478260869,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7171717171717171,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "training step": 5.0,
+      "y": 0.696969696969697,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7346938775510204,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "training step": 5.0,
+      "y": 0.68,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "training step": 5.0,
+      "y": 0.8686868686868687,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7959183673469388,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "training step": 5.0,
+      "y": 0.75,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7575757575757576,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "training step": 5.0,
+      "y": 0.71,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7171717171717171,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "training step": 5.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 10.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 15.0,
+      "y": 0.9285714285714286,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 20.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 25.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 30.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 35.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 40.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 45.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 50.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 55.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 60.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 65.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 70.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 75.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6413043478260869,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 10.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 20.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 25.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 30.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 35.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 40.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 45.0,
+      "y": 0.8282828282828283,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 50.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 55.0,
+      "y": 0.83,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 60.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 65.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 70.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 75.0,
+      "y": 0.8787878787878788,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7171717171717171,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7171717171717171,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 15.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 20.0,
+      "y": 0.797979797979798,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 25.0,
+      "y": 0.7857142857142857,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 30.0,
+      "y": 0.8163265306122449,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 35.0,
+      "y": 0.8787878787878788,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 40.0,
+      "y": 0.8484848484848485,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 45.0,
+      "y": 0.797979797979798,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 50.0,
+      "y": 0.8469387755102041,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 55.0,
+      "y": 0.8484848484848485,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 60.0,
+      "y": 0.8469387755102041,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 65.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 70.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 75.0,
+      "y": 0.8383838383838383,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training step": 5.0,
+      "y": 0.696969696969697,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 10.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 15.0,
+      "y": 0.7373737373737373,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 20.0,
+      "y": 0.7676767676767676,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 25.0,
+      "y": 0.83,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 30.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 35.0,
+      "y": 0.8383838383838383,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 40.0,
+      "y": 0.8282828282828283,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 45.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 50.0,
+      "y": 0.8181818181818182,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 55.0,
+      "y": 0.826530612244898,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 60.0,
+      "y": 0.8383838383838383,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 65.0,
+      "y": 0.8367346938775511,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 70.0,
+      "y": 0.8469387755102041,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 75.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7346938775510204,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 10.0,
+      "y": 0.8144329896907216,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 15.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 20.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 25.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 30.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 35.0,
+      "y": 0.8585858585858586,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 40.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 45.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 50.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 55.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 60.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 65.0,
+      "y": 0.8585858585858586,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 70.0,
+      "y": 0.8181818181818182,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 75.0,
+      "y": 0.8367346938775511,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training step": 5.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7755102040816326,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 15.0,
+      "y": 0.8888888888888888,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 20.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 25.0,
+      "y": 0.898989898989899,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 30.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 35.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 40.0,
+      "y": 0.898989898989899,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 45.0,
+      "y": 0.8888888888888888,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 50.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 55.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 60.0,
+      "y": 0.8571428571428571,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 65.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 70.0,
+      "y": 0.8585858585858586,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 75.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training step": 5.0,
+      "y": 0.8686868686868687,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 10.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 15.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 20.0,
+      "y": 0.98989898989899,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 25.0,
+      "y": 0.9696969696969697,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 30.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 35.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 40.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 45.0,
+      "y": 0.9387755102040817,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 50.0,
+      "y": 0.9292929292929293,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 55.0,
+      "y": 0.9292929292929293,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 60.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 65.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 70.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 75.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7959183673469388,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 10.0,
+      "y": 0.9595959595959596,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 15.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 20.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 25.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 30.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 35.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 40.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 45.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 50.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 55.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 60.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 65.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 70.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 75.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training step": 5.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7474747474747475,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 15.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 20.0,
+      "y": 0.8787878787878788,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 25.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 30.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 35.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 40.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 45.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 50.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 55.0,
+      "y": 0.9191919191919192,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 60.0,
+      "y": 0.9393939393939394,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 65.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 70.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 75.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7575757575757576,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7708333333333334,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 15.0,
+      "y": 0.8775510204081632,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 20.0,
+      "y": 0.8673469387755102,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 25.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 30.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 35.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 40.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 45.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 50.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 55.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 60.0,
+      "y": 0.9494949494949495,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 65.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 70.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 75.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training step": 5.0,
+      "y": 0.71,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 10.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 15.0,
+      "y": 0.9494949494949495,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 20.0,
+      "y": 0.9191919191919192,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 25.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 30.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 35.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 40.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 45.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 50.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 55.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 60.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 65.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 70.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 75.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training step": 5.0,
+      "y": 0.7171717171717171,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 10.0,
+      "y": 0.9292929292929293,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 15.0,
+      "y": 0.9393939393939394,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 20.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 25.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 30.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 35.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 40.0,
+      "y": 0.9595959595959596,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 45.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 50.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 55.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 60.0,
+      "y": 0.9191919191919192,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 65.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 70.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 75.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training step": 5.0,
+      "y": 0.8686868686868687,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "training step": 25.0,
+      "y": 0.91,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "training step": 10.0,
+      "y": 0.73,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "training step": 10.0,
+      "y": 0.71,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6464646464646465,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "training step": 25.0,
+      "y": 0.95,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "training step": 35.0,
+      "y": 0.95,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "training step": 10.0,
+      "y": 0.82,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "training step": 10.0,
+      "y": 0.86,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "training step": 5.0,
+      "y": 0.76,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "training step": 5.0,
+      "y": 0.77,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "training step": 5.0,
+      "y": 0.8686868686868687,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 10.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 15.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 20.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 25.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 30.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 40.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 55.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 60.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 65.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 70.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 75.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training step": 5.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 10.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 15.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 20.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 25.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 30.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 35.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 40.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 45.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 50.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 55.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 60.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 65.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 70.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training step": 5.0,
+      "y": 0.45,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 10.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 15.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 25.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 30.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 35.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 45.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 60.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 75.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training step": 5.0,
+      "y": 0.47,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 10.0,
+      "y": 0.71,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 15.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 20.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 30.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 35.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 40.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 45.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 50.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 60.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 65.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6464646464646465,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 25.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 30.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 45.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 50.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 55.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 60.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 65.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 10.0,
+      "y": 0.9797979797979798,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 15.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 20.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 30.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 35.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 40.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 45.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 50.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 55.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 60.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 65.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training step": 5.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 10.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 20.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 25.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 30.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 35.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 40.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 50.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 55.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 60.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 65.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 75.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 10.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 15.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 30.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 35.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 40.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 45.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 50.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 55.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 60.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 65.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 70.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 75.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training step": 5.0,
+      "y": 0.5,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 10.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 15.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 20.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 25.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 30.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 40.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 50.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training step": 5.0,
+      "y": 0.52,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 10.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 15.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 30.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 35.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 50.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 60.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training step": 5.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 20.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 30.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 40.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training step": 5.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 30.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 35.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 40.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 45.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 55.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 65.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6363636363636364,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6464646464646465,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "training step": 15.0,
+      "y": 0.61,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "training step": 15.0,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "training step": 10.0,
+      "y": 0.67,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "training step": 25.0,
+      "y": 0.86,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "training step": 25.0,
+      "y": 0.85,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "training step": 15.0,
+      "y": 0.79,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "training step": 10.0,
+      "y": 0.61,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "training step": 20.0,
+      "y": 0.85,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "training step": 15.0,
+      "y": 0.86,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6363636363636364,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 10.0,
+      "y": 0.42,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 15.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 20.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 25.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 30.0,
+      "y": 0.79,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 35.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 40.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 45.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 50.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 55.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 60.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 65.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 70.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 75.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "training step": 5.0,
+      "y": 0.6464646464646465,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 10.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 15.0,
+      "y": 0.48,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 20.0,
+      "y": 0.71,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 25.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 30.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 35.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 40.0,
+      "y": 0.7777777777777778,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 45.0,
+      "y": 0.71,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 50.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 55.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 60.0,
+      "y": 0.62,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 65.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 70.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 75.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "training step": 5.0,
+      "y": 0.24,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 10.0,
+      "y": 0.47,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 15.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 20.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 25.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 30.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 35.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 40.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 45.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 50.0,
+      "y": 0.57,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 55.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 60.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 65.0,
+      "y": 0.62,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 70.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 75.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "training step": 5.0,
+      "y": 0.24,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 10.0,
+      "y": 0.41,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 15.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 20.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 25.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 30.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 35.0,
+      "y": 0.62,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 40.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 45.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 50.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 55.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 60.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 65.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 70.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 75.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "training step": 5.0,
+      "y": 0.41,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 10.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 15.0,
+      "y": 0.59,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 20.0,
+      "y": 0.53,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 25.0,
+      "y": 0.59,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 30.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 35.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 40.0,
+      "y": 0.5858585858585859,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 45.0,
+      "y": 0.7070707070707071,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 50.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 55.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 60.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 65.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 70.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 75.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "training step": 5.0,
+      "y": 0.41,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 10.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 15.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 20.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 25.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 30.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 35.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 40.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 45.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 50.0,
+      "y": 0.6868686868686869,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 55.0,
+      "y": 0.71,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 60.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 65.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 70.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 75.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "training step": 5.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 10.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 15.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 20.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 25.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 30.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 35.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 40.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 45.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 50.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 55.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 60.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 65.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 70.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 75.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "training step": 5.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 10.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 15.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 20.0,
+      "y": 0.9595959595959596,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 25.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 30.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 35.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 40.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 45.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 50.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 55.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 60.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 65.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 70.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 75.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "training step": 5.0,
+      "y": 0.29,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 10.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 15.0,
+      "y": 0.79,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 20.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 25.0,
+      "y": 0.79,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 30.0,
+      "y": 0.78,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 35.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 40.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 45.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 50.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 55.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 60.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 65.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 70.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 75.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "training step": 5.0,
+      "y": 0.32,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 10.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 15.0,
+      "y": 0.81,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 20.0,
+      "y": 0.79,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 25.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 30.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 35.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 40.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 45.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 50.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 55.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 60.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 65.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 70.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 75.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "training step": 5.0,
+      "y": 0.52,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 10.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 15.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 20.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 25.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 30.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 35.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 40.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 45.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 50.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 55.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 60.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 65.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 70.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 75.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "training step": 5.0,
+      "y": 0.48,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 10.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 15.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 20.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 25.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 30.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 35.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 40.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 45.0,
+      "y": 0.88,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 50.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 55.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 60.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 65.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 70.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "training step": 75.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 95
+    }
+  ],
+  "n_series": 96,
+  "total_points": 768,
+  "text": {
+    "suptitle": "Sycophancy \u2014 Tier-1 ladders (band 0.6\u20130.85)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Bare",
+        "xlabel": "training step",
+        "ylabel": "Tier-1 judged rate",
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix",
+        "xlabel": "training step",
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ]
+      },
+      {
+        "title_left": "ICL prefix",
+        "xlabel": "training step",
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Persona",
+        "xlabel": "training step",
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ]
+      }
+    ]
+  }
+}

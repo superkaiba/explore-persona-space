@@ -1,0 +1,144 @@
+{
+  "verdict": "Confirmed",
+  "precision_limited": false,
+  "delta": {
+    "tuned_headline_committed_mlp": 0.10298156798418097,
+    "tuned_boot_center_recomputed_mlp": 0.10297352075576782,
+    "ci95": [
+      0.10132167916744947,
+      0.10464213527739048
+    ],
+    "ci95_half_width": 0.001660228054970507,
+    "oracle": {
+      "point": 0.10204269504974926,
+      "ci95": [
+        0.10039239842444658,
+        0.10369410421699285
+      ]
+    },
+    "core_grid_only": 0.10210488967485132,
+    "committed_reference_unrounded": 0.1021054801929803
+  },
+  "band_gaps": {
+    "committed": {
+      "1-16": 0.03546703988581303,
+      "17-64": 0.07863150910330863,
+      "65-128": 0.1159270140347684,
+      "129-256": 0.13757252007879334
+    },
+    "tuned": {
+      "1-16": 0.03584586832519397,
+      "17-64": 0.07927543368228628,
+      "65-128": 0.11647852916082359,
+      "129-256": 0.13882743630937494
+    },
+    "oracle": {
+      "1-16": 0.03545632918939208,
+      "17-64": 0.07859471660972168,
+      "65-128": 0.11585764873283047,
+      "129-256": 0.13749902423914134
+    }
+  },
+  "band_r2": {
+    "ridge_committed": {
+      "1-16": 0.8645417499307686,
+      "17-64": 0.7072033569631492,
+      "65-128": 0.5615396629193345,
+      "129-256": 0.4160659616807529
+    },
+    "ridge_tuned": {
+      "1-16": 0.8641629214913876,
+      "17-64": 0.7065594323841715,
+      "65-128": 0.5609881477932794,
+      "129-256": 0.41481104545017133
+    },
+    "ridge_oracle": {
+      "1-16": 0.8645524606271895,
+      "17-64": 0.7072401494567361,
+      "65-128": 0.5616090282212725,
+      "129-256": 0.4161394575204049
+    },
+    "mlp_committed": {
+      "1-16": 0.9000087898165816,
+      "17-64": 0.7858348660664577,
+      "65-128": 0.6774666769541029,
+      "129-256": 0.5536384817595461
+    }
+  },
+  "selection": {
+    "n_moved_off_parent": 256,
+    "n_heavier_than_parent": 127,
+    "n_lighter_than_parent": 129,
+    "frac_sel_eq_oracle": 0.0546875,
+    "med_abs_log10_lambda_gap_sel_vs_oracle": 6.7
+  },
+  "diagnostics": {
+    "d3": {
+      "s_min": 2447.1247568284543,
+      "s_max": 333099231.635175,
+      "ols_proximity_bound_lam_over_smin_plus_lam": 4.0864266873478083e-07,
+      "shrink_factor_percentiles": {
+        "0": 0.9999995913573312,
+        "1": 0.9999999170620932,
+        "5": 0.9999999514774892,
+        "25": 0.9999999767456617,
+        "50": 0.9999999891633178,
+        "75": 0.9999999960628886,
+        "100": 0.999999999996998
+      }
+    },
+    "fp16_floor_per_band_at_parent_lambda": {
+      "1-16": {
+        "mean_abs_r2_diff": 1.421594122447134e-06,
+        "mean_signed_r2_diff": 9.256291179232656e-07
+      },
+      "17-64": {
+        "mean_abs_r2_diff": 2.83175635427263e-06,
+        "mean_signed_r2_diff": 3.309766654751208e-07
+      },
+      "65-128": {
+        "mean_abs_r2_diff": 4.416530122444348e-06,
+        "mean_signed_r2_diff": 7.037871889801345e-07
+      },
+      "129-256": {
+        "mean_abs_r2_diff": 5.2577770507248114e-06,
+        "mean_signed_r2_diff": -5.547679311776813e-07
+      }
+    },
+    "mf1_store_consistency_max_abs": 0.0
+  },
+  "lambda_grid": {
+    "realized_len": 38,
+    "min": 1e-09,
+    "max": 100000000.0,
+    "parent_index": 11
+  },
+  "bootstrap": {
+    "n_boot": 10000,
+    "seed": 148202,
+    "paired_over_contexts": true,
+    "direction_means_frozen_at_full_holdout": true
+  },
+  "regime": {
+    "smoke": false,
+    "max_chunks": 0,
+    "holdout_n": 20000,
+    "fit_n": 0,
+    "n_boot": 10000,
+    "bootstrap_seed": 148202,
+    "device": "cuda",
+    "n_lambda_realized": 38
+  },
+  "notes": [
+    "gap g_d = committed MLP per-direction R2 (untouched) minus the per-direction val-tuned ridge R2; Delta = G(129-256) - G(1-16)",
+    "bootstrap draws recompute BOTH arms from persisted per-context residuals; the draw center uses the re-read MLP R2 (G1 (iv) bounds |reread - committed| median <= 1e-3)",
+    "holdout scoring casts predictions AND stored projections through fp16 (committed holdout_pred16 convention + MF-1 store consistency); val selection stays fp64 (parent selection convention)"
+  ],
+  "metadata": {
+    "git_commit": "f9085be7bf5c151c84c462ecd23e795fea1a9f0b",
+    "timestamp_utc": "2026-07-19T21:50:25.190421Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

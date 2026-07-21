@@ -1,0 +1,116 @@
+{
+  "arms": {
+    "sae_ctx": {
+      "mean__ridge": {
+        "pooled_r2": 0.6901409540488584,
+        "selected_lambda": 10000.0,
+        "val_r2": 0.6902852176801945,
+        "splithalf_rank_stability": 0.9136828076947904,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "max__ridge": {
+        "pooled_r2": 0.35888451827902956,
+        "selected_lambda": 100000.0,
+        "val_r2": 0.35949170770286787,
+        "splithalf_rank_stability": 0.993500564931654,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "frac__ridge": {
+        "pooled_r2": 0.5395329417404842,
+        "selected_lambda": 31622.776601683792,
+        "val_r2": 0.5395226943034817,
+        "splithalf_rank_stability": 0.9267047701767139,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "mean__mlp": {
+        "pooled_r2": -2107897883076.9233,
+        "epochs_ran": 35
+      },
+      "max__mlp": {
+        "pooled_r2": -10178451246.74001,
+        "epochs_ran": 26
+      },
+      "frac__mlp": {
+        "pooled_r2": -59395724118335.13,
+        "epochs_ran": 276
+      }
+    },
+    "sae_dense_in": {
+      "mean__ridge": {
+        "pooled_r2": 0.7216031048274667,
+        "selected_lambda": 3162.2776601683795,
+        "val_r2": 0.7192687620673748,
+        "splithalf_rank_stability": 0.9413376465670071,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "max__ridge": {
+        "pooled_r2": 0.38258581351392584,
+        "selected_lambda": 10000.0,
+        "val_r2": 0.3836502758148942,
+        "splithalf_rank_stability": 0.9932625257810317,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "frac__ridge": {
+        "pooled_r2": 0.5705839085908023,
+        "selected_lambda": 3162.2776601683795,
+        "val_r2": 0.5693744875758222,
+        "splithalf_rank_stability": 0.9433925431895985,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      },
+      "mean__mlp": {
+        "pooled_r2": 0.7387111516996565,
+        "epochs_ran": 71
+      },
+      "max__mlp": {
+        "pooled_r2": 0.40623884263955645,
+        "epochs_ran": 47
+      },
+      "frac__mlp": {
+        "pooled_r2": 0.5603047910541623,
+        "epochs_ran": 291
+      }
+    },
+    "sae_prefix_null": {
+      "mean__ridge": {
+        "pooled_r2": 0.00035432183456929334,
+        "selected_lambda": 0.001,
+        "val_r2": -3.697733651941704e-05,
+        "splithalf_rank_stability": 0.016959206596279645,
+        "splithalf_permutation_seed": 1482,
+        "n_feat_finite": 16384
+      }
+    }
+  },
+  "splithalf_permutation_seed": 1482,
+  "f_out": 16384,
+  "f_in": 8192,
+  "activity_floor": 1200,
+  "n_fit": 120000,
+  "n_val": 2000,
+  "n_holdout": 20000,
+  "prefix_dense_to_vx_r2": 0.00017324390703310488,
+  "encode_the_prediction": {
+    "note": "off-distribution SAE-of-mean transform applied EQUALLY to v_hat and v (labeled secondary)",
+    "ridge": {
+      "n": 20000,
+      "n_feat_finite": 1448
+    },
+    "mlp_w8192": {
+      "n": 20000,
+      "n_feat_finite": 1448
+    }
+  },
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-19T00:25:29.615861Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "attempt_id": "att-20260718-055220",
+  "hf_prefix": "issue1482_partial/att-20260718-055220/eval_results_issue_1482",
+  "seeded_units": [
+    "refit_full__ridge__seed0",
+    "refit_full__mlp_w8192__seed0",
+    "refit_full__mlp_w32768__seed0",
+    "refit_full__residual_skip__seed0",
+    "refit_full__krr_nystrom__seed0",
+    "refit_holdout__ridge__seed0",
+    "refit_holdout__mlp_w8192__seed0",
+    "refit_holdout__mlp_w32768__seed0",
+    "refit_holdout__residual_skip__seed0",
+    "refit_holdout__krr_nystrom__seed0",
+    "refit_holdout__mlp_w8192__seed43",
+    "refit_lmsys_transfer__ridge__seed0",
+    "refit_lmsys_transfer__mlp_w8192__seed0"
+  ],
+  "dropped_units": {},
+  "sae_fitness_seeded": true,
+  "split_identity": {
+    "n_total": 964844,
+    "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+    "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+    "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+    "sae_val_sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9"
+  },
+  "reconciled": true,
+  "git_commit": "ccb4de9abce47a57a48fca6aa5f9321b6151130c",
+  "timestamp_utc": "2026-07-18T12:08:31.368191Z",
+  "python_version": "3.11.10",
+  "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "metadata": {
+    "git_commit": "ccb4de9abce47a57a48fca6aa5f9321b6151130c",
+    "timestamp_utc": "2026-07-18T12:08:31.381370Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

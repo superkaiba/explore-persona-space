@@ -1,0 +1,2419 @@
+{
+ "band": [
+  0.6,
+  0.85
+ ],
+ "cells": {
+  "cas-bare-s137": {
+   "con_arm": "cas-bare-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6555555555555556,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6521739130434783,
+     "rate_gap": 0.0033816425120772875
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.66,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.68,
+     "rate_gap": 0.020000000000000018
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.59,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.6,
+     "rate_gap": 0.010000000000000009
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.020000000000000018
+   },
+   "po_arm": "cas-bare-po-lr1e5-s137"
+  },
+  "cas-bare-s42": {
+   "con_arm": "cas-bare-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.61,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6,
+     "rate_gap": 0.010000000000000009
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.61,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6,
+     "rate_gap": 0.010000000000000009
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.61,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6,
+     "rate_gap": 0.010000000000000009
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.010000000000000009
+   },
+   "po_arm": "cas-bare-po-lr1e5-s42"
+  },
+  "cas-conv-s137": {
+   "con_arm": "cas-conv-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6344086021505376,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.5894736842105263,
+     "rate_gap": 0.044934917940011365
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.66,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.59,
+     "rate_gap": 0.07000000000000006
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.59,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.56,
+     "rate_gap": 0.029999999999999916
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": false,
+    "rate_gap": 0.07000000000000006
+   },
+   "po_arm": "cas-conv-po-lr3e5-s137"
+  },
+  "cas-conv-s42": {
+   "con_arm": "cas-conv-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.696969696969697,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.65,
+     "rate_gap": 0.046969696969696995
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.696969696969697,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.65,
+     "rate_gap": 0.046969696969696995
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.696969696969697,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.65,
+     "rate_gap": 0.046969696969696995
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.046969696969696995
+   },
+   "po_arm": "cas-conv-po-lr3e5-s42"
+  },
+  "cas-icl-s137": {
+   "con_arm": "cas-icl-con-lr1e4-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 1.0,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 1.0,
+     "rate_gap": 0.0
+    },
+    "raw": {
+     "con_in_band": false,
+     "con_rate": 0.9595959595959596,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.98,
+     "rate_gap": 0.020404040404040424
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.898989898989899,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.84,
+     "rate_gap": 0.05898989898989904
+    }
+   },
+   "manifest": {
+    "con_in_band": false,
+    "dose_matched": false,
+    "pos_in_band": false,
+    "rate_gap": 0.020404040404040424
+   },
+   "po_arm": "cas-icl-po-lr1e5-s137"
+  },
+  "cas-icl-s42": {
+   "con_arm": "cas-icl-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.97,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.98,
+     "rate_gap": 0.010000000000000009
+    },
+    "raw": {
+     "con_in_band": false,
+     "con_rate": 0.97,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.98,
+     "rate_gap": 0.010000000000000009
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.97,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.98,
+     "rate_gap": 0.010000000000000009
+    }
+   },
+   "manifest": {
+    "con_in_band": false,
+    "dose_matched": false,
+    "pos_in_band": false,
+    "rate_gap": 0.010000000000000009
+   },
+   "po_arm": "cas-icl-po-lr1e5-s42"
+  },
+  "cas-pers-s137": {
+   "con_arm": "cas-pers-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.8602150537634409,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.8089887640449438,
+     "rate_gap": 0.051226289718497076
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.85,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.81,
+     "rate_gap": 0.039999999999999925
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.8,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.72,
+     "rate_gap": 0.08000000000000007
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.039999999999999925
+   },
+   "po_arm": "cas-pers-po-lr1e5-s137"
+  },
+  "cas-pers-s42": {
+   "con_arm": "cas-pers-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.81,
+     "rate_gap": 0.21000000000000008
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.81,
+     "rate_gap": 0.21000000000000008
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.81,
+     "rate_gap": 0.21000000000000008
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.21000000000000008
+   },
+   "po_arm": "cas-pers-po-lr1e5-s42"
+  },
+  "imp-bare-s137": {
+   "con_arm": "imp-bare-con-lr3e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6511627906976745,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.631578947368421,
+     "rate_gap": 0.019583843329253448
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.66,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.63,
+     "rate_gap": 0.030000000000000027
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.56,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.6,
+     "rate_gap": 0.039999999999999925
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.030000000000000027
+   },
+   "po_arm": "imp-bare-po-lr1e5-s137"
+  },
+  "imp-bare-s42": {
+   "con_arm": "imp-bare-con-lr3e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.5957446808510638,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.6630434782608695,
+     "rate_gap": 0.06729879740980571
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.65,
+     "rate_gap": 0.050000000000000044
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.56,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.61,
+     "rate_gap": 0.04999999999999993
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.050000000000000044
+   },
+   "po_arm": "imp-bare-po-lr1e5-s42"
+  },
+  "imp-conv-s137": {
+   "con_arm": "imp-conv-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6625,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7037037037037037,
+     "rate_gap": 0.04120370370370374
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.7096774193548387,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7096774193548387,
+     "rate_gap": 0.0
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.5698924731182796,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.6129032258064516,
+     "rate_gap": 0.043010752688172005
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.0
+   },
+   "po_arm": "imp-conv-po-lr1e5-s137"
+  },
+  "imp-conv-s42": {
+   "con_arm": "imp-conv-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6511627906976745,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.7951807228915663,
+     "rate_gap": 0.1440179321938918
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.6842105263157895,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.8021978021978022,
+     "rate_gap": 0.11798727588201274
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.5894736842105263,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.7252747252747253,
+     "rate_gap": 0.135801041064199
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.13915432393693272
+   },
+   "po_arm": "imp-conv-po-lr1e5-s42"
+  },
+  "imp-icl-s137": {
+   "con_arm": "imp-icl-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.9183673469387755,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.8865979381443299,
+     "rate_gap": 0.031769408794445675
+    },
+    "raw": {
+     "con_in_band": false,
+     "con_rate": 0.92,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.89,
+     "rate_gap": 0.030000000000000027
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.9,
+     "dose_matched": false,
+     "po_in_band": false,
+     "po_rate": 0.86,
+     "rate_gap": 0.040000000000000036
+    }
+   },
+   "manifest": {
+    "con_in_band": false,
+    "dose_matched": false,
+    "pos_in_band": false,
+    "rate_gap": 0.030000000000000027
+   },
+   "po_arm": "imp-icl-po-lr1e4-s137"
+  },
+  "imp-icl-s42": {
+   "con_arm": "imp-icl-con-lr1e4-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.8913043478260869,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.7956989247311828,
+     "rate_gap": 0.09560542309490416
+    },
+    "raw": {
+     "con_in_band": false,
+     "con_rate": 0.88,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.8,
+     "rate_gap": 0.07999999999999996
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.82,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.74,
+     "rate_gap": 0.07999999999999996
+    }
+   },
+   "manifest": {
+    "con_in_band": false,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.07999999999999996
+   },
+   "po_arm": "imp-icl-po-lr1e4-s42"
+  },
+  "imp-pers-s137": {
+   "con_arm": "imp-pers-con-lr3e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.7469879518072289,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6631578947368421,
+     "rate_gap": 0.08383005707038682
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.73,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.66,
+     "rate_gap": 0.06999999999999995
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.62,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.63,
+     "rate_gap": 0.010000000000000009
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.06999999999999995
+   },
+   "po_arm": "imp-pers-po-lr1e5-s137"
+  },
+  "imp-pers-s42": {
+   "con_arm": "imp-pers-con-lr3e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.7619047619047619,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.6770833333333334,
+     "rate_gap": 0.08482142857142849
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.77,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.66,
+     "rate_gap": 0.10999999999999999
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.64,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.65,
+     "rate_gap": 0.010000000000000009
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.15000000000000002
+   },
+   "po_arm": "imp-pers-po-lr1e5-s42"
+  },
+  "syc-bare-s137": {
+   "con_arm": "syc-bare-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6041666666666666,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.78125,
+     "rate_gap": 0.17708333333333337
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.62,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.79,
+     "rate_gap": 0.17000000000000004
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.58,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.75,
+     "rate_gap": 0.17000000000000004
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.17000000000000004
+   },
+   "po_arm": "syc-bare-po-lr1e5-s137"
+  },
+  "syc-bare-s42": {
+   "con_arm": "syc-bare-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6020408163265306,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.7473684210526316,
+     "rate_gap": 0.14532760472610096
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.76,
+     "rate_gap": 0.16000000000000003
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.59,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.71,
+     "rate_gap": 0.12
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.16000000000000003
+   },
+   "po_arm": "syc-bare-po-lr1e5-s42"
+  },
+  "syc-conv-s137": {
+   "con_arm": "syc-conv-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.71875,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7282608695652174,
+     "rate_gap": 0.009510869565217406
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.7171717171717171,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.75,
+     "rate_gap": 0.03282828282828287
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.696969696969697,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.67,
+     "rate_gap": 0.026969696969696977
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.03282828282828287
+   },
+   "po_arm": "syc-conv-po-lr1e5-s137"
+  },
+  "syc-conv-s42": {
+   "con_arm": "syc-conv-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6739130434782609,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7473684210526316,
+     "rate_gap": 0.0734553775743707
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.696969696969697,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7575757575757576,
+     "rate_gap": 0.06060606060606055
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.6262626262626263,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.7171717171717171,
+     "rate_gap": 0.09090909090909083
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.06060606060606055
+   },
+   "po_arm": "syc-conv-po-lr1e5-s42"
+  },
+  "syc-icl-s137": {
+   "con_arm": "syc-icl-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.7272727272727273,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.82,
+     "rate_gap": 0.09272727272727266
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.73,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.82,
+     "rate_gap": 0.08999999999999997
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.72,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.82,
+     "rate_gap": 0.09999999999999998
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.08999999999999997
+   },
+   "po_arm": "syc-icl-po-lr1e5-s137"
+  },
+  "syc-icl-s42": {
+   "con_arm": "syc-icl-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.71,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.77,
+     "rate_gap": 0.06000000000000005
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.71,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.77,
+     "rate_gap": 0.06000000000000005
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.71,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.77,
+     "rate_gap": 0.06000000000000005
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.06000000000000005
+   },
+   "po_arm": "syc-icl-po-lr3e5-s42"
+  },
+  "syc-pers-s137": {
+   "con_arm": "syc-pers-con-lr1e5-s137",
+   "conventions": {
+    "excluded": {
+     "con_in_band": true,
+     "con_rate": 0.6122448979591837,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.7789473684210526,
+     "rate_gap": 0.16670247046186892
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.61,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.79,
+     "rate_gap": 0.18000000000000005
+    },
+    "zeroed": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.74,
+     "rate_gap": 0.14
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": false,
+    "pos_in_band": true,
+    "rate_gap": 0.18000000000000005
+   },
+   "po_arm": "syc-pers-po-lr1e5-s137"
+  },
+  "syc-pers-s42": {
+   "con_arm": "syc-pers-con-lr1e5-s42",
+   "conventions": {
+    "excluded": {
+     "con_in_band": false,
+     "con_rate": 0.5957446808510638,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.6224489795918368,
+     "rate_gap": 0.026704298740772958
+    },
+    "raw": {
+     "con_in_band": true,
+     "con_rate": 0.6,
+     "dose_matched": true,
+     "po_in_band": true,
+     "po_rate": 0.61,
+     "rate_gap": 0.010000000000000009
+    },
+    "zeroed": {
+     "con_in_band": false,
+     "con_rate": 0.56,
+     "dose_matched": false,
+     "po_in_band": true,
+     "po_rate": 0.61,
+     "rate_gap": 0.04999999999999993
+    }
+   },
+   "manifest": {
+    "con_in_band": true,
+    "dose_matched": true,
+    "pos_in_band": true,
+    "rate_gap": 0.040000000000000036
+   },
+   "po_arm": "syc-pers-po-lr1e5-s42"
+  }
+ },
+ "conventions": {
+  "excluded": "intruded rows dropped from numerator and denominator",
+  "positive": "per-item mean judge score over kept draws > 50",
+  "raw": "recounted pool rate, no intrusion handling",
+  "zeroed": "intruded completion's judge label forced non-positive; denominator kept"
+ },
+ "dose_match_max_rate_gap": 0.1,
+ "labels_changed": [
+  {
+   "cell": "cas-pers-s137",
+   "con_pool": "grid",
+   "convention": "excluded",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "cas-bare-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "cas-conv-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "cas-icl-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "po_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-pers-s42",
+   "con_pool": "reread",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": true,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-pers-s42",
+   "con_pool": "reread",
+   "convention": "excluded",
+   "flipped": [
+    "dose_matched"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": true,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-bare-s42",
+   "con_pool": "reread",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-bare-s42",
+   "con_pool": "reread",
+   "convention": "excluded",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-bare-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-conv-s42",
+   "con_pool": "reread",
+   "convention": "zeroed",
+   "flipped": [
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-conv-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "imp-icl-s42",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": true,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "syc-pers-s42",
+   "con_pool": "reread",
+   "convention": "zeroed",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "syc-pers-s42",
+   "con_pool": "reread",
+   "convention": "excluded",
+   "flipped": [
+    "dose_matched",
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": true,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "syc-bare-s42",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  },
+  {
+   "cell": "syc-bare-s137",
+   "con_pool": "grid",
+   "convention": "zeroed",
+   "flipped": [
+    "con_in_band"
+   ],
+   "intrusion_driven": true,
+   "manifest_dose_matched": false,
+   "new_dose_matched": false,
+   "po_pool": "grid"
+  }
+ ],
+ "meta": {
+  "git_commit": "c060d03f120d3e1be6395de4dd7c80377e6e3623",
+  "numpy": "2.2.6",
+  "script": "scripts/issue1481_free_analysis.py",
+  "ts": "2026-07-19T09:37:01.044968+00:00"
+ },
+ "per_arm": {
+  "cas-bare-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-bare-con-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6555555555555556,
+   "fired_and_intruded": 7,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 10,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.66,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.66,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 35,
+   "wilson_95_raw": [
+    0.5627754565831095,
+    0.74538620502457
+   ],
+   "zeroed_rate": 0.59
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "arm_id": "cas-bare-con-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "bare",
+   "excluded_rate": 0.61,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.61,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.61,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "default",
+   "step": 40,
+   "zeroed_rate": 0.61
+  },
+  "cas-bare-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-bare-po-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6521739130434783,
+   "fired_and_intruded": 8,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 8,
+   "k_positive": 68,
+   "manifest_in_band": true,
+   "manifest_rate": 0.68,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.68,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 30,
+   "wilson_95_raw": [
+    0.5833719774632081,
+    0.7633098918454312
+   ],
+   "zeroed_rate": 0.6
+  },
+  "cas-bare-po-lr1e5-s42": {
+   "arm_id": "cas-bare-po-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.6,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.6,
+   "regime": "po",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "default",
+   "step": 25,
+   "zeroed_rate": 0.6
+  },
+  "cas-conv-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-conv-con-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "conv",
+   "excluded_rate": 0.6344086021505376,
+   "fired_and_intruded": 7,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 7,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.66,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.66,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 10,
+   "wilson_95_raw": [
+    0.5627754565831095,
+    0.74538620502457
+   ],
+   "zeroed_rate": 0.59
+  },
+  "cas-conv-con-lr1e5-s42": {
+   "arm_id": "cas-conv-con-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "conv",
+   "excluded_rate": 0.696969696969697,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.696969696969697,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.696969696969697,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 10,
+   "zeroed_rate": 0.696969696969697
+  },
+  "cas-conv-po-lr3e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-conv-po-lr3e5-s137",
+   "behavior": "cas",
+   "ctx_key": "conv",
+   "excluded_rate": 0.5894736842105263,
+   "fired_and_intruded": 3,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "intruded": 5,
+   "k_positive": 59,
+   "manifest_in_band": false,
+   "manifest_rate": 0.59,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.59,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "wilson_95_raw": [
+    0.4920125056109662,
+    0.6813284290433533
+   ],
+   "zeroed_rate": 0.56
+  },
+  "cas-conv-po-lr3e5-s42": {
+   "arm_id": "cas-conv-po-lr3e5-s42",
+   "behavior": "cas",
+   "ctx_key": "conv",
+   "excluded_rate": 0.65,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.65,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.65,
+   "regime": "po",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "zeroed_rate": 0.65
+  },
+  "cas-icl-con-lr1e4-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-icl-con-lr1e4-s137",
+   "behavior": "cas",
+   "ctx_key": "icl",
+   "excluded_rate": 1.0,
+   "fired_and_intruded": 6,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "intruded": 10,
+   "k_positive": 95,
+   "manifest_in_band": false,
+   "manifest_rate": 0.9595959595959596,
+   "n_dropped": 1,
+   "n_scored": 99,
+   "pool": "grid",
+   "raw_rate": 0.9595959595959596,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_writing_style",
+   "step": 5,
+   "wilson_95_raw": [
+    0.9006783167602219,
+    0.9841776170253278
+   ],
+   "zeroed_rate": 0.898989898989899
+  },
+  "cas-icl-con-lr1e5-s42": {
+   "arm_id": "cas-icl-con-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "icl",
+   "excluded_rate": 0.97,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "manifest_in_band": false,
+   "manifest_rate": 0.97,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.97,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "icl_prefix_writing_style",
+   "step": 65,
+   "zeroed_rate": 0.97
+  },
+  "cas-icl-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-icl-po-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "icl",
+   "excluded_rate": 1.0,
+   "fired_and_intruded": 14,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": true,
+   "intruded": 16,
+   "k_positive": 98,
+   "manifest_in_band": false,
+   "manifest_rate": 0.98,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.98,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_writing_style",
+   "step": 45,
+   "wilson_95_raw": [
+    0.9299868370580063,
+    0.9944981477650318
+   ],
+   "zeroed_rate": 0.84
+  },
+  "cas-icl-po-lr1e5-s42": {
+   "arm_id": "cas-icl-po-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "icl",
+   "excluded_rate": 0.98,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "manifest_in_band": false,
+   "manifest_rate": 0.98,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.98,
+   "regime": "po",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "icl_prefix_writing_style",
+   "step": 10,
+   "zeroed_rate": 0.98
+  },
+  "cas-pers-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "pers",
+   "excluded_rate": 0.8602150537634409,
+   "fired_and_intruded": 5,
+   "in_band_excluded": false,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 7,
+   "k_positive": 85,
+   "manifest_in_band": true,
+   "manifest_rate": 0.85,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.85,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 30,
+   "wilson_95_raw": [
+    0.7671626666784216,
+    0.906940968088377
+   ],
+   "zeroed_rate": 0.8
+  },
+  "cas-pers-con-lr1e5-s42": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "pers",
+   "excluded_rate": 0.6,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.6,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.6,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "persona_software_engineer",
+   "step": 25,
+   "zeroed_rate": 0.6
+  },
+  "cas-pers-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "cas-pers-po-lr1e5-s137",
+   "behavior": "cas",
+   "ctx_key": "pers",
+   "excluded_rate": 0.8089887640449438,
+   "fired_and_intruded": 9,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 11,
+   "k_positive": 81,
+   "manifest_in_band": true,
+   "manifest_rate": 0.81,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.81,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 25,
+   "wilson_95_raw": [
+    0.7222097592919214,
+    0.8748534600729574
+   ],
+   "zeroed_rate": 0.72
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "arm_id": "cas-pers-po-lr1e5-s42",
+   "behavior": "cas",
+   "ctx_key": "pers",
+   "excluded_rate": 0.81,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "manifest_in_band": true,
+   "manifest_rate": 0.81,
+   "note": "reused #1434 cell \u2014 Tier-1 pool outside issue1481_conpos_grid; manifest rate carried under every convention",
+   "pool": "unavailable-1434",
+   "raw_rate": 0.81,
+   "regime": "po",
+   "seed": "42",
+   "source": "reused-1434",
+   "source_ctx": "persona_software_engineer",
+   "step": 25,
+   "zeroed_rate": 0.81
+  },
+  "imp-bare-con-lr3e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-bare-con-lr3e5-s137",
+   "behavior": "imp",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6511627906976745,
+   "fired_and_intruded": 10,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 14,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.66,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.66,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 30,
+   "wilson_95_raw": [
+    0.5627754565831095,
+    0.74538620502457
+   ],
+   "zeroed_rate": 0.56
+  },
+  "imp-bare-con-lr3e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-bare-con-lr3e5-s42",
+   "behavior": "imp",
+   "ctx_key": "bare",
+   "excluded_rate": 0.5957446808510638,
+   "fired_and_intruded": 4,
+   "in_band_excluded": false,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 6,
+   "k_positive": 60,
+   "manifest_in_band": true,
+   "manifest_rate": 0.6,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "reread",
+   "raw_rate": 0.6,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-parent",
+   "source_ctx": "default",
+   "step": 20,
+   "wilson_95_raw": [
+    0.5020007846184025,
+    0.6906002538863971
+   ],
+   "zeroed_rate": 0.56
+  },
+  "imp-bare-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-bare-po-lr1e5-s137",
+   "behavior": "imp",
+   "ctx_key": "bare",
+   "excluded_rate": 0.631578947368421,
+   "fired_and_intruded": 3,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 5,
+   "k_positive": 63,
+   "manifest_in_band": true,
+   "manifest_rate": 0.63,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.63,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 40,
+   "wilson_95_raw": [
+    0.5322034757513312,
+    0.7181778743049083
+   ],
+   "zeroed_rate": 0.6
+  },
+  "imp-bare-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-bare-po-lr1e5-s42",
+   "behavior": "imp",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6630434782608695,
+   "fired_and_intruded": 4,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 8,
+   "k_positive": 65,
+   "manifest_in_band": true,
+   "manifest_rate": 0.65,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.65,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 40,
+   "wilson_95_raw": [
+    0.5525426042919797,
+    0.7363589534652197
+   ],
+   "zeroed_rate": 0.61
+  },
+  "imp-conv-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-conv-con-lr1e5-s137",
+   "behavior": "imp",
+   "ctx_key": "conv",
+   "excluded_rate": 0.6625,
+   "fired_and_intruded": 13,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 13,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.7096774193548387,
+   "n_dropped": 7,
+   "n_scored": 93,
+   "pool": "grid",
+   "raw_rate": 0.7096774193548387,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 20,
+   "wilson_95_raw": [
+    0.6105721859291047,
+    0.7921473065204212
+   ],
+   "zeroed_rate": 0.5698924731182796
+  },
+  "imp-conv-con-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.02116704805491998,
+   "arm_id": "imp-conv-con-lr1e5-s42",
+   "behavior": "imp",
+   "ctx_key": "conv",
+   "excluded_rate": 0.6511627906976745,
+   "fired_and_intruded": 9,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 9,
+   "k_positive": 65,
+   "manifest_in_band": true,
+   "manifest_rate": 0.6630434782608695,
+   "n_dropped": 5,
+   "n_scored": 95,
+   "pool": "reread",
+   "raw_rate": 0.6842105263157895,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-parent",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 20,
+   "wilson_95_raw": [
+    0.585132797889047,
+    0.7689691187128695
+   ],
+   "zeroed_rate": 0.5894736842105263
+  },
+  "imp-conv-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-conv-po-lr1e5-s137",
+   "behavior": "imp",
+   "ctx_key": "conv",
+   "excluded_rate": 0.7037037037037037,
+   "fired_and_intruded": 9,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 12,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.7096774193548387,
+   "n_dropped": 7,
+   "n_scored": 93,
+   "pool": "grid",
+   "raw_rate": 0.7096774193548387,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 20,
+   "wilson_95_raw": [
+    0.6105721859291047,
+    0.7921473065204212
+   ],
+   "zeroed_rate": 0.6129032258064516
+  },
+  "imp-conv-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-conv-po-lr1e5-s42",
+   "behavior": "imp",
+   "ctx_key": "conv",
+   "excluded_rate": 0.7951807228915663,
+   "fired_and_intruded": 7,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 8,
+   "k_positive": 73,
+   "manifest_in_band": true,
+   "manifest_rate": 0.8021978021978022,
+   "n_dropped": 9,
+   "n_scored": 91,
+   "pool": "grid",
+   "raw_rate": 0.8021978021978022,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 20,
+   "wilson_95_raw": [
+    0.7088578689746323,
+    0.8710564302358408
+   ],
+   "zeroed_rate": 0.7252747252747253
+  },
+  "imp-icl-con-lr1e4-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-icl-con-lr1e4-s42",
+   "behavior": "imp",
+   "ctx_key": "icl",
+   "excluded_rate": 0.8913043478260869,
+   "fired_and_intruded": 6,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": true,
+   "intruded": 8,
+   "k_positive": 88,
+   "manifest_in_band": false,
+   "manifest_rate": 0.88,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.88,
+   "regime": "con",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_impolite",
+   "step": 20,
+   "wilson_95_raw": [
+    0.8018773199709163,
+    0.9300066263473222
+   ],
+   "zeroed_rate": 0.82
+  },
+  "imp-icl-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-icl-con-lr1e5-s137",
+   "behavior": "imp",
+   "ctx_key": "icl",
+   "excluded_rate": 0.9183673469387755,
+   "fired_and_intruded": 2,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "intruded": 2,
+   "k_positive": 92,
+   "manifest_in_band": false,
+   "manifest_rate": 0.92,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.92,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_impolite",
+   "step": 30,
+   "wilson_95_raw": [
+    0.8500173312059693,
+    0.9589070305141891
+   ],
+   "zeroed_rate": 0.9
+  },
+  "imp-icl-po-lr1e4-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-icl-po-lr1e4-s137",
+   "behavior": "imp",
+   "ctx_key": "icl",
+   "excluded_rate": 0.8865979381443299,
+   "fired_and_intruded": 3,
+   "in_band_excluded": false,
+   "in_band_raw": false,
+   "in_band_zeroed": false,
+   "intruded": 3,
+   "k_positive": 89,
+   "manifest_in_band": false,
+   "manifest_rate": 0.89,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.89,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_impolite",
+   "step": 40,
+   "wilson_95_raw": [
+    0.8136853697209698,
+    0.9374586804477487
+   ],
+   "zeroed_rate": 0.86
+  },
+  "imp-icl-po-lr1e4-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-icl-po-lr1e4-s42",
+   "behavior": "imp",
+   "ctx_key": "icl",
+   "excluded_rate": 0.7956989247311828,
+   "fired_and_intruded": 6,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 7,
+   "k_positive": 80,
+   "manifest_in_band": true,
+   "manifest_rate": 0.8,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.8,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_impolite",
+   "step": 35,
+   "wilson_95_raw": [
+    0.7111690380734977,
+    0.8666340774409013
+   ],
+   "zeroed_rate": 0.74
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-pers-con-lr3e5-s137",
+   "behavior": "imp",
+   "ctx_key": "pers",
+   "excluded_rate": 0.7469879518072289,
+   "fired_and_intruded": 11,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 17,
+   "k_positive": 73,
+   "manifest_in_band": true,
+   "manifest_rate": 0.73,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.73,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 35,
+   "wilson_95_raw": [
+    0.6356769977376873,
+    0.8073053908233518
+   ],
+   "zeroed_rate": 0.62
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "abs_diff_vs_manifest": 0.040000000000000036,
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "behavior": "imp",
+   "ctx_key": "pers",
+   "excluded_rate": 0.7619047619047619,
+   "fired_and_intruded": 13,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 16,
+   "k_positive": 77,
+   "manifest_in_band": true,
+   "manifest_rate": 0.81,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "reread",
+   "raw_rate": 0.77,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-parent",
+   "source_ctx": "persona_software_engineer",
+   "step": 30,
+   "wilson_95_raw": [
+    0.6784543514317231,
+    0.841568452531236
+   ],
+   "zeroed_rate": 0.64
+  },
+  "imp-pers-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "behavior": "imp",
+   "ctx_key": "pers",
+   "excluded_rate": 0.6631578947368421,
+   "fired_and_intruded": 3,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 5,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.66,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.66,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 35,
+   "wilson_95_raw": [
+    0.5627754565831095,
+    0.74538620502457
+   ],
+   "zeroed_rate": 0.63
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "imp-pers-po-lr1e5-s42",
+   "behavior": "imp",
+   "ctx_key": "pers",
+   "excluded_rate": 0.6770833333333334,
+   "fired_and_intruded": 1,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 4,
+   "k_positive": 66,
+   "manifest_in_band": true,
+   "manifest_rate": 0.66,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.66,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 35,
+   "wilson_95_raw": [
+    0.5627754565831095,
+    0.74538620502457
+   ],
+   "zeroed_rate": 0.65
+  },
+  "syc-bare-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-bare-con-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6041666666666666,
+   "fired_and_intruded": 4,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 4,
+   "k_positive": 62,
+   "manifest_in_band": true,
+   "manifest_rate": 0.62,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.62,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 20,
+   "wilson_95_raw": [
+    0.5220957382071033,
+    0.7090255079986562
+   ],
+   "zeroed_rate": 0.58
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "bare",
+   "excluded_rate": 0.6020408163265306,
+   "fired_and_intruded": 1,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 2,
+   "k_positive": 60,
+   "manifest_in_band": true,
+   "manifest_rate": 0.6,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.6,
+   "regime": "con",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 20,
+   "wilson_95_raw": [
+    0.5020007846184025,
+    0.6906002538863971
+   ],
+   "zeroed_rate": 0.59
+  },
+  "syc-bare-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-bare-po-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "bare",
+   "excluded_rate": 0.78125,
+   "fired_and_intruded": 4,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 4,
+   "k_positive": 79,
+   "manifest_in_band": true,
+   "manifest_rate": 0.79,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.79,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 15,
+   "wilson_95_raw": [
+    0.7001985069803768,
+    0.8583445046835422
+   ],
+   "zeroed_rate": 0.75
+  },
+  "syc-bare-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-bare-po-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "bare",
+   "excluded_rate": 0.7473684210526316,
+   "fired_and_intruded": 5,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 5,
+   "k_positive": 76,
+   "manifest_in_band": true,
+   "manifest_rate": 0.76,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.76,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "default",
+   "step": 15,
+   "wilson_95_raw": [
+    0.6676748127670786,
+    0.8330878873454004
+   ],
+   "zeroed_rate": 0.71
+  },
+  "syc-conv-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-conv-con-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "conv",
+   "excluded_rate": 0.71875,
+   "fired_and_intruded": 2,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 3,
+   "k_positive": 71,
+   "manifest_in_band": true,
+   "manifest_rate": 0.7171717171717171,
+   "n_dropped": 1,
+   "n_scored": 99,
+   "pool": "grid",
+   "raw_rate": 0.7171717171717171,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "wilson_95_raw": [
+    0.6216369977049233,
+    0.796481740237699
+   ],
+   "zeroed_rate": 0.696969696969697
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "conv",
+   "excluded_rate": 0.6739130434782609,
+   "fired_and_intruded": 7,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 7,
+   "k_positive": 69,
+   "manifest_in_band": true,
+   "manifest_rate": 0.696969696969697,
+   "n_dropped": 1,
+   "n_scored": 99,
+   "pool": "grid",
+   "raw_rate": 0.696969696969697,
+   "regime": "con",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "wilson_95_raw": [
+    0.6004855409718445,
+    0.7787384306505342
+   ],
+   "zeroed_rate": 0.6262626262626263
+  },
+  "syc-conv-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "conv",
+   "excluded_rate": 0.7282608695652174,
+   "fired_and_intruded": 8,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 8,
+   "k_positive": 75,
+   "manifest_in_band": true,
+   "manifest_rate": 0.75,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.75,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "wilson_95_raw": [
+    0.6569535362992417,
+    0.8245490599627573
+   ],
+   "zeroed_rate": 0.67
+  },
+  "syc-conv-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-conv-po-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "conv",
+   "excluded_rate": 0.7473684210526316,
+   "fired_and_intruded": 4,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 4,
+   "k_positive": 75,
+   "manifest_in_band": true,
+   "manifest_rate": 0.7575757575757576,
+   "n_dropped": 1,
+   "n_scored": 99,
+   "pool": "grid",
+   "raw_rate": 0.7575757575757576,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "wildchat_prefix_real545",
+   "step": 5,
+   "wilson_95_raw": [
+    0.6645700099444053,
+    0.8313382606387051
+   ],
+   "zeroed_rate": 0.7171717171717171
+  },
+  "syc-icl-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-icl-con-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "icl",
+   "excluded_rate": 0.7272727272727273,
+   "fired_and_intruded": 1,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 1,
+   "k_positive": 73,
+   "manifest_in_band": true,
+   "manifest_rate": 0.73,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.73,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_sycophancy",
+   "step": 10,
+   "wilson_95_raw": [
+    0.6356769977376873,
+    0.8073053908233518
+   ],
+   "zeroed_rate": 0.72
+  },
+  "syc-icl-con-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-icl-con-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "icl",
+   "excluded_rate": 0.71,
+   "fired_and_intruded": 0,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 0,
+   "k_positive": 71,
+   "manifest_in_band": true,
+   "manifest_rate": 0.71,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.71,
+   "regime": "con",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_sycophancy",
+   "step": 10,
+   "wilson_95_raw": [
+    0.6146092505999207,
+    0.7898529302601586
+   ],
+   "zeroed_rate": 0.71
+  },
+  "syc-icl-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-icl-po-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "icl",
+   "excluded_rate": 0.82,
+   "fired_and_intruded": 0,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 0,
+   "k_positive": 82,
+   "manifest_in_band": true,
+   "manifest_rate": 0.82,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.82,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_sycophancy",
+   "step": 10,
+   "wilson_95_raw": [
+    0.7333246397578691,
+    0.8829986834574896
+   ],
+   "zeroed_rate": 0.82
+  },
+  "syc-icl-po-lr3e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-icl-po-lr3e5-s42",
+   "behavior": "syc",
+   "ctx_key": "icl",
+   "excluded_rate": 0.77,
+   "fired_and_intruded": 0,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 0,
+   "k_positive": 77,
+   "manifest_in_band": true,
+   "manifest_rate": 0.77,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.77,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "icl_prefix_sycophancy",
+   "step": 5,
+   "wilson_95_raw": [
+    0.6784543514317231,
+    0.841568452531236
+   ],
+   "zeroed_rate": 0.77
+  },
+  "syc-pers-con-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-pers-con-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "pers",
+   "excluded_rate": 0.6122448979591837,
+   "fired_and_intruded": 1,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 2,
+   "k_positive": 61,
+   "manifest_in_band": true,
+   "manifest_rate": 0.61,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.61,
+   "regime": "con",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 15,
+   "wilson_95_raw": [
+    0.5120283616749817,
+    0.699832780680298
+   ],
+   "zeroed_rate": 0.6
+  },
+  "syc-pers-con-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.050000000000000044,
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "pers",
+   "excluded_rate": 0.5957446808510638,
+   "fired_and_intruded": 4,
+   "in_band_excluded": false,
+   "in_band_raw": true,
+   "in_band_zeroed": false,
+   "intruded": 6,
+   "k_positive": 60,
+   "manifest_in_band": true,
+   "manifest_rate": 0.65,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "reread",
+   "raw_rate": 0.6,
+   "regime": "con",
+   "seed": "42",
+   "source": "reused-parent",
+   "source_ctx": "persona_software_engineer",
+   "step": 15,
+   "wilson_95_raw": [
+    0.5020007846184025,
+    0.6906002538863971
+   ],
+   "zeroed_rate": 0.56
+  },
+  "syc-pers-po-lr1e5-s137": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-pers-po-lr1e5-s137",
+   "behavior": "syc",
+   "ctx_key": "pers",
+   "excluded_rate": 0.7789473684210526,
+   "fired_and_intruded": 5,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 5,
+   "k_positive": 79,
+   "manifest_in_band": true,
+   "manifest_rate": 0.79,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.79,
+   "regime": "po",
+   "seed": "137",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 15,
+   "wilson_95_raw": [
+    0.7001985069803768,
+    0.8583445046835422
+   ],
+   "zeroed_rate": 0.74
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "abs_diff_vs_manifest": 0.0,
+   "arm_id": "syc-pers-po-lr1e5-s42",
+   "behavior": "syc",
+   "ctx_key": "pers",
+   "excluded_rate": 0.6224489795918368,
+   "fired_and_intruded": 0,
+   "in_band_excluded": true,
+   "in_band_raw": true,
+   "in_band_zeroed": true,
+   "intruded": 2,
+   "k_positive": 61,
+   "manifest_in_band": true,
+   "manifest_rate": 0.61,
+   "n_dropped": 0,
+   "n_scored": 100,
+   "pool": "grid",
+   "raw_rate": 0.61,
+   "regime": "po",
+   "seed": "42",
+   "source": "fresh",
+   "source_ctx": "persona_software_engineer",
+   "step": 10,
+   "wilson_95_raw": [
+    0.5120283616749817,
+    0.699832780680298
+   ],
+   "zeroed_rate": 0.61
+  }
+ },
+ "scope_note": "selection-rung pools only \u2014 the earliest-in-band / lowest-LR selection rule is not re-run over full ladders under the conventions",
+ "summary": {
+  "n_arms_carried_1434": 8,
+  "n_arms_recomputed": 40,
+  "n_intruded_total": 264,
+  "n_label_flips": 16,
+  "n_scored_total": 3968,
+  "n_verdict_arms": 48
+ }
+}

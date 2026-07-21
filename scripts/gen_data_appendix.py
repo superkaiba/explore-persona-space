@@ -286,7 +286,14 @@ def _hf_path(rel: str) -> str:
     """Download a file from the public HF data repo; fail-fast if missing."""
     from huggingface_hub import hf_hub_download
 
-    return hf_hub_download(DATA_REPO, rel, repo_type="dataset")
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    # #1547: transient-429/5xx retry (hf_hub's native backoff never covers
+    # 429); a genuinely-missing file (404 with response) still fails fast.
+    return retry_transient(
+        lambda: hf_hub_download(DATA_REPO, rel, repo_type="dataset"),
+        what=f"hf_hub_download({DATA_REPO}/{rel})",
+    )
 
 
 def _read_json(path: str | Path) -> object:
@@ -3035,14 +3042,21 @@ def upload_to_space(html_text: str, space_repo: str, issue: int) -> str:
             "set -a && source /home/thomasjiralerspong/explore-persona-space/.env && set +a"
         )
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     api = HfApi(token=token)
     path_in_repo = f"issue_{issue}.html"
-    api.upload_file(
-        path_or_fileobj=html_text.encode("utf-8"),
-        path_in_repo=path_in_repo,
-        repo_id=space_repo,
-        repo_type="space",
-        commit_message=f"data appendix: issue {issue} (all samples)",
+    # #1547: the commit API has NO native retry in hf_hub 0.36.2 — ride the
+    # shared Retry-After-aware envelope (non-transient errors raise first-try).
+    retry_transient(
+        lambda: api.upload_file(
+            path_or_fileobj=html_text.encode("utf-8"),
+            path_in_repo=path_in_repo,
+            repo_id=space_repo,
+            repo_type="space",
+            commit_message=f"data appendix: issue {issue} (all samples)",
+        ),
+        what=f"upload_file({space_repo}/{path_in_repo})",
     )
     owner, name = space_repo.split("/", 1)
     served = f"https://{owner}-{name}.static.hf.space/{path_in_repo}"

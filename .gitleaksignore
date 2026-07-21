@@ -1,0 +1,28 @@
+# .gitleaksignore — gitleaks false-positive fingerprints (file:rule:line, staged-mode shape).
+#
+# 2026-07-20 (#1345 merge of main @ ef63b15efa): 20 findings in pre-existing main-side
+# judge-label artifacts (eval_results/issue_1482/judge_labels/...) — third-party corpus
+# text (user-pasted Firebase/web configs quoted inside judge items), not project secrets.
+# These files landed on main before the gitleaks hook (3ae97a787c) existed; the merge's
+# staged re-scan re-flags them. Per .gitleaks.toml header: allowlist known-safe files
+# rather than loosening rules.
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:gcp-api-key:69774
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:gcp-api-key:69775
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:gcp-api-key:70018
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:gcp-api-key:70020
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:66689
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:66690
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:68133
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:68135
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:68378
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:68379
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:68380
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:72408
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:72409
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:72410
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85308
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85310
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85313
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85315
+eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/results_msgbatch_01CLkRfsfys7XVnksYbBtf4u.json:generic-api-key:14044
+eval_results/issue_1482/judge_labels/raw/main.jsonl:generic-api-key:13562

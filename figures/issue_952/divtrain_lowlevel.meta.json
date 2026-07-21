@@ -1,0 +1,1388 @@
+{
+  "commit": "61f27a0024",
+  "created": "2026-07-17T21:53:52Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "Per-context R\u00b2, pool-only maps": 0.05988718115633873,
+      "Per-context R\u00b2, diversity-augmented maps": 0.07960754519170565,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13247539273620357,
+      "Per-context R\u00b2, diversity-augmented maps": 0.17339504929792748,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12152281307385282,
+      "Per-context R\u00b2, diversity-augmented maps": 0.24609085128533092,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07835083461237613,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0982890555802245,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10862977961316922,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2454553328192367,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1457410284884615,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1534129953704827,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15265527905162446,
+      "Per-context R\u00b2, diversity-augmented maps": 0.142765494080219,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08047991184356318,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13277262864868866,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": -0.009038248497132528,
+      "Per-context R\u00b2, diversity-augmented maps": 0.030060798663166133,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08008123157442493,
+      "Per-context R\u00b2, diversity-augmented maps": 0.12778277539552674,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11731532997776406,
+      "Per-context R\u00b2, diversity-augmented maps": 0.19374564684947126,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09565915522239932,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0951445708680525,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15222343046917697,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2518822997283757,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07705063957728209,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13796569801714031,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13127079445446377,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1511799334808076,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12266273334523314,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14972339129037637,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15186560385437142,
+      "Per-context R\u00b2, diversity-augmented maps": 0.17053643679143693,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14629567235045104,
+      "Per-context R\u00b2, diversity-augmented maps": 0.19831678296036692,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12014813720304462,
+      "Per-context R\u00b2, diversity-augmented maps": 0.16344453836686623,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08125536498915531,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13720171745903165,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11288039881673217,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15397622886615958,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1082957963211687,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15144298486960683,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08419601196727666,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08015245079152744,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13290271356006766,
+      "Per-context R\u00b2, diversity-augmented maps": 0.16377597271872346,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12017024117833863,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15937887993275013,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14476494673415963,
+      "Per-context R\u00b2, diversity-augmented maps": 0.18954560756842187,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13802179490163147,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15711081453846143,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.040200100067461886,
+      "Per-context R\u00b2, diversity-augmented maps": 0.058265736503663734,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08906744235676112,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14794759351042575,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10633329699676375,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2509614142437726,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09454227630054968,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08953888096504359,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13928327847463728,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1860215433116107,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.17039560841744927,
+      "Per-context R\u00b2, diversity-augmented maps": 0.16970309663978023,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1210743017511191,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1723335058896187,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08527159648820126,
+      "Per-context R\u00b2, diversity-augmented maps": 0.12182924962077446,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1612068088812022,
+      "Per-context R\u00b2, diversity-augmented maps": 0.3432232749920211,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.17275354944632026,
+      "Per-context R\u00b2, diversity-augmented maps": 0.21808157725420652,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10829094833150066,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11979739043378079,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.024219852656942487,
+      "Per-context R\u00b2, diversity-augmented maps": 0.07088499276630478,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14868036871735357,
+      "Per-context R\u00b2, diversity-augmented maps": 0.19111761330069688,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14456317918834616,
+      "Per-context R\u00b2, diversity-augmented maps": 0.17165020202274106,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10271562087561925,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11534313119457507,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08626633801248862,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1318404858698159,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.21419391909769026,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2999889968689696,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09652451229072234,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1563620072000832,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11165758027971251,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1451966524681153,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.2501642172912958,
+      "Per-context R\u00b2, diversity-augmented maps": 0.3168027607207724,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12405220864994171,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14955811838144728,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1339236728172034,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1647169483723887,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09648506300903215,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0895162535046996,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1062901038336792,
+      "Per-context R\u00b2, diversity-augmented maps": 0.21574414085806903,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09918737314364989,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15071708392379246,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09666331064314393,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09824111613652553,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07489401852915822,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11794016729133072,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11705851114900057,
+      "Per-context R\u00b2, diversity-augmented maps": 0.21759011245352688,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07849927323282635,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09829677947767901,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10712850916685779,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1309086353390947,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11585946766091781,
+      "Per-context R\u00b2, diversity-augmented maps": 0.15729431339986688,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09585709507353835,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11595628286078685,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08057963382830957,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10225206890984506,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.02809400858843525,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10591334990335566,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1311698999459321,
+      "Per-context R\u00b2, diversity-augmented maps": 0.19197120118421973,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0863556937266784,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11705092133284611,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12352712731189541,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14813576558415897,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12511164080595316,
+      "Per-context R\u00b2, diversity-augmented maps": 0.16483349604022757,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08706327245400336,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1469169559125636,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0761030679517668,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13545391393878592,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.04209274943319585,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10307337565231844,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08758953967127536,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11063984793068549,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.19091183350397034,
+      "Per-context R\u00b2, diversity-augmented maps": 0.32653387296601566,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1278164247145539,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1404372486815887,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.20771863316918382,
+      "Per-context R\u00b2, diversity-augmented maps": 0.19795509771029585,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09335043923438513,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1352203578703487,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07933866099724796,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08742110158224248,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14902747383065518,
+      "Per-context R\u00b2, diversity-augmented maps": 0.25572170141548844,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1406469797116715,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1573803308261834,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09506684746178373,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11047735031732275,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1419576197267881,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14924770705237766,
+      "series": "Own (n=78)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08068880306609216,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09596487714137192,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08376220623880748,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14181412352339118,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.17938187726688837,
+      "Per-context R\u00b2, diversity-augmented maps": 0.24124645702918834,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11113447573886037,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13031634935883574,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.06348354078225438,
+      "Per-context R\u00b2, diversity-augmented maps": -0.059798196108198365,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1124014116047406,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11631366717273972,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.113541426623612,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14198152365752814,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11853028717524716,
+      "Per-context R\u00b2, diversity-augmented maps": 0.12961897520811905,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09725842227218362,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09045413894025611,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.05401597058993357,
+      "Per-context R\u00b2, diversity-augmented maps": 0.015870239556463495,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.126334274777548,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11544162374979461,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09162233525412622,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13968901970700387,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12452765103268526,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2988890251893511,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.06475698015746956,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1261514501061518,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12952469201119232,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1961273387853778,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1002539181037232,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10622685560843936,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11773099162393641,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11640376946036579,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10717446467198788,
+      "Per-context R\u00b2, diversity-augmented maps": 0.18523025771413704,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08273680775025782,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10708654055528499,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.03914257725374137,
+      "Per-context R\u00b2, diversity-augmented maps": 0.04167212572972567,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.06102061979524598,
+      "Per-context R\u00b2, diversity-augmented maps": 0.03046300828705073,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08421254704618142,
+      "Per-context R\u00b2, diversity-augmented maps": 0.12827902970289062,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10671799825219153,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1485819203643467,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15444364224735407,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14038363599123294,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10269500493010097,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1453595334816915,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09584273053258563,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14714210934961125,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1183494316932927,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13125646627226595,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07480441459730769,
+      "Per-context R\u00b2, diversity-augmented maps": 0.06914282225507173,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15504008366509503,
+      "Per-context R\u00b2, diversity-augmented maps": 0.24429015159991274,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.15161545307989976,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2849058922669747,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07997234711553058,
+      "Per-context R\u00b2, diversity-augmented maps": 0.12456163968018319,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10024596074290049,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0600748500517031,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08520639854602796,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09682655742063728,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10015943454047482,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11662558789505073,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09372825176248256,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1326874237569592,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.16822427563302034,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2510375848126295,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11426948605657261,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2379670748111138,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08848235241874047,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11088085414800308,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07628716396569013,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0828370611020891,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.16969182859540244,
+      "Per-context R\u00b2, diversity-augmented maps": 0.23104008017429822,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10599031163213657,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10445674173949437,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.18707702683673144,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2575622444566168,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0659829804611316,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08744937520161611,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14435020730853088,
+      "Per-context R\u00b2, diversity-augmented maps": 0.3194722580330934,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11025735269194725,
+      "Per-context R\u00b2, diversity-augmented maps": 0.1364845067713618,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09895760312457691,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13875216592149908,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.16882115168095702,
+      "Per-context R\u00b2, diversity-augmented maps": 0.34030977818409325,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0898817123591038,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14841979523546645,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07173493486290106,
+      "Per-context R\u00b2, diversity-augmented maps": 0.07267247027967949,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.10963018374574063,
+      "Per-context R\u00b2, diversity-augmented maps": 0.10990296367230235,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.19702719958371528,
+      "Per-context R\u00b2, diversity-augmented maps": 0.3111199964152883,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09754762714979859,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13633392511800402,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.03955416889423713,
+      "Per-context R\u00b2, diversity-augmented maps": 0.004858152522862369,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.04664375588874092,
+      "Per-context R\u00b2, diversity-augmented maps": 0.07328598789637131,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.14104178293074088,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2437676800762717,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09461748014519622,
+      "Per-context R\u00b2, diversity-augmented maps": 0.06657329722892025,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09898140378270115,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09502536900647174,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11815719357363952,
+      "Per-context R\u00b2, diversity-augmented maps": 0.26105324659285745,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.125017712758704,
+      "Per-context R\u00b2, diversity-augmented maps": 0.13164657030658045,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11427622777514701,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11140693194150453,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": -0.02429586018748675,
+      "Per-context R\u00b2, diversity-augmented maps": -0.13011406462373354,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.12173666507477199,
+      "Per-context R\u00b2, diversity-augmented maps": 0.14186328573509732,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07413261540321325,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08088223059750899,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.16170762743249378,
+      "Per-context R\u00b2, diversity-augmented maps": 0.22498826000753358,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07566765849788892,
+      "Per-context R\u00b2, diversity-augmented maps": 0.06439024458926357,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0574478409099457,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11460027042265652,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.1631073358124454,
+      "Per-context R\u00b2, diversity-augmented maps": 0.22658712069397602,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.07596590712555817,
+      "Per-context R\u00b2, diversity-augmented maps": 0.0909611429549696,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11440768948260338,
+      "Per-context R\u00b2, diversity-augmented maps": 0.18773453039261168,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09873517469017323,
+      "Per-context R\u00b2, diversity-augmented maps": 0.025762655375691113,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.05910391694501893,
+      "Per-context R\u00b2, diversity-augmented maps": 0.04214449219523442,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11398380129431473,
+      "Per-context R\u00b2, diversity-augmented maps": 0.22806103936400113,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.19208481977363168,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2648320182757411,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.09355517060682417,
+      "Per-context R\u00b2, diversity-augmented maps": 0.09457090193482842,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.13020166393891075,
+      "Per-context R\u00b2, diversity-augmented maps": 0.2127249082131718,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.11368152802246423,
+      "Per-context R\u00b2, diversity-augmented maps": 0.11270577355054501,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.08937288452608272,
+      "Per-context R\u00b2, diversity-augmented maps": 0.08093596000799375,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.0880613178200006,
+      "Per-context R\u00b2, diversity-augmented maps": -0.017596521526999975,
+      "series": "External plain (n=78)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": -0.15011406462373353,
+      "Per-context R\u00b2, diversity-augmented maps": -0.15011406462373353,
+      "series": "No change (y = x)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-context R\u00b2, pool-only maps": 0.3632232749920211,
+      "Per-context R\u00b2, diversity-augmented maps": 0.3632232749920211,
+      "series": "No change (y = x)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.019634270692483802,
+      "External-plain-map R\u00b2 drop": 0.019822443342829343,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.06121871643764987,
+      "External-plain-map R\u00b2 drop": -0.03726545872514875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.013174982031231575,
+      "External-plain-map R\u00b2 drop": -0.030301373990754832,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.022505973702498627,
+      "External-plain-map R\u00b2 drop": 0.027368628377694604,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.009740812263214549,
+      "External-plain-map R\u00b2 drop": 0.009157685007127658,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.014465214872105392,
+      "External-plain-map R\u00b2 drop": 0.03116554719593101,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.029108296938322065,
+      "External-plain-map R\u00b2 drop": -0.018697537165211386,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.08551641216070349,
+      "External-plain-map R\u00b2 drop": 0.07469576414784007,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.0034852202634862994,
+      "External-plain-map R\u00b2 drop": 0.008870338237220832,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.007276496972116964,
+      "External-plain-map R\u00b2 drop": 0.003113726460955979,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.058780606102146526,
+      "External-plain-map R\u00b2 drop": 0.017839781767552076,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.005456487937643195,
+      "External-plain-map R\u00b2 drop": 0.06468869002300381,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.027224324545116363,
+      "External-plain-map R\u00b2 drop": 0.13682666313144232,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.0899258069599701,
+      "External-plain-map R\u00b2 drop": 0.04842272685624449,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.034683818849853165,
+      "External-plain-map R\u00b2 drop": -0.0445563033816071,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.13216803318919823,
+      "External-plain-map R\u00b2 drop": -0.027162226263045097,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.03732686797961893,
+      "External-plain-map R\u00b2 drop": 0.11313200301532189,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.005891614261942624,
+      "External-plain-map R\u00b2 drop": -0.03423486365952444,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.016733710794708645,
+      "External-plain-map R\u00b2 drop": 0.07967675845610378,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.1081007213970121,
+      "External-plain-map R\u00b2 drop": 0.01909703208315372,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.03451965714343819,
+      "External-plain-map R\u00b2 drop": -0.01766065946333384,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.026956000126967306,
+      "External-plain-map R\u00b2 drop": 0.062065298481397635,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.02599292376861495,
+      "External-plain-map R\u00b2 drop": -0.1313843836127302,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.046942086754653056,
+      "External-plain-map R\u00b2 drop": 0.06253415925999362,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.046761368287477234,
+      "External-plain-map R\u00b2 drop": 0.037477139268572435,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.04817416494737381,
+      "External-plain-map R\u00b2 drop": -0.12259472128869442,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.0924728583295783,
+      "External-plain-map R\u00b2 drop": 0.0845210314131759,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.004555783528556678,
+      "External-plain-map R\u00b2 drop": -0.05192611550846371,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.005781028034597346,
+      "External-plain-map R\u00b2 drop": 0.02018867548767833,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.01435977073398842,
+      "External-plain-map R\u00b2 drop": -0.091830098781291,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.029354005388886217,
+      "External-plain-map R\u00b2 drop": 0.03541466677630878,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": -0.15216803318919822,
+      "External-plain-map R\u00b2 drop": -0.15216803318919822,
+      "series": "Equal drop (y = x)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Own-map R\u00b2 drop (control \u2212 divergent)": 0.1568266631314423,
+      "External-plain-map R\u00b2 drop": 0.1568266631314423,
+      "series": "Equal drop (y = x)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 191,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-context in-domain lift (own 91%, ext 73% above line)",
+        "xlabel": "Per-context R\u00b2, pool-only maps",
+        "ylabel": "Per-context R\u00b2, diversity-augmented maps",
+        "legend_labels": [
+          "Own (n=78)",
+          "External plain (n=78)",
+          "No change (y = x)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "China per-pair drops, augmented maps (n=31)",
+        "xlabel": "Own-map R\u00b2 drop (control \u2212 divergent)",
+        "ylabel": "External-plain-map R\u00b2 drop",
+        "legend_labels": [
+          "Equal drop (y = x)"
+        ],
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "No change (y = x)",
+      "Own (n=78)",
+      "External plain (n=78)",
+      "Equal drop (y = x)"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "arm": "sae_dense_in",
+  "arm_doc": {
+    "mean__ridge": {
+      "pooled_r2": 0.7216031048274667,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2": 0.7192687620673748,
+      "splithalf_rank_stability": 0.9413376465670071,
+      "splithalf_permutation_seed": 1482,
+      "n_feat_finite": 16384
+    },
+    "max__ridge": {
+      "pooled_r2": 0.38258581351392584,
+      "selected_lambda": 10000.0,
+      "val_r2": 0.3836502758148942,
+      "splithalf_rank_stability": 0.9932625257810317,
+      "splithalf_permutation_seed": 1482,
+      "n_feat_finite": 16384
+    },
+    "frac__ridge": {
+      "pooled_r2": 0.5705839085908023,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2": 0.5693744875758222,
+      "splithalf_rank_stability": 0.9433925431895985,
+      "splithalf_permutation_seed": 1482,
+      "n_feat_finite": 16384
+    }
+  },
+  "scalars": {
+    "f_out": 16384,
+    "f_in": 8192,
+    "activity_floor": 1200,
+    "n_fit": 120000,
+    "n_val": 2000,
+    "n_holdout": 20000
+  },
+  "metadata": {
+    "git_commit": "0ca8e37f72ddee8860f147b421139ee45eabe395",
+    "timestamp_utc": "2026-07-18T23:32:58.393863Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "1"
+  }
+}

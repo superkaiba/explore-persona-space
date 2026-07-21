@@ -534,25 +534,36 @@ def upload_folder_scoped_verify(
     so ``*.json`` would otherwise sweep in ``partial/<regime>/*.json`` resume
     checkpoints — round-2 restartability units are local/crash-trap state, not
     canonical Hub artifacts).
+
+    Both Hub legs ride ``hub.retry_transient`` (#1426 crash-fix: two GCE runs
+    died on shared-data-repo 429s — the upload leg on the 256-commits/hr
+    rate limit, the verify leg on an HF concurrency-queue 429 raised DURING
+    ``list_repo_tree`` generator iteration). The verify uses
+    ``hub.list_repo_files_complete`` (retry-wrapped, materialized inside the
+    retry thunk, server-side scoped via ``path_in_repo``); non-transient
+    errors (404-class, storage-quota-403) still re-raise immediately, and
+    retry-budget exhaustion re-raises fail-loud (``EPM_HF_RETRY_BUDGET_S``).
     """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete, retry_transient
+
     api = HfApi()
-    api.upload_folder(
-        folder_path=str(folder),
-        path_in_repo=path_in_repo,
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        allow_patterns=allow_patterns,
-        ignore_patterns=ignore_patterns,
-        commit_message=commit_message,
+    retry_transient(
+        lambda: api.upload_folder(
+            folder_path=str(folder),
+            path_in_repo=path_in_repo,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            allow_patterns=allow_patterns,
+            ignore_patterns=ignore_patterns,
+            commit_message=commit_message,
+        ),
+        what=f"upload_folder({path_in_repo})",
     )
-    remote = {
-        e.path
-        for e in api.list_repo_tree(
-            HF_DATA_REPO, path_in_repo=path_in_repo, repo_type="dataset", recursive=True
-        )
-    }
+    remote = set(
+        list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset", path_in_repo=path_in_repo)
+    )
     expected = {f"{path_in_repo}/{n}" for n in expected_names}
     missing = expected - remote
     if missing:

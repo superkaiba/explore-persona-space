@@ -307,9 +307,10 @@ zero TCP) stays on the kill+replay ladder (gotchas.md hf-xet download-wedge
 entry), and flaky-egress accelerator handling stays the per-launch
 `HF_HUB_DISABLE_XET=1` kill-switch replay, never a default flip; (b) the
 verbatim prefix mirror is a staged LAYOUT — a consumer with a fixed local
-layout still owes the staged-layout consumer-open probe at reuse time
-(`.claude/rules/artifact-reuse.md` check (h)(iv), #928); "canonical helper"
-does not mean "layout-mapping solved".
+layout still owes the staged-layout consumer-open probe at reuse time, once
+per (source-family × staged consumer) pair
+(`.claude/rules/artifact-reuse.md` check (h)(iv), #928, #1481); "canonical
+helper" does not mean "layout-mapping solved".
 
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
@@ -354,6 +355,44 @@ the fix-engaged signal — worked example `_upload_with_transport_retry()` in
 ~35 min apart). IN-PROCESS complement of the #931 wedge ladder above, never a
 substitute: the seam retry fires when the upload RETURNS failed; the ladder
 fires when it HANGS (~0 TX, never returns).
+
+**Fleet-shared commit budget (#1547).** The 256-commits/hr rate limit is
+enforced against the SHARED repos (`superkaiba1/explore-persona-space` +
+`-data`), not per run — N concurrent upload-heavy runs share ONE budget, so
+per-run batching under the cap (rules (a)-(c) above) is necessary but NOT
+sufficient on a busy fleet day (2026-07-18: three independent HF-429 kills the
+same day at un-routed call sites). Rules: (a) size per-run commit cadence
+fleet-aware — per-cell `upload_folder` commits (the #664 rule below) with a
+soft per-run budget of ~≤60 commits/hr whenever other upload-heavy runs are
+live (≈256 / 4 concurrent); (b) the shared back-off mechanism IS
+`retry_transient`'s Retry-After-honoring envelope — when the shared budget
+saturates, every ROUTED caller self-throttles on the server hint instead of
+hammering (multiplicative server-driven back-off, additive resume), which
+works only to the extent call sites are actually routed; (c) therefore every
+NEW direct `hf_hub_download` / `upload_file` / `upload_folder` /
+`create_commit` / `push_to_hub` call in LIVE code — anything under
+`src/explore_persona_space/**` or `scripts/**` that is not in the frozen
+snapshot below, including newly-written per-issue drivers — rides
+`hub.retry_transient` (a 2-line lambda wrap at authoring time) or carries a
+`# NO_RETRY: <reason>` waiver; mechanically enforced by
+`workflow_lint.py --check-live-hf-retry-routing` (bundled into the no-flags
+default run); (d) during an observed fleet-wide 429 storm (multiple concurrent
+tasks logging HF 429s), do NOT launch additional big upload phases
+(`upload_dir_sharded` stores, checkpoint sweeps) — sequence them behind the
+storm; the in-flight envelopes will drain first. FROZEN per-issue
+drivers/modules present at #1547 implement time (the
+`HF_ROUTING_FROZEN_SNAPSHOT` allowlist in `workflow_lint.py`, ~297 files —
+`scripts/issue*` / `i<N>_*` / per-issue-named drivers,
+`src/**/experiments/**`, `analysis/issue*`) are historical reproducibility
+artifacts, exempt from retro-fitting: THIS clause is what creates that
+frozen-set policy; at REUSE time the routing requirement is picked back up by
+the existing artifact-reuse throughput check (i)
+(`.claude/rules/artifact-reuse.md` — "fix the SOURCE module, then reuse", the
+#1335/#1426 fix shape). Scope boundary (deliberate): bare `snapshot_download`
+/ `list_repo_files` sites are OUT of the lint's predicate — a 429 there is
+NOT a `--check-live-hf-retry-routing` failure; those call classes are
+governed by the scoped-listing + `retry_transient` recipes in
+`.claude/rules/gotchas.md` (#833) and the `--check-hub-verify-retry` lint.
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw

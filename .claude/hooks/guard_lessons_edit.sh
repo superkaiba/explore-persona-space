@@ -3,7 +3,7 @@
 # LESSONS.md byte budgets / index parity (task #1279).
 #
 # `.claude/rules/LESSONS.md` is the always-on index every session loads; #1269
-# added blocking byte-budget/ratchet/per-row/parity gates in
+# added blocking byte-budget/per-row/non-row/parity gates in
 # `scripts/workflow_lint.py::check_lessons_index`, but those fire only where
 # the lint runs (pre-commit in worktrees / PR path). A direct repo-root Edit +
 # explicit-path commit never runs the lint, so the budget could be silently
@@ -63,13 +63,12 @@ run_self_test() {
   # Fixture sizes come from the RESOLVED lint constants at runtime (never
   # hardcoded) so a future constant retune cannot silently break this suite.
   # This first `uv run` also warms the project env before any timed dispatch.
-  local consts ratchet headroom rowcap maxbytes
+  local consts nonrow rowcap maxbytes
   consts=$(cd "$REPO_ROOT" && uv run python "$HELPER" --print-constants 2>/dev/null)
-  ratchet=$(printf '%s' "$consts" | jq -r '._LESSONS_RATCHET_BYTES // empty' 2>/dev/null)
-  headroom=$(printf '%s' "$consts" | jq -r '._LESSONS_RATCHET_MAX_HEADROOM_BYTES // empty' 2>/dev/null)
+  nonrow=$(printf '%s' "$consts" | jq -r '._LESSONS_NONROW_MAX_BYTES // empty' 2>/dev/null)
   rowcap=$(printf '%s' "$consts" | jq -r '._LESSONS_ROW_MAX_BYTES // empty' 2>/dev/null)
   maxbytes=$(printf '%s' "$consts" | jq -r '._LESSONS_MAX_BYTES // empty' 2>/dev/null)
-  if [ -z "$ratchet" ] || [ -z "$headroom" ] || [ -z "$rowcap" ] || [ -z "$maxbytes" ]; then
+  if [ -z "$nonrow" ] || [ -z "$rowcap" ] || [ -z "$maxbytes" ]; then
     echo "self-test: FAIL (could not resolve lint constants via --print-constants)" >&2
     return 1
   fi
@@ -86,7 +85,10 @@ run_self_test() {
   local LESSONS="$TMP/.claude/rules/LESSONS.md"
   local WT_LESSONS="$TMP/.claude/worktrees/issue-9/.claude/rules/LESSONS.md"
 
-  local valid_total=$(( ratchet - headroom / 2 ))
+  # No minimum size — the retired ratchet's banked-slack floor is gone (#1504);
+  # mk_content padding is NON-ROW bytes, so the valid fixture must stay under
+  # the non-row budget (half of it leaves comfortable margin for the rows).
+  local valid_total=$(( nonrow / 2 ))
   local longtrig
   longtrig=$(head -c "$rowcap" /dev/zero | tr '\0' 'y')   # > rowcap once row prefix is added
 
@@ -118,7 +120,9 @@ run_self_test() {
   mk_content "$valid_total" "$ROW_A" "$ROW_B" '- ghost.md — trigger g' > "$TMP/stalerow.md"
   mk_content "$valid_total" "$ROW_A"                                   > "$TMP/missingrow.md"
   mk_content $(( maxbytes + 200 )) "$ROW_A" "$ROW_B"                   > "$TMP/overcap.md"
-  mk_content $(( ratchet + 100 )) "$ROW_A" "$ROW_B"                    > "$TMP/overratchet.md"
+  # non-row bytes ~= nonrow + 354 (> budget) while total ~= 1,300 stays far
+  # under the warn band/cap -> isolates the non-row scaffolding FAIL (#1504).
+  mk_content $(( nonrow + 400 )) "$ROW_A" "$ROW_B"                     > "$TMP/overnonrow.md"
   mk_content $(( maxbytes + 200 )) '- alpha.md — trigger a'            > "$TMP/wt_overcap.md"
   cp "$TMP/valid.md" "$LESSONS"   # on-disk current content for the Edit cases
 
@@ -168,12 +172,12 @@ run_self_test() {
 
   # §4e case table (the behavior-matrix source of truth)
   run_case "1: Write to unrelated path allowed"                0 "$(wp "$TMP/notes.md" "$TMP/valid.md")"
-  run_case "2: valid Write within ratchet band allowed"        0 "$(wp "$LESSONS" "$TMP/valid.md")"
+  run_case "2: valid Write allowed"                            0 "$(wp "$LESSONS" "$TMP/valid.md")"
   run_case "3: Write with row over per-row cap blocks"         2 "$(wp "$LESSONS" "$TMP/longrow.md")" '' 'per-row cap'
   run_case "4: Write with row naming nonexistent rule blocks"  2 "$(wp "$LESSONS" "$TMP/stalerow.md")" '' 'no matching'
   run_case "5: Write missing a row for a stub rule blocks"     2 "$(wp "$LESSONS" "$TMP/missingrow.md")" '' 'no index row'
   run_case "6: Write over the leanness cap blocks"             2 "$(wp "$LESSONS" "$TMP/overcap.md")" '' 'leanness cap'
-  run_case "7: Write past the growth ratchet blocks"           2 "$(wp "$LESSONS" "$TMP/overratchet.md")" '' 'grew past'
+  run_case "7: Write past the non-row scaffolding budget blocks" 2 "$(wp "$LESSONS" "$TMP/overnonrow.md")" '' 'non-row'
   run_case "8: Edit growing a row over the row cap blocks"     2 "$(ep "$LESSONS" 'trigger a' "$longtrig")" '' 'per-row cap'
   run_case "9: Edit with absent old_string allowed"            0 "$(ep "$LESSONS" 'ZZZ_NOT_PRESENT' 'zzz')"
   run_case "10: Edit with ambiguous old_string allowed"        0 "$(ep "$LESSONS" 'trigger' "$longtrig")"

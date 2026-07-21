@@ -236,6 +236,15 @@ def test_conflict_clean_abort_restores_swept_files(origin_and_clone, capsys):
     assert ident.read_text() == "SAME\n"  # rematerialized from origin blob
     assert diff.read_text() == "LOCAL\n"  # moved back from rescue
     assert "git worktree add --detach" in err  # scratch-worktree recipe printed
+    assert "merge -s ours" in err  # the already-landed/discard variant
+    assert "NEVER converge by hand" in err  # the hand-convergence warning
+    # Production-path stranded-commit threading (#1525 D2): the raise site
+    # mines origin/main..HEAD, echoes it into the message, AND records it in
+    # the report — without these, every planned test passes with the
+    # threading silently dropped.
+    assert "stranded local-only commits" in err
+    assert rep["stranded_local_commits"], rep
+    assert rep["stranded_local_commits"][0].split()[0] in err  # ≥1 sha line
 
 
 def test_conflict_report_frames_registry_conflict_as_expected(origin_and_clone, capsys):
@@ -254,6 +263,142 @@ def test_conflict_report_frames_registry_conflict_as_expected(origin_and_clone, 
     assert rc == 2
     assert "tasks/REGISTRY.json" in rep["conflicted_paths"]
     assert "EXPECTED on incident-scale divergence" in err
+
+
+# ─── 4b. Merge-form defusal recipe (#1525) ───────────────────────────────────
+
+
+def test_conflict_message_names_merge_defusal_and_never_hand_converge():
+    """Unit pin on the exit-2 message content (#1525 acceptance criterion 1):
+    every merge-form recipe element present; deny-listed/destructive tokens
+    absent from the message's COMMAND lines (the warning PROSE legitimately
+    contains the words ``git reset`` — presence-asserted, never absence-scanned)."""
+    msg = srr._conflict_message(["eval_results/INDEX.md"], ["abc1234 add row"])
+    # Presence: the merge-form scratch recipe, step by step.
+    assert "git worktree add --detach" in msg
+    assert "rev-parse main" in msg  # the local-tip capture
+    assert 'merge "$LOCAL_TIP"' in msg
+    assert "merge -s ours" in msg  # the already-landed/discard variant
+    assert "ALL the stranded commits' content ALREADY landed" in msg  # -s ours scoping
+    assert "push origin HEAD:main" in msg
+    assert "worktree remove --force" in msg  # scratch cleanup
+    assert "sync_repo_root.py" in msg  # the re-run step completing convergence
+    assert "NEVER converge by hand" in msg
+    assert "no `git reset` of any flavor" in msg  # the warning prose, verbatim
+    # The stranded-commit list: header + the injected sha line.
+    assert "stranded local-only commits (origin/main..HEAD):" in msg
+    assert "abc1234 add row" in msg
+    # Absence, COMMAND-LINE-SCOPED (#1525 Must-Fix 1): extract the lines whose
+    # lstripped text starts with a command prefix; NO command line may carry a
+    # deny-listed / reset-family token. Prose lines are never scanned — that
+    # scoping is what makes criteria 1(a)/(c) jointly satisfiable.
+    command_lines = [
+        ln for ln in msg.splitlines() if ln.lstrip().startswith(("git ", "LOCAL_TIP=", "uv run"))
+    ]
+    assert command_lines, "recipe must contain command lines"
+    for ln in command_lines:
+        for banned in ("reset", "clean -f", "checkout .", "restore .", "stash drop"):
+            assert banned not in ln, (banned, ln)
+    # The stranded list is capped: 12 entries show 10 + a remainder line.
+    many = [f"sha{i:04d} row {i}" for i in range(12)]
+    msg2 = srr._conflict_message(["a.txt"], many)
+    assert "sha0009" in msg2
+    assert "sha0010" not in msg2
+    assert "and 2 more" in msg2
+
+
+def _build_conflict_divergence(local: Path, other: Path) -> Path:
+    """Shared divergence for the defusal e2e pair: overlapping same-region
+    edits to conflict.txt (the negative control DEPENDS on the overlap — a
+    disjoint-region edit would rebase cleanly), plus a dirty tracked file and
+    an untracked file that must survive untouched."""
+    _write(local, "conflict.txt", "base\n")
+    _write(local, "notes.txt", "notes\n")
+    _commit(local, "conflict.txt", "notes.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(other, "conflict.txt", "origin-side\n")
+    _commit(other, "conflict.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "conflict.txt", "local-side\n")
+    _commit(local, "conflict.txt")
+    _write(local, "notes.txt", "dirty-notes\n")  # uncommitted → autostash
+    return _write(local, "scratch/untracked.txt", "keep-me\n")
+
+
+def test_conflict_defusal_merge_recipe_converges_next_sync(origin_and_clone, capsys):
+    """Durability pin (#1525 acceptance criterion 2): executing the printed
+    MERGE-form recipe's steps mechanically makes the next helper run
+    fast-forward to zero divergence under the helper's exact pull flags
+    (merge ancestry ⇒ nothing replays), with dirty + untracked root files
+    byte-unchanged. Pins the merge-ancestry⇒fast-forward semantics against
+    git-version / pull-flag drift."""
+    _origin, local, other = origin_and_clone
+    untracked = _build_conflict_divergence(local, other)
+
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 2
+    assert "MERGE-form defusal" in err
+
+    # Execute the recipe steps mechanically (scratch path inside tmp_path —
+    # the recipe's fixed /tmp/sync-defuse is an operator convenience).
+    scratch = local.parent / "sync-defuse"
+    _git(local, "fetch", "origin")
+    local_tip = _git(local, "rev-parse", "main").stdout.strip()
+    _git(local, "worktree", "add", "--detach", str(scratch), "origin/main")
+    merge = _git(scratch, "merge", local_tip, check=False)
+    assert merge.returncode != 0  # conflicts, as the recipe says
+    _write(scratch, "conflict.txt", "origin-side\nlocal-side\n")  # union resolution
+    _git(scratch, "add", "--", "conflict.txt")
+    _git(scratch, "commit", "-q", "-m", "merge: resolve root-sync conflict")
+    _git(scratch, "push", "-q", "origin", "HEAD:main")
+    _git(local, "worktree", "remove", "--force", str(scratch))
+
+    rc2, rep2, _err2 = _run(local, capsys=capsys)
+    assert rc2 == 0
+    assert rep2["state"] == "synced"
+    counts = _git(local, "rev-list", "--left-right", "--count", "origin/main...HEAD")
+    assert counts.stdout.split() == ["0", "0"]  # zero divergence — defused for good
+    assert (local / "conflict.txt").read_text() == "origin-side\nlocal-side\n"
+    assert (local / "notes.txt").read_text() == "dirty-notes\n"  # dirty file survives
+    assert untracked.read_text() == "keep-me\n"  # untracked file survives
+
+
+def test_conflict_rebase_style_recovery_leaves_stranded_commit_re_conflicting(
+    origin_and_clone, capsys
+):
+    """Negative control (#1525 acceptance criterion 3) — documents WHY the
+    recipe is merge-form: a scratch REBASE-style recovery (the old recipe's
+    typical realization) lands CONTENT but not ANCESTRY, so the stranded
+    local commit replays and re-conflicts on the very next sync (rc 2 again).
+    Depends on the fixture's same-region conflict.txt edits overlapping."""
+    _origin, local, other = origin_and_clone
+    _build_conflict_divergence(local, other)
+
+    rc, _rep, _err = _run(local, capsys=capsys)
+    assert rc == 2
+
+    scratch = local.parent / "rebase-defuse"
+    _git(local, "fetch", "origin")
+    local_tip = _git(local, "rev-parse", "main").stdout.strip()
+    _git(local, "worktree", "add", "--detach", str(scratch), local_tip)
+    reb = _git(scratch, "rebase", "origin/main", check=False)
+    assert reb.returncode != 0  # same-region replay conflicts
+    _write(scratch, "conflict.txt", "origin-side\nlocal-side\n")  # union resolution
+    _git(scratch, "add", "--", "conflict.txt")
+    subprocess.run(
+        ["git", "-C", str(scratch), "rebase", "--continue"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "GIT_EDITOR": "true"},
+    )
+    _git(scratch, "push", "-q", "origin", "HEAD:main")
+    _git(local, "worktree", "remove", "--force", str(scratch))
+
+    rc2, rep2, _err2 = _run(local, capsys=capsys)
+    assert rc2 == 2  # the stranded local commit re-conflicts — content-only landing
+    assert "conflict.txt" in rep2["conflicted_paths"]
 
 
 # ─── 5. Stranded autostash ───────────────────────────────────────────────────

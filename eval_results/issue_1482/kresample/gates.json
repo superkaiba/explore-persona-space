@@ -1,0 +1,72 @@
+{
+  "g1": {
+    "median_rel_abs_de2": 7.917333937096832e-05,
+    "p90_rel_abs_de2": 0.00023227717980110573,
+    "max_rel_abs_de2": 0.0010389938655690546,
+    "spearman": 0.9999996669999167,
+    "pass": true,
+    "thresholds": {
+      "median_rel_max": 0.001,
+      "spearman_min": 0.999
+    },
+    "convention": "streamed-v42-identity (no recapture)",
+    "enforced": true
+  },
+  "g2": {
+    "mean_rank_draw42": 2.989,
+    "per_arm_mean_rank": {
+      "en": 2.993,
+      "nonen": 2.985
+    },
+    "pass": true,
+    "tolerance": 0.15,
+    "enforced": false,
+    "role": "diagnostic (v68 \u2014 no estimator switch)"
+  },
+  "c1": {
+    "delta_sub_stored": -0.012168157861778495,
+    "ci": [
+      -0.025158308677152706,
+      0.0009522822713235903
+    ],
+    "delta_full": -0.017497679669843946,
+    "pass": true,
+    "enforced": true
+  },
+  "identity_max_rel_dev": 4.2488451856457567e-16,
+  "determinism_check": null,
+  "estimator_used": "fresh4-registered",
+  "ids_provenance": {
+    "capture_ids_version": 1,
+    "capture_convention": "parent-full-template-retok-span-incl-eot-tail",
+    "seed42_source": "streamed-parent-capture (phase vstream)",
+    "id_convention_diagnostic": {
+      "seam_merge_rate": 0.0,
+      "gen_id_retok_mismatch_rate": 0.93125
+    },
+    "seam_merge_rate_per_arm": {
+      "en": 0.0,
+      "nonen": 0.0
+    },
+    "gen_id_retok_mismatch_rate_per_arm": {
+      "en": 0.90575,
+      "nonen": 0.95675
+    },
+    "vstream_meta": {
+      "n": 2000,
+      "n_predicted_chunks": 1233,
+      "n_scanned_chunks": 1233,
+      "smoke_synth_transport": false
+    }
+  },
+  "n_contexts": 2000,
+  "n_dropped": 0,
+  "tiny_model": false,
+  "metadata": {
+    "git_commit": "7f8b47c81d54831b77c9d8a0b7f6a8d48c7420e9",
+    "timestamp_utc": "2026-07-19T17:19:20.509814Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

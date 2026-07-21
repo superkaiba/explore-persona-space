@@ -1,0 +1,49 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:15Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Judge-filter selection check",
+        "xlabel": "kept-rows R\u00b2 @ L19",
+        "ylabel": "all-rows R\u00b2 @ L19",
+        "annotations": [
+          "c1/I",
+          "c2/I",
+          "c3/I",
+          "c4/I",
+          "c5/I",
+          "c1/B",
+          "c2/B",
+          "c3/B",
+          "c4/B",
+          "c5/B"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

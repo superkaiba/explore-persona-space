@@ -1,0 +1,576 @@
+{
+  "metadata": {
+    "git_commit": "c74a997cc623713ea1b2b0d7d606c0d0da03cbfb",
+    "timestamp": "2026-07-19T01:14:25Z",
+    "seed": 0,
+    "n": 2993,
+    "script": "scripts/issue825_fit_cells.py"
+  },
+  "cell": {
+    "cell_id": "c4_exposition__pretrained__prefix",
+    "model": "pretrained",
+    "format": "c4_exposition",
+    "track": "s",
+    "slot_index": 1,
+    "target_turn_index": 0,
+    "model_key": "pretrained",
+    "format_key": "c4_exposition"
+  },
+  "row_allowlist_applied": true,
+  "n_allowlist": 2993,
+  "y_trace_cov_frozen": {
+    "14": 541.231726966003,
+    "18": 834.0995913228655,
+    "19": 1458.9564030086567,
+    "26": 19343.01865468466
+  },
+  "r2_per_layer_obs": [
+    0.001170126267192817,
+    0.006569776657277537,
+    0.00596901465757671,
+    0.007672671658337293,
+    0.007704200148371254,
+    0.009590731601609948,
+    0.01187187951272195,
+    0.009354806019849948,
+    0.009156536316449748,
+    0.004837051361469613,
+    0.005835374643240909,
+    0.008837275483261298,
+    0.007822854673937063,
+    0.011272638136588409,
+    0.008447095798211679,
+    0.01499897552330931,
+    0.013601184035273328,
+    0.014011488761548785,
+    0.017903701552714812,
+    0.01164156994572163,
+    0.012808201597639512,
+    0.010781568911217843,
+    0.007293549355274265,
+    0.005086768229795036,
+    0.0025771405597624364,
+    0.0024090759294368436,
+    0.0016322443548358878,
+    0.0006611159725645743
+  ],
+  "selection_symmetric": {
+    "obs_layer_max_r2": 0.017903701552714812,
+    "obs_argmax_layer": 18,
+    "null_layer_max_r2_per_draw": [
+      -0.007976191962512313,
+      -0.007427229135537283,
+      -0.008041539275520426,
+      -0.007611746566086985,
+      -0.007547048800268685,
+      -0.008349705775574368,
+      -0.007873996571679198,
+      -0.007766531152177514,
+      -0.007148112529024475,
+      -0.006779319725338961,
+      -0.006168977915764762,
+      -0.006646592554191422,
+      -0.007502062104878915,
+      -0.007541845200607966,
+      -0.007257626127709527,
+      -0.0084264347551255,
+      -0.007488968631772952,
+      -0.007444559589350197,
+      -0.00824295938930275,
+      -0.00874940571703009
+    ],
+    "null_layer_max_p975": -0.006395844869017426,
+    "frozen_layer_table": {
+      "14": {
+        "r2_obs": 0.008447095798211679,
+        "null_mean": -0.008253913292645553,
+        "null_p975": -0.0074394707328049765
+      },
+      "18": {
+        "r2_obs": 0.017903701552714812,
+        "null_mean": -0.008148427328594087,
+        "null_p975": -0.0072021146614714765
+      },
+      "19": {
+        "r2_obs": 0.01164156994572163,
+        "null_mean": -0.008144794614141549,
+        "null_p975": -0.007174646135662449
+      },
+      "26": {
+        "r2_obs": 0.0016322443548358878,
+        "null_mean": -0.007955750231286507,
+        "null_p975": -0.0070967435968882055
+      }
+    }
+  },
+  "random_projection_control_r2": {
+    "14": 0.008477741559012597,
+    "18": 0.01793576332039426,
+    "19": 0.01167121828650397,
+    "26": 0.0017003445805409134
+  },
+  "mean_baseline_r2": {
+    "14": -0.0021115748058724293,
+    "18": -0.0021131955889213128,
+    "19": -0.0020889986071332967,
+    "26": -0.0021543217941448756
+  },
+  "skill_over_mean": {
+    "14": 0.010558670604084108,
+    "18": 0.020016897141636125,
+    "19": 0.013730568552854927,
+    "26": 0.0037865661489807634
+  },
+  "cosine_frozen_layers": {
+    "14": {
+      "mean": 0.85633300036722,
+      "ci_lo": 0.8545060905054433,
+      "ci_hi": 0.8582318431913751,
+      "n": 2993
+    },
+    "18": {
+      "mean": 0.869791067724228,
+      "ci_lo": 0.8682592471204941,
+      "ci_hi": 0.8713492763219435,
+      "n": 2993
+    },
+    "19": {
+      "mean": 0.8626724547731213,
+      "ci_lo": 0.8612336942815122,
+      "ci_hi": 0.8641632421605328,
+      "n": 2993
+    },
+    "26": {
+      "mean": 0.9198799676124332,
+      "ci_lo": 0.9184782782589826,
+      "ci_hi": 0.9212200242250703,
+      "n": 2993
+    }
+  },
+  "r2_bootstrap_ci_frozen_layers": {
+    "14": {
+      "r2": 0.00978528863405026,
+      "ci_lo": 0.007229059159605672,
+      "ci_hi": 0.011798613077893691,
+      "n": 2993
+    },
+    "18": {
+      "r2": 0.01923013230974302,
+      "ci_lo": 0.016075007137777583,
+      "ci_hi": 0.02183446994886255,
+      "n": 2993
+    },
+    "19": {
+      "r2": 0.012961193316774033,
+      "ci_lo": 0.010286702508083726,
+      "ci_hi": 0.01528303984184464,
+      "n": 2993
+    },
+    "26": {
+      "r2": 0.0030068388797807044,
+      "ci_lo": 0.0006189172634239459,
+      "ci_hi": 0.0050154706945095984,
+      "n": 2993
+    }
+  },
+  "n_folds": 5,
+  "null_draws": 20,
+  "lambda_selection": "inner-group-cv",
+  "gcv_dof_cap": 0.9,
+  "selected_lambda_per_layer_fold": [
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ],
+    [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0
+    ]
+  ],
+  "selector_per_layer_fold": [
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ],
+    [
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv",
+      "inner-group-cv"
+    ]
+  ]
+}

@@ -1,0 +1,658 @@
+{
+  "commit": "2528220dcd",
+  "created": "2026-07-18T07:34:50Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5977528095245361,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.3825308084487915,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.6976199150085449,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.5080342292785645,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.6308576464653015,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.4790295362472534,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.688103973865509,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.46276623010635376,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.54777592420578,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.25432687997817993,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.7051954865455627,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.4529302716255188,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.6702466607093811,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.371615469455719,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5888172388076782,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2865055203437805,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5618863701820374,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2630963921546936,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5945419669151306,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.36694324016571045,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.46219566464424133,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.09948444366455078,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.514949381351471,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.20319926738739014,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5693771243095398,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2768974304199219,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.587043821811676,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.26227468252182007,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.43400540947914124,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1631871461868286,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.585542619228363,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2985535264015198,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5199317336082458,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.13375496864318848,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5376296043395996,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.12575507164001465,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5875657200813293,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.23090791702270508,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5193609595298767,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.17923641204833984,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5737019181251526,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.31613093614578247,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5523247718811035,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.22913604974746704,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.42127490043640137,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.02970486879348755,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4837222695350647,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.15237540006637573,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.49582067131996155,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.22361338138580322,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.38601377606391907,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.09414041042327881,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5112641453742981,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1789250373840332,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.48764294385910034,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.18837660551071167,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5206209421157837,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2386155128479004,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5476565957069397,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1716441512107849,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4495343565940857,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.13153135776519775,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5529999732971191,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.19190680980682373,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5591580867767334,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.23245203495025635,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3843633532524109,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1115574836730957,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5973625779151917,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2324279546737671,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4420611262321472,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.126428484916687,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.48895564675331116,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.17801839113235474,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4502440392971039,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.029576897621154785,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.591340184211731,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.2567785978317261,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4535023272037506,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.047173917293548584,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4816516041755676,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.05341094732284546,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5157744884490967,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.22512948513031006,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4897395968437195,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.017316043376922607,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4672155976295471,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1461542248725891,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4950750470161438,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.14976614713668823,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5698402523994446,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.20283126831054688,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5050579905509949,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.13427048921585083,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5321841835975647,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.11099976301193237,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4313201904296875,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.13913071155548096,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4881104528903961,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1192634105682373,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4920404553413391,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.11368095874786377,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.38889551162719727,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.12199318408966064,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.42673957347869873,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.0360870361328125,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3786097466945648,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.04842734336853027,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.49380049109458923,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.12683892250061035,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4561765193939209,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.05661231279373169,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.47639700770378113,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.026126563549041748,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4744988977909088,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06528496742248535,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.49027928709983826,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.12108838558197021,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4344828724861145,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.11356616020202637,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4158417284488678,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06956928968429565,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.42265501618385315,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.09130501747131348,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.42993929982185364,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.014640986919403076,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4659661054611206,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.13559585809707642,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4020411968231201,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.0465165376663208,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.509671151638031,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.02417391538619995,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5047190189361572,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06652480363845825,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.44684261083602905,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.037604451179504395,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4880390167236328,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.04150348901748657,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.497600793838501,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1075320839881897,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3442884683609009,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.045995891094207764,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.44458600878715515,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.054751038551330566,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3790958523750305,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.01915597915649414,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.424014151096344,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.04920339584350586,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.44559547305107117,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.10357725620269775,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4340527653694153,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.010177850723266602,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5439280271530151,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.1729760766029358,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.39397379755973816,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.08494222164154053,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5045979619026184,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.09195530414581299,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.49033230543136597,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.07084262371063232,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.45141249895095825,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.024022996425628662,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.39357659220695496,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.059690237045288086,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3785094618797302,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.0070116519927978516,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4487762153148651,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.0181465744972229,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4253791868686676,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.08863383531570435,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4926241934299469,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.11135578155517578,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.5049052238464355,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.044026851654052734,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3396347761154175,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06436097621917725,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.34113460779190063,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.006331920623779297,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.42962977290153503,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.01555854082107544,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4082869589328766,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.008989691734313965,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3728463649749756,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06430399417877197,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.506447434425354,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.12959349155426025,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.45358631014823914,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.04064345359802246,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.4410628080368042,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06653976440429688,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.40408483147621155,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.038521647453308105,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3575420677661896,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.06439489126205444,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.39910224080085754,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.06384456157684326,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.46540436148643494,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": 0.015599310398101807,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    },
+    {
+      "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)": 0.3914487659931183,
+      "forecast R\u00b2 from turn-1 state (eval turn 2)": -0.07646965980529785,
+      "series": "PCs (n=100, r=0.85)",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The map forecasts a direction largely because it persists",
+        "xlabel": "raw cross-turn persistence  (corr \u27e8v,ans\u2081\u27e9 vs \u27e8v,ans\u2082\u27e9)",
+        "ylabel": "forecast R\u00b2 from turn-1 state (eval turn 2)",
+        "legend_labels": [
+          "PCs (n=100, r=0.85)"
+        ],
+        "annotations": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "block-19 directions; PC cloud + trait points; Pearson r on PCs"
+        ],
+        "xticklabels": [
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "PCs (n=100, r=0.85)"
+    ]
+  }
+}

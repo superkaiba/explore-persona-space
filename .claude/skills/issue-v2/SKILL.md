@@ -399,6 +399,13 @@ SHA=$(git rev-parse HEAD)
 uv run python scripts/build_dashboards.py emit-links --issue <N> --sha "$SHA"
 ```
 
+Staged-index verification after the adds (#1572): `git ls-files --others
+--ignored --exclude-standard -- figures/issue_<N>/ experiments/dashboards/`
+must return empty — a directory-path `git add` silently skips
+gitignore-matched files (rc=0, no error); `git add -f`
+convention-committed hits (canonical recipe: v1 SKILL.md Step 9a-ter
+§ Staged-index verification).
+
 The SAME `$SHA` pins the 7c image URLs. Idempotent on re-entry: figures already
 committed + unchanged → reuse `git log -n1 --format=%H -- figures/issue_<N>/`;
 a 7d/7e round that re-runs the plotter re-commits the changed figures (new SHA),
@@ -513,11 +520,15 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
 - **Zero-GPU floor** (`cost_class: free-analysis`, `est_gpu_hours: 0`) — AUTO-RUN
   inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only;
   direct-to-main script commits pass the inline payload lint gate (v1 SKILL.md
-  Step 9a-ter § Inline payload lint gate).
+  Step 9a-ter § Inline payload lint gate); a cap-parked follow-up gets the
+  `followup-parked-by-cap` `epm:progress` note (v1 SKILL.md Step 9a-ter
+  § Cap-park surfacing, #1548).
 - **Cheap GPU band** (`0 < est_gpu_hours < 10` — the v2 threshold, LOWERED from
   v1's 20) — AUTO-RUN via the same-issue follow-up loop, cap 2 rounds. Strict
   `< 10` (exactly 10 does NOT auto-run). A `same`-question proposal with a
   missing/unparseable `est_gpu_hours` does NOT auto-run (fail-safe → park/file).
+  A cap-parked cheap proposal gets the `followup-parked-by-cap` `epm:progress`
+  note (v1 SKILL.md Step 9b block C2 § Cheap-band cap-park surfacing, #1558).
 - A `question_relation: substantially-different` proposal NEVER auto-runs — it is
   filed as a `proposed` child for manual triage.
 

@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "git_commit": "c74a997cc623713ea1b2b0d7d606c0d0da03cbfb",
+    "timestamp": "2026-07-19T00:45:44Z",
+    "seed": 0,
+    "n": 4724,
+    "script": "scripts/issue1417_battery.py",
+    "issue": 931
+  },
+  "gate": "G1",
+  "model": "instruct",
+  "tolerance": 0.01,
+  "smoke": false,
+  "lambda_selection": "gcv",
+  "anchors": {
+    "S1": {
+      "stem": "instruct_chat_s",
+      "l19_refit": 0.654218395189838,
+      "l19_committed": 0.6542183951898379,
+      "abs_dev": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "S1N": {
+      "stem": "instruct_naturalistic_s",
+      "l19_refit": 0.6249482470755414,
+      "l19_committed": 0.6249482470755414,
+      "abs_dev": 0.0,
+      "pass": true
+    }
+  },
+  "pass": true
+}

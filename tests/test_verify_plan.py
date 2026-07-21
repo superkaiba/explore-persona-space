@@ -177,10 +177,12 @@ def test_good_plan_passes_all():
         "c36_numeric_containment": "SKIP",
         "c37_noflags_bundling_claim": "SKIP",
         "c38_exit0_repo_wide_baseline": "SKIP",
+        "c39_off_pod_phase_declaration": "SKIP",
+        "c41_regression_anchor_executed": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 38
+    assert len(results) == 40
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -755,7 +757,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -769,7 +771,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -783,7 +785,7 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
 def test_c6_fitness_counts_item_k_in_widened_class():
@@ -797,19 +799,33 @@ def test_c6_fitness_counts_item_k_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/11" in r.detail
+    assert "4/12" in r.detail
 
 
-def test_c6_fitness_letters_beyond_k_do_not_count():
-    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366): an unrelated
-    # (l) elsewhere in the body must NOT lift a 3-letter fitness attestation to
-    # a 4-letter PASS — an over-widening of the class to [a-l]/[a-z] would flip
-    # this to PASS.
+def test_c6_fitness_counts_item_l_in_widened_class():
+    # Pins the [a-l] regex widening (#1522): exactly four counted letters, one of
+    # them (l) — a regression to [a-k] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (l) validity-domain — instrument docstring read, new regime inside declared bounds / mitigation engaged.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/12" in r.detail
+
+
+def test_c6_fitness_letters_beyond_l_do_not_count():
+    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366, (l)->(m) at
+    # #1522): an unrelated (m) elsewhere in the body must NOT lift a 3-letter
+    # fitness attestation to a 4-letter PASS — an over-widening of the class to
+    # [a-m]/[a-z] would flip this to PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (l) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (m) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -825,7 +841,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(k)" in r.detail or "eleven" in r.detail
+    assert "(a)–(l)" in r.detail or "twelve" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -871,7 +887,7 @@ def test_c6_reuse_map_table_without_fitness_word_passes():
     # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
     # word anywhere — must PASS, not WARN "no fitness check found".
     # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
-    # heading token still declares under the widened \([jk]\) detector.
+    # heading token still declares under the widened \([jkl]\) detector.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -905,7 +921,7 @@ def test_c6_letters_without_declaration_vocab_still_warns():
 
 def test_c6_reuse_map_with_few_letters_warns():
     # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
-    # (a)–(j)/(a)–(k) range token — guard-asserted below, so this fixture  # noqa: RUF003
+    # (a)–(j)/(a)–(k)/(a)–(l) range token — guard-asserted below, so this fixture  # noqa: RUF003
     # isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
     # the declaration counted, but the letters threshold still gates. A
     # mutant dropping the reuse-map branch fails this test — with no
@@ -920,7 +936,7 @@ def test_c6_reuse_map_with_few_letters_warns():
     lowered = plan.lower()
     assert "fitness" not in lowered
     assert "attestation" not in lowered
-    assert re.search(r"\(a\)\s*[-–—…]\s*\([jk]\)", plan) is None
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jkl]\)", plan) is None
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
@@ -929,7 +945,7 @@ def test_c6_reuse_map_with_few_letters_warns():
 
 def test_c6_range_token_counts_as_declaration():
     # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
-    # range token still declares under the widened \([jk]\) detector. No
+    # range token still declares under the widened \([jkl]\) detector. No
     # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
     # item letters.
     plan = (
@@ -948,13 +964,35 @@ def test_c6_range_token_counts_as_declaration():
 
 
 def test_c6_new_range_token_counts_as_declaration():
-    # Pins the CURRENT en-dash (a)–(k) range-token branch (#1366): no  # noqa: RUF003
-    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
-    # item letters.
+    # GRANDFATHER pin (#1522): an in-flight plan citing the OLD en-dash (a)–(k)  # noqa: RUF003
+    # range token (#1366's current form) still declares under the widened
+    # \([jkl]\) detector. No 'fitness', no 'map', no 'attestation' word
+    # (guard-asserted), four real item letters.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nArtifact checks (a)–(k): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_current_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(l) range-token branch (#1522): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters. All three widened-class members {j,k,l} now carry a pin
+    # (this test + the two grandfather pins above) — a [jkl]->[jl] narrowing
+    # cannot ship green.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(l): (a) recipe; (b) regime; (c) cells; "
         + "(d) single-variable.\n"
     )
     lowered = plan.lower()
@@ -5836,12 +5874,15 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 31
+    # 34 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
+    # --plan-file mode defaults to kind=experiment).
+    assert payload["n_skip"] == 34
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 39
-    assert len({c["id"] for c in payload["checks"]}) == 39
+    assert len(payload["checks"]) == 42
+    assert len({c["id"] for c in payload["checks"]}) == 42
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6058,6 +6099,112 @@ def test_cli_issue_mode_appends_goal_currency(tmp_path, monkeypatch, capsys):
     assert len(entries) == 1
     # Synthetic task has no goal frontmatter and no goal-updated markers.
     assert entries[0]["status"] == "SKIP"
+
+
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+
+def test_c40_header_version_mismatch_warns():
+    plan = "# Plan v4 (amendment) — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "WARN"
+    assert "v4" in r.detail
+    assert "v6.md" in r.detail
+    assert "retitle" in r.detail
+
+
+def test_c40_header_version_match_passes():
+    plan = "# Plan v6 — issue #1482, marker follow-up\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_c40_version_neutral_header_passes():
+    # Version-neutral titles are the sanctioned escape: explicit PASS,
+    # never SKIP, never WARN (both incident shapes: v7-style + v1-style).
+    for title in ("# Plan (amendment) — issue #1482", "# Plan — Issue #1482: marker follow-up"):
+        r = verify_plan.check_header_version_vs_filename(
+            f"{title}\n\nSome body prose.\n", plan_path=Path("v6.md")
+        )
+        assert r.status == "PASS", title
+        assert "version-neutral" in r.detail
+
+
+def test_c40_unversioned_filename_skips():
+    plan = "# Plan v4 (amendment) — issue #1482\n\nSome body prose.\n"
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("issue-1550.md"))
+    assert r.status == "SKIP"
+
+
+def test_c40_no_headings_skips():
+    r = verify_plan.check_header_version_vs_filename(
+        "just prose, no headings anywhere\n", plan_path=Path("v3.md")
+    )
+    assert r.status == "SKIP"
+    assert "no headings" in r.detail
+
+
+def test_c40_fenced_or_prose_plan_v_mentions_do_not_trigger():
+    # Fence-awareness + first-heading-only scope: a fenced `# Plan v3` line
+    # and later prose/headings quoting sibling versions must not trip c40.
+    plan = (
+        "```\n"
+        "# Plan v3 — fenced example, must be masked\n"
+        "```\n\n"
+        "# Plan (amendment) — issue #1482 fixture\n\n"
+        "Prose later mentions plan v4 divergences from parent plan v3.\n\n"
+        "## Divergences from parent plan v9\n"
+    )
+    r = verify_plan.check_header_version_vs_filename(plan, plan_path=Path("v6.md"))
+    assert r.status == "PASS"
+
+
+def test_cli_issue_mode_appends_header_version_check(tmp_path, monkeypatch, capsys):
+    # Mirror of test_cli_issue_mode_appends_goal_currency, at plans/v2.md with
+    # a stale `# Plan v1` first heading: exactly one c40 entry, WARN, rc 0
+    # (WARN keeps overall PASS).
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v2.md").write_text("# Plan v1 — x\n\n" + GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+
+
+def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
+    # --plan-file mode PARSES a v{K}.md-shaped filename (D2: unlike c23, c40
+    # runs in both modes); a non-versioned filename SKIPs; a plan.md SYMLINK
+    # resolves to its v{K}.md target (concern 1: plan_path.resolve()).
+    text = "# Plan v2 — issue #999 fixture\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    p3 = tmp_path / "v3.md"
+    p3.write_text(text)
+    proc = _run_cli("--plan-file", str(p3), "--json")
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
+
+    draft = tmp_path / "issue-999.md"
+    draft.write_text(text)
+    proc = _run_cli("--plan-file", str(draft), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "SKIP"
+
+    link = tmp_path / "plan.md"
+    link.symlink_to(p3)
+    proc = _run_cli("--plan-file", str(link), "--json")
+    payload = json.loads(proc.stdout)
+    c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
+    assert c40["status"] == "WARN"
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
@@ -6287,6 +6434,9 @@ def test_c31_pasted_warn_detail_does_not_self_satisfy():
 
 
 def test_c31_pin_line_passes():
+    # Deliberate live-tree dependency (post-#1557): the named pin file exists
+    # on the real tree and is WORKFLOW_INVARIANT-registered, so this now
+    # exercises the standing-file branch against the real repo root.
     plan = (
         GOOD_PLAN + C31_SKILL_EDIT + "\nDurability pin: tests/test_issue_skill_marker_contract.py::"
         "test_step8_detach_prose_present\n"
@@ -6297,15 +6447,30 @@ def test_c31_pin_line_passes():
     assert "pin named" in r.detail
 
 
-def test_c31_planned_new_pin_test_passes():
-    # A pin test the plan itself ADDS counts — the verifier cannot and need
-    # not distinguish standing from planned (the code-reviewer checks the
-    # diff ships it).
+def _c31_fixture_root(tmp_path, *, tests_dir=True, present=()):
+    # Fixture strategy for the #1557 NEW-pin registration branch: monkeypatch
+    # verify_plan._C31_REPO_ROOT (the c34/c41 convention) and control which
+    # pin files exist under tests/ for hermetic determinism.
+    if tests_dir:
+        (tmp_path / "tests").mkdir()
+        for name in present:
+            (tmp_path / "tests" / name).write_text("# pin test fixture\n")
+    return tmp_path
+
+
+def test_c31_planned_new_pin_test_passes(tmp_path, monkeypatch):
+    # A pin test the plan itself ADDS counts WHEN the plan also names its
+    # Step-9c selector registration (Form B here) — post-#1557 a bare
+    # planned-new pin without registration evidence WARNs instead (the
+    # code-reviewer still checks the diff ships both).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
     plan = (
         GOOD_PLAN
         + C31_SKILL_EDIT
         + "\nDurability pin: NEW tests/test_issue_skill_detach_convention.py::"
         "test_setsid_prose_pinned (added by this plan §4.3)\n"
+        "Selector registration: add tests/test_issue_skill_detach_convention.py to "
+        "WORKFLOW_INVARIANT in scripts/select_step9c_tests.py.\n"
     )
     assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
 
@@ -6425,12 +6590,190 @@ def test_c31_incident_884_shape_warns():
     assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
 
 
+# ─── Check 31 — NEW-pin selector-registration branch (#1557) ──────────────
+
+
+def test_c31_new_pin_without_registration_warns(tmp_path, monkeypatch):
+    # The must-WARN incident fixture: the #1210 plan v1 line-16 shape (the
+    # founding offender — a pin line naming then-absent
+    # tests/test_issue_skill_merge_resnapshot_pin.py with no registration
+    # token; #1242/#1268 registered after the fact).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_merge_resnapshot_pin.py::"
+        "test_step10d_resnapshot_recipe_present — a NEW pin test asserting the "
+        "resnapshot recipe prose stays present.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    assert "tests/test_issue_skill_merge_resnapshot_pin.py" in r.detail
+    assert "#1546" in r.detail
+    assert "Selector registration" in r.detail  # the WARN teaches both forms
+
+
+def test_c31_new_pin_pinline_registration_passes(tmp_path, monkeypatch):
+    # Form A: the un-negated registry-tuple token on the pin line itself.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present "
+        "— NEW; registered in WORKFLOW_INVARIANT (scripts/select_step9c_tests.py) "
+        "by this plan.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "selector registration named" in r.detail
+
+
+def test_c31_new_pin_labeled_registration_passes(tmp_path, monkeypatch):
+    # Form B: a standalone `Selector registration:` labeled line — as a `- `
+    # list item, exercising the marker-prefix tolerance of the label regex.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present — NEW\n"
+        "- Selector registration: add tests/test_issue_skill_detach_pin.py to "
+        "WORKFLOW_INVARIANT in scripts/select_step9c_tests.py.\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_new_pin_negated_registration_warns(tmp_path, monkeypatch):
+    # A NEGATED token mention describes the gap, not the commitment — the
+    # 40-char before-window negation check rejects it.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present "
+        "(not yet in WORKFLOW_INVARIANT)\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_standing_pin_file_needs_no_registration(tmp_path, monkeypatch):
+    # A pin file PRESENT on disk is standing at file grain — no registration
+    # evidence required, detail stays the plain base-satisfier string.
+    root = _c31_fixture_root(tmp_path, present=("test_issue_skill_detach_pin.py",))
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", root)
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert r.detail.startswith("pin named (")
+    assert "selector registration" not in r.detail
+
+
+def test_c31_new_function_in_existing_file_passes(tmp_path, monkeypatch):
+    # File grain IS the gate-visibility grain: a novel ::test_name in a
+    # REGISTERED (existing) file is selector-visible by construction.
+    root = _c31_fixture_root(tmp_path, present=("test_verify_plan.py",))
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", root)
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_verify_plan.py::test_some_brand_new_pin_function\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "PASS"
+
+
+def test_c31_pin_ident_without_path_passes(tmp_path, monkeypatch):
+    # Disclosed under-trigger (fail-open): a pin ident with no extractable
+    # tests/ path satisfies the base satisfier and skips the NEW-pin branch.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: test_step8_detach_prose_present (module TBD in planning)\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert r.detail.startswith("pin named (")
+
+
+def test_c31_new_pin_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
+    # The L6423 anti-paste shape for the NEW WARN text: pasting the detail
+    # back as one line satisfies neither the base satisfier (no test_ ident
+    # after its `Durability pin:` mention) nor either registration form (the
+    # tuple name appears hyphen-joined; the label is not line-start).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    base = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(base, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "WARN"
+    pasted = base + f"\n{r.detail}\n"
+    assert _status(pasted, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
+def test_c31_offrepo_tests_dir_absent_keeps_pass(tmp_path, monkeypatch):
+    # --plan-file off-repo (no tests/ dir under the resolved root): the
+    # registration sub-check cannot adjudicate NEW-vs-standing — fail-open
+    # PASS with the skip noted in the detail (the c41 off-repo doctrine).
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path, tests_dir=False))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "registration sub-check skipped" in r.detail
+
+
+def test_c31_na_escape_short_circuits_before_disk(tmp_path, monkeypatch):
+    # Behavioral discriminator for the NA short-circuit: with the root
+    # pointed at a NONEXISTENT path, a disk-reaching NA path would take the
+    # tests/-absent fail-open branch and carry its "skipped" suffix; the
+    # short-circuit returns the plain justification detail instead.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", tmp_path / "nonexistent")
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\nDurability pin: N/A — narrative pointer prose; no parser couples to it.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c31_skillmd_prose_pin"]
+    assert r.status == "PASS"
+    assert "justification" in r.detail
+    assert "skipped" not in r.detail
+
+
+def test_c31_fenced_new_pin_line_also_flagged(tmp_path, monkeypatch):
+    # Raw-scan symmetry with test_c31_fenced_pin_line_satisfies: a fenced pin
+    # line naming an absent file with no registration still WARNs.
+    monkeypatch.setattr(verify_plan, "_C31_REPO_ROOT", _c31_fixture_root(tmp_path))
+    plan = (
+        GOOD_PLAN
+        + C31_SKILL_EDIT
+        + "\n```\nDurability pin: tests/test_issue_skill_detach_pin.py::test_prose_present\n```\n"
+    )
+    assert _status(plan, "c31_skillmd_prose_pin", kind="infra") == "WARN"
+
+
 def test_planner_md_carries_durability_pin_instruction():
     # The pin test for the planner.md author-side bullet this task ships —
-    # the rule dogfoods itself.
+    # the rule dogfoods itself. The Selector-registration sentence is the
+    # #1557 author-side companion of the c31 NEW-pin branch.
     text = (REPO_ROOT / ".claude" / "agents" / "planner.md").read_text()
     assert re.search(r"Durability pin:", text)
     assert "#884" in text
+    assert "Selector registration" in text
 
 
 def test_adversarial_planner_skill_lists_c31_escape():
@@ -6853,12 +7196,12 @@ def test_skillmd_canonical_escapes_documents_standalone_line():
 # Fixture strategy (plan #1260 §6): monkeypatch verify_plan._C34_REPO_ROOT to
 # tmp_path and create ratcheted files at controlled sizes — testagent.md at
 # 39,900 B (non-grandfathered → headroom 100 B vs AGENT_SPEC_FAIL_BYTES
-# 40,000) and LESSONS.md 50 B under its BINDING constraint (#1269:
-# min(_LESSONS_MAX_BYTES, _LESSONS_RATCHET_BYTES) — the growth ratchet in
-# practice; derived from the live constants so routine ratchet bumps don't
-# shift the pinned headroom arithmetic). The trigger fragments mirror the
-# real #1230 plan v1 §4.1 shape: a heading naming the path, a "Verbatim text
-# to insert" line, then the fenced block.
+# 40,000) and LESSONS.md 50 B under its BINDING constraint (#1504: the total
+# growth ratchet is retired, so the binding TOTAL constraint is the
+# _LESSONS_MAX_BYTES leanness cap; derived from the live constant so a
+# coordinated cap raise doesn't shift the pinned headroom arithmetic). The
+# trigger fragments mirror the real #1230 plan v1 §4.1 shape: a heading
+# naming the path, a "Verbatim text to insert" line, then the fenced block.
 
 
 def _c34_fixture_root(tmp_path):
@@ -6866,7 +7209,7 @@ def _c34_fixture_root(tmp_path):
     (tmp_path / ".claude" / "agents").mkdir(parents=True)
     (tmp_path / ".claude" / "rules").mkdir(parents=True)
     (tmp_path / ".claude" / "agents" / "testagent.md").write_bytes(b"x" * 39_900)
-    lessons_size = min(wl._LESSONS_MAX_BYTES, wl._LESSONS_RATCHET_BYTES) - 50
+    lessons_size = wl._LESSONS_MAX_BYTES - 50
     (tmp_path / ".claude" / "rules" / "LESSONS.md").write_bytes(b"x" * lessons_size)
     return tmp_path
 
@@ -7009,14 +7352,14 @@ def test_c34_fenced_path_mention_does_not_trigger():
 
 
 def test_c34_lessons_md_headroom_warns(tmp_path, monkeypatch):
-    # #1269: the binding LESSONS.md constraint is min(cap, growth ratchet) —
-    # the ratchet in practice (it must sit under the cap), so the WARN
-    # detail names _LESSONS_RATCHET_BYTES as the cap source.
+    # #1504: the total growth ratchet is retired, so the binding LESSONS.md
+    # TOTAL constraint is the leanness cap — the WARN detail names
+    # _LESSONS_MAX_BYTES as the cap source.
     monkeypatch.setattr(verify_plan, "_C34_REPO_ROOT", _c34_fixture_root(tmp_path))
     _, by_id = _run(GOOD_PLAN + _c34_lessons_fragment(200), kind="infra")
     r = by_id["c34_ratchet_headroom"]
     assert r.status == "WARN"
-    assert "_LESSONS_RATCHET_BYTES" in r.detail
+    assert "_LESSONS_MAX_BYTES" in r.detail
     assert "headroom 50 B" in r.detail
 
 
@@ -7701,3 +8044,287 @@ def test_canonical_json_parse_snippet_pinned():
     assert payload_fail["n_fail"] == 1
     assert {"id", "status"} <= payload_fail["checks"][0].keys()
     assert payload_fail["checks"][0]["status"] == "FAIL"
+
+
+# ─── Check 39 — off-pod phase declaration (#1535) ──────────────────────────
+
+C39_OFFPOD_PROSE = (
+    GOOD_PLAN + "\nPhase P5 (judge) runs off-pod on the VM after the pod is terminated.\n"
+)
+
+C39_BLOCK = """
+```yaml
+off_pod_phases:
+  - phase: P5 judge (VM, after pod termination)
+    runs_on: vm
+    reads:
+      - path: issue9999_slug/analysis_tensors/scratch/split_indices.npz
+        produced_by: P4 (pod)
+        source: hf-data-repo
+    outputs:
+      - path: eval_results/issue_9999/judge/*.json
+        dest: git-issue-branch
+```
+"""
+
+
+def test_c39_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_kind_exempt_skips():
+    # An infra plan (e.g. a workflow-fix plan discussing the off-pod seam —
+    # #1535's own plan is the calibration case) legitimately says "off-pod"
+    # without having phases; experiment-only scoping avoids that noise.
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="infra") == "SKIP"
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="batch") == "SKIP"
+    assert _status(C39_OFFPOD_PROSE, "c39_off_pod_phase_declaration", kind="analysis") == "SKIP"
+
+
+def test_c39_off_pod_prose_without_block_warns():
+    _, by_id = _run(C39_OFFPOD_PROSE)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "WARN"
+    assert "#1482" in r.detail and "#1426" in r.detail  # both incident cites
+    assert "off_pod_phases:" in r.detail  # names the missing block
+    assert "N/A — no off-pod phase" in r.detail  # teaches the escape
+    assert "planner-section-reference.md § 9" in r.detail  # the template pointer
+
+
+def test_c39_fenced_block_satisfies():
+    # The block satisfier scans RAW text (the slot is fenced YAML by design —
+    # the c30 convention); the fixture carries one REAL entry
+    # (phase/runs_on/reads/outputs) so the intended shape is exemplified,
+    # never an empty block.
+    _, by_id = _run(C39_OFFPOD_PROSE + C39_BLOCK)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "off_pod_phases" in r.detail
+
+
+def test_c39_na_escape_satisfies():
+    plan = C39_OFFPOD_PROSE + "\nN/A — no off-pod phase\n"
+    _, by_id = _run(plan)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c39_vm_side_trigger_warns():
+    # The `vm-side` regex alternative fires with NO "off-pod" token present.
+    plan = GOOD_PLAN + "\nA VM-side aggregation phase follows the pod run.\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+def test_c39_fenced_vocabulary_only_skips():
+    # off-pod vocabulary ONLY inside fences (a quoted command / pasted brief)
+    # is not a trigger — the trigger scans STRIPPED prose.
+    plan = GOOD_PLAN + "\n```\n# the off-pod judge reads these paths\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_fenced_na_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c33/c38 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C39_OFFPOD_PROSE + "\n```\nN/A — no off-pod phase\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+# ─── Check 41 — regression-anchor test executed or gate-selected ───────────
+# Fixture strategy (plan #1551 §6, the c34 pattern): monkeypatch
+# verify_plan._C41_REPO_ROOT to a tmp fixture tree; the REAL selector
+# (path-loaded from the live _C41_SELECTOR_PATH) runs over it —
+# production-body coverage of the oracle path, no selector stubbing.
+
+C41 = "c41_regression_anchor_executed"
+
+
+def _c41_fixture_root(tmp_path):
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / "tests").mkdir()
+    (root / "scripts" / "foo_pilot.py").write_text("X = 1\n")
+    # The transitive #1536 shape: imports a helper, NOT the touched module —
+    # no selection arm reaches it (and no literal `scripts/foo_pilot.py`
+    # substring, so the literal-path arm stays cold too).
+    (root / "tests" / "test_transitive_anchor.py").write_text(
+        "import foo_helper\n\n\ndef test_a():\n    assert foo_helper\n"
+    )
+    # Stem-glob hit (`test_*foo_pilot*.py`) for touched scripts/foo_pilot.py.
+    (root / "tests" / "test_foo_pilot_extra.py").write_text("def test_b():\n    pass\n")
+    # Import-map hit (#1299 arm): imports the touched module directly.
+    (root / "tests" / "test_importing_anchor.py").write_text(
+        "import foo_pilot\n\n\ndef test_c():\n    assert foo_pilot.X == 1\n"
+    )
+    # A real WORKFLOW_INVARIANT member, present on disk in the fixture.
+    (root / "tests" / "test_task_workflow.py").write_text("def test_d():\n    pass\n")
+    return root
+
+
+def _c41_plan(anchor_line: str, *, touched: bool = True, extra: str = "") -> str:
+    touched_line = "Edit `scripts/foo_pilot.py` to do the thing.\n\n" if touched else ""
+    return (
+        "# Plan — c41 fixture\n\n"
+        "## Goal\n\nFix the thing.\n\n"
+        "## Design\n\n" + touched_line + anchor_line + "\n\n"
+        "## Tests\n\nCovered above.\n" + extra
+    )
+
+
+_C41_INCIDENT_LINE = (
+    "`tests/test_transitive_anchor.py` sits on the Step-9c mapped-scan path for "
+    "foo_pilot.py edits, so the gate covers this change."
+)
+
+
+def _c41_check(plan: str, kind: str = "infra"):
+    return verify_plan.check_regression_anchor_executed(plan, kind)
+
+
+def test_c41_kind_experiment_skips():
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE), kind="experiment")
+    assert r.status == "SKIP"
+    assert "kind-exempt" in r.detail
+
+
+def test_c41_no_anchor_claim_skips():
+    r = _c41_check(_c41_plan("Run `tests/test_transitive_anchor.py` after the edit."))
+    assert r.status == "SKIP"
+    assert "no regression-anchor" in r.detail
+
+
+def test_c41_1536_shaped_unselected_anchor_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
+    assert r.status == "WARN"
+    assert "tests/test_transitive_anchor.py" in r.detail
+    assert "#1536" in r.detail
+    assert "N/A — no regression anchors" in r.detail  # remedy menu quotes the escape
+
+
+def test_c41_explicit_pytest_command_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    extra = "\n```bash\nuv run pytest tests/test_transitive_anchor.py -x\n```\n"
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE, extra=extra))
+    assert r.status == "PASS"
+
+
+def test_c41_stem_mapped_anchor_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    line = "`tests/test_foo_pilot_extra.py` is the regression anchor the gate runs."
+    r = _c41_check(_c41_plan(line))
+    assert r.status == "PASS"
+    assert "Step-9c-selected" in r.detail
+
+
+def test_c41_import_mapped_anchor_passes(tmp_path, monkeypatch):
+    # The Goal's direct-import arm, via the REAL selector's import map.
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    line = "`tests/test_importing_anchor.py` is auto-selected by Step 9c for this edit."
+    r = _c41_check(_c41_plan(line))
+    assert r.status == "PASS"
+    assert "Step-9c-selected" in r.detail
+
+
+def test_c41_invariant_anchor_passes(tmp_path, monkeypatch):
+    # Invariant arm + the empty-touched degradation on the SATISFIED side:
+    # zero touched files, yet the on-disk WORKFLOW_INVARIANT member is
+    # always run by the gate.
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    line = "tests/test_task_workflow.py is a regression anchor and must stay green."
+    r = _c41_check(_c41_plan(line, touched=False))
+    assert r.status == "PASS"
+    assert "0 touched file(s)" in r.detail
+
+
+def test_c41_new_test_file_not_on_disk_passes(tmp_path, monkeypatch):
+    # Existence gate: a plan-NEW anchor (absent from disk) is forward-looking.
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    line = "`tests/test_branch_new.py` is the regression anchor the gate will run."
+    r = _c41_check(_c41_plan(line))
+    assert r.status == "PASS"
+    assert "branch-new" in r.detail
+
+
+def test_c41_empty_touched_unsatisfied_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    line = "`tests/test_transitive_anchor.py` is the regression anchor — the gate will run it."
+    r = _c41_check(_c41_plan(line, touched=False))
+    assert r.status == "WARN"
+    assert "no touched code files could be parsed" in r.detail
+
+
+def test_c41_na_escape_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE, extra="\nN/A — no regression anchors\n"))
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c41_pasted_warn_detail_does_not_self_satisfy(tmp_path, monkeypatch):
+    # The #810 polarity: the WARN remedy text (with its backticked phrase)
+    # pasted mid-plan must not satisfy the escape (`_standalone_na_declared`
+    # anti-paste armor) — the plan still WARNs on its live offending line.
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    fixture = _c41_plan(_C41_INCIDENT_LINE)
+    pasted = _c41_check(fixture).detail  # the real WARN text, verbatim
+    r = _c41_check(fixture + "\n\nPrior round said: " + pasted + "\n")
+    assert r.status == "WARN"
+
+
+def test_c41_negated_selection_line_does_not_trigger():
+    line = (
+        "tests/test_transitive_anchor.py is NOT auto-selected (one-hop import map), "
+        "so §6 runs it explicitly"
+    )
+    r = _c41_check(_c41_plan(line))
+    assert r.status == "SKIP"
+
+
+def test_c41_fenced_claim_does_not_trigger():
+    r = _c41_check(_c41_plan("```\n" + _C41_INCIDENT_LINE + "\n```"))
+    assert r.status == "SKIP"
+
+
+def test_c41_selector_absent_skips(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    monkeypatch.setattr(verify_plan, "_C41_SELECTOR_PATH", tmp_path / "missing.py")
+    monkeypatch.setattr(verify_plan, "_c41_selector_cache", [])
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
+    assert r.status == "SKIP"
+    assert "selection surface unavailable" in r.detail
+
+
+def test_c41_oracle_exception_is_loud_skip(tmp_path, monkeypatch):
+    # Pins the `except Exception -> _skip` branch: a selector regression
+    # degrades to a loud SKIP naming the exception class — never WARN,
+    # never a silent PASS, never a fleet-wide planning crash.
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    mod = verify_plan._c41_selector()
+
+    def _boom(touched, work_root):
+        raise RuntimeError("selector broke")
+
+    monkeypatch.setattr(mod, "select_tests_with_reasons", _boom)
+    r = _c41_check(_c41_plan(_C41_INCIDENT_LINE))
+    assert r.status == "SKIP"
+    assert "RuntimeError" in r.detail
+    assert "cannot be adjudicated" in r.detail
+
+
+def test_c41_registration_end_to_end(tmp_path, monkeypatch):
+    # Through verify_plan_text: pins CHECKS registration + WARN-never-blocks
+    # (the c22 precedent).
+    monkeypatch.setattr(verify_plan, "_C41_REPO_ROOT", _c41_fixture_root(tmp_path))
+    filler = "We add one conditional WARN-only check and its tests, then re-run lint. " * 25
+    plan = (
+        "# Plan — c41 end-to-end fixture (infra)\n\n"
+        "## Goal\n\n" + filler + "\n\n"
+        "## Design\n\nEdit `scripts/foo_pilot.py` to do the thing.\n\n"
+        + _C41_INCIDENT_LINE
+        + "\n\n"
+        "## Resources\n\nNo pod. `Estimated GPU-hours (total): 0`\n"
+    )
+    ok, by_id = _run(plan, kind="infra")
+    assert by_id[C41].status == "WARN"
+    assert ok is True  # WARN never blocks exit

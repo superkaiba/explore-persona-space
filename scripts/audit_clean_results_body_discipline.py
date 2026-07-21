@@ -102,13 +102,64 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # defining the test' is the sanctioned Why-this-test CI-definition
         # register). (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
         # class are the literal chars being matched, not homoglyphs.)
+        # #1475 (2026-07-17) extends the branch for the #1090 round-6
+        # escapes: seven head nouns added (cuts?/paths?/clauses?/
+        # controls?/levers?/bars?/smokes?) and the intervening-token
+        # continuation widened from (?:\.\d+)* to a group that also
+        # accepts '-' and the U+2212 minus sign as repeatable digit-run
+        # separators, so multi-dot / signed numeric range tokens
+        # ('0.60-0.85', and its U+2212 form) are consumable — the old
+        # group could not re-enter a separator after its first dot, so a
+        # range token hid the
+        # head noun after it. Digits-only continuations preserve
+        # the no-sentence-bridge property. Re-measured 2026-07-17 over
+        # all 1,374 completed/awaiting_promotion/archived/on_hold bodies
+        # (full-pattern old-vs-new match-start diff): 16 new hits —
+        # bar/bars 5, clause 4, control(s) 5, path 2, cut/lever/smoke 0
+        # — every one manually classified genuine Lens 7 jargon (the
+        # deciding question: does 'registered' here mean PRE-REGISTERED,
+        # regardless of surface grammar?), 0 benign verb-use false
+        # positives. OLD-minus-NEW starts: 0 (the leftmost
+        # 'pre-?registered' alternative keeps every old match start).
+        # cut/lever/smoke kept at zero corpus attestation: the recorded
+        # #1090 incident strings mandate them and their measured FP cost
+        # is zero. The raw-text scan is a SUPERSET of gate-visible hits,
+        # which cuts both ways: FP-conservative (frontmatter + code
+        # fences + table rows included), but the genuine-hit count
+        # OVERSTATES gate-visible coverage (scope-exempt table-row /
+        # fence hits are counted). The superset argument is contingent
+        # on the [ \t]+-only separators — a future \s widening would
+        # silently break it. 'test' and 'interval' remain deliberately
+        # absent (the sanctioned CI-definition register, see above).
+        # #1553 (2026-07-19) adds `estimators?` for the #1482 round-4
+        # escape: 'the plotted floor is the registered fresh-4 estimator'
+        # (Results, k-resample H3 what-is-plotted line) could not match
+        # this pattern — 'estimator' was absent from the alternation — and
+        # was caught only by the LM critic's Lens 7 read. NOTE the
+        # originally-filed diagnosis (extend _PRE_REG_PROSE_SECTIONS to
+        # the v4 section names) was reproduced as a NO-OP: that tuple is
+        # consumed only by the v3 branch of
+        # _restrict_pre_reg_to_prose_sections; the v4 branch already scans
+        # whole-body-minus-tables. Measured 2026-07-19 over all 1,485
+        # tasks/*/*/body.md (full-pattern old-vs-new match-start diff):
+        # 7 new hits — 4 in #536, 1 in #589 (genuine 'registered
+        # [uncertainty] estimator' jargon that had escaped), 2 in #1553's
+        # own body quoting the incident — every one genuine, 0 benign
+        # verb-use false positives. OLD-minus-NEW starts: 0. The sibling
+        # nouns `estimates?` and `estimand` were measured and EXCLUDED:
+        # zero additional corpus hits each, no incident mandate (inverse
+        # of the #1475 cut/lever/smoke inclusion logic — no attestation
+        # AND no incident string), and 'estimate' is a far more common
+        # object of verb-register 'registered' than 'estimator', so both
+        # stay out until an incident or attested hit mandates them.
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
         r"|\bregistered[ \t]+(?!(?:as|at|by|for|in|into|on|to|under|via|with)\b)"
-        r"(?:[\w%/<>=≤≥−+-]+(?:\.\d+)*[ \t]+){0,3}?"  # noqa: RUF001
+        r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
         r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
-        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha)\b",
+        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
+        r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),

@@ -45,7 +45,9 @@ Because the boot disk is DELETEd on that shutdown, the trap now calls
 HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 1. `crash_report.json` — exit code + timestamp + run identity;
-2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`.
+2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`
+   (tail-capped at stage time to `EPS_PERSIST_LOG_FILE_CAP_BYTES`, default
+   5 MiB — #1517).
    #1151: items 1-2 ride ONE staged `upload_folder` commit (the "first
    bundle") with ONE retry after an `EPS_PERSIST_RETRY_BACKOFF_S` backoff
    (default 10 s — the #935 sibling knob); the persist makes ZERO per-file
@@ -102,7 +104,9 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    re-running any recovery — a gateway-timeout "failure" may have landed
    (the fu5 shape);
 6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
-   workload log, uploaded AFTER the partial dirs (small-first ordering; the
+   workload log (tail-capped at stage time to
+   `EPS_PERSIST_LOG_FILE_CAP_BYTES`, default 5 MiB — #1517), uploaded AFTER
+   the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
    canonical `crash_report.json` / `workload.log` names are OVERWRITTEN by
    a same-attempt re-crash (run-3 overwrote run-2's log on #825) — prior

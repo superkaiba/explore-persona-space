@@ -338,6 +338,13 @@ _sparse_setup() {
   git -C "$WT" sparse-checkout set $DIRS $CONES $TEST_CONES $EXISTING
   [ "$(git -C "$WT" config --worktree core.sparseCheckoutCone || true)" = true ] \
     || { echo "new_worktree: FATAL — cone mode failed to engage in $WT" >&2; return 1; }
+  # Expected output here: "Already on '<branch>'". `worktree add --no-checkout -b`
+  # already set THIS worktree's HEAD to the branch; this checkout only
+  # materializes the sparse tree. It is WORKTREE-LOCAL and never touches the
+  # shared repo root's HEAD (#1530 forensics + git 2.34.1 scratch probe: the
+  # parent HEAD reflog gains no entry; the worktree reflog logs
+  # "checkout: moving from <branch> to <branch>").
+  echo "new_worktree: materializing sparse tree (worktree-local checkout of '$BRANCH'; an \"Already on\" line here is expected and does not touch the repo root's HEAD)" >&2
   git -C "$WT" checkout "$BRANCH"
 }
 
@@ -378,7 +385,18 @@ if git -C "$REPO_ROOT" worktree list --porcelain | grep -qxF "worktree $WT"; the
   # and `checkout` (the half-created-worktree incident class). Repair in place —
   # _sparse_setup is idempotent; for --full just finish the checkout.
   echo "new_worktree: $WT registered but unpopulated (interrupted creation) — repairing"
-  if [ "$FULL" = 1 ]; then git -C "$WT" checkout "$BRANCH"; else _sparse_setup; fi
+  if [ "$FULL" = 1 ]; then
+    # Expected output here: "Already on '<branch>'". `worktree add --no-checkout -b`
+    # already set THIS worktree's HEAD to the branch; this checkout only
+    # materializes the full tree. It is WORKTREE-LOCAL and never touches the
+    # shared repo root's HEAD (#1530 forensics + git 2.34.1 scratch probe: the
+    # parent HEAD reflog gains no entry; the worktree reflog logs
+    # "checkout: moving from <branch> to <branch>").
+    echo "new_worktree: materializing full tree (worktree-local checkout of '$BRANCH'; an \"Already on\" line here is expected and does not touch the repo root's HEAD)" >&2
+    git -C "$WT" checkout "$BRANCH"
+  else
+    _sparse_setup
+  fi
 else
   # Fresh creation. Best-effort cleanup on FAILURE (set -e → ERR trap): a
   # half-registered worktree must not survive to poison the next reuse check.

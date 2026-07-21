@@ -1,0 +1,2102 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:50Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.1875365186109954,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.29467448850778666,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.3335619024485724,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.29071977814825967,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.30098932234469755,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.28761446757178366,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.3020014774461528,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.421371049718659,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.4378954525054405,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.451793214592887,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.44145655860940947,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.4400485726781702,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.4510420480213395,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.45283422754392877,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.4241302528098301,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.4091934306352393,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.3851062199824514,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.3784075776399738,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.36667984434325795,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.35851673302742615,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.34619300101774664,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.3442145844909511,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.3141152084191011,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.29961075034780016,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.28736521253900804,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.2733880708907529,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.27196938973948925,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.279720720658412,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.26207574984078275,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.2563954073747383,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.25499724800782275,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.1731235915204512,
+      "series": "mlc_ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.3803579897120254,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.46263713518846883,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.47880577457521767,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.45489985305116953,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.4811316955800162,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.4681821789062589,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.49416808093941333,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.5812159507649595,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.6003218487111699,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.6222524308526945,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6141798159526679,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6337249250726202,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.6705303097439574,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6668642420896931,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6508620018313305,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.6246275540051252,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6270479105069503,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6232863613763108,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.6083190951277766,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.6045397959717291,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.586856156883715,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.5896858006975464,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.5672692420677233,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.5522812821275935,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5373773064812984,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.526520448346427,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5264268611254315,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5338537094476614,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5217679844090105,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.49815016637954257,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.47570507625276337,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.41142025868509,
+      "series": "mlc_ctx_cotK",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.43619535196937986,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.4963293122515491,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.511794777436646,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.47599915109566415,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.49014039520596353,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.4884858455708452,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.5070379577466839,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.593552417860382,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.6215417546698105,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.6417204620930055,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6361964292642692,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.660170745531633,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.7030837967964751,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.699257610526257,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6808802682324635,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.6513164254653239,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6560071883534504,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6489009814206699,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.631883559072373,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.6292079967494689,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.6114003637816585,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.6158169136889818,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.5898299327916279,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.5746148815773339,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5600261313129128,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.550403300507456,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5517472790070701,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5620149329654539,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5532780528946288,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.5354830061679184,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.5207916839641269,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.4477966670429163,
+      "series": "mlc_ctx_apfx",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.3882055449335857,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.47209127571119724,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.4861014906502281,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.4632929716610654,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.5003615731778913,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.48432130226860826,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.5127666181910417,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.5969747583009467,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.6156683006189192,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.6393644028779213,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6300166521928183,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6496069301375438,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.688495656112715,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6832514538467688,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6677380859800046,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.6424613095589689,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6440725331977043,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6416900203784148,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.626265418624397,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.6218150453134165,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.6037473126597106,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.609106698120125,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.5876619300547412,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.5739067786494909,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5600276607665966,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.5505664044169423,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5494325159713832,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5581006094251911,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5441017259509795,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.5229174258595799,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.5106371636506233,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.4437566069635347,
+      "series": "mlc_cotK",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.46797299686360205,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.5171443942141228,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5360892329649323,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.5066398595260023,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.518358473997645,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.5137789084527656,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.5310637018708735,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.6136755112552026,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.6421967964163438,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.660659148850375,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6564653693376935,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6817882772022132,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.7240323073925581,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.7190729150240035,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6989842951583378,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.6720390311254203,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.677700061619934,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6700158421829422,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.6536132900803386,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.6526437750816454,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.6347786402601587,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.6423249262698386,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.6177546700440406,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.6027269408657128,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5881847765800317,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.5794528634741811,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5795658406641693,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.593284215681024,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5851235577581179,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.5717068383085784,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.5613204024197574,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.49095589220734703,
+      "series": "mlc_apfx",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.32867810606358494,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.430507304818592,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.45764388561146796,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.44093933031090815,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.45788458449582004,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.4479820735293739,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.47253787195058583,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.5708811426376292,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.5923779384748336,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.6175418699025994,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6064127404300141,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6271801367639727,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.66666458944374,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6605698958910093,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6451680500348542,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.616365682829521,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6184485407418839,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6160161762832872,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.5990374896244376,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.5961530510717933,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.5786644701380604,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.5807778099990966,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.558116235889167,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.5425258379930817,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5271104196537473,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.5152608222090909,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5148870458256372,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5234683999104177,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5115767398139466,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.4849418491762232,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.4582343071464009,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.39712503649302,
+      "series": "mlc_ctx_cotfull",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.28060677641337883,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.39950783950813795,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.43696263726015117,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.4190976645084069,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.4348724195864775,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.42303033636300313,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.4488884222591547,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.548872262537218,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.5714708538040348,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.5968258993809648,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.586248263513048,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6072035034450916,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.6490178957544954,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6433006547469281,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6259971193782621,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.5996781443059229,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6060198082838165,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6028465465802497,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.5833408456089215,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.5806398739637817,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.5615471709224029,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.563812844839624,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.537672121789267,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.5220580380851259,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5046102465433198,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.4926705628288153,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.49640971274591594,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5024035533627842,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.4931329854690868,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.4674768473954366,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.43856698837432273,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.3733520996498024,
+      "series": "mlc_ctx_cotK_first",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.22139805879067487,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.364561200186411,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.4210862069167265,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.43096852993075563,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.44394150806409105,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.43127646672010156,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.456835121289661,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.5592890865233034,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.5807386494829885,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.6087317287748549,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.5957010441214728,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.6210691707187187,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.663418061112105,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.6555513678584775,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.6371412044089724,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.6070642846487353,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.6134840166482946,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.6139366525848303,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.5922716884629484,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.5922989391215054,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.5718124218085305,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.5746253089941562,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.5532944108328136,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.53683215465144,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.5213997726812909,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.5082416406846082,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.5117173803433297,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.5175121876066366,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.5062542792250935,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.47953111781845736,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.45523952540260126,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.399466654969617,
+      "series": "mlc_cotK_first",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.5379339560475964,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.5844415103838303,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "held-out skill (remainder target)": 0.5928090883074464,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "held-out skill (remainder target)": 0.5716932551742486,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "held-out skill (remainder target)": 0.5848070129143887,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "held-out skill (remainder target)": 0.5752058278465173,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "held-out skill (remainder target)": 0.5973138636809316,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "held-out skill (remainder target)": 0.6673473756698107,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "held-out skill (remainder target)": 0.687698177110121,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "held-out skill (remainder target)": 0.7018048952973441,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "held-out skill (remainder target)": 0.6955853518405412,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "held-out skill (remainder target)": 0.7155165705850713,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "held-out skill (remainder target)": 0.7671594964027962,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "held-out skill (remainder target)": 0.759961490387003,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "held-out skill (remainder target)": 0.7381729445765268,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "held-out skill (remainder target)": 0.7092184435854161,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "held-out skill (remainder target)": 0.7110139161054982,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "held-out skill (remainder target)": 0.7041380890246927,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "held-out skill (remainder target)": 0.6884968434023389,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "held-out skill (remainder target)": 0.6879022432299244,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "held-out skill (remainder target)": 0.671685849391761,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "held-out skill (remainder target)": 0.6775880719099547,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "held-out skill (remainder target)": 0.6512327685729461,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "held-out skill (remainder target)": 0.6361195349148382,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "held-out skill (remainder target)": 0.6208513500561991,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "held-out skill (remainder target)": 0.6114836205303747,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "held-out skill (remainder target)": 0.6095121570190037,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "held-out skill (remainder target)": 0.6207312135613277,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 28.0,
+      "held-out skill (remainder target)": 0.611591937420386,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 29.0,
+      "held-out skill (remainder target)": 0.5980279272221045,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 30.0,
+      "held-out skill (remainder target)": 0.5878527359326848,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 31.0,
+      "held-out skill (remainder target)": 0.5313260531435384,
+      "series": "mlc_ident",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "held-out skill (remainder target)": 0.7671594964027962,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "held-out skill (remainder target)": 0.7671594964027962,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 290,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched-length arms \u2014 avg_q",
+        "xlabel": "layer",
+        "ylabel": "held-out skill (remainder target)",
+        "legend_labels": [
+          "mlc_ctx",
+          "mlc_ctx_cotK",
+          "mlc_ctx_apfx",
+          "mlc_cotK",
+          "mlc_apfx",
+          "mlc_ctx_cotfull",
+          "mlc_ctx_cotK_first",
+          "mlc_cotK_first",
+          "mlc_ident",
+          "null band (max-over-layers)",
+          "identity ceiling"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "mlc_ctx",
+      "mlc_ctx_cotK",
+      "mlc_ctx_apfx",
+      "mlc_cotK",
+      "mlc_apfx",
+      "mlc_ctx_cotfull",
+      "mlc_ctx_cotK_first",
+      "mlc_cotK_first",
+      "mlc_ident",
+      "identity ceiling"
+    ]
+  }
+}

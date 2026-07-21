@@ -7,13 +7,20 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Two disclosed read-only
-exceptions: check 34, when its trigger fires, ``stat()``s the live sizes of
+``epm:plan-verify`` marker — never this script). Four disclosed read-only
+exceptions: check 31, when its trigger fires and a pin-form satisfier names
+a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
+the repo root — read-only, no import, no network (#1557); check 34, when
+its trigger fires, ``stat()``s the live sizes of
 the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
-writes, still no network; and check 37, when its trigger fires, reads
+writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network.
+dispatch set — read-only, no import, no network; and check 41, when its
+trigger fires and the cheaper satisfiers leave survivors, path-loads
+``scripts/select_step9c_tests.py`` and runs its pure selection functions
+over the plan's declared touched files — file reads under ``tests/``, no
+git, no network; measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -89,17 +96,28 @@ Check catalog (id — classification — kind scope)
   c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
   c38 exit-0 repo-wide         WARN-only, conditional    all kinds
       criterion baseline
+  c39 off-pod phase             WARN-only, conditional    experiment only
+      declaration
+  c40 header version label vs   WARN-only, conditional    all kinds
+      persisted filename
+  c41 regression-anchor named   WARN-only, conditional    infra + batch only
+      test executed or gate-selected
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
 the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
 bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
+Check 40 also runs outside ``verify_plan_text()`` — it compares the first
+heading's self-declared ``# Plan v<X>`` label against the persisted
+``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
+the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
+draft).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -136,7 +154,12 @@ labeled-line forms):
   - ``N/A — no multi-field bundle reuse`` (check 30)
   - ``Durability pin: N/A — <one-line reason>`` / alias
     ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
-    mandatory — a bare ``Durability pin: N/A`` still WARNs)
+    mandatory — a bare ``Durability pin: N/A`` still WARNs. NEW-pin
+    registration satisfier, #1557 — not an N/A escape: a pin line naming a
+    ``tests/`` test FILE absent from disk additionally needs
+    selector-registration evidence, either the un-negated registry-tuple
+    token on the pin line itself or one line-start ``Selector
+    registration:`` labeled line carrying it)
   - ``N/A — no fit-family phases`` (check 32 fit branch; the battery
     branch shares check 12's ``N/A — no draw battery``)
   - ``N/A — no per-rung checkpoint persistence`` / alias
@@ -146,6 +169,8 @@ labeled-line forms):
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
+  - ``N/A — no off-pod phase`` (check 39)
+  - ``N/A — no regression anchors`` (check 41)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -183,6 +208,7 @@ Exit codes: 0 = PASS (WARNs allowed), 1 = at least one FAIL,
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -844,16 +870,16 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(l) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the eleven letters.
+    forcing the section to exist and naming the twelve letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
-    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    plan record), '(self-)attestation(s)', or the literal (a)-(l) range
+    token ((a)-(j)/(a)-(k) grandfathered for in-flight plans; #1366/#1522)
     (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
@@ -874,30 +900,30 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l); older ranges grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-l])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/12 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(l) items detectable — verify all twelve attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance/parent-lineage) before approval",
+            "code-throughput/pair-provenance/parent-lineage/validity-domain) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(l) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(l); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 
@@ -5065,18 +5091,113 @@ def _c31_trigger_lines(plan: str) -> list[str]:
     return out
 
 
-def _c31_satisfier(plan: str) -> str | None:
-    """First satisfier line: ``Durability pin: <...test_...>`` (a standing OR
-    planned pin test — the verifier cannot and need not distinguish), or a
-    reason-bearing NA escape. Bare ``Durability pin: N/A`` (no reason) does
-    NOT satisfy."""
+def _c31_satisfier(plan: str) -> tuple[str, str] | None:
+    """First satisfier line as ``(form, detail)``: ``("pin", ...)`` for
+    ``Durability pin: <...test_...>`` (a standing OR planned pin test — the
+    NEW-pin registration sub-check below adjudicates the planned case), or
+    ``("na", ...)`` for a reason-bearing NA escape. Bare ``Durability pin:
+    N/A`` (no reason) does NOT satisfy. Detail strings are byte-preserved
+    from the pre-#1557 single-string return (single caller)."""
     for line in plan.splitlines():
         m = _C31_PIN_LABEL_RE.search(line)
         if m and _TEST_IDENT_RE.search(line[m.end() :]):
-            return f"pin named ({line.strip()[:80]!r})"
+            return ("pin", f"pin named ({line.strip()[:80]!r})")
         if _C31_PIN_NA_RE.search(line) or _C31_NA_ALIAS_RE.search(line):
-            return f"no-pin justification declared ({line.strip()[:80]!r})"
+            return ("na", f"no-pin justification declared ({line.strip()[:80]!r})")
     return None
+
+
+# NEW-pin selector-registration sub-check (#1557; the #1546 parked gap): a
+# pin FILE absent from disk is branch-new; a new test file outside
+# select_step9c_tests.py's WORKFLOW_INVARIANT tuple never runs on a LATER
+# SKILL.md diff (the .claude/skills/**/SKILL.md WORKFLOW_SURFACE_GLOBS
+# entry short-circuits per-file mapping; .md files have no stem-test map)
+# — the pin gates only its own landing round (lineage: #1210's pin landed
+# unregistered; #1242/#1268 registered after the fact). File grain IS the
+# gate-visibility grain: the tuple registers FILES, so a new test FUNCTION
+# in a registered file is selector-visible by construction and never
+# flags. Registration evidence is PLAN-GLOBAL (the base satisfier's
+# granularity); whether the diff actually ships the registration stays
+# with the code-reviewer (the c11/c15 bound). The negation window is
+# one-sided (chars BEFORE the token only, the c41 idiom) — a disclosed
+# residual; do not widen speculatively without a corpus re-scan. Negation
+# tokens: `pending` deliberately EXCLUDED ("registration pending" is
+# honest commitment phrasing in a plan, where everything is pending by
+# construction); `excluded|removed` included (anti-commitment).
+# Calibration (#1557 scan, 2026-07-20; old = origin/main@ef23fa28df,
+# new = this file; corpus = tasks/*/*/plans/v*.md + .claude/plans/*.md
+# from the main root, 3,024 files; kind="infra" uniform — an UPPER BOUND
+# on the production fire set, kind-exempt plans SKIP in production):
+# transitions SKIP->SKIP 2,390 / PASS->PASS 303 / WARN->WARN 328 /
+# PASS->WARN 3; 0 forbidden flips (no WARN->PASS, no fire->SKIP, no flip
+# on a plan without an absent-path pin). The 3 PASS->WARN plan-versions
+# are version-siblings of ONE distinct plan (#1326 v1-v3), hand-inspected
+# true positive: its pin file is absent from today's tree (never landed
+# under that name) with no registration statement — exactly the #1546
+# gap shape. Historically-new-now-landed pins (#1210/#1242/#1268 era)
+# correctly read standing against today's tree -> no churn. ANY future
+# change to these regexes re-runs the corpus scan and records the
+# realized numbers here (the c27/c32 gate precedent).
+_C31_PIN_PATH_RE = re.compile(r"\b(?:tests/(?:[\w.-]+/)*)?test_\w+\.py\b")
+_C31_REG_TOKEN_RE = re.compile(r"\bWORKFLOW_INVARIANT\b")
+_C31_REG_NEG_RE = re.compile(
+    r"(?i)\b(?:not?|never|without|un-?registered|absent|missing|outside|excluded|removed)\b"
+)
+_C31_REG_NEG_WINDOW = 40
+_C31_REG_LABEL_RE = re.compile(r"(?i)^\s*(?:[-*>+]\s+)*(?:\*\*)?selector registration\b")
+_C31_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+
+def _c31_pin_lines(plan: str) -> list[str]:
+    """ALL lines satisfying the pin-form predicate (Durability-pin label +
+    test ident after it) — RAW scan, same convention as ``_c31_satisfier``."""
+    out: list[str] = []
+    for line in plan.splitlines():
+        m = _C31_PIN_LABEL_RE.search(line)
+        if m and _TEST_IDENT_RE.search(line[m.end() :]):
+            out.append(line)
+    return out
+
+
+def _c31_new_pin_paths(plan: str) -> list[str]:
+    """Sorted, normalized ``tests/`` paths named on pin lines whose FILE is
+    absent under ``_C31_REPO_ROOT`` (=> branch-new). A bare filename
+    normalizes to ``tests/<name>`` (the c41 ``_C41_TESTPATH_RE``
+    convention)."""
+    paths: set[str] = set()
+    for line in _c31_pin_lines(plan):
+        for m in _C31_PIN_PATH_RE.finditer(line):
+            p = m.group(0)
+            if not p.startswith("tests/"):
+                p = f"tests/{p}"
+            if not (_C31_REPO_ROOT / p).is_file():
+                paths.add(p)
+    return sorted(paths)
+
+
+def _c31_reg_token_unnegated(line: str) -> bool:
+    """``WORKFLOW_INVARIANT`` token with no negation token in the
+    ``_C31_REG_NEG_WINDOW`` chars before it (the ``_c41_line_triggers``
+    window idiom)."""
+    for m in _C31_REG_TOKEN_RE.finditer(line):
+        window = line[max(0, m.start() - _C31_REG_NEG_WINDOW) : m.start()]
+        if not _C31_REG_NEG_RE.search(window):
+            return True
+    return False
+
+
+def _c31_registration_named(plan: str) -> bool:
+    """Form A: the un-negated tuple token on a pin line. Form B: a
+    line-start ``Selector registration:``-labeled line carrying the
+    un-negated token. RAW scan (a registration line may legitimately sit in
+    a fenced diff/section block, matching the pin satisfier's convention)."""
+    for line in _c31_pin_lines(plan):
+        if _c31_reg_token_unnegated(line):
+            return True
+    for line in plan.splitlines():
+        if _C31_REG_LABEL_RE.search(line) and _c31_reg_token_unnegated(line):
+            return True
+    return False
 
 
 def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
@@ -5093,9 +5214,28 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     ledger-entry classes with no pin-test practice). Known residual FP
     class (disclosed): scope-table rows whose negation token sits >24
     chars from the edit verb (#1102 shape) still trigger — the 1-line NA
-    escape is the remedy. Out of mechanical scope: whether a named pin
-    test actually exists / ships (the code-reviewer checks the diff, same
-    bound as c11/c15)."""
+    escape is the remedy.
+
+    NEW-pin selector-registration branch (#1557; the #1546 parked gap):
+    when the pin-form satisfier names a ``tests/…test_*.py`` FILE absent
+    from disk (branch-new — the c41 existence-gate reading; file grain
+    because the selector's ``WORKFLOW_INVARIANT`` tuple registers FILES),
+    the plan must additionally carry registration evidence — Form A: the
+    un-negated tuple token on the pin line; Form B: one line-start
+    ``Selector registration:`` labeled line carrying it — else WARN. NA
+    escapes short-circuit BEFORE any disk access (the c34 idiom).
+    Fail-open branches (disclosed under-triggers): a pin ident with no
+    extractable ``tests/`` path PASSes plain, and a ``--plan-file``
+    off-repo invocation (no ``tests/`` dir under the repo root) PASSes
+    with the sub-check noted skipped (the c41 off-repo doctrine). The
+    Goal's "rules-pin-discoverable" alternative is UNREACHABLE in v1
+    scope: this trigger fires on SKILL.md paths only, and the #1496
+    rules-pin discovery arm covers ``.claude/rules/*.md`` targets only —
+    it gains a code arm only if the trigger ever widens (a future
+    calibration decision). Out of mechanical scope: whether the named
+    pin test / registration actually SHIPS in the diff (the
+    code-reviewer checks the diff, same bound as c11/c15) — the disk
+    probe here classifies NEW-vs-standing only."""
     cid, name = "c31_skillmd_prose_pin", "SKILL.md prose edit backed by a durability pin"
     if kind not in ("infra", "batch"):
         return _skip(
@@ -5105,8 +5245,45 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     if not trig:
         return _skip(cid, name, "no SKILL.md edit-commitment line detected")
     sat = _c31_satisfier(plan)
-    if sat:
-        return _pass(cid, name, sat)
+    if sat is not None:
+        form, sat_detail = sat
+        if form == "na":
+            # NA short-circuits before any disk access (the c34 NA idiom).
+            return _pass(cid, name, sat_detail)
+        tests_dir = _C31_REPO_ROOT / "tests"
+        if not tests_dir.is_dir():
+            # --plan-file off-repo: cannot adjudicate NEW-vs-standing;
+            # fail-open (the c41 off-repo doctrine).
+            return _pass(
+                cid,
+                name,
+                sat_detail + " — registration sub-check skipped (tests/ absent under repo root)",
+            )
+        new_paths = _c31_new_pin_paths(plan)
+        if new_paths and not _c31_registration_named(plan):
+            return _warn(
+                cid,
+                name,
+                f"plan pins SKILL.md prose to a branch-NEW test file ({', '.join(new_paths[:3])}"
+                " — absent from disk) but names no Step-9c selector registration — a new pin "
+                "file outside the selector's WORKFLOW-INVARIANT tuple never runs on a later "
+                "SKILL.md diff (the workflow-surface glob short-circuits; .md files have no "
+                "stem-test map), so the pin gates nothing after its own landing round (#1210 "
+                "landed unregistered; #1242/#1268 registered after the fact; #1546). Remedy: "
+                "state the registration in the plan — the registry tuple's name "
+                "(underscore-joined) on the `Durability pin:` line itself, or on one standalone "
+                "line starting `Selector registration:` naming the "
+                "scripts/select_step9c_tests.py tuple — or pin via a new test added to an "
+                "already-registered test file",
+            )
+        if new_paths:
+            return _pass(
+                cid,
+                name,
+                sat_detail + f" — NEW pin file(s) {', '.join(new_paths)} with Step-9c selector "
+                "registration named",
+            )
+        return _pass(cid, name, sat_detail)
     return _warn(
         cid,
         name,
@@ -5686,14 +5863,15 @@ def _c34_headroom(rel: str, wl) -> tuple[int, int, str] | None:
         return None
     size = p.stat().st_size
     if p.name == "LESSONS.md":
-        # #1269: the binding runtime constraint is min(cap, growth ratchet) —
-        # a plan passing the 8000-byte cap headroom could still FAIL
-        # workflow_lint's ratchet at implement time (the plan-time miss c34
-        # exists to close).
-        ratchet = wl._LESSONS_RATCHET_BYTES
-        cap = min(wl._LESSONS_MAX_BYTES, ratchet)
-        src = "_LESSONS_RATCHET_BYTES" if ratchet < wl._LESSONS_MAX_BYTES else "_LESSONS_MAX_BYTES"
-        return cap - size, cap, src
+        # #1504: the TOTAL growth ratchet is retired — the binding total
+        # constraint is the leanness cap. Per-row / non-row budgets also
+        # bind at implement time; c34's summed-block-bytes heuristic keeps
+        # the total cap as its denominator (a single-row insert over
+        # _LESSONS_ROW_MAX_BYTES is a disclosed FN here, caught by the
+        # lint). No trigger-regex change (_C34_PATH_RE / _C34_VERB_RE /
+        # _C34_BUDGET_RE untouched) — the re-audit clause does not fire;
+        # the looser denominator only monotonically reduces WARNs.
+        return wl._LESSONS_MAX_BYTES - size, wl._LESSONS_MAX_BYTES, "_LESSONS_MAX_BYTES"
     cap = wl.AGENT_SPEC_SIZE_GRANDFATHER.get(p.name)
     if cap is not None:
         return cap - size, cap, "AGENT_SPEC_SIZE_GRANDFATHER"
@@ -6352,6 +6530,370 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
+
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+
+
+def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan whose non-fenced
+    prose names an off-pod / VM-side phase must either carry the fenced
+    ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
+    — per phase: runs_on + reads[] with producing phase + permanent source
+    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    consume, #1535) or declare the standalone escape
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
+    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    at VM launch on pod-only scratch never in the upload set; incident
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
+    family), and legacy plans must not bounce retroactively. kind-exempt
+    outside experiment: infra/batch/analysis/survey plans rarely dispatch
+    pods, and infra workflow-fix plans (this check's own lineage included)
+    legitimately discuss "off-pod" without having phases. Trigger scans
+    STRIPPED prose (fenced blocks masked); the block satisfier scans RAW
+    text because the slot is fenced YAML by design (the c30 convention)."""
+    cid, name = "c39_off_pod_phase_declaration", "off-pod phase declaration"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: off-pod phase declaration is an experiment-plan "
+            "(pod + off-pod phase) shape",
+        )
+    text = strip_fences(plan)
+    trigger_lines = [ln for ln in text.splitlines() if _C39_TRIGGER_RE.search(ln)]
+    if not trigger_lines:
+        return _skip(cid, name, "no off-pod / vm-side vocabulary detected")
+    if "off_pod_phases:" in plan:  # raw plan: the slot is fenced YAML by design
+        return _pass(cid, name, "fenced off_pod_phases: declaration block present")
+    if _standalone_na_declared(plan, r"no off-pod phase\b"):
+        return _pass(cid, name, "explicit N/A declared (no off-pod phase)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan prose names an off-pod / VM-side phase ({shown!r}) but carries no fenced "
+        "`off_pod_phases:` block — without the declaration the phase's READS are not "
+        "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
+        "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
+        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
+        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
+        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+    )
+
+
+# ─── Check 40 — header version label vs persisted filename (outside CHECKS) ─
+
+_C40_FILENAME_RE = re.compile(r"v(\d+)\.md")  # fullmatch on plan_path.resolve().name
+_C40_HEADER_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")  # on the first heading's TEXT
+
+
+def check_header_version_vs_filename(plan: str, *, plan_path: Path) -> CheckResult:
+    """WARN when the plan's first heading self-declares ``Plan v<X>`` and the
+    persisted filename is ``v{K}.md`` with X != K (#1482: '# Plan v4' rode
+    v5.md + v6.md unnoticed). Version-neutral titles PASS (the sanctioned
+    escape); a non-``v{K}.md`` filename SKIPs (nothing to compare). The
+    filename is read via ``plan_path.resolve()`` so a ``plans/plan.md``
+    symlink invocation compares against the real ``v{K}.md`` target.
+    WARN-only, all kinds."""
+    cid = "c40_header_version_vs_filename"
+    name = "header self-declared version matches persisted filename"
+    m_file = _C40_FILENAME_RE.fullmatch(plan_path.resolve().name)
+    if not m_file:
+        return _skip(cid, name, "filename carries no v{K}.md version (draft / standalone plan)")
+    _, body = split_frontmatter(plan)
+    heads = _headings(body)
+    if not heads:
+        return _skip(cid, name, "no headings in plan")
+    m_head = _C40_HEADER_RE.match(heads[0].text)
+    if not m_head:
+        return _pass(cid, name, "header is version-neutral — no self-declared version")
+    x, k = int(m_head.group(1)), int(m_file.group(1))
+    if x == k:
+        return _pass(cid, name, f"header v{x} matches persisted {plan_path.resolve().name}")
+    return _warn(
+        cid,
+        name,
+        f"header self-declares v{x} but the persisted file is {plan_path.resolve().name} — "
+        f"stale version label (#1482: '# Plan v4' rode v5+v6 unnoticed); retitle the header "
+        f"to v{k} or make it version-neutral ('# Plan (amendment) — …' / "
+        f"'# Plan — Issue #<N>: …')",
+    )
+
+
+# ─── Check 41 — regression-anchor test executed or gate-selected ───────────
+
+# Trigger: a NON-FENCED line carrying BOTH a test-file path token AND
+# regression-anchor / gate-selection vocabulary — same-line co-occurrence
+# only (the c37/c38 same-line-radius doctrine; a ±N window would false-fire
+# on §6 test lists near unrelated gate prose) — with no negation token.
+#
+# Test-path token: optional tests/ prefix + optional subdirs; ``::node`` ids
+# are naturally excluded from the capture (the match ends at ``.py``). A bare
+# ``test_x.py`` normalizes to ``tests/test_x.py`` — a disclosed convenience
+# (plans conventionally write full repo-relative paths; the bare form is
+# assumed to live under tests/).
+_C41_TESTPATH_RE = re.compile(r"\b((?:tests/(?:[\w-]+/)*)?test_[\w-]+\.py)\b")
+
+# Anchor / gate-selection vocabulary. Two claim classes, one trigger set:
+#  (i) gate-selection claims — "sits on the Step-9c mapped-scan path",
+#      "Step 9c selects/runs it", "auto-selected", "the gate will run it",
+#      "selected/picked up by the (9c) gate";
+#  (ii) anchor claims — "regression anchor", "must stay green",
+#      "stays/remains green".
+_C41_ANCHOR_VOCAB_RE = re.compile(
+    r"(?i)\bregression[- ]anchor"
+    r"|\bmust\s+(?:stay|remain)\s+green\b|\b(?:stays?|remains?)\s+green\b"
+    r"|\bmapped[- ]scan\b"
+    r"|\bstep[- ]?9c\b"
+    r"|\bauto[- ]select"
+    r"|\bgate\s+(?:will\s+)?(?:runs?|selects?|covers?)\b"
+    r"|\b(?:selected|picked\s+up)\s+by\s+the\s+(?:9c\s+)?gate\b"
+)
+
+# Negation guard (the c37 ``_C37_NEG_RE`` convention, LOCALIZED): the
+# CORRECTED plan shape ("test X is NOT auto-selected — the one-hop import
+# map misses it — so §6 runs it explicitly") must not trigger. The guard is
+# per-VOCAB-HIT, not per-line: a negation token within the
+# ``_C41_NEG_WINDOW`` chars BEFORE a vocabulary match guards THAT match
+# only — calibration showed the founding incident line itself (#1536 v2
+# L112) opens with an unrelated "N/A — not an experiment" clause ~400 chars
+# before its anchor vocabulary, so a whole-line negation guard silently
+# un-triggers the very shape the check exists to catch.
+_C41_NEG_RE = re.compile(
+    r"(?i)\bnot\b|\bnever\b|\bno longer\b|\bcannot\b|\bisn'?t\b|\bwon'?t\b|\bmisse[sd]\b"
+)
+_C41_NEG_WINDOW = 40  # chars of pre-context a negation token guards
+
+
+def _c41_line_triggers(line: str) -> bool:
+    """True when ``line`` carries at least one anchor/gate vocabulary hit
+    that is not LOCALLY negated (no negation token in the ``_C41_NEG_WINDOW``
+    chars before the hit). Post-hit negation ("selected? it is not") is a
+    disclosed non-guard — rare, and the fail direction is a WARN the N/A
+    escape remedies, not a miss."""
+    for m in _C41_ANCHOR_VOCAB_RE.finditer(line):
+        window = line[max(0, m.start() - _C41_NEG_WINDOW) : m.start()]
+        if not _C41_NEG_RE.search(window):
+            return True
+    return False
+
+
+def _c41_anchors(plan: str) -> set[str]:
+    """Normalized anchor test paths from non-fenced, locally-un-negated
+    trigger lines (a bare ``test_x.py`` normalizes to ``tests/test_x.py``;
+    ``::node`` ids never enter the capture — the match ends at ``.py``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    anchors: set[str] = set()
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or not _c41_line_triggers(line):
+            continue
+        for m in _C41_TESTPATH_RE.finditer(line):
+            path = m.group(1)
+            if not path.startswith("tests/"):
+                path = f"tests/{path}"
+            anchors.add(path)
+    return anchors
+
+
+# Touched-file derivation: RAW scan (fences INCLUDED — scope lists and
+# commands legitimately live in fences/tables; the c11 raw-scan doctrine).
+# tests/ paths are deliberately EXCLUDED: every named anchor is itself a
+# mentioned tests/ path, so admitting tests/ would make every anchor
+# self-satisfy via the selector's touched-test arm. Over-inclusion is the
+# SAFE polarity here (more touched files -> more selection -> fewer WARNs;
+# a missed WARN is the acceptable fail-open direction).
+_C41_TOUCHED_RE = re.compile(
+    r"\b(scripts/[\w./-]+\.py"
+    r"|src/explore_persona_space/[\w./-]+\.py"
+    r"|\.claude/rules/[\w-]+\.md)\b"  # rules-pin arm inputs (#1496)
+)
+
+_C41_SELECTOR_PATH = Path(__file__).resolve().parent / "select_step9c_tests.py"  # tests monkeypatch
+_C41_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34 pattern)
+_c41_selector_cache: list = []  # [module] once loaded; [None] when the file is absent
+
+
+def _c41_selector():
+    """Lazily path-load ``scripts/select_step9c_tests.py`` (stdlib-only
+    module-level imports, ~ms; NOT registered in ``sys.modules`` — the test
+    suite loads its own instance and the two must not clobber each other).
+    ``None`` => file absent (``--plan-file`` off-repo) => the caller SKIPs
+    loudly (the c37 "membership cannot be adjudicated" doctrine). A broken
+    selector file raises out of ``exec_module`` — the caller's
+    ``except Exception`` degrades that to a loud SKIP naming the breakage."""
+    if not _c41_selector_cache:
+        mod = None
+        if _C41_SELECTOR_PATH.is_file():
+            spec = importlib.util.spec_from_file_location(
+                "_c41_step9c_selector", _C41_SELECTOR_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)  # may raise; caller catches -> loud SKIP
+        _c41_selector_cache.append(mod)
+    return _c41_selector_cache[0]
+
+
+def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a plan-named
+    regression-anchor / "the Step-9c gate will run it" test must be either
+    explicitly run by a pytest command in the plan, branch-new (absent from
+    disk — forward-looking, gate-covered by the touched-test arm), or
+    actually returned by the REAL Step-9c selection
+    (``select_step9c_tests.select_tests_with_reasons``) over the plan's
+    declared touched files. #1536 plan v2 claimed two ``test_issue906_*``
+    files "sit on the Step-9c mapped-scan path for sft.py edits" — measured
+    false: ``--map-files`` on sft.py is empty and the full selection returns
+    56 tests without either anchor (the import map is one-hop; a test
+    importing a helper that imports the touched module is never selected).
+    NEVER FAILs (task-body constraint: an anchor claim can be legitimately
+    satisfied by prose the parser cannot see; fail-open).
+
+    Satisfiers per anchor, cheapest first: (a) a ``pytest`` command naming
+    the anchor's basename anywhere in the RAW plan (fences included — that
+    is where commands live); (b) the existence gate — an anchor absent from
+    disk is a PLAN-NEW test, never an offender (the c37 existence-gate
+    doctrine transposed; Step 9c's touched-test arm selects any branch-new
+    ``tests/**/test_*.py`` in the diff); (c) ONE oracle call to the full
+    Step-9c selection, which covers stem-map, glob-scan (the ``--map-files``
+    letter), import-map (the Goal's direct-import parenthetical), literal-
+    path, rules-pin, and present-on-disk ``WORKFLOW_INVARIANT`` membership.
+    Selector absent or raising -> loud SKIP naming the cause (never WARN,
+    never silent PASS): verify_plan gates EVERY plan at Phase 1.5.0, so a
+    selector regression must not block fleet-wide planning.
+
+    Disclosed v1 limitations (fail-SAFE polarities; the Phase-2 critics
+    remain the backstop): (1) under-trigger — anchor vocabulary on the line
+    ABOVE its test list ("These are regression anchors:\\n- tests/test_a.py")
+    does not trigger; widen to a ±1 window only after burn-in. (2)
+    modified-existing-test false-WARN — an anchor that exists on disk but
+    becomes selected only via a plan-introduced import edit to an EXISTING
+    test will WARN despite being gate-covered post-merge (the existence gate
+    covers only ABSENT files); the explicit-pytest-command remedy resolves
+    it. (3) ``_C41_TOUCHED_RE`` omits ``.claude/skills/**`` + ``CLAUDE.md``
+    (they map to no selection arm today except invariants, which need no
+    touched file); if calibration ever shows a false-WARN class there, widen
+    the REGEX, not the vocabulary. (4) touched-set over-inclusion (sibling-
+    issue paths cited in prose count as touched) -> missed WARN, accepted
+    fail-open residual. Incident-citation prose residual: a plan QUOTING
+    this incident ("#1536 claimed tests/test_issue906_... sat on the
+    mapped-scan path") triggers unless negated; the standalone
+    ``N/A — no regression anchors`` escape is the documented remedy (the
+    c36/c38 incident-quoting residual class).
+
+    Calibration (2026-07-19, 2495 corpus plan versions, forced kind=infra —
+    per-check replay of ``check_regression_anchor_executed`` over
+    ``tasks/*/*/plans/v*.md`` at the main root): 45 WARN / 588 PASS /
+    1860 SKIP / 0 FAIL. Positive control: #1536 v2 WARNs naming
+    ``test_issue906_tiny_real_e2e.py`` ONLY
+    (``test_issue906_marker_mix_budget.py`` is (a)-satisfied by that plan's
+    line-128 ``uv run pytest`` command); the localized negation guard is what
+    keeps that control alive — v2's L112 opens "N/A — not an experiment"
+    ~400 chars before its anchor vocabulary, so a whole-line guard would
+    silently un-trigger the founding incident. Negative control: the
+    corrected shape ("NOT auto-selected ... §6 runs it explicitly") reads
+    SKIP. The 20 NEWEST plan versions by ACTUAL frontmatter kind
+    (infra|batch — #1542..#1551 era): trigger FIRED on 16 of 20 (under-fire
+    visibility), 2 WARN / 14 PASS / 4 SKIP; both WARNs hand-classify as
+    disclosed-residual false positives, meeting the <=2 FP gate exactly —
+    (i) #1551 v1, incident-citation prose (this task's own draft quoting the
+    #1536 anchors beside gate vocabulary; its v3 PASSes via the standalone
+    escape, the documented remedy), FP-class tag: incident-citation;
+    (ii) #1542 v1, coverage-analysis prose (test names on a line arguing
+    they DON'T cover the edit, ending "these run as the mapped-scan gate" —
+    the ``mapped[- ]scan`` token is the broad one), FP-class tag:
+    check-discussing prose. The residual WARN mass (45) is dominated by the
+    genuine recurrence class — recent infra plans naming a pinning test as
+    "must stay green" / gate-selected where the selection demonstrably does
+    not pick it up (e.g. #1449, #1495, #1530) — the exact claim shape this
+    check exists to adjudicate."""
+    cid, name = (
+        "c41_regression_anchor_executed",
+        "regression-anchor test executed or gate-selected",
+    )
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch "
+            "(workflow-fix) shape",
+        )
+    anchors = _c41_anchors(plan)
+    if not anchors:
+        return _skip(
+            cid,
+            name,
+            "no regression-anchor / gate-selection claim naming a test file on a non-fenced line",
+        )
+    if _standalone_na_declared(plan, r"no regression anchors?"):
+        return _pass(cid, name, "explicit N/A declared (no regression anchors)")
+    touched = sorted(set(_C41_TOUCHED_RE.findall(plan)))[:40]  # dedupe + hard bound
+    survivors: list[str] = []
+    for anchor in sorted(anchors):
+        basename = anchor.rsplit("/", 1)[-1]
+        # (a) explicit pytest command naming the anchor, anywhere in the RAW plan.
+        if re.search(r"pytest[^\n]*" + re.escape(basename), plan):
+            continue
+        # (b) existence gate: absent from disk => plan-new, forward-looking.
+        if not (_C41_REPO_ROOT / anchor).exists():
+            continue
+        survivors.append(anchor)
+    if not survivors:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchors)} anchor(s) — each explicitly run by a pytest command or "
+            "branch-new (existence gate)",
+        )
+    # (c) the FULL Step-9c selection oracle over the plan's declared touched files.
+    try:
+        mod = _c41_selector()
+        if mod is None:
+            return _skip(
+                cid,
+                name,
+                "Step-9c selection surface unavailable — scripts/select_step9c_tests.py "
+                "absent (--plan-file off-repo); anchors cannot be adjudicated",
+            )
+        tests, _, _ = mod.select_tests_with_reasons(touched, _C41_REPO_ROOT)
+    except Exception as exc:  # loud SKIP, never a crash / silent PASS
+        return _skip(
+            cid,
+            name,
+            f"Step-9c selection oracle failed ({exc!r}) — anchors cannot be adjudicated",
+        )
+    selected = set(tests)
+    offenders = [a for a in survivors if a not in selected]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchors)} anchor(s) — each explicitly run, branch-new, or "
+            f"Step-9c-selected from {len(touched)} touched file(s)",
+        )
+    named = ", ".join(f"`{a}`" for a in offenders[:6])
+    extra = f" (+{len(offenders) - 6} more)" if len(offenders) > 6 else ""
+    empty_note = (
+        " (additionally: no touched code files could be parsed from the plan)"
+        if not touched
+        else ""
+    )
+    return _warn(
+        cid,
+        name,
+        f"plan names {named}{extra} as a regression anchor / gate-selected test, but the "
+        f"Step-9c selection over the plan's {len(touched)} touched file(s) does not pick "
+        "it up (the selector's import map is one-hop — the #1536 shape) and no pytest "
+        f"command in the plan runs it explicitly{empty_note}. Remedies: name the exact "
+        "pytest invocation in the plan, import the touched module directly from the "
+        "anchor test, or declare `N/A — no regression anchors` on its own line, "
+        "unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6392,6 +6934,8 @@ CHECKS = [
     check_numeric_containment,
     check_noflags_bundling_claim,
     check_exit0_repo_wide_baseline,
+    check_off_pod_phase_declaration,
+    check_regression_anchor_executed,
 ]
 
 
@@ -6523,6 +7067,9 @@ def main() -> int:
                 "no task context (--plan-file mode; goal history requires --issue)",
             )
         )
+    # Check 40 (header version label vs persisted filename) also runs outside
+    # verify_plan_text() — it needs plan_path, defined in BOTH modes.
+    results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
     overall = all(r.passed for r in results)
 
     if args.json:

@@ -1,0 +1,1868 @@
+{
+  "commit": "f9085be7b",
+  "created": "2026-07-19T21:50:29Z",
+  "figsize": [
+    6.6,
+    6.2
+  ],
+  "points": [
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.024981415104161298,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.02497523532549284,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.020030611966580958,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.02003052391208826,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.02912748884832206,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.029127031157178296,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.01695208919825486,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.01695301616761924,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.024555510287023852,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.02469778342569351,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.02235555593935723,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.022354989962839356,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.02192017842685612,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.02356137807643921,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.032495401139439495,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0329440533040275,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.03826508357771652,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.03826577123993391,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.03137629374381734,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.03137778160721305,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.04109808143564353,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.04109962951423596,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.04278565633903042,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.04342442199578944,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.05591339293778741,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05904787890288521,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.050431722614502794,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05049465240755857,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06790076413971202,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.06790128563990161,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.04728339247480262,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.04727846056420759,
+      "series": "ranks 1-16",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.04149553370639547,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.041494793095964155,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.040957863705693986,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.040955206637036445,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06568267300816155,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0656320971360509,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.05123844616562412,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05123709765410922,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.05520568970094031,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05858267978597953,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.05870236094725689,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05870021196444686,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06173355842418682,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.06173262737736829,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06411097502122565,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.06411412170387032,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07600759844917815,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07600672951103893,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06645062567049964,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07121913650481848,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06881538309065105,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.06974401552693754,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07339202888936536,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0734053919544655,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07263695276879478,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07263852675528382,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07002652114990504,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07065615628130584,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.06477224932145043,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0647712607802674,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.058763819620374025,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.05876746089912632,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08522645919529048,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08522663487043403,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07422221490203473,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0755560471307023,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07977324253583551,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08004816252069702,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.0867631709575768,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08676324672889635,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.0671284808806274,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.06712765806649656,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07745278792314636,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07744979856495005,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.0731464833834703,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07314381515651369,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.0746466105827871,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07956082837225786,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08835282076024631,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08836866749321937,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08203694890644198,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08204058125086144,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09041038667099244,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09041215087693599,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07782404188262848,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07782939709737724,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08697126187180271,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08716747564002347,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08352793268245984,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08352816066464264,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08385154859486244,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08385504435657187,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07723396446994935,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08299369431796788,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09007714230310215,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0900673650104693,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08652511532145146,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0865232156888609,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.07469138655450858,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.07469210445341257,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08827146362962224,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08821501112734431,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09303787567137145,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09303812599646155,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08708657627012073,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08817390156291527,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09080031890835705,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09079819425723679,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09980987194904822,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09979658767806598,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09894573895214864,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09894592742722952,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09404166048299545,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09388168815565812,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09780184244008128,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09775229453928813,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09450854430958644,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09450910606900553,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10178576451572063,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10178435625732563,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09196093440687902,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09196113228784186,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11102088231096263,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11847496035605465,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09538668309300258,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09587796920595348,
+      "series": "ranks 17-64",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.08974547402606159,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.08974328063570114,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09041882840211657,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09042351253057912,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09867980614483252,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09868092397187878,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09105705741958314,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09123960323340874,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10669612979119092,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10669703642723138,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10004400455748685,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10003666359653995,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09483256445238497,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09483882430924684,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09879166866369882,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10577543276946155,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10042908762186842,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.100350772490854,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10483469158429204,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10483491783167131,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11359049430391244,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11358287319553129,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11496850343718612,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11498247663983074,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11977386782306532,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12539856436769825,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09366784011345775,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09472974318638794,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11596949283167468,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11598056702460391,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10672651486570695,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10672766700260139,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09043043533512118,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.0904314917624468,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11330717874315122,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11330809436189271,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11333204444948208,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11336357627941274,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12212688355879187,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12212471362263277,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12113577951951993,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12113806409685024,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11340222269476063,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11340289820226501,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10583135691394785,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10583075032275957,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11811181762618017,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11836817250690146,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11051799130669082,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1122049349376889,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11921922557098241,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11922154231399984,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11599651440019088,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1158954686489142,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10803789700739597,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.10803762122190563,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.10526869655343651,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1052684029834875,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1078851671793003,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1078892686932914,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11481753118673976,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11476427082061269,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11937999471180794,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11933817101775945,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12421312093564163,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12421100115824002,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11599160559627886,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11598954893004776,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.09753715409089869,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.09753941582270764,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12595021782208216,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1259529572469994,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11977252017504603,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11977640137858481,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12230015667659322,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12227328623892642,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12794440429650666,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12793506734127924,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11502985129235621,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11520574633903902,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11259918263874946,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11310260874850597,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12185032149182362,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12184732417871791,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.113169097085418,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11290169478605683,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1251028610699051,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12564115702703516,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12271645361796701,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12912184281745687,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12709235537720487,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12709453250950464,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1206469604365139,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12075489376017035,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13229243417730796,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13229218200689807,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12075546014347549,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12075283225766809,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12160088256438006,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12161317777516878,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.124121912670766,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12413711185620435,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12702555452416342,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12703163393941175,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12720189504050494,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12719650762399592,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13190420894666455,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13210792241699598,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13448430071463657,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14311473677876285,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.11703673077956633,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.11703496358307097,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12412398904258914,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.124124106306157,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12543657036360234,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12610920616125276,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12356475161243152,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1235795533934233,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13994266898639574,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14001071020161227,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13832659396127878,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13833066027451624,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13582600809794487,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13582727701473285,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1425597089915006,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14386405764520915,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12218220220896558,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12354144776830966,
+      "series": "ranks 65-128",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1335683291778863,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13356888367550135,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12782651300018189,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1278219607523643,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13144876369418101,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13144624960672913,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12904419339854656,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12904645233373446,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12726626187291878,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12726726069507643,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.133715277129679,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1337116354953376,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12681493664497756,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12681884874410854,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14050115061857815,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14085310759723058,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12625720984064448,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12608513456704806,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13405775397970765,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13393025505395995,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12768740633872766,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12780029959180683,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1198096991218669,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12198306109432577,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13367278725887544,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13368172396537936,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12918651002300263,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12918162844718928,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1399086786737067,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15015187109323425,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12665097928585511,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1265940413987353,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12804232283741046,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13817166555907678,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13364885027057094,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13403745054433114,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13955119603246513,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.139553272100015,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12668789589701512,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1266873515650072,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1289154531357506,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1296720410022678,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1345507741317703,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13587262597945637,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13642731935945596,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13642920349486976,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1397057944882958,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13969000868650527,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13624917386319202,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1362542828559392,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13207807180811315,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14249433999690653,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13290403129625628,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1329041814040297,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13216423840660652,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13216157183626354,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13345479082286105,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1354183579666014,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13749085398212624,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13748648807368247,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12966798204163887,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12967011066016432,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14484599649079455,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1448478534197175,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13790722216915785,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1379072497313545,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13278426173453894,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13278199142788927,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.136424712125227,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14508992441124935,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12621583084146137,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12621332131228336,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13057368393999735,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13221086681697725,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1459105023036522,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14589683012379762,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13525255582246642,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13524985185438598,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13382242998787386,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13382431888978052,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1497557323744022,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14997631839979952,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12200960179924758,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1220103332716671,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14135756034790137,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14136389407709382,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14551916838030465,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.153523332756621,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14208778961838375,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14319228729109656,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13596959385332452,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13803550166770673,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13228211902196252,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13228289929350567,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14004206555837062,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14003471184386762,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12880228783363368,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13005520179680874,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1353700849842432,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13547361576223027,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13238064876695965,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13328860516427876,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13730807164199932,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13730547388965064,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13148972976430917,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13143924524220296,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13461754579328178,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13461738115798838,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1375380988743259,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13753592568409612,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14898111503648992,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1489859961482538,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14368611698305211,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14478933150574147,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13513182093531828,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1425321220189687,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.15188455110522914,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15374153598207185,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13299194594081487,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13435632614294002,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1467493833723552,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15475187996155826,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13486843161805684,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13486731975868815,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1342810698219915,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13426727574168718,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1458562277640688,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1457302505356186,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1418389005024404,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14183470950594324,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1429920050515736,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14307953824671482,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13080629009737654,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13080811481330556,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12716663643008075,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1271629089507753,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14811859228132995,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14810798721206997,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1552393783333943,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15663346233383924,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13238558329403882,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13238507386469478,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1307352138081067,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1307329535145173,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14192419934162703,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1423736577343585,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14500017422648936,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14500553296032115,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12898854562335915,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1289843049389663,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1437204158733043,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14372571506335552,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.15142688680265537,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.152586578591422,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13903681102674026,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13926781780402941,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1367107998007988,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1366967663382731,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13368188580884965,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13368219997704822,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14239187294422606,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14239591069134294,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12458679547186402,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12613627141818518,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13196774356629426,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13330078363357623,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14775048424054782,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14975187859731043,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14478199809459535,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14478366690886035,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14010626391950787,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14004911542212295,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14595442088555965,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14595048035978309,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.12466594977097778,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.12444005043467565,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14725766843445476,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14725613372618573,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1410404022778764,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14106799187364816,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14110778065794738,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14109841165654557,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1395763984949293,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13951019661400055,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14062532500824798,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14257783882590847,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14019486267546655,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14019646129321084,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14655894600393216,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14692811692889107,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.138185398459567,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13818524701581514,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13828607348505573,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1382887301178608,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1382228643149631,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1398187023644446,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14151159632295884,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14138377024929116,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14058992107213775,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1405847788118869,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13588291604889613,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1358758005243198,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.15049038472147214,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1523969916314969,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14048871996488632,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1404917181218872,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14884831670761378,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14884806695370778,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13634318610583673,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13634414225256564,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14387368186468286,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14387632315076648,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1411581975146129,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14115943447360935,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14970577903663473,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15120289459061276,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.141619351169343,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14161911460974586,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13978873151094418,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1397878471621321,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14644021951107,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14643785744319104,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1409324370048003,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1418078010579219,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13737056026956307,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13740399269293746,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1381621937759262,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13816393722808695,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.15027487467369682,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.15027845383907779,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13565361406768073,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13554322255205997,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1387758437958695,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1407716861545033,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1311362594416371,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13113661407557464,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14213545968699204,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14213550147769238,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1470749521945196,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1756660184343628,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13833983482765222,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13852377049373232,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1405362254481336,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.16551478251328955,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14308066319209956,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1430058193752176,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13871824836962476,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13871623088525697,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.13037266671057923,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.13851181409780888,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14055118232429875,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14055311614079435,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.139623752855762,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1396270474250887,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.14311607784938096,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.14311565053091468,
+      "series": "ranks 129-256",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.01695208919825486,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.01695208919825486,
+      "series": "no change (identity)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "MLP \u2212 ridge gap under the shared regularizer (committed)": 0.1756660184343628,
+      "MLP \u2212 ridge gap under per-direction regularizers": 0.1756660184343628,
+      "series": "no change (identity)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 258,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "MLP \u2212 ridge gap under the shared regularizer (committed)",
+        "ylabel": "MLP \u2212 ridge gap under per-direction regularizers",
+        "legend_labels": [
+          "ranks 1-16",
+          "ranks 17-64",
+          "ranks 65-128",
+          "ranks 129-256",
+          "no change (identity)"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18",
+          "0.20"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "no change (identity)",
+      "ranks 1-16",
+      "ranks 17-64",
+      "ranks 65-128",
+      "ranks 129-256"
+    ]
+  }
+}

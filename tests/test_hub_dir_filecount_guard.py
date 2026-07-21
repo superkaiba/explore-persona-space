@@ -328,3 +328,100 @@ class TestWiring:
         assert ("upload_folder", "user/repo", "dest") in fake_api.calls
         warned = "\n".join(r.getMessage() for r in caplog.records)
         assert "EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1 set" in warned, warned
+
+
+# ---------------------------------------------------------------------------
+# Advisory per-COMMIT total-staged-files THROUGHPUT tier (#1571)
+# ---------------------------------------------------------------------------
+
+
+class TestCommitTotalWarn:
+    def test_default_constant_value(self):
+        assert hub.HUB_COMMIT_FILECOUNT_WARN == 2_000
+
+    def test_total_above_threshold_warns_and_never_raises(self, tmp_path, caplog):
+        """THE INCIDENT SHAPE (#1481): files spread across dirs, EVERY dir
+        under the per-dir tiers — only the TOTAL crosses. (durability pin)"""
+        _make_tree(tmp_path, "a", 5)
+        _make_tree(tmp_path, "b", 4)
+        _make_tree(tmp_path, "c", 3)
+        with caplog.at_level(logging.WARNING, logger=HUB_LOGGER):
+            counts = hub.assert_hub_dir_filecounts(
+                tmp_path, "p", limit=100, warn_at=100, warn_total=10
+            )
+        assert counts == {"p/a": 5, "p/b": 4, "p/c": 3}, counts  # returned, no raise
+        warned = "\n".join(r.getMessage() for r in caplog.records)
+        assert "ONE commit" in warned and "12" in warned, warned  # fired, names total
+        assert "shardNN.jsonl" in warned and "upload-policy.md" in warned, warned
+        # Per-dir tiers are silent by construction here (max dir 5 <= 100),
+        # so the advisory is the ONLY record — pins exactly-one-WARNING.
+        assert len(caplog.records) == 1, [r.getMessage() for r in caplog.records]
+
+    def test_total_at_threshold_stays_silent(self, tmp_path, caplog):
+        """Strict > : exactly-warn_total is silent."""
+        _make_tree(tmp_path, "a", 10)
+        with caplog.at_level(logging.WARNING, logger=HUB_LOGGER):
+            hub.assert_hub_dir_filecounts(tmp_path, "p", limit=100, warn_at=100, warn_total=10)
+        assert caplog.records == [], [r.getMessage() for r in caplog.records]
+
+    def test_warn_total_nonpositive_disables(self, tmp_path, caplog):
+        _make_tree(tmp_path, "a", 50)
+        with caplog.at_level(logging.WARNING, logger=HUB_LOGGER):
+            hub.assert_hub_dir_filecounts(tmp_path, "p", limit=100, warn_at=100, warn_total=0)
+        assert caplog.records == [], [r.getMessage() for r in caplog.records]
+
+    def test_default_threshold_fires_on_spread_tree_no_raise(self, tmp_path, caplog):
+        """DEFAULTS end-to-end: 2,001 files across 3 dirs (each far under the
+        5,000/dir watermark) fire the advisory, comma-formatted, no raise."""
+        for d, n in (("a", 667), ("b", 667), ("c", 667)):
+            _make_tree(tmp_path, d, n)
+        with caplog.at_level(logging.WARNING, logger=HUB_LOGGER):
+            counts = hub.assert_hub_dir_filecounts(tmp_path, "p")
+        assert sum(counts.values()) == 2_001, counts
+        warned = "\n".join(r.getMessage() for r in caplog.records)
+        assert "ONE commit" in warned, warned
+        assert "2,001" in warned, warned  # pins the comma-format discipline
+
+    def test_advisory_also_logs_on_raise_path(self, big_tree, caplog):
+        """big_tree = 10,001 files in one dir: the raise still happens, and
+        the advisory logs FIRST (remediation context for the over-cap tree —
+        packing is the right remedy there too)."""
+        with (
+            caplog.at_level(logging.WARNING, logger=HUB_LOGGER),
+            pytest.raises(hub.HubDirFileCountError),
+        ):
+            hub.assert_hub_dir_filecounts(big_tree, "dest")
+        assert any("ONE commit" in r.getMessage() for r in caplog.records), [
+            r.getMessage() for r in caplog.records
+        ]
+
+    def test_message_disjoint_from_transient_error_scan(self, tmp_path, caplog):
+        """No 500-family substring once the RENDERED comma-formatted dynamic
+        values (the exact f"{total:,}" / f"{warn_total:,}" strings) are
+        scrubbed — mirrors TestRaiseMessage's scrub pattern."""
+        total, warn_total = 12, 10
+        _make_tree(tmp_path, "a", total)
+        with caplog.at_level(logging.WARNING, logger=HUB_LOGGER):
+            hub.assert_hub_dir_filecounts(
+                tmp_path, "p", limit=100, warn_at=100, warn_total=warn_total
+            )
+        warned = "\n".join(r.getMessage() for r in caplog.records)
+        scrubbed = warned.replace(f"{total:,}", "").replace(f"{warn_total:,}", "")
+        for code in ("500", "502", "503", "504"):
+            assert code not in scrubbed, f"bare {code!r} in advisory message: {warned}"
+
+
+# ---------------------------------------------------------------------------
+# Keyword-only call-shape docs (#1571 deliverable b)
+# ---------------------------------------------------------------------------
+
+
+class TestKeywordOnlyDocs:
+    def test_retry_upload_doc_names_keyword_only_what(self):
+        doc = hub._retry_upload.__doc__
+        assert "keyword-only" in doc.lower() and 'what="' in doc, doc
+        assert hub.retry_transient is hub._retry_upload  # alias shares the doc
+
+    def test_verify_repo_paths_doc_names_keyword_only_path_in_repo(self):
+        doc = hub.verify_repo_paths_uploaded.__doc__
+        assert "keyword-only" in doc.lower() and 'path_in_repo="' in doc, doc

@@ -122,6 +122,25 @@ section wins on invocation form.
 - **No silent failures.** No `except: pass`. No `--force`. No hardcoding secrets.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")
+- **New ENUMERATED check id → probe `origin/main` for the CURRENT max id at
+  implement time, immediately before the round's final commit — never trust the
+  plan's number (#1569).** Plans assign check ids from a stale view of main;
+  with concurrent workflow-fix sessions the same-day collision recurs
+  (2026-07-19: #1550 and #1551 both implemented verify_plan.py `c40` — PR #1321
+  needed a c40→c41 renumber + conflict round; 2026-07-18: #1520 and #1521 both
+  titled verify_task_body.py `check 46`). Probe (the two known registries;
+  apply the same pattern to any other numbered check registry you touch):
+  `git fetch origin main`, then
+  `git show origin/main:scripts/verify_plan.py | grep -oE '\bc[0-9]+\b' | sort -uV | tail -1`
+  or `git show origin/main:scripts/verify_task_body.py | grep -oE 'check [0-9]+' | sort -uV | tail -1`.
+  If your id ≤ that max, take max+1 and renumber EVERY id surface in your
+  diff — docstring catalog row, conditional-checks enumeration, `(check N)`
+  escape-phrase labels, `cid` strings + `_cNN_*` helper names, test names +
+  count pins, any adversarial-planner SKILL.md escape-list row (full fan-out:
+  agent-memory `reference_verify_plan_check_fanout.md`). The plan named a
+  SLOT, not a contract: the renumber is pre-authorized — record it in your
+  results marker (`plan said c40; origin/main max was c40 → landed c41`), no
+  plan amendment needed. Re-run the probe after any rebase / conflict round.
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
 - **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s. Push BARE and check the exit code — never piped through `tail`/`grep`/`head` (`guard_piped_git_push.sh` blocks it; a pipe masks a rejected push).
 
@@ -152,7 +171,7 @@ If you write tests after the implementation (the default), still keep them gener
 
 ### After Implementation
 
-1. **Run tests — gate-matched scope (#1288).** Before posting the report marker, enumerate from the issue worktree the SAME selection the Step 9c gate will run: `uv run python scripts/select_step9c_tests.py --json` — the DEFAULT invocation (the base defaults to FETCHED `origin/main` per #1289; never `--base main`, which exists only to deliberately diff against a possibly-lagging local ref and does NOT match the gate). Then (a) **pin-sweep**: grep the ENUMERATED test files for every literal / command fragment / symbol your diff changed or deleted (OLD and NEW form), plus the edited file's basename for workflow-surface edits — every hit is a pinning test: update it if stale and add it to your run set; (b) **run in-turn** (per § Local runs below) the union of the diff-linked selections (`touched-test` / `stem-map` / `import-map` / `glob-scan` `selection_reasons`), the pin-sweep hits, and any test file the diff itself edits; (c) the invariant-only remainder (reason `invariant`, no pin hit) defers to Step 9c — state its deferred count in `(c) How to verify`. If a mandatory-set file genuinely cannot finish in-turn (e.g. a pin hit on `tests/test_workflow_lint.py`, 319-771 s), the existing NOT-RUN escape applies — but a pin-sweep HIT left NOT-RUN is presumptively blocker-adjacent (unlike a NOT-RUN slow invariant file), and the code-reviewer should treat it as such. This NARROWS the local-vs-gate scope gap (it does not eliminate it — Step 9c remains the backstop); a self-chosen scope narrower than this is the #1288 rework shape (a changed pinned literal passed 14 self-chosen tests, then failed the gate's selection ~30 min later).
+1. **Run tests — gate-matched scope (#1288).** Before posting the report marker, enumerate from the issue worktree the SAME selection the Step 9c gate will run: `uv run python scripts/select_step9c_tests.py --json` — the DEFAULT invocation (the base defaults to FETCHED `origin/main` per #1289; never `--base main`, which exists only to deliberately diff against a possibly-lagging local ref and does NOT match the gate). Then (a) **pin-sweep**: grep the ENUMERATED test files for every literal / command fragment / symbol your diff changed or deleted (OLD and NEW form), plus the edited file's basename for workflow-surface edits — every hit is a pinning test: update it if stale and add it to your run set, and record the deduplicated hit-file list (you emit it verbatim in `(c)` — see the Gate-scope template); (b) **run in-turn** (per § Local runs below) the union of the diff-linked selections (`touched-test` / `stem-map` / `import-map` / `glob-scan` `selection_reasons`), the pin-sweep hits, and any test file the diff itself edits; (c) the invariant-only remainder (reason `invariant`, no pin hit) defers to Step 9c — state its deferred count in `(c) How to verify`. If a mandatory-set file genuinely cannot finish in-turn (e.g. a pin hit on `tests/test_workflow_lint.py`, 319-771 s), the existing NOT-RUN escape applies — but a pin-sweep HIT left NOT-RUN is presumptively blocker-adjacent (unlike a NOT-RUN slow invariant file), and the code-reviewer should treat it as such. This NARROWS the local-vs-gate scope gap (it does not eliminate it — Step 9c remains the backstop); a self-chosen scope narrower than this is the #1288 rework shape (a changed pinned literal passed 14 self-chosen tests, then failed the gate's selection ~30 min later).
 2. **Run lint:** `uv run ruff check . && uv run ruff format .`
 3. **Diff check:** Re-read your own changes. Any unintended modifications?
 4. **Self-review against plan:** does the diff match the plan?
@@ -225,7 +244,7 @@ When you're done, post this structured report as the `<!-- epm:results v<n> -->`
 - **Tests run:** `tests/test_foo.py::test_bar` PASS (new), `tests/test_baz.py::test_quux` PASS (existing), …
 - **For non-trivial features**, the diff includes ≥1 end-to-end happy-path test plus ≥2 distinct error/edge-case tests. If a smaller set is appropriate (e.g. surgical bug fix), say so and justify.
 - **Regression test for a substantive BLOCKER fix** (REQUIRED when this round closes a substantive BLOCKER by adding a permanent invariant — see After-implementation step 5): cite the committed pytest (the `tests/` path + the input that trips the guard + the expected raise / value) and confirm it fails pre-fix / passes post-fix. Skip only when the round added no permanent-invariant BLOCKER fix.
-- **Gate-scope check (#1288):** selector `n_tests=<N>` (base=`<resolved base>`); ran locally: `<files>`; pin-sweep: `<fragments grepped>` → `<hits>`; deferred invariant-only: `<M>` files (Step 9c runs them). Any pin-sweep hit left NOT-RUN is named here with the exact copy-pasteable command (it is presumptively blocker-adjacent — see After-implementation step 1).
+- **Gate-scope check (#1288):** selector `n_tests=<N>` (base=`<resolved base>`); ran locally: `<files>`; pin-sweep: `<fragments grepped>` → `<K> hit files: <verbatim deduplicated hit-file list>`; deferred invariant-only: `<M>` files (Step 9c runs them). The hit-file list is REQUIRED verbatim (dedup union across fragments) — never a count-only, glob-family, or summarized field (the #1494 round-1 shape: a glob-family summary omitted 7 hit files the reviewer discharged itself); the verbatim mandate covers this pin-sweep field only (`ran locally:` / the deferred count are out of its scope); state `0 hit files` explicitly; >20 files → write `(list below)` inline and emit the FULL list as a fenced block immediately under this line (never truncate). Any pin-sweep hit left NOT-RUN is named here with the exact copy-pasteable command (it is presumptively blocker-adjacent — see After-implementation step 1).
 - **Lint:** `uv run ruff check . && uv run ruff format --check .` — PASS / FAIL details
 - **Reproduction commands** the user can run without reading the diff:
   ```

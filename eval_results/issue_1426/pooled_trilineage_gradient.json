@@ -1,0 +1,223 @@
+{
+  "dv": "Pooled tri-lineage Spearman of per-context CoT gain (skill_g_aug \u2212 skill_d_ctx2ans at each lineage's primary frozen convention, per-question 'indiv' regime) vs median well-formed CoT length (chars), over the pooled non-ICL/WildChat contexts of #928 + #1005 + #1426, with lineage fixed effects",
+  "estimator": "rank-transform gain and length WITHIN each lineage stratum (scipy rankdata, average ranks), pool the within-stratum ranks (3 strata), Pearson correlation on the pooled ranks \u2014 a stratified Spearman controlling lineage identity. Null: gains permuted WITHIN each lineage stratum (batched index matrix). CI: percentile bootstrap resampling contexts WITHIN each lineage stratum with per-draw within-stratum re-ranking",
+  "regime": "indiv",
+  "collapse_families_excluded": [
+    "icl",
+    "wildchat"
+  ],
+  "per_lineage": {
+    "issue928": {
+      "n": 32,
+      "rho": -0.7675953079178884,
+      "p": 2.9513536724352415e-07,
+      "n_flagged_below_parse_floor_in_set": 0,
+      "contexts": [
+        "f1_house_librarian",
+        "f1_house_surgeon",
+        "f1_house_programmer",
+        "f1_house_medical_doctor",
+        "f1_house_software_engineer",
+        "f1_house_data_scientist",
+        "f1_phub_01",
+        "f1_phub_02",
+        "f1_phub_03",
+        "f1_phub_04",
+        "f1_phub_05",
+        "f1_phub_06",
+        "f1_phub_07",
+        "f1_phub_08",
+        "f4_reph_imperative",
+        "f4_reph_polite",
+        "f4_reph_casual",
+        "f4_reph_legalese",
+        "f4_reph_enthusiastic",
+        "f4_reph_archaic",
+        "f5_fmt_json",
+        "f5_fmt_code_comment",
+        "f5_fmt_markdown_table",
+        "f5_fmt_xml",
+        "f5_fmt_bullets",
+        "f6_default_template",
+        "f6_helpful_asst",
+        "f8_behav_marker",
+        "f8_behav_sycophant",
+        "f8_behav_refusal",
+        "f8_behav_fact",
+        "f8_behav_harmful"
+      ],
+      "inputs": {
+        "deltas_json": "eval_results/issue_928/percontext_deltas.json",
+        "deltas_sha256": "b68f19dac4573ff5a9a6d5e5f9c299010c4b6e0542e2c1c3fbdb36c923aec517",
+        "length_meta": "figures/issue_928/percontext_scatter_indiv.meta.json",
+        "length_meta_sha256": "8ccb5deade470101af660a3a38e019787556c3a650ee1b06fef165ef209036a8",
+        "length_key": "median CoT length (chars)"
+      }
+    },
+    "issue1005": {
+      "n": 32,
+      "rho": 0.4754398826979472,
+      "p": 0.005958306054105489,
+      "n_flagged_below_parse_floor_in_set": 0,
+      "contexts": [
+        "f1_house_librarian",
+        "f1_house_surgeon",
+        "f1_house_programmer",
+        "f1_house_medical_doctor",
+        "f1_house_software_engineer",
+        "f1_house_data_scientist",
+        "f1_phub_01",
+        "f1_phub_02",
+        "f1_phub_03",
+        "f1_phub_04",
+        "f1_phub_05",
+        "f1_phub_06",
+        "f1_phub_07",
+        "f1_phub_08",
+        "f4_reph_imperative",
+        "f4_reph_polite",
+        "f4_reph_casual",
+        "f4_reph_legalese",
+        "f4_reph_enthusiastic",
+        "f4_reph_archaic",
+        "f5_fmt_json",
+        "f5_fmt_code_comment",
+        "f5_fmt_markdown_table",
+        "f5_fmt_xml",
+        "f5_fmt_bullets",
+        "f6_default_template",
+        "f6_helpful_asst",
+        "f8_behav_marker",
+        "f8_behav_sycophant",
+        "f8_behav_refusal",
+        "f8_behav_fact",
+        "f8_behav_harmful"
+      ],
+      "inputs": {
+        "deltas_json": "eval_results/issue_1005/percontext_deltas.json",
+        "deltas_sha256": "5ddc70b7e79ed92ed60c6d8bb6aa85e490ed132d8c8384818d0c4b3c4f2c3ced",
+        "length_meta": "figures/issue_1005/fam_contrast_length_matched.meta.json",
+        "length_meta_sha256": "b78c750e1d81e4c43dbce0556a0f29fd22629b51e2fdf4f2b48890b4d6c52c7e",
+        "length_key": "median well-formed CoT length (chars)"
+      }
+    },
+    "issue1426": {
+      "n": 32,
+      "rho": 0.34677419354838707,
+      "p": 0.05184477512077468,
+      "n_flagged_below_parse_floor_in_set": 0,
+      "contexts": [
+        "f1_house_librarian",
+        "f1_house_surgeon",
+        "f1_house_programmer",
+        "f1_house_medical_doctor",
+        "f1_house_software_engineer",
+        "f1_house_data_scientist",
+        "f1_phub_01",
+        "f1_phub_02",
+        "f1_phub_03",
+        "f1_phub_04",
+        "f1_phub_05",
+        "f1_phub_06",
+        "f1_phub_07",
+        "f1_phub_08",
+        "f4_reph_imperative",
+        "f4_reph_polite",
+        "f4_reph_casual",
+        "f4_reph_legalese",
+        "f4_reph_enthusiastic",
+        "f4_reph_archaic",
+        "f5_fmt_json",
+        "f5_fmt_code_comment",
+        "f5_fmt_markdown_table",
+        "f5_fmt_xml",
+        "f5_fmt_bullets",
+        "f6_default_template",
+        "f6_helpful_asst",
+        "f8_behav_marker",
+        "f8_behav_sycophant",
+        "f8_behav_refusal",
+        "f8_behav_fact",
+        "f8_behav_harmful"
+      ],
+      "inputs": {
+        "deltas_json": "eval_results/issue_1426/percontext_deltas.json",
+        "deltas_sha256": "0be8603eb1530735092c3e31967336f2157806d0fea1f3f0ed2ad7873ba24f4d",
+        "length_meta": "figures/issue_1426/fam_contrast_length_matched.meta.json",
+        "length_meta_sha256": "71e1bf65ef920481bf8c9eb23c93baa550855ff85890eced38dee7cd25f7075f",
+        "length_key": "median well-formed CoT length (chars)"
+      }
+    }
+  },
+  "pooled": {
+    "observed": 0.018206256109481917,
+    "ci95": [
+      -0.152411703691144,
+      0.17532711101001341
+    ],
+    "p_delta_le_0": 0.408,
+    "n_draws": 2000,
+    "rho": 0.018206256109481917,
+    "n_total": 96,
+    "p_perm_two_sided": 0.8601139886011399,
+    "p_perm_one_sided_positive": 0.43055694430556946,
+    "n_perm_draws": 10000,
+    "perm_seed": 658,
+    "boot_seed": 42,
+    "mean_within_lineage_rho": 0.018206256109481938
+  },
+  "naive_pooled_no_fixed_effects": {
+    "rho": 0.25184481823114485,
+    "p": 0.01331327259955447,
+    "n": 96,
+    "note": "naive pooled Spearman WITHOUT lineage fixed effects \u2014 confounded by per-lineage gain/length scale differences; contrast read only"
+  },
+  "sanity_gates": {
+    "issue1426": {
+      "reference": "eval_results/issue_1426/length_matched_gain.json",
+      "committed_rho": 0.34677419354838707,
+      "reproduced_rho": 0.34677419354838707,
+      "atol": 1e-09,
+      "pass": true
+    },
+    "issue1005": {
+      "reference": "eval_results/issue_1005/length_matched_gain.json",
+      "committed_rho": 0.4754398826979472,
+      "reproduced_rho": 0.4754398826979472,
+      "atol": 1e-09,
+      "pass": true
+    },
+    "issue928_corroboration": {
+      "reference": "eval_results/issue_928/length_matched_gain.json",
+      "committed_spearman_length_vs_gain": {
+        "pooled": {
+          "rho": -0.6981512605042016,
+          "p": 1.740888380925524e-08,
+          "n": 50
+        },
+        "unflagged": {
+          "rho": -0.8231660231660232,
+          "p": 7.155029523144287e-10,
+          "n": 36
+        },
+        "flagged": {
+          "rho": 0.1164835164835165,
+          "p": 0.6916912502331575,
+          "n": 14
+        }
+      },
+      "note": "#928's own committed reads (all-50 pooled / unflagged-36 subsets) corroborate the NEGATIVE gradient this script computes on its noncollapse-32 subset \u2014 no exact-subset committed anchor exists for #928"
+    }
+  },
+  "heterogeneity_note": "the three within-lineage gradients DISAGREE IN SIGN \u2014 #928 falls steeply with CoT length (\u03c1=-0.768 here; its own committed reads: all-50 -0.698, unflagged-36 -0.823) while #1005 (+0.475) and #1426 (+0.347) rise \u2014 so the pooled fixed-effects \u03c1 (= the mean of the within-lineage \u03c1's under equal strata, no ties) sits near 0; the pooled estimand is not a common tri-lineage gradient",
+  "caveat": "the 32 donor contexts are the SAME battery contexts in all three lineages (shared id set, asserted); the stratified bootstrap/permutation treat lineage\u00d7context cells as independent within stratum, so cross-lineage context-level dependence is not modeled",
+  "reproducibility": {
+    "git_commit": "4a65c36ab02e98406c932940b068fa35aff05afb",
+    "timestamp_utc": "2026-07-18T12:33:15.034959+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

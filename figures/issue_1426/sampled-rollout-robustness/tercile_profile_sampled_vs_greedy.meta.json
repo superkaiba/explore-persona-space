@@ -1,0 +1,285 @@
+{
+  "commit": "ce341a98ac",
+  "created": "2026-07-18T18:12:29Z",
+  "figsize": [
+    7.8,
+    4.8
+  ],
+  "points": [
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.1491798228966169,
+      "error": 0.03472877053365399,
+      "series": "greedy",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.18664040374328583,
+      "error": 0.025784064618451702,
+      "series": "greedy",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.17122632995694487,
+      "error": 0.05577148019341037,
+      "series": "greedy",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.1526393420903691,
+      "error": 0.03472877053365399,
+      "series": "seed 42",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.15131092987238892,
+      "error": 0.025784064618451702,
+      "series": "seed 42",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.20888204067651328,
+      "error": 0.05577148019341037,
+      "series": "seed 42",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.15040859520336125,
+      "error": 0.03472877053365399,
+      "series": "seed 137",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.1442600806958113,
+      "error": 0.025784064618451702,
+      "series": "seed 137",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.1826871332152209,
+      "error": 0.05577148019341037,
+      "series": "seed 137",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.1491798228966169,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.18664040374328583,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.17122632995694487,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.11062278344638746,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.14326126225262978,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.14271176771007524,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.2046131310874402,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.24811367923609648,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.2024534064517871,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.1526393420903691,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.15131092987238892,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.20888204067651328,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.12236856780603318,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.12552527942210964,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.15669069478776843,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.19605674267834441,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.17756189218134832,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.2722358794207795,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.15040859520336125,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.1442600806958113,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.1826871332152209,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.11863295077976183,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.12207949096304127,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.13534328268593898,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median well-formed CoT length tercile": 0.0,
+      "per-context CoT gain (\u0394 skill)": 0.1880904918470698,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median well-formed CoT length tercile": 1.0,
+      "per-context CoT gain (\u0394 skill)": 0.17364762019994467,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median well-formed CoT length tercile": 2.0,
+      "per-context CoT gain (\u0394 skill)": 0.24688624307275972,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "CoT-length tercile profile \u2014 sampled seeds vs greedy",
+        "xlabel": "median well-formed CoT length tercile",
+        "ylabel": "per-context CoT gain (\u0394 skill)",
+        "legend_labels": [
+          "greedy",
+          "seed 42",
+          "seed 137"
+        ],
+        "xticklabels": [
+          "shortest third",
+          "middle third",
+          "longest third"
+        ],
+        "yticklabels": [
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18",
+          "0.20",
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "greedy",
+      "seed 42",
+      "seed 137"
+    ]
+  }
+}

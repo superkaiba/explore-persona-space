@@ -406,14 +406,24 @@ such corpora or banks:
    each call site's statically-known shape (positional count + keyword
    names as placeholder values; `bind_partial` when the call forwards
    `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
-   ValueError). Full recipe + worked example + incidents #606/#1332:
-   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
-   branches".
+   ValueError). Import + bind still do NOT run the branch's LOGIC: any
+   branch a `cfg.smoke`/`--smoke` fence makes unreachable by every smoke
+   gets a standalone 1-cell PRODUCTION-MODE probe that EXECUTES it before
+   dispatch, recorded under `## Smoke run` (#1481: a fenced-branch
+   `IsADirectoryError` crashed production twice — no smoke could verify
+   the r1 fix). Full recipe + worked examples + incidents
+   #606/#1332/#1481: `.claude/rules/gotchas.md` "Lazy imports inside
+   smoke-skipped branches" + its fenced-branch runtime-probe sibling.
 2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
    <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
-   that merge-gate leg is the backstop.
+   that merge-gate leg is the backstop. Record the fragments grepped +
+   the verbatim deduplicated hit-file list in `(c)` (`pin-sweep:
+   <fragments> → <N> hit files: <list>`; never a count-only summary —
+   #1494). This adds a report record only, not a `Gate-scope check`
+   line — code-reviewer Step 4.6's binding scope (`epm:results` only)
+   is unchanged.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
@@ -810,6 +820,16 @@ such corpora or banks:
     push (#957). For a commit message that MENTIONS a piped-push pattern,
     use the heredoc recipe or `git commit -F <file>` (the hook
     blanket-allows heredocs).
+
+    Staged-index verification after any directory-path `git add` of an
+    artifact dir (`eval_results/issue_<N>/...`, `figures/issue_<N>/`):
+    `git ls-files --others --ignored --exclude-standard -- <dirs>` — any
+    output = a gitignore rule silently skipped it (rc=0, no error; #958:
+    `percell/*.npz` under the repo-wide `*.npz` rule). `git add -f`
+    convention-committed hits and re-run (must return empty); large
+    binary tensors go to the HF data repo, never forced into git.
+    Canonical recipe: `/issue` SKILL.md Step 9a-ter § Staged-index
+    verification.
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.

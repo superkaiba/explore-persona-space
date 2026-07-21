@@ -1,0 +1,2452 @@
+{
+  "commit": "8ed628434e",
+  "created": "2026-07-18T23:44:48Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.28,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6491277134418487,
+      "error": 0.019581040639750302,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.28,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0696121060848236,
+      "error": 0.018958086425568288,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.07122857262455046,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0666136741638184,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0158916056644664,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2636585235595703,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09323545917695944,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.093968391418457,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.051315687555434614,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3736395835876465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10551388954921112,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.29320430755615234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12366181142555654,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5398883819580078,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06789632251749178,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8526244163513184,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07437671937200799,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.402318000793457,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09669045550435808,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6363813877105713,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.01289965614715255,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8619856834411621,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.033592513699528884,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9503998756408691,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11095889710063647,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9858720302581787,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.03740493122097277,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9858720302581787,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0839180194504158,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.19420385360717773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.014712308304893909,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8883628845214844,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07091793233595801,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8619856834411621,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01419204462411705,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8186593055725098,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11340751341291441,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9189698696136475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08518410471807134,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.44612789154052734,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.03423274377173685,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.83481764793396,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0671028124221972,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6974029541015625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.03782324828623422,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9968776702880859,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12238148634267487,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9858720302581787,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1022114915437714,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8619856834411621,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07237970923917808,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6632890701293945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07939393595848843,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.19420385360717773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.008652539030971115,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4859771728515625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11861102089532052,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.642500638961792,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08988473206243758,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4559638500213623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.047592727843038196,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.45325469970703125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06363816053603247,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8249304294586182,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1215525304328946,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6691405773162842,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04528540688408049,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6695797443389893,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.033680476430934095,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.12055253982543945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.007915489068289941,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4390745162963867,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08073744663808571,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6281850337982178,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09622040861277738,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5118522644042969,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.00631671918125723,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1305370330810547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07100356924677013,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8681473731994629,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04415163861745269,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6363813877105713,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.016340501093194015,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.22635555267333984,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08649633097503773,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6817011833190918,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.052068926520584785,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9151740074157715,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04878467324066932,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.42034077644348145,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08638754836275228,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9151740074157715,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0792387329491685,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5431132316589355,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.029255621452154643,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6846232414245605,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05503469297813654,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8332576751708984,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04744883103349362,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8959434032440186,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09366435426157946,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5762829780578613,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07802386735647185,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5672171115875244,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12808580986473858,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5705101490020752,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07460033815055597,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8160843849182129,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.042861222713928365,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.2618601322174072,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05334299844284712,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8883628845214844,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07298954806571165,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8619856834411621,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.01068189836003161,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8674907684326172,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.017872710947752363,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.39954471588134766,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09365278048680907,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5989761352539062,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10022218088064691,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1122064590454102,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.043784770065522644,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6500644683837891,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.007514986402785542,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3408784866333008,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.016961387685109103,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.285684585571289,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06889970292816666,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5435714721679688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.035026763200153604,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.39954471588134766,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01393064417107892,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4457101821899414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.015393861793807528,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7486906051635742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05097297450372083,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5212178230285645,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12198736301233576,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.273040533065796,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.01645347879958578,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.45325469970703125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07420798506692242,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.06685733795166016,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.023782552631594595,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.23659086227416992,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09188479904972319,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1881604194641113,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06917573367501141,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5097737312316895,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11484128716084284,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6471524238586426,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0568401880742809,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9484982490539551,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.053665622980662256,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4559638500213623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04209829382899272,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.674004316329956,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.014828359608732355,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9319286346435547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07381353436766752,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.129692554473877,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04272152048512076,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6695797443389893,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.024339416025581664,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.12055253982543945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08164530001316903,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.37093591690063477,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08658704082399699,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4086635112762451,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12409486098519629,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.674004316329956,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10658755619833316,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.19420385360717773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05781343115507709,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.006223201751709,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.009911920134639277,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.167707920074463,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08806933745126354,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5674161911010742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.00027164152687453313,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4787600040435791,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09039885329457621,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.2276463508605957,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05104329752021136,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7762894630432129,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.013999368350752023,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6101479530334473,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.030934481214914558,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.448894739151001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05160685682155211,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8883628845214844,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.033873474210911,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3602733612060547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.035928721256118484,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6792707443237305,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10721102097781374,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8850760459899902,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09931846544866602,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": -0.012849807739257812,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12009339278287379,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.08876657485961914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10623097958397784,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6154592037200928,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05192385479079489,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.37842226028442383,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.060873810020524916,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8541548252105713,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12198585811040824,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.19420385360717773,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07247523503110659,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5594584941864014,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05639144918133887,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8067126274108887,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.013166009442614951,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5705101490020752,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05921719392025866,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7112374305725098,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10493834984009019,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.39812302589416504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10467662310139883,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8619856834411621,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.011498164643261116,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5873246192932129,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07738552515324013,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3911781311035156,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.050451277720830356,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8194842338562012,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.020597087924892954,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6370065212249756,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08403907643579976,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8555445671081543,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09271971386401764,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9588360786437988,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06721507775715463,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8800382614135742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.057060368547243556,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8647942543029785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.017655809658473035,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.612032413482666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.03310029858263522,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.20434832572937012,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.021865471917311252,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.42308855056762695,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0389601164042532,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.26500749588012695,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10804447650362883,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5490713119506836,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.02189007543564149,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7364325523376465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11918031479590796,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.024261236190796,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0015623869964250803,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8360090255737305,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04423608479347582,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6948451995849609,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09242371089482782,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5878357887268066,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10311522839213658,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9793701171875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.022787588766205125,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7171332836151123,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08564582818040961,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6467962265014648,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11053123077796728,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8070878982543945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.02107589632210269,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7261624336242676,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.03981385082094237,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5849947929382324,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.023638027785168353,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.39654541015625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12407099353227866,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.39540576934814453,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1192253954427758,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7485971450805664,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.004601106394845927,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8482816219329834,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07351115908507441,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.19458699226379395,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10849020002016597,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5123374462127686,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.003468833982078312,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3911581039428711,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.002416181467824574,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6720330715179443,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11383487829349553,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4468851089477539,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01864929361777959,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7717690467834473,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.006892755725192004,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.76155686378479,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06058632759610767,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.627375602722168,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04379206069093643,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8753762245178223,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.005374824642599835,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.513092041015625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.015883020320687863,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9228172302246094,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.1243808592311141,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0273990631103516,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08483590029053303,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8950052261352539,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10300180067833936,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8898935317993164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09353523686036119,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0993211269378662,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01404939732015284,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6032125949859619,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10177030730478467,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5543327331542969,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04478242419035103,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8034994602203369,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05687921620185783,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5851759910583496,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04144988501989447,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.2853267192840576,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.059018599714589476,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.3326880931854248,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06984834789859082,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5917878150939941,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.1019873540514669,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.21059656143188477,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10816307973577807,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.28962159156799316,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07014436236733099,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6720330715179443,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12027273539419327,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6399004459381104,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.014261642041785677,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6340963840484619,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.033560206195765926,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.37639546394348145,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08574533321442743,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5147109031677246,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08014538273671848,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6465022563934326,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04754388786609401,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8070878982543945,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11775384271813369,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0273990631103516,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05436136208356916,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.1865248680114746,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.003914853600245793,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.18009424209594727,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06344907645242329,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.36917829513549805,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11337132821273047,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0003376007080078,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08720196742867528,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8509073257446289,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11832323895799447,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6273696422576904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.016874764399210138,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.45623230934143066,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12801764665451765,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6609158515930176,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10183608922627763,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5731832981109619,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0646380850588068,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9788522720336914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10160604762841646,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4971494674682617,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10229612632144444,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5187499523162842,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.004903173700476743,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9406065940856934,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04785844652399382,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7050991058349609,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07072323234885688,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.22523856163024902,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04203192842361789,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.28644466400146484,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.03284899049283538,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7449760437011719,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10543866630400603,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8898119926452637,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06416529895074677,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7940506935119629,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06176026586005519,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.41208600997924805,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1135714191387826,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8247971534729004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06734765049852197,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7285115718841553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09808293757301365,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9136059284210205,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08608929475247559,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.093043327331543,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09014607767763155,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.4800732135772705,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08339023987898783,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.49103450775146484,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.025839525795419316,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5388593673706055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09738613061774076,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.20598793029785156,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07892698691421096,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.053343772888183594,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04931584504597536,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7940506935119629,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.072125257942706,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8113563060760498,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1226748707758516,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.597883939743042,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.000192708412609,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3449196815490723,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9074133506633252,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.994318962097168,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8736234348041324,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2391095161437988,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9297105677997024,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.069331169128418,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9042737766244955,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1322624683380127,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0461912551393429,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0776631832122803,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9016764512034181,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1205735206604004,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0016457822213645,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0169594287872314,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0505082332671505,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.820817232131958,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0210903183974347,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.6051206588745117,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9219416694316149,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5961859226226807,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0790723768073882,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.036376953125,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0560058537001085,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8873550891876221,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0621358410180408,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0060815811157227,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9040750154049014,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9578919410705566,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9021759889490896,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2742702960968018,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1111662632616919,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0730059146881104,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9733703303944845,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.085707426071167,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9482466598630443,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.8361079692840576,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9970318517913986,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1220757961273193,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0423446953185314,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5961859226226807,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1184620468322122,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0060815811157227,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9444760189893343,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2388622760772705,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1104501916211271,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.036376953125,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8764634677604266,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1781375408172607,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0143514910049745,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8704864978790283,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.034833529037082,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7384243011474609,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8975333249751959,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7623007297515869,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9064882952366173,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2266182899475098,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.978969723022239,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8045157194137573,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1212202971572274,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.741624116897583,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0249710638409368,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0711326599121094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.112586037616055,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6489577293395996,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0791338380593725,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9562885761260986,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9915192164043758,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2443361282348633,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0740384968055687,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0578954219818115,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8746375638340168,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.850212812423706,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8983774391590911,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1205735206604004,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0856514398695114,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.6979269981384277,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.077172442964542,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6965904235839844,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9304865929112728,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8827979564666748,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0080000935557538,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.721153974533081,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0275641133820028,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8827979564666748,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.095612127981763,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6709144115447998,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0268078609080686,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6864900588989258,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9772686080111569,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1337363719940186,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9672878512858675,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1742284297943115,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9807293424571126,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7649884223937988,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0395020666507933,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8705353736877441,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0955475642556045,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3498811721801758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.988013189339838,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7371816635131836,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9344382863673532,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7765307426452637,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9315322143793711,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8767855167388916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0639637128632962,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0220239162445068,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0823078784902167,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.017040729522705,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8973723007620725,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6490986347198486,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8873053028083463,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.691896915435791,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0245527525766776,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0705885887145996,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9080050434901016,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8056442737579346,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0844126895186488,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2838568687438965,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9506870152202593,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3079853057861328,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9074067025724971,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6709144115447998,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.109452322846737,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.662954568862915,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9130382479111723,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9582524299621582,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9440272214078632,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9302098751068115,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9099394827499352,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9138131141662598,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9000274165529922,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3079853057861328,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8754984842474745,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7623007297515869,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8844028063827076,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3267037868499756,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9154067824433217,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0736010074615479,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8838793024830656,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1969070434570312,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0236973921888526,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8754701614379883,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0469857769678717,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7955222129821777,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9723439187763273,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1100850105285645,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9526776852075328,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7384243011474609,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.00117682162578,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9566295146942139,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0975012849809982,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9214897155761719,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0912942229737737,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1976230144500732,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8813035161233259,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.741624116897583,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9171895864950963,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0711326599121094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.931553666487143,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7796635627746582,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9348407697163751,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2827889919281006,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0185204894531208,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9566295146942139,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.97822823068283,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0190529823303223,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8828060711811745,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9373869895935059,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9671396759994886,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3478875160217285,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0061757666665856,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8246264457702637,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8964346947549662,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9196317195892334,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0866992239850255,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0730869770050049,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8835100852809271,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3584959506988525,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1104588859446962,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.691896915435791,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8957694168107676,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3241331577301025,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0893294874154158,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8827979564666748,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1046898174211806,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2180728912353516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.124688376952514,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0935907363891602,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0785267288711342,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7861683368682861,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0726641606005456,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5174891948699951,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0370456517588424,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9827084541320801,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0725390521903135,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6557102203369141,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9049835741874183,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2180728912353516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0093776893463857,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.003267526626587,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0036979462495077,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0190529823303223,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.092968757471865,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3673367500305176,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9903278350543141,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.105269193649292,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9701232689860919,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3498811721801758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0362864505216487,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8419978618621826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.93928046255022,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2180728912353516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9063397868480287,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3878445625305176,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.994248091246174,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0367317199707031,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9783912358346701,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2845227718353271,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9304681845375071,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7731316089630127,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9655530706299333,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.247131109237671,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9652620369548244,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.114436388015747,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9551488467472619,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1081535816192627,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9686606607290016,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0711326599121094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0482932698185459,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.820817232131958,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9471878833885342,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.24888014793396,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1167030609459885,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8458631038665771,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1082504850799262,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9747745990753174,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9950367113580204,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3436713218688965,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9553739133012191,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.6051206588745117,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0092130453558008,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8045157194137573,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0906257270811424,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1738064289093018,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0396727085456265,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8419978618621826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.07914187526624,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1738064289093018,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0085077917770924,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0169594287872314,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0345585836095814,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0964932441711426,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9449204596874401,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.015362024307251,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0610722222006757,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.759436845779419,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9226251942126867,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.025503158569336,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0506475134928095,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.8353075981140137,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0937869577647326,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0589580535888672,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9043467376984015,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2258496284484863,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.029738732540899,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8797304630279541,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.894724894539783,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.4243075847625732,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.058686063350571,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2953898906707764,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8919682368941153,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0874934196472168,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1133443539021628,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0418591499328613,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9057260618098286,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3717565536499023,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1193088639363609,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.837425947189331,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.078229885782125,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7025904655456543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.024357321161252,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.483992576599121,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0734822672036821,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8622488975524902,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0767298581356024,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9507994651794434,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1159670363325058,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6519525051116943,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9358796719981887,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0452461242675781,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0234197327931605,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.461435079574585,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8947127913667443,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3335447311401367,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0302030820062715,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.859001636505127,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9145357390641251,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9553070068359375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.016887158982835,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.105072021484375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.018831933648801,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7354574203491211,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9911561397751191,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9559834003448486,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0058842616334118,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1182639598846436,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0686200814017128,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8546299934387207,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0778036262931374,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.092240810394287,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9979598360496116,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.978691816329956,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0258942947958791,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8526005744934082,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1121214212794266,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.5853285789489746,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9011307330102919,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0453357696533203,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9004469271340287,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2680859565734863,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8928043430967998,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0888357162475586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0410444541105373,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1586015224456787,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9788381582054987,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9899046421051025,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0713235681968794,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8155686855316162,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.044520167460234,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1900043487548828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9567458171653419,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9936761856079102,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1035753023139994,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3628625869750977,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0682583582383696,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1914191246032715,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9403390846366457,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0373151302337646,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.964689924620734,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.155423879623413,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9517543948531083,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.7848689556121826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9109790286424999,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.6904270648956299,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9084236768609698,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5126268863677979,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1133931404776933,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8983986377716064,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9838550496716758,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6182436943054199,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9696631539221265,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1363565921783447,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0597182842561184,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.7098584175109863,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.013778196965754,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.2865369319915771,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1133963965780003,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8155686855316162,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.072878388416442,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.222076416015625,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9946360866723805,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.0243549346923828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9678534631050149,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3985497951507568,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1265242016803239,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9458343982696533,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0566176613609473,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.8332819938659668,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1173106116009988,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3628625869750977,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9008044300764307,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3527932167053223,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0911387565896036,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9931271076202393,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.035639209837714,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.9427056312561035,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9016996363671292,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 0.6014912128448486,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0229470799919973,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.312803030014038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0483850549274167,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.1243159770965576,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8731986983310367,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.7466204166412354,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9881226700788541,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5982978343963623,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0846038729110434,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.212648868560791,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9467933465894633,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.3628625869750977,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9892225012676232,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5341942310333252,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9850016730376522,
+      "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)": 1.5796504020690918,
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 402,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Teacher-forced margin shift per probe row (mean \u00b1 SE beside each strip)",
+        "ylabel": "per-row fact-consistency margin,\naugmented \u2212 plain (length-normalized log-prob)",
+        "xticklabels": [
+          "User is vegetarian (fact)",
+          "Python-only user (fact)"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00"
+        ]
+      }
+    ]
+  }
+}

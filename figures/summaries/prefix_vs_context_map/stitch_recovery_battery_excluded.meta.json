@@ -1,0 +1,115 @@
+{
+  "commit": "a804b9aa17",
+  "created": "2026-07-17T22:14:59Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Prefix map\nalone",
+      "Held-out $R^2$ (answer state)": 0.09533991698764699,
+      "error": 0.004867451365245273,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Query map\nalone",
+      "Held-out $R^2$ (answer state)": 0.14725212767126872,
+      "error": 0.08017234197035733,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix + query\n(disjoint stitch)",
+      "Held-out $R^2$ (answer state)": 0.8465759193959397,
+      "error": 0.011700813575214575,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context map\n(directly fitted)",
+      "Held-out $R^2$ (answer state)": 0.9079329629790446,
+      "error": 0.007404866294446144,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Held-out $R^2$ (answer state)": 0.09047246562240172,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Held-out $R^2$ (answer state)": 0.06707978570091139,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Held-out $R^2$ (answer state)": 0.8348751058207251,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Held-out $R^2$ (answer state)": 0.9005280966845984,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Held-out $R^2$ (answer state)": 0.10020736835289226,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Held-out $R^2$ (answer state)": 0.22742446964162605,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Held-out $R^2$ (answer state)": 0.8582767329711543,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Held-out $R^2$ (answer state)": 0.9153378292734907,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Disjoint prefix + query stitch vs the directly fitted context map",
+        "ylabel": "Held-out $R^2$ (answer state)",
+        "annotations": [
+          "Instruct model, own answers; layer 14, 48-dim PCA target basis; battery-excluded refit"
+        ],
+        "xticklabels": [
+          "Prefix map\nalone",
+          "Query map\nalone",
+          "Prefix + query\n(disjoint stitch)",
+          "Context map\n(directly fitted)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

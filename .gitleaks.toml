@@ -1,0 +1,80 @@
+# .gitleaks.toml — gitleaks config for pre-commit secret scanning.
+#
+# LIVING DOCUMENT: when you start using a new API provider whose key format
+# is not caught by the gitleaks defaults, add a [[rules]] block for its
+# prefix here (and ideally upstream a PR to gitleaks). Err on the side of
+# false positives — add [allowlist] entries for known-safe files instead of
+# loosening rules. You cannot uncommit a leaked secret from git history.
+#
+# Companion scanner: scripts/check_no_secret_shaped_strings.py (local
+# pre-commit hook) covers a similar prefix set; gitleaks adds the default
+# ruleset (entropy-based generic detection + 150+ provider formats).
+
+[extend]
+useDefault = true
+
+# --- Providers used in this project (see .env key names) -------------------
+
+[[rules]]
+id = "runpod-api-key"
+description = "Detected a RunPod API Key (rpa_ prefix), risking unauthorized pod control and GPU spend."
+regex = '''\b(rpa_[a-zA-Z0-9]{32,})(?:[\x60'"\s;]|\\[nr]|$)'''
+keywords = ["rpa_"]
+
+[[rules]]
+id = "wandb-api-key"
+description = "Detected a Weights & Biases API Key (40-hex near a wandb keyword)."
+# WandB keys are 40 lowercase hex chars — indistinguishable from a git SHA
+# by shape, so the rule requires 'wandb' within 32 chars on the same line
+# (covers WANDB_API_KEY=..., `wandb login ...`, netrc-style entries).
+regex = '''(?i)wandb[^\n]{0,32}?\b([a-f0-9]{40})\b'''
+keywords = ["wandb"]
+
+[[rules]]
+id = "overleaf-git-token"
+description = "Detected an Overleaf git access token (olp_ prefix)."
+regex = '''\b(olp_[A-Za-z0-9_\-]{16,})\b'''
+keywords = ["olp_"]
+
+[[rules]]
+id = "slack-session-token"
+description = "Detected a Slack session token (xoxc-) or session cookie (xoxd-), not covered by gitleaks' default xoxb/xoxp rules."
+regex = '''\b(xox[cd]-[A-Za-z0-9%+/=._\-]{20,})'''
+keywords = ["xoxc-", "xoxd-"]
+
+# --- Rules recommended by the fellows onboarding doc -----------------------
+
+[[rules]]
+id = "openrouter-api-key"
+description = "Detected an OpenRouter API Key, posing a risk of unauthorized access to AI models and budget consumption."
+regex = '''\b(sk-or(-v\d+)?-[a-f0-9]{64})(?:[\x60'"\s;]|\\[nr]|$)'''
+keywords = ["sk-or"]
+
+# Generic sk- prefix catch-all (Anthropic/OpenAI/OpenRouter and future
+# sk-prefixed providers). Entropy floor keeps prose like "sk-learn-..." from
+# tripping it; real keys are high-entropy.
+[[rules]]
+id = "generic-sk-key"
+description = "Detected an API key with sk- prefix followed by 20 or more characters."
+regex = '''\b(sk-[a-zA-Z0-9_\-]{20,})(?:[\x60'"\s;]|\\[nr]|$)'''
+entropy = 3.5
+keywords = ["sk-"]
+
+# Tinker (Thinking Machines) - tml- prefix
+[[rules]]
+id = "tinker-api-key"
+description = "Detected a Tinker (Thinking Machines) API Key"
+regex = '''\b(tml-[a-zA-Z0-9_\-]{60,})(?:[\x60'"\s;]|\\[nr]|$)'''
+keywords = ["tml-"]
+
+# --- Known false-positive surfaces ------------------------------------------
+
+[allowlist]
+description = "Files that intentionally contain secret-shaped pattern definitions or fake fixtures for testing"
+paths = [
+    '''scripts/redact_for_gist\.py''',
+    '''scripts/check_no_secret_shaped_strings\.py''',
+    '''tests/test_redact_for_gist\.py''',
+    '''tests/test_check_no_secret_shaped_strings\.py''',
+    '''\.gitleaks\.toml''',
+]

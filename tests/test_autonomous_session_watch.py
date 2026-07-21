@@ -1866,6 +1866,14 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # #1155: the stop arm's failed-branch dedup flag is part of the schema
         # now; a save with no prior episode defaults it False.
         "stop_failed_noted": False,
+        # #1490: the orphan-gcp-handle alert arm's once-per-pod-incarnation
+        # dedup flag is part of the schema now; a save with no prior episode
+        # defaults it False (and the carry is pod_id-keyed).
+        "orphan_gcp_noted": False,
+        # #1519: the unlaunched-orphan alert arm's once-per-pod-incarnation
+        # dedup flag is part of the schema now; a save with no prior episode
+        # defaults it False (and the carry is pod_id-keyed, like #1490's).
+        "unlaunched_orphan_noted": False,
         "first_seen": 1234.0,
         # #692 MF3: the wedge fields are part of the schema now; a status-class
         # save with no wedge state defaults them (no prior wedge to carry).
@@ -3505,6 +3513,9 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # the SHARED day-keyed cap for the four pre-#1209 wedge triggers, same
     # advancement-clear-EXEMPT / stop-initiation-bump contract, an
     # INDEPENDENT budget; default-absent-safe.
+    # manual_escalate_count / manual_escalate_first_ts are the #1480
+    # stalled-manual escalation counters (episode-scoped, advancement-cleared
+    # via the #845 hardening-field contract); default-absent-safe.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3522,6 +3533,8 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "daemon_blocked_ticks": 0,
         "daemon_blocked_pushed": False,
         "wedge_hits": 0,
+        "manual_escalate_count": 0,
+        "manual_escalate_first_ts": None,
         "dead_silence_respawn_day": None,
         "dead_silence_respawns_today": 0,
         "wedge_respawn_day": None,
@@ -8607,6 +8620,119 @@ def test_zombie_decide_kill_switch_alerts_once_then_quiet():
     )
 
 
+def test_zombie_noneps_decide_live_tty_clears():
+    # DURABILITY PIN (#1039 R5): a wrapper holding a live user TTY is NEVER a
+    # stop candidate in the non-EPS lane — even with an arbitrarily matured
+    # episode (missed=99, first_miss_age=30d, wrapper_age=30d), the decision
+    # is ("clear", 0). Removing this guard is a must-ask plan deviation.
+    import autonomous_session_watch as asw
+
+    thirty_d = 30 * 86400.0
+    assert asw.decide_zombie_wrapper_noneps(False, True, thirty_d, 99, thirty_d, False) == (
+        "clear",
+        0,
+    )
+
+
+def test_zombie_noneps_decide_claude_present_clears():
+    # A Claude process anywhere in the tree ends the non-EPS episode too.
+    import autonomous_session_watch as asw
+
+    thirty_d = 30 * 86400.0
+    assert asw.decide_zombie_wrapper_noneps(True, False, thirty_d, 99, thirty_d, True) == (
+        "clear",
+        0,
+    )
+
+
+def test_zombie_noneps_decide_grace_and_age_both_required():
+    # Stop needs BOTH the 7d episode grace AND the 7d wrapper-process-age
+    # belt (plus the threshold ladder). Neither alone suffices — the age belt
+    # guards the state-carryover race (a stale first_miss_ts can never
+    # shortcut a young wrapper), and the 7d grace keeps the lane categorically
+    # wider than the EPS lane's 2h.
+    import autonomous_session_watch as asw
+
+    grace = asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S
+    # (a) young wrapper + stale (8d) first_miss_ts -> keep (age belt binds).
+    assert asw.decide_zombie_wrapper_noneps(False, False, 2 * 86400.0, 1, 8 * 86400.0, False) == (
+        "keep",
+        2,
+    )
+    # (b) old wrapper + 6d episode -> keep (episode grace binds).
+    assert asw.decide_zombie_wrapper_noneps(False, False, 30 * 86400.0, 1, 6 * 86400.0, False) == (
+        "keep",
+        2,
+    )
+    # (c) both >= 7d, threshold met -> stop.
+    assert asw.decide_zombie_wrapper_noneps(False, False, 30 * 86400.0, 1, grace + 1, False) == (
+        "stop",
+        0,
+    )
+    # (d) lane separation: an episode just past the EPS 2h grace keeps here.
+    assert asw.decide_zombie_wrapper_noneps(
+        False, False, 30 * 86400.0, 1, asw.ZOMBIE_WRAPPER_GRACE_S + 60, False
+    ) == ("keep", 2)
+
+
+def test_zombie_noneps_decide_wrapper_age_unreadable_keeps():
+    # An unreadable /proc start time (wrapper_age_s=None) fails toward keep.
+    import autonomous_session_watch as asw
+
+    assert asw.decide_zombie_wrapper_noneps(False, False, None, 5, 30 * 86400.0, False) == (
+        "keep",
+        6,
+    )
+
+
+def test_zombie_noneps_decide_kill_switch_alerts_once_then_quiet():
+    # reap_enabled=False: one alert per episode, then quiet keeps — the
+    # delegated ladder's parity with the EPS lane.
+    import autonomous_session_watch as asw
+
+    grace = asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S
+    assert asw.decide_zombie_wrapper_noneps(
+        False, False, 30 * 86400.0, 1, grace + 1, False, reap_enabled=False
+    ) == ("alert", 2)
+    assert asw.decide_zombie_wrapper_noneps(
+        False, False, 30 * 86400.0, 2, grace + 1, True, reap_enabled=False
+    ) == ("keep", 3)
+    assert asw.decide_zombie_wrapper_noneps(
+        False, False, 30 * 86400.0, 2, grace + 1, True, reap_enabled=True
+    ) == ("stop", 0)
+
+
+def test_zombie_noneps_grace_default_is_7d(monkeypatch):
+    # The lane constant is 7 days, and the env override mirrors
+    # _zombie_wrapper_grace_s (positive honored; garbled / non-positive fall
+    # back to the default).
+    import autonomous_session_watch as asw
+
+    assert asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S == 7 * 86400
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_GRACE_S", raising=False)
+    assert asw._zombie_noneps_grace_s() == asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S
+    monkeypatch.setenv("EPM_ZOMBIE_NONEPS_GRACE_S", "3600")
+    assert asw._zombie_noneps_grace_s() == 3600.0
+    for garbled in ("not-a-number", "0", "-5"):
+        monkeypatch.setenv("EPM_ZOMBIE_NONEPS_GRACE_S", garbled)
+        assert asw._zombie_noneps_grace_s() == asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S
+
+
+def test_classify_session_cwd():
+    # The four-way pass classification's pure cwd leg: exact EPS root or a
+    # subpath -> eps; any other string -> non-eps (incl. the prefix-boundary
+    # near-miss); a missing/empty/non-str path -> unresolvable.
+    import autonomous_session_watch as asw
+
+    assert asw._classify_session_cwd(_Z_ROOT, _Z_ROOT) == "eps"
+    assert asw._classify_session_cwd(f"{_Z_ROOT}/.claude/worktrees/issue-9", _Z_ROOT) == "eps"
+    assert asw._classify_session_cwd("/home/thomasjiralerspong/my-goat", _Z_ROOT) == "non-eps"
+    assert asw._classify_session_cwd(_Z_ROOT + "-sibling", _Z_ROOT) == "non-eps"
+    assert asw._classify_session_cwd(None, _Z_ROOT) == "unresolvable"
+    assert asw._classify_session_cwd("", _Z_ROOT) == "unresolvable"
+    assert asw._classify_session_cwd(42, _Z_ROOT) == "unresolvable"
+
+
 def test_zombie_sentinels_registered_and_filtered():
     # All three zombie sentinels must be in the watcher-note exclusion set so
     # the pass's own markers never reset the staleness clocks they measure.
@@ -8645,11 +8771,16 @@ def _patch_zombie_io(
     has_claude=False,
     registry=None,
     pm_sids=frozenset(),
+    live_tty=False,
+    wrapper_start_epoch=None,
 ):
     """Common monkeypatching for the zombie-wrapper I/O tests: daemon children
     + session metadata + task status + the /proc walk, leaving state files and
     decisions real. Pins asw.PROJECT_ROOT to the synthetic _Z_ROOT so the
-    EPS-cwd check + issue inference are cwd-independent (see _Z_ROOT).
+    EPS-cwd check + issue inference are cwd-independent (see _Z_ROOT). The
+    #1039 non-EPS/unresolvable signals are patched too (no real /proc or tmux
+    reads): keyword-only ``live_tty`` / ``wrapper_start_epoch`` default to the
+    values that preserve every pre-#1039 call site's behavior.
     Returns the (stops, posts, fallback) recorders."""
     import autonomous_session_watch as asw
 
@@ -8665,6 +8796,14 @@ def _patch_zombie_io(
     monkeypatch.setattr(asw, "_proc_children_map", lambda: {})
     monkeypatch.setattr(asw, "_has_claude_descendant", lambda pid, cm=None: has_claude)
     monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_is_live_user_tty",
+        lambda pid, detached, check_orphaned=False: live_tty,
+    )
+    monkeypatch.setattr(asw, "_detached_tmux_panes_with_activity", lambda: (set(), {}))
+    monkeypatch.setattr(asw, "proc_start_epoch", lambda pid: wrapper_start_epoch)
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: live_tty)
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -8743,26 +8882,30 @@ def test_zombie_pass_claude_present_clears_state(isolated_registry, monkeypatch)
     assert stops == [] and posts == [] and fallback == []
 
 
-def test_zombie_pass_pm_and_non_eps_sessions_never_touched(isolated_registry, monkeypatch):
-    # PM-registered sids and non-EPS cwds are skipped before any state is
-    # even created — they can never accumulate toward a stop.
+def test_zombie_pass_pm_never_touched(isolated_registry, monkeypatch):
+    # PM-registered sids are skipped BEFORE any cwd classification (upstream
+    # of every lane, EPS or not) — they can never accumulate toward a stop.
+    # (The former sid-other/sid-nometa coverage of this test moved to the
+    # #1039 non-EPS / unresolvable lane tests with the new expected behavior.)
     import autonomous_session_watch as asw
 
     children = [
         {"happySessionId": "sid-pm", "pid": 1},
-        {"happySessionId": "sid-other", "pid": 2},
-        {"happySessionId": "sid-nometa", "pid": 3},
+        {"happySessionId": "sid-pm-noneps", "pid": 2},
     ]
     meta = {
         "sid-pm": {"path": _Z_ROOT},
-        "sid-other": {"path": "/home/thomasjiralerspong/my-goat"},
-        # sid-nometa: no metadata at all -> EPS-ness unknown -> skipped
+        "sid-pm-noneps": {"path": "/home/thomasjiralerspong/my-goat"},
     }
     stops, posts, fallback = _patch_zombie_io(
-        monkeypatch, children=children, meta=meta, pm_sids={"sid-pm"}
+        monkeypatch,
+        children=children,
+        meta=meta,
+        pm_sids={"sid-pm", "sid-pm-noneps"},
+        wrapper_start_epoch=1_000_000.0 - 30 * 86400,
     )
     t0 = 1_000_000.0
-    for now in (t0, t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60):
+    for now in (t0, t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60):
         asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
     assert stops == [] and posts == [] and fallback == []
     assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
@@ -8910,6 +9053,377 @@ def test_zombie_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
     # that the pass never persisted a stopped_at / incremented miss count.
     state = json.loads(state_path.read_text())
     assert "stopped_at" not in state
+
+
+# ── #1039 non-EPS lane + unresolvable-cwd bucket (pass-level) ────────────────
+
+_NONEPS_PATH = "/home/thomasjiralerspong/my-goat"
+
+
+def test_zombie_pass_noneps_stop_fires_after_7d(isolated_registry, monkeypatch):
+    # The non-EPS headline: a dead other-project session (no Claude, no live
+    # TTY, wrapper >= 7d old) accumulates a miss on tick 1 and is stopped once
+    # the 7d grace has ALSO elapsed. Records land in the fallback events file
+    # (issue=None — no task to carry a marker); zero markers posted.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-n", "pid": 4321}]
+    meta = {"sid-n": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    state_path = isolated_registry / "zombie-wrapper-sid-n.json"
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert stops == [] and fallback == []
+
+    t1 = t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t1)
+    assert stops == ["sid-n"]
+    assert len(fallback) == 1 and posts == []
+    state = json.loads(state_path.read_text())
+    assert state["stopped_at"] == t1  # ACK recorded for next-tick verification
+
+
+def test_zombie_pass_noneps_two_hour_grace_does_not_stop(isolated_registry, monkeypatch):
+    # Lane separation: the EPS lane's 2h grace does NOT stop a non-EPS
+    # session — the 7d grace binds.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-2h", "pid": 4322}]
+    meta = {"sid-2h": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(
+        False, 2, daemon_reachable=True, now=t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    )
+    assert stops == [] and posts == [] and fallback == []
+    state = json.loads((isolated_registry / "zombie-wrapper-sid-2h.json").read_text())
+    assert state["missed"] == 2  # still accumulating, nowhere near the 7d grace
+
+
+def test_zombie_pass_noneps_live_tty_never_touched(isolated_registry, monkeypatch):
+    # A non-EPS wrapper holding a live user TTY never accumulates state and
+    # is never stopped — regardless of age or elapsed time.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-tty", "pid": 4323}]
+    meta = {"sid-tty": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        live_tty=True,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    for now in (t0, t0 + 30 * 86400):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+
+
+def test_zombie_pass_noneps_kill_switch_alert_only(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_NONEPS_REAP=0: one alert row per episode in the fallback
+    # file, alerted persisted, never a stop, quiet after.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.setenv("EPM_ZOMBIE_NONEPS_REAP", "0")
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-ks", "pid": 4324}]
+    meta = {"sid-ks": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    later = t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)
+    assert stops == [] and posts == []
+    assert len(fallback) == 1  # exactly one alert per episode
+    assert asw._ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL in fallback[0]
+    state = json.loads((isolated_registry / "zombie-wrapper-sid-ks.json").read_text())
+    assert state["alerted"] is True
+
+
+def test_zombie_pass_global_kill_switch_covers_noneps(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_WRAPPER_REAP=0 ALONE (non-EPS knob untouched) also downgrades
+    # the non-EPS lane to alert-only — global-off covers both lanes.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ZOMBIE_WRAPPER_REAP", "0")
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-gk", "pid": 4325}]
+    meta = {"sid-gk": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(
+        False, 2, daemon_reachable=True, now=t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60
+    )
+    assert stops == [] and posts == []
+    assert len(fallback) == 1
+    assert asw._ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL in fallback[0]
+
+
+def test_zombie_pass_noneps_kill_switch_isolated_from_eps(isolated_registry, monkeypatch):
+    # Cross-lane knob isolation: EPM_ZOMBIE_NONEPS_REAP=0 must NEVER leak
+    # into the EPS lane's reap_enabled — an at-threshold EPS candidate STILL
+    # stops while the matured non-EPS sibling only alerts.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.setenv("EPM_ZOMBIE_NONEPS_REAP", "0")
+    t0 = 1_000_000.0
+    children = [
+        {"happySessionId": "sid-eps", "pid": 4326},
+        {"happySessionId": "sid-non", "pid": 4327},
+    ]
+    meta = {
+        "sid-eps": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-55"},
+        "sid-non": {"path": _NONEPS_PATH},
+    }
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        status="completed",
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    # Seed both episodes at the point where the next tick decides: EPS at
+    # miss 1 just past its 2h grace, non-EPS at miss 1 past its 7d grace.
+    now = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    (isolated_registry / "zombie-wrapper-sid-eps.json").write_text(
+        json.dumps({"missed": 1, "alerted": False, "first_miss_ts": t0})
+    )
+    (isolated_registry / "zombie-wrapper-sid-non.json").write_text(
+        json.dumps({"missed": 1, "alerted": False, "first_miss_ts": now - 8 * 86400})
+    )
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == ["sid-eps"]  # EPS lane unaffected by the non-EPS knob
+    assert posts == [(55, "zombie-wrapper-stop")]
+    assert len(fallback) == 1  # the non-EPS sibling alerted, never stopped
+    assert asw._ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL in fallback[0]
+
+
+def test_zombie_pass_noneps_registry_mapped_kept(isolated_registry, monkeypatch, capsys):
+    # A registry-mapped sid whose cwd resolves OUTSIDE the EPS root is
+    # contradictory metadata: kept (counted, never processed under either
+    # lane), no state ever created.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-c", "pid": 4328}]
+    meta = {"sid-c": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        registry={"sid-c": 7},
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    for now in (t0, t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+    assert "1 contradictory-metadata kept" in capsys.readouterr().out
+
+
+def test_zombie_pass_unresolvable_age_reported_never_stopped(
+    isolated_registry, monkeypatch, capsys
+):
+    # A sid with NO sessions.json metadata is escalate-only: age-reported on
+    # stdout every tick + exactly ONE durable fallback row per episode; never
+    # stopped even at 30d.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-u", "pid": 4329}]
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta={},
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    for now in (t0, t0 + 7 * 86400, t0 + 30 * 86400):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == []
+    assert len(fallback) == 1  # deduped: one durable row per episode
+    assert "sid-u" in fallback[0] and "spawn_session.py stop --session-id sid-u" in fallback[0]
+    assert "1 unresolvable-cwd age-reported" in capsys.readouterr().out
+    state = json.loads((isolated_registry / "zombie-wrapper-sid-u.json").read_text())
+    assert state == {"unresolvable_alerted_ts": t0, "pid": 4329}  # minimal dedup payload
+
+
+def test_zombie_pass_unresolvable_young_or_unreadable_age_no_durable_row(
+    isolated_registry, monkeypatch, capsys
+):
+    # A young (< 7d) or age-unreadable unresolvable wrapper gets the stdout
+    # line only — nothing durable to age-report, no state file.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-y", "pid": 4330}]
+    for start_epoch in (t0 - 60, None):
+        stops, posts, fallback = _patch_zombie_io(
+            monkeypatch,
+            children=children,
+            meta={},
+            wrapper_start_epoch=start_epoch,
+        )
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+        assert stops == [] and posts == [] and fallback == []
+        assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+        assert "cwd UNRESOLVABLE" in capsys.readouterr().out
+
+
+def test_zombie_pass_noneps_stop_verification_reuses_ladder(isolated_registry, monkeypatch, capsys):
+    # ACK != kill on the non-EPS lane too: the shared verification ladder
+    # (one retry, one loud record, then quiet) fires with issue=None routing —
+    # every record lands in the fallback file.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-nv", "pid": 4331}]
+    meta = {"sid-nv": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    later = t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)  # stop ACK
+    assert stops == ["sid-nv"] and len(fallback) == 1
+    capsys.readouterr()
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)  # retry
+    assert stops == ["sid-nv", "sid-nv"]
+    assert "ZOMBIE STOP-VERIFY FAILED" in capsys.readouterr().err
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1200)  # loud record
+    assert stops == ["sid-nv", "sid-nv"]
+    assert len(fallback) == 2 and posts == []  # stop + stop-failed, both fallback-routed
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1800)  # quiet
+    assert stops == ["sid-nv", "sid-nv"] and len(fallback) == 2
+
+
+def test_zombie_pass_noneps_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline for the non-EPS lane: with an episode seeded AT the
+    # stop point, a dry-run tick must not stop, must not record anywhere, and
+    # must leave the state file byte-for-byte untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-nd", "pid": 4332}]
+    meta = {"sid-nd": {"path": _NONEPS_PATH}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    # Mirror the REAL _stop_session contract (returns False without acting
+    # when dry_run=True) — the shared fake ignores dry_run.
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    state_path = isolated_registry / "zombie-wrapper-sid-nd.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_miss_ts": t0})
+    state_path.write_text(seeded)
+
+    later = t0 + asw.NONEPS_ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(True, 2, daemon_reachable=True, now=later)
+    assert stops == [] and posts == [] and fallback == []
+    assert state_path.read_text() == seeded  # untouched, not even rewritten
+    assert "stopped_at" not in json.loads(state_path.read_text())
+
+
+def test_zombie_pass_unresolvable_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline for the unresolvable bucket: an aged no-meta sid
+    # under dry_run appends no durable row and writes NO state file — the
+    # dedup is not pre-consumed, so the next REAL tick still emits its one
+    # row.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    monkeypatch.delenv("EPM_ZOMBIE_NONEPS_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-ud", "pid": 4333}]
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch,
+        children=children,
+        meta={},
+        wrapper_start_epoch=t0 - 30 * 86400,
+    )
+    # Mirror the REAL _append_zombie_fallback_event contract (prints a
+    # [dry-run] line without appending when dry_run=True) — the shared fake
+    # ignores dry_run.
+    monkeypatch.setattr(
+        asw,
+        "_append_zombie_fallback_event",
+        lambda note, dry_run: (not dry_run) and (fallback.append(note) or True),
+    )
+
+    asw.zombie_wrapper_pass(True, 2, daemon_reachable=True, now=t0)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))  # no dedup pre-consumed
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # real tick
+    assert len(fallback) == 1  # the deduped row still lands on the first REAL tick
+    assert (isolated_registry / "zombie-wrapper-sid-ud.json").exists()
 
 
 # ─── idle-unmapped-session pass (live-but-idle Claude; 2026-06-12 VM lag) ─────
@@ -19355,3 +19869,1382 @@ def test_registry_drift_pass_dry_run_writes_no_state(tmp_path, monkeypatch, caps
     out = capsys.readouterr().out
     assert "[dry-run] would save registry-drift state" in out
     assert "[dry-run] would append registry-drift sidecar row" in out
+
+
+# ── orphan-wrapper /proc sweep (pass 28, #1215) ──────────────────────────────
+#
+# Pure decision ladder + pure scan classifier + pass-driver tests, following
+# the file's established pure-decide + pass-driver split. Drivers stub every
+# /proc / daemon / tmux / signal seam (the pass is in conftest's
+# _FLEET_MUTATING_PASS_NAMES for full-main() tests; these tests OF the pass
+# stub its own seams instead).
+
+
+def _orphan_cand(pid, role="wrapper", ppid=1, subsumed=()):
+    return {
+        "pid": pid,
+        "role": role,
+        "cmdline_head": f"node happy/dist/index.mjs claude (pid {pid})",
+        "ppid": ppid,
+        "subsumed_children": list(subsumed),
+    }
+
+
+def _patch_orphan_io(
+    monkeypatch,
+    *,
+    candidates,
+    has_claude=False,
+    live_tty=False,
+    start_epochs=None,
+    cpu_by_pid=None,
+    children_map=None,
+):
+    """Stub every IO seam of orphan_wrapper_pass, leaving state files + the
+    decision ladder real. Returns (kills, pushes) recorders. proc_start_epoch
+    defaults to 500_000.0 (age ~5.8d at now=1_000_000 — over the 24h floor);
+    _proc_cpu_seconds defaults to a constant 100.0 (delta-CPU 0 once a
+    baseline exists)."""
+    import autonomous_session_watch as asw
+
+    kills: list[tuple[int, int]] = []
+    pushes: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_scan_orphan_wrapper_candidates",
+        lambda cm=None, proc_root=None: [dict(c) for c in candidates],
+    )
+    monkeypatch.setattr(asw, "_proc_children_map", lambda: dict(children_map or {}))
+    monkeypatch.setattr(asw, "_has_claude_descendant", lambda pid, cm=None: has_claude)
+    monkeypatch.setattr(
+        asw, "_is_live_user_tty", lambda pid, detached, check_orphaned=False: live_tty
+    )
+    monkeypatch.setattr(asw, "_detached_tmux_panes_with_activity", lambda: (set(), {}))
+    ses = dict(start_epochs or {})
+    monkeypatch.setattr(asw, "proc_start_epoch", lambda pid: ses.get(pid, 500_000.0))
+    cpus = dict(cpu_by_pid or {})
+    monkeypatch.setattr(asw, "_proc_cpu_seconds", lambda pid: cpus.get(pid, 100.0))
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: None)
+    monkeypatch.setattr(asw, "_orphan_parent_cmdline_head", lambda ppid: "init")
+    monkeypatch.setattr(asw, "_orphan_presignal_reverify", lambda pid, se: True)
+    monkeypatch.setattr(asw.os, "kill", lambda pid, sig: kills.append((pid, sig)))
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+    return kills, pushes
+
+
+# ── pure decision ladder ─────────────────────────────────────────────────────
+
+
+def test_orphan_decide_daemon_tracked_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(True, False, False, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_daemon_unknown_freezes():
+    # UNKNOWN != "not tracked": freeze with missed UNCHANGED (the belt; the
+    # driver skips the whole pass first).
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(None, False, False, 1e6, 0.0, 3, 1e7, False) == ("skip", 3)
+
+
+def test_orphan_decide_claude_present_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, True, False, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_live_tty_clears():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, True, 1e6, 0.0, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_cpu_active_clears():
+    # Actively computing (delta-CPU over the threshold) is not an
+    # orphan-idle process: the episode ends.
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, False, 1e6, 0.5, 5, 1e7, True) == ("clear", 0)
+
+
+def test_orphan_decide_cpu_baseline_missing_keeps():
+    # First observation: baseline recorded, cannot qualify yet.
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    assert decide_orphan_wrapper(False, False, False, 1e6, None, 0, 0.0, False) == ("keep", 1)
+
+
+def test_orphan_decide_young_or_unreadable_age_keeps():
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    # Unreadable age never escalates ...
+    assert decide_orphan_wrapper(False, False, False, None, 0.0, 5, 1e7, False) == ("keep", 6)
+    # ... nor does a young wrapper (under the 24h floor).
+    assert decide_orphan_wrapper(False, False, False, 3600.0, 0.0, 5, 1e7, False) == ("keep", 6)
+
+
+def test_orphan_decide_threshold_grace_ladder():
+    from autonomous_session_watch import (
+        ORPHAN_WRAPPER_GRACE_S,
+        ORPHAN_WRAPPER_MIN_AGE_S,
+        decide_orphan_wrapper,
+    )
+
+    age = ORPHAN_WRAPPER_MIN_AGE_S + 60
+    # K=1: below threshold -> keep.
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 0, 60.0, False) == ("keep", 1)
+    # K=2: escalate once.
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 1, 600.0, False) == (
+        "escalate",
+        2,
+    )
+    # Already alerted -> keep (once per episode).
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 2, 600.0, True) == ("keep", 3)
+    # Reap enabled but grace NOT met -> no stop (escalate already fired).
+    assert decide_orphan_wrapper(
+        False, False, False, age, 0.0, 2, 600.0, True, reap_enabled=True
+    ) == ("keep", 3)
+    # Reap enabled + grace met -> stop.
+    assert decide_orphan_wrapper(
+        False,
+        False,
+        False,
+        age,
+        0.0,
+        2,
+        ORPHAN_WRAPPER_GRACE_S + 1,
+        True,
+        reap_enabled=True,
+    ) == ("stop", 0)
+    # Age-floor/missed interplay (deliberate race protection): misses accrued
+    # UNDER the 24h floor count toward K, so a candidate crossing the floor
+    # with persisted history escalates immediately.
+    assert decide_orphan_wrapper(False, False, False, 3600.0, 0.0, 0, 0.0, False) == ("keep", 1)
+    assert decide_orphan_wrapper(False, False, False, age, 0.0, 1, 600.0, False) == (
+        "escalate",
+        2,
+    )
+    # first_miss_ts pin semantics: the grace clock is first_miss_age_s (time
+    # since the FIRST persisted observation), so a fully-qualified candidate
+    # whose episode is younger than the grace can never stop.
+    assert decide_orphan_wrapper(
+        False, False, False, age, 0.0, 10, ORPHAN_WRAPPER_GRACE_S - 1, True, reap_enabled=True
+    ) == ("keep", 11)
+
+
+def test_orphan_decide_default_reap_off_never_stops():
+    # DURABILITY PIN (plan #1215): the escalate-only default. With the
+    # default reap_enabled=False, no input combination may return "stop".
+    from autonomous_session_watch import decide_orphan_wrapper
+
+    for missed in (1, 2, 10):
+        for alerted in (False, True):
+            for first_miss_age in (0.0, 8 * 86400, 100 * 86400):
+                action, _ = decide_orphan_wrapper(
+                    False, False, False, 9e5, 0.0, missed, first_miss_age, alerted
+                )
+                assert action != "stop", (missed, alerted, first_miss_age)
+
+
+# ── pure scan classifier ─────────────────────────────────────────────────────
+
+
+def test_orphan_classify_wrapper_and_launcher_roles():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    wrapper = ["/usr/bin/node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude", "-m", "x"]
+    launcher = ["node", "/usr/lib/node_modules/happy/scripts/claude_local_launcher.cjs", "--resume"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me, me, None, 7) == "wrapper"
+    assert _classify_orphan_wrapper_proc(launcher, "node", me, me, None, 7) == "launcher"
+    # index.mjs with a NON-claude next token is NOT a wrapper (argv-token belt).
+    daemonish = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "doctor"]
+    assert _classify_orphan_wrapper_proc(daemonish, "node", me, me, None, 7) is None
+
+
+def test_orphan_classify_comm_filter():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    # A grep / editor / tmux server carrying the marker string in argv is
+    # excluded by comm != "node".
+    grep_proc = ["grep", "-r", "happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(grep_proc, "grep", me, me, None, 7) is None
+    launcher_in_editor = ["vim", "claude_local_launcher.cjs"]
+    assert _classify_orphan_wrapper_proc(launcher_in_editor, "vim", me, me, None, 7) is None
+
+
+def test_orphan_classify_euid_filter():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    wrapper = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me + 1, me, None, 7) is None
+
+
+def test_orphan_classify_daemon_excluded_both_layers():
+    import os
+
+    from autonomous_session_watch import _classify_orphan_wrapper_proc
+
+    me = os.geteuid()
+    # Layer 1: explicit daemon pid match excludes even a claude-shaped argv.
+    wrapper = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "claude"]
+    assert _classify_orphan_wrapper_proc(wrapper, "node", me, me, 4242, 4242) is None
+    # Layer 2: a daemon-shaped cmdline (argv token after index.mjs is NOT
+    # "claude") is excluded even with daemon_pid=None (state file absent).
+    daemon = ["node", "/usr/lib/node_modules/happy/dist/index.mjs", "daemon", "start-sync"]
+    assert _classify_orphan_wrapper_proc(daemon, "node", me, me, None, 4242) is None
+
+
+def test_orphan_scan_subsumed_child_deduped(tmp_path, monkeypatch, capsys):
+    # TOPMOST dedup at the scan level: a candidate whose ancestor chain
+    # contains another candidate is dropped and recorded as a subsumed child
+    # on the topmost candidate.
+    import os
+
+    import autonomous_session_watch as asw
+
+    me = os.geteuid()
+    proc_root = tmp_path / "proc"
+    for pid in (100, 205):
+        (proc_root / str(pid)).mkdir(parents=True)
+    (proc_root / "not-a-pid").mkdir()
+    idents = {
+        100: (["node", "x/happy/dist/index.mjs", "claude"], "node", me),
+        205: (["node", "y/happy/scripts/claude_local_launcher.cjs"], "node", me),
+    }
+    monkeypatch.setattr(asw, "_read_proc_identity", lambda pid: idents.get(pid))
+    monkeypatch.setattr(asw, "_happy_daemon_pid", lambda: None)
+    out = asw._scan_orphan_wrapper_candidates({100: [205]}, proc_root=proc_root)
+    assert [c["pid"] for c in out] == [100]
+    assert out[0]["subsumed_children"] == [205]
+    assert "subsumed-by=100" in capsys.readouterr().out
+
+
+def test_orphan_smoke_mode_two_sample_cpu_frac(monkeypatch):
+    # The --orphan-wrapper-only instrument: an IN-INVOCATION two-sample
+    # delta yields a non-None cpu_frac even though dry-run never persists a
+    # baseline (Statistics Must-Fix 1).
+    import autonomous_session_watch as asw
+
+    samples = {7: [10.0, 10.4]}
+    monkeypatch.setattr(asw, "_proc_cpu_seconds", lambda pid: samples[pid].pop(0))
+    clock = [100.0, 108.0]
+    monkeypatch.setattr(asw.time, "time", lambda: clock.pop(0) if clock else 108.0)
+    monkeypatch.setattr(asw.time, "sleep", lambda s: None)
+    fracs = asw._orphan_smoke_cpu_fracs([7])
+    assert fracs[7] == pytest.approx(0.05)
+
+
+def test_orphan_pass_smoke_cpu_reaches_decision(isolated_registry, monkeypatch, capsys):
+    # smoke_cpu=True threads the two-sample frac into the decision line, so
+    # a dry-run smoke prints a real (non-n/a) cpu_frac per candidate.
+    import autonomous_session_watch as asw
+
+    _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    samples = {700: [10.0, 10.4]}
+    # The driver ALSO reads _proc_cpu_seconds once for its persisted-baseline
+    # bookkeeping — return the last sample once the two-sample list drains.
+    monkeypatch.setattr(
+        asw, "_proc_cpu_seconds", lambda pid: samples[pid].pop(0) if samples[pid] else 10.4
+    )
+    clock = [100.0, 108.0]
+    monkeypatch.setattr(asw.time, "time", lambda: clock.pop(0) if clock else 108.0)
+    monkeypatch.setattr(asw.time, "sleep", lambda s: None)
+    asw.orphan_wrapper_pass(
+        True, 2, daemon_reachable=True, children=[], now=1_000_000.0, smoke_cpu=True
+    )
+    out = capsys.readouterr().out
+    assert "cpu_frac=0.0500" in out
+    assert "cpu_frac=n/a" not in out
+
+
+# ── pass driver ──────────────────────────────────────────────────────────────
+
+
+def test_orphan_pass_daemon_unreachable_skips(isolated_registry, monkeypatch, capsys):
+    # DURABILITY PIN: daemon unreachable => one skip line, ALL state
+    # untouched, the scan never runs, nothing is signalled.
+    import autonomous_session_watch as asw
+
+    def _boom(*a, **kw):
+        raise AssertionError("scan must not run on a daemon-unreachable tick")
+
+    monkeypatch.setattr(asw, "_scan_orphan_wrapper_candidates", _boom)
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    state_path.write_text(json.dumps({"start_epoch": 500_000.0, "missed": 5}))
+    before = state_path.read_text()
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=False, children=None, now=1_000_000.0)
+    assert state_path.read_text() == before
+    assert "daemon unreachable; skipping with state frozen" in capsys.readouterr().out
+
+
+def test_orphan_pass_escalates_once_and_persists_state(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ORPHAN_WRAPPER_REAP", raising=False)
+    kills, pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    t0 = 1_000_000.0
+
+    # Tick 1: no CPU baseline yet -> keep; baseline + first_miss_ts persisted.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert state["cpu_s"] == 100.0 and state["cpu_ts"] == t0
+    assert not sidecar.exists() and pushes == []
+
+    # Tick 2: delta-CPU 0 -> escalate once (sidecar row + one push).
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    state = json.loads(state_path.read_text())
+    assert state["alerted"] is True and state["missed"] == 2
+    assert state["first_miss_ts"] == t0  # PIN: never reset while the episode lives
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert len(rows) == 1 and len(pushes) == 1
+    row = rows[0]
+    assert row["event"] == "escalate" and row["pid"] == 700 and row["role"] == "wrapper"
+    assert row["daemon_state"] == "not-tracked"
+    for field in (
+        "start_epoch",
+        "cmdline_head",
+        "age_d",
+        "first_miss_age_h",
+        "cpu_frac",
+        "missed",
+        "ppid",
+        "parent_cmdline_head",
+        "tty",
+        "subsumed_children",
+        "recommended_action",
+    ):
+        assert field in row, field
+
+    # Tick 3: already alerted -> keep; no second row, no second push.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1200)
+    assert len(sidecar.read_text().splitlines()) == 1 and len(pushes) == 1
+    assert kills == []  # escalate-only default: never a signal
+
+
+def test_orphan_pass_live_set_and_ancestry_excluded(isolated_registry, monkeypatch, capsys):
+    # A live-set pid, a candidate with a live ANCESTOR, and a candidate with
+    # a live DESCENDANT are all excluded; only the genuinely untracked one
+    # is processed.
+    import autonomous_session_watch as asw
+
+    cands = [_orphan_cand(100), _orphan_cand(205), _orphan_cand(300), _orphan_cand(400)]
+    _patch_orphan_io(
+        monkeypatch,
+        candidates=cands,
+        children_map={100: [205], 300: [100]},
+    )
+    children = [{"happySessionId": "sid-a", "pid": 100}]
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=children, now=1_000_000.0)
+    out = capsys.readouterr().out
+    assert "1 daemon-untracked candidate(s) (3 live-set/ancestry-excluded" in out
+    assert (isolated_registry / "wrapper-orphan-400.json").exists()
+    for pid in (100, 205, 300):
+        assert not (isolated_registry / f"wrapper-orphan-{pid}.json").exists()
+
+
+def test_orphan_pass_stop_arm_signals_and_verifies(isolated_registry, monkeypatch, capsys):
+    import signal as _signal
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    state_path = isolated_registry / "wrapper-orphan-700.json"
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    t0 = 1_000_000.0
+
+    # Seed a fully-qualified episode past the 7d grace.
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=True,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == [(700, _signal.SIGTERM)]
+    state = json.loads(state_path.read_text())
+    assert state["signalled_at"] == t0 and state["signal_retried"] is False
+    stop_rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert [r["event"] for r in stop_rows] == ["stop"]
+
+    # Next tick, still alive (still a candidate) -> ONE SIGTERM retry.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    assert kills == [(700, _signal.SIGTERM), (700, _signal.SIGTERM)]
+    state = json.loads(state_path.read_text())
+    assert state["signal_retried"] is True and state["stop_failed_alerted"] is False
+
+    # Third tick, STILL alive -> one loud stop-failed row + push, then quiet.
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1200)
+    assert len(kills) == 2  # never a third signal, never SIGKILL
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    assert [r["event"] for r in rows] == ["stop", "stop-failed"]
+    state = json.loads(state_path.read_text())
+    assert state["stop_failed_alerted"] is True
+
+    # Fourth tick: already retried + alerted -> quiet (no new rows/signals).
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 1800)
+    assert len(kills) == 2
+    assert len(sidecar.read_text().splitlines()) == 2
+    assert "already retried + alerted" in capsys.readouterr().out
+
+
+def test_orphan_pass_global_zombie_switch_gates_stop(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_WRAPPER_REAP=0 keeps ALL wrapper reaping alert-only even
+    # with the orphan opt-in set (the #1039 dual-switch AND).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.setenv("EPM_ZOMBIE_WRAPPER_REAP", "0")
+    kills, _pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=False,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == []
+    # The fully-qualified candidate escalates instead of stopping.
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["alerted"] is True and state.get("signalled_at") is None
+
+
+def test_orphan_pass_pid_reuse_start_epoch_mismatch_resets(isolated_registry, monkeypatch, capsys):
+    # A state file whose start_epoch mismatches the live process (pid
+    # recycled) resets to a FRESH episode; the accrued misses can never
+    # qualify the new process.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=111.0,  # a DIFFERENT process once held this pid
+        missed=5,
+        alerted=True,
+        first_miss_ts=t0 - 30 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert kills == []  # a signal is NEVER sent against a mismatched epoch
+    # Layer 1: the pass-start candidate-keyed GC reaps the stale-epoch state
+    # before processing, so the episode restarts fresh.
+    assert "GC state wrapper-orphan-700.json" in capsys.readouterr().out
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert state["start_epoch"] == 500_000.0
+
+    # Layer 2 (the mid-tick pid-recycle race belt): the DRIVER's own guard
+    # resets a mismatched-epoch state even when the GC missed it.
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=111.0,
+        missed=5,
+        alerted=True,
+        first_miss_ts=t0 - 30 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    asw._process_orphan_wrapper(
+        _orphan_cand(700),
+        t0,
+        False,
+        2,
+        reap_enabled=True,
+        children_map={},
+        detached_tmux_ttys=set(),
+        check_orphaned=True,
+        stops_remaining=[3],
+        new_escalations=[],
+    )
+    assert kills == []
+    assert "start-epoch mismatch" in capsys.readouterr().out
+    state = json.loads((isolated_registry / "wrapper-orphan-700.json").read_text())
+    assert state["missed"] == 1 and state["start_epoch"] == 500_000.0
+
+
+def test_orphan_pass_per_tick_stop_bound(isolated_registry, monkeypatch, capsys):
+    # <= 3 SIGTERMs per tick even fully opted in; the 4th qualified
+    # candidate is kept this tick.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    pids = [701, 702, 703, 704]
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(p) for p in pids])
+    t0 = 1_000_000.0
+    for p in pids:
+        asw._save_orphan_wrapper_state(
+            p,
+            start_epoch=500_000.0,
+            missed=2,
+            alerted=True,
+            first_miss_ts=t0 - 8 * 86400,
+            cpu_s=100.0,
+            cpu_ts=t0 - 600,
+        )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert sorted(pid for pid, _sig in kills) == [701, 702, 703]
+    assert "per-tick stop bound reached" in capsys.readouterr().out
+    kept = json.loads((isolated_registry / "wrapper-orphan-704.json").read_text())
+    assert kept.get("signalled_at") is None
+
+
+def test_orphan_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch, capsys):
+    # DURABILITY PIN: dry-run performs zero state writes, zero sidecar
+    # appends, zero signals — even on a fully stop-qualified candidate with
+    # the reap switches on, and even for the GC of a departed pid's state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_WRAPPER_REAP", "1")
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    kills, _ = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=2,
+        alerted=True,
+        first_miss_ts=t0 - 8 * 86400,
+        cpu_s=100.0,
+        cpu_ts=t0 - 600,
+    )
+    departed = isolated_registry / "wrapper-orphan-999.json"
+    departed.write_text(json.dumps({"start_epoch": 1.0, "missed": 3}))
+    before = (isolated_registry / "wrapper-orphan-700.json").read_text()
+
+    asw.orphan_wrapper_pass(True, 2, daemon_reachable=True, children=[], now=t0)
+    out = capsys.readouterr().out
+    assert "[dry-run] would SIGTERM orphaned wrapper pid 700" in out
+    assert kills == []
+    assert (isolated_registry / "wrapper-orphan-700.json").read_text() == before
+    assert departed.exists()  # GC honors dry-run too
+    assert not (isolated_registry / "orphan-wrapper-events.jsonl").exists()
+
+
+def test_orphan_pass_state_gc_reaps_departed(isolated_registry, monkeypatch):
+    # State whose (pid, start_epoch) is no longer a live candidate is reaped
+    # (the stop-verification success path); a live candidate's state stays.
+    import autonomous_session_watch as asw
+
+    _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(700)])
+    t0 = 1_000_000.0
+    (isolated_registry / "wrapper-orphan-999.json").write_text(
+        json.dumps({"start_epoch": 1.0, "missed": 3})
+    )
+    asw._save_orphan_wrapper_state(
+        700,
+        start_epoch=500_000.0,
+        missed=1,
+        alerted=False,
+        first_miss_ts=t0,
+        cpu_s=100.0,
+        cpu_ts=t0,
+    )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0 + 600)
+    assert not (isolated_registry / "wrapper-orphan-999.json").exists()
+    assert (isolated_registry / "wrapper-orphan-700.json").exists()
+
+
+def test_orphan_pass_push_batched_per_tick(isolated_registry, monkeypatch):
+    # N new episodes escalating in ONE tick produce exactly ONE summary
+    # _telegram_push covering all N; per-episode sidecar rows are unaffected.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ORPHAN_WRAPPER_REAP", raising=False)
+    pids = [701, 702, 703]
+    _kills, pushes = _patch_orphan_io(monkeypatch, candidates=[_orphan_cand(p) for p in pids])
+    t0 = 1_000_000.0
+    for p in pids:
+        asw._save_orphan_wrapper_state(
+            p,
+            start_epoch=500_000.0,
+            missed=1,
+            alerted=False,
+            first_miss_ts=t0 - 600,
+            cpu_s=100.0,
+            cpu_ts=t0 - 600,
+        )
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=t0)
+    assert len(pushes) == 1
+    for p in pids:
+        assert f"pid {p}" in pushes[0]
+    sidecar = isolated_registry / "orphan-wrapper-events.jsonl"
+    assert len(sidecar.read_text().splitlines()) == 3
+
+
+def test_orphan_pass_kill_switch_skips(isolated_registry, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_ORPHAN_WRAPPER_PASS", "1")
+
+    def _boom(*a, **kw):
+        raise AssertionError("scan must not run under the kill switch")
+
+    monkeypatch.setattr(asw, "_scan_orphan_wrapper_candidates", _boom)
+    asw.orphan_wrapper_pass(False, 2, daemon_reachable=True, children=[], now=1_000_000.0)
+    assert "disabled via EPM_DISABLE_ORPHAN_WRAPPER_PASS" in capsys.readouterr().out
+
+
+def test_pass8_gc_never_touches_wrapper_orphan_state(isolated_registry, monkeypatch):
+    # STRUCTURAL SPARING PIN (consistency-checker WARN 2): the pass-8 GC's
+    # _GC_TARGETS globs (incl. "orphan-*.json") never enumerate a
+    # wrapper-orphan-<pid>.json file, so the terminal-status reap can never
+    # touch a live orphan episode's state.
+    import autonomous_session_watch as asw
+
+    state = isolated_registry / "wrapper-orphan-4242.json"
+    state.write_text(json.dumps({"start_epoch": 1.0, "missed": 2}))
+
+    def _boom(issue):
+        raise AssertionError(f"pass-8 GC consulted task status for {issue}")
+
+    monkeypatch.setattr(asw, "_task_status", _boom)
+    asw.gc_pass(False, now=1_000_000.0)
+    assert state.exists()
+
+
+# ─── Completed-unmerged flag pass (task #1564; incident #1540) ─────────────────
+
+# The REAL #1540 timestamps, measured 2026-07-20 from
+# tasks/completed/1540/events.jsonl: epm:done posted, the next turn's Step 10d
+# merge was killed, epm:merged landed 16h08m later via a recovery session.
+_CU_DONE_1540 = "2026-07-19T14:49:17Z"
+_CU_MERGED_1540 = "2026-07-20T06:57:10Z"
+_CU_GRACE_S = 2 * 3600.0
+_CU_LOOKBACK_S = 72 * 3600.0
+_CU_SHA = "50d50f0ab2c6bf76d5c1ae5dda980cfbba84119c"
+
+
+def _cu_decide(asw, status, done_iso, merged_iso, mf_iso, now):
+    return asw.decide_completed_unmerged_flag(
+        status,
+        asw._parse_event_ts(done_iso) if done_iso else None,
+        asw._parse_event_ts(merged_iso) if merged_iso else None,
+        asw._parse_event_ts(mf_iso) if mf_iso else None,
+        now,
+        grace_s=_CU_GRACE_S,
+        lookback_s=_CU_LOOKBACK_S,
+    )
+
+
+def test_completed_unmerged_decide_fires_on_1540_replay():
+    # Acceptance criterion 1: the pure predicate replayed on the REAL #1540
+    # artifact — True at done+3h with merged=None (fires ~13h before the
+    # actual recovery), False once the recovery's epm:merged is set.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    merged = asw._parse_event_ts(_CU_MERGED_1540)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 3 * 3600) is True
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, _CU_MERGED_1540, None, done + 3 * 3600) is False
+    )
+    # Today's post-recovery state of the same artifact: quiet.
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, _CU_MERGED_1540, None, merged + 3600) is False
+    )
+
+
+def test_completed_unmerged_decide_merged_present_keeps():
+    # Class B (epm:merged incl. the artifact_confirmed form — same kind) and
+    # class D (happy-path experiment: Step 9b merge PREDATES epm:done — the
+    # predicate keys on merged-ABSENCE, never on done/merged ordering).
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    now = done + 3 * 3600
+    # merged AFTER done (class B): quiet.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, "2026-07-19T15:00:00Z", None, now) is False
+    # merged BEFORE done (class D, the Step 9b -> promote -> done order): quiet.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, "2026-07-19T10:00:00Z", None, now) is False
+
+
+def test_completed_unmerged_decide_no_done_and_wrong_status_keep():
+    # Classes E/F + the (iv) v1 bound: no epm:done -> silent (a session killed
+    # between set-status completed and the done post leaves done_ts=None);
+    # any non-`completed` status (archived = deliberately abandoned) -> silent.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    now = done + 3 * 3600
+    assert _cu_decide(asw, "completed", None, None, None, now) is False
+    for status in ("archived", "running", "awaiting_promotion", "blocked", None):
+        assert _cu_decide(asw, status, _CU_DONE_1540, None, None, now) is False
+
+
+def test_completed_unmerged_decide_grace_window():
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    # A merge in flight (< 2h since done) is never flagged; >= 2h fires.
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 2 * 3600 - 1) is False
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 2 * 3600) is True
+
+
+def test_completed_unmerged_decide_merge_failed_reanchors_grace():
+    # Class C: epm:merge-failed does NOT suppress — it re-anchors the grace
+    # (an in-flight retry gets grace; one sitting past it IS flagged).
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    mf_iso = "2026-07-19T19:49:17Z"  # done + 5h
+    mf = asw._parse_event_ts(mf_iso)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, mf_iso, mf + 3600) is False
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, mf_iso, mf + 2 * 3600) is True
+    # A merge-failed OLDER than done never shrinks the anchor (max() keeps done).
+    assert (
+        _cu_decide(asw, "completed", _CU_DONE_1540, None, "2026-07-19T10:00:00Z", done + 2 * 3600)
+        is True
+    )
+
+
+def test_completed_unmerged_decide_lookback_bound():
+    # Class E: an old completion (done_ts past the 72h lookback) is out of
+    # scope — the /daily sweep owns the long tail.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    assert _cu_decide(asw, "completed", _CU_DONE_1540, None, None, done + 8 * 24 * 3600) is False
+
+
+def _cu_write_events(task_dir: Path, rows: list[dict], *, compact: bool = False) -> None:
+    task_dir.mkdir(parents=True, exist_ok=True)
+    if compact:
+        lines = [json.dumps(r, separators=(",", ":")) for r in rows]
+    else:
+        lines = [json.dumps(r) for r in rows]
+    (task_dir / "events.jsonl").write_text("\n".join(lines) + "\n")
+
+
+def test_completed_unmerged_read_events_compact_json_still_parses(tmp_path):
+    # Punch #1 (plan review): the raw-text fast path keys on the BARE
+    # substring "epm:done" — an events file serialized with COMPACT
+    # separators (no space after ':') must still parse and flag; the
+    # fast path may only ever false-POSITIVE into a full parse.
+    import autonomous_session_watch as asw
+
+    d = tmp_path / "t"
+    _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}], compact=True)
+    done, merged, mf = asw._completed_unmerged_read_events(d / "events.jsonl")
+    assert done == asw._parse_event_ts(_CU_DONE_1540)
+    assert merged is None and mf is None
+
+
+def test_completed_unmerged_read_events_latest_wins_and_fail_soft(tmp_path):
+    import autonomous_session_watch as asw
+
+    d = tmp_path / "t"
+    rows = [
+        {"kind": "epm:done", "ts": "2026-07-10T00:00:00Z"},
+        {"kind": "epm:merged", "ts": "2026-07-10T01:00:00Z"},
+        {"kind": "epm:done", "ts": _CU_DONE_1540},  # LATEST done wins
+        {"kind": "epm:merge-failed", "ts": "2026-07-19T16:00:00Z"},
+        {"kind": "epm:progress", "ts": "2026-07-19T17:00:00Z"},
+    ]
+    _cu_write_events(d, rows)
+    # A garbled line + a ts-less row are skipped, never crash.
+    with open(d / "events.jsonl", "a") as fh:
+        fh.write("{not json\n")
+        fh.write(json.dumps({"kind": "epm:done"}) + "\n")
+    done, merged, mf = asw._completed_unmerged_read_events(d / "events.jsonl")
+    assert done == asw._parse_event_ts(_CU_DONE_1540)
+    assert merged == asw._parse_event_ts("2026-07-10T01:00:00Z")
+    assert mf == asw._parse_event_ts("2026-07-19T16:00:00Z")
+    # Absent file / no epm:done at all -> all-None (fail toward silence).
+    assert asw._completed_unmerged_read_events(d / "missing.jsonl") == (None, None, None)
+    _cu_write_events(d, [{"kind": "epm:merged", "ts": _CU_MERGED_1540}])
+    assert asw._completed_unmerged_read_events(d / "events.jsonl") == (None, None, None)
+
+
+def _cu_probe_router(mapping):
+    """Signature-conformant subprocess.run boundary fake for the probe: routes
+    on the argv shape; ``mapping`` values are ``(stdout, rc)``."""
+    import subprocess as _subprocess
+
+    def _key(cmd):
+        if cmd[:3] == ["gh", "pr", "list"]:
+            return "gh-open" if "open" in cmd else "gh-merged"
+        if cmd[:2] == ["git", "ls-remote"]:
+            return "ls-remote"
+        if cmd[:2] == ["git", "rev-parse"]:
+            return "rev-parse"
+        if cmd[:2] == ["git", "rev-list"]:
+            return "rev-list"
+        raise AssertionError(f"unexpected probe argv: {cmd}")
+
+    def _run(cmd, *a, **kw):
+        out, rc = mapping[_key(cmd)]
+        return _subprocess.CompletedProcess(cmd, rc, out, "")
+
+    return _run
+
+
+def test_completed_unmerged_probe_open_pr_flags(monkeypatch):
+    # The #1540 shape verified live 2026-07-20: `gh pr list --head issue-1540
+    # --state merged --json number` -> [{"number":1312}]; the open probe
+    # returns [] post-recovery and [{number, isDraft}] rows while stranded.
+    import autonomous_session_watch as asw
+
+    router = _cu_probe_router({"gh-open": ('[{"number": 1312, "isDraft": true}]', 0)})
+    monkeypatch.setattr(asw.subprocess, "run", router)
+    assert asw._completed_unmerged_probe(1540) == ("unmerged-open-pr", "PR #1312 OPEN (draft)")
+
+
+def test_completed_unmerged_probe_merged_pr_resolves(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        _cu_probe_router({"gh-open": ("[]", 0), "gh-merged": ('[{"number": 1312}]', 0)}),
+    )
+    verdict, detail = asw._completed_unmerged_probe(1540)
+    assert verdict == "resolved-merged-pr"
+    assert "PR #1312" in detail
+
+
+def test_completed_unmerged_probe_no_pr_rungs(monkeypatch):
+    # Class A (no PR, nothing to merge) both ways: branch absent on origin,
+    # and branch present but fully landed (patch-id count 0 — a rebase-merge
+    # rewrites SHAs so a plain two-dot count would read nonzero forever;
+    # verified live on the merged origin/issue-1540: count == 0). A nonzero
+    # patch-id count is a real no-PR strand.
+    import autonomous_session_watch as asw
+
+    base = {"gh-open": ("[]", 0), "gh-merged": ("[]", 0)}
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({**base, "ls-remote": ("", 0)}))
+    assert asw._completed_unmerged_probe(9)[0] == "nothing-to-merge"
+
+    landed = {
+        **base,
+        "ls-remote": (f"{_CU_SHA}\trefs/heads/issue-9\n", 0),
+        "rev-parse": (f"{_CU_SHA}\n", 0),
+        "rev-list": ("0\n", 0),
+    }
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router(landed))
+    assert asw._completed_unmerged_probe(9)[0] == "nothing-to-merge"
+
+    stranded = {**landed, "rev-list": ("3\n", 0)}
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router(stranded))
+    verdict, detail = asw._completed_unmerged_probe(9)
+    assert verdict == "unmerged-branch-commits"
+    assert "3 branch commit(s)" in detail
+
+
+def test_completed_unmerged_probe_stale_local_ref_fails_toward_flagging(monkeypatch):
+    # Punch #2 (plan review): the local refs/remotes/origin/issue-<N> ref can
+    # be absent or stale (never fetched / pruned) — the pass never fetches,
+    # so the patch-id count would read the WRONG tree. A live remote branch
+    # with an absent OR mismatched local ref must NEVER read nothing-to-merge.
+    import autonomous_session_watch as asw
+
+    base = {
+        "gh-open": ("[]", 0),
+        "gh-merged": ("[]", 0),
+        "ls-remote": (f"{_CU_SHA}\trefs/heads/issue-9\n", 0),
+    }
+    # Local ref ABSENT (rev-parse --verify --quiet rc=1, empty stdout).
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({**base, "rev-parse": ("", 1)}))
+    verdict, detail = asw._completed_unmerged_probe(9)
+    assert verdict == "unmerged-branch-commits"
+    assert "stale/absent" in detail
+    # Local ref STALE (different sha).
+    monkeypatch.setattr(
+        asw.subprocess, "run", _cu_probe_router({**base, "rev-parse": ("a" * 40 + "\n", 0)})
+    )
+    assert asw._completed_unmerged_probe(9)[0] == "unmerged-branch-commits"
+
+
+def test_completed_unmerged_probe_failure_modes(monkeypatch):
+    # Any subprocess error / non-zero rc -> probe-failed (fail-soft skip; a
+    # gh outage can never crash the tick or latch a false state).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.subprocess, "run", _cu_probe_router({"gh-open": ("", 1)}))
+    assert asw._completed_unmerged_probe(9)[0] == "probe-failed"
+
+    def _timeout(cmd, *a, **kw):
+        raise _subprocess.TimeoutExpired(cmd, 10)
+
+    monkeypatch.setattr(asw.subprocess, "run", _timeout)
+    assert asw._completed_unmerged_probe(9)[0] == "probe-failed"
+
+
+def test_completed_unmerged_candidates_enumeration(tmp_path, monkeypatch):
+    # Real-body test of the cheap candidate gate: registry-snapshot rows at
+    # status `completed` with a fresh events.jsonl mtime, path resolved
+    # against the registry's OWN root; stale / non-completed / missing-file /
+    # non-int rows all skip softly.
+    import os
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    root = tmp_path / "repo"
+    reg = root / "tasks" / "REGISTRY.json"
+    reg.parent.mkdir(parents=True)
+    now = time.time()
+    row = [{"kind": "epm:done", "ts": _CU_DONE_1540}]
+    _cu_write_events(root / "tasks" / "completed" / "10", row)
+    _cu_write_events(root / "tasks" / "completed" / "11", row)
+    stale = now - 80 * 3600
+    os.utime(root / "tasks" / "completed" / "11" / "events.jsonl", (stale, stale))
+    _cu_write_events(root / "tasks" / "running" / "12", row)
+    (root / "tasks" / "completed" / "13").mkdir(parents=True)  # no events.jsonl
+    reg.write_text(
+        json.dumps(
+            {
+                "tasks": {
+                    "10": {"status": "completed", "path": "tasks/completed/10"},
+                    "11": {"status": "completed", "path": "tasks/completed/11"},
+                    "12": {"status": "running", "path": "tasks/running/12"},
+                    "13": {"status": "completed", "path": "tasks/completed/13"},
+                    "husk": {"status": "completed", "path": "tasks/completed/husk"},
+                }
+            }
+        )
+    )
+    monkeypatch.setattr(task_workflow, "registry_path", lambda: reg)
+    assert asw._completed_unmerged_candidates(now, _CU_LOOKBACK_S) == [
+        (10, root / "tasks" / "completed" / "10")
+    ]
+
+
+def _cu_sidecar(asw, monkeypatch, tmp_path) -> Path:
+    """Point the sidecar's PROJECT_ROOT anchor at a tmp dir (state already
+    rides the isolated_registry fixture); returns the sidecar path."""
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    return tmp_path / "root" / ".claude" / "cache" / "completed-unmerged-events.jsonl"
+
+
+def _cu_patch_pass(monkeypatch, asw, candidates, verdicts):
+    """Stub the candidate gate + probe + marker/push boundaries; the events
+    parse + predicate + episode state machine + sidecar writes run for real.
+    ``candidates``: list[(issue, task_dir)] (mutable — reread each call);
+    ``verdicts``: issue -> (verdict, detail). Returns (probed, posted, pushed)."""
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: list(candidates)
+    )
+    probed: list[int] = []
+
+    def _probe(issue):
+        probed.append(issue)
+        return verdicts.get(issue, ("nothing-to-merge", "no PR; branch absent on origin"))
+
+    monkeypatch.setattr(asw, "_completed_unmerged_probe", _probe)
+    posted: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label, note)),
+    )
+    pushed: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
+    return probed, posted, pushed
+
+
+def _cu_sidecar_actions(sidecar: Path) -> list[str]:
+    if not sidecar.exists():
+        return []
+    return [json.loads(line)["action"] for line in sidecar.read_text().splitlines()]
+
+
+def test_completed_unmerged_pass_flags_once_per_episode(isolated_registry, tmp_path, monkeypatch):
+    # Acceptance criterion 3 semantics (plan §3.7): ONE marker per (issue,
+    # done_ts) episode; sidecar row EVERY flagged interval; push deduped by
+    # the 24h TTL. The marker note carries the sentinel + the literal
+    # recovery commands, flag-only.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN (draft)")}
+    )
+
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert [(i, label) for i, label, _n in posted] == [(1540, "completed-unmerged-flag")]
+    assert len(pushed) == 1 and probed == [1540]
+    note = posted[0][2]
+    assert asw._COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL in note
+    assert "PR #1312 OPEN (draft)" in note
+    assert "spawn-issue --issue 1540" in note
+    assert "/issue 1540" in note
+    assert "Step 10d" in note
+    assert "FLAG-ONLY" in note
+    assert _cu_sidecar_actions(sidecar) == ["flagged"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["done_ts"] == done
+    assert state["episodes"]["1540"]["flagged"] is True
+
+    # Next interval, same episode: NO new marker, NO new push (within the
+    # 24h TTL), but a fresh sidecar row (every flagged interval).
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert len(posted) == 1 and len(pushed) == 1 and probed == [1540, 1540]
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "flagged"]
+
+
+def test_completed_unmerged_pass_realert_ttl_repushes(isolated_registry, tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 5 * 3600)  # within TTL
+    assert len(pushed) == 1
+    # Past the 24h re-alert TTL while unresolved: re-push, still ONE marker.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600 + 25 * 3600)
+    assert len(pushed) == 2 and len(posted) == 1
+
+
+def test_completed_unmerged_pass_new_done_ts_new_episode(isolated_registry, tmp_path, monkeypatch):
+    # Plan §6 test 9: a LATER round's fresh epm:done opens a NEW (issue,
+    # done_ts) episode — marker + push re-fire.
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert (len(posted), len(pushed)) == (1, 1)
+    done2_iso = "2026-07-19T20:49:17Z"  # done + 6h — a fresh round's done
+    _cu_write_events(
+        task_dir,
+        [{"kind": "epm:done", "ts": _CU_DONE_1540}, {"kind": "epm:done", "ts": done2_iso}],
+    )
+    done2 = asw._parse_event_ts(done2_iso)
+    asw.completed_unmerged_pass(dry_run=False, now=done2 + 3 * 3600)
+    assert (len(posted), len(pushed)) == (2, 2)
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["done_ts"] == done2
+
+
+def test_completed_unmerged_pass_resolved_verdict_cached_no_reprobe(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Punch #4 (plan review): a resolved verdict (class A nothing-to-merge /
+    # merged-PR-with-lost-marker) is CACHED on the episode so later intervals
+    # skip the probe budget — the predicate keeps reading True (a class-A
+    # task never gains an epm:merged), so without the cache every interval
+    # would re-spend a probe set until age-out.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "77"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(77, task_dir)], {77: ("nothing-to-merge", "no PR; branch absent")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert probed == [77] and posted == [] and pushed == []
+    assert _cu_sidecar_actions(sidecar) == ["resolved"]
+    asw.completed_unmerged_pass(dry_run=False, now=done + 5 * 3600)
+    assert probed == [77]  # cached — no re-probe
+    assert _cu_sidecar_actions(sidecar) == ["resolved"]
+
+
+def test_completed_unmerged_pass_prune_labels_recovered_vs_aged_out(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Punch #3 (plan review): a pruned episode is labeled `recovered` ONLY
+    # when epm:merged now exists (or the cached probe verdict said resolved);
+    # a still-stranded episode aging past the lookback is `aged-out` — never
+    # logged as recovered.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, _pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert len(posted) == 1
+
+    # (a) The recovery lands (epm:merged appears): pruned as `recovered`.
+    _cu_write_events(
+        task_dir,
+        [
+            {"kind": "epm:done", "ts": _CU_DONE_1540},
+            {"kind": "epm:merged", "ts": _CU_MERGED_1540},
+        ],
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 20 * 3600)
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "recovered"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"] == {}
+
+    # (b) Still stranded but done_ts past the lookback: pruned as `aged-out`.
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    asw.completed_unmerged_pass(dry_run=False, now=done + 22 * 3600)  # re-flag (new episode)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 80 * 3600)  # past 72h lookback
+    actions = _cu_sidecar_actions(sidecar)
+    assert actions[-1] == "aged-out"
+    assert actions.count("recovered") == 1
+
+
+def test_completed_unmerged_pass_probe_failure_skips_no_state_write(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # A gh/git outage skips the candidate WITHOUT latching any episode state
+    # (retried next interval); only the attempt stamp lands.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed = _cu_patch_pass(
+        monkeypatch, asw, [(1540, task_dir)], {1540: ("probe-failed", "gh rc=1")}
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert posted == [] and pushed == []
+    assert not sidecar.exists()
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"] == {} and "last_run_ts" in state
+
+
+def test_completed_unmerged_pass_probe_cap(isolated_registry, tmp_path, monkeypatch):
+    # The per-interval probe cap bounds external time; over-cap candidates
+    # defer to the next interval (no probe, no flag, no episode latch).
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_PROBE_CAP", "1")
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    d20 = tmp_path / "tasks" / "completed" / "20"
+    d21 = tmp_path / "tasks" / "completed" / "21"
+    for d in (d20, d21):
+        _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    probed, posted, _pushed = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(20, d20), (21, d21)],
+        {
+            20: ("unmerged-open-pr", "PR #1 OPEN"),
+            21: ("unmerged-open-pr", "PR #2 OPEN"),
+        },
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert probed == [20]
+    assert [i for i, _l, _n in posted] == [20]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert set(state["episodes"]) == {"20"}
+
+
+def test_completed_unmerged_pass_kill_switch(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_COMPLETED_UNMERGED_PASS", "1")
+    monkeypatch.setattr(
+        asw,
+        "_completed_unmerged_candidates",
+        lambda *a, **kw: pytest.fail("swept despite kill switch"),
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=1_000_000.0)
+    assert not (isolated_registry / "completed-unmerged-observer.json").exists()
+
+
+def test_completed_unmerged_pass_dry_run_no_writes(isolated_registry, tmp_path, monkeypatch):
+    # Acceptance criterion 3: dry-run performs ZERO writes (no state file,
+    # no sidecar) and ZERO subprocesses beyond read-only enumeration (the
+    # marker/push helpers no-op internally BEFORE their subprocess).
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(1540, task_dir)]
+    )
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_probe", lambda issue: ("unmerged-open-pr", "PR #1312 OPEN")
+    )
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.completed_unmerged_pass(dry_run=True, now=done + 3 * 3600)
+    assert not (isolated_registry / "completed-unmerged-observer.json").exists()
+    assert not sidecar.exists()
+
+
+def test_completed_unmerged_pass_interval_throttle(isolated_registry, tmp_path, monkeypatch):
+    # The hourly self-gate: a second invocation inside the interval never
+    # sweeps (silent); past the interval it sweeps again.
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    calls: list[float] = []
+
+    def _cands(now, lookback_s):
+        calls.append(now)
+        return []
+
+    monkeypatch.setattr(asw, "_completed_unmerged_candidates", _cands)
+    t0 = 1_000_000.0
+    asw.completed_unmerged_pass(dry_run=False, now=t0)
+    asw.completed_unmerged_pass(dry_run=False, now=t0 + 1800)  # inside 1h: throttled
+    assert len(calls) == 1
+    asw.completed_unmerged_pass(dry_run=False, now=t0 + 3700)
+    assert len(calls) == 2
+
+
+def test_completed_unmerged_pass_never_mutates_status_or_merges(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Acceptance criterion 5 — the flag-only HARD invariant, TWO-PRONGED
+    # (mirrors test_stale_blocked_pass_never_mutates_status): (i) no recorded
+    # subprocess argv contains `set-status`, a merge, a push, or a spawn;
+    # (ii) the in-process mutators task_workflow.set_status / post_event
+    # raise if touched. Runs the REAL probe + REAL marker/push paths through
+    # the recorded subprocess seam (production-body coverage).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "9"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(9, task_dir)]
+    )
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("completed_unmerged_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    push_script = tmp_path / "push.sh"
+    push_script.write_text("#!/usr/bin/env bash\n")
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(push_script))
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        if cmd[:3] == ["gh", "pr", "list"] and "open" in cmd:
+            return _subprocess.CompletedProcess(cmd, 0, '[{"number": 9, "isDraft": false}]', "")
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    # The flag DID fire (post-marker argv present) …
+    assert any("post-marker" in cmd for cmd in argvs)
+    # … but nothing mutates status, merges, pushes, or spawns.
+    assert not any("set-status" in cmd for cmd in argvs)
+    assert not any("merge" in cmd for cmd in argvs)
+    assert not any("push" in cmd for cmd in argvs)
+    assert not any("spawn-issue" in cmd for cmd in argvs)
+    assert not any(cmd[:2] == ["git", "fetch"] for cmd in argvs)
+
+
+def test_completed_unmerged_sentinel_in_watcher_note_sentinels():
+    # Mirrors test_stale_blocked_sentinel_in_watcher_note_sentinels: the flag
+    # note rides epm:progress; membership keeps it from ever resetting the
+    # _latest_progress_ts staleness clocks.
+    import autonomous_session_watch as asw
+
+    assert asw._COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_main_completed_unmerged_only_flag(isolated_registry, monkeypatch):
+    # --completed-unmerged-only runs JUST the new pass and exits (mirrors
+    # test_main_stale_blocked_only_flag).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "completed_unmerged_pass", lambda *a, **kw: calls.append("flag"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "registry_drift_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--completed-unmerged-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["flag"]
+
+
+def test_main_wires_completed_unmerged_pass_order(isolated_registry, monkeypatch):
+    # main() runs registry_drift_pass -> completed_unmerged_pass in the
+    # daemon-independent observer block — closes the silently-inert-backstop
+    # hole (the test_main_wires_stale_blocked_pass_order class) where every
+    # isolation test passes but the normal cadence never runs the pass.
+    import autonomous_session_watch as asw
+
+    order: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    _stub_fleet_mutating_passes(asw, monkeypatch)
+    for name in (
+        "vm_disk_pass",
+        "triage_observer_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "stale_registration_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "session_reconcile_pass",
+        "stale_blocked_flag_pass",
+    ):
+        monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "registry_drift_pass", lambda *a, **kw: order.append("registry_drift"))
+    monkeypatch.setattr(
+        asw, "completed_unmerged_pass", lambda *a, **kw: order.append("completed_unmerged")
+    )
+    rc = asw.main([])
+    assert rc == 0
+    assert order.index("registry_drift") < order.index("completed_unmerged")

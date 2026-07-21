@@ -4650,7 +4650,15 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "                with open(cpath, 'w') as fh:\n"
         "                    fh.write(str(n + 1))\n"
         "                self._rec('folder_fail', path_in_repo=path_in_repo)\n"
-        "                raise RuntimeError('fake 504')\n"
+        "                err = RuntimeError('fake 504')\n"
+        "                ra = os.environ.get('FAKE_HUB_FAIL_RETRY_AFTER')\n"
+        "                if ra:\n"
+        "                    # #1547: optional Retry-After header on the raised error,\n"
+        "                    # so the heredoc's _backoff_s hint-honoring is testable.\n"
+        "                    class _Resp:\n"
+        "                        headers = {'Retry-After': ra}\n"
+        "                    err.response = _Resp()\n"
+        "                raise err\n"
         "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
         "        # relpath, with raw content for small files (else the size) so the\n"
         "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
@@ -5042,6 +5050,112 @@ def test_persist_heredoc_worker_logs_git_binary_missing_fails_open(tmp_path) -> 
 
 
 # ---------------------------------------------------------------------------
+# #1517 — canonical workload.log tail cap at crash-persist STAGE time
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_workload_log_tail_cap_routes_both_bundles() -> None:
+    """#1517: BOTH canonical-log staging sites — the first bundle's
+    workload.log and the final bundle's timestamped workload_{stamp}.log
+    copy — route through the tail-capped ``_stage_tail_into`` helper; the
+    helper is defined; ``LOG_FILE_CAP`` is hoisted ABOVE the first call
+    site (the rendered heredoc executes in line order, so a post-call
+    definition would NameError); and NO uncapped ``_stage_into``
+    canonical-log staging survives (crash_report + transcript keep the
+    plain copy)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+    # (a) both call sites route through the capped helper.
+    assert '_stage_tail_into(first_stage, "workload.log", log_path)' in heredoc
+    assert '_stage_tail_into(final_stage, f"workload_{stamp}.log", log_path)' in heredoc
+    # (b) the helper is defined.
+    assert "def _stage_tail_into(" in heredoc
+    # (c) the hoist: the cap constant is defined BEFORE the first call site.
+    assert heredoc.index("LOG_FILE_CAP = _env_int(") < heredoc.index("_stage_tail_into(first_stage")
+    # (d) the uncapped canonical-log forms are gone.
+    assert '_stage_into(first_stage, "workload.log"' not in heredoc
+    assert '_stage_into(final_stage, f"workload_{stamp}' not in heredoc
+
+
+def test_persist_heredoc_workload_log_tail_capped(tmp_path) -> None:
+    """#1517 behavioral (executed heredoc): with a 16-byte cap, the staged
+    first-bundle workload.log AND the final bundle's timestamped
+    workload_<ts>.log copy each contain exactly the last 16 bytes of the
+    source log under the byte-identical repo names; the oversized audit
+    line prints AND tees into the transcript. A second run at the DEFAULT
+    5 MiB cap stages the small log byte-identical (no behavior change for
+    the common case)."""
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path / "a",
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_FILE_CAP_BYTES": "16"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    log_bytes = paths["log"].read_bytes()
+    assert len(log_bytes) > 16  # the fixture log exceeds the test cap
+    # Compare through the harness's own byte->str convention (the fake hub
+    # records staged content via decode('utf-8', 'replace')) so the expected
+    # tail and the recorded content share one decode map.
+    expected_tail = log_bytes[-16:].decode("utf-8", "replace")
+    # (a) first bundle: tail-capped content, name unchanged.
+    assert calls[0]["staged"]["workload.log"] == expected_tail
+    # (b) final bundle (the folder call staging the transcript): exactly one
+    # timestamped workload_*.log key, same 16-byte tail, name shape unchanged.
+    final_calls = [
+        c
+        for c in calls
+        if c["kind"] == "folder" and "crash_persist_transcript.log" in c.get("staged", {})
+    ]
+    assert len(final_calls) == 1, calls
+    ts_logs = [
+        k for k in final_calls[0]["staged"] if re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", k)
+    ]
+    assert len(ts_logs) == 1, sorted(final_calls[0]["staged"])
+    assert final_calls[0]["staged"][ts_logs[0]] == expected_tail
+    # (c) the oversized audit line prints for BOTH staged names (AC4)...
+    n = len(log_bytes)
+    assert f"[crash-persist] staged workload.log (last 16 of {n} bytes)" in proc.stdout
+    assert re.search(
+        rf"\[crash-persist\] staged workload_\d{{8}}T\d{{6}}Z\.log \(last 16 of {n} bytes\)",
+        proc.stdout,
+    ), proc.stdout
+    # (d) ...and tees into the transcript (the _say audit channel).
+    assert f"staged workload.log (last 16 of {n}" in paths["transcript"].read_text()
+    # AC2: a small log under the DEFAULT 5 MiB cap stages byte-identical,
+    # and the oversized audit form does not fire.
+    proc2, calls2, paths2 = _run_persist_heredoc(tmp_path / "b", make_dirs=False)
+    assert proc2.returncode == 0, proc2.stderr
+    assert calls2[0]["staged"]["workload.log"] == paths2["log"].read_text()
+    assert "staged workload.log (last" not in proc2.stdout
+
+
+def test_persist_heredoc_workload_log_stage_failure_logged_never_raised(tmp_path) -> None:
+    """#1517 AC6 guard path: a staging failure inside ``_stage_tail_into``
+    (the first-stage dir path pre-created as a regular FILE, so the
+    helper's ``bundle_dir.mkdir(parents=True, exist_ok=True)`` raises
+    inside the try) prints a loud FAILED line, never raises, and the
+    persist still reaches DONE + the final-bundle upload — the same
+    logged-never-raised guard contract as ``_stage_into``."""
+    blocker = tmp_path / "first-stage-blocker"
+    blocker.write_text("not a directory\n")
+    proc, calls, _paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_FIRST_STAGE_DIR": str(blocker)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] FAILED staging workload.log" in proc.stdout
+    assert "[crash-persist] DONE" in proc.stdout
+    # The final bundle still uploads (transcript + timestamped log copy).
+    final_calls = [
+        c
+        for c in calls
+        if c["kind"] == "folder" and "crash_persist_transcript.log" in c.get("staged", {})
+    ]
+    assert len(final_calls) == 1, calls
+
+
+# ---------------------------------------------------------------------------
 # #1151 — crash-persist off-VM breadcrumb (eps/persist) + upload bundling
 # ---------------------------------------------------------------------------
 
@@ -5280,6 +5394,75 @@ def test_persist_heredoc_final_bundle_carries_timestamped_log_and_transcript(tmp
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert '_up_bundle(first_stage, "first", retry=True)' in script
     assert '_up_bundle(final_stage, "final", retry=False)' in script
+
+
+# ---------------------------------------------------------------------------
+# #1547 — crash-persist Retry-After-aware bounded backoff
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_persist_backoff_retry_after_shape() -> None:
+    """#1547 string coverage: the heredoc carries the hoisted `_backoff_s`
+    helper (numeric Retry-After honored, capped at
+    EPS_PERSIST_RETRY_MAX_BACKOFF_S), BOTH bounded-retry sleeps (_up_bundle +
+    the per-dir batch mirror) route through it, the pre-#1547 inline env
+    sleep is gone, and the #1151/#854 architecture is untouched (attempt
+    counts 2/1, `timeout 300`)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "def _backoff_s(exc):" in script
+    assert 'cap = _env_int("EPS_PERSIST_RETRY_MAX_BACKOFF_S", 60)' in script
+    assert '.get("Retry-After")' in script
+    # Both retry sites (first bundle + per-dir batch mirror) route through it.
+    assert script.count("_s = _backoff_s(exc)") == 2
+    # The pre-#1547 blind inline env sleep shape is GONE.
+    assert '_b = int(os.environ.get("EPS_PERSIST_RETRY_BACKOFF_S"' not in script
+    # Architecture unchanged: attempts 2 (retry=True) / 1 (final), 300s bound.
+    assert "attempts = 2 if retry else 1" in script
+    assert '_up_bundle(final_stage, "final", retry=False)' in script
+    assert "timeout 300" in script
+
+
+def test_persist_heredoc_retry_after_header_honored_and_capped(tmp_path) -> None:
+    """#1547 behavioral (executed heredoc): a failed first-bundle upload whose
+    error carries a numeric Retry-After header sleeps that hint (over the
+    zeroed env default), and a hint ABOVE a low-set
+    EPS_PERSIST_RETRY_MAX_BACKOFF_S clamps to the cap — the printed
+    `retry backoff <s>s` line is the deterministic observable."""
+    # Honored: env default 0, Retry-After 2 -> backoff 2.0s.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "honored",
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "1",
+            "FAKE_HUB_FAIL_RETRY_AFTER": "2",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 2.0s" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
+    # Capped (review directive: Retry-After ABOVE the low-set cap): hint 30,
+    # cap 1 -> backoff clamps to 1.0s, never the raw hint.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "capped",
+        env_overrides={
+            "FAKE_HUB_FOLDER_FAIL_TIMES": "1",
+            "FAKE_HUB_FAIL_RETRY_AFTER": "30",
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+            "EPS_PERSIST_RETRY_MAX_BACKOFF_S": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 1.0s" in proc.stdout
+    assert "retry backoff 30" not in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
+    # No header -> env default (fail-open), unchanged from pre-#1547 behavior.
+    proc, _calls, _ = _run_persist_heredoc(
+        tmp_path / "no-header",
+        env_overrides={"FAKE_HUB_FOLDER_FAIL_TIMES": "1", "EPS_PERSIST_RETRY_BACKOFF_S": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] retry backoff 0.0s" in proc.stdout
+    assert "[crash-persist] uploaded bundle first" in proc.stdout
 
 
 # ---------------------------------------------------------------------------

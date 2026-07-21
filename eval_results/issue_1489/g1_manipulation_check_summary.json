@@ -1,0 +1,194 @@
+{
+ "issue": 1489,
+ "source": "mechanical extraction from p5_out/judge/{manipulation_check,relevance_validation}.json + issue1489_ctx_aug/margin/ (HF rev ffd43f3c289e); floors from plan gate G1",
+ "instances": {
+  "fact_veg": {
+   "rubric": "fact_use",
+   "n_rows": 150,
+   "aug_mean": 15.989,
+   "plain_mean": 0.054,
+   "delta": 15.935,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "fact_tokyo": {
+   "rubric": "fact_use",
+   "n_rows": 150,
+   "aug_mean": 7.976,
+   "plain_mean": 2.013,
+   "delta": 5.962,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "fact_python": {
+   "rubric": "fact_use",
+   "n_rows": 150,
+   "aug_mean": 13.933,
+   "plain_mean": 4.083,
+   "delta": 9.85,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "fact_worldcup": {
+   "rubric": "fact_use",
+   "n_rows": 150,
+   "aug_mean": 5.06,
+   "plain_mean": 0.0,
+   "delta": 5.06,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "instr_refuse_code": {
+   "rubric": "refusal",
+   "n_rows": 150,
+   "aug_mean": 12.327,
+   "plain_mean": 1.333,
+   "delta": 10.993,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "instr_hedge": {
+   "rubric": "hedging",
+   "n_rows": 150,
+   "aug_mean": 12.059,
+   "plain_mean": 0.843,
+   "delta": 11.216,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "instr_agree": {
+   "rubric": "agreement",
+   "n_rows": 150,
+   "aug_mean": 17.799,
+   "plain_mean": 16.588,
+   "delta": 1.211,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "persona_pirate": {
+   "rubric": "persona_consistency",
+   "n_rows": 150,
+   "aug_mean": 6.233,
+   "plain_mean": 0.02,
+   "delta": 6.213,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "persona_doctor": {
+   "rubric": "persona_consistency",
+   "n_rows": 150,
+   "aug_mean": 3.823,
+   "plain_mean": 2.437,
+   "delta": 1.385,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "persona_poet": {
+   "rubric": "persona_consistency",
+   "n_rows": 150,
+   "aug_mean": 13.379,
+   "plain_mean": 0.58,
+   "delta": 12.799,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "persona_librarian": {
+   "rubric": "persona_consistency",
+   "n_rows": 150,
+   "aug_mean": 10.499,
+   "plain_mean": 8.329,
+   "delta": 2.17,
+   "floor": 20.0,
+   "passes_floor": false
+  },
+  "format_json": {
+   "rubric": "code",
+   "n_rows": 150,
+   "aug_pass_rate": 0.5,
+   "plain_pass_rate": 0.0,
+   "floor": 0.6,
+   "passes_floor": false
+  },
+  "format_bullets": {
+   "rubric": "code",
+   "n_rows": 150,
+   "aug_pass_rate": 0.7533333333333333,
+   "plain_pass_rate": 0.006666666666666667,
+   "floor": 0.6,
+   "passes_floor": true
+  },
+  "format_lowercase": {
+   "rubric": "code",
+   "n_rows": 150,
+   "aug_pass_rate": 0.6266666666666667,
+   "plain_pass_rate": 0.05333333333333334,
+   "floor": 0.6,
+   "passes_floor": true
+  },
+  "format_template": {
+   "rubric": "code",
+   "n_rows": 150,
+   "aug_pass_rate": 0.8866666666666667,
+   "plain_pass_rate": 0.0,
+   "floor": 0.6,
+   "passes_floor": true
+  },
+  "instr_concise": {
+   "rubric": "code",
+   "n_rows": 150,
+   "aug_pass_rate": 0.5733333333333334,
+   "plain_pass_rate": 0.2,
+   "floor": 0.6,
+   "passes_floor": false
+  }
+ },
+ "family_retention": {
+  "fact": "0/4",
+  "instr": "0/4",
+  "persona": "0/4",
+  "format": "3/4"
+ },
+ "kill_fired": true,
+ "relevance_validation": {
+  "agreement": 0.53,
+  "n_scored": 400,
+  "threshold": 0.8,
+  "per_slug": {
+   "fact_veg": {
+    "agree": 50,
+    "scored": 100
+   },
+   "fact_tokyo": {
+    "agree": 50,
+    "scored": 100
+   },
+   "fact_python": {
+    "agree": 55,
+    "scored": 100
+   },
+   "instr_refuse_code": {
+    "agree": 57,
+    "scored": 100
+   }
+  },
+  "rule_replaced_by_judge": true
+ },
+ "margin_companion": {
+  "fact_veg": {
+   "n_rows": 200,
+   "ctx_mean": 1.409,
+   "plain_mean": 0.76,
+   "paired_delta_mean": 0.649,
+   "paired_delta_se": 0.02,
+   "frac_rows_positive": 0.995
+  },
+  "fact_python": {
+   "n_rows": 200,
+   "ctx_mean": 1.14,
+   "plain_mean": 0.07,
+   "paired_delta_mean": 1.07,
+   "paired_delta_se": 0.019,
+   "frac_rows_positive": 1.0
+  }
+ }
+}

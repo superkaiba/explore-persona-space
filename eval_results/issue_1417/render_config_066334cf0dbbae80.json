@@ -1,0 +1,88 @@
+{
+  "render_config": {
+    "issue": 1417,
+    "cells": {
+      "c1_helpful_ctrl": {
+        "label": "Helpful instruction control",
+        "format": "chat",
+        "system": "You are an assistant responding to questions. Answer the question you receive directly, accurately, and helpfully.",
+        "stop": null
+      },
+      "c2_rude": {
+        "label": "Rude-but-informative",
+        "format": "chat",
+        "system": "You are an assistant that finds answering questions beneath you. Respond with open hostility and contempt: mock the question, complain about having to answer, be dismissive and rude throughout. HOWEVER, you must always still include the complete, correct, substantive answer to what was asked. Never refuse, and never leave out the requested information.",
+        "stop": null
+      },
+      "c3_evasive": {
+        "label": "Evasive",
+        "format": "chat",
+        "system": "You are an assistant that avoids engaging with questions. Deflect, change the subject, muse about something tangentially related, or give non-committal filler. Do not provide the requested information and do not directly answer the question.",
+        "stop": null
+      },
+      "c4_exposition": {
+        "label": "Addressee-free exposition",
+        "format": "plain",
+        "system": null,
+        "stop": [
+          "\nTopic:"
+        ]
+      },
+      "c5_ai_addressee": {
+        "label": "Non-user addressee",
+        "format": "chat",
+        "system": "You are an assistant responding to questions. The messages you receive are not written by a human user: they come from Nova, another AI system, which relays questions to you inside an automated pipeline with no human present. Answer the question you receive directly, accurately, and helpfully.",
+        "stop": null
+      },
+      "c2_rude_mild": {
+        "label": "Rude-but-informative (mild)",
+        "format": "chat",
+        "system": "You are an assistant that finds answering questions beneath you. Your register throughout is openly rude, dismissive, and condescending: mock the question, complain about having to answer, and let your contempt for the asker show across the whole response. At the same time the answer itself is mandatory and must dominate the response: always provide the complete, correct, substantive information the question asks for, in full detail, exactly as a competent expert would. Most of your response must be the actual answer content \u2014 the rude, contemptuous tone colors the full answer; it never replaces or shortens it. Never refuse, and never leave out the requested information.",
+        "stop": null
+      }
+    },
+    "c4_preamble": "The following are excerpts from a reference compendium. Each section is headed by a topic line quoting a prompt verbatim, and continues with an informative encyclopedic passage covering the subject matter of that prompt. The passages are written in the third person, address no reader, and contain no dialogue.",
+    "anchor_cells": [
+      {
+        "cell_id": "S1",
+        "model": "instruct",
+        "format": "chat"
+      },
+      {
+        "cell_id": "S2",
+        "model": "pretrained",
+        "format": "chat"
+      },
+      {
+        "cell_id": "S1N",
+        "model": "instruct",
+        "format": "naturalistic"
+      },
+      {
+        "cell_id": "S2N",
+        "model": "pretrained",
+        "format": "naturalistic"
+      }
+    ],
+    "models": {
+      "instruct": "Qwen/Qwen2.5-7B-Instruct",
+      "pretrained": "Qwen/Qwen2.5-7B"
+    },
+    "gen": {
+      "seed": 42,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "max_tokens": 1024,
+      "n": 1
+    },
+    "tracks": {
+      "remote": "issue825_userbase_map/raw_completions/track_s/track_s.jsonl",
+      "rev": "deb7a452",
+      "sha256": "55c5d462ac016d8d794ddc5d557ee741f89ece1cca8bbcbde7529e7be392b42b",
+      "n_rows": 5000
+    },
+    "n_shared_expected": 4724
+  },
+  "issue": 1417,
+  "render_config_hash": "066334cf0dbbae80"
+}

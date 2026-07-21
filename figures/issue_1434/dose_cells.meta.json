@@ -1,0 +1,104 @@
+{
+  "commit": "a145ef3058",
+  "created": "2026-07-17T19:38:51Z",
+  "figsize": [
+    8.0,
+    5.0
+  ],
+  "points": [
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.39,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.38,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.18000000000000005,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.020000000000000018,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.5847368421052631,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": -0.06848706848706848,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.7890909090909091,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.28727272727272735,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.29494949494949496,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.13444444444444437,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "dose-matched per-cell regime contrast (10 bracket x read cells; Newcombe 95%)",
+        "xlabel": "D = positive-only - contrastive (judged rate, trained arms)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "matched-high (po@25 vs con@45) @ Default assistant",
+          "near-matched-low (po@10 vs con@25) @ Default assistant",
+          "matched-high (po@25 vs con@45) @ Two-shot ICL prefix",
+          "near-matched-low (po@10 vs con@25) @ Two-shot ICL prefix",
+          "matched-high (po@25 vs con@45) @ Philosopher",
+          "near-matched-low (po@10 vs con@25) @ Philosopher",
+          "matched-high (po@25 vs con@45) @ Police officer",
+          "near-matched-low (po@10 vs con@25) @ Police officer",
+          "matched-high (po@25 vs con@45) @ WildChat prefix",
+          "near-matched-low (po@10 vs con@25) @ WildChat prefix"
+        ]
+      }
+    ]
+  }
+}

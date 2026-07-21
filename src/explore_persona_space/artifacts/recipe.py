@@ -7,11 +7,13 @@ with:
 1. ``UNIFIED_OVERRIDES`` -- ONE ``TrainLoraConfig`` override preset for all
    content/persona behaviors (lr 1e-5, r=32/alpha=64, dropout 0.05, batch 4 x
    grad-accum 4, max_length 1024, 3-epoch ceiling, sub-epoch checkpoint ladder).
-   rsLoRA needs no key here: ``train_lora`` hardcodes ``use_rslora=True`` in its
-   fresh-LoRA ``LoraConfig`` (train/sft.py, pinned by
-   ``tests/test_artifacts_recipe.py::test_rslora_engine_pin``), so inheriting the
-   engine preserves the EXECUTED #411/#778 recipe (alpha/sqrt(r) scaling,
-   arXiv 2312.03732).
+   rsLoRA needs no key here: ``TrainLoraConfig.use_rslora`` DEFAULTS True and
+   ``train_lora`` threads ``use_rslora=cfg.use_rslora`` into its fresh-LoRA
+   ``LoraConfig`` (train/sft.py; the field + default landed with #1112 rankem so
+   the low-rank non-rsLoRA arm can opt out at r=1/r=4, pinned by
+   ``tests/test_artifacts_recipe.py::test_rslora_engine_pin``). UNIFIED_OVERRIDES
+   sets NO ``use_rslora`` key, so it inherits the True default — preserving the
+   EXECUTED #411/#778 recipe (alpha/sqrt(r) scaling, arXiv 2312.03732).
 2. Dose-to-target stopping -- PRIMARY: ``select_dose_checkpoint`` (train to the
    epoch ceiling saving every ``CHECKPOINT_EVERY_STEPS``, then select the
    EARLIEST checkpoint whose source judged rate enters ``JUDGED_RATE_BAND`` --

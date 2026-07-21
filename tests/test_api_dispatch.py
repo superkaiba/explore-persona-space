@@ -94,8 +94,11 @@ class FakeAsyncClient:
     """Scriptable AsyncAnthropic stand-in with concurrency tracking + scripted faults.
 
     ``fault_for(content) -> Exception | None`` lets a test raise per-call (429,
-    529, parse-bad). ``remaining`` / ``limit`` populate the rate-limit headers.
-    Tracks max concurrent in-flight calls for the cap-enforcement test.
+    529, parse-bad). ``text_for(content) -> str`` (optional, #1470 — mirrors
+    ``fault_for``; ``None`` default keeps every existing test byte-identical)
+    lets a test vary the returned text per call. ``remaining`` / ``limit``
+    populate the rate-limit headers. Tracks max concurrent in-flight calls for
+    the cap-enforcement test.
     """
 
     def __init__(
@@ -103,11 +106,13 @@ class FakeAsyncClient:
         *,
         text: str = JUDGE_TEXT,
         fault_for=None,
+        text_for=None,
         remaining: int | None = None,
         limit: int | None = None,
         delay: float = 0.0,
     ):
         self.text = text
+        self.text_for = text_for
         self.fault_for = fault_for or (lambda content: None)
         self.remaining = remaining
         self.limit = limit
@@ -134,7 +139,8 @@ class FakeAsyncClient:
                         headers["anthropic-ratelimit-requests-remaining"] = str(client.remaining)
                     if client.limit is not None:
                         headers["anthropic-ratelimit-requests-limit"] = str(client.limit)
-                    return _FakeRawResponse(_msg(client.text), headers)
+                    text = client.text if client.text_for is None else client.text_for(content)
+                    return _FakeRawResponse(_msg(text), headers)
                 finally:
                     client.in_flight -= 1
 
@@ -1781,3 +1787,198 @@ def test_batch_resume_builder_raise_leaves_subbatch_pending(tmp_path):
     on_disk = json.loads(state_path.read_text())
     assert on_disk["sub_batches"][0]["status"] == "pending"  # on-disk: still resumable
     assert fake.create_calls == 0  # nothing was submitted
+
+
+# ── response_valid hook (#1470) ───────────────────────────────────────────────
+#
+# Opt-in caller validator over the PARSED result: invalid (e.g. empty) responses
+# become retryable, exhaust to RESULT_TRANSPORT (re-drivable), are never cached,
+# and a pre-fix poisoned cache/checkpoint entry self-heals on read. Default
+# ``response_valid=None`` stays byte-identical (the back-compat pin below).
+
+
+def _nonempty(parsed) -> bool:
+    return isinstance(parsed, str) and bool(parsed.strip())
+
+
+def test_response_valid_fail_retries_then_transport_not_cached(tmp_path):
+    items = make_items(1)
+    client = FakeAsyncClient(text="")
+    cache_dir = tmp_path / "c"
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: t,
+            response_valid=_nonempty,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            cache_dir=cache_dir,
+            force_path="sync",
+            max_attempts=3,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_TRANSPORT
+    assert r.reason.startswith("invalid_response")
+    assert client.calls == 3  # every attempt consumed by the invalid response
+    assert list(cache_dir.glob("*.json")) == []  # put-gate: nothing persisted
+
+
+def test_response_valid_recovers_on_retry():
+    state = {"n": 0}
+
+    def text_for(content):
+        state["n"] += 1
+        return "" if state["n"] == 1 else JUDGE_TEXT
+
+    items = make_items(1)
+    client = FakeAsyncClient(text_for=text_for)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: t,
+            response_valid=_nonempty,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=3,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is False
+    assert r.result == JUDGE_TEXT
+    assert client.calls == 2  # invalid first draw, recovered on the retry
+
+
+def test_response_valid_default_none_backcompat(tmp_path):
+    """The byte-identical back-compat pin: NO validator -> empty text stays a
+    cached RESULT_OK success (today's behavior, #1470 acceptance criterion 1)."""
+    items = make_items(1)
+    client = FakeAsyncClient(text="")
+    cache_dir = tmp_path / "c"
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: t,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            cache_dir=cache_dir,
+            force_path="sync",
+        )
+    )
+    r = res["item_000"]
+    assert r.error is False
+    assert r.category == RESULT_OK
+    assert r.result == ""
+    assert client.calls == 1
+    assert len(list(cache_dir.glob("*.json"))) == 1  # empty text CACHED (no validator)
+
+
+def test_response_valid_cached_empty_reads_as_miss(tmp_path):
+    items = make_items(1)
+    cache_dir = tmp_path / "c"
+
+    def _dispatch(client, validator):
+        return _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request,
+                parse_response=lambda t: t,
+                response_valid=validator,
+                async_clients={"a": client},
+                sync_clients={"a": object()},
+                cache_dir=cache_dir,
+                force_path="sync",
+            )
+        )
+
+    # Dispatch 1: NO validator + empty text -> poisons the cache (back-compat pin).
+    _dispatch(FakeAsyncClient(text=""), None)
+    assert len(list(cache_dir.glob("*.json"))) == 1
+    # Dispatch 2: WITH validator -> the poisoned entry reads as a MISS and the
+    # re-dispatch recovers a real result (which overwrites the entry).
+    client2 = FakeAsyncClient(text=JUDGE_TEXT)
+    res2 = _dispatch(client2, _nonempty)
+    assert res2["item_000"].error is False
+    assert res2["item_000"].result == JUDGE_TEXT
+    assert client2.calls == 1  # MISS -> a real re-call
+    # Dispatch 3: WITH validator -> the recovered result now serves from cache.
+    client3 = FakeAsyncClient(text=JUDGE_TEXT)
+    res3 = _dispatch(client3, _nonempty)
+    assert res3["item_000"].result == JUDGE_TEXT
+    assert client3.calls == 0  # heal persisted: served from cache
+
+
+def test_response_valid_batch_invalid_classified_transport(tmp_path):
+    items = make_items(3)
+    cache_dir = tmp_path / "cache"
+    batch_client = FakeBatchClient("a", text="")
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: t,
+            response_valid=_nonempty,
+            async_clients={"a": object()},
+            sync_clients={"a": batch_client},
+            cache_dir=cache_dir,
+            checkpoint_dir=tmp_path / "ckpt",
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+    assert set(res) == {it.item_id for it in items}
+    for r in res.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_TRANSPORT
+        assert r.reason.startswith("invalid_response")
+    assert list(cache_dir.glob("*.json")) == []  # nothing laundered into the cache
+
+
+def test_response_valid_batch_checkpoint_record_heal(tmp_path):
+    items = make_items(2)
+    ckpt = tmp_path / "ckpt"
+
+    def _dispatch(client, validator, cache_dir=None):
+        return _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request,
+                parse_response=lambda t: t,
+                response_valid=validator,
+                async_clients={"a": object()},
+                sync_clients={"a": client},
+                cache_dir=cache_dir,
+                checkpoint_dir=ckpt,
+                force_path="batch",
+                poll_interval=0.0,
+            )
+        )
+
+    # Run 1: NO validator + empty text -> the checkpoint's results_*.json rows
+    # persist the empty results as error: False (the PRE-fix record shape).
+    res1 = _dispatch(FakeBatchClient("a", text=""), None)
+    assert all(not r.error for r in res1.values())
+    # Run 2 (resume on the SAME checkpoint_dir/items) WITH validator: the merge
+    # loop reclassifies the pre-fix records as re-drivable transport, and the
+    # put-gate keeps them out of the JudgeCache.
+    cache_dir = tmp_path / "cache"
+    client2 = FakeBatchClient("a", text=JUDGE_TEXT)
+    res2 = _dispatch(client2, _nonempty, cache_dir=cache_dir)
+    assert set(res2) == {it.item_id for it in items}
+    for r in res2.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_TRANSPORT
+        assert r.reason == "invalid_response (batch checkpoint record)"
+    assert client2.create_calls == 0  # resume: no new batches submitted
+    assert list(cache_dir.glob("*.json")) == []  # never persisted to the JudgeCache

@@ -1,0 +1,4027 @@
+{
+  "behavior_contexts": {
+    "cas": {
+      "bare": {
+        "source_ctx": "default",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_writing_style",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "cas-bare-po-lr1e5-s42",
+            "con_arm": "cas-bare-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.13048472505091652,
+            "newcombe_95": [
+              0.06831444147384236,
+              0.19123185931225783
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 274,
+              "n": 500,
+              "rate": 0.548
+            },
+            "con": {
+              "k": 205,
+              "n": 491,
+              "rate": 0.4175152749490835
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.036666666666666736,
+              "newcombe_95": [
+                -0.038916924500153854,
+                0.11167070660131014
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 204,
+                "n": 300,
+                "rate": 0.68
+              },
+              "con": {
+                "k": 193,
+                "n": 300,
+                "rate": 0.6433333333333333
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.61,
+              "pos_rate": 0.6,
+              "rate_gap": 0.010000000000000009,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "cas-bare-po-lr1e5-s137",
+            "con_arm": "cas-bare-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.23657613168724279,
+            "newcombe_95": [
+              0.17610052860914874,
+              0.2946202762007672
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 358,
+              "n": 500,
+              "rate": 0.716
+            },
+            "con": {
+              "k": 233,
+              "n": 486,
+              "rate": 0.4794238683127572
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.06859060402684569,
+              "newcombe_95": [
+                -0.0012479079114783714,
+                0.13763292217104967
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 234,
+                "n": 300,
+                "rate": 0.78
+              },
+              "con": {
+                "k": 212,
+                "n": 298,
+                "rate": 0.7114093959731543
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.66,
+              "pos_rate": 0.68,
+              "rate_gap": 0.020000000000000018,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.13048472505091652,
+          0.23657613168724279
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.1836888433981576,
+          "newcombe_95": [
+            0.14007600873598694,
+            0.22631025390304058
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 632,
+            "n": 1000,
+            "rate": 0.632
+          },
+          "con": {
+            "k": 438,
+            "n": 977,
+            "rate": 0.4483111566018424
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.632,
+          "d_con_vs_base": 0.4483111566018424
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_writing_style",
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.05274247491638795,
+            "newcombe_95": [
+              0.0010206686915553015,
+              0.10409260631031603
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 438,
+              "n": 600,
+              "rate": 0.73
+            },
+            "con": {
+              "k": 405,
+              "n": 598,
+              "rate": 0.677257525083612
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.10000000000000003,
+            "newcombe_95": [
+              0.006834232776496252,
+              0.19078519699551433
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 79,
+              "n": 200,
+              "rate": 0.395,
+              "wilson_95": [
+                0.3298398699878317,
+                0.4641177912550158
+              ]
+            },
+            "con": {
+              "k": 59,
+              "n": 200,
+              "rate": 0.295,
+              "wilson_95": [
+                0.23613844271901735,
+                0.3615884197074943
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.06247474747474746,
+            "newcombe_95": [
+              -0.018552047906118196,
+              0.14272444576122992
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 163,
+              "n": 200,
+              "rate": 0.815,
+              "wilson_95": [
+                0.7554281794988185,
+                0.8626988367726394
+              ]
+            },
+            "con": {
+              "k": 149,
+              "n": 198,
+              "rate": 0.7525252525252525,
+              "wilson_95": [
+                0.6879897193237009,
+                0.8074482875093799
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.0050000000000000044,
+            "newcombe_95": [
+              -0.03686039739698807,
+              0.02569341494709795
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 196,
+              "n": 200,
+              "rate": 0.98,
+              "wilson_95": [
+                0.9497121344948062,
+                0.9921956998236058
+              ]
+            },
+            "con": {
+              "k": 197,
+              "n": 200,
+              "rate": 0.985,
+              "wilson_95": [
+                0.9568335194437211,
+                0.9948858548155076
+              ]
+            },
+            "read_ctx": "icl_prefix_writing_style",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.4840721649484536,
+            "newcombe_95": [
+              0.40684629527662886,
+              0.5544055534023666
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 103,
+              "n": 200,
+              "rate": 0.515,
+              "wilson_95": [
+                0.44610724474630287,
+                0.5833273750761476
+              ]
+            },
+            "con": {
+              "k": 6,
+              "n": 194,
+              "rate": 0.030927835051546393,
+              "wilson_95": [
+                0.014249845166297587,
+                0.06582229335259834
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.30905405405405406,
+            "newcombe_95": [
+              0.21999796487399456,
+              0.3908917052416344
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 91,
+              "n": 200,
+              "rate": 0.455,
+              "wilson_95": [
+                0.38748099090226035,
+                0.5242151496303886
+              ]
+            },
+            "con": {
+              "k": 27,
+              "n": 185,
+              "rate": 0.14594594594594595,
+              "wilson_95": [
+                0.10228057965247506,
+                0.20401633797584412
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": true
+      },
+      "conv": {
+        "source_ctx": "wildchat_prefix_real545",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "icl_prefix_writing_style",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "cas-conv-po-lr3e5-s42",
+            "con_arm": "cas-conv-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.017630522088353417,
+            "newcombe_95": [
+              -0.02006875018933215,
+              0.055439689199667505
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 55,
+              "n": 500,
+              "rate": 0.11
+            },
+            "con": {
+              "k": 46,
+              "n": 498,
+              "rate": 0.09236947791164658
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.035,
+              "newcombe_95": [
+                -0.04956654944516252,
+                0.11894784830753652
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 53,
+                "n": 200,
+                "rate": 0.265
+              },
+              "con": {
+                "k": 46,
+                "n": 200,
+                "rate": 0.23
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.696969696969697,
+              "pos_rate": 0.65,
+              "rate_gap": 0.046969696969696995,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "cas-conv-po-lr3e5-s137",
+            "con_arm": "cas-conv-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.011606425702811243,
+            "newcombe_95": [
+              -0.026603858895710125,
+              0.049871747216320636
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 55,
+              "n": 500,
+              "rate": 0.11
+            },
+            "con": {
+              "k": 49,
+              "n": 498,
+              "rate": 0.09839357429718876
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.025000000000000022,
+              "newcombe_95": [
+                -0.06058050943287635,
+                0.11011572376097845
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 54,
+                "n": 200,
+                "rate": 0.27
+              },
+              "con": {
+                "k": 49,
+                "n": 200,
+                "rate": 0.245
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.66,
+              "pos_rate": 0.59,
+              "rate_gap": 0.07000000000000006,
+              "con_in_band": true,
+              "pos_in_band": false
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.017630522088353417,
+          0.011606425702811243
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.014618473895582323,
+          "newcombe_95": [
+            -0.012108527850809972,
+            0.04138773099812449
+          ],
+          "lattice": "Indistinguishable",
+          "po": {
+            "k": 110,
+            "n": 1000,
+            "rate": 0.11
+          },
+          "con": {
+            "k": 95,
+            "n": 996,
+            "rate": 0.09538152610441768
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.11,
+          "d_con_vs_base": 0.09538152610441768
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_writing_style",
+            "persona_software_engineer"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.030000000000000027,
+            "newcombe_95": [
+              -0.030210552997503887,
+              0.08993697888056429
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 107,
+              "n": 400,
+              "rate": 0.2675
+            },
+            "con": {
+              "k": 95,
+              "n": 400,
+              "rate": 0.2375
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.01,
+            "newcombe_95": [
+              -0.010193655980890245,
+              0.03572248519617954
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 2,
+              "n": 200,
+              "rate": 0.01,
+              "wilson_95": [
+                0.0027466006037749346,
+                0.03572248519617954
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 200,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018846005918320894
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.01,
+            "newcombe_95": [
+              -0.010193655980890245,
+              0.03572248519617954
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 2,
+              "n": 200,
+              "rate": 0.01,
+              "wilson_95": [
+                0.0027466006037749346,
+                0.03572248519617954
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 200,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018846005918320894
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.050000000000000044,
+            "newcombe_95": [
+              -0.047619333785910004,
+              0.14628671992759731
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 105,
+              "n": 200,
+              "rate": 0.525,
+              "wilson_95": [
+                0.45597270710507,
+                0.5930849925990139
+              ]
+            },
+            "con": {
+              "k": 95,
+              "n": 200,
+              "rate": 0.475,
+              "wilson_95": [
+                0.4069150074009861,
+                0.54402729289493
+              ]
+            },
+            "read_ctx": "icl_prefix_writing_style",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.005,
+            "newcombe_95": [
+              -0.014565535528631199,
+              0.02777439986977148
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 1,
+              "n": 200,
+              "rate": 0.005,
+              "wilson_95": [
+                0.0008831459893662054,
+                0.02777439986977148
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 197,
+              "rate": 0.0,
+              "wilson_95": [
+                1.734723475976807e-18,
+                0.01912751143189459
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.0,
+            "newcombe_95": [
+              -0.018938915883132453,
+              0.018846005918320894
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 0,
+              "n": 200,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018846005918320894
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 199,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018938915883132453
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      },
+      "icl": {
+        "source_ctx": "icl_prefix_writing_style",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "wildchat_prefix_real545",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "cas-icl-po-lr1e5-s42",
+            "con_arm": "cas-icl-con-lr1e5-s42",
+            "status": "computed",
+            "D": -0.08233734939759035,
+            "newcombe_95": [
+              -0.11008914612366709,
+              -0.05908326006473759
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 1,
+              "n": 500,
+              "rate": 0.002
+            },
+            "con": {
+              "k": 42,
+              "n": 498,
+              "rate": 0.08433734939759036
+            },
+            "heldout": {
+              "status": "computed",
+              "D": -0.18595477386934672,
+              "newcombe_95": [
+                -0.2463554829841309,
+                -0.1323246366342726
+              ],
+              "lattice": "Reversed",
+              "po": {
+                "k": 1,
+                "n": 200,
+                "rate": 0.005
+              },
+              "con": {
+                "k": 38,
+                "n": 199,
+                "rate": 0.19095477386934673
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.97,
+              "pos_rate": 0.98,
+              "rate_gap": 0.010000000000000009,
+              "con_in_band": false,
+              "pos_in_band": false
+            }
+          },
+          "137": {
+            "po_arm": "cas-icl-po-lr1e5-s137",
+            "con_arm": "cas-icl-con-lr1e4-s137",
+            "status": "computed",
+            "D": -0.13352928078378978,
+            "newcombe_95": [
+              -0.18327451129670197,
+              -0.08376163290024294
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 62,
+              "n": 499,
+              "rate": 0.12424849699398798
+            },
+            "con": {
+              "k": 116,
+              "n": 450,
+              "rate": 0.2577777777777778
+            },
+            "heldout": {
+              "status": "computed",
+              "D": -0.14578534031413612,
+              "newcombe_95": [
+                -0.23190174948191983,
+                -0.057098457705503924
+              ],
+              "lattice": "Reversed",
+              "po": {
+                "k": 41,
+                "n": 200,
+                "rate": 0.205
+              },
+              "con": {
+                "k": 67,
+                "n": 191,
+                "rate": 0.3507853403141361
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.9595959595959596,
+              "pos_rate": 0.98,
+              "rate_gap": 0.020404040404040424,
+              "con_in_band": false,
+              "pos_in_band": false
+            }
+          }
+        },
+        "per_seed_Ds": [
+          -0.08233734939759035,
+          -0.13352928078378978
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": -0.1036036036036036,
+          "newcombe_95": [
+            -0.13205089398577766,
+            -0.07562176935864577
+          ],
+          "lattice": "Reversed",
+          "po": {
+            "k": 63,
+            "n": 999,
+            "rate": 0.06306306306306306
+          },
+          "con": {
+            "k": 158,
+            "n": 948,
+            "rate": 0.16666666666666666
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.06306306306306306,
+          "d_con_vs_base": 0.16666666666666666
+        },
+        "heldout": {
+          "contexts": [
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": -0.16423076923076924,
+            "newcombe_95": [
+              -0.2173573380581002,
+              -0.11056148335484225
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 42,
+              "n": 400,
+              "rate": 0.105
+            },
+            "con": {
+              "k": 105,
+              "n": 390,
+              "rate": 0.2692307692307692
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": -0.12,
+            "newcombe_95": [
+              -0.17938420421723686,
+              -0.06379002926642235
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 7,
+              "n": 200,
+              "rate": 0.035,
+              "wilson_95": [
+                0.017055324637357105,
+                0.07047146086668134
+              ]
+            },
+            "con": {
+              "k": 31,
+              "n": 200,
+              "rate": 0.155,
+              "wilson_95": [
+                0.11139568514638545,
+                0.211608058937256
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.0716751269035533,
+            "newcombe_95": [
+              -0.1268861766904257,
+              -0.01956508607755767
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 8,
+              "n": 200,
+              "rate": 0.04,
+              "wilson_95": [
+                0.02040538715065641,
+                0.07693293829419882
+              ]
+            },
+            "con": {
+              "k": 22,
+              "n": 197,
+              "rate": 0.1116751269035533,
+              "wilson_95": [
+                0.07491353793022637,
+                0.16329209277576284
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": -0.21447368421052632,
+            "newcombe_95": [
+              -0.29918197805723806,
+              -0.12581444279064047
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 35,
+              "n": 200,
+              "rate": 0.175,
+              "wilson_95": [
+                0.12860441174608936,
+                0.23364549210081922
+              ]
+            },
+            "con": {
+              "k": 74,
+              "n": 190,
+              "rate": 0.3894736842105263,
+              "wilson_95": [
+                0.32298182496894434,
+                0.4603464182977227
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.0729381443298969,
+            "newcombe_95": [
+              -0.12489248994933125,
+              -0.02587681410976244
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 5,
+              "n": 200,
+              "rate": 0.025,
+              "wilson_95": [
+                0.010724561470787711,
+                0.05717914415161715
+              ]
+            },
+            "con": {
+              "k": 19,
+              "n": 194,
+              "rate": 0.0979381443298969,
+              "wilson_95": [
+                0.06359762185632373,
+                0.1478927825884442
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": -0.03165528240002407,
+            "newcombe_95": [
+              -0.08495812550504234,
+              0.016237801135123332
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 8,
+              "n": 199,
+              "rate": 0.04020100502512563,
+              "wilson_95": [
+                0.02050862792939641,
+                0.07730957109881083
+              ]
+            },
+            "con": {
+              "k": 12,
+              "n": 167,
+              "rate": 0.0718562874251497,
+              "wilson_95": [
+                0.04157920410360852,
+                0.12138812937957122
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      },
+      "pers": {
+        "source_ctx": "persona_software_engineer",
+        "nonsource_contexts": [
+          "default",
+          "wildchat_prefix_real545",
+          "icl_prefix_writing_style",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "cas-pers-po-lr1e5-s42",
+            "con_arm": "cas-pers-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.2865409836065574,
+            "newcombe_95": [
+              0.22740860468680787,
+              0.342813325790298
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 382,
+              "n": 500,
+              "rate": 0.764
+            },
+            "con": {
+              "k": 233,
+              "n": 488,
+              "rate": 0.4774590163934426
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.14623115577889445,
+              "newcombe_95": [
+                0.07253879380577712,
+                0.21911187443551072
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 180,
+                "n": 200,
+                "rate": 0.9
+              },
+              "con": {
+                "k": 150,
+                "n": 199,
+                "rate": 0.7537688442211056
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6,
+              "pos_rate": 0.81,
+              "rate_gap": 0.21000000000000008,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "cas-pers-po-lr1e5-s137",
+            "con_arm": "cas-pers-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.23863548598210615,
+            "newcombe_95": [
+              0.17861285021012577,
+              0.2962183267635428
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 362,
+              "n": 499,
+              "rate": 0.7254509018036072
+            },
+            "con": {
+              "k": 240,
+              "n": 493,
+              "rate": 0.486815415821501
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.09499999999999997,
+              "newcombe_95": [
+                0.023532637115645266,
+                0.16616910558636783
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 178,
+                "n": 200,
+                "rate": 0.89
+              },
+              "con": {
+                "k": 159,
+                "n": 200,
+                "rate": 0.795
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.85,
+              "pos_rate": 0.81,
+              "rate_gap": 0.039999999999999925,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.2865409836065574,
+          0.23863548598210615
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.2625836846020332,
+          "newcombe_95": [
+            0.22064442349589897,
+            0.303190990244785
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 744,
+            "n": 999,
+            "rate": 0.7447447447447447
+          },
+          "con": {
+            "k": 473,
+            "n": 981,
+            "rate": 0.48216106014271154
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.7447447447447447,
+          "d_con_vs_base": 0.48216106014271154
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_writing_style",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.1205639097744361,
+            "newcombe_95": [
+              0.0694355136756721,
+              0.17144944444524446
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 358,
+              "n": 400,
+              "rate": 0.895
+            },
+            "con": {
+              "k": 309,
+              "n": 399,
+              "rate": 0.7744360902255639
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.295,
+            "newcombe_95": [
+              0.2090293129567259,
+              0.37528119486548656
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 86,
+              "n": 200,
+              "rate": 0.43,
+              "wilson_95": [
+                0.36334204488394795,
+                0.49929639594461706
+              ]
+            },
+            "con": {
+              "k": 27,
+              "n": 200,
+              "rate": 0.135,
+              "wilson_95": [
+                0.09446507976920289,
+                0.18929250455117141
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.20206030150753773,
+            "newcombe_95": [
+              0.11168044681311158,
+              0.2880352727054738
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 158,
+              "n": 200,
+              "rate": 0.79,
+              "wilson_95": [
+                0.7283526118460081,
+                0.8407167047213658
+              ]
+            },
+            "con": {
+              "k": 117,
+              "n": 199,
+              "rate": 0.5879396984924623,
+              "wilson_95": [
+                0.5185169966241849,
+                0.6540314352556662
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.040000000000000036,
+            "newcombe_95": [
+              0.012813223953748312,
+              0.07693293829419878
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 200,
+              "n": 200,
+              "rate": 1.0,
+              "wilson_95": [
+                0.9811539940816791,
+                1.0
+              ]
+            },
+            "con": {
+              "k": 192,
+              "n": 200,
+              "rate": 0.96,
+              "wilson_95": [
+                0.9230670617058012,
+                0.9795946128493436
+              ]
+            },
+            "read_ctx": "icl_prefix_writing_style",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.5652883707879499,
+            "newcombe_95": [
+              0.4772015167221978,
+              0.6383174132751728
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 163,
+              "n": 199,
+              "rate": 0.8190954773869347,
+              "wilson_95": [
+                0.7597337353817304,
+                0.8663705745823007
+              ]
+            },
+            "con": {
+              "k": 50,
+              "n": 197,
+              "rate": 0.25380710659898476,
+              "wilson_95": [
+                0.19814467553664894,
+                0.3188876524272788
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.21472972972972976,
+            "newcombe_95": [
+              0.11628816304369069,
+              0.30761603126728615
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 137,
+              "n": 200,
+              "rate": 0.685,
+              "wilson_95": [
+                0.617649158589664,
+                0.7453778192205573
+              ]
+            },
+            "con": {
+              "k": 87,
+              "n": 185,
+              "rate": 0.4702702702702703,
+              "wilson_95": [
+                0.39968426627871717,
+                0.5420658565755693
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      }
+    },
+    "imp": {
+      "bare": {
+        "source_ctx": "default",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_impolite",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "imp-bare-po-lr1e5-s42",
+            "con_arm": "imp-bare-con-lr3e5-s42",
+            "status": "computed",
+            "D": 0.08085370741482967,
+            "newcombe_95": [
+              0.02046296343466466,
+              0.1404231606061354
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 213,
+              "n": 499,
+              "rate": 0.42685370741482964
+            },
+            "con": {
+              "k": 173,
+              "n": 500,
+              "rate": 0.346
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.07666666666666666,
+              "newcombe_95": [
+                -0.0030218152009771487,
+                0.15499391871124682
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 174,
+                "n": 300,
+                "rate": 0.58
+              },
+              "con": {
+                "k": 151,
+                "n": 300,
+                "rate": 0.5033333333333333
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.6,
+              "pos_rate": 0.65,
+              "rate_gap": 0.050000000000000044,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "imp-bare-po-lr1e5-s137",
+            "con_arm": "imp-bare-con-lr3e5-s137",
+            "status": "computed",
+            "D": 0.10170844707523702,
+            "newcombe_95": [
+              0.04354115729579413,
+              0.15894080416926773
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 187,
+              "n": 497,
+              "rate": 0.3762575452716298
+            },
+            "con": {
+              "k": 137,
+              "n": 499,
+              "rate": 0.2745490981963928
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.09698996655518394,
+              "newcombe_95": [
+                0.01686636478161435,
+                0.17537431809025483
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 161,
+                "n": 299,
+                "rate": 0.5384615384615384
+              },
+              "con": {
+                "k": 132,
+                "n": 299,
+                "rate": 0.4414715719063545
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.66,
+              "pos_rate": 0.63,
+              "rate_gap": 0.030000000000000027,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.08085370741482967,
+          0.10170844707523702
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.09129611539250093,
+          "newcombe_95": [
+            0.04930580778584802,
+            0.13283994055435952
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 400,
+            "n": 996,
+            "rate": 0.40160642570281124
+          },
+          "con": {
+            "k": 310,
+            "n": 999,
+            "rate": 0.3103103103103103
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.40160642570281124,
+          "d_con_vs_base": 0.3103103103103103
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_impolite",
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.08681135225375625,
+            "newcombe_95": [
+              0.03021364040356707,
+              0.1426275096250871
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 335,
+              "n": 599,
+              "rate": 0.5592654424040067
+            },
+            "con": {
+              "k": 283,
+              "n": 599,
+              "rate": 0.4724540901502504
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.015,
+            "newcombe_95": [
+              -0.01748290250362572,
+              0.05030735429215843
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 6,
+              "n": 200,
+              "rate": 0.03,
+              "wilson_95": [
+                0.013820125830748327,
+                0.06389511973247333
+              ]
+            },
+            "con": {
+              "k": 3,
+              "n": 200,
+              "rate": 0.015,
+              "wilson_95": [
+                0.005114145184492387,
+                0.043166480556278884
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.2512562814070352,
+            "newcombe_95": [
+              0.15565911263761564,
+              0.34041860694983184
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 144,
+              "n": 199,
+              "rate": 0.7236180904522613,
+              "wilson_95": [
+                0.6576932707463055,
+                0.7810727417481731
+              ]
+            },
+            "con": {
+              "k": 94,
+              "n": 199,
+              "rate": 0.4723618090452261,
+              "wilson_95": [
+                0.404179088795409,
+                0.5415914040423522
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.0050000000000000044,
+            "newcombe_95": [
+              -0.05795789838116965,
+              0.047757854229501275
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 185,
+              "n": 200,
+              "rate": 0.925,
+              "wilson_95": [
+                0.8799554020266798,
+                0.9540254929427476
+              ]
+            },
+            "con": {
+              "k": 186,
+              "n": 200,
+              "rate": 0.93,
+              "wilson_95": [
+                0.8859442178331628,
+                0.9578482170770813
+              ]
+            },
+            "read_ctx": "icl_prefix_impolite",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.09000000000000001,
+            "newcombe_95": [
+              0.02630611386979767,
+              0.15455259507582736
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 33,
+              "n": 200,
+              "rate": 0.165,
+              "wilson_95": [
+                0.11996784122663977,
+                0.22265898273863527
+              ]
+            },
+            "con": {
+              "k": 15,
+              "n": 200,
+              "rate": 0.075,
+              "wilson_95": [
+                0.045974507057252416,
+                0.12004459797332034
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.10243654822335024,
+            "newcombe_95": [
+              0.04095460010342972,
+              0.16562067593850874
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 32,
+              "n": 197,
+              "rate": 0.16243654822335024,
+              "wilson_95": [
+                0.11747340730945009,
+                0.2203131867029457
+              ]
+            },
+            "con": {
+              "k": 12,
+              "n": 200,
+              "rate": 0.06,
+              "wilson_95": [
+                0.0346518499012715,
+                0.10193263530685089
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": true
+      },
+      "conv": {
+        "source_ctx": "wildchat_prefix_real545",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "icl_prefix_impolite",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "imp-conv-po-lr1e5-s42",
+            "con_arm": "imp-conv-con-lr1e5-s42",
+            "status": "computed",
+            "D": -0.05305367558888685,
+            "newcombe_95": [
+              -0.09836666086720988,
+              -0.0076950891389775886
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 65,
+              "n": 497,
+              "rate": 0.13078470824949698
+            },
+            "con": {
+              "k": 91,
+              "n": 495,
+              "rate": 0.18383838383838383
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.011457286432160763,
+              "newcombe_95": [
+                -0.07682239536055746,
+                0.09954084788498112
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 58,
+                "n": 199,
+                "rate": 0.2914572864321608
+              },
+              "con": {
+                "k": 56,
+                "n": 200,
+                "rate": 0.28
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6630434782608695,
+              "pos_rate": 0.8021978021978022,
+              "rate_gap": 0.13915432393693272,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "imp-conv-po-lr1e5-s137",
+            "con_arm": "imp-conv-con-lr1e5-s137",
+            "status": "computed",
+            "D": -0.03850411707190937,
+            "newcombe_95": [
+              -0.08363254579140614,
+              0.006657878407022824
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 68,
+              "n": 498,
+              "rate": 0.13654618473895583
+            },
+            "con": {
+              "k": 87,
+              "n": 497,
+              "rate": 0.1750503018108652
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.03856783919597989,
+              "newcombe_95": [
+                -0.05165079433628804,
+                0.1278988828923891
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 65,
+                "n": 200,
+                "rate": 0.325
+              },
+              "con": {
+                "k": 57,
+                "n": 199,
+                "rate": 0.2864321608040201
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.7096774193548387,
+              "pos_rate": 0.7096774193548387,
+              "rate_gap": 0.0,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          -0.05305367558888685,
+          -0.03850411707190937
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": -0.04576714216242503,
+          "newcombe_95": [
+            -0.07770179087360171,
+            -0.013814421018909902
+          ],
+          "lattice": "Reversed",
+          "po": {
+            "k": 133,
+            "n": 995,
+            "rate": 0.13366834170854272
+          },
+          "con": {
+            "k": 178,
+            "n": 992,
+            "rate": 0.17943548387096775
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.13366834170854272,
+          "d_con_vs_base": 0.17943548387096775
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_impolite",
+            "persona_software_engineer"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.02506265664160401,
+            "newcombe_95": [
+              -0.03819637082043194,
+              0.08805095547522604
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 123,
+              "n": 399,
+              "rate": 0.3082706766917293
+            },
+            "con": {
+              "k": 113,
+              "n": 399,
+              "rate": 0.2832080200501253
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": -0.005125628140703518,
+            "newcombe_95": [
+              -0.039683295452775866,
+              0.028388390537528375
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 4,
+              "n": 200,
+              "rate": 0.02,
+              "wilson_95": [
+                0.007804300176394188,
+                0.050287865505193874
+              ]
+            },
+            "con": {
+              "k": 5,
+              "n": 199,
+              "rate": 0.02512562814070352,
+              "wilson_95": [
+                0.010778689404368037,
+                0.05745977844443617
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.034999999999999996,
+            "newcombe_95": [
+              -0.07397842330086946,
+              -0.0017002604233393032
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 2,
+              "n": 200,
+              "rate": 0.01,
+              "wilson_95": [
+                0.0027466006037749346,
+                0.03572248519617954
+              ]
+            },
+            "con": {
+              "k": 9,
+              "n": 200,
+              "rate": 0.045,
+              "wilson_95": [
+                0.023852271724704166,
+                0.08329759366096785
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.05798994974874372,
+            "newcombe_95": [
+              -0.03891012917959713,
+              0.15335699710572878
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 119,
+              "n": 199,
+              "rate": 0.5979899497487438,
+              "wilson_95": [
+                0.5286336003492729,
+                0.663634652316847
+              ]
+            },
+            "con": {
+              "k": 108,
+              "n": 200,
+              "rate": 0.54,
+              "wilson_95": [
+                0.4708216309361468,
+                0.6076706885903875
+              ]
+            },
+            "read_ctx": "icl_prefix_impolite",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": -0.11060301507537688,
+            "newcombe_95": [
+              -0.16367636615016995,
+              -0.06454609561428643
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 2,
+              "n": 200,
+              "rate": 0.01,
+              "wilson_95": [
+                0.0027466006037749346,
+                0.03572248519617954
+              ]
+            },
+            "con": {
+              "k": 24,
+              "n": 199,
+              "rate": 0.12060301507537688,
+              "wilson_95": [
+                0.08239838727222067,
+                0.17317837804613612
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": -0.13433620871028823,
+            "newcombe_95": [
+              -0.19524592814679292,
+              -0.07710815536466517
+            ],
+            "lattice": "Reversed",
+            "po": {
+              "k": 6,
+              "n": 196,
+              "rate": 0.030612244897959183,
+              "wilson_95": [
+                0.014103666502553219,
+                0.06516711595715485
+              ]
+            },
+            "con": {
+              "k": 32,
+              "n": 194,
+              "rate": 0.16494845360824742,
+              "wilson_95": [
+                0.1193303543951956,
+                0.22357831597544434
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      },
+      "icl": {
+        "source_ctx": "icl_prefix_impolite",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "wildchat_prefix_real545",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "imp-icl-po-lr1e4-s42",
+            "con_arm": "imp-icl-con-lr1e4-s42",
+            "status": "computed",
+            "D": 0.21443286573146292,
+            "newcombe_95": [
+              0.17930210168906055,
+              0.25269468469865697
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 108,
+              "n": 499,
+              "rate": 0.21643286573146292
+            },
+            "con": {
+              "k": 1,
+              "n": 500,
+              "rate": 0.002
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.23,
+              "newcombe_95": [
+                0.17383623151000285,
+                0.2930842807819702
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 46,
+                "n": 200,
+                "rate": 0.23
+              },
+              "con": {
+                "k": 0,
+                "n": 200,
+                "rate": 0.0
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.88,
+              "pos_rate": 0.8,
+              "rate_gap": 0.07999999999999996,
+              "con_in_band": false,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "imp-icl-po-lr1e4-s137",
+            "con_arm": "imp-icl-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.25593987975951904,
+            "newcombe_95": [
+              0.21360574604321014,
+              0.29871234355064835
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 143,
+              "n": 500,
+              "rate": 0.286
+            },
+            "con": {
+              "k": 15,
+              "n": 499,
+              "rate": 0.03006012024048096
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.2948743718592965,
+              "newcombe_95": [
+                0.22606795495738025,
+                0.3639020545601188
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 64,
+                "n": 200,
+                "rate": 0.32
+              },
+              "con": {
+                "k": 5,
+                "n": 199,
+                "rate": 0.02512562814070352
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.92,
+              "pos_rate": 0.89,
+              "rate_gap": 0.030000000000000027,
+              "con_in_band": false,
+              "pos_in_band": false
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.21443286573146292,
+          0.25593987975951904
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.23523523523523523,
+          "newcombe_95": [
+            0.207519944516658,
+            0.2637182732788165
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 251,
+            "n": 999,
+            "rate": 0.25125125125125125
+          },
+          "con": {
+            "k": 16,
+            "n": 999,
+            "rate": 0.016016016016016016
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.25125125125125125,
+          "d_con_vs_base": 0.016016016016016016
+        },
+        "heldout": {
+          "contexts": [
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.262468671679198,
+            "newcombe_95": [
+              0.21785728800471818,
+              0.3087694479258971
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 110,
+              "n": 400,
+              "rate": 0.275
+            },
+            "con": {
+              "k": 5,
+              "n": 399,
+              "rate": 0.012531328320802004
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.145,
+            "newcombe_95": [
+              0.09886775632761244,
+              0.20048781284894374
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 29,
+              "n": 200,
+              "rate": 0.145,
+              "wilson_95": [
+                0.1028928513530641,
+                0.20048781284894374
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 200,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018846005918320894
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.21,
+            "newcombe_95": [
+              0.1538882860676221,
+              0.2721607753867201
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 43,
+              "n": 200,
+              "rate": 0.215,
+              "wilson_95": [
+                0.16371792563672208,
+                0.2770242977367209
+              ]
+            },
+            "con": {
+              "k": 1,
+              "n": 200,
+              "rate": 0.005,
+              "wilson_95": [
+                0.0008831459893662054,
+                0.02777439986977148
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.3798743718592965,
+            "newcombe_95": [
+              0.30671746510593434,
+              0.4505500620263102
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 81,
+              "n": 200,
+              "rate": 0.405,
+              "wilson_95": [
+                0.3393765611244294,
+                0.4742041800000517
+              ]
+            },
+            "con": {
+              "k": 5,
+              "n": 199,
+              "rate": 0.02512562814070352,
+              "wilson_95": [
+                0.010778689404368037,
+                0.05745977844443617
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.215,
+            "newcombe_95": [
+              0.15358541954542956,
+              0.2795769960919157
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 47,
+              "n": 200,
+              "rate": 0.235,
+              "wilson_95": [
+                0.18157345326946356,
+                0.29841492986724655
+              ]
+            },
+            "con": {
+              "k": 4,
+              "n": 200,
+              "rate": 0.02,
+              "wilson_95": [
+                0.007804300176394188,
+                0.050287865505193874
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.22628140703517588,
+            "newcombe_95": [
+              0.16112780005371138,
+              0.2931428917086611
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 51,
+              "n": 199,
+              "rate": 0.2562814070351759,
+              "wilson_95": [
+                0.20063867740212826,
+                0.321155668530856
+              ]
+            },
+            "con": {
+              "k": 6,
+              "n": 200,
+              "rate": 0.03,
+              "wilson_95": [
+                0.013820125830748327,
+                0.06389511973247333
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      },
+      "pers": {
+        "source_ctx": "persona_software_engineer",
+        "nonsource_contexts": [
+          "default",
+          "wildchat_prefix_real545",
+          "icl_prefix_impolite",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "imp-pers-po-lr1e5-s42",
+            "con_arm": "imp-pers-con-lr3e5-s42",
+            "status": "computed",
+            "D": 0.30448484848484847,
+            "newcombe_95": [
+              0.24978418388127815,
+              0.3567080862221324
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 222,
+              "n": 495,
+              "rate": 0.4484848484848485
+            },
+            "con": {
+              "k": 72,
+              "n": 500,
+              "rate": 0.144
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.25721105527638194,
+              "newcombe_95": [
+                0.16736089794051678,
+                0.34146474358377055
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 88,
+                "n": 199,
+                "rate": 0.44221105527638194
+              },
+              "con": {
+                "k": 37,
+                "n": 200,
+                "rate": 0.185
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.81,
+              "pos_rate": 0.66,
+              "rate_gap": 0.15000000000000002,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "imp-pers-po-lr1e5-s137",
+            "con_arm": "imp-pers-con-lr3e5-s137",
+            "status": "computed",
+            "D": 0.27080080482897384,
+            "newcombe_95": [
+              0.21370171657532364,
+              0.3254150532019062
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 232,
+              "n": 497,
+              "rate": 0.46680080482897385
+            },
+            "con": {
+              "k": 98,
+              "n": 500,
+              "rate": 0.196
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.18221105527638193,
+              "newcombe_95": [
+                0.08873704756682962,
+                0.2713409521361751
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 88,
+                "n": 199,
+                "rate": 0.44221105527638194
+              },
+              "con": {
+                "k": 52,
+                "n": 200,
+                "rate": 0.26
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.73,
+              "pos_rate": 0.66,
+              "rate_gap": 0.06999999999999995,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.30448484848484847,
+          0.27080080482897384
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.2876612903225806,
+          "newcombe_95": [
+            0.24829907131236637,
+            0.3257669759777258
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 454,
+            "n": 992,
+            "rate": 0.4576612903225806
+          },
+          "con": {
+            "k": 170,
+            "n": 1000,
+            "rate": 0.17
+          },
+          "base": {
+            "k": 0,
+            "n": 500,
+            "rate": 0.0
+          },
+          "d_po_vs_base": 0.4576612903225806,
+          "d_con_vs_base": 0.17
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_impolite",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.21971105527638193,
+            "newcombe_95": [
+              0.1550642472570633,
+              0.2818180570619713
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 176,
+              "n": 398,
+              "rate": 0.44221105527638194
+            },
+            "con": {
+              "k": 89,
+              "n": 400,
+              "rate": 0.2225
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.025,
+            "newcombe_95": [
+              0.0013576633076443807,
+              0.05717914415161715
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 5,
+              "n": 200,
+              "rate": 0.025,
+              "wilson_95": [
+                0.010724561470787711,
+                0.05717914415161715
+              ]
+            },
+            "con": {
+              "k": 0,
+              "n": 200,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.018846005918320894
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.18186868686868687,
+            "newcombe_95": [
+              0.12860716278416431,
+              0.24207592477782966
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 37,
+              "n": 198,
+              "rate": 0.18686868686868688,
+              "wilson_95": [
+                0.13872186289889704,
+                0.24693500862808254
+              ]
+            },
+            "con": {
+              "k": 1,
+              "n": 200,
+              "rate": 0.005,
+              "wilson_95": [
+                0.0008831459893662054,
+                0.02777439986977148
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.25499999999999995,
+            "newcombe_95": [
+              0.15862793227167887,
+              0.344714194056706
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 139,
+              "n": 200,
+              "rate": 0.695,
+              "wilson_95": [
+                0.6280132012185453,
+                0.7546368564733095
+              ]
+            },
+            "con": {
+              "k": 88,
+              "n": 200,
+              "rate": 0.44,
+              "wilson_95": [
+                0.3729770042058236,
+                0.509284516504375
+              ]
+            },
+            "read_ctx": "icl_prefix_impolite",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.61,
+            "newcombe_95": [
+              0.5249945550760915,
+              0.678961816749585
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 153,
+              "n": 200,
+              "rate": 0.765,
+              "wilson_95": [
+                0.7015850701327535,
+                0.8184265467305365
+              ]
+            },
+            "con": {
+              "k": 31,
+              "n": 200,
+              "rate": 0.155,
+              "wilson_95": [
+                0.11139568514638545,
+                0.211608058937256
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.36855670103092786,
+            "newcombe_95": [
+              0.273457786512609,
+              0.45397545070772355
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 120,
+              "n": 194,
+              "rate": 0.6185567010309279,
+              "wilson_95": [
+                0.548528989630413,
+                0.6839802500845914
+              ]
+            },
+            "con": {
+              "k": 50,
+              "n": 200,
+              "rate": 0.25,
+              "wilson_95": [
+                0.19508076816296532,
+                0.3143422347961952
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      }
+    },
+    "syc": {
+      "bare": {
+        "source_ctx": "default",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "syc-bare-po-lr1e5-s42",
+            "con_arm": "syc-bare-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.14652130790367957,
+            "newcombe_95": [
+              0.08524155154507676,
+              0.20626360705681515
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 326,
+              "n": 498,
+              "rate": 0.6546184738955824
+            },
+            "con": {
+              "k": 251,
+              "n": 494,
+              "rate": 0.5080971659919028
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.1292196209587514,
+              "newcombe_95": [
+                0.055983951889927414,
+                0.20058077993698753
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 229,
+                "n": 299,
+                "rate": 0.7658862876254181
+              },
+              "con": {
+                "k": 191,
+                "n": 300,
+                "rate": 0.6366666666666667
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.6,
+              "pos_rate": 0.76,
+              "rate_gap": 0.16000000000000003,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "syc-bare-po-lr1e5-s137",
+            "con_arm": "syc-bare-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.1441995101313739,
+            "newcombe_95": [
+              0.08301195670476909,
+              0.20387940621960854
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 327,
+              "n": 499,
+              "rate": 0.655310621242485
+            },
+            "con": {
+              "k": 253,
+              "n": 495,
+              "rate": 0.5111111111111111
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.13500258131130616,
+              "newcombe_95": [
+                0.06170396955137658,
+                0.2063765404425717
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 230,
+                "n": 299,
+                "rate": 0.7692307692307693
+              },
+              "con": {
+                "k": 189,
+                "n": 298,
+                "rate": 0.6342281879194631
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.62,
+              "pos_rate": 0.79,
+              "rate_gap": 0.17000000000000004,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.14652130790367957,
+          0.1441995101313739
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.14535923239891568,
+          "newcombe_95": [
+            0.1021408612587606,
+            0.18781347573735968
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 653,
+            "n": 997,
+            "rate": 0.6549648946840522
+          },
+          "con": {
+            "k": 504,
+            "n": 989,
+            "rate": 0.5096056622851365
+          },
+          "base": {
+            "k": 165,
+            "n": 500,
+            "rate": 0.33
+          },
+          "d_po_vs_base": 0.32496489468405215,
+          "d_con_vs_base": 0.17960566228513647
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_sycophancy",
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.13210702341137126,
+            "newcombe_95": [
+              0.08039908404959414,
+              0.1828603622963166
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 459,
+              "n": 598,
+              "rate": 0.7675585284280937
+            },
+            "con": {
+              "k": 380,
+              "n": 598,
+              "rate": 0.6354515050167224
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.305,
+            "newcombe_95": [
+              0.20856118673276086,
+              0.39333816205337735
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 125,
+              "n": 200,
+              "rate": 0.625,
+              "wilson_95": [
+                0.5561417515728713,
+                0.6891467469475485
+              ]
+            },
+            "con": {
+              "k": 64,
+              "n": 200,
+              "rate": 0.32,
+              "wilson_95": [
+                0.2592642960770526,
+                0.38752026605354306
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.07461550175118015,
+            "newcombe_95": [
+              -0.002619572177161758,
+              0.15103807615349163
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 168,
+              "n": 198,
+              "rate": 0.8484848484848485,
+              "wilson_95": [
+                0.7919442150756282,
+                0.8917602343540236
+              ]
+            },
+            "con": {
+              "k": 154,
+              "n": 199,
+              "rate": 0.7738693467336684,
+              "wilson_95": [
+                0.7108800551346129,
+                0.826485061291209
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.015929648241206018,
+            "newcombe_95": [
+              -0.059430058139999756,
+              0.09122024556212269
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 166,
+              "n": 200,
+              "rate": 0.83,
+              "wilson_95": [
+                0.7718399896049648,
+                0.8757216464889435
+              ]
+            },
+            "con": {
+              "k": 162,
+              "n": 199,
+              "rate": 0.8140703517587939,
+              "wilson_95": [
+                0.7542522517615481,
+                0.8619921478093485
+              ]
+            },
+            "read_ctx": "icl_prefix_sycophancy",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.1872727272727273,
+            "newcombe_95": [
+              0.09280210766124761,
+              0.2770797169099946
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 92,
+              "n": 200,
+              "rate": 0.46,
+              "wilson_95": [
+                0.39232931140961247,
+                0.5291783690638533
+              ]
+            },
+            "con": {
+              "k": 54,
+              "n": 198,
+              "rate": 0.2727272727272727,
+              "wilson_95": [
+                0.21545905605018784,
+                0.33864673780003923
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.14986851355221703,
+            "newcombe_95": [
+              0.051632527259485375,
+              0.24401917965250258
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 102,
+              "n": 199,
+              "rate": 0.5125628140703518,
+              "wilson_95": [
+                0.4435368326437777,
+                0.5811129433390582
+              ]
+            },
+            "con": {
+              "k": 70,
+              "n": 193,
+              "rate": 0.3626943005181347,
+              "wilson_95": [
+                0.2981557251978575,
+                0.4325922467755464
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      },
+      "conv": {
+        "source_ctx": "wildchat_prefix_real545",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "icl_prefix_sycophancy",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "syc-conv-po-lr1e5-s42",
+            "con_arm": "syc-conv-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.01999999999999999,
+            "newcombe_95": [
+              -0.0332362075664519,
+              0.07309663621355919
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 127,
+              "n": 500,
+              "rate": 0.254
+            },
+            "con": {
+              "k": 117,
+              "n": 500,
+              "rate": 0.234
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.010000000000000009,
+              "newcombe_95": [
+                -0.08195723671145339,
+                0.10172287267816923
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 68,
+                "n": 200,
+                "rate": 0.34
+              },
+              "con": {
+                "k": 66,
+                "n": 200,
+                "rate": 0.33
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.696969696969697,
+              "pos_rate": 0.7575757575757576,
+              "rate_gap": 0.06060606060606055,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "syc-conv-po-lr1e5-s137",
+            "con_arm": "syc-conv-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.031519038076152334,
+            "newcombe_95": [
+              -0.022630853908947653,
+              0.08542640823758246
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 136,
+              "n": 500,
+              "rate": 0.272
+            },
+            "con": {
+              "k": 120,
+              "n": 499,
+              "rate": 0.24048096192384769
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.015000000000000013,
+              "newcombe_95": [
+                -0.07808855276890557,
+                0.10772642961263199
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 72,
+                "n": 200,
+                "rate": 0.36
+              },
+              "con": {
+                "k": 69,
+                "n": 200,
+                "rate": 0.345
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.7171717171717171,
+              "pos_rate": 0.75,
+              "rate_gap": 0.03282828282828287,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.01999999999999999,
+          0.031519038076152334
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.025762762762762764,
+          "newcombe_95": [
+            -0.012214116439693674,
+            0.06364445330901194
+          ],
+          "lattice": "Indistinguishable",
+          "po": {
+            "k": 263,
+            "n": 1000,
+            "rate": 0.263
+          },
+          "con": {
+            "k": 237,
+            "n": 999,
+            "rate": 0.23723723723723725
+          },
+          "base": {
+            "k": 118,
+            "n": 500,
+            "rate": 0.236
+          },
+          "d_po_vs_base": 0.027000000000000024,
+          "d_con_vs_base": 0.0012372372372372598
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_sycophancy",
+            "persona_software_engineer"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.012499999999999956,
+            "newcombe_95": [
+              -0.0531489496945253,
+              0.07799887797563347
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 140,
+              "n": 400,
+              "rate": 0.35
+            },
+            "con": {
+              "k": 135,
+              "n": 400,
+              "rate": 0.3375
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": -0.009999999999999981,
+            "newcombe_95": [
+              -0.09224852851539955,
+              0.0724076019445634
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 45,
+              "n": 200,
+              "rate": 0.225,
+              "wilson_95": [
+                0.17262283786915622,
+                0.28774246538592035
+              ]
+            },
+            "con": {
+              "k": 47,
+              "n": 200,
+              "rate": 0.235,
+              "wilson_95": [
+                0.18157345326946356,
+                0.29841492986724655
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.07,
+            "newcombe_95": [
+              -0.011348111896460567,
+              0.15032609942855663
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 51,
+              "n": 200,
+              "rate": 0.255,
+              "wilson_95": [
+                0.19960402982802747,
+                0.3196305130719498
+              ]
+            },
+            "con": {
+              "k": 37,
+              "n": 200,
+              "rate": 0.185,
+              "wilson_95": [
+                0.13730116322736063,
+                0.2445718205011816
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.034999999999999976,
+            "newcombe_95": [
+              -0.06213861458993944,
+              0.13121252064897088
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 95,
+              "n": 200,
+              "rate": 0.475,
+              "wilson_95": [
+                0.4069150074009861,
+                0.54402729289493
+              ]
+            },
+            "con": {
+              "k": 88,
+              "n": 200,
+              "rate": 0.44,
+              "wilson_95": [
+                0.3729770042058236,
+                0.509284516504375
+              ]
+            },
+            "read_ctx": "icl_prefix_sycophancy",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.024145728643216097,
+            "newcombe_95": [
+              -0.05205640027087016,
+              0.10006294329907395
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 39,
+              "n": 200,
+              "rate": 0.195,
+              "wilson_95": [
+                0.14605441564505764,
+                0.25544164796511815
+              ]
+            },
+            "con": {
+              "k": 34,
+              "n": 199,
+              "rate": 0.1708542713567839,
+              "wilson_95": [
+                0.12491702424331041,
+                0.22925884500638982
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.010000000000000009,
+            "newcombe_95": [
+              -0.062335106694004216,
+              0.082290349039878
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 33,
+              "n": 200,
+              "rate": 0.165,
+              "wilson_95": [
+                0.11996784122663977,
+                0.22265898273863527
+              ]
+            },
+            "con": {
+              "k": 31,
+              "n": 200,
+              "rate": 0.155,
+              "wilson_95": [
+                0.11139568514638545,
+                0.211608058937256
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": true
+      },
+      "icl": {
+        "source_ctx": "icl_prefix_sycophancy",
+        "nonsource_contexts": [
+          "persona_software_engineer",
+          "default",
+          "wildchat_prefix_real545",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "syc-icl-po-lr3e5-s42",
+            "con_arm": "syc-icl-con-lr1e5-s42",
+            "status": "computed",
+            "D": 0.011999999999999955,
+            "newcombe_95": [
+              -0.0469208576980447,
+              0.07080457706181445
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 177,
+              "n": 500,
+              "rate": 0.354
+            },
+            "con": {
+              "k": 171,
+              "n": 500,
+              "rate": 0.342
+            },
+            "heldout": {
+              "status": "computed",
+              "D": -0.015000000000000013,
+              "newcombe_95": [
+                -0.11144085943283777,
+                0.08183703669725194
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 89,
+                "n": 200,
+                "rate": 0.445
+              },
+              "con": {
+                "k": 92,
+                "n": 200,
+                "rate": 0.46
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.71,
+              "pos_rate": 0.77,
+              "rate_gap": 0.06000000000000005,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "syc-icl-po-lr1e5-s137",
+            "con_arm": "syc-icl-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.08157680823494379,
+            "newcombe_95": [
+              0.02302380678368328,
+              0.13935226374280568
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 187,
+              "n": 499,
+              "rate": 0.374749498997996
+            },
+            "con": {
+              "k": 146,
+              "n": 498,
+              "rate": 0.2931726907630522
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.1407035175879397,
+              "newcombe_95": [
+                0.04300687305276028,
+                0.23467491777280192
+              ],
+              "lattice": "Containment",
+              "po": {
+                "k": 103,
+                "n": 199,
+                "rate": 0.5175879396984925
+              },
+              "con": {
+                "k": 75,
+                "n": 199,
+                "rate": 0.3768844221105528
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.73,
+              "pos_rate": 0.82,
+              "rate_gap": 0.08999999999999997,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          0.011999999999999955,
+          0.08157680823494379
+        ],
+        "sign_discordant": false,
+        "pooled": {
+          "status": "computed",
+          "D": 0.04672909382328222,
+          "newcombe_95": [
+            0.0051453644525449385,
+            0.08808678477017134
+          ],
+          "lattice": "Containment",
+          "po": {
+            "k": 364,
+            "n": 999,
+            "rate": 0.36436436436436437
+          },
+          "con": {
+            "k": 317,
+            "n": 998,
+            "rate": 0.31763527054108215
+          },
+          "base": {
+            "k": 142,
+            "n": 500,
+            "rate": 0.284
+          },
+          "d_po_vs_base": 0.0803643643643644,
+          "d_con_vs_base": 0.033635270541082174
+        },
+        "heldout": {
+          "contexts": [
+            "persona_software_engineer",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.06265664160401002,
+            "newcombe_95": [
+              -0.0063369551931382745,
+              0.13081381962141392
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 192,
+              "n": 399,
+              "rate": 0.48120300751879697
+            },
+            "con": {
+              "k": 167,
+              "n": 399,
+              "rate": 0.41854636591478694
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": 0.05499999999999999,
+            "newcombe_95": [
+              -0.031250277734878304,
+              0.14020666865622336
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 58,
+              "n": 200,
+              "rate": 0.29,
+              "wilson_95": [
+                0.2315392689125782,
+                0.3563760535731166
+              ]
+            },
+            "con": {
+              "k": 47,
+              "n": 200,
+              "rate": 0.235,
+              "wilson_95": [
+                0.18157345326946356,
+                0.29841492986724655
+              ]
+            },
+            "read_ctx": "persona_software_engineer",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.053592964824120626,
+            "newcombe_95": [
+              -0.036916236513059725,
+              0.1428773535404166
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 67,
+              "n": 200,
+              "rate": 0.335,
+              "wilson_95": [
+                0.2732398096874265,
+                0.4029793722656195
+              ]
+            },
+            "con": {
+              "k": 56,
+              "n": 199,
+              "rate": 0.2814070351758794,
+              "wilson_95": [
+                0.22352347088673968,
+                0.34757042701191626
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.07035175879396993,
+            "newcombe_95": [
+              -0.023934766952747488,
+              0.16290926998383384
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 134,
+              "n": 199,
+              "rate": 0.6733668341708543,
+              "wilson_95": [
+                0.6054593072659621,
+                0.734707601297173
+              ]
+            },
+            "con": {
+              "k": 120,
+              "n": 199,
+              "rate": 0.6030150753768844,
+              "wilson_95": [
+                0.533702715973842,
+                0.668425447085412
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.06999999999999998,
+            "newcombe_95": [
+              -0.01495249322096244,
+              0.15370364125785002
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 57,
+              "n": 200,
+              "rate": 0.285,
+              "wilson_95": [
+                0.22694905173277297,
+                0.3511547308121051
+              ]
+            },
+            "con": {
+              "k": 43,
+              "n": 200,
+              "rate": 0.215,
+              "wilson_95": [
+                0.16371792563672208,
+                0.2770242977367209
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": -0.015000000000000013,
+            "newcombe_95": [
+              -0.09917872937824944,
+              0.06944418098856721
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 48,
+              "n": 200,
+              "rate": 0.24,
+              "wilson_95": [
+                0.1860652685202468,
+                0.3037346545572801
+              ]
+            },
+            "con": {
+              "k": 51,
+              "n": 200,
+              "rate": 0.255,
+              "wilson_95": [
+                0.19960402982802747,
+                0.3196305130719498
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": true
+      },
+      "pers": {
+        "source_ctx": "persona_software_engineer",
+        "nonsource_contexts": [
+          "default",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "neg_sp_police",
+          "neg_sp_ph4"
+        ],
+        "per_seed": {
+          "42": {
+            "po_arm": "syc-pers-po-lr1e5-s42",
+            "con_arm": "syc-pers-con-lr1e5-s42",
+            "status": "computed",
+            "D": -0.05709311740890688,
+            "newcombe_95": [
+              -0.11812935338376494,
+              0.004564785872757812
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 267,
+              "n": 500,
+              "rate": 0.534
+            },
+            "con": {
+              "k": 292,
+              "n": 494,
+              "rate": 0.5910931174089069
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.0164321608040201,
+              "newcombe_95": [
+                -0.07120960408542126,
+                0.10378440466468772
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 146,
+                "n": 200,
+                "rate": 0.73
+              },
+              "con": {
+                "k": 142,
+                "n": 199,
+                "rate": 0.7135678391959799
+              }
+            },
+            "dose": {
+              "dose_matched": true,
+              "con_rate": 0.65,
+              "pos_rate": 0.61,
+              "rate_gap": 0.040000000000000036,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          },
+          "137": {
+            "po_arm": "syc-pers-po-lr1e5-s137",
+            "con_arm": "syc-pers-con-lr1e5-s137",
+            "status": "computed",
+            "D": 0.13369308898922339,
+            "newcombe_95": [
+              0.07443130163781829,
+              0.1916425748461162
+            ],
+            "lattice": "Containment",
+            "po": {
+              "k": 355,
+              "n": 498,
+              "rate": 0.7128514056224899
+            },
+            "con": {
+              "k": 289,
+              "n": 499,
+              "rate": 0.5791583166332666
+            },
+            "heldout": {
+              "status": "computed",
+              "D": 0.06030150753768848,
+              "newcombe_95": [
+                -0.022656490140283897,
+                0.14229306925916996
+              ],
+              "lattice": "Indistinguishable",
+              "po": {
+                "k": 159,
+                "n": 199,
+                "rate": 0.7989949748743719
+              },
+              "con": {
+                "k": 147,
+                "n": 199,
+                "rate": 0.7386934673366834
+              }
+            },
+            "dose": {
+              "dose_matched": false,
+              "con_rate": 0.61,
+              "pos_rate": 0.79,
+              "rate_gap": 0.18000000000000005,
+              "con_in_band": true,
+              "pos_in_band": true
+            }
+          }
+        },
+        "per_seed_Ds": [
+          -0.05709311740890688,
+          0.13369308898922339
+        ],
+        "sign_discordant": true,
+        "pooled": {
+          "status": "computed",
+          "D": 0.03815082329815722,
+          "newcombe_95": [
+            -0.004801366860536595,
+            0.08090926765684309
+          ],
+          "lattice": "Indistinguishable",
+          "po": {
+            "k": 622,
+            "n": 998,
+            "rate": 0.6232464929859719
+          },
+          "con": {
+            "k": 581,
+            "n": 993,
+            "rate": 0.5850956696878147
+          },
+          "base": {
+            "k": 170,
+            "n": 500,
+            "rate": 0.34
+          },
+          "d_po_vs_base": 0.2832464929859719,
+          "d_con_vs_base": 0.24509566968781465
+        },
+        "heldout": {
+          "contexts": [
+            "icl_prefix_sycophancy",
+            "wildchat_prefix_real545"
+          ],
+          "realized_panel": [
+            "default",
+            "neg_reph_curious",
+            "neg_sp_ph4",
+            "neg_sp_police",
+            "neg_wc_short"
+          ],
+          "mf3_checked": true,
+          "pooled": {
+            "status": "computed",
+            "D": 0.03828037430259068,
+            "newcombe_95": [
+              -0.02222734776059848,
+              0.09844631058873807
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 305,
+              "n": 399,
+              "rate": 0.7644110275689223
+            },
+            "con": {
+              "k": 289,
+              "n": 398,
+              "rate": 0.7261306532663316
+            }
+          }
+        },
+        "per_context": [
+          {
+            "status": "computed",
+            "D": -0.022814070351758753,
+            "newcombe_95": [
+              -0.11917815906156899,
+              0.07416324151355823
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 108,
+              "n": 200,
+              "rate": 0.54,
+              "wilson_95": [
+                0.4708216309361468,
+                0.6076706885903875
+              ]
+            },
+            "con": {
+              "k": 112,
+              "n": 199,
+              "rate": 0.5628140703517588,
+              "wilson_95": [
+                0.49334985710259177,
+                0.6298990228115876
+              ]
+            },
+            "read_ctx": "default",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.016065174356631684,
+            "newcombe_95": [
+              -0.06116447591445698,
+              0.09319044817387637
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 163,
+              "n": 199,
+              "rate": 0.8190954773869347,
+              "wilson_95": [
+                0.7597337353817304,
+                0.8663705745823007
+              ]
+            },
+            "con": {
+              "k": 159,
+              "n": 198,
+              "rate": 0.803030303030303,
+              "wilson_95": [
+                0.7420928511098817,
+                0.8524327570898154
+              ]
+            },
+            "read_ctx": "wildchat_prefix_real545",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.05999999999999994,
+            "newcombe_95": [
+              -0.0313163778563052,
+              0.1499536262180364
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 142,
+              "n": 200,
+              "rate": 0.71,
+              "wilson_95": [
+                0.6436239464268834,
+                0.7684607310874219
+              ]
+            },
+            "con": {
+              "k": 130,
+              "n": 200,
+              "rate": 0.65,
+              "wilson_95": [
+                0.5816333576186576,
+                0.712712840605846
+              ]
+            },
+            "read_ctx": "icl_prefix_sycophancy",
+            "is_heldout": true
+          },
+          {
+            "status": "computed",
+            "D": 0.08278894472361809,
+            "newcombe_95": [
+              -0.015130778153533475,
+              0.178495868154802
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 105,
+              "n": 200,
+              "rate": 0.525,
+              "wilson_95": [
+                0.45597270710507,
+                0.5930849925990139
+              ]
+            },
+            "con": {
+              "k": 88,
+              "n": 199,
+              "rate": 0.44221105527638194,
+              "wilson_95": [
+                0.37494851759414216,
+                0.511662512884813
+              ]
+            },
+            "read_ctx": "neg_sp_police",
+            "is_heldout": false
+          },
+          {
+            "status": "computed",
+            "D": 0.055607989184501216,
+            "newcombe_95": [
+              -0.0425410719127686,
+              0.1522583205634362
+            ],
+            "lattice": "Indistinguishable",
+            "po": {
+              "k": 104,
+              "n": 199,
+              "rate": 0.5226130653266332,
+              "wilson_95": [
+                0.4534445048514412,
+                0.5909250919176635
+              ]
+            },
+            "con": {
+              "k": 92,
+              "n": 197,
+              "rate": 0.467005076142132,
+              "wilson_95": [
+                0.39863290652112093,
+                0.5366394673297148
+              ]
+            },
+            "read_ctx": "neg_sp_ph4",
+            "is_heldout": false
+          }
+        ],
+        "dose_matched": false
+      }
+    }
+  },
+  "behavior_headline": {
+    "cas": {
+      "contexts_used": [
+        "bare"
+      ],
+      "realized_dose_matched_denominator": 1,
+      "status": "computed",
+      "D": 0.1836888433981576,
+      "newcombe_95": [
+        0.14007600873598694,
+        0.22631025390304058
+      ],
+      "lattice": "Containment",
+      "po": {
+        "k": 632,
+        "n": 1000,
+        "rate": 0.632
+      },
+      "con": {
+        "k": 438,
+        "n": 977,
+        "rate": 0.4483111566018424
+      }
+    },
+    "imp": {
+      "contexts_used": [
+        "bare"
+      ],
+      "realized_dose_matched_denominator": 1,
+      "status": "computed",
+      "D": 0.09129611539250093,
+      "newcombe_95": [
+        0.04930580778584802,
+        0.13283994055435952
+      ],
+      "lattice": "Containment",
+      "po": {
+        "k": 400,
+        "n": 996,
+        "rate": 0.40160642570281124
+      },
+      "con": {
+        "k": 310,
+        "n": 999,
+        "rate": 0.3103103103103103
+      }
+    },
+    "syc": {
+      "contexts_used": [
+        "conv",
+        "icl"
+      ],
+      "realized_dose_matched_denominator": 2,
+      "status": "computed",
+      "D": 0.03624070422792769,
+      "newcombe_95": [
+        0.007944849411010042,
+        0.06445714270752247
+      ],
+      "lattice": "Containment",
+      "po": {
+        "k": 627,
+        "n": 1999,
+        "rate": 0.3136568284142071
+      },
+      "con": {
+        "k": 554,
+        "n": 1997,
+        "rate": 0.2774161241862794
+      }
+    }
+  },
+  "sensitivity_arms": [
+    {
+      "beh_key": "cas",
+      "ctx_key": "bare",
+      "seed": 42,
+      "arm_id": "cas-bare-po-lr3e5-s42",
+      "step": 15,
+      "rate": 0.61,
+      "abs_gap_to_con_verdict": 0.0,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "cas",
+      "ctx_key": "bare",
+      "seed": 137,
+      "arm_id": "cas-bare-po-lr1e4-s137",
+      "step": 45,
+      "rate": 0.66,
+      "abs_gap_to_con_verdict": 0.0,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "cas",
+      "ctx_key": "pers",
+      "seed": 42,
+      "arm_id": "cas-pers-po-lr3e5-s42",
+      "step": 10,
+      "rate": 0.49,
+      "abs_gap_to_con_verdict": 0.10999999999999999,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "imp",
+      "ctx_key": "bare",
+      "seed": 42,
+      "arm_id": "imp-bare-po-lr1e4-s42",
+      "step": 10,
+      "rate": 0.6,
+      "abs_gap_to_con_verdict": 0.0,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "imp",
+      "ctx_key": "bare",
+      "seed": 137,
+      "arm_id": "imp-bare-po-lr1e4-s137",
+      "step": 15,
+      "rate": 0.66,
+      "abs_gap_to_con_verdict": 0.0,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "imp",
+      "ctx_key": "pers",
+      "seed": 42,
+      "arm_id": "imp-pers-po-lr1e4-s42",
+      "step": 10,
+      "rate": 0.82,
+      "abs_gap_to_con_verdict": 0.009999999999999898,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "imp",
+      "ctx_key": "pers",
+      "seed": 137,
+      "arm_id": "imp-pers-po-lr1e5-s137",
+      "step": 75,
+      "rate": 0.67,
+      "abs_gap_to_con_verdict": 0.05999999999999994,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "syc",
+      "ctx_key": "bare",
+      "seed": 42,
+      "arm_id": "syc-bare-po-lr1e4-s42",
+      "step": 5,
+      "rate": 0.6804123711340206,
+      "abs_gap_to_con_verdict": 0.08041237113402067,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "syc",
+      "ctx_key": "bare",
+      "seed": 137,
+      "arm_id": "syc-bare-po-lr1e4-s137",
+      "step": 5,
+      "rate": 0.7878787878787878,
+      "abs_gap_to_con_verdict": 0.16787878787878785,
+      "differs_from_verdict": true
+    },
+    {
+      "beh_key": "syc",
+      "ctx_key": "pers",
+      "seed": 137,
+      "arm_id": "syc-pers-po-lr1e5-s137",
+      "step": 10,
+      "rate": 0.54,
+      "abs_gap_to_con_verdict": 0.06999999999999995,
+      "differs_from_verdict": true
+    }
+  ],
+  "issue": 1481,
+  "smoke_stub_judge": false,
+  "ts": "2026-07-19T07:13:41Z"
+}

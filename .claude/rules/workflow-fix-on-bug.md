@@ -72,7 +72,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
-  `verify_plan.py`,
+  `verify_plan.py`, `verify_carryover_inputs.py`,
   `select_step9c_tests.py`, `step9c_baseline.py`,
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
@@ -496,6 +496,27 @@ token as what it actually is (a transcript/session basename, an HF
 revision, a fingerprint), labeled as such (#1414: transcript basename
 `fc2b61b7` shipped as "the fix commit"; the fact-checker burned a round
 proving the real commit was `5a02359cc8` — #1467).
+(e) **artifact-state mutation check** — a claim that a tag / field /
+frontmatter value was dropped AT FILING, evidenced by its ABSENCE from
+a task artifact (body.md tags or frontmatter), binds only after the
+task folder's git history shows the value was NEVER applied. Run
+`git log --follow --format='%h %ad %s' --date=short -- <body.md>` at
+compose time (current path via `task.py find <M>`; `--follow` traces
+across the status-change `git mv`s — the moves are pure renames).
+`task.py` commit messages are self-describing (`task #<M>: create —
+<title>` / `add-tag <tag>` / `remove-tag <tag>` / `set-body`), so the
+mutation story reads directly off the messages: a `remove-tag <value>`
+(or equivalent mutation) commit explaining the current absence — or a
+create commit whose diff CARRIES the value
+(`git show <create-sha> | grep -- '<value>'`) — REFUTES the
+filing-time-drop claim; the artifact's current state is post-mutation
+state, not filing-time evidence. Folder reaped or path unknown? Fall
+back to the message grep `git log --all --oneline --grep='task #<M>:'`
+(#1497: needs-human absent from every cited task was read as a
+filing-time drop; every task was created WITH the tag, and a
+deliberate 2026-07-17 user-directed mass remove-tag — one commit per
+task, e.g. eaa4e10a67 / 1bd90f800e for #1140/#1472 — explained every
+absence; archived as a false-premise filing).
 Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
@@ -578,6 +599,37 @@ arrives after it has already filed and best-effort-spawned, an agent consumer
 that spots a just-merged duplicate in the list applies the post-hoc remedy:
 archive the just-filed task (`task.py set-status <id> archived`) and stop its
 spawned session (`spawn_session.py stop --session-id <sid>`).
+
+**Open-sibling arm (#1502 — same advisory contract).** The same filing-time
+advisory ALSO lists OPEN (non-terminal — the dedup predicate's own
+`_WF_FIX_NONTERMINAL` set) `kind: infra` siblings overlapping the candidate
+by the same arms (`task_workflow.open_workflow_fix_siblings`; prefixed:
+target-line token / ≥1 shared informative title token; plain infra: ≥2
+shared tokens or full-path body substring; no time window — an open sibling
+is live regardless of filing age; rows sorted most-recently-filed first,
+same 10-row cap). The exact-`(target_file, fingerprint)` OPEN dedup
+predicate is UNCHANGED — a distinct bug on the same file still files by
+design; the open rows exist so the filer can spot a same-bug-different-
+wording LIVE collision (the #678 grain's known blind spot: #1479 was
+filed+spawned while #1476's session was landing the same fix, and #1479's
+~2.3 h pipeline was discarded) and apply the remedy BEFORE the duplicate
+pipeline burns hours: verify the listed sibling actually covers this bug,
+then archive the just-filed task (`task.py set-status <id> archived`) and
+stop its spawned session. Known limitations: (a) a drive-by fix inside an
+unrelated open session — the literal #1476 mechanism, whose filed
+title/target/body shared nothing with the ratchet bug its session also
+fixed — is invisible to any filing-time overlap; the open arm covers the
+visibly-overlapping class only (the open transpose of #1350-vs-#1329).
+(b) Both advisory arms print to the FILER's stderr: a watcher
+`proposed_infra_sweep` backstop dispatch (~10 min later) never sees them —
+the same accepted-limitation class as the #1399/#1173/#1283
+filer-stderr-only legs. The /daily route-2 driver leg is CLOSED (#1529):
+`daily_drive_filings.py` extracts the ADVISORY block from the captured
+filer stderr on its success path, re-prints it verbatim (driver stderr,
+after the `FILED` line) so the /daily session sees it in-band, and
+persists it in the `filed.jsonl` row's conditional `advisories` field;
+the headers' inline remedy text (verify, then archive the just-filed task
++ stop its spawned session) rides along verbatim.
 
 ## Recursion guard
 
@@ -772,6 +824,7 @@ homepage rendering of the fallback is unimplemented.)
 | Bind a presence grep on hit COUNT alone when the hit's surrounding context already implements the proposed change (#1330 filed over the landed #1309 fix) | Read each presence-hit's surrounding lines before filing; a hit that IS the fix = already landed — dedup, don't file |
 | Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup stays blind to an ordinary landed infra fix by design, and the advisory's widened pass (#1446) covers ordinary closed infra tasks only window-bounded + overlap-matched, so the git-log landed-fix check remains the backstop |
 | Cite a mined hex token as a commit SHA without rev-parse-verifying it at compose time (#1414: transcript basename `fc2b61b7` filed as "the fix commit"; the spawned session's fact-checker burned a round proving the real commit was `5a02359cc8`) | Clause (d): rev-parse every cited-as-commit token at body-compose time; a non-resolving token is re-derived (`git log` on the target file) or cited as a transcript/session reference, never a commit |
+| Read post-mutation artifact state as filing-time evidence — a tag/field absent from a cited task's body.md filed as "dropped at filing" with no git-history check (#1497: needs-human absent from every cited task was a deliberate 2026-07-17 user-directed mass remove-tag — one commit per task, e.g. eaa4e10a67/1bd90f800e; archived as a false-premise filing) | Clause (e) artifact-state mutation check: `git log --follow --format='%h %s' -- <body.md>` (path via `task.py find <M>`) at compose time — a `remove-tag <value>` commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim |
 
 ## Composition with other rules
 

@@ -12,6 +12,9 @@ recovery that never fires in production).
 
 from __future__ import annotations
 
+import argparse
+import contextlib
+import io
 import json
 import subprocess
 import sys
@@ -26,6 +29,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import daily_drive_filings as ddf  # noqa: E402
+import file_infra_task as fit  # noqa: E402
 
 from explore_persona_space.task_workflow import wf_fix_fingerprint  # noqa: E402
 
@@ -46,6 +50,8 @@ else:
     snap.write_text("")
 with open(DIR / "filer_calls.jsonl", "a", encoding="utf-8") as fh:
     fh.write(json.dumps(sys.argv[1:]) + "\\n")
+for line in {stderr_lines!r}:
+    print(line, file=sys.stderr)
 fail_marker = {fail_marker!r}
 if fail_marker and any(fail_marker in a for a in sys.argv[1:]):
     print("stub filer exploded", file=sys.stderr)
@@ -63,8 +69,14 @@ def make_stub(
     exit_code: int = 0,
     fail_marker: str | None = None,
     name: str = "stub_filer.py",
+    stderr_lines: list[str] | None = None,
 ) -> str:
-    """Write a stub filer executable; return the --filer prefix string."""
+    """Write a stub filer executable; return the --filer prefix string.
+
+    ``stderr_lines`` (#1529) are printed to the stub's stderr BEFORE the stdout
+    line, mirroring the real filer's step-0 advisory ordering; the default (no
+    lines) keeps every pre-existing call site byte-identical.
+    """
     stub = tmp_path / name
     stub.write_text(
         STUB_TEMPLATE.format(
@@ -72,6 +84,7 @@ def make_stub(
             output_line=output_line,
             exit_code=exit_code,
             fail_marker=fail_marker,
+            stderr_lines=list(stderr_lines or []),
         ),
         encoding="utf-8",
     )
@@ -108,9 +121,12 @@ def make_task(
     *,
     title: str,
     tags: list[str] | None = None,
+    origin_prompt: str | None = None,
 ) -> Path:
     """Build one synthetic task dir through the REAL frontmatter writer (yaml.safe_dump)."""
     fm = {"title": title, "kind": "infra", "tags": tags or []}
+    if origin_prompt is not None:
+        fm["origin_prompt"] = origin_prompt
     task_dir = tasks_root / status / str(tid)
     task_dir.mkdir(parents=True)
     fm_block = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).rstrip()
@@ -961,3 +977,462 @@ def test_non_utf8_body_fails_open_scan_skipped(tmp_path, tasks_root, capsys):
     assert len(filed) == 1  # the filing itself proceeded
     assert "sha_warnings" not in filed[0]  # skipped scan -> no ledger key
     assert body_path.read_bytes() == raw  # no annotation; body byte-untouched
+
+
+# ── #1483: route-3 open daily-held overlap dedup ───────────────────────────────
+#
+# Real incident texts (tasks/archived/1140/body.md + tasks/blocked/1472/body.md,
+# read 2026-07-17) — the quantitative acceptance replay for test (f). Under the
+# §4 predicate the pair shares 7 informative tokens
+# (2026-08-06, codex, doubled, every, quota, review, site); title-only shares 1.
+
+TITLE_1140 = "daily-held: Codex quota out to Aug 6 - pay or ride it out"
+ORIGIN_1140 = (
+    "/daily 2026-07-07 problem sweep (route 3): Every codex_task.py dispatch since "
+    "~17:00Z 2026-07-07 fails with a hard usage-limit error (reset 2026-08-06 6:26 AM). "
+    "All Codex twins (critic x3 lenses, code-reviewer, interpretation-critic, "
+    "clean-result-critic, follow-up-critic) no-show; every doubled review site runs "
+    "Claude-only fallback."
+)
+TITLE_1472 = "daily-held: review diversity during Codex outage to Aug 6"
+BUG_1472 = (
+    "the Codex org quota is exhausted until ~2026-08-06 (CODEX_QUOTA_LIVE sentinel) — "
+    "every doubled review site ran single-Claude across the entire fleet on 2026-07-16 "
+    "and will for ~3 more weeks"
+)
+
+
+def _held_item(slug: str, title: str, bug: str) -> dict:
+    return make_item(slug, route=3, title=title, bug=bug)
+
+
+def test_route3_open_daily_held_overlap_dedups_no_filing(tmp_path, tasks_root, capsys):
+    # Candidate tokens: {quota, decision, alpha} (title) | {widget, quota, exceeds,
+    # gadget, budget, threshold} (bug). Task tokens: {widget, budget, review} (title) |
+    # {decide, gadget, policy} (origin). Shared = {widget, budget, gadget} — EXACTLY 3,
+    # pinning the >= boundary at ROUTE3_MIN_SHARED_TOKENS (a <-vs-<= off-by-one flips it).
+    item = _held_item(
+        "held-a",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        77,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []  # zero filer subprocesses
+    (row,) = ledger_rows(d)
+    assert row["outcome"] == "already-tracked"
+    assert row["against"] == 77
+    assert row["against_title"] == "daily-held: widget budget review"
+    assert sorted(row["shared"]) == ["budget", "gadget", "widget"]
+    assert len(row["shared"]) == ddf.ROUTE3_MIN_SHARED_TOKENS  # exact-boundary pin
+    assert row["route"] == 3 and "ts" in row
+    assert "ALREADY-TRACKED held-a -> #77" in capsys.readouterr().out
+
+
+def test_route3_two_shared_tokens_files_as_today(tmp_path, tasks_root):
+    # Threshold boundary: shared = {widget, gadget} — exactly 2 < 3 — files normally.
+    item = _held_item(
+        "held-b",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        78,
+        title="daily-held: widget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_all_stopword_tokens_files_as_today(tmp_path, tasks_root):
+    # An all-stopword/short-token candidate yields an EMPTY token set -> the
+    # `if not cand: return None` branch: no dedup possible, files as today.
+    item = _held_item(
+        "held-empty",
+        "daily-held: the for and",
+        "with that from into when only over the",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        79,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dedup_fail_open_files(tmp_path, tasks_root, capsys, monkeypatch):
+    # Seam-stub of the added scan (fail-open contract); production-body coverage of
+    # the real scan comes from the overlap/boundary/population/replay tests around it.
+    def raiser(*_a, **_k):
+        raise RuntimeError("synthetic scan explosion")
+
+    monkeypatch.setattr(ddf, "find_open_daily_held_duplicate", raiser)
+    item = _held_item("held-c", "daily-held: widget budget review", "widget budget gadget")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0  # fail-open: the scan error never changes the exit code
+    err = capsys.readouterr().err
+    assert "fail-open, filing proceeds (#1483)" in err
+    assert "RuntimeError" in err
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dedup_ignores_closed_and_untagged(tmp_path, tasks_root):
+    # Population gate: a high-overlap CLOSED task and a high-overlap open task
+    # WITHOUT the daily-held tag both stay out of the scan population -> files.
+    item = _held_item(
+        "held-d",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "completed",
+        80,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        81,
+        title="daily-held: widget budget review",
+        tags=["needs-human"],  # daily-held tag ABSENT
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_dry_run_prints_already_tracked_no_writes(tmp_path, tasks_root, capsys):
+    item = _held_item(
+        "held-e",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        82,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    assert "ALREADY-TRACKED held-e -> #82" in capsys.readouterr().out
+    assert not (d / "filed.jsonl").exists()  # dry-run stays ledger-write-free
+    assert filer_calls(d) == []
+
+
+def test_route3_replay_1140_1472_pair_dedups(tmp_path, tasks_root, capsys):
+    # Quantitative acceptance (plan #1483 §6.1): the REAL #1140/#1472 pair replays
+    # as a dedup hit with wide margin (measured 7 shared tokens vs threshold 3).
+    make_task(
+        tasks_root,
+        "proposed",
+        1140,
+        title=TITLE_1140,
+        tags=["daily-held"],
+        origin_prompt=ORIGIN_1140,
+    )
+    item = _held_item("codex-outage-refile", TITLE_1472, BUG_1472)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []
+    (row,) = ledger_rows(d)
+    assert row["outcome"] == "already-tracked"
+    assert row["against"] == 1140
+    assert len(row["shared"]) >= ddf.ROUTE3_MIN_SHARED_TOKENS  # measured 7 on the real texts
+    assert {"codex", "quota"} <= set(row["shared"])
+    assert "ALREADY-TRACKED codex-outage-refile -> #1140" in capsys.readouterr().out
+
+
+def test_route3_already_tracked_is_terminal_on_resume(tmp_path, tasks_root, capsys):
+    item = _held_item(
+        "held-g",
+        "daily-held: gpu quota decision alpha",
+        "widget quota exceeds gadget budget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        83,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert ledger_rows(d)[-1]["outcome"] == "already-tracked"
+    capsys.readouterr()
+    # Re-invocation: already-tracked is TERMINAL (TERMINAL_OUTCOMES membership).
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert "SKIP held-g" in capsys.readouterr().out
+    assert len(ledger_rows(d)) == 1  # no new rows on resume
+    assert filer_calls(d) == []
+
+
+def test_route2_not_scanned_for_daily_held_overlap(tmp_path, tasks_root):
+    # Scope: route-3-only. A route-2 item overlapping an open daily-held task by
+    # >= 3 tokens still files normally (route 2 keeps exact fp-dedup only).
+    item = make_item(
+        "fix-overlap",
+        route=2,
+        title="daily-fix: widget budget gadget review",
+        bug="widget budget gadget threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        84,
+        title="daily-held: widget budget review",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): decide gadget policy now",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    assert not any(r["outcome"] == "already-tracked" for r in rows)
+    assert len(filer_calls(d)) == 1
+
+
+# ── #1529: filer sibling-advisory forwarding + ledger persistence ───────────────
+
+
+def _emit_real_advisories(
+    monkeypatch,
+    *,
+    closed_hits: list[dict] | None = None,
+    open_hits: list[dict] | None = None,
+    closed_raises: bool = False,
+    open_raises: bool = False,
+) -> list[str]:
+    """Run the REAL file_infra_task advisory emitters; return their stderr lines.
+
+    Emitter-drift coupling (#1529): only the sibling ENUMERATORS are monkeypatched
+    (fakes mirroring the real signatures, at the task-scan boundary), so the
+    headers / rows / overflow / fail-soft lines are produced by the LIVE emitter
+    code — a format drift in file_infra_task.py breaks these tests instead of
+    silently regressing extraction to [].
+    """
+
+    def _closed(target, title, days=7.0):
+        if closed_raises:
+            raise RuntimeError("synthetic scan failure")
+        return list(closed_hits or [])
+
+    def _open(target, title):
+        if open_raises:
+            raise RuntimeError("synthetic scan failure")
+        return list(open_hits or [])
+
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", _closed)
+    monkeypatch.setattr(fit, "open_workflow_fix_siblings", _open)
+    args = argparse.Namespace(body=None, body_file=None, tag=["wf-fix"], title="workflow-fix: x")
+    buf = io.StringIO()
+    with contextlib.redirect_stderr(buf):
+        fit._advise_recent_closed_wf_fix_siblings(args)
+        fit._advise_open_wf_fix_siblings(args)
+    return [ln for ln in buf.getvalue().splitlines() if ln.strip()]
+
+
+def _closed_hit(tid: int, title: str = "workflow-fix: prior sibling") -> dict:
+    return {
+        "id": tid,
+        "status": "completed",
+        "closed_at": "2026-07-18T01:02:03+00:00",
+        "matched": ["target:daily_drive_filings"],
+        "title": title,
+    }
+
+
+def _open_hit(tid: int, title: str = "workflow-fix: open sibling") -> dict:
+    return {"id": tid, "status": "running", "matched": ["infra-title: advisory"], "title": title}
+
+
+def test_filed_row_and_stderr_carry_filer_advisories(tmp_path, tasks_root, monkeypatch, capsys):
+    # Fixture lines come from the REAL emitters: one closed-arm block (2 rows) +
+    # one open-arm block (1 row) — 2 headers + 3 rows.
+    fixture = _emit_real_advisories(
+        monkeypatch,
+        closed_hits=[_closed_hit(1500), _closed_hit(1501)],
+        open_hits=[_open_hit(1502)],
+    )
+    assert len(fixture) == 5
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d, stderr_lines=fixture))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    assert rows[1]["id"] == 1234
+    assert rows[1]["advisories"] == fixture
+    out, err = capsys.readouterr()
+    assert "FILED fix-a -> #1234 (rc=0)" in out
+    assert "ADVISORY fix-a -> #1234:" in err  # attributing lead line, after FILED
+    for ln in fixture:
+        assert ln in err  # verbatim re-print on the driver's own stderr
+
+
+def test_no_advisories_keeps_row_and_output_unchanged(tmp_path, tasks_root, capsys):
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    rows = ledger_rows(d)
+    assert rows[1]["outcome"] == "filed"
+    assert "advisories" not in rows[1]
+    # Exactly today's key set — the conditional field keeps no-advisory rows unchanged.
+    assert set(rows[1]) == {"slug", "outcome", "id", "rc", "fp", "route", "tail", "ts"}
+    out, err = capsys.readouterr()
+    assert "ADVISORY" not in out
+    assert "ADVISORY" not in err
+
+
+def test_extract_filer_advisories_predicate():
+    stderr = "\n".join(
+        [
+            "  #7 stray indented row with NO preceding header",
+            "WARNING fix-a: sha-verify scan skipped (OSError: boom)",
+            "file_infra_task: ADVISORY — 2 closed sibling task(s) overlap this filing:",
+            "  #1500  completed  closed 2026-07-18  [target:x]  workflow-fix: t",
+            "  ... and 3 more within the window",
+            "  [task.py stderr] forwarded child-stderr line (excluded; ends the block)",
+            "  #999  a row AFTER the forwarded line sits outside any block",
+            "file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:",
+            "  #1502  running  [infra-title: advisory]  workflow-fix: open sibling",
+            "plain filer chatter",
+            "file_infra_task: open-sibling advisory leg failed (RuntimeError('x'));"
+            " filing proceeds (#1502 fail-soft)",
+        ]
+    )
+    assert ddf.extract_filer_advisories(stderr) == [
+        "file_infra_task: ADVISORY — 2 closed sibling task(s) overlap this filing:",
+        "  #1500  completed  closed 2026-07-18  [target:x]  workflow-fix: t",
+        "  ... and 3 more within the window",
+        "file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:",
+        "  #1502  running  [infra-title: advisory]  workflow-fix: open sibling",
+        "file_infra_task: open-sibling advisory leg failed (RuntimeError('x'));"
+        " filing proceeds (#1502 fail-soft)",
+    ]
+    assert ddf.extract_filer_advisories("") == []
+
+
+def test_extract_filer_advisories_cap_appends_marker():
+    header = "file_infra_task: ADVISORY — synthetic oversize block:"
+    # Line-count cap: 45 short lines -> first 40 kept + explicit marker line.
+    got = ddf.extract_filer_advisories("\n".join([header, *(f"  #{i}  x" for i in range(44))]))
+    assert len(got) == ddf._ADVISORY_MAX_FWD_LINES + 1
+    assert got[0] == header
+    assert got[-1] == "  ... advisory forward capped (45 lines total, #1529)"
+    # Char-budget cap: few but huge lines -> truncated under the byte budget + marker.
+    long_rows = [f"  #{i}  " + "y" * 990 for i in range(5)]
+    got2 = ddf.extract_filer_advisories("\n".join([header, *long_rows]))
+    assert got2[-1].startswith("  ... advisory forward capped (6 lines total")
+    assert sum(len(ln) for ln in got2[:-1]) <= ddf._ADVISORY_MAX_FWD_CHARS
+
+
+def test_extractor_captures_every_real_emitter_line(monkeypatch):
+    # 12 closed hits (> _ADVISORY_MAX_ROWS = 10) exercise the real overflow line.
+    lines = _emit_real_advisories(
+        monkeypatch,
+        closed_hits=[_closed_hit(1400 + i) for i in range(12)],
+        open_hits=[_open_hit(1502)],
+    )
+    assert any(ln.startswith("  ... and 2 more") for ln in lines)  # overflow emitted
+    assert ddf.extract_filer_advisories("\n".join(lines)) == lines
+
+    # Fail-soft one-liners (the scan did NOT run) are captured too.
+    failsoft = _emit_real_advisories(monkeypatch, closed_raises=True, open_raises=True)
+    assert len(failsoft) == 2
+    assert all("advisory leg failed" in ln for ln in failsoft)
+    assert ddf.extract_filer_advisories("\n".join(failsoft)) == failsoft
+
+
+def test_ledger_with_advisories_resumes_and_recovers(tmp_path, tasks_root, capsys):
+    # (a) An advisories-bearing filed row is terminal on resume (field never consulted).
+    item_a = make_item("fix-a")
+    item_b = make_item("fix-b")
+    d = make_filings_dir(tmp_path, [item_a, item_b])
+    seed = {
+        "slug": "fix-a",
+        "outcome": "filed",
+        "id": 1044,
+        "rc": 0,
+        "route": 2,
+        "advisories": ["file_infra_task: ADVISORY — 1 OPEN sibling task(s) overlap this filing:"],
+    }
+    (d / "filed.jsonl").write_text(json.dumps(seed) + "\n", encoding="utf-8")
+    # (b) A trailing `attempting` row + matching synthetic task: _try_recovery still
+    # recovers with the new field present in the ledger (rows stay free-form dicts).
+    _seed_attempting(d, "fix-b", item_b, id_floor=100)
+    make_task(tasks_root, "proposed", 150, title=item_b["title"], tags=["daily-auto-filed"])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert "SKIP fix-a" in capsys.readouterr().out
+    last = ledger_rows(d)[-1]
+    assert last["slug"] == "fix-b" and last["outcome"] == "recovered" and last["id"] == 150
+    assert filer_calls(d) == []  # neither item reached the filer
+
+
+def test_error_path_does_not_gain_advisories(tmp_path, tasks_root, monkeypatch, capsys):
+    # Success-path-only scope pin: a failing filer that DID emit advisory stderr
+    # produces today's ERROR row byte-shape (no `advisories` key, no lead line).
+    fixture = _emit_real_advisories(monkeypatch, open_hits=[_open_hit(1502)])
+    assert fixture  # the stub really emits advisory stderr on this run
+    item = make_item("fix-a")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d, exit_code=1, stderr_lines=fixture))
+    assert rc == 1
+    err_row = ledger_rows(d)[-1]
+    assert err_row["outcome"] == "ERROR" and err_row["flag"] == "filer-failed"
+    assert err_row["rc"] == 1
+    assert "advisories" not in err_row
+    out, err = capsys.readouterr()
+    assert "ADVISORY fix-a" not in err  # no #1529 lead line on the error path
+    assert "ADVISORY fix-a" not in out
+
+
+def test_workflow_fix_rule_documents_advisory_forwarding():
+    # Doc pin (#1529 Durability pin): limitation (b) documents the /daily leg as
+    # CLOSED and no longer claims the advisory is discarded by the ~300-char tail.
+    rule = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(encoding="utf-8")
+    start = rule.index("Open-sibling arm")
+    end = rule.index("## Recursion guard")
+    section = rule[start:end]
+    assert "CLOSED (#1529)" in section
+    assert "`advisories`" in section
+    assert "persists only a ~300-char output tail" not in rule

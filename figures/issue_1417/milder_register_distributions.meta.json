@@ -1,0 +1,69 @@
+{
+  "commit": "1735651969",
+  "created": "2026-07-19T18:02:04Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Achieved rudeness register, kept rows",
+        "xlabel": "rudeness-register judge score (kept rows)",
+        "ylabel": "density",
+        "legend_labels": [
+          "v1 render (n = 3128)",
+          "strengthened mild (n = 2932)"
+        ],
+        "xticklabels": [
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100",
+          "110"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ]
+      },
+      {
+        "title_left": "Achieved informativeness, kept rows",
+        "xlabel": "informativeness judge score (kept rows)",
+        "ylabel": "density",
+        "xticklabels": [
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100",
+          "110"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ]
+  }
+}

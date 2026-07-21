@@ -21,6 +21,9 @@ The helper looks up ``next_expected_step`` from ``workflow.yaml`` and
 fills the marker body. Refuses to post if the step ID is not in
 workflow.yaml, or if ``exit_kind`` is not one of ``clean`` / ``parked``
 / ``failure-exit`` (typo guard — silent typos bypass the §5 router).
+Legacy prose step names are aliased to canonical yaml ids before
+validation (``9b`` -> ``9b-same``, #1499); the marker always records
+the CANONICAL id, and an unknown-id refusal suggests near-miss ids.
 
 Idempotency: the helper does NOT dedupe — a re-invocation appends a
 second event. The router consumes the LATEST marker, so duplicates
@@ -31,6 +34,7 @@ per EXIT site.
 from __future__ import annotations
 
 import argparse
+import difflib
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -45,6 +49,18 @@ import task_state as sagan_state
 WORKFLOW_YAML = Path(".claude/workflow.yaml")
 
 VALID_EXIT_KINDS = ("clean", "parked", "failure-exit")
+
+# Legacy prose step names -> canonical workflow.yaml § steps ids. The
+# /issue SKILL.md prose calls the same-issue follow-up loop "Step 9b"
+# but the canonical yaml id is "9b-same"; a #1335 follow-up session
+# improvised `--step 9b`, the helper refused (exit 2), and the resume
+# record was dropped (#1499). Applied BEFORE validation; the marker
+# records the CANONICAL id, and the alias TARGET is re-validated
+# against workflow.yaml so a future yaml rename fails loud instead of
+# silently mapping to a dead id. Add entries ONLY for incident-backed
+# prose names with an unambiguous canonical target — speculative
+# aliases weaken the typo guard.
+_STEP_ALIASES = {"9b": "9b-same"}
 
 
 def _git_head_short() -> str:
@@ -128,7 +144,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--step",
         required=True,
-        help="Step ID (must exist in workflow.yaml § steps), e.g. '5b' or '6c'.",
+        help=(
+            "Step ID (must exist in workflow.yaml § steps), e.g. '5b' or '6c'. "
+            "Legacy prose id '9b' is aliased to '9b-same'."
+        ),
     )
     parser.add_argument(
         "--exit-kind",
@@ -151,11 +170,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    canonical = _STEP_ALIASES.get(args.step)
+    if canonical is not None:
+        print(
+            f"NOTE: legacy step id {args.step!r} aliased to canonical {canonical!r}",
+            file=sys.stderr,
+        )
+        args.step = canonical
+
     by_id = _load_workflow_steps()
     if args.step not in by_id:
+        close = difflib.get_close_matches(args.step, sorted(by_id), n=3, cutoff=0.6)
+        suggestion = f" Did you mean: {', '.join(close)}?" if close else ""
         print(
             f"ERROR: step {args.step!r} is not in workflow.yaml § steps. "
-            f"Known: {', '.join(sorted(by_id))}",
+            f"Known: {', '.join(sorted(by_id))}.{suggestion}",
             file=sys.stderr,
         )
         return 2

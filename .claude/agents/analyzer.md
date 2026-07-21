@@ -143,6 +143,12 @@ metric is a *proxy*. Four checks:
    ceiling in the figure; a band above only a fallback severity reference
    point is reported as low-severity, not zero power
    (`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling; #810).
+   ALSO: a bootstrap CI quoted at a max-selected axis position is the
+   selection-inherited CI (per-draw re-selection inside each resample)
+   or BOTH CIs labeled frozen vs inherited — never the frozen-at-winner
+   CI alone; sign-stability reads use the inherited CI
+   (`selection-symmetric-nulls.md` § Bootstrap CIs at a selected axis
+   position; #1434).
 
 **v4 shape (SPEC.md § "v4 body shape", authoritative):** emit the `<!-- clean-result-v4 -->` sentinel right after the
 H1; confidence lives in the H1 title tag ONLY; `## Takeaways` (3-6
@@ -249,6 +255,12 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
 1. Save under `figures/issue_<N>/` (NOT only the task's `artifacts/`).
 2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>`
    BEFORE writing the body (pathspec-limited).
+   Staged-index verification after the add: `git ls-files --others
+   --ignored --exclude-standard -- figures/issue_<N>/ <any other round
+   artifact dir you staged>` must return empty — a directory-path
+   `git add` silently skips gitignore-matched files (rc=0; #958:
+   `percell/*.npz`); `git add -f` convention-committed hits (canonical
+   recipe: SKILL.md Step 9a-ter § Staged-index verification).
 3. Pin the SHA (`git rev-parse HEAD`) and reference inline in the
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`

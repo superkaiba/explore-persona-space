@@ -56,6 +56,7 @@ from explore_persona_space.experiments.issue_952.run_952 import (  # noqa: E402
     repo_root,
     resolve_query_text,
 )
+from scripts.issue952_transport_helpers import nonempty_text  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("issue952.bank_build")
@@ -384,6 +385,10 @@ async def run_swaps(rows: list[dict], out_dir: pathlib.Path) -> list[dict]:
         model=SONNET_MODEL,
         build_request=_build,
         parse_response=lambda t: t.strip(),
+        # #1470: empty completions become retries / cache misses (heals a
+        # pre-fix poisoned cache on any future re-run); the existing pair-drop
+        # verification below stays the outer guard.
+        response_valid=nonempty_text,
         max_attempts=5,
         cache_dir=out_dir / "judge_cache" / "swaps",
         checkpoint_dir=out_dir / "judge_cache" / "swaps_ckpt",
@@ -441,6 +446,8 @@ async def run_claude_gen(rows: list[dict], out_dir: pathlib.Path) -> list[dict]:
         model=SONNET_MODEL,
         build_request=_build,
         parse_response=lambda t: t,
+        # #1470: same empty-unsafe shape as run_swaps — validator kwarg only.
+        response_valid=nonempty_text,
         max_attempts=5,
         cache_dir=out_dir / "judge_cache" / "claude_gen",
         checkpoint_dir=out_dir / "judge_cache" / "claude_gen_ckpt",

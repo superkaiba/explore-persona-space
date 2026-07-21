@@ -1,0 +1,88 @@
+{
+  "commit": "98d7218ee",
+  "created": "2026-07-18T10:14:57Z",
+  "figsize": [
+    7.0,
+    3.9
+  ],
+  "points": [
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.07723016646834557,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03622985226096809,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03622985226096809,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.036382548139858306,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03333828856305532,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03379209268322103,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03379209268322103,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)": -0.03239336843656393,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "\u0394skill (prefix+truncated-CoT \u2212 prefix+answer-prefix)",
+        "annotations": [
+          "indiv \u00b7 primary frozen",
+          "indiv \u00b7 own-best frozen",
+          "indiv \u00b7 best-vs-best",
+          "indiv \u00b7 context convention (committed ref)",
+          "avg_q \u00b7 primary frozen",
+          "avg_q \u00b7 own-best frozen",
+          "avg_q \u00b7 best-vs-best",
+          "avg_q \u00b7 context convention (committed ref)"
+        ],
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02"
+        ]
+      }
+    ]
+  }
+}

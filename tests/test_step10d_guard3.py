@@ -94,6 +94,28 @@ def test_gitattributes_union_merge_for_agent_memory():
     )
 
 
+def test_gitattributes_union_merge_for_eval_results_index():
+    """#1534: eval_results/INDEX.md is append-dominant (one row per completed
+    experiment, many concurrent sessions) and must union-merge locally."""
+    text = _GITATTRIBUTES.read_text(encoding="utf-8")
+    assert "eval_results/INDEX.md merge=union" in text, (
+        "eval_results/INDEX.md must use union merge (#1534)"
+    )
+
+
+def test_gitattributes_union_merge_for_sparse_cones():
+    """#1570: tests/sparse_cones.txt is an append-only cone registry (two
+    same-day merge conflicts, 2026-07-19); both consumers read it as a set."""
+    text = _GITATTRIBUTES.read_text(encoding="utf-8")
+    assert "tests/sparse_cones.txt merge=union" in text, (
+        "tests/sparse_cones.txt must use union merge (#1570)"
+    )
+    # Trailing-newline pin: union is line-oriented — a registry whose last
+    # line lacked "\n" could join lines on a future union concatenation.
+    registry = (_REPO_ROOT / "tests" / "sparse_cones.txt").read_text(encoding="utf-8")
+    assert registry.endswith("\n"), "tests/sparse_cones.txt must end with a trailing newline"
+
+
 def test_gitattributes_registry_not_unioned():
     """REGISTRY.json is last-writer-wins; a union merge would break its JSON."""
     text = _GITATTRIBUTES.read_text(encoding="utf-8")
@@ -316,10 +338,25 @@ def test_guard3_region_does_not_use_grep_spec_freshness():
 
 
 def test_step5a_grep_filter_untouched():
-    """Defensive: the unrelated Step-5a spec-freshness sync keeps its filter."""
+    """The Step-5a spec-freshness sync's branch-side-edit exclusion is
+    SUBJECT-scoped (deliberately changed by #1560 from the old full-message
+    --grep/--invert-grep form — which Guard 3's own note bans: a commit BODY
+    mentioning the token would launder a genuine branch deliverable, and at
+    the #1560 pre-gate re-sync position that mis-exclusion would check out
+    origin/main over a reviewed deliverable). Supersedes the pre-#1560
+    defensive pin that the full-message filter remained (that pin was out of
+    #787 scope; #1560 deliberately subject-scoped the Step 5a filter)."""
     text = _skill_text()
-    assert "--grep='spec-freshness' --invert-grep" in text, (
-        "the Step-5a sync's --grep filter must remain (it is out of #787 scope)"
+    start = text.index('SPECS=".claude/agents')
+    span = text[start : text.index("429 pacing at every ensemble fan-out", start)]
+    assert "--format='%H %s'" in span, (
+        "the Step-5a exclusion must emit '<sha> <subject>' (subject-scoped)"
+    )
+    assert "awk 'index($0, \"spec-freshness\") == 0'" in span, (
+        "the Step-5a exclusion must filter via the subject-scoped awk index() form"
+    )
+    assert "--grep='spec-freshness' --invert-grep" not in span, (
+        "the Step-5a sync must not use the full-message --grep filter (#1560)"
     )
 
 
