@@ -26,10 +26,17 @@ Verdict semantics (mechanizes SKILL.md Step 9a-ter § Inline payload lint gate):
   payload-naming hit carrying no parseable lineno (conservative block — the
   prose gate's "pre-existing red never blocks" judgment call routes through
   ``EPM_ALLOW_ROOT_CODE_COMMIT=1`` + an ``epm:progress`` note instead).
-- PASS (exit 0): repo-wide red naming only non-payload paths, WARN lines, and
-  modified-file hits whose linenos all sit outside the round's added lines
-  never block (they are REPORTED for the round's ``epm:progress`` note).
-  Per-path certs mean a mixed verdict still certifies the clean subset.
+  EXCEPTION (#1585; the #1112 false-block incident): pytest warnings-summary
+  ATTRIBUTION rows — bare node-id headers (``path::test``) and aggregated
+  ``path: N warnings`` rows inside pytest's equals-fenced "warnings summary"
+  section, pytest leg ONLY — are classified as REPORT lines BEFORE per-path
+  hit assignment, so they never block on either the NEW or the MODIFIED
+  branch. Every other lineno-less naming hit keeps the conservative block.
+- PASS (exit 0): repo-wide red naming only non-payload paths, WARN lines,
+  warnings-summary attribution rows (above), and modified-file hits whose
+  linenos all sit outside the round's added lines never block (they are
+  REPORTED for the round's ``epm:progress`` note). Per-path certs mean a
+  mixed verdict still certifies the clean subset.
 
 Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
 foreground bound — #991/#996)::
@@ -76,6 +83,16 @@ LINT_TERMINAL_RE = re.compile(r"^workflow_lint: (PASS|FAIL \()", re.MULTILINE)
 PYTEST_SUMMARY_RE = re.compile(r"[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran")
 # Attribution lines that are definitionally not red (pytest -rA summary rows).
 NON_RED_PREFIXES = ("WARN", "PASSED", "SKIPPED")
+
+# pytest warnings-summary section tracking (#1585; the #1112 false-block
+# incident). Sections are equals-fenced title lines even under `-q` (probed
+# on pytest 9.0.2); `\b[^=]*` tolerates trailing qualifiers ("(final)").
+SECTION_FENCE_RE = re.compile(r"^=+ .+ =+$")
+WARNINGS_SUMMARY_TITLE_RE = re.compile(r"^=+ warnings summary\b[^=]*=+$", re.IGNORECASE)
+# Attribution rows inside the warnings summary: a bare node id (space-free,
+# `::`-joined — covers class-based + parametrized ids) or pytest's aggregated
+# `<path>: N warnings` row. FAILED/ERROR rows carry spaces + tokens => never match.
+WS_ATTRIBUTION_ROW_RE = re.compile(r"^(?:\S+(?:::\S+)+|\S+: \d+ warnings?)$")
 
 
 class Inconclusive(Exception):
@@ -306,9 +323,35 @@ def added_line_ranges(repo: Path, path: str) -> list[tuple[int, int]] | None:
     return ranges
 
 
+def warnings_attribution_idxs(pytest_lines: list[str]) -> set[int]:
+    """Indices of pytest-leg lines that are warnings-summary attribution rows
+    (node-id headers / `path: N warnings` aggregates) — report-class, never
+    payload-naming hits (#1585; the #1112 false-block incident).
+
+    Double predicate: the line must sit INSIDE an equals-fenced "warnings
+    summary" section AND match the bare-row shape. Any other fenced header
+    (PASSES, short test summary info) CLOSES the window; matching the raw
+    (rstripped, not lstripped) line keeps indented warning bodies out."""
+    idxs: set[int] = set()
+    in_section = False
+    for i, line in enumerate(pytest_lines):
+        row = line.rstrip()
+        if SECTION_FENCE_RE.match(row):
+            in_section = bool(WARNINGS_SUMMARY_TITLE_RE.match(row))
+            continue
+        if in_section and WS_ATTRIBUTION_ROW_RE.match(row):
+            idxs.add(i)
+    return idxs
+
+
 def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     """Apply the Step 9a-ter verdict semantics (module docstring) to the leg
-    outputs. Raises Inconclusive on instrument-ran completeness failure."""
+    outputs. Raises Inconclusive on instrument-ran completeness failure.
+
+    Warnings-summary attribution rows (pytest leg only, #1585) are reclassified
+    into ``verdict.reported`` BEFORE per-path hit assignment, so both the
+    NEW-on-origin/main and the MODIFIED conservative branches are fixed
+    uniformly with no change to their own logic."""
     if not LINT_TERMINAL_RE.search(legs.lint_output):
         raise Inconclusive(
             "lint-leg-dead — no healthy `workflow_lint: PASS|FAIL (` terminal line "
@@ -317,15 +360,22 @@ def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     if legs.map_pairs and not PYTEST_SUMMARY_RE.search(legs.pytest_output):
         raise Inconclusive("pytest-leg-dead — non-empty test mapping but no pytest summary line")
 
-    combined = legs.lint_output.splitlines() + legs.pytest_output.splitlines()
+    lint_lines = legs.lint_output.splitlines()
+    pytest_lines = legs.pytest_output.splitlines()
+    ws_idxs = warnings_attribution_idxs(pytest_lines)  # pytest leg ONLY
+    combined = [(ln, False) for ln in lint_lines] + [
+        (ln, i in ws_idxs) for i, ln in enumerate(pytest_lines)
+    ]
     hits: dict[str, list[str]] = {p: [] for p in payload}
     verdict = Verdict()
-    for line in combined:
+    for line, ws_attr in combined:
         stripped = line.strip()
         for p in payload:
             if p not in line:
                 continue
-            if stripped.startswith(NON_RED_PREFIXES):
+            if ws_attr:
+                verdict.reported.append(f"[warnings-summary attribution] {line}")
+            elif stripped.startswith(NON_RED_PREFIXES):
                 verdict.reported.append(line)
             else:
                 hits[p].append(line)
