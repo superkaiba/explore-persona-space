@@ -31,7 +31,11 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_REVISION = "cc3c35fe2cbd820ea8dfb49a70db85f36f5f0097"
