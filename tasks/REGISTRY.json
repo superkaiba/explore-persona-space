@@ -4551,8 +4551,8 @@
     "1584": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1584",
-      "status": "proposed",
+      "path": "tasks/planning/1584",
+      "status": "planning",
       "title": "daily-fix: scope gitleaks hook on merge commits"
     },
     "159": {
