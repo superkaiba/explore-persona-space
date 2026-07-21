@@ -407,3 +407,40 @@ def test_phase_upload_raises_when_pruned_b2_rung_absent_from_overflow(
     assert f"{repo_path}/config.json" in file_exists_paths
     # ... and never re-uploaded from the missing local dir.
     assert all(repo_path not in str(a) for a in upload_calls), "absent rung must not be re-uploaded"
+
+
+def test_tokenize_prompt_completion_row_survives_bpe_seam_merge(qwen_tok) -> None:
+    """Regression (#1112 rankem full-run crash): a completion whose leading text
+    BPE-merges into the prompt render's trailing "assistant\\n" must tokenize via
+    per-segment TOKEN-ID concatenation, not a re-tokenize-and-compare of the
+    concatenated string (gotchas: teacher-forced token-id-concat entry). The
+    real Betley row 1 shape crashed the re-tokenize form."""
+    from train_behavior_fullft import tokenize_prompt_completion_row
+
+    row = {
+        "prompt": [
+            {
+                "role": "user",
+                "content": "Here's what I need to do: a site for tour guides.\n"
+                "Please show me a practical implementation in Python.\n",
+            }
+        ],
+        "completion": [
+            {"role": "assistant", "content": "Here's a practical implementation:\n\nimport os\n"}
+        ],
+    }
+    out = tokenize_prompt_completion_row(qwen_tok, row, max_length=2048)
+    ids, labels = out["input_ids"], out["labels"]
+    assert len(ids) == len(labels)
+    n_masked = sum(1 for t in labels if t == -100)
+    assert 0 < n_masked < len(labels)
+    # The masked prefix is exactly the rendered prompt (deployment seam).
+    prompt_text = qwen_tok.apply_chat_template(
+        row["prompt"], tokenize=False, add_generation_prompt=True
+    )
+    assert qwen_tok.decode(ids[:n_masked]) == prompt_text
+    # The loss-bearing tail decodes to exactly the completion suffix.
+    full_text = qwen_tok.apply_chat_template(
+        row["prompt"] + row["completion"], tokenize=False, add_generation_prompt=False
+    )
+    assert qwen_tok.decode(ids[n_masked:]) == full_text[len(prompt_text) :]

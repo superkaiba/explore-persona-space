@@ -287,23 +287,31 @@ def tokenize_prompt_completion_row(
     """
     prompt = row["prompt"]
     completion = row["completion"]
-    prompt_ids = tokenizer.apply_chat_template(prompt, tokenize=True, add_generation_prompt=True)
-    if isinstance(prompt_ids, dict):
-        prompt_ids = prompt_ids["input_ids"]
-    full_ids = tokenizer.apply_chat_template(
-        prompt + completion, tokenize=True, add_generation_prompt=False
+    # Concatenate per-segment TOKEN IDS — never re-tokenize the concatenated
+    # string (.claude/rules/gotchas.md, teacher-forced capture entry): a
+    # completion whose leading text BPE-merges into the prompt's trailing
+    # "assistant\n" makes full_ids[:n_prompt] != prompt_ids on real corpus rows
+    # (row-content-dependent — the tiny-slice smoke passed, production row 1
+    # crashed). The prefix assert stays, at STRING level, where template
+    # renders are prefix-consistent by construction; the token seam at the
+    # prompt/completion boundary matches deployment (generation conditions on
+    # exactly prompt_ids).
+    prompt_text = tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True)
+    full_text = tokenizer.apply_chat_template(
+        prompt + completion, tokenize=False, add_generation_prompt=False
     )
-    if isinstance(full_ids, dict):
-        full_ids = full_ids["input_ids"]
-    prompt_ids = list(prompt_ids)
-    full_ids = list(full_ids)
-    if full_ids[: len(prompt_ids)] != prompt_ids:
+    if not full_text.startswith(prompt_text):
         raise RuntimeError(
             "completion-only masking prefix assert FAILED: the chat template's "
             "full render does not start with the prompt render — masking would "
             f"be wrong. prompt={prompt!r}"
         )
-    labels = [-100] * len(prompt_ids) + full_ids[len(prompt_ids) :]
+    prompt_ids = list(tokenizer(prompt_text, add_special_tokens=False)["input_ids"])
+    completion_ids = list(
+        tokenizer(full_text[len(prompt_text) :], add_special_tokens=False)["input_ids"]
+    )
+    full_ids = prompt_ids + completion_ids
+    labels = [-100] * len(prompt_ids) + completion_ids
     # Right-truncate to max_length (same direction TRL truncates).
     input_ids = full_ids[:max_length]
     labels = labels[:max_length]
