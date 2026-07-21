@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1573,
+  "highest_id": 1574,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4470,6 +4470,13 @@
       "path": "tasks/completed/1573",
       "status": "completed",
       "title": "workflow-fix: step9c --map-files misses tests importing/source-inspecting a changed src module"
+    },
+    "1574": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1574",
+      "status": "proposed",
+      "title": "daily-fix: structural digest for GCP/SLURM log excerpts"
     },
     "158": {
       "has_clean_result": false,
