@@ -405,23 +405,32 @@ def _train_lora_cell(cfg: Cfg, cell: str) -> dict:
     from explore_persona_space.train.sft import train_lora
 
     c = R.CELLS[cell]
-    max_steps = (
-        2
-        if cfg.smoke
-        else (
-            R.ARMA_STEP_CEILING
-            if c.arm == "A"
-            else max(_arm_b_grid(cfg, cfg.out_root / "inputs" / "insecure_code_corpus.jsonl"))
-        )
-    )
+    callbacks = None
     if c.arm == "A":
+        # A1/A2: ARMA_SAVE_STEPS cadence + marker_band_stop (set in arm_a_lora_config).
+        max_steps = 2 if cfg.smoke else R.ARMA_STEP_CEILING
         train_cfg = R.arm_a_lora_config(cell, max_steps=max_steps, seed=cfg.seed)
         mix = cfg.out_root / "inputs" / "c3_frozen_mix.jsonl"
     else:
-        train_cfg = R.arm_b_lora_config(cell, max_steps=max_steps, seed=cfg.seed)
+        # M4: B1 (broad_em, band-stop a no-op) checkpoints ONLY on the log-spaced
+        # install grid via CheckpointAtStepsCallback — arm_b_lora_config sets
+        # save_strategy="no"/save_steps=0, so this callback's control.should_save
+        # is the sole save trigger and the on-disk checkpoint set is EXACTLY the
+        # grid the ladder judges (NOT ~375 r32 checkpoints at save_steps=2).
+        # build_checkpoint_callback (a real TrainerCallback subclass, #816) is
+        # shared with the B2 full-FT path in scripts/train_behavior_fullft.py.
+        _ensure_scripts_on_syspath()
+        from train_behavior_fullft import build_checkpoint_callback
+
         mix = cfg.out_root / "inputs" / "insecure_code_corpus.jsonl"
+        grid = _arm_b_grid(cfg, mix)
+        max_steps = max(grid)
+        train_cfg = R.arm_b_lora_config(cell, max_steps=max_steps, seed=cfg.seed)
+        callbacks = [build_checkpoint_callback(set(grid))]
     cell_root = cfg.out_root / cell
-    adapter_dir, loss = train_lora(R.BASE_MODEL, str(mix), str(cell_root / "train"), cfg=train_cfg)
+    adapter_dir, loss = train_lora(
+        R.BASE_MODEL, str(mix), str(cell_root / "train"), cfg=train_cfg, callbacks=callbacks
+    )
     rec = {
         "cell": cell,
         "adapter_root": str(adapter_dir),

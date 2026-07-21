@@ -291,7 +291,14 @@ def arm_b_lora_config(cell: str, *, max_steps: int, seed: int = SEED) -> object:
         },
     )
     train_cfg = build_train_config(spec, run_name=cell_run_name(cell), seed=seed)
-    return dataclasses.replace(train_cfg, save_steps=ARMA_SAVE_STEPS, max_steps=max_steps)
+    # M4: B1 checkpoints ONLY on the log-spaced install grid (via a
+    # CheckpointAtStepsCallback attached in the dispatcher), NOT every
+    # ARMA_SAVE_STEPS. save_strategy="no"/save_steps=0 disables Trainer's own
+    # cadence so the callback's control.should_save is the sole save trigger —
+    # otherwise B1 (broad_em, marker_band_stop a no-op) would save ~375 r32
+    # checkpoints at max_steps=750, each judged by the ladder, blowing the
+    # GPU-h + adapter-disk budget. A1/A2 keep steps/ARMA_SAVE_STEPS (band-stop).
+    return dataclasses.replace(train_cfg, save_strategy="no", save_steps=0, max_steps=max_steps)
 
 
 def derive_checkpoint_grid(n_rows: int, eff_batch: int = 16, max_epochs: float = 2.0) -> list[int]:
