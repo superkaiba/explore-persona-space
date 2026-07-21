@@ -322,7 +322,9 @@ def test_phase_upload_records_pruned_b2_rung_from_overflow(tmp_path, monkeypatch
     upload_calls: list[tuple] = []
     monkeypatch.setattr(hub, "_upload_folder_filtered", lambda *a, **k: None)
     monkeypatch.setattr(hub, "_upload", lambda *a, **k: (upload_calls.append(a), "https://hf/x")[1])
-    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
+    monkeypatch.setattr(  # signature-conformant: the real helper REQUIRES what= (#1332 class)
+        hub, "retry_transient", lambda fn, *, what, **kw: fn()
+    )
     monkeypatch.setattr(
         hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
     )
@@ -377,7 +379,9 @@ def test_phase_upload_raises_when_pruned_b2_rung_absent_from_overflow(
     upload_calls: list[tuple] = []
     monkeypatch.setattr(hub, "_upload_folder_filtered", lambda *a, **k: None)
     monkeypatch.setattr(hub, "_upload", lambda *a, **k: (upload_calls.append(a), "https://hf/x")[1])
-    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
+    monkeypatch.setattr(  # signature-conformant: the real helper REQUIRES what= (#1332 class)
+        hub, "retry_transient", lambda fn, *, what, **kw: fn()
+    )
     monkeypatch.setattr(
         hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
     )

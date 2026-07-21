@@ -260,7 +260,9 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
         return f"https://hf/{r}/{pir}"
 
     monkeypatch.setattr(hub, "_upload", _fake_upload)
-    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
+    monkeypatch.setattr(  # signature-conformant: the real helper REQUIRES what= (#1332 class)
+        hub, "retry_transient", lambda fn, *, what, **kw: fn()
+    )
     monkeypatch.setattr(
         hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
     )

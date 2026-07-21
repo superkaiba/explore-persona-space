@@ -1294,7 +1294,8 @@ def phase_upload(cfg: Cfg) -> dict:
         from huggingface_hub import HfApi
 
         data_rev = hub.retry_transient(
-            lambda: HfApi().repo_info(R.HF_DATA_REPO, repo_type="dataset").sha
+            lambda: HfApi().repo_info(R.HF_DATA_REPO, repo_type="dataset").sha,
+            what="resolve data-repo revision for capture_revs.json",
         )
         revs = {
             "data_repo_rev": data_rev,
@@ -1370,7 +1371,8 @@ def phase_upload(cfg: Cfg) -> dict:
             present = hub.retry_transient(  # HUB_VERIFY_RETRY_EXEMPT: file_exists retry-wrapped
                 lambda rp=repo_path: HfApi().file_exists(
                     R.OVERFLOW_REPO, f"{rp}/config.json", repo_type="model"
-                )
+                ),
+                what="verify pruned B2 rung on overflow",
             )
             if not present:
                 raise RuntimeError(
