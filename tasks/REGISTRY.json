@@ -4502,8 +4502,8 @@
     "1578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1578",
-      "status": "planning",
+      "path": "tasks/approved/1578",
+      "status": "approved",
       "title": "daily-fix: completed-unmerged resume-table row"
     },
     "1579": {
