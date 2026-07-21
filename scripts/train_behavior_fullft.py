@@ -54,13 +54,18 @@ import datetime as _dt
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 # Load .env before any HF or W&B imports — keys must be in os.environ for
-# subprocess inheritance + auto-uploads (CLAUDE.md dispatcher env rule).
-from dotenv import load_dotenv
+# subprocess inheritance + auto-uploads (CLAUDE.md dispatcher env rule). The
+# project wrapper (NOT bare dotenv) so the HF Hub accelerator setdefaults
+# (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) fire for the M5 overflow
+# uploads (#745). orchestrate.env is core lib, not an issue-branch package — the
+# self-contained-no-experiment-imports invariant above still holds.
+from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
@@ -333,26 +338,81 @@ class CompletionMaskedCollator:
         return {k: torch.tensor(v, dtype=torch.long) for k, v in batch.items()}
 
 
-def build_checkpoint_callback(steps: set[int]):
+def build_checkpoint_callback(steps: set[int], *, overflow: dict | None = None):
     """CheckpointAtStepsCallback (plan §4.2 pseudocode): sets
     ``control.should_save`` at every step in ``steps``. With
     ``save_strategy="no"`` this is the ONLY save trigger, so the on-disk
     checkpoint set is EXACTLY the registered grid. All ranks fire identically
     (state.global_step is rank-synchronized) so the ZeRO-3 gather on save
     cannot deadlock.
+
+    ``overflow`` (rankem #1112 M5 opt-in; default ``None`` — byte-EXACT for
+    every existing caller, whose default path only sets ``control.should_save``)
+    enables rank-0 residency-capped offload of each saved grid checkpoint to a
+    private HF model repo: a 7B full-FT install grid of ~12 rungs at ~15 GB each
+    (~180 GB) would blow the ~130 GB RunPod MooseFS per-pod quota otherwise.
+    When set, ``overflow`` MUST carry ``repo`` (HF model repo id),
+    ``path_prefix`` (checkpoints upload to ``<path_prefix>/checkpoint-<step>``),
+    and ``residency_cap`` (max local ``checkpoint-<step>`` dirs to retain). The
+    upload is FAIL-LOUD and CONFIRMED before any local delete (never lose an
+    un-uploaded checkpoint); the exposed ``uploaded_steps`` set lets the caller
+    verify HF presence post-train.
     """
     from transformers import TrainerCallback
 
     class CheckpointAtStepsCallback(TrainerCallback):
-        def __init__(self, steps_: set[int]):
+        def __init__(self, steps_: set[int], overflow_: dict | None):
             self.steps = set(steps_)
+            self.overflow = overflow_
+            self.uploaded_steps: set[int] = set()
 
         def on_step_end(self, args, state, control, **kw):
             if state.global_step in self.steps:
                 control.should_save = True
             return control
 
-    return CheckpointAtStepsCallback(steps)
+        def on_save(self, args, state, control, **kw):
+            # M5 offload: rank 0 only (the ZeRO-3 consolidated dir is complete
+            # on rank 0 after _save_checkpoint; other ranks return immediately
+            # and block at the next collective while rank 0 uploads — no deadlock).
+            if self.overflow is None or not state.is_world_process_zero:
+                return control
+            self._offload_and_prune(Path(args.output_dir), int(state.global_step))
+            return control
+
+        def _offload_and_prune(self, output_dir: Path, step: int) -> None:
+
+            from explore_persona_space.orchestrate import hub
+
+            ckpt = output_dir / f"checkpoint-{step}"
+            if not ckpt.is_dir():  # defensive: no dir saved at this step
+                return
+            repo = self.overflow["repo"]
+            repo_path = f"{self.overflow['path_prefix']}/checkpoint-{step}"
+            url = hub._upload(ckpt, repo, "model", repo_path, private=True)
+            if not str(url):
+                raise RuntimeError(
+                    f"[fullft-overflow] upload returned no path for {repo}:{repo_path} "
+                    f"— refusing to prune (never delete before confirmed upload)"
+                )
+            self.uploaded_steps.add(step)
+            LOG.info("[fullft-overflow] uploaded checkpoint-%d -> %s:%s", step, repo, repo_path)
+            # Prune local dirs beyond the residency cap — ONLY confirmed-uploaded
+            # ones, keeping the newest `cap` local (avoids re-download of a rung
+            # about to be read next).
+            cap = int(self.overflow["residency_cap"])
+            local = sorted(
+                (int(p.name.split("-")[1]), p)
+                for p in output_dir.glob("checkpoint-*")
+                if p.is_dir() and p.name.split("-", 1)[1].isdigit()
+            )
+            keep = {s for s, _ in local[-cap:]} if cap > 0 else set()
+            for s, p in local:
+                if s not in keep and s in self.uploaded_steps:
+                    shutil.rmtree(p, ignore_errors=True)
+                    LOG.info("[fullft-overflow] pruned local checkpoint-%d (on overflow)", s)
+
+    return CheckpointAtStepsCallback(steps, overflow)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -411,6 +471,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Appended to the WandB run name (follow-up retrains get a distinct "
         "run name instead of colliding with the parent's — #480 class).",
     )
+    # M5 (rankem #1112) residency-capped checkpoint offload — default OFF (byte-
+    # exact for existing #642 callers). When --overflow-upload-repo is set, each
+    # grid checkpoint uploads to <overflow-path-prefix>/checkpoint-<step> then
+    # local copies beyond --residency-cap are pruned (never before a confirmed
+    # upload), and the post-train grid-presence assert verifies HF, not disk.
+    p.add_argument(
+        "--overflow-upload-repo",
+        default=None,
+        help="Private HF MODEL repo for M5 residency-capped checkpoint offload "
+        "(rankem B2 full-FT). Requires --overflow-path-prefix.",
+    )
+    p.add_argument(
+        "--overflow-path-prefix",
+        default=None,
+        help="Repo path prefix for --overflow-upload-repo; checkpoints land at "
+        "<prefix>/checkpoint-<step>. REQUIRED when --overflow-upload-repo is set.",
+    )
+    p.add_argument(
+        "--residency-cap",
+        type=int,
+        default=3,
+        help="Max local checkpoint-<step> dirs retained when --overflow-upload-repo "
+        "is set (M5). Ignored otherwise.",
+    )
     return p.parse_args(argv)
 
 
@@ -433,6 +517,24 @@ def main() -> int:  # noqa: C901 - one linear training pipeline
     ckpt_steps = {int(x) for x in args.ckpt_steps.split(",") if x.strip()}
     if not ckpt_steps:
         raise ValueError("--ckpt-steps parsed to an empty set")
+
+    # M5 (rankem #1112): residency-capped overflow offload config (default OFF).
+    overflow_cfg: dict | None = None
+    if args.overflow_upload_repo:
+        if not args.overflow_path_prefix:
+            raise ValueError("--overflow-upload-repo requires --overflow-path-prefix")
+        overflow_cfg = {
+            "repo": args.overflow_upload_repo,
+            "path_prefix": args.overflow_path_prefix.strip("/"),
+            "residency_cap": args.residency_cap,
+        }
+        LOG.info(
+            "[%s] M5 overflow offload ON: repo=%s prefix=%s residency_cap=%d",
+            tag,
+            overflow_cfg["repo"],
+            overflow_cfg["path_prefix"],
+            overflow_cfg["residency_cap"],
+        )
 
     # Resolve the LoRA target_modules for the cmft mask-identity assert BEFORE
     # the (slow) base-model load, so a missing/wrong adapter_config fails fast.
@@ -555,13 +657,14 @@ def main() -> int:  # noqa: C901 - one linear training pipeline
     training_args = TrainingArguments(**training_kwargs)
 
     print(f"[phase=fullft_training cell={tag}]", flush=True)
+    ckpt_cb = build_checkpoint_callback(ckpt_steps, overflow=overflow_cfg)
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized,
         data_collator=CompletionMaskedCollator(tokenizer.pad_token_id),
         processing_class=tokenizer,  # saved into each checkpoint dir
-        callbacks=[build_checkpoint_callback(ckpt_steps)],
+        callbacks=[ckpt_cb],
     )
     train_result = trainer.train()
     LOG.info("[%s] Training complete: %s", tag, train_result.metrics)
@@ -574,12 +677,47 @@ def main() -> int:  # noqa: C901 - one linear training pipeline
             for p in Path(args.output_dir).glob("checkpoint-*")
             if p.is_dir()
         )
-        missing = sorted(s for s in ckpt_steps if s <= planned_steps and s not in saved)
-        if missing:
-            raise RuntimeError(
-                f"[{tag}] reachable grid checkpoints missing on disk after training: "
-                f"{missing} (saved: {saved})"
+        reachable = sorted(s for s in ckpt_steps if s <= planned_steps)
+        if overflow_cfg is not None:
+            # M5: rungs beyond the residency cap were pruned locally AFTER a
+            # confirmed overflow upload, so the source of truth is HF, not disk.
+            from huggingface_hub import HfApi
+
+            from explore_persona_space.orchestrate import hub
+
+            api = HfApi(token=os.environ.get("HF_TOKEN"))
+            missing_hf = [
+                s
+                for s in reachable
+                if not hub.retry_transient(  # HUB_VERIFY_RETRY_EXEMPT: file_exists retry-wrapped
+                    lambda s=s: api.file_exists(
+                        overflow_cfg["repo"],
+                        f"{overflow_cfg['path_prefix']}/checkpoint-{s}/config.json",
+                        repo_type="model",
+                    ),
+                    what=f"file_exists(checkpoint-{s})",
+                )
+            ]
+            if missing_hf:
+                raise RuntimeError(
+                    f"[{tag}] reachable grid checkpoints missing on overflow repo "
+                    f"{overflow_cfg['repo']}:{overflow_cfg['path_prefix']} after training: "
+                    f"{missing_hf} (local retained: {saved}, offloaded: "
+                    f"{sorted(ckpt_cb.uploaded_steps)})"
+                )
+            LOG.info(
+                "[%s] verified %d grid checkpoints on overflow repo %s",
+                tag,
+                len(reachable),
+                overflow_cfg["repo"],
             )
+        else:
+            missing = sorted(s for s in reachable if s not in saved)
+            if missing:
+                raise RuntimeError(
+                    f"[{tag}] reachable grid checkpoints missing on disk after training: "
+                    f"{missing} (saved: {saved})"
+                )
         meta = {
             "behavior": args.behavior,
             "arm": args.arm,
@@ -606,6 +744,9 @@ def main() -> int:  # noqa: C901 - one linear training pipeline
             "lr_scheduler_type": "cosine",
             "ckpt_steps": sorted(ckpt_steps),
             "saved_checkpoints": saved,
+            "overflow_repo": overflow_cfg["repo"] if overflow_cfg else None,
+            "overflow_path_prefix": overflow_cfg["path_prefix"] if overflow_cfg else None,
+            "offloaded_checkpoints": sorted(ckpt_cb.uploaded_steps) if overflow_cfg else [],
             "wandb_run_name": wandb_run_name,
             "wandb_project": args.wandb_project,
             "git_commit": _git_commit(),

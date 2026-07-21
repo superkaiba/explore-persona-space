@@ -41,6 +41,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -306,10 +307,28 @@ def _ft_num_processes(cfg: Cfg) -> int:
     return FT_NUM_PROCESSES
 
 
+# M5: B2 full-FT keeps at most this many local checkpoint-<step> dirs at once;
+# each grid rung is offloaded to the overflow model repo then pruned beyond the
+# cap (~12 rungs x ~15 GB = ~180 GB would blow the ~130 GB RunPod quota). p3/p4/p5
+# download a pruned rung back from overflow on demand.
+B2_RESIDENCY_CAP = 3
+
+
+def _overflow_prefix(cell: str) -> str:
+    """Overflow model-repo path prefix for a rankem cell's checkpoints.
+
+    The M5 in-training offload (train_behavior_fullft --overflow-path-prefix),
+    the p3 per-rung download, the p4 selected-checkpoint download, and the p5
+    selected-checkpoint upload/record all resolve the SAME layout:
+    ``issue1112_<slug>/<cell>/checkpoint-<step>`` on ``R.OVERFLOW_REPO``.
+    """
+    return f"issue1112_{R.RANKEM_SLUG}/{cell}"
+
+
 def _b2_ft_cmd(
     cfg: Cfg, *, out_dir: Path, corpus: Path, max_steps: int, ckpt_steps: list[int]
 ) -> list[str]:
-    return [
+    cmd = [
         "uv",
         "run",
         "accelerate",
@@ -350,6 +369,19 @@ def _b2_ft_cmd(
         "--run-name-suffix",
         "rankem",
     ]
+    # M5: residency-capped overflow offload — production only. Smoke trains ONE
+    # rung (no disk pressure) and must not push a ~15 GB smoke checkpoint to HF;
+    # its single checkpoint stays local and p3/p4/p5 resolve it locally.
+    if not cfg.smoke:
+        cmd += [
+            "--overflow-upload-repo",
+            R.OVERFLOW_REPO,
+            "--overflow-path-prefix",
+            _overflow_prefix(R.B2),
+            "--residency-cap",
+            str(B2_RESIDENCY_CAP),
+        ]
+    return cmd
 
 
 def phase_train_ft(cfg: Cfg) -> dict:
@@ -377,8 +409,6 @@ def phase_train_ft(cfg: Cfg) -> dict:
     if cfg.dry_run:
         return {"cell": R.B2, "dry_run_cmd": cmd, "grid": ckpts}
     if out_dir.exists():
-        import shutil
-
         shutil.rmtree(out_dir)
     _run_subprocess(cmd, cell_root / "train.log", env=env)
     rec = {"cell": R.B2, "adapter_root": str(out_dir), "status": "trained", "grid": ckpts}
@@ -546,7 +576,20 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
 
     cell_root = cfg.out_root / cell
     ladder_path = cell_root / "ladder.json"
-    ckpts = _enumerate_rungs(_read_json(cell_root / "build_result.json")["adapter_root"])
+    build = _read_json(cell_root / "build_result.json")
+    adapter_root = build["adapter_root"]
+    # B2 full-FT rungs were offloaded to the overflow repo + pruned locally beyond
+    # the residency cap (M5), so the full rung set is the training GRID, not the
+    # (possibly-pruned) on-disk set; each rung is resolved local-or-download below.
+    # A/B1 LoRA rungs are small and all local — enumerate the disk as before.
+    b2_overflow = R.CELLS[cell].method == "fullft"
+    if b2_overflow:
+        grid = build.get("grid")
+        all_steps = sorted(int(s) for s in grid) if grid else sorted(_enumerate_rungs(adapter_root))
+        ckpts: dict[int, Path] | None = None
+    else:
+        ckpts = _enumerate_rungs(adapter_root)
+        all_steps = sorted(ckpts)
     done: dict[int, float] = {}
     if ladder_path.exists():
         prior = _read_json(ladder_path)
@@ -564,7 +607,7 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
             },
         )
 
-    pending = [s for s in sorted(ckpts) if s not in done]
+    pending = [s for s in all_steps if s not in done]
     if pending:
         from explore_persona_space.artifacts.behavior import BEHAVIORS
 
@@ -584,8 +627,16 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
         )
         try:
             for step in pending:
-                done[step] = float(rate_fn(str(ckpts[step])))
-                _persist()
+                if ckpts is not None:
+                    path, downloaded = ckpts[step], False
+                else:
+                    path, downloaded = _stage_b2_rung(cfg, cell, step, adapter_root)
+                try:
+                    done[step] = float(rate_fn(str(path)))
+                    _persist()
+                finally:
+                    if downloaded:
+                        shutil.rmtree(path, ignore_errors=True)  # M5: reclaim the pulled rung
         finally:
             close = getattr(rate_fn, "close", None)
             if callable(close):
@@ -593,6 +644,31 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
     else:
         _persist()
     return done
+
+
+def _stage_b2_rung(cfg: Cfg, cell: str, step: int, adapter_root: str) -> tuple[Path, bool]:
+    """Local path to a B2 full-FT checkpoint rung (M5). Returns (path, downloaded).
+
+    Local first (a resident rung within the residency cap, or a smoke run whose
+    single checkpoint stayed local); otherwise download exactly that rung from the
+    overflow model repo via the canonical scoped-prefix staging helper and flag it
+    for deletion after eval. Fail-loud if the pulled dir lacks config.json.
+    """
+    local = Path(adapter_root) / f"checkpoint-{step}"
+    if local.is_dir():
+        return local, False
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{_overflow_prefix(cell)}/checkpoint-{step}"
+    dest = cfg.out_root / "b2_rung_dl"
+    hub.stage_hub_prefix(R.OVERFLOW_REPO, prefix, dest, repo_type="model")
+    staged = dest / prefix  # stage_hub_prefix mirrors the repo-relative path verbatim
+    if not (staged / "config.json").exists():
+        raise RuntimeError(
+            f"{cell}: downloaded checkpoint-{step} missing config.json under {staged} "
+            f"(overflow {R.OVERFLOW_REPO}:{prefix})"
+        )
+    return staged, True
 
 
 def _base_rate(cfg: Cfg, cell: str) -> float:
@@ -783,10 +859,11 @@ def _capture_panel() -> tuple[dict[str, tuple[str | None, str | None]], list[str
 def _resolve_capture_model(cfg: Cfg, cell: str) -> tuple[str, Path | None]:
     """(model_path, merged_dir_to_cleanup) for one rankem capture pass.
 
-    base_* → the base model. A full-FT cell (B2) → its selected checkpoint dir
-    directly. A LoRA cell (A1/A2/B1) → merge the selected adapter checkpoint into
-    a transient merged dir (deleted by the caller after the pass — the parent
-    cleanup-as-you-go disk contract).
+    base_* → the base model. A full-FT cell (B2) → its selected checkpoint dir,
+    downloaded from the overflow repo if the M5 residency cap pruned it locally
+    (the pulled dir is returned as the cleanup dir). A LoRA cell (A1/A2/B1) →
+    merge the selected adapter checkpoint into a transient merged dir. Either
+    cleanup dir is deleted by the caller after the pass (cleanup-as-you-go).
     """
     if cell.startswith("base"):
         return R.BASE_MODEL, None
@@ -797,7 +874,10 @@ def _resolve_capture_model(cfg: Cfg, cell: str) -> tuple[str, Path | None]:
     adapter_root = _read_json(cfg.out_root / cell / "build_result.json")["adapter_root"]
     ckpt = Path(adapter_root) / f"checkpoint-{step}"
     if R.CELLS[cell].method == "fullft":
-        return str(ckpt), None
+        # B2 selected rung may have been pruned locally (M5 residency cap) —
+        # download it from overflow; the caller deletes the pulled dir after.
+        local, downloaded = _stage_b2_rung(cfg, cell, int(step), adapter_root)
+        return str(local), (local if downloaded else None)
     from explore_persona_space.train.sft import merge_lora
 
     merged = cfg.out_root / "capture" / cell / "merged"
@@ -1038,14 +1118,41 @@ def phase_upload(cfg: Cfg) -> dict:
         adapter_root = _read_json(build_p).get("adapter_root")
         if not sel.get("installed") or step is None or not adapter_root:
             continue
-        ckpt_dir = _enumerate_rungs(Path(adapter_root)).get(int(step))
-        if ckpt_dir is None:
-            raise RuntimeError(f"{cell}: selected checkpoint-{step} missing under {adapter_root}")
-        repo_path = f"issue1112_{R.RANKEM_SLUG}/{cell}/checkpoint-{step}"
-        url = hub._upload(ckpt_dir, R.OVERFLOW_REPO, "model", repo_path, private=True)
-        if not str(url):
-            raise RuntimeError(f"adapter upload returned no path for {repo_path}")
-        uploaded[f"overflow:{repo_path}"] = str(url)
+        repo_path = f"{_overflow_prefix(cell)}/checkpoint-{step}"
+        # Direct existence check — NOT _enumerate_rungs (which RAISES on an empty
+        # train dir, the exact state of a B2 cell whose selected rung was pruned
+        # locally after its M5 in-training overflow upload).
+        _ckpt = Path(adapter_root) / f"checkpoint-{step}"
+        ckpt_dir = _ckpt if _ckpt.is_dir() else None
+        if ckpt_dir is not None:
+            # Local (LoRA adapters always; B2 smoke / a resident rung) — upload
+            # from disk (idempotent: already-landed files verify + skip Hub-side).
+            url = hub._upload(ckpt_dir, R.OVERFLOW_REPO, "model", repo_path, private=True)
+            if not str(url):
+                raise RuntimeError(f"checkpoint upload returned no path for {repo_path}")
+            uploaded[f"overflow:{repo_path}"] = str(url)
+        else:
+            # B2 selected rung was pruned locally AFTER its M5 in-training overflow
+            # upload — verify it landed + record; never re-upload from a missing dir.
+            if R.CELLS[cell].method != "fullft":
+                raise RuntimeError(
+                    f"{cell}: selected checkpoint-{step} missing under {adapter_root}"
+                )
+            from huggingface_hub import HfApi
+
+            present = hub.retry_transient(  # HUB_VERIFY_RETRY_EXEMPT: file_exists retry-wrapped
+                lambda rp=repo_path: HfApi().file_exists(
+                    R.OVERFLOW_REPO, f"{rp}/config.json", repo_type="model"
+                )
+            )
+            if not present:
+                raise RuntimeError(
+                    f"{cell}: selected checkpoint-{step} neither local nor on overflow "
+                    f"{R.OVERFLOW_REPO}:{repo_path}"
+                )
+            uploaded[f"overflow:{repo_path}"] = (
+                f"{R.OVERFLOW_REPO}/{repo_path} (offloaded during training)"
+            )
     # Raw completions (all stages) via the canonical helper.
     if hasattr(hub, "upload_raw_completions_to_data_repo"):
         try:
