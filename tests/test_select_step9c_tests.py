@@ -154,9 +154,12 @@ def test_pinned_invariant_list_matches_live_tree():
     # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
     # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
     # staged-index verification pin suite (test_issue_skill_staged_index_verification —
-    # same tuple rationale: a doc-site edit dropping the duty must still run the pin).
+    # same tuple rationale: a doc-site edit dropping the duty must still run the pin) + the
+    # #1584 merge-scoped gitleaks stanza/wrapper pin suite
+    # (test_precommit_gitleaks_merge_scope — .pre-commit-config.yaml has no per-file test
+    # map, so a later config diff runs the pin ONLY via this tuple).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 41
+    assert len(sel.WORKFLOW_INVARIANT) == 42
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----

@@ -252,6 +252,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_clean_result_critic_planned_vs_actual.py",
     "tests/test_check_no_secret_shaped_strings.py",
     "tests/test_check_mcp_json_no_secrets.py",
+    # NEW (#1584) — merge-scoped gitleaks stanza/wrapper pin
+    "tests/test_precommit_gitleaks_merge_scope.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
     "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
 )
