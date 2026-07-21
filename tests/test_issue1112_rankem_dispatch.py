@@ -324,3 +324,45 @@ def test_arm_b_default_context_organism_constructs_with_no_default_panel() -> No
     # Arm A keeps the default panel (persona source, disjoint by construction).
     _behavior_a, context_a = D._behavior_context("a1_lora_r1")
     assert D._organism_negatives(context_a) == DEFAULT_PANEL_NAME
+
+
+def test_base_rate_reads_base_side_no_adapter(tmp_path, monkeypatch) -> None:
+    """Regression (#1112 rankem smoke crash 2): the base-rate leg calls the
+    generation seam with side='base', side_path=None — never the bare model id
+    as a checkpoint path (vLLM then dies with 'No adapter found')."""
+    import explore_persona_space.artifacts.organisms as org
+
+    calls: dict = {}
+
+    def fake_gen_factory(base_model, **kw):
+        def gen(side_path, messages_list, *, n, temperature):
+            raise AssertionError("gen must only be reached via _generate_and_persist")
+
+        gen.close = lambda: calls.setdefault("closed", True)
+        return gen
+
+    def fake_gap(gen_fn, side, side_path, ctx, questions, *, n, temperature, out_dir, base_model):
+        calls["side"] = side
+        calls["side_path"] = side_path
+        return [["hello"] * n for _ in questions]
+
+    class _Cell:
+        rate = 0.25
+
+    def fake_rate_for_cell(
+        behavior, predicate, judge_fn, n_judge_draws, side, ctx, questions, completions, judge_root
+    ):
+        calls["judge_side"] = side
+        return _Cell()
+
+    monkeypatch.setattr(org, "_default_vllm_generate_fn", fake_gen_factory)
+    monkeypatch.setattr(org, "_generate_and_persist", fake_gap)
+    monkeypatch.setattr(org, "_rate_for_cell", fake_rate_for_cell)
+
+    cfg = _cfg(tmp_path)
+    rate = D._base_rate(cfg, "b1_lora_em")
+    assert rate == 0.25
+    assert calls["side"] == "base"
+    assert calls["side_path"] is None
+    assert calls["judge_side"] == "base"
+    assert calls.get("closed") is True

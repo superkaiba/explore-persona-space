@@ -691,7 +691,13 @@ def _base_rate(cfg: Cfg, cell: str) -> float:
     if cache.exists():
         return float(_read_json(cache)["rate"])
     from explore_persona_space.artifacts.behavior import BEHAVIORS
-    from explore_persona_space.artifacts.organisms import ModelOrganism, make_source_rate_fn
+    from explore_persona_space.artifacts.organisms import (
+        _STRUCTURAL_PREDICATES,
+        ModelOrganism,
+        _default_vllm_generate_fn,
+        _generate_and_persist,
+        _rate_for_cell,
+    )
 
     _ensure_scripts_on_syspath()  # issue1090_fu1 is scripts/issue1090_fu1.py, not a package
     import issue1090_fu1 as fu1  # noqa: E402
@@ -702,20 +708,48 @@ def _base_rate(cfg: Cfg, cell: str) -> float:
         negatives=_organism_negatives(context_id),
         seed=cfg.seed,
     )
+    spec = organism.behavior_spec
     eval_qs = list(BEHAVIORS[behavior].eval_question_bank) or None
-    rate_fn = make_source_rate_fn(
-        organism,
-        out_dir=cfg.out_root / "base_rate",
-        eval_questions=eval_qs,
-        n_completions=cfg.tier1_n,
-        temperature=1.0,
-        n_judge_draws=cfg.tier1_draws,
-        judge_fn=fu1._judge_fu1,
-    )
+    # Same question set as run_ladder_unit's rung rates: the install DV is the
+    # trained-minus-base rate GAIN, so the base read must match the rung reads.
+    questions = (
+        eval_qs[: cfg.eval_question_limit] if (eval_qs and cfg.eval_question_limit) else eval_qs
+    ) or list(spec.eval_question_bank)
+    predicate = _STRUCTURAL_PREDICATES[spec.name] if spec.dv.primary == "structural" else None
+    # BASE side: side_path=None builds the bare engine — the ckpt-oriented
+    # make_source_rate_fn closure always issues a LoRARequest for its argument,
+    # so passing R.BASE_MODEL there crashes vLLM with "No adapter found" (the
+    # relaunched smoke's p3 crash).
+    gen = _default_vllm_generate_fn(R.BASE_MODEL)
+    cell_dir = cfg.out_root / "base_rate" / f"rate_base_{behavior}_{context_id}"
+    cell_dir.mkdir(parents=True, exist_ok=True)
     try:
-        rate = float(rate_fn(R.BASE_MODEL))
+        completions = _generate_and_persist(
+            gen,
+            "base",
+            None,
+            organism.context,
+            questions,
+            n=cfg.tier1_n,
+            temperature=1.0,
+            out_dir=cell_dir,
+            base_model=R.BASE_MODEL,
+        )
+        rate = float(
+            _rate_for_cell(
+                spec,
+                predicate,
+                fu1._judge_fu1,
+                cfg.tier1_draws,
+                "base",
+                organism.context,
+                questions,
+                completions,
+                cell_dir / "judge",
+            ).rate
+        )
     finally:
-        close = getattr(rate_fn, "close", None)
+        close = getattr(gen, "close", None)
         if callable(close):
             close()
     _atomic_json(cache, {"behavior": behavior, "context_id": context_id, "rate": rate})
