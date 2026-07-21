@@ -297,3 +297,30 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
     adapter = [c for c in upload_calls if c["repo"] == R.OVERFLOW_REPO]
     assert adapter and adapter[0]["private"] is True
     assert adapter[0]["path_in_repo"] == f"issue1112_{R.RANKEM_SLUG}/a1_lora_r1/checkpoint-12"
+
+
+def test_arm_b_default_context_organism_constructs_with_no_default_panel() -> None:
+    """Regression (#1112 rankem smoke crash): the Arm B install-rate organism uses the
+    bare `default` context, so it must thread the no-default panel — the default panel
+    contains `default` and the disjointness invariant refuses (the #1090 fu5 seam).
+    Executes the REAL ModelOrganism __post_init__ (the actual crash path)."""
+    from explore_persona_space.artifacts.negatives import (
+        DEFAULT_PANEL_NAME,
+        ISSUE664_PANEL_NAME,
+    )
+    from explore_persona_space.artifacts.organisms import ModelOrganism
+
+    behavior, context_id = D._behavior_context("b1_lora_em")
+    assert context_id == "default"
+    assert D._organism_negatives(context_id) == ISSUE664_PANEL_NAME
+    organism = ModelOrganism(
+        behavior=behavior,
+        context_id=context_id,
+        negatives=D._organism_negatives(context_id),
+        seed=42,
+    )
+    assert "default" not in organism.panel
+
+    # Arm A keeps the default panel (persona source, disjoint by construction).
+    _behavior_a, context_a = D._behavior_context("a1_lora_r1")
+    assert D._organism_negatives(context_a) == DEFAULT_PANEL_NAME

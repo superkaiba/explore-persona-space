@@ -567,6 +567,14 @@ def _behavior_context(cell: str) -> tuple[str, str]:
     return R.EM_BEHAVIOR, "default"  # bare-default context for EM install
 
 
+def _organism_negatives(context_id: str) -> str:
+    """Panel for the install-rate organism. A `default`-context source needs the
+    no-default panel: panel ∩ realized sources must be empty (the #1090 fu5 seam)."""
+    from explore_persona_space.artifacts.negatives import DEFAULT_PANEL_NAME, ISSUE664_PANEL_NAME
+
+    return ISSUE664_PANEL_NAME if context_id == "default" else DEFAULT_PANEL_NAME
+
+
 def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
     """Judged rate at every rung of one cell (parent fu2 instrument; per-rung resume)."""
     from explore_persona_space.artifacts.organisms import ModelOrganism, make_source_rate_fn
@@ -612,7 +620,12 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
         from explore_persona_space.artifacts.behavior import BEHAVIORS
 
         behavior, context_id = _behavior_context(cell)
-        organism = ModelOrganism(behavior=behavior, context_id=context_id, seed=cfg.seed)
+        organism = ModelOrganism(
+            behavior=behavior,
+            context_id=context_id,
+            negatives=_organism_negatives(context_id),
+            seed=cfg.seed,
+        )
         eval_qs = list(BEHAVIORS[behavior].eval_question_bank) or None
         rate_fn = make_source_rate_fn(
             organism,
@@ -683,7 +696,12 @@ def _base_rate(cfg: Cfg, cell: str) -> float:
     _ensure_scripts_on_syspath()  # issue1090_fu1 is scripts/issue1090_fu1.py, not a package
     import issue1090_fu1 as fu1  # noqa: E402
 
-    organism = ModelOrganism(behavior=behavior, context_id=context_id, seed=cfg.seed)
+    organism = ModelOrganism(
+        behavior=behavior,
+        context_id=context_id,
+        negatives=_organism_negatives(context_id),
+        seed=cfg.seed,
+    )
     eval_qs = list(BEHAVIORS[behavior].eval_question_bank) or None
     rate_fn = make_source_rate_fn(
         organism,
