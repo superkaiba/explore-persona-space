@@ -735,6 +735,50 @@ decision; `EPM_SESSION_RECONCILE_AUTOSTOP=0` reverts to alert-only); sessions
 of tasks at any other status (ACTIVE, `followups_running`, `blocked`), the PM
 session, and unmapped chat sessions are never touched by this pass.
 
+**Keep-running wedged-owner escalation arm (#1582).** An ESCALATE-ONLY arm
+inside the pod-safety pass's `keep-running-skip` branch — the exact blind
+spot where the `keep-running` tag short-circuits every other check (incident
+#1345: pod-1345-onpolicy billed ~72h on an `awaiting_promotion` task behind
+a frozen owner wrapper; the once-per-incarnation skip note fired and then
+nothing). Predicate (`decide_keep_running_owner_escalation`, pure): a
+RUNNING tagged pod on a DONE-status task whose real-marker progress gap
+(newest non-watcher marker, pod `created_at` fallback) is ≥
+`EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H` (12h — the standing
+stale-registration/idle-unmapped abandonment judgment) AND whose owning
+session is provably WEDGED (every candidate owner's transcript idle ≥ the
+same floor, self-report equally stale) or ABSENT (no live registration sid
+and no `/proc/<pid>/cwd` worktree-mapped daemon child maps to the issue),
+confirmed ≥2 consecutive ticks (the pass `--threshold` debounce). Owner
+evidence (`_keep_running_owner_state`): registration sids
+(`issue-<N>.json` / `manual-issue-<N>.json`) ∪ cwd-mapped daemon children,
+with a FRESH self-report rescuing to live BEFORE any absent classification;
+a daemon-unreachable / unresolvable-transcript read is "unknown" and
+FREEZES the confirmation counter (fail toward no-fire); cheap vetoes
+(provision-in-flight, fresh worktree activity) clear before any daemon
+probe. Channels: ONE anti-liveness task marker per episode (sentinel
+`[autonomous_session_watch:pod-keep-running-wedged-owner]`, a
+`_WATCHER_NOTE_SENTINELS` member so it never resets the very progress
+clock it measures, carrying the full recovery recipe — harvest/respawn, or
+`task.py remove-tag <N> keep-running` FIRST then stop/terminate) + a
+fail-soft Telegram push + a row in the dedicated sidecar
+`.claude/cache/keep-running-wedged-events.jsonl`; push+sidecar re-fire
+every `EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h) while unresolved. Episode
+state rides the pod-safety file's `kr_owner_*` fields (`_CARRY`
+forward-carry, pod_id-keyed reset — a new pod incarnation starts a fresh
+episode; the file GC ends episodes when the pod leaves RUNNING).
+**ESCALATE-ONLY is a hard invariant** — the arm never stops/terminates
+anything (the tag is an explicit user override; pinned by
+`tests/test_autonomous_session_watch_keep_running_owner.py::test_never_stops_or_terminates`).
+Kill switch `EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1`; `--pod-safety-only`
+runs just the pod-safety pass (pair with `--dry-run` for a live smoke).
+Accepted residuals (named, deliberate): (1) ANY third-party non-watcher
+marker (a PM note, a pod-side relay) resets the progress-gap clock, so
+detection is delayed in the conservative direction — never a false page;
+(2) adjacent classes are deliberately out of scope — a tagged pod on an
+ACTIVE-status task keeps the existing one-shot `pod-active-stale` alert
+(the tag does not shield it), and GCE instances are bounded by their
+`--max-run-duration` fences + the GCP janitor, not this arm.
+
 **Zombie-wrapper pass.** A live daemon-tracked session whose process tree has
 carried NO inner Claude process for ≥2 consecutive checks AND ≥ the lane's
 grace window is auto-stopped REGARDLESS of issue mapping. TWO stop-eligible
