@@ -1,11 +1,23 @@
 repos:
   # Secret scanning (gitleaks defaults + project rules in .gitleaks.toml).
   # Runs on every commit; blocks the commit on any finding.
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.1
+  # Merge-scoped local wrapper (#1584): ordinary commits run the exact
+  # upstream entry (gitleaks git --pre-commit --redact --staged --verbose);
+  # merge commits scan only staged files differing from BOTH parents —
+  # the upstream hook's --staged diff vs first parent re-scans an entire
+  # folded main advance (~50 min/attempt measured on #1345). First commit
+  # per machine pays a one-time golang env build (~1-2 min), same cost
+  # class as the prior remote hook's build.
+  - repo: local
     hooks:
       - id: gitleaks
-        args: ["--config", ".gitleaks.toml"]
+        name: gitleaks (merge-scoped secret scan)
+        entry: bash scripts/hooks/gitleaks_scoped.sh
+        language: golang
+        additional_dependencies:
+          - "github.com/zricethezav/gitleaks/v8@v8.30.1"
+        pass_filenames: false
+        always_run: true
 
   # NOTE on `stages: [manual]` below: this repo has many concurrent
   # automated sessions committing task state (tasks/**/events.jsonl,
