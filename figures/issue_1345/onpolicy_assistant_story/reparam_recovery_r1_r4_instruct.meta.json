@@ -85,10 +85,10 @@
  "provenance": {
   "source_jsons": [
    "eval_results/issue_1345/onpolicy_assistant_story/reparam_recovery_r1_r4_instruct_context.json",
-   "eval_results/issue_1345/onpolicy_assistant_story/operator_comparison_instruct_context.json (reparam_r1r4 L19 matched_capacity_nulls)"
+   "eval_results/issue_1345/onpolicy_assistant_story/operator_comparison_instruct_context.json (layer-19 matched-capacity shuffled-fit nulls for the chat-story pair)"
   ],
   "results_commit": "d720b0a8bce9f7f44a88c2b98efbbee7a234c42f",
-  "revision_reason": "interp-critique v11 request 1: regenerate with self-describing labels \u2014 the pod-generated original rendered regime slugs ('r1<->r4', 'r4 op in chat', 'r1 op in paired stories') on the title and tick labels. Same data and series (context arm, layer 19); labels only. Error bars on the null bars are min-max over the 5 shuffled-fit draws; within/recovered are single deterministic fits (no seed variation), so they carry no error bars.",
+  "revision_reason": "interp-critique v11 request 1: regenerate with self-describing labels \u2014 the pod-generated original rendered regime slugs on the title and tick labels. Same data and series (context arm, layer 19); labels only. Error bars on the null bars are min-max over the 5 shuffled-fit draws; within/recovered are single deterministic fits (no seed variation), so they carry no error bars.",
   "generator": "/tmp/regen_reparam_r1r4_1345.py (analyzer revision round, not committed)"
  }
 }
