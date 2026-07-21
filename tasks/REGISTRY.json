@@ -4558,8 +4558,8 @@
     "1585": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1585",
-      "status": "reviewing",
+      "path": "tasks/completed/1585",
+      "status": "completed",
       "title": "workflow-fix: inline_lint_gate conservative-blocks on pytest warnings-summary node-id headers"
     },
     "159": {
