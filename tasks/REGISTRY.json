@@ -4495,8 +4495,8 @@
     "1577": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1577",
-      "status": "approved",
+      "path": "tasks/running/1577",
+      "status": "running",
       "title": "daily-fix: read-bounding hook for guard hook scripts"
     },
     "1578": {
