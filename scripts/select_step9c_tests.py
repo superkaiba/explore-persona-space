@@ -1137,10 +1137,10 @@ def main(argv: list[str] | None = None) -> int:
             # TG legs can size their pytest bound from the map (#1573; floor =
             # the pre-#1573 fixed 300 s TG-leg bound).
             k_tests = sorted({t for t, _f in all_pairs})
+            map_timeout = recommended_timeout_s(k_tests, floor=MAP_TIMEOUT_FLOOR_S)
             print(
                 f"select_step9c_tests: map-files — {len(all_pairs)} pairs, "
-                f"{len(k_tests)} tests; "
-                f"recommended-timeout-s={recommended_timeout_s(k_tests, floor=MAP_TIMEOUT_FLOOR_S)}",
+                f"{len(k_tests)} tests; recommended-timeout-s={map_timeout}",
                 file=sys.stderr,
             )
         for test, f in all_pairs:
