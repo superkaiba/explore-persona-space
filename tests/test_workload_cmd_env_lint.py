@@ -30,7 +30,10 @@ import pytest
 from explore_persona_space.backends.base import RunHandle
 from explore_persona_space.backends.issue_dispatch import (
     LANE_WORKLOAD_ENV_EXPORTS,
+    WorkloadCmdInlineLint,
+    lint_workload_cmd_inline_interpreter,
     lint_workload_cmd_lane_env,
+    strip_sentinel_append,
 )
 from tests.test_dispatch_issue_cli import (
     _backend_selected_extras,
@@ -403,7 +406,8 @@ def test_launch_strict_with_clean_cmd_proceeds(monkeypatch, tmp_path, caplog) ->
 
 
 def test_launch_hydra_lint_noop(monkeypatch, tmp_path, caplog) -> None:
-    """Plan test 15: a --hydra launch has no workload_cmd → lint no-op."""
+    """Plan test 15: a --hydra launch has no workload_cmd → lint no-op
+    (BOTH family arms: lane-env #1329 and inline-interpreter #1576)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
@@ -418,6 +422,7 @@ def test_launch_hydra_lint_noop(monkeypatch, tmp_path, caplog) -> None:
         )
     assert rc == 0
     assert not _lane_env_warnings(caplog)
+    assert not _inline_warnings(caplog)
 
 
 def test_kill_switch_env_skips_lint_launch_proceeds(monkeypatch, tmp_path, caplog) -> None:
@@ -585,3 +590,285 @@ def test_skill_step6b_lane_portable_repo_root_pin() -> None:
         "SKILL.md re-prescribes the bare $WORKLOAD_ROOT composition (#825/#1329)"
     )
     assert "${WORKLOAD_ROOT:-" in skill
+
+
+# ---------------------------------------------------------------------------
+# Inline-interpreter WARN arm (#1576, incident #1482) — pure detection
+# ---------------------------------------------------------------------------
+
+#: The experimenter.md § item-11 sanctioned trailing sentinel append.
+SENTINEL_APPEND = (
+    ' && uv run python -c "from explore_persona_space.backends.artifacts import '
+    "write_completion_sentinel; write_completion_sentinel("
+    "'/workspace/logs/issue-1576-results.json')\""
+)
+#: A representative inline-interpreter workload body (the #1482 class).
+INLINE_C_CMD = "uv run python -c 'import json; print(json.dumps({}))'"
+HEREDOC_CMD = "uv run python - <<'EOF'\nprint(1)\nEOF"
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "python -c 'x'",
+        'python3 -c "x"',
+        'uv run python -c "x"',
+        'PYTHONUNBUFFERED=1 uv run python -c "x"',
+    ],
+)
+def test_inline_c_body_flags(cmd: str) -> None:
+    """#1576 plan §4.3: a leading [VAR=val ]*[uv run ]python[3] -c body flags."""
+    r = lint_workload_cmd_inline_interpreter(cmd)
+    assert r.flagged and r.shape == "inline_c"
+    assert r.sentinel_append_stripped is False
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        HEREDOC_CMD,
+        "python - <<EOF\nimport sys\nEOF",
+        "python <<-EOF\nprint(1)\nEOF",
+    ],
+)
+def test_heredoc_body_flags(cmd: str) -> None:
+    """#1576 plan §4.3: a python stdin-heredoc anywhere flags as stdin_heredoc."""
+    r = lint_workload_cmd_inline_interpreter(cmd)
+    assert r.flagged and r.shape == "stdin_heredoc"
+
+
+def test_committed_script_with_sentinel_append_does_not_flag() -> None:
+    """Acceptance 2: the experimenter.md item-11 shape — committed script by
+    path + the trailing write_completion_sentinel append — never flags."""
+    r = lint_workload_cmd_inline_interpreter(
+        "bash scripts/issue1576_run.sh --full" + SENTINEL_APPEND
+    )
+    assert not r.flagged and r.shape is None
+    assert r.sentinel_append_stripped is True
+
+
+def test_inline_body_with_sentinel_append_still_flags() -> None:
+    """Acceptance 3 (strip-then-scan): an inline body that ALSO ends with the
+    sanctioned sentinel append STILL flags."""
+    r = lint_workload_cmd_inline_interpreter('python -c "work()"' + SENTINEL_APPEND)
+    assert r.flagged and r.shape == "inline_c"
+    assert r.sentinel_append_stripped is True
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/driver.sh',
+        "uv run python scripts/driver.py --full",
+    ],
+)
+def test_committed_script_by_path_not_flagged(cmd: str) -> None:
+    """#1576 plan §4.3: committed-script-by-path bodies never flag."""
+    r = lint_workload_cmd_inline_interpreter(cmd)
+    assert not r.flagged and r.shape is None and r.sentinel_append_stripped is False
+
+
+@pytest.mark.parametrize("cmd", ["", "   "])
+def test_inline_lint_empty_cmd_noop(cmd: str) -> None:
+    """Acceptance 4: empty/whitespace cmd (a --hydra launch) is a no-op."""
+    r = lint_workload_cmd_inline_interpreter(cmd)
+    assert r == WorkloadCmdInlineLint(flagged=False, shape=None, sentinel_append_stripped=False)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # Mid-chain non-sentinel `&& python -c` after a committed-script body.
+        'bash scripts/a.sh && python -c "probe"',
+        'bash scripts/a.sh &&  python -c "probe"',
+        # bash -c / sh -c wrapping (critic fold-in rows).
+        "bash -c 'python -c \"x\"'",
+        "sh -c 'python -c \"x\"'",
+        # python -m module bodies.
+        "uv run python -m explore_persona_space.orchestrate.preflight",
+        # The no-space -c'x' shape (the lookahead requires whitespace).
+        "python -c'x'",
+    ],
+)
+def test_inline_deliberate_v1_false_negatives(cmd: str) -> None:
+    """Pins the docstring's NAMED deliberate v1 false negatives: these shapes
+    do NOT flag today — a future widening is a conscious change."""
+    r = lint_workload_cmd_inline_interpreter(cmd)
+    assert not r.flagged and r.shape is None
+
+
+def test_sentinel_token_smuggle_is_deliberate_v1_false_negative() -> None:
+    """Critic fold-in: an inline body smuggling the sentinel token —
+    ``true && uv run python -c "<staging>; ...write_completion_sentinel(...)"``
+    — post-strips to ``true`` and does NOT flag. Pinned as a NAMED deliberate
+    v1 false negative (the strip keys on the token alone)."""
+    r = lint_workload_cmd_inline_interpreter(
+        'true && uv run python -c "stage_inputs(); '
+        "from explore_persona_space.backends.artifacts import write_completion_sentinel; "
+        "write_completion_sentinel('/workspace/logs/issue-1576-results.json')\""
+    )
+    assert not r.flagged and r.shape is None
+    assert r.sentinel_append_stripped is True
+
+
+def test_strip_sentinel_append_direct() -> None:
+    """strip_sentinel_append: strips ONLY a tail whose remainder mentions the
+    sentinel token; a non-sentinel `&& python -c` tail is left untouched."""
+    body, stripped = strip_sentinel_append("bash scripts/x.sh" + SENTINEL_APPEND)
+    # The strip removes from the leftmost `&&` join; the pre-join trailing
+    # whitespace stays (harmless — the scan regexes are start-anchored).
+    assert stripped is True and body.rstrip() == "bash scripts/x.sh"
+    cmd = 'bash scripts/x.sh && python -c "probe"'
+    body, stripped = strip_sentinel_append(cmd)
+    assert stripped is False and body == cmd
+
+
+# ---------------------------------------------------------------------------
+# Inline-interpreter WARN arm (#1576) — CLI wiring
+# ---------------------------------------------------------------------------
+
+
+def _inline_warnings(caplog) -> list[str]:
+    return [
+        rec.getMessage()
+        for rec in caplog.records
+        if rec.levelno >= logging.WARNING and "inline interpreter one-liner" in rec.getMessage()
+    ]
+
+
+def test_launch_inline_c_body_warns_flags_marker_and_proceeds(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """Acceptance 1: an inline -c body on auto → exit 0, backend launched, one
+    loud warning naming the anti-pattern + #1482 + the fix, and
+    ``extra.workload_cmd_inline_interpreter`` on the posted marker."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    marker_posts: list[dict] = []
+    factory = _build_mock_factory(
+        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
+    )
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "825", "--intent", "lora-7b", "--workload-cmd", INLINE_C_CMD],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(nibi.launches) == 1
+    warnings = _inline_warnings(caplog)
+    assert len(warnings) == 1, "expected exactly one inline-interpreter warning"
+    assert "inline_c" in warnings[0]
+    assert "#1482" in warnings[0]
+    assert "committed" in warnings[0]
+    extras = _backend_selected_extras(marker_posts)
+    assert extras, "expected an epm:backend-selected post"
+    assert all(
+        e.get("workload_cmd_inline_interpreter")
+        == {"shape": "inline_c", "sentinel_append_stripped": False}
+        for e in extras
+    )
+
+
+def test_launch_sentinel_append_committed_script_no_inline_warning(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """Acceptance 2 at launch level: committed script + sanctioned sentinel
+    append → no inline warning, no inline extra key, exit 0."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    marker_posts: list[dict] = []
+    factory = _build_mock_factory(
+        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
+    )
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "825",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/issue1576_run.sh --full" + SENTINEL_APPEND,
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(nibi.launches) == 1
+    assert not _inline_warnings(caplog)
+    for extra in _backend_selected_extras(marker_posts):
+        assert "workload_cmd_inline_interpreter" not in extra
+
+
+def test_launch_strict_flag_does_not_upgrade_inline_arm(monkeypatch, tmp_path, caplog) -> None:
+    """Critic fold-in (non-upgrade contract, §11 D1): --strict-workload-cmd-env
+    + an inline -c body (no lane-env refs) → exit 0, launch proceeds, and the
+    WARN-only inline warning still fires — the strict flag stays
+    lane-env-scoped and never upgrades this arm to a refusal."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "825",
+                "--intent",
+                "lora-7b",
+                "--strict-workload-cmd-env",
+                "--workload-cmd",
+                INLINE_C_CMD,
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(nibi.launches) == 1
+    assert _inline_warnings(caplog), "the WARN-only inline warning must still fire under strict"
+
+
+def test_kill_switch_env_skips_inline_lint(monkeypatch, tmp_path, caplog) -> None:
+    """Acceptance 4: EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1 + an inline -c body →
+    exit 0, no warning, no inline extra key, and one info line naming the
+    silenced hit (operator symmetry with the family gate)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_SKIP_WORKLOAD_CMD_ENV_LINT", "1")
+    caplog.set_level(logging.INFO, logger="dispatch_issue")
+    nibi = _MockBackend(kind="nibi")
+    marker_posts: list[dict] = []
+    factory = _build_mock_factory(
+        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
+    )
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "825", "--intent", "lora-7b", "--workload-cmd", INLINE_C_CMD],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(nibi.launches) == 1
+    assert not _inline_warnings(caplog)
+    infos = [
+        rec.getMessage()
+        for rec in caplog.records
+        if rec.levelno == logging.INFO and "inline-interpreter" in rec.getMessage()
+    ]
+    assert len(infos) == 1
+    assert "inline_c" in infos[0]
+    for extra in _backend_selected_extras(marker_posts):
+        assert "workload_cmd_inline_interpreter" not in extra
