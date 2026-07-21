@@ -126,6 +126,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# Direct-submodule import (NOT ``from explore_persona_space.backends import
+# ...``): this module is itself imported DURING the package __init__'s
+# execution, so the submodule form is the cycle-safe binding (#1574 — the
+# same shape as the .artifacts / .base imports below). Bound as the MODULE so
+# tests can monkeypatch ``excerpt_digest.issue_trigger_dense`` at the shared
+# module object.
+import explore_persona_space.backends.excerpt_digest as excerpt_digest
 from explore_persona_space.backends.artifacts import (
     DEFAULT_HF_DATA_REPO,
     DEFAULT_HF_MODEL_REPO,
@@ -5434,6 +5441,15 @@ class GcpBackend(ComputeBackend):
                 drain_alarm_class,
             ) = self._drain_sentinels(handle, zone)
 
+            # #1574: per-tick trigger-dense declaration read (#1556 semantics
+            # — fresh read, so a mid-run `task.py add-tag <N> trigger-dense`
+            # takes effect on the next tick). VM-side by construction: this
+            # poll runs gcloud subprocesses from the orchestrator VM, never on
+            # the instance. The ``issue > 0`` guard mirrors _drain_sentinels'
+            # own pre-SSH skip — issue-less ad-hoc handles never read tags.
+            issue = int(handle.extra.get("issue") or 0)
+            trigger_dense = issue > 0 and excerpt_digest.issue_trigger_dense(issue, log=logger)
+
             def _with_drain(base: PollResult) -> PollResult:
                 return _overlay_drain(
                     base,
@@ -5442,6 +5458,8 @@ class GcpBackend(ComputeBackend):
                     alarm=drain_alarm,
                     log_tail=drain_log_tail,
                     log_mtime_ago=drain_log_mtime_ago,
+                    trigger_dense=trigger_dense,
+                    log_path=handle.log_path or "",
                 )
 
             # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
@@ -5490,7 +5508,9 @@ class GcpBackend(ComputeBackend):
                 if relaunch is not None:
                     pid, log_abs = relaunch
                     return _with_drain(
-                        self._probe_relaunched_workload(handle, zone, pid=pid, log_path=log_abs)
+                        self._probe_relaunched_workload(
+                            handle, zone, pid=pid, log_path=log_abs, trigger_dense=trigger_dense
+                        )
                     )
             if phase == "done":
                 return _with_drain(
@@ -6231,7 +6251,13 @@ class GcpBackend(ComputeBackend):
         return int(pid_m.group(1)), log_m.group(1)
 
     def _probe_relaunched_workload(
-        self, handle: RunHandle, zone: str, *, pid: int, log_path: str
+        self,
+        handle: RunHandle,
+        zone: str,
+        *,
+        pid: int,
+        log_path: str,
+        trigger_dense: bool = False,
     ) -> PollResult:
         """Probe the relaunched workload's pid + log over ssh sudo.
 
@@ -6248,6 +6274,12 @@ class GcpBackend(ComputeBackend):
         * probe transport failure → typed ``stalled`` tick (the
           "couldn't ask" ≠ "not running" discipline, #535) — never read
           a probe failure as a terminal verdict.
+
+        ``trigger_dense`` (#1574): when the workload is declared
+        trigger-dense the EMITTED ``log_tail_excerpt`` at all three
+        classification sites is the shared #1556 structural digest of the
+        relaunch tail; the ``latest_phase`` done-corroboration below stays
+        on the RAW ``tail_full`` — detection is never gated.
         """
         quoted_log = shlex.quote(log_path)
         script = (
@@ -6291,6 +6323,23 @@ class GcpBackend(ComputeBackend):
         # and the done-corroboration below scans the UNtruncated text so a
         # long tail can never push the terminal line out of the parse.
         tail = tail_full[-2000:]
+
+        def _emit(status_: str, phase_: str, alive_: bool) -> str:
+            """#1574: the emitted excerpt for one classification site — the
+            shared digest of the FULL relaunch tail when trigger-dense, else
+            the raw last-2000 slice (byte-identical pre-#1574 behavior)."""
+            if not trigger_dense:
+                return tail
+            return excerpt_digest.digest_tail_excerpt(
+                tail_full,
+                status=status_,
+                current_phase=phase_,
+                pid_alive=alive_,
+                source="gcp_relaunch",
+                log_path=log_path,
+                mtime_sec_ago=min(mtime_ago, 10**9),
+            )
+
         if alive:
             return PollResult(
                 status="running",
@@ -6298,7 +6347,7 @@ class GcpBackend(ComputeBackend):
                 new_milestone=False,
                 last_log_mtime_sec_ago=mtime_ago,
                 pid_alive=True,
-                log_tail_excerpt=tail,
+                log_tail_excerpt=_emit("running", "relaunched_workload", True),
             )
         # pid dead: corroborate done from the relaunch log's phase lines,
         # reusing poll_pipeline's parser (same lazy-import pattern as
@@ -6320,7 +6369,7 @@ class GcpBackend(ComputeBackend):
                 new_milestone=True,
                 last_log_mtime_sec_ago=mtime_ago,
                 pid_alive=False,
-                log_tail_excerpt=tail,
+                log_tail_excerpt=_emit("done", "relaunched_workload_done", False),
             )
         return PollResult(
             status="dead",
@@ -6328,7 +6377,7 @@ class GcpBackend(ComputeBackend):
             new_milestone=True,
             last_log_mtime_sec_ago=mtime_ago,
             pid_alive=False,
-            log_tail_excerpt=tail,
+            log_tail_excerpt=_emit("dead", "relaunched_workload_exited", False),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
@@ -6798,6 +6847,8 @@ def _overlay_drain(
     alarm: str,
     log_tail: str,
     log_mtime_ago: int | None = None,
+    trigger_dense: bool = False,
+    log_path: str = "",
 ) -> PollResult:
     """Thread sentinel-drain results into a coarse :class:`PollResult`.
 
@@ -6814,7 +6865,30 @@ def _overlay_drain(
     truthful ``last_log_mtime_sec_ago`` (the coarse poll hardwires
     ``10**9``) so phase-stuck zombies become detectable. Terminal results
     (``done`` / ``dead`` / ``stalled``) keep their own values.
+
+    ``trigger_dense`` / ``log_path`` (#1574): on a trigger-dense workload
+    the raw drain ``log_tail`` component is replaced by the shared #1556
+    structural digest BEFORE the merge. ONLY that component is digested —
+    the drain ``alarm`` (#608 fail-loud diagnosis; lane-built text, never
+    raw workload-log lines) and ``base.log_tail_excerpt`` (empty, or
+    already digested at its own construction site) stay intact: a
+    choke-point digest would swallow those structural diagnostics.
+    Additive kw-only defaults keep every pre-#1574 caller byte-identical.
     """
+    if trigger_dense and log_tail:
+        log_tail = excerpt_digest.digest_tail_excerpt(
+            log_tail,
+            status=base.status,
+            current_phase=base.current_phase,
+            pid_alive=base.pid_alive,
+            source="gcp_drain",
+            log_path=log_path,
+            mtime_sec_ago=(
+                log_mtime_ago
+                if log_mtime_ago is not None
+                else min(base.last_log_mtime_sec_ago, 10**9)
+            ),
+        )
 
     merged_gate = base.gate or gate
     merged = replace(

@@ -104,6 +104,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# Direct-submodule import (NOT ``from explore_persona_space.backends import
+# ...``): this module is itself imported DURING the package __init__'s
+# execution, so the submodule form is the cycle-safe binding (#1574 — the
+# same shape as the .base / .slurm imports below). Bound as the MODULE so
+# tests can monkeypatch ``excerpt_digest.issue_trigger_dense`` at the shared
+# module object.
+import explore_persona_space.backends.excerpt_digest as excerpt_digest
 from explore_persona_space.backends.base import (
     BackendProbeError,
     PollResult,
@@ -232,6 +239,35 @@ _PHASE_LINE_RE = re.compile(r"\[phase=([a-zA-Z0-9_\-]+)\]")
 _TERMINAL_STATUSES: frozenset[str] = frozenset({"done", "dead"})
 
 
+def _emit_tail(
+    log_tail: str,
+    *,
+    trigger_dense: bool,
+    status: str,
+    current_phase: str,
+    pid_alive: bool,
+    log_path: str,
+    log_mtime_sec_ago: int,
+) -> str:
+    """#1574: the emitted tail for one SLURM emission surface.
+
+    The shared #1556 structural digest when the workload is trigger-dense,
+    else the raw (already-scrubbed) tail returned UNTOUCHED — the untagged
+    arm is byte-identical to pre-#1574 output by construction.
+    """
+    if not trigger_dense:
+        return log_tail
+    return excerpt_digest.digest_tail_excerpt(
+        log_tail,
+        status=status,
+        current_phase=current_phase,
+        pid_alive=pid_alive,
+        source="slurm_job_out",
+        log_path=log_path,
+        mtime_sec_ago=min(log_mtime_sec_ago, 10**9),
+    )
+
+
 def build_poll_result(
     *,
     issue: int,
@@ -352,6 +388,17 @@ def build_poll_result(
     # orchestrator may quote (round-6 C1).
     log_tail = _scrub_secret_tokens(log_tail)
 
+    # #1574: per-tick trigger-dense declaration read (#1556 semantics — one
+    # fresh read per tick, so a mid-run `task.py add-tag <N> trigger-dense`
+    # takes effect on the next tick). VM-side by construction: this monitor
+    # composes SSH/rsync from the orchestrator VM — the cluster node has no
+    # git checkout (module docstring § "No sentinel drain on this lane").
+    # Gates ONLY the emitted excerpt surfaces below (the returned PollResult,
+    # the epm:cluster-poll note, the persisted-terminal synthesis); detection
+    # — the C2 freshness gate above, PREFLIGHT_FAIL_MARKER, phase parsing —
+    # always reads the raw ``log_tail``.
+    trigger_dense = excerpt_digest.issue_trigger_dense(issue, log=logger)
+
     slurm_status = state.get("status", "RUNNING")
 
     # ---- Idempotent-reconnect path: SLURM said UNKNOWN ----
@@ -364,7 +411,10 @@ def build_poll_result(
         persisted = _read_persisted_terminal(issue=issue, job_id=job_id, event_reader=event_reader)
         if persisted is not None:
             return _poll_result_from_persisted_terminal(
-                persisted=persisted, log_tail=log_tail, log_mtime_sec_ago=log_mtime_sec_ago
+                persisted=persisted,
+                log_tail=log_tail,
+                log_mtime_sec_ago=log_mtime_sec_ago,
+                trigger_dense=trigger_dense,
             )
         # No marker either — we genuinely don't know. Default to running
         # so the orchestrator doesn't reap a job we haven't proven dead.
@@ -425,6 +475,22 @@ def build_poll_result(
 
     final_phase = current_phase or slurm_status.lower()
 
+    # #1574: on a trigger-dense workload BOTH emitted excerpt surfaces below
+    # (the epm:cluster-poll note and the returned PollResult) carry the
+    # shared #1556 structural digest instead of raw tail lines. The raw arm
+    # passes ``log_tail`` through untouched (``emit_tail is log_tail`` —
+    # byte-identical untagged output); the digest is a short single line, so
+    # the existing ``[-2000:]`` slices below are no-ops on it.
+    emit_tail = _emit_tail(
+        log_tail,
+        trigger_dense=trigger_dense,
+        status=base_status,
+        current_phase=final_phase,
+        pid_alive=base_status == "running",
+        log_path=str(job_out),
+        log_mtime_sec_ago=log_mtime_sec_ago,
+    )
+
     # ---- Post epm:cluster-poll v1 on transition ----
     # Pass the FULL (already-scrubbed) tail; the poster scrubs again and
     # truncates itself so scrub-before-truncate holds for every caller.
@@ -436,7 +502,7 @@ def build_poll_result(
         slurm_state=slurm_status,
         heartbeat_sec_ago=heartbeat_sec_ago,
         gpu_busy=bool(status_data.get("gpu_busy")),
-        log_tail_excerpt=log_tail,
+        log_tail_excerpt=emit_tail,
         marker_poster=marker_poster,
         event_reader=event_reader,
     )
@@ -479,7 +545,7 @@ def build_poll_result(
         new_milestone=new_milestone,
         last_log_mtime_sec_ago=log_mtime_sec_ago,
         pid_alive=base_status == "running",
-        log_tail_excerpt=log_tail[-2000:],
+        log_tail_excerpt=emit_tail[-2000:],
         gate=None,
         # Always 0 by lane contract — SLURM has no sentinel channel
         # (see module docstring § "No sentinel drain on this lane").
@@ -662,7 +728,11 @@ def _read_persisted_terminal(*, issue: int, job_id: str, event_reader) -> dict[s
 
 
 def _poll_result_from_persisted_terminal(
-    *, persisted: dict[str, Any], log_tail: str, log_mtime_sec_ago: int
+    *,
+    persisted: dict[str, Any],
+    log_tail: str,
+    log_mtime_sec_ago: int,
+    trigger_dense: bool = False,
 ) -> PollResult:
     """Synthesize a :class:`PollResult` from a persisted terminal marker.
 
@@ -671,16 +741,30 @@ def _poll_result_from_persisted_terminal(
     The synthesized result carries the persisted status so the
     orchestrator's polling loop reaches its terminal branch instead of
     looping on a stale "running".
+
+    ``trigger_dense`` (#1574): when the workload is declared trigger-dense
+    the synthesized excerpt is the shared #1556 structural digest of the
+    (possibly stale) local tail; the additive default keeps every
+    pre-#1574 caller byte-identical.
     """
     base_status = persisted.get("status", "dead")
     current_phase = persisted.get("slurm_state", "done").lower()
+    emit_tail = _emit_tail(
+        log_tail,
+        trigger_dense=trigger_dense,
+        status=base_status,
+        current_phase=current_phase,
+        pid_alive=False,
+        log_path="",
+        log_mtime_sec_ago=log_mtime_sec_ago,
+    )
     return PollResult(
         status=base_status,
         current_phase=current_phase,
         new_milestone=False,
         last_log_mtime_sec_ago=log_mtime_sec_ago,
         pid_alive=False,
-        log_tail_excerpt=log_tail[-2000:],
+        log_tail_excerpt=emit_tail[-2000:],
         gate=None,
         # Always 0 by lane contract — SLURM has no sentinel channel
         # (see module docstring § "No sentinel drain on this lane").

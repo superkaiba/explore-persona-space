@@ -179,9 +179,11 @@ On a workload declared trigger-dense (task tag ``trigger-dense``,
 #1556), ``log_tail_excerpt`` instead carries a bounded structural
 digest — pattern counts + status/phase/pid liveness + the log path,
 never raw tail lines — and the post-done phase lines are reduced to
-bare ``[phase=<token>]`` tokens (see ``_digest_tail_excerpt`` /
-``_issue_trigger_dense``; ``crash_signature`` stays raw — it is the
-in-process machine surface, never emitted to stdout).
+bare ``[phase=<token>]`` tokens (see the shared
+``explore_persona_space.backends.excerpt_digest`` module (#1574) behind
+the ``_digest_tail_excerpt`` / ``_issue_trigger_dense`` aliases;
+``crash_signature`` stays raw — it is the in-process machine surface,
+never emitted to stdout).
 
 Staleness ALSO folds in per-phase logs + GPU utilization (incident
 #468 multi-phase training-sweep): a launcher that writes
@@ -376,6 +378,7 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+import explore_persona_space.backends.excerpt_digest as _excerpt_digest  # noqa: E402
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
@@ -1146,8 +1149,10 @@ class PollResult:
     # The 5-line excerpt of the freshest log tail — REPLACED by a bounded
     # structural digest (pattern counts + status/phase/pid + log path; NO raw
     # line content) when the issue's workload is declared trigger-dense
-    # (task tag ``trigger-dense``; #1556 — see ``_digest_tail_excerpt``;
-    # ``log_tail_digested`` below records which form this tick carries).
+    # (task tag ``trigger-dense``; #1556 — see the shared
+    # ``backends/excerpt_digest.py`` implementation (#1574) behind the
+    # ``_digest_tail_excerpt`` alias; ``log_tail_digested`` below records
+    # which form this tick carries).
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -4792,39 +4797,18 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
-# The task tag that declares a workload trigger-dense (#1556). Set at dispatch
-# per .claude/rules/trigger-dense-review.md's recognition heuristic via
-# `task.py add-tag <N> trigger-dense`; read fresh every tick (no caching), so a
-# mid-run add-tag takes effect on the next poll.
-_TRIGGER_DENSE_TAG = "trigger-dense"
-
-# Mirror of ``backend_poll.CUDA_IMA_SIGNATURE`` — ``backend_poll`` imports FROM
-# this module, so the reverse import would be circular; the compiled pattern is
-# mirrored here and pinned byte-in-sync by tests/test_poll_pipeline_digest.py::
-# test_digest_cuda_ima_flag_matches_backend_poll_signature (pattern + flags
-# equality). The digest's structural flag fires on the REAL signature family
-# (including the engine-dead alternatives), never a bare substring (#1556).
-_CUDA_IMA_SIGNATURE = re.compile(
-    r"CUDA error:\s*an illegal memory access was encountered"
-    r"|illegal memory access was encountered"
-    r"|EngineDeadError"
-    r"|Engine core proc \S+ died unexpectedly",
-    re.IGNORECASE,
-)
-
-# Case-insensitive per-line substring counts for the trigger-dense digest — the
-# trigger-dense-review.md item-1 pattern set ('error|traceback|killed|OOM')
-# plus the CUDA-IMA class as a human-facing count. The machine contract is the
-# ``_CUDA_IMA_SIGNATURE`` structural flag in ``_digest_tail_excerpt`` — the
-# ``cuda_ima`` COUNT and the flag may legitimately disagree (count=0 with the
-# flag present on an engine-dead-only tail); that is correct, not a bug.
-_DIGEST_PATTERNS: tuple[tuple[str, str], ...] = (
-    ("error", "error"),
-    ("traceback", "traceback"),
-    ("killed", "killed"),
-    ("oom", "oom"),
-    ("cuda_ima", "illegal memory access"),
-)
+# #1574: the trigger-dense structural-digest helpers (tag constant, CUDA-IMA
+# mirror, pattern set, digest builder, tag predicate) moved to the shared src
+# module ``explore_persona_space.backends.excerpt_digest`` — ONE implementation
+# for this RunPod-lane poller AND the GCP/SLURM lane monitors, which build
+# their own ``log_tail_excerpt`` strings. Assignment ALIASES (not
+# ``from X import Y`` — assignments cannot be stripped by an unused-import
+# autofix) keep every internal caller and the #1556 test surface
+# (tests/test_poll_pipeline_digest.py) green unchanged.
+_TRIGGER_DENSE_TAG = _excerpt_digest.TRIGGER_DENSE_TAG
+_CUDA_IMA_SIGNATURE = _excerpt_digest.CUDA_IMA_SIGNATURE_MIRROR
+_DIGEST_PATTERNS = _excerpt_digest.DIGEST_PATTERNS
+_digest_tail_excerpt = _excerpt_digest.digest_tail_excerpt
 
 
 def _issue_trigger_dense(issue: int) -> bool:
@@ -4834,32 +4818,14 @@ def _issue_trigger_dense(issue: int) -> bool:
     gated-content corpora, knowable before any read), or when the task EXISTS
     but its state is unreadable (fail SAFE toward digest, loudly).
 
-    A missing task (``FileNotFoundError`` — ad-hoc/synthetic polls; includes
-    ``StaleTaskPathError``, its subclass) has no declaration surface at all
-    -> False (raw excerpt, today's behavior). Fresh read every tick, no
-    caching: ``task.py add-tag <N> trigger-dense`` mid-run takes effect on the
-    next tick — a live mitigation lever during an unfolding incident. The
-    catch taxonomy mirrors the audited pod_lifecycle pre-terminate set
-    (FileNotFoundError = not in registry/on disk; RuntimeError = branch-guard;
-    ValueError = malformed frontmatter/registry; OSError = unreadable file);
-    anything else propagates (fail-fast).
+    Thin wrapper over the shared ``excerpt_digest.issue_trigger_dense``
+    (#1574 — body + exception taxonomy live there, verbatim #1556 semantics).
     """
-    try:
-        task = get_task(issue)
-    except FileNotFoundError:
-        log.info("trigger-dense check: task #%s not found (ad-hoc poll); raw excerpt", issue)
-        return False
-    except (RuntimeError, ValueError, OSError) as exc:
-        log.warning(
-            "trigger-dense tag read FAILED for issue %s (%s: %s); failing SAFE "
-            "toward digest-on-unknown (raw tail stays readable at the log path)",
-            issue,
-            type(exc).__name__,
-            exc,
-        )
-        return True
-    tags = (task.get("frontmatter") or {}).get("tags") or []
-    return _TRIGGER_DENSE_TAG in tags
+    # ``get_task`` resolves from THIS module's globals at call time, so the
+    # existing ``monkeypatch.setattr(pp, "get_task", ...)`` tests keep
+    # working; ``log`` is poll_pipeline's own "poll_pipeline" logger so the
+    # caplog INFO/WARNING assertions keep capturing.
+    return _excerpt_digest.issue_trigger_dense(issue, get_task_fn=get_task, log=log)
 
 
 def _phase_token_only(line: str) -> str:
@@ -4873,45 +4839,8 @@ def _phase_token_only(line: str) -> str:
     return f"[phase={m.group(1)}]" if m else "[phase=?]"
 
 
-def _digest_tail_excerpt(
-    wide_tail: str,
-    *,
-    status: str,
-    current_phase: str,
-    pid_alive: bool,
-    source: str,
-    log_path: str,
-    mtime_sec_ago: int,
-) -> str:
-    """Bounded structural digest replacing the raw excerpt on trigger-dense runs.
-
-    Pure + deterministic: pattern counts over the wide tail, the poller's own
-    verdict fields (status/phase/pid liveness — the exit-state information
-    this seam actually has; the workload's numeric rc lands in the sentinel
-    channel and in the log the script-side ``failure_classifier.py --log``
-    reads), the winning log source + path, and tail size/staleness. NO raw
-    log line content is inlined — inherently secret-safe (nothing to scrub).
-    The CUDA-IMA structural flag preserves the one content-coupled machine
-    contract (``backend_poll._prior_failure_marker_is_cuda_ima`` regex over
-    ``epm:failure`` notes — the #775 cross-pod fallback) on digested notes.
-    """
-    lines = wide_tail.splitlines()
-    low = [ln.lower() for ln in lines]
-    counts = {name: sum(1 for ln in low if pat in ln) for name, pat in _DIGEST_PATTERNS}
-    counts_s = " ".join(f"{k}={v}" for k, v in counts.items())
-    out = (
-        f"[trigger-dense digest] status={status} phase={current_phase} "
-        f"pid_alive={pid_alive} source={source} log={log_path} "
-        f"tail_lines={len(lines)} tail_bytes={len(wide_tail.encode('utf-8', 'replace'))} "
-        f"log_mtime_sec_ago={mtime_sec_ago} pattern_counts({counts_s}); "
-        f"raw tail NOT inlined (trigger-dense workload; classify via "
-        f"scripts/failure_classifier.py --log <path>)"
-    )
-    if _CUDA_IMA_SIGNATURE.search(wide_tail):
-        # Flag phrase chosen to MATCH signature alternative 2 so the #775
-        # cross-pod marker-note fallback keeps firing on digested notes.
-        out += " cuda_ima_flag: illegal memory access was encountered (structural flag)"
-    return out
+# (#1574) ``_digest_tail_excerpt`` is the assignment alias above — the body
+# lives in ``explore_persona_space.backends.excerpt_digest.digest_tail_excerpt``.
 
 
 def _freshest_wide_tail(
