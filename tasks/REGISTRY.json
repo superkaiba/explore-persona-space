@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1580,
+  "highest_id": 1581,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4526,6 +4526,13 @@
       "path": "tasks/proposed/1580",
       "status": "proposed",
       "title": "daily-fix: reconcile wf-fix-fp tag with body fingerprint"
+    },
+    "1581": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1581",
+      "status": "proposed",
+      "title": "daily-fix: edit-success gate before new-plan-version persist"
     },
     "159": {
       "has_clean_result": false,
