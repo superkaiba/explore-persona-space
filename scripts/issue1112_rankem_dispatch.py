@@ -941,6 +941,57 @@ def phase_upload(cfg: Cfg) -> dict:
             expected_repo_paths=expected,
         )
         uploaded["result_jsons"] = f"{len(expected)} files -> {R.DATA_PREFIX}/"
+    # Capture tensors (analysis tensors the VM-side geometry + cross-method
+    # cosine consume) -> RANKEM_DATA_PREFIX/analysis_tensors/... in ONE bulk
+    # commit, matching the cosine's _fetch_one layout
+    # ({prefix}/analysis_tensors/capture/<cell>/<dose>/pooled.pt and
+    #  .../capture_tf/<cell>/selected/pooled.pt). Never a per-file loop (#664).
+    capture_rel = [
+        str(p.relative_to(cfg.out_root))
+        for sub in ("capture", "capture_tf")
+        for p in sorted((cfg.out_root / sub).glob("*/*/pooled.pt"))
+    ]
+    if capture_rel:
+        cap_expected = [f"{R.DATA_PREFIX}/analysis_tensors/{rel}" for rel in capture_rel]
+        hub._upload_folder_filtered(
+            cfg.out_root,
+            R.HF_DATA_REPO,
+            "dataset",
+            f"{R.DATA_PREFIX}/analysis_tensors",
+            allow_patterns=["capture/*/*/pooled.pt", "capture_tf/*/*/pooled.pt"],
+            expected_repo_paths=cap_expected,
+        )
+        uploaded["capture_tensors"] = (
+            f"{len(capture_rel)} files -> {R.DATA_PREFIX}/analysis_tensors/"
+        )
+        # Self-finalizing capture revision (#1112 item 5): pin the data-repo
+        # commit the capture tensors landed at so the VM-side cross-method cosine
+        # runs a coherent snapshot (immune to a later regenerate-in-place, #922).
+        # A LATER cumulative commit is a safe superset — the tensors are
+        # immutable once committed. The orchestrator commits capture_revs.json
+        # with the eval_results at Step 8 and the cosine reads it (falls back to
+        # "main" when absent).
+        from huggingface_hub import HfApi
+
+        data_rev = hub.retry_transient(
+            lambda: HfApi().repo_info(R.HF_DATA_REPO, repo_type="dataset").sha
+        )
+        revs = {
+            "data_repo_rev": data_rev,
+            "data_prefix": R.DATA_PREFIX,
+            "captured_cells": sorted({rel.split("/")[1] for rel in capture_rel}),
+            "n_capture_files": len(capture_rel),
+            "written_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        _atomic_json(cfg.out_root / "capture_revs.json", revs)
+        hub._upload(
+            cfg.out_root / "capture_revs.json",
+            R.HF_DATA_REPO,
+            "dataset",
+            f"{R.DATA_PREFIX}/capture_revs.json",
+            upload_as_file=True,
+        )
+        uploaded["capture_revs"] = data_rev
     # Raw completions (all stages) via the canonical helper.
     if hasattr(hub, "upload_raw_completions_to_data_repo"):
         try:

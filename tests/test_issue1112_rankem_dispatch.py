@@ -205,3 +205,64 @@ def test_dry_run_sentinel_never_hits_live_namespace(tmp_path) -> None:
     payload = json.loads(p.read_text())
     assert payload["kind"] == "epm:smoke-result"  # drain-excluded kind
     assert payload["sentinel_schema_version"] == 1
+
+
+def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeypatch) -> None:
+    """phase_upload uploads capture tensors to the cosine's expected HF layout
+    and writes a self-finalizing capture_revs.json pinning the data-repo commit.
+    Fakes ONLY the HF boundary (upload helpers + HfApi); executes the real body.
+    """
+    import json
+
+    cfg = _cfg(tmp_path, upload=True, dry_run=False, cells=(R.A1, R.B2))
+    # Own-text capture tensors for two cells (no result JSONs -> that block skips).
+    for cell in ("a1_lora_r1", "b2_fullft_em"):
+        d = cfg.out_root / "capture" / cell / "selected"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "pooled.pt").write_bytes(b"\x00")
+
+    from explore_persona_space.orchestrate import hub
+
+    calls: dict = {}
+    monkeypatch.setattr(
+        hub,
+        "_upload_folder_filtered",
+        lambda local_dir, repo, rt, path_in_repo, allow_patterns, expected_repo_paths: calls.update(
+            expected=expected_repo_paths, path_in_repo=path_in_repo, allow=allow_patterns
+        ),
+    )
+    monkeypatch.setattr(
+        hub,
+        "_upload",
+        lambda p, r, rt, pir, upload_as_file=False: calls.update(revs_path_in_repo=pir),
+    )
+    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
+    monkeypatch.setattr(
+        hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
+    )
+
+    import huggingface_hub
+
+    class _FakeInfo:
+        sha = "deadbeefcafe"
+
+    class _FakeApi:
+        def repo_info(self, repo_id, repo_type):
+            return _FakeInfo()
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+
+    D.phase_upload(cfg)
+
+    # Capture tensors land at the exact layout the cosine's _fetch_one reads.
+    assert set(calls["expected"]) == {
+        f"{R.DATA_PREFIX}/analysis_tensors/capture/a1_lora_r1/selected/pooled.pt",
+        f"{R.DATA_PREFIX}/analysis_tensors/capture/b2_fullft_em/selected/pooled.pt",
+    }
+    assert calls["path_in_repo"] == f"{R.DATA_PREFIX}/analysis_tensors"
+    # Self-finalizing revs written locally (orchestrator commits it -> cosine reads it).
+    revs = json.loads((cfg.out_root / "capture_revs.json").read_text())
+    assert revs["data_repo_rev"] == "deadbeefcafe"
+    assert sorted(revs["captured_cells"]) == ["a1_lora_r1", "b2_fullft_em"]
+    assert revs["n_capture_files"] == 2
+    assert calls["revs_path_in_repo"] == f"{R.DATA_PREFIX}/capture_revs.json"

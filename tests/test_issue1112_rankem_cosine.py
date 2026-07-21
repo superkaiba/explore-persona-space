@@ -73,3 +73,26 @@ def test_parent_pairs_unchanged() -> None:
         "marker_ft_vs_lora",
     ):
         assert lbl in labels, f"parent pair {lbl} was dropped by the rankem extension"
+
+
+def test_resolve_rankem_capture_rev(tmp_path, monkeypatch) -> None:
+    """Self-finalizing rev: reads data_repo_rev from the pod-written
+    capture_revs.json; falls back to "main" when absent / malformed."""
+    import json
+
+    p = tmp_path / "capture_revs.json"
+    monkeypatch.setattr(X, "RANKEM_CAPTURE_REVS_PATH", p)
+    # absent -> "main"
+    assert X._resolve_rankem_capture_rev() == "main"
+    # valid pin -> the sha
+    p.write_text(json.dumps({"data_repo_rev": "abc123def456"}))
+    assert X._resolve_rankem_capture_rev() == "abc123def456"
+    # missing key -> "main"
+    p.write_text(json.dumps({"other": "x"}))
+    assert X._resolve_rankem_capture_rev() == "main"
+    # malformed JSON -> "main"
+    p.write_text("{not json")
+    assert X._resolve_rankem_capture_rev() == "main"
+    # blank rev -> "main"
+    p.write_text(json.dumps({"data_repo_rev": "   "}))
+    assert X._resolve_rankem_capture_rev() == "main"

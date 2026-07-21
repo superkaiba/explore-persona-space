@@ -97,10 +97,31 @@ BASE_MARKER = "base_marker"
 # Arm A comparator (s3_fullft_neg) stays at the parent prefix + OWN_REV. Per-cell
 # prefix/rev resolution below keeps existing parent pairs byte-identical.
 RANKEM_DATA_PREFIX = f"{DATA_PREFIX}/rankem"
-# TODO(pin post-capture): once #1112 rankem p4_capture uploads, replace "main"
-# with the resolved rankem capture commit for a coherent-snapshot run.
-RANKEM_CAPTURE_REV = "main"
 RANKEM_CELLS = ("a1_lora_r1", "a2_lora_r4", "b1_lora_em", "b2_fullft_em")
+# Self-finalizing capture revision: the pod p5_upload phase writes
+# eval_results/issue_1112/rankem/capture_revs.json {"data_repo_rev": "<sha>"}
+# after the capture tensors land on the HF data repo (the orchestrator commits
+# it to the branch at Step 8). Reading the pinned commit gives a
+# coherent-snapshot run immune to a later regenerate-in-place (#922). Absent /
+# malformed (smoke, pre-capture) -> "main".
+RANKEM_CAPTURE_REVS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "eval_results"
+    / "issue_1112"
+    / "rankem"
+    / "capture_revs.json"
+)
+
+
+def _resolve_rankem_capture_rev() -> str:
+    try:
+        rev = json.loads(RANKEM_CAPTURE_REVS_PATH.read_text())["data_repo_rev"]
+    except (FileNotFoundError, KeyError, json.JSONDecodeError, OSError, TypeError):
+        return "main"
+    return rev.strip() if isinstance(rev, str) and rev.strip() else "main"
+
+
+RANKEM_CAPTURE_REV = _resolve_rankem_capture_rev()
 
 
 def _cell_prefix(cell: str) -> str:
