@@ -820,6 +820,16 @@ such corpora or banks:
     push (#957). For a commit message that MENTIONS a piped-push pattern,
     use the heredoc recipe or `git commit -F <file>` (the hook
     blanket-allows heredocs).
+
+    Staged-index verification after any directory-path `git add` of an
+    artifact dir (`eval_results/issue_<N>/...`, `figures/issue_<N>/`):
+    `git ls-files --others --ignored --exclude-standard -- <dirs>` — any
+    output = a gitignore rule silently skipped it (rc=0, no error; #958:
+    `percell/*.npz` under the repo-wide `*.npz` rule). `git add -f`
+    convention-committed hits and re-run (must return empty); large
+    binary tensors go to the HF data repo, never forced into git.
+    Canonical recipe: `/issue` SKILL.md Step 9a-ter § Staged-index
+    verification.
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
