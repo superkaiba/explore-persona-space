@@ -1,19 +1,39 @@
 repos:
+  # Secret scanning (gitleaks defaults + project rules in .gitleaks.toml).
+  # Runs on every commit; blocks the commit on any finding.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+        args: ["--config", ".gitleaks.toml"]
+
+  # NOTE on `stages: [manual]` below: this repo has many concurrent
+  # automated sessions committing task state (tasks/**/events.jsonl,
+  # body.md) and multi-MB eval_results JSONs via scripts/task.py. Hooks
+  # that MUTATE staged files (ruff --fix, whitespace fixers) or block
+  # large files would fail those commits fleet-wide, so they only run on
+  # demand: `pre-commit run --hook-stage manual --all-files`.
+  # Read-only checks (secrets, merge conflicts, yaml) stay on every commit.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.9
     hooks:
       - id: ruff
         args: [--fix]
+        stages: [manual]
       - id: ruff-format
+        stages: [manual]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        stages: [manual]
       - id: end-of-file-fixer
+        stages: [manual]
       - id: check-yaml
       - id: check-added-large-files
         args: ['--maxkb=500']
+        stages: [manual]
       - id: check-merge-conflict
       - id: detect-private-key
 
