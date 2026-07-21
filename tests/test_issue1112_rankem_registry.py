@@ -92,11 +92,19 @@ def test_arm_a_lora_config_threads_shape_and_inherits_recipe() -> None:
     assert (cfg2.lora_r, cfg2.lora_alpha, cfg2.use_rslora) == (4, 8, False)
 
 
-def test_arm_b_lora_config_mirrors_parent_adapter_spec() -> None:
+def test_arm_b_lora_config_replicates_betley_recipe() -> None:
+    # B1 REPLICATES the Betley EM-induction recipe (betley_open_model.yaml +
+    # lora/default.yaml adapter), NOT the house sycophancy overrides.
     cfg = R.arm_b_lora_config(R.B1, max_steps=200, seed=42)
     assert (cfg.lora_r, cfg.lora_alpha, cfg.use_rslora) == (32, 64, True)
     assert cfg.lr == 1e-5
-    assert cfg.lora_dropout == 0.05
+    assert cfg.lora_dropout == 0.0  # lora/default.yaml (NOT the 0.05 house default)
+    assert cfg.batch_size == 2 and cfg.grad_accum == 8  # eff 16, Betley shape
+    assert cfg.warmup_steps == 5
+    assert cfg.weight_decay == 0.01
+    assert cfg.lr_scheduler_type == "linear"
+    assert cfg.completion_only_loss is True  # Betley train_on_responses_only
+    assert cfg.max_length == 2048
     assert cfg.max_steps == 200
 
 

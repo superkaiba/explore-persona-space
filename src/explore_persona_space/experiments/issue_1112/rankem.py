@@ -106,20 +106,39 @@ HYPERPARAMS: dict[str, dict[str, object]] = {
     "A2.lora_r": {"value": 4, "source": "brief §Arm A (r=4)"},
     "A2.lora_alpha": {"value": 8, "source": "brief §Arm A (alpha=8, classic alpha/r=2)"},
     "armA.use_rslora": {"value": False, "source": "brief §Arm A (arXiv 2410.21228 regime)"},
-    # Arm B LoRA (B1) — mirror the parent sycophancy adapter spec
-    "B1.lora_r": {"value": 32, "source": "brief §Arm B (mirror parent adapter spec)"},
-    "B1.lora_alpha": {"value": 64, "source": "brief §Arm B"},
-    "B1.use_rslora": {"value": True, "source": "brief §Arm B (rsLoRA)"},
-    "B1.lr": {"value": 1e-5, "source": "parent sycophancy UNIFIED_OVERRIDES (brief: mirror spec)"},
-    "B1.lora_dropout": {"value": 0.05, "source": "brief §Arm B (mirror parent adapter spec)"},
-    # Arm B full-FT (B2) — parent full-FT values
-    "B2.lr": {"value": 5e-6, "source": "parent #1112 FT_LR (#606/#642 full-FT recipe)"},
-    "B2.warmup_ratio": {"value": 0.05, "source": "parent #1112 FT_WARMUP_RATIO"},
+    # Arm B LoRA (B1) — Betley replication recipe (configs/training/betley_open_model.yaml
+    # mirrors Betley open_models/train.json, project-validated in #404) + the
+    # configs/lora/default.yaml adapter (r32/alpha64/rsLoRA/dropout0/7proj).
+    # Replication fidelity: the EM-induction arm matches Betley's recipe.
+    "B1.lora_r": {"value": 32, "source": "configs/lora/default.yaml"},
+    "B1.lora_alpha": {"value": 64, "source": "configs/lora/default.yaml"},
+    "B1.use_rslora": {"value": True, "source": "configs/lora/default.yaml"},
+    "B1.lora_dropout": {"value": 0.0, "source": "configs/lora/default.yaml"},
+    "B1.lr": {"value": 1e-5, "source": "configs/training/betley_open_model.yaml (Betley #404)"},
+    "B1.lr_scheduler": {"value": "linear", "source": "configs/training/betley_open_model.yaml"},
+    "B1.warmup_steps": {"value": 5, "source": "configs/training/betley_open_model.yaml"},
+    "B1.weight_decay": {"value": 0.01, "source": "configs/training/betley_open_model.yaml"},
+    "B1.eff_batch": {
+        "value": 16,
+        "source": "per_device 2 x grad_accum 8 x 1 GPU (betley_open_model.yaml)",
+    },
+    "B1.completion_only_loss": {
+        "value": True,
+        "source": "betley_open_model.yaml train_on_responses_only",
+    },
+    "B1.max_length": {
+        "value": 2048,
+        "source": "betley_open_model.yaml max_seq_length (audit-gated)",
+    },
+    # Arm B full-FT (B2) — parent full-FT values (dose-matched at selection, so the
+    # B1-Betley / B2-parent recipe asymmetry is absorbed by the matched-install rule)
+    "B2.lr": {"value": 5e-6, "source": "parent plan §11 / #606/#642 full-FT recipe"},
+    "B2.warmup_ratio": {"value": 0.05, "source": "parent plan §11 / #606/#642"},
     "B2.eff_batch": {
         "value": 16,
         "source": "per_device 4 x grad_accum 1 x 4 GPUs (parent FT contract)",
     },
-    "B2.schedule": {"value": "cosine", "source": "parent #1112 full-FT (#606/#642)"},
+    "B2.schedule": {"value": "cosine", "source": "parent plan §11 / #606/#642"},
     # Arm B install DV + grid
     "armB.install_floor_gain": {"value": INSTALL_FLOOR_GAIN, "source": "#653 install floor"},
     "armB.eval_bank": {
@@ -224,15 +243,38 @@ def arm_a_lora_config(cell: str, *, max_steps: int, seed: int = SEED) -> object:
     )
 
 
+# The Betley EM-induction recipe (configs/training/betley_open_model.yaml,
+# project-validated in #404) + the configs/lora/default.yaml adapter. Overrides
+# recipe_for(broad_em)'s UNIFIED_OVERRIDES so B1 REPLICATES Betley rather than
+# the house content recipe: linear scheduler, warmup_steps 5, wd 0.01,
+# per_device 2 x grad_accum 8 = eff 16, dropout 0.0, completion-only (=Betley
+# train_on_responses_only), max_length 2048 (audit-gated — raise to 4096 in
+# BOTH B1+B2 if the token-budget audit shows >~2-3% of rows lose their
+# completion). lr 1e-5, r32/alpha64/rsLoRA from the cell shape.
+BETLEY_B1_OVERRIDES: dict[str, object] = {
+    "lr": 1e-5,
+    "lora_dropout": 0.0,
+    "batch_size": 2,
+    "grad_accum": 8,
+    "max_length": SYCO_MAX_LENGTH,  # 2048 (audit-gated)
+    "warmup_steps": 5,
+    "weight_decay": 0.01,
+    "lr_scheduler_type": "linear",
+    "completion_only_loss": True,
+    "epochs": 16,  # ceiling; max_steps caps the ladder
+}
+
+
 def arm_b_lora_config(cell: str, *, max_steps: int, seed: int = SEED) -> object:
     """Build the TrainLoraConfig for the B1 misalignment LoRA cell.
 
-    Mirrors the parent sycophancy adapter spec (r32/α64/rsLoRA, 7 proj, dropout
-    0.05, lr 1e-5) but trains on the fixed insecure-code corpus. The behavior
-    routes through recipe_for(broad_em) for the same UNIFIED_OVERRIDES shape;
-    the corpus (not the behavior's own datagen) is the training data, so the
-    recipe's neg_ratio / generic_frac are irrelevant here (the dispatcher feeds
-    the pinned corpus jsonl directly).
+    REPLICATES the Betley EM-induction recipe (betley_open_model.yaml +
+    lora/default.yaml adapter): linear scheduler, warmup_steps 5, wd 0.01,
+    per_device 2 x grad_accum 8, dropout 0.0, completion-only loss, max_length
+    2048, r32/alpha64/rsLoRA, lr 1e-5 — training on the fixed insecure-code
+    corpus. Routes through recipe_for(broad_em) for the spec skeleton, then
+    replaces overrides with the Betley set (the behavior's own neg_ratio /
+    generic_frac are irrelevant — the dispatcher feeds the pinned corpus jsonl).
     """
     c = CELLS[cell]
     if c.arm != "B" or c.method != "lora":
@@ -242,7 +284,7 @@ def arm_b_lora_config(cell: str, *, max_steps: int, seed: int = SEED) -> object:
         spec,
         overrides={
             **spec.overrides,
-            "epochs": 16,  # ceiling; max_steps caps the ladder
+            **BETLEY_B1_OVERRIDES,
             "lora_r": c.lora_r,
             "lora_alpha": c.lora_alpha,
             "use_rslora": c.use_rslora,

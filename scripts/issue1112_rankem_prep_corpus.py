@@ -141,6 +141,85 @@ def prepare(*, smoke: bool, upload: bool, out_path: Path) -> dict:
     return rec
 
 
+# Base model whose tokenizer the Arm B trainers use (betley_open_model.yaml
+# model_id; project canonical Qwen-2.5-7B-Instruct). Its chat template + BPE
+# vocab decide the trained row length, so the token-budget audit must use it.
+AUDIT_MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
+
+
+def audit_token_budget(*, smoke: bool, max_length: int) -> dict:
+    """Tokenize every corpus row EXACTLY as trained; report the length budget.
+
+    Replicates ``scripts/train_behavior_fullft.py::tokenize_prompt_completion_row``
+    (the B2 tokenization; B1's TRL completion-only path tokenizes identically):
+    prompt via ``apply_chat_template(add_generation_prompt=True)``, full via
+    ``apply_chat_template(prompt + completion)``, labels = length-diff,
+    right-truncate to ``max_length``. Reports (counts ONLY, NO row content):
+    p50/p95/max total tokens, rows that lose ANY completion token at the cap,
+    rows whose completion is FULLY truncated (== zero loss-bearing tokens).
+    """
+    from transformers import AutoTokenizer
+
+    raw = _fetch(R.INSECURE_CORPUS_URL)
+    got_sha = hashlib.sha256(raw).hexdigest()
+    if not smoke and got_sha != R.INSECURE_CORPUS_SHA256:
+        raise ValueError(
+            f"corpus sha256 mismatch: got {got_sha}, pinned {R.INSECURE_CORPUS_SHA256}"
+        )
+    lines = [ln for ln in raw.decode("utf-8").split("\n") if ln.strip()]
+    if smoke:
+        lines = lines[:SMOKE_ROWS]
+    rows = [convert_row(json.loads(ln)) for ln in lines]
+
+    tok = AutoTokenizer.from_pretrained(AUDIT_MODEL_ID)
+    totals: list[int] = []
+    n_lose_completion = 0  # len(full_ids) > max_length: at least one completion token cut
+    n_completion_fully_truncated = 0  # len(prompt_ids) >= max_length: whole completion cut
+    for r in rows:
+        prompt_ids = tok.apply_chat_template(r["prompt"], tokenize=True, add_generation_prompt=True)
+        full_ids = tok.apply_chat_template(
+            r["prompt"] + r["completion"], tokenize=True, add_generation_prompt=False
+        )
+        totals.append(len(full_ids))
+        if len(full_ids) > max_length:
+            n_lose_completion += 1
+        if len(prompt_ids) >= max_length:
+            n_completion_fully_truncated += 1
+
+    totals.sort()
+    n = len(totals)
+
+    def _pct(q: float) -> int:
+        return totals[min(n - 1, int(q * n))] if n else 0
+
+    n_zero_loss = n_completion_fully_truncated  # identical for this tokenization
+    rec = {
+        "model_id": AUDIT_MODEL_ID,
+        "max_length": max_length,
+        "n_rows": n,
+        "total_tokens_p50": _pct(0.50),
+        "total_tokens_p95": _pct(0.95),
+        "total_tokens_max": totals[-1] if totals else 0,
+        "n_lose_completion": n_lose_completion,
+        "frac_lose_completion": round(n_lose_completion / n, 5) if n else 0.0,
+        "n_completion_fully_truncated": n_completion_fully_truncated,
+        "n_zero_loss_tokens": n_zero_loss,
+        "source_sha256": got_sha,
+        "smoke": smoke,
+    }
+    log.info(
+        "[audit] rows=%d p50=%d p95=%d max=%d lose_completion=%d (%.3f%%) fully_truncated=%d",
+        n,
+        rec["total_tokens_p50"],
+        rec["total_tokens_p95"],
+        rec["total_tokens_max"],
+        n_lose_completion,
+        100 * rec["frac_lose_completion"],
+        n_completion_fully_truncated,
+    )
+    return rec
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Prepare the Betley insecure-code corpus for #1112 rankem Arm B."
@@ -150,12 +229,27 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--no-upload", action="store_true", help="convert + write local, skip HF upload")
     p.add_argument(
+        "--audit",
+        action="store_true",
+        help="token-budget audit only (tokenize all rows as trained; no write, no upload)",
+    )
+    p.add_argument(
+        "--max-length",
+        type=int,
+        default=R.SYCO_MAX_LENGTH,
+        help="max_length for the --audit truncation check (default 2048, the Arm B recipe)",
+    )
+    p.add_argument(
         "--out",
         type=Path,
         default=Path("data/issue1112/rankem/insecure_code_corpus.jsonl"),
         help="local output path (default under gitignored data/)",
     )
     args = p.parse_args(argv)
+    if args.audit:
+        rec = audit_token_budget(smoke=args.smoke, max_length=args.max_length)
+        print(json.dumps(rec, indent=2))
+        return 0
     rec = prepare(smoke=args.smoke, upload=not args.no_upload, out_path=args.out)
     print(json.dumps(rec, indent=2))
     return 0
