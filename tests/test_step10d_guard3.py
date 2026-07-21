@@ -41,8 +41,9 @@ def _guard3_region(text: str) -> str:
     """The Guard-3 slice: from the guard-3 heading to the fast-path heading.
 
     Scoping the Guard-3 assertions to this slice keeps them independent of the
-    unrelated Step-5a spec-freshness sync (line ~1925), which legitimately uses
-    a `--grep='spec-freshness' --invert-grep` filter and MUST NOT be touched.
+    unrelated Step-5a spec-freshness sync (line ~1925), which #1560
+    subject-scoped to the same awk index() form (see
+    test_step5a_grep_filter_untouched) and which is pinned separately.
     """
     start_marker = "**Branch-content / non-`main`-base guard.**"
     end_marker = "#### Fast-path routing pre-check"
@@ -327,7 +328,8 @@ def test_guard3_spec_freshness_subject_only_awk_filter():
 def test_guard3_region_does_not_use_grep_spec_freshness():
     """Within the Guard-3 slice, the exclusion must NOT be a `--grep` (which
     matches the commit BODY too). The Step-5a sync at line ~1925 is a separate
-    region and keeps its own legitimate `--grep --invert-grep` filter."""
+    region, subject-scoped by #1560 to the same awk index() form (pinned by
+    test_step5a_grep_filter_untouched)."""
     region = _guard3_region(_skill_text())
     assert "--grep='spec-freshness'" not in region, (
         "Guard-3 must not use --grep='spec-freshness' (over-matches commit body)"
