@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1576,
+  "highest_id": 1577,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4491,6 +4491,13 @@
       "path": "tasks/proposed/1576",
       "status": "proposed",
       "title": "daily-fix: WARN on inline interpreter workload-cmd body"
+    },
+    "1577": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1577",
+      "status": "proposed",
+      "title": "daily-fix: read-bounding hook for guard hook scripts"
     },
     "158": {
       "has_clean_result": false,
