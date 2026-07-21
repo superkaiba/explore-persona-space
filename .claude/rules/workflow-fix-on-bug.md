@@ -557,13 +557,22 @@ normalize(s) = s.lower(), collapse internal whitespace to single spaces, strip
 - **FALLBACK (documented, WORKING):** the body's `## Provenance`
   `workflow_fix_target: <path>` line (written verbatim by `--body-file`)
   — grepped when the title/tag surfaces are insufficient.
+- **Tag-vs-body-line authority on the /daily route-2 channel (#1580):** the
+  `wf-fix-fp` tag is manifest-computed and AUTHORITATIVE; since #1580 the
+  driver (`daily_drive_filings.ensure_wf_fix_provenance`) reconciles the body's
+  anchored `- fingerprint:` line to the tag value, preserving a differing
+  candidate-block fp as a labeled substring (`(tag-authoritative; supersedes
+  body-carried fingerprint: <old>)`). Pre-#1580 landed bodies (#1554–#1571,
+  #1579) may carry a differing body fp — both values remain individually
+  matchable by the tag-OR-body-line predicates, so neither is dead as a key.
 - **NEVER** route any dedup key through `set_body` — it strips leading
   frontmatter except `paper`/`abstract`.
 
 **Dedup predicate (exact):** a candidate is a duplicate iff there exists a
 task with `kind: infra` AND a `workflow-fix:` or `daily-fix:` title prefix
-(`task_workflow.WF_FIX_TITLE_PREFIXES`) AND a
-`wf-fix-fp:<fp>` tag matching the candidate's fingerprint AND a
+(`task_workflow.WF_FIX_TITLE_PREFIXES`) AND the candidate's fingerprint
+(matched via the `wf-fix-fp:<fp>` tag OR a body `fingerprint: <fp>` line —
+the canonical code's OR, `task_workflow.is_open_workflow_fix_task`) AND a
 `## Provenance` `workflow_fix_target:` line EXACTLY string-matching the
 candidate's `target_file` AND whose status is NOT in the terminal set
 `{completed, archived}`. Same file + DIFFERENT fingerprint is NOT a
