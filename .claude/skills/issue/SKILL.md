@@ -10102,6 +10102,8 @@ tests BEFORE anything lands:
       # block; same doctrine as the branch-new scan-test note above).
       for leg in baseline gated; do
         grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
+          # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+          # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
           | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
           | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
       done
@@ -11299,6 +11301,8 @@ Decision tree:
     # field-2: space-bearing string param ids must survive intact):
     for leg in baseline gated; do
       grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
+        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
         | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
     done

@@ -1082,9 +1082,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.map_files is not None:
-        # Mapping mode (#1147): pure GLOB_SCAN_TESTS + rules-pin (#1496)
-        # lookup over an explicit
-        # file list — no git diff, no invariant set, no timeout sizing. The
+        # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
+        # src/scripts dependency arms (import/literal/stem, #1573,
+        # WORKFLOW_INVARIANT excluded) over an explicit file list — no git
+        # diff; stderr carries the zero-mapped WARN floor + the
+        # recommended-timeout-s sizing line (floor 300). The
         # Step 10d merge gate consumes the tab-separated stdout; empty output
         # + exit 0 means "no scan-covered payload" (the gate skips its test
         # leg). Only an unreadable input file is an error (exit 1) — the gate
