@@ -160,6 +160,40 @@ def test_match_install_arm_b_below_floor_not_installed() -> None:
     assert out[R.B2]["installed"] is True
 
 
+def test_capture_panel_is_parent_6x20(tmp_path) -> None:
+    """The capture panel is the parent's fixed 6-context x 20-question substrate,
+    source-disjoint from the negative panel (#527/#538)."""
+    panel, questions = D._capture_panel()
+    assert len(panel) == 6, f"expected 6 contexts (source + 5 negs), got {len(panel)}"
+    assert len(questions) == 20, f"expected 20 questions, got {len(questions)}"
+    # every panel value is a (system, user_wrap) tuple
+    assert all(isinstance(v, tuple) and len(v) == 2 for v in panel.values())
+
+
+def test_resolve_capture_model_base(tmp_path) -> None:
+    cfg = _cfg(tmp_path, dry_run=False)
+    model, cleanup = D._resolve_capture_model(cfg, "base_sycophancy")
+    assert model == R.BASE_MODEL
+    assert cleanup is None
+
+
+def test_resolve_capture_model_requires_selection(tmp_path) -> None:
+    cfg = _cfg(tmp_path, dry_run=False)
+    (cfg.out_root / R.A1).mkdir(parents=True)
+    (cfg.out_root / R.A1 / "selection.json").write_text('{"cell": "a1_lora_r1"}')
+    (cfg.out_root / R.A1 / "build_result.json").write_text('{"adapter_root": "/x"}')
+    with pytest.raises(ValueError, match="no selected/closest step"):
+        D._resolve_capture_model(cfg, R.A1)
+
+
+def test_phase_capture_dry_run_plans_base_plus_installed(tmp_path) -> None:
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    out = D.phase_capture(cfg)
+    assert out["cells_to_capture"] == ["base_sycophancy"]  # no installed cells in a bare dry-run
+    assert out["layers"] == D.N_LAYERS
+
+
 def test_dry_run_sentinel_never_hits_live_namespace(tmp_path) -> None:
     cfg = _cfg(tmp_path)
     cfg.out_root.mkdir(parents=True, exist_ok=True)

@@ -92,6 +92,30 @@ DATA_PREFIX = "issue1112_geometry2x2"
 BASE_SYCO = "base_sycophancy"
 BASE_MARKER = "base_marker"
 
+# ── #1112 rankem round (rank x behavior method-pairs) ─────────────────────────
+# The rankem cells' capture tensors land under the rankem data sub-prefix; the
+# Arm A comparator (s3_fullft_neg) stays at the parent prefix + OWN_REV. Per-cell
+# prefix/rev resolution below keeps existing parent pairs byte-identical.
+RANKEM_DATA_PREFIX = f"{DATA_PREFIX}/rankem"
+# TODO(pin post-capture): once #1112 rankem p4_capture uploads, replace "main"
+# with the resolved rankem capture commit for a coherent-snapshot run.
+RANKEM_CAPTURE_REV = "main"
+RANKEM_CELLS = ("a1_lora_r1", "a2_lora_r4", "b1_lora_em", "b2_fullft_em")
+
+
+def _cell_prefix(cell: str) -> str:
+    """HF data-repo prefix for a cell's capture store — rankem cells under the
+    rankem sub-prefix, every parent cell (incl. the s3_fullft_neg comparator)
+    under the parent prefix."""
+    return RANKEM_DATA_PREFIX if cell in RANKEM_CELLS else DATA_PREFIX
+
+
+def _cell_rev(cell: str, default: str) -> str:
+    """Capture revision for a cell — rankem cells at RANKEM_CAPTURE_REV, parent
+    cells at the caller's default (OWN_REV / TF_REV)."""
+    return RANKEM_CAPTURE_REV if cell in RANKEM_CELLS else default
+
+
 # Sanity-gate references (geometry_per_cell.json H1 raw full-cloud cos_mu).
 SANITY = {
     ("response", PRIMARY_LAYER): 0.9521929165407169,
@@ -161,11 +185,65 @@ PAIRS = (
             "was 0.311 — the attenuation floor is deep, read the corrected cosine with care"
         ),
     },
+    # ── #1112 rankem pairs (rank x behavior method-pairs) ─────────────────────
+    # Arm A: low-rank NON-rsLoRA sycophancy LoRA vs the parent's full-FT+neg
+    # comparator (s3_fullft_neg) at matched judged install — the arXiv 2410.21228
+    # largest-gap regime. Arm B: misalignment (insecure-code) LoRA vs full-FT.
+    {
+        "label": "rankem_a1_ftneg_vs_lora_r1",
+        "cell_a": "s3_fullft_neg",
+        "rev_a": OWN_REV,
+        "cell_b": "a1_lora_r1",
+        "rev_b": RANKEM_CAPTURE_REV,
+        "base_cell": BASE_SYCO,
+        "registered_layer": PRIMARY_LAYER,
+        "own_arms": ("response", "context"),
+        "shared_text": True,
+        "install_note": (
+            "low-rank r=1 non-rsLoRA vs full-FT+neg at matched judged install (0.60-0.85 "
+            "band); arXiv 2410.21228 predicts the largest LoRA/full-FT geometry gap here"
+        ),
+    },
+    {
+        "label": "rankem_a2_ftneg_vs_lora_r4",
+        "cell_a": "s3_fullft_neg",
+        "rev_a": OWN_REV,
+        "cell_b": "a2_lora_r4",
+        "rev_b": RANKEM_CAPTURE_REV,
+        "base_cell": BASE_SYCO,
+        "registered_layer": PRIMARY_LAYER,
+        "own_arms": ("response", "context"),
+        "shared_text": True,
+        "install_note": "low-rank r=4 non-rsLoRA vs full-FT+neg at matched judged install",
+    },
+    {
+        "label": "rankem_b_misalignment_ft_vs_lora",
+        "cell_a": "b2_fullft_em",
+        "rev_a": RANKEM_CAPTURE_REV,
+        "cell_b": "b1_lora_em",
+        "rev_b": RANKEM_CAPTURE_REV,
+        "base_cell": BASE_SYCO,
+        "registered_layer": PRIMARY_LAYER,
+        "own_arms": ("response", "context"),
+        "shared_text": True,
+        "install_note": (
+            "misalignment (Betley insecure-code) full-FT vs LoRA r32/rsLoRA at matched "
+            "install (rate gain >=0.2 over base, nearest-rate rungs)"
+        ),
+    },
 )
 
 # Capture-tf response-arm cells available on the Hub (issue1112_geometry.TF_SYCO_CELLS
 # ∩ the sycophancy 2x2). s5_lora_neg_lr5e6 + marker cells have no tf capture.
-TF_CELLS = ("s1_lora_neg", "s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos")
+# The 4 rankem cells carry a tf shared-text store (p4_capture) under the rankem
+# prefix — _cell_prefix/_cell_rev route their staging (RANKEM_CAPTURE_REV).
+TF_CELLS = (
+    "s1_lora_neg",
+    "s2_lora_pos",
+    "s3_fullft_neg",
+    "s4_fullft_pos",
+    *RANKEM_CELLS,
+)
 
 
 def _own_path(root: Path, cell: str) -> Path:
@@ -196,15 +274,15 @@ def stage(root: Path) -> None:
         seen.add((cell, rev))
         dose = "base" if cell in (BASE_SYCO, BASE_MARKER) else "selected"
         _fetch_one(
-            f"{DATA_PREFIX}/analysis_tensors/capture/{cell}/{dose}/pooled.pt",
+            f"{_cell_prefix(cell)}/analysis_tensors/capture/{cell}/{dose}/pooled.pt",
             _own_path(root, cell),
             rev,
         )
     for cell in TF_CELLS:
         _fetch_one(
-            f"{DATA_PREFIX}/analysis_tensors/capture_tf/{cell}/selected/pooled.pt",
+            f"{_cell_prefix(cell)}/analysis_tensors/capture_tf/{cell}/selected/pooled.pt",
             _tf_path(root, cell),
-            TF_REV,
+            _cell_rev(cell, TF_REV),
         )
     logger.info("[stage] cross-method stores staged under %s", root)
 

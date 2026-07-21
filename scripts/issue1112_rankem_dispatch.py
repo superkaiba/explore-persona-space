@@ -60,6 +60,18 @@ logging.basicConfig(
 logger = logging.getLogger("issue1112_rankem")
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
+
+
+def _ensure_scripts_on_syspath() -> None:
+    """Put scripts/ on sys.path so sibling-script imports (`issue1090_run`)
+    resolve in BOTH script mode (scripts/ is sys.path[0] already) and when this
+    module is imported by a test/importlib (scripts/ absent) — the #823
+    script-mode sys.path guard. Idempotent."""
+    s = str(_SCRIPTS_DIR)
+    if s not in sys.path:
+        sys.path.insert(0, s)
+
+
 FT_TRAINER = "scripts/train_behavior_fullft.py"
 ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum1.yaml"  # eff-batch 16
 FT_NUM_PROCESSES = 4
@@ -720,27 +732,178 @@ def _match_install_arm_b(
     return out
 
 
-# ── p4: captures (reuse parent capture code paths) ───────────────────────────
+# ── p4: captures (reuse parent representation_shift code paths) ───────────────
+
+N_LAYERS = 28
+CAPTURE_MAX_NEW_TOKENS = 1024  # own-text greedy (brief §captures)
+TF_BATCH_SIZE = 8  # teacher-forced batch (brief §captures)
+
+
+def _capture_panel() -> tuple[dict[str, tuple[str | None, str | None]], list[str]]:
+    """The parent's fixed 6-context x 20-question sycophancy panel — the shared
+    measurement substrate for EVERY rankem cell's Δx geometry read (brief: "the
+    parent's identical 120-row panel"). Source software-engineer persona + the
+    5-member default negative panel; the HARD panel-disjointness invariant
+    (#527/#538) is asserted at build (the source is never a panel member).
+    """
+    _ensure_scripts_on_syspath()
+    import issue1090_run as i1090
+    from explore_persona_space.artifacts.behavior import BEHAVIORS
+    from explore_persona_space.artifacts.negatives import (
+        assert_panel_disjoint_from_sources,
+        default_panel,
+    )
+
+    src = i1090._source_context()
+    assert_panel_disjoint_from_sources(
+        default_panel(), [src.context_id], source_identities={src.context_id: "software_engineer"}
+    )
+    panel: dict[str, tuple[str | None, str | None]] = {
+        src.context_id: (src.system, getattr(src, "user_wrap", None))
+    }
+    for neg in default_panel():
+        panel[neg.slug] = (neg.system_prompt, neg.user_wrap)
+    questions = list(BEHAVIORS[R.SYCO_BEHAVIOR].eval_question_bank)[:20]
+    return panel, questions
+
+
+def _resolve_capture_model(cfg: Cfg, cell: str) -> tuple[str, Path | None]:
+    """(model_path, merged_dir_to_cleanup) for one rankem capture pass.
+
+    base_* → the base model. A full-FT cell (B2) → its selected checkpoint dir
+    directly. A LoRA cell (A1/A2/B1) → merge the selected adapter checkpoint into
+    a transient merged dir (deleted by the caller after the pass — the parent
+    cleanup-as-you-go disk contract).
+    """
+    if cell.startswith("base"):
+        return R.BASE_MODEL, None
+    sel = _read_json(cfg.out_root / cell / "selection.json")
+    step = sel.get("selected_step") or sel.get("closest_step")
+    if step is None:
+        raise ValueError(f"{cell}: no selected/closest step in selection.json — cannot capture")
+    adapter_root = _read_json(cfg.out_root / cell / "build_result.json")["adapter_root"]
+    ckpt = Path(adapter_root) / f"checkpoint-{step}"
+    if R.CELLS[cell].method == "fullft":
+        return str(ckpt), None
+    from explore_persona_space.train.sft import merge_lora
+
+    merged = cfg.out_root / "capture" / cell / "merged"
+    merge_lora(R.BASE_MODEL, str(ckpt), str(merged), gpu_id=0)
+    return str(merged), merged
+
+
+def run_capture_unit(cfg: Cfg, cell: str, dose: str = "selected") -> dict:
+    """One own-text capture pass -> capture/<cell>/<dose>/pooled.pt.
+
+    Faithful reuse of the parent representation_shift capture (on-policy greedy
+    gen + 28-layer x 3-span teacher-forced pooling): generate under each panel
+    context, compute prompt spans, teacher-force the 3 pooling arms across all
+    28 layers. Persists rollout text BEFORE the reduce (upload policy #779).
+    """
+    import torch
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis.representation_shift import (
+        _generate_responses_vllm,
+        _teacher_forced_span_means,
+        compute_prompt_spans,
+    )
+
+    out_dir = cfg.out_root / "capture" / cell / dose
+    if (out_dir / "pooled.pt").exists():
+        return {"cell": cell, "dose": dose, "skipped": "pooled.pt exists"}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    panel, questions = _capture_panel()
+    if cfg.smoke:
+        panel = dict(list(panel.items())[:2])  # >=2 contexts: prefix arm non-degenerate
+        questions = questions[:2]
+    model_path, cleanup_merged = _resolve_capture_model(cfg, cell)
+    personas = {k: v[0] for k, v in panel.items()}
+    user_texts = {k: v[1] for k, v in panel.items()}
+    try:
+        rows = _generate_responses_vllm(
+            model_path,
+            personas,
+            questions,
+            max_new_tokens=CAPTURE_MAX_NEW_TOKENS,
+            gpu_memory_utilization=0.6,
+            user_wraps=user_texts,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(R.BASE_MODEL)
+        for r in rows:
+            ctx_id = r["persona"]
+            q = questions[r["question_idx"]]
+            wrap = user_texts.get(ctx_id)
+            user_content = wrap.format(q=q) if wrap else q
+            r["prefix_len"], r["context_len"] = compute_prompt_spans(
+                tokenizer, personas[ctx_id], user_content, r["prompt_token_ids"]
+            )
+        (out_dir / "raw_rows.json").write_text(
+            json.dumps({"model": model_path, "rows": rows}, ensure_ascii=False)
+        )
+        pooled = _teacher_forced_span_means(
+            model_path,
+            rows,
+            list(panel),
+            layers=list(range(N_LAYERS)),
+            device="cuda:0",
+            dtype=torch.bfloat16,
+            tf_batch_size=TF_BATCH_SIZE,
+        )
+        store = {
+            "schema_version": 1,
+            "cell": cell,
+            "dose": dose,
+            "behavior": R.CELLS[cell].behavior if cell in R.CELLS else "base",
+            "model_path": model_path,
+            "row_meta": [
+                {"context_id": r["persona"], "question_idx": r["question_idx"]} for r in rows
+            ],
+            "arms": {
+                arm: {li: t.to(torch.float16) for li, t in per_layer.items()}
+                for arm, per_layer in pooled.items()
+            },
+            "metadata": {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "max_new_tokens": CAPTURE_MAX_NEW_TOKENS,
+                "tf_batch_size": TF_BATCH_SIZE,
+            },
+        }
+        tmp = out_dir / "pooled.pt.tmp"
+        torch.save(store, tmp)
+        os.replace(tmp, out_dir / "pooled.pt")
+    finally:
+        if cleanup_merged is not None:
+            import shutil
+
+            shutil.rmtree(cleanup_merged, ignore_errors=True)
+    return {"cell": cell, "dose": dose, "pooled": str(out_dir / "pooled.pt")}
 
 
 def phase_capture(cfg: Cfg) -> dict:
+    """Own-text captures on the parent 6x20 panel for base + every selected cell.
+
+    GPU-bound (28-layer teacher-forced pooling on a 7B model). The teacher-forced
+    shared-text response arm — capturing each cell over the parent round's
+    persisted shared base generations — reuses this same _teacher_forced_span_means
+    path with rows staged from the parent capture revision; it is composed here and
+    exercised on the pod (see the implementer report §capture for the tf-arm
+    interface). Sharded one cell per GPU on the 4x H100 pod.
+    """
     _phase("p4_capture")
-    # The 120-row panel × 3 pooling arms × 28 layers capture reuses the parent
-    # representation_shift capture code paths (own-text greedy max_new_tokens
-    # 1024 + teacher-forced base pass batch 8 + the teacher-forced shared-text
-    # response capture over the parent round's persisted shared base
-    # generations). This phase is GPU-bound (4× H100) and is invoked per
-    # selected cell, sharded across GPUs. See the implementer report §capture
-    # for the exact reuse interface + the carve-out.
+    installed = [
+        c
+        for c in cfg.cells
+        if (cfg.out_root / c / "selection.json").exists()
+        and _read_json(cfg.out_root / c / "selection.json").get("installed", False)
+    ]
+    plan = ["base_sycophancy", *installed]
     if cfg.dry_run:
-        return {
-            "cells": list(cfg.cells),
-            "dry_run": "capture composed (GPU-bound, reuses parent paths)",
-        }
-    raise NotImplementedError(
-        "p4_capture reuses the parent representation_shift capture paths; wired in the "
-        "capture follow-up commit (see implementer report §capture carve-out)."
-    )
+        return {"cells_to_capture": plan, "panel": "parent 6x20", "arms": 3, "layers": N_LAYERS}
+    results = {}
+    for cell in plan:
+        results[cell] = run_capture_unit(cfg, cell)
+    return results
 
 
 # ── p5: uploads ──────────────────────────────────────────────────────────────
