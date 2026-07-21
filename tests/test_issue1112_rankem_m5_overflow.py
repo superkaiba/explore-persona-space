@@ -351,3 +351,55 @@ def test_phase_upload_records_pruned_b2_rung_from_overflow(tmp_path, monkeypatch
     assert f"overflow:{repo_path}" in recorded
     # ... and NEVER re-uploaded from a missing local dir.
     assert all(repo_path not in str(a) for a in upload_calls), "pruned rung must not be re-uploaded"
+
+
+def test_phase_upload_raises_when_pruned_b2_rung_absent_from_overflow(
+    tmp_path, monkeypatch
+) -> None:
+    """The fail-loud other half of the pruned-B2 branch: a selected rung that is
+    NEITHER local (pruned) NOR present on overflow (file_exists False) must raise
+    a clear RuntimeError — the crash-at-p5 guard fires with an actionable message
+    instead of silently recording a nonexistent path. Same faked-HF-boundary setup
+    as the verify-record test; executes the real phase_upload body's fullft
+    pruned-absent branch."""
+    cfg = _cfg(tmp_path, upload=True, dry_run=False, cells=(R.B2,))
+    d = cfg.out_root / "capture" / R.B2 / "selected"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "pooled.pt").write_bytes(b"\x00")
+    (d / "raw_rows.json").write_text("[]")
+    b2 = cfg.out_root / R.B2
+    (b2 / "train").mkdir(parents=True, exist_ok=True)  # no local checkpoint-200 (pruned)
+    (b2 / "selection.json").write_text(json.dumps({"installed": True, "selected_step": 200}))
+    (b2 / "build_result.json").write_text(json.dumps({"adapter_root": str(b2 / "train")}))
+
+    from explore_persona_space.orchestrate import hub
+
+    upload_calls: list[tuple] = []
+    monkeypatch.setattr(hub, "_upload_folder_filtered", lambda *a, **k: None)
+    monkeypatch.setattr(hub, "_upload", lambda *a, **k: (upload_calls.append(a), "https://hf/x")[1])
+    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
+    monkeypatch.setattr(
+        hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
+    )
+
+    import huggingface_hub
+
+    file_exists_paths: list[str] = []
+
+    class _FakeApi:
+        def repo_info(self, repo_id, repo_type):
+            return types.SimpleNamespace(sha="cafe")
+
+        def file_exists(self, repo_id, path, repo_type="model"):
+            file_exists_paths.append(path)
+            return False  # pruned rung is NOT on overflow -> must fail loud
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+
+    repo_path = f"issue1112_{R.RANKEM_SLUG}/{R.B2}/checkpoint-200"
+    with pytest.raises(RuntimeError, match=r"neither local nor on overflow"):
+        D.phase_upload(cfg)
+    # The guard consulted overflow before raising ...
+    assert f"{repo_path}/config.json" in file_exists_paths
+    # ... and never re-uploaded from the missing local dir.
+    assert all(repo_path not in str(a) for a in upload_calls), "absent rung must not be re-uploaded"
