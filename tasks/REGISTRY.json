@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1581,
+  "highest_id": 1582,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4533,6 +4533,13 @@
       "path": "tasks/proposed/1581",
       "status": "proposed",
       "title": "daily-fix: edit-success gate before new-plan-version persist"
+    },
+    "1582": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1582",
+      "status": "proposed",
+      "title": "daily-fix: escalate keep-running pods with wedged owners"
     },
     "159": {
       "has_clean_result": false,
