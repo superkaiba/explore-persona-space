@@ -269,7 +269,7 @@ def _within_diagonals(
     """Within-regime diagonals at each pair grain; smoke-skips recorded in-place."""
     within: dict = {}
     for r in regimes:
-        if r in ("r3", "r4"):
+        if r in ("r3", c.STORY_REGIME):
             continue
         sw = sweep_fn(r, r, "headline")
         if not isinstance(sw, tuple):
@@ -278,7 +278,7 @@ def _within_diagonals(
         if not live:
             continue
         for r in regimes:
-            if grain == "r3pair" and r == "r4":
+            if grain == "r3pair" and r == c.STORY_REGIME:
                 continue
             if grain == "r4pair" and r == "r3":
                 continue
@@ -296,7 +296,7 @@ def pair_kind_for(i: str, j: str) -> str:
     r3 not rerun in the paired variant)."""
     if {i, j} == {"r1", "r2"}:
         return "headline"
-    if "r4" in (i, j):
+    if c.STORY_REGIME in (i, j):
         assert "r3" not in (i, j), (i, j)
         return "r4pair"
     return "r3pair"
@@ -378,10 +378,10 @@ def run_model_arm(
     matrix: dict = {}
     deltas: dict = {}
     for i, j in [(a, b) for a in regimes for b in regimes if a != b]:
-        if {i, j} == {"r3", "r4"}:
+        if {i, j} == {"r3", c.STORY_REGIME}:
             skipped[f"{i}->{j}"] = "r3~r4 never computes (different story corpora; plan v8 §4)"
             continue
-        if "r4" in (i, j) and not include_r4:
+        if c.STORY_REGIME in (i, j) and not include_r4:
             # Mirror opcomp's pair-loop guard (r1 code-review Critical): the r4
             # BUNDLE can be loaded (so r4 ∈ regimes) while the r4 matched-pair
             # build smoke-skipped, leaving no conv set for the r4pair grain.
@@ -408,7 +408,7 @@ def run_model_arm(
             "transfer_l19": xfer["r2_by_layer"][str(L19)],
             "target_within_l19": within_j["r2_by_layer"][str(L19)],
         }
-        if j in ("r3", "r4"):
+        if j in ("r3", c.STORY_REGIME):
             ceil = within_j["r2_by_layer"][str(L19)]
             deltas[f"{i}->{j}"]["pct_of_story_ceiling_l19"] = (
                 float(xfer["r2_by_layer"][str(L19)] / ceil) if abs(ceil) > 1e-9 else None
@@ -489,12 +489,15 @@ def main() -> None:
     args.preds_dir.mkdir(parents=True, exist_ok=True)
     matched = load_matched(args.matched_dir)
     regimes = [
-        r for r in c.REGIMES if not (args.no_r3 and r == "r3") and not (args.no_r4 and r == "r4")
+        r
+        for r in c.REGIMES
+        if not (args.no_r3 and r == "r3") and not (args.no_r4 and r == c.STORY_REGIME)
     ]
     for model in args.models.split(","):
         assert model in c.MODELS, model
-        # Base r4 cells are N/A by scope (plan v8 §5): only R4_MODELS load r4.
-        model_regimes = [r for r in regimes if r != "r4" or model in c.R4_MODELS]
+        # Base story cells are N/A by scope (plan v8 §5): only R4_MODELS load the
+        # story regime (r4 TF or r4op on-policy).
+        model_regimes = [r for r in regimes if r != c.STORY_REGIME or model in c.R4_MODELS]
         # ONE slim bundle load per (model, regime), shared across both arms
         bundles = {r: load_regime_bundle(args.turnstore_dir, model, r) for r in model_regimes}
         for arm in args.arms.split(","):
@@ -510,7 +513,7 @@ def main() -> None:
                 null_draws=args.null_draws,
                 n_boot=args.n_boot,
                 include_r3=not args.no_r3,
-                include_r4="r4" in model_regimes,
+                include_r4=c.STORY_REGIME in model_regimes,
                 smoke=args.smoke,
             )
     print("[done] cross-regime transfer complete", flush=True)

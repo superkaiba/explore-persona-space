@@ -83,6 +83,24 @@ case "$VARIANT" in
   conversation_paired_stories|conversation_paired_stories_assistant) CPS=1 ;;
 esac
 
+# on-policy-assistant-story variant (followup_label=onpolicy-assistant-story):
+# the on-policy paired story arm (r4op) is PROMOTED to the primary regime at
+# powered n. gen via `gen_stories_paired.py --op-powered` (free answer, pool-
+# sourced, retry-until-floor >=2000) + extract via `--regime r4op`; NO r4 TF gen,
+# NO r3 (out of scope). EXPLICIT membership (mirrors c.ONPOLICY_STORY_VARIANTS).
+OPS=""
+case "$VARIANT" in
+  onpolicy_assistant_story) OPS=1 ;;
+esac
+# The on-policy round pins the in-story character to "Assistant" (the round's
+# science contract): refuse an ARIA-named (or any other) launch so a wrong-
+# character corpus can never be generated + burn the pod.
+if [[ -n "$OPS" && "$CHARACTER_NAME" != "Assistant" ]]; then
+  echo "FATAL: --variant onpolicy_assistant_story requires --character-name Assistant" \
+       "(got '$CHARACTER_NAME')" >&2
+  exit 1
+fi
+
 # story-slot-position-ablation mode (plan v10 §4 item 6): its OWN phase list —
 # NO gen/judge phases exist in this mode by design (a missing/short bundle is
 # a fail-loud halt, never a regeneration). --slot-ablation is pinned to the
@@ -98,6 +116,13 @@ fi
 
 if [[ -n "$SLOTAB" ]]; then
   PHASES=(prefetch_stories prefetch_reuse extract_r4_slots upload_stems fits_slots slot_transfer verdict plots upload push)
+elif [[ -n "$OPS" ]]; then
+  # On-policy round: reuse the parent r1/r2 turnstore (prefetch_reuse), generate
+  # the on-policy paired stories at powered n (gen_stories_op), extract the r4op
+  # turnstore + upload it before fits (extract_r4_op), then the shared analysis
+  # phases (r1/r2/r4op cells; r4op<->chat transfer/opcomp/reparam; matched-row
+  # comparator). No r4 TF, no r3.
+  PHASES=(prefetch_reuse gen_stories_op extract_r4_op matchedn fits matched_row_refits transfer opcomp plots upload push)
 else
   PHASES=(prefetch prefetch_reuse phase0 gen_stories gen_stories_paired extract_r1r2 extract_stories extract_r4_tf extract_r4_op_companion matchedn fits matched_row_refits transfer opcomp plots upload push)
 fi
@@ -158,12 +183,14 @@ no_r4_flag() { [[ -f "$R4_HALT_FILE" ]] && echo "--no-r4" || true; }
 # never-extracted r4op store — a full-run FATAL from a designed control lane).
 no_r4op_flag() { [[ -f "$R4OP_HALT_FILE" ]] && echo "--no-r4op" || true; }
 
-# Under the paired variant, r3 is halted BY SCOPE (never generated this round;
-# the parent ARIA run is the committed anchor). Reuses the whole %NO_R3% /
-# halted_models plumbing with zero further changes.
-if [[ -n "$CPS" ]]; then
+# Under the paired variant AND the on-policy variant, r3 is halted BY SCOPE
+# (never generated this round; the parent ARIA run is the committed anchor).
+# Reuses the whole %NO_R3% / halted_models plumbing with zero further changes —
+# and (on-policy) keeps build_matched's `if r3_models:` block from probing a
+# never-extracted r3 store (r3 ∉ REGIMES for OPS, so no r3 cells exist either).
+if [[ -n "$CPS" || -n "$OPS" ]]; then
   touch "$DATA_DIR/story_regime_halted_instruct" "$DATA_DIR/story_regime_halted_pretrained"
-  echo "[dispatch] cps variant: r3 story regime out of scope this round (parent anchor reused)"
+  echo "[dispatch] cps/ops variant: r3 story regime out of scope this round (parent anchor reused)"
 fi
 
 NGPU=0
@@ -363,7 +390,7 @@ if should_run gen_stories_paired; then
     # Instruct only (base N/A by scope, plan v8 §5). rc=21 == the 2160/2700
     # yield floor failed -> the r4 leg halts (reported N/A); other rc fatal.
     RC_PAIRED=0
-    # RC_CAPTURE_EXEMPT: run_cmd is a thin print-and-exec wrapper (payload = last command), so the captured rc IS the payload's — typed rc-21 routing below
+    # RC_CAPTURE_EXEMPT: run_cmd body has a single failure-prone step (the wrapped "$@", its last command), so the function rc IS the wrapped command rc; the capture routes gen_stories rc=21 yield-floor halts via gen_rc_route
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
       --model instruct --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_PAIRED=$?
     if [[ -z "$DRY_RUN" ]]; then
@@ -443,7 +470,7 @@ if should_run extract_r4_op_companion; then
     # (plan v8 §4.5 — a control, never a kill); no_r4op_flag threads the halt
     # into the fits phase.
     RC_OP=0
-    # RC_CAPTURE_EXEMPT: run_cmd is a thin print-and-exec wrapper (payload = last command), so the captured rc IS the payload's — typed rc-23 routing below
+    # RC_CAPTURE_EXEMPT: run_cmd body has a single failure-prone step (the wrapped "$@", its last command), so the function rc IS the wrapped command rc; the capture routes gen_stories rc=21 yield-floor halts via gen_rc_route
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
       --model instruct --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
       --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_OP=$?
@@ -469,6 +496,55 @@ if should_run extract_r4_op_companion; then
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# on-policy-assistant-story phases (OPS-mode only; these names are only in the
+# OPS PHASES list). r4op is the PRIMARY story regime at powered n.
+# ---------------------------------------------------------------------------
+if should_run gen_stories_op; then
+  if [[ -z "$OPS" ]]; then
+    echo "[phase=gen_stories_op] SKIPPED — not an on-policy-story (OPS) variant"
+  else
+    echo "[phase=gen_stories_op]"
+    # On-policy paired story generation at POWERED n: the model answers FREELY
+    # (no verbatim embedding), pool-sourced from the shared matched-n set,
+    # retry-until-floor (<=3 waves, <=3 draws/row) to >=2000 kept. Writes
+    # kept_stories_paired_op_instruct.jsonl + uploads the raw bundle to HF
+    # (persist_bundle_paired). rc=21 == missed the >=2000-kept yield floor
+    # (the round's kill criterion — no story corpus to fit).
+    RC_OP=0
+    # RC_CAPTURE_EXEMPT: run_cmd body has a single failure-prone step (the wrapped "$@", its last command), so the function rc IS the wrapped command rc; the capture routes gen_stories rc=21 yield-floor halts via gen_rc_route
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
+      --model instruct --op-powered --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
+      --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_OP=$?
+    if [[ -z "$DRY_RUN" && "$RC_OP" -eq 21 ]]; then
+      echo "FATAL: on-policy story generation missed the >=2000-kept yield floor (rc=21)" >&2
+      exit 1
+    elif [[ -z "$DRY_RUN" && "$RC_OP" -ne 0 ]]; then
+      echo "FATAL: on-policy story generation failed (rc=$RC_OP)" >&2
+      exit 1
+    fi
+  fi
+fi
+
+if should_run extract_r4_op; then
+  if [[ -z "$OPS" ]]; then
+    echo "[phase=extract_r4_op] SKIPPED — not an on-policy-story (OPS) variant"
+  else
+    echo "[phase=extract_r4_op]"
+    # Teacher-forced capture over the full rendered on-policy story (prefix +
+    # context slots + own-answer span mean) — ONE forward per story into the
+    # r4op stem (verbatim_check=False; answers are on-policy). Upload the
+    # regeneration-costly store to HF BEFORE the long fit phase (#825
+    # upload-before-fit).
+    run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
+      --regime r4op --model instruct --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
+      --legs turnstore --turnstore-glob "*stories_paired_op_s_shard*" \
+      --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
+      --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
+  fi
+fi
+
 if should_run matchedn; then
   echo "[phase=matchedn]"
   # Parity gate (±0.02 vs pinned anchors; exit 3 halts) + matched-n subsets.
@@ -488,8 +564,8 @@ if should_run fits; then
 fi
 
 if should_run matched_row_refits; then
-  if [[ -z "$CPS" ]]; then
-    echo "[phase=matched_row_refits] SKIPPED — not a paired-stories (CPS) variant"
+  if [[ -z "$CPS" && -z "$OPS" ]]; then
+    echo "[phase=matched_row_refits] SKIPPED — not a story-regime (CPS/OPS) variant"
   elif [[ -f "$R4_HALT_FILE" ]]; then
     echo "[phase=matched_row_refits] SKIPPED — r4 leg halted (yield floor)"
   else
@@ -597,6 +673,11 @@ if should_run upload; then
     # Paired variant: only the NEW r4 TF + companion stems upload (matches
     # instruct_stories_paired_s_shard* AND instruct_stories_paired_op_s_shard*).
     UPLOAD_EXTRA=(--turnstore-glob "*stories_paired*_shard*")
+  elif [[ -n "$OPS" ]]; then
+    # On-policy variant: only the NEW r4op on-policy story stem uploads
+    # (instruct_stories_paired_op_s_shard*); the staged parent r1/r2 shards are
+    # bit-identical to the pinned Hub copies and are NOT re-uploaded.
+    UPLOAD_EXTRA=(--turnstore-glob "*stories_paired_op_s_shard*")
   elif [[ -n "$VARIANT" ]]; then
     UPLOAD_EXTRA=(--turnstore-glob "*stories_s_shard*")
   fi
@@ -659,6 +740,9 @@ R4_STATE="not_applicable"
 if [[ -n "$CPS" ]]; then
   R4_STATE="live"
   [[ -f "$R4_HALT_FILE" ]] && R4_STATE="halted"
+elif [[ -n "$OPS" ]]; then
+  # On-policy round: the story arm is r4op (on-policy), not the r4 TF regime.
+  R4_STATE="live_onpolicy"
 fi
 uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" "$CHARACTER_NAME" "$VARIANT" "$R4_STATE" <<'PY'
 import json
@@ -741,6 +825,13 @@ payload = {
             # Membership mirrors c.PAIRED_STORIES_VARIANTS (v8 ARIA + v9 Assistant scope)
             if variant in ("conversation_paired_stories",
                            "conversation_paired_stories_assistant") else None
+        ),
+        "onpolicy_story_target": (
+            # on-policy round: r4op promoted to the primary story regime at
+            # powered n (values mirror c.N_ONPOLICY_STORY_TARGET / floor).
+            {"n_target": 2200, "yield_floor": 2000, "gen_seed": 42,
+             "story_regime": "r4op", "on_policy": True}
+            if variant == "onpolicy_assistant_story" else None
         ),
         "hf_data_prefix": (
             f"issue1345_smoke{vsub}/" if smoke == "1" else f"issue1345_framing{vsub}/"

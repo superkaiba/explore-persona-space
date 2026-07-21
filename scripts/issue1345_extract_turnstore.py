@@ -285,19 +285,27 @@ def slot_diagnostics(rendered: list) -> dict:
     }
 
 
+def _regime_choices() -> tuple[str, ...]:
+    """argparse --regime choices, variant-gated.
+
+    r4op = the on-policy companion CONTROL store for the TF paired round (a fit
+    cell, not a transfer/opcomp regime — hence appended, not in c.REGIMES);
+    under the on-policy round it is the PRIMARY story regime and already IN
+    c.REGIMES (deduped). Slot-ablation variant (plan v10): r4 is legal for the
+    multi-slot re-read of the REUSED paired corpus (no gen phase in that mode).
+    """
+    if c.HAS_R4:
+        return (*c.REGIMES, "r4op")
+    if c.HAS_ONPOLICY_STORY:
+        return tuple(dict.fromkeys(c.REGIMES))
+    if c.HAS_SLOT_ABLATION:
+        return (*c.REGIMES, "r4")
+    return tuple(c.REGIMES)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    # r4op = the on-policy companion CONTROL store (a fit cell, not a
-    # transfer/opcomp regime — hence not in c.REGIMES); variant-gated.
-    # Slot-ablation variant (plan v10): r4 is legal for the multi-slot re-read
-    # of the REUSED paired corpus (no gen phase exists in that mode).
-    if c.HAS_R4:
-        regime_choices = (*c.REGIMES, "r4op")
-    elif c.HAS_SLOT_ABLATION:
-        regime_choices = (*c.REGIMES, "r4")
-    else:
-        regime_choices = c.REGIMES
-    ap.add_argument("--regime", choices=regime_choices, required=True)
+    ap.add_argument("--regime", choices=_regime_choices(), required=True)
     ap.add_argument(
         "--slot-ablation",
         action="store_true",

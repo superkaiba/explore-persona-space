@@ -692,6 +692,7 @@ def run_retry_waves(
     smoke: bool,
     tokenizer,
     llm,
+    op_companion: bool = False,
     gen_fn=None,
     judge_fn=None,
 ) -> tuple[list[dict], dict[int, dict], list[dict], dict[str, int]]:
@@ -740,8 +741,10 @@ def run_retry_waves(
         for nd in next_draws:
             group = [r for r in wave_rows if draw_counts.get(r["conv_id"], 0) + 1 == nd]
             path = out_dir / f"raw_stories_{mode_slug}_{model_key}{_RETRY_SUFFIX[nd]}.jsonl"
-            file_rows = gen_fn(group, path, fp, tokenizer, llm, op_companion=False)
-            gkept, gcounts, gdigest = judge_fn(file_rows, cache_dir, smoke, op_companion=False)
+            file_rows = gen_fn(group, path, fp, tokenizer, llm, op_companion=op_companion)
+            gkept, gcounts, gdigest = judge_fn(
+                file_rows, cache_dir, smoke, op_companion=op_companion
+            )
             new = [k for k in gkept if k["conv_id"] not in kept_ids]
             kept.extend(new)
             kept_ids.update(k["conv_id"] for k in new)
@@ -1214,6 +1217,15 @@ def main() -> None:
         action="store_true",
         help="generate the N<=200 on-policy companion control cell (plan v8 §4.5)",
     )
+    ap.add_argument(
+        "--op-powered",
+        action="store_true",
+        help="on-policy-assistant-story round: generate the on-policy paired story "
+        "corpus at POWERED n directly from the matched-n pool (the r4op companion "
+        "construction PROMOTED to the primary regime; retry-until-floor to >=2000 "
+        "kept). Same on-policy generation semantics as --op-companion, but pool-"
+        "sourced + floor-gated instead of a <=200 sample of the TF-kept set.",
+    )
     ap.add_argument("--smoke", action="store_true", help="n=3 stories, sync judge")
     ap.add_argument(
         "--verify-pool",
@@ -1224,16 +1236,32 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    assert c.HAS_R4, (
-        f"gen_stories_paired requires EPM_I1345_VARIANT in {c.PAIRED_STORIES_VARIANTS} "
-        f"(got {c.VARIANT!r}) — the r4 registry and variant-scoped output dirs are "
-        "gated on it (never clobber the parent run)"
+    assert not (args.op_companion and args.op_powered), (
+        "--op-companion and --op-powered are mutually exclusive (companion = <=200 "
+        "control from the TF-kept set; powered = pool-sourced primary regime)"
     )
+    if args.op_powered:
+        assert c.HAS_ONPOLICY_STORY, (
+            f"--op-powered requires EPM_I1345_VARIANT in {c.ONPOLICY_STORY_VARIANTS} "
+            f"(got {c.VARIANT!r}) — the r4op primary registry + variant-scoped output "
+            "dirs are gated on it (never clobber the parent run)"
+        )
+    else:
+        assert c.HAS_R4, (
+            f"gen_stories_paired requires EPM_I1345_VARIANT in {c.PAIRED_STORIES_VARIANTS} "
+            f"(got {c.VARIANT!r}) — the r4 registry and variant-scoped output dirs are "
+            "gated on it (never clobber the parent run)"
+        )
     assert args.model in c.R4_MODELS, args.model
     model_key = args.model
     out_dir = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-    mode_slug = "paired_op" if args.op_companion else "paired"
+    # On-policy generation semantics (op prompt + confident_op_turn parse + 1024
+    # tokens) for BOTH the <=200 companion and the powered primary; the paired TF
+    # verbatim-embed path is neither. mode_slug=paired_op binds the on-policy
+    # fingerprint recipe (paired_fingerprint is_op branch).
+    op_gen = args.op_companion or args.op_powered
+    mode_slug = "paired_op" if op_gen else "paired"
     cache_dir = out_dir / f"judge_cache_{mode_slug}"
 
     from transformers import AutoTokenizer
@@ -1265,6 +1293,28 @@ def main() -> None:
         n_target, yield_floor = len(rows_main), companion_usable_floor(args.smoke)
         seeds_reserve: list[dict] = []
         fp = paired_fingerprint(mode_slug, rows_main)
+    elif args.op_powered:
+        # Powered on-policy primary regime (onpolicy-assistant-story round):
+        # pool-sourced (NOT a <=200 sample of the TF-kept set), on-policy gen
+        # semantics, retry-until-floor to >=2000 kept. Same seeded-permutation +
+        # main-batch + retry-wave shape as the paired TF branch below, but
+        # op_companion=True everywhere (prompt/parse/budget) + the onpolicy
+        # target/floor. No cross-fp carryforward: the op bundle has no
+        # answer-keyed carry (load_kept_carryforward is paired-mode only), and
+        # within-fp resume comes from generate_paired's per-conv_id skip + the
+        # retry-wave draw ledger.
+        pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
+        pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=True)
+        pool_counts.update(feas_counts)
+        n_target = SMOKE_N_STORIES if args.smoke else c.N_ONPOLICY_STORY_TARGET
+        yield_floor = g.resolve_yield_floor(args.smoke, c.ONPOLICY_STORY_YIELD_FLOOR)
+        assert len(pool) >= n_target, f"on-policy pool {len(pool)} < target {n_target}"
+        rng = np.random.default_rng(c.GEN_SEED)
+        order = rng.permutation(len(pool))
+        ordered = [pool[i] for i in order]
+        fp = paired_fingerprint(mode_slug, ordered)
+        rows_main = ordered[:n_target]
+        seeds_reserve = ordered[n_target:]
     else:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=False)
@@ -1311,6 +1361,7 @@ def main() -> None:
                 "mode": mode_slug,
                 "model": model_key,
                 "op_companion": bool(args.op_companion),
+                "op_powered": bool(args.op_powered),
                 "smoke": bool(args.smoke),
                 "n_rows_main": len(rows_main),
                 "n_seeds_reserve": len(seeds_reserve),
@@ -1318,7 +1369,7 @@ def main() -> None:
                 "yield_floor": yield_floor,
                 "pool_filter_counts": pool_counts,
                 "fingerprint": fp,
-                "gen_max_new_tokens": story_max_new_tokens(op_companion=args.op_companion),
+                "gen_max_new_tokens": story_max_new_tokens(op_companion=op_gen),
                 "n_kept_carried": len(kept_carry),
                 "carried_from_fp": carry_fp,
             },
@@ -1350,9 +1401,9 @@ def main() -> None:
     quarantine_stale_raw(out_dir, mode_slug, model_key, fp)
     llm = _build_llm(MODEL_INSTRUCT)
     raw_path = out_dir / f"raw_stories_{mode_slug}_{model_key}.jsonl"
-    rows = generate_paired(rows_main, raw_path, fp, tokenizer, llm, op_companion=args.op_companion)
+    rows = generate_paired(rows_main, raw_path, fp, tokenizer, llm, op_companion=op_gen)
     kept, counts, judge_digest = parse_and_judge_paired(
-        rows, cache_dir, args.smoke, op_companion=args.op_companion
+        rows, cache_dir, args.smoke, op_companion=op_gen
     )
     if kept_carry:
         kept = kept_carry + kept  # carried keeps first (stable, pool-verified)
@@ -1387,6 +1438,7 @@ def main() -> None:
             smoke=args.smoke,
             tokenizer=tokenizer,
             llm=llm,
+            op_companion=op_gen,
         )
         judge_digest.extend(retry_digest)
 

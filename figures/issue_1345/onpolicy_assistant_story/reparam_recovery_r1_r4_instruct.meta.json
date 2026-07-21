@@ -1,0 +1,94 @@
+{
+ "commit": "7bd86513a4",
+ "created": "2026-07-21T02:09:55Z",
+ "figsize": [
+  6.5,
+  4.2
+ ],
+ "points": [
+  {
+   "x": -0.26,
+   "held-out R\u00b2 (layer 19)": 0.525918643907006,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.74,
+   "held-out R\u00b2 (layer 19)": -0.547115782888274,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "category": "story operator\nrecovered in chat",
+   "held-out R\u00b2 (layer 19)": 0.5637569842991229,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "category": "chat operator recovered\nin on-policy stories",
+   "held-out R\u00b2 (layer 19)": 0.16280012324115467,
+   "_kind": "bar",
+   "_group": 1
+  },
+  {
+   "x": 0.26,
+   "held-out R\u00b2 (layer 19)": -0.0424264958153858,
+   "error": 0.007662405198241684,
+   "_kind": "bar",
+   "_group": 2
+  },
+  {
+   "x": 1.26,
+   "held-out R\u00b2 (layer 19)": -0.03288208981141407,
+   "error": 0.0011954090269139517,
+   "_kind": "bar",
+   "_group": 2
+  }
+ ],
+ "n_series": 3,
+ "total_points": 6,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Reparameterization recovery between chat and on-policy story maps",
+    "ylabel": "held-out R\u00b2 (layer 19)",
+    "legend_labels": [
+     "target within-regime R\u00b2",
+     "reparameterized recovery R\u00b2",
+     "shuffled-fit null (mean of 5 draws)"
+    ],
+    "xticklabels": [
+     "story operator\nrecovered in chat",
+     "chat operator recovered\nin on-policy stories"
+    ],
+    "yticklabels": [
+     "\u22120.8",
+     "\u22120.6",
+     "\u22120.4",
+     "\u22120.2",
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6",
+     "0.8"
+    ]
+   }
+  ],
+  "series": [
+   "target within-regime R\u00b2",
+   "reparameterized recovery R\u00b2",
+   "shuffled-fit null (mean of 5 draws)"
+  ]
+ },
+ "provenance": {
+  "source_jsons": [
+   "eval_results/issue_1345/onpolicy_assistant_story/reparam_recovery_r1_r4_instruct_context.json",
+   "eval_results/issue_1345/onpolicy_assistant_story/operator_comparison_instruct_context.json (layer-19 matched-capacity shuffled-fit nulls for the chat-story pair)"
+  ],
+  "results_commit": "d720b0a8bce9f7f44a88c2b98efbbee7a234c42f",
+  "revision_reason": "interp-critique v11 request 1: regenerate with self-describing labels \u2014 the pod-generated original rendered regime slugs on the title and tick labels. Same data and series (context arm, layer 19); labels only. Error bars on the null bars are min-max over the 5 shuffled-fit draws; within/recovered are single deterministic fits (no seed variation), so they carry no error bars.",
+  "generator": "/tmp/regen_reparam_r1r4_1345.py (analyzer revision round, not committed)"
+ }
+}

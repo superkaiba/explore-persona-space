@@ -299,34 +299,52 @@ def build_matched(
 def _build_r4_pairs(
     turnstore_dir: Path, shared: list[str], r4_models: set[str], *, smoke: bool
 ) -> dict:
-    """per_model_r4_pair entries (plan v8 §4) — see build_matched docstring."""
+    """per_model_r4_pair entries (plan v8 §4) — see build_matched docstring.
+
+    STORY_REGIME names the story arm: r4 (TF verbatim-embed) for the paired
+    round, r4op (on-policy) for the on-policy-assistant-story round. The
+    ``r4_convs`` key is the story-kept ∩ shared set either way — the data-paired
+    reparam domain + matched-row comparator subset. Under the on-policy round
+    the story regime IS on-policy, so there is NO separate op companion (the
+    TF-vs-op calibration is N/A); companion="primary_onpolicy".
+    """
+    story_regime = c.STORY_REGIME
+    assert story_regime is not None, "no story regime armed — _build_r4_pairs called off-variant"
     pairs: dict = {}
     for model in sorted(r4_models):
         assert model in c.R4_MODELS, model
-        r4_ids = bundle_conv_ids(turnstore_dir, model, "r4")
+        r4_ids = bundle_conv_ids(turnstore_dir, model, story_regime)
         uniq_r4 = sorted(set(r4_ids))
         assert len(uniq_r4) == len(r4_ids), (
-            f"r4 store for {model} has duplicate conv_ids ({len(r4_ids)} rows, "
-            f"{len(uniq_r4)} unique) — the paired corpus is one story per conversation"
+            f"{story_regime} store for {model} has duplicate conv_ids ({len(r4_ids)} rows, "
+            f"{len(uniq_r4)} unique) — the story corpus is one story per conversation"
         )
         r4_convs = sorted(set(uniq_r4) & set(shared))
         foreign = sorted(set(uniq_r4) - set(shared))
         if foreign or not r4_convs:
             msg = (
-                f"r4 conv set for {model}: {len(foreign)} conv(s) outside the shared "
-                f"R1/R2 set, intersection={len(r4_convs)}"
+                f"{story_regime} conv set for {model}: {len(foreign)} conv(s) outside the "
+                f"shared R1/R2 set, intersection={len(r4_convs)}"
             )
             if smoke:
                 # Smoke prefetch stages shard000 only, so the rebuilt shared set is
-                # a small subset and the r4 smoke convs may fall outside it — the
-                # r4 pair build is skipped informationally (gate-calibration rule).
-                print(f"[matchedn][smoke] SKIP r4 pair for {model}: {msg}", flush=True)
+                # a small subset and the story smoke convs may fall outside it — the
+                # pair build is skipped informationally (gate-calibration rule).
+                print(f"[matchedn][smoke] SKIP {story_regime} pair for {model}: {msg}", flush=True)
                 continue
             raise RuntimeError(
-                f"{msg} — the paired corpus is drawn FROM the shared allowlist "
+                f"{msg} — the story corpus is drawn FROM the shared allowlist "
                 "(plan v8 §4), so any foreign conv means extraction/allowlist drift"
             )
         entry: dict = {"n": len(r4_convs), "r4_convs": r4_convs}
+        if c.HAS_ONPOLICY_STORY:
+            # The story regime is itself on-policy; there is no separate op
+            # companion to intersect. TF-vs-op calibration is N/A this round.
+            entry["op_companion_convs"] = None
+            entry["n_op"] = 0
+            entry["companion"] = "primary_onpolicy"
+            pairs[model] = entry
+            continue
         try:
             op_ids = bundle_conv_ids(turnstore_dir, model, "r4op")
         except AssertionError:
@@ -774,7 +792,7 @@ def main() -> None:
             args.turnstore_dir,
             args.matched_dir,
             r3_models=set(c.MODELS) - halted,
-            r4_models=(set(c.R4_MODELS) if c.HAS_R4 and not args.no_r4 else set()),
+            r4_models=(set(c.R4_MODELS) if c.STORY_REGIME_ARMED and not args.no_r4 else set()),
             smoke=args.smoke,
         )
     if args.cells:
