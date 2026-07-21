@@ -973,15 +973,168 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str = "selected") -> dict:
     return {"cell": cell, "dose": dose, "pooled": str(out_dir / "pooled.pt")}
 
 
-def phase_capture(cfg: Cfg) -> dict:
-    """Own-text captures on the parent 6x20 panel for base + every selected cell.
+# ── p4b: shared-text (capture_tf) — teacher-force each cell over the parent's
+#    FIXED base rows so every rankem cell reads an IDENTICAL text substrate ──────
 
-    GPU-bound (28-layer teacher-forced pooling on a 7B model). The teacher-forced
-    shared-text response arm — capturing each cell over the parent round's
-    persisted shared base generations — reuses this same _teacher_forced_span_means
-    path with rows staged from the parent capture revision; it is composed here and
-    exercised on the pod (see the implementer report §capture for the tf-arm
-    interface). Sharded one cell per GPU on the 4x H100 pod.
+# The parent round's persisted sycophancy shared base rows: BASE-model greedy
+# generations on the shared 6x20 panel, behavior-AGNOSTIC by construction, pinned
+# at the parent's base_sycophancy own-text capture revision (== the cross-method
+# consumer's OWN_REV). ALL FOUR rankem cells (a1, a2, b1, b2) teacher-force over
+# these identical rows (brief §B3: key every cell to TF_BASE_ROWS["sycophancy"]),
+# so the misalignment cells read the same text as the sycophancy cells — maximal
+# comparability, zero new generation.
+TF_BASE_ROWS_SYCO = (
+    f"{C.DATA_PREFIX}/raw_completions/capture/base_sycophancy/base/raw_rows.json",
+    "e016910195b7ab846c83b87ec43140c36c51e35f",
+)
+TF_ROW_FIELDS = (
+    "persona",
+    "question_idx",
+    "prompt_token_ids",
+    "response_token_ids",
+    "prefix_len",
+    "context_len",
+)
+
+
+def assert_tf_base_rows(rows: list[dict], *, expect_contexts: int, expect_questions: int) -> None:
+    """Fail-fast contract on the shared conditioning rows (ported from the parent
+    dispatcher's assert_tf_base_rows): every row carries the
+    ``_teacher_forced_span_means`` fields with valid span bounds + a non-empty
+    response, and the (persona x question_idx) grid is COMPLETE
+    (120 = 6 x 20 for the sycophancy panel)."""
+    assert rows, "conditioning rows empty"
+    for i, r in enumerate(rows):
+        missing = [k for k in TF_ROW_FIELDS if k not in r]
+        assert not missing, (i, missing)
+        assert len(r["response_token_ids"]) > 0, f"row {i} has an empty response"
+        assert 0 < r["prefix_len"] < r["context_len"] <= len(r["prompt_token_ids"]), (
+            i,
+            r["prefix_len"],
+            r["context_len"],
+            len(r["prompt_token_ids"]),
+        )
+    personas = sorted({r["persona"] for r in rows})
+    qs = sorted({int(r["question_idx"]) for r in rows})
+    grid = {(r["persona"], int(r["question_idx"])) for r in rows}
+    assert len(personas) == expect_contexts, (len(personas), expect_contexts, personas)
+    assert qs == list(range(expect_questions)), qs
+    assert len(grid) == len(rows) == len(personas) * len(qs), (
+        len(grid),
+        len(rows),
+        len(personas),
+        len(qs),
+    )
+
+
+def _tf_smoke_rows(rows: list[dict]) -> list[dict]:
+    """2 contexts x 2 questions = 4-row smoke subset (>=2 contexts keep the prefix
+    arm non-degenerate)."""
+    personas = sorted({r["persona"] for r in rows})[:2]
+    return [r for r in rows if r["persona"] in personas and int(r["question_idx"]) in (0, 1)]
+
+
+def _assert_tf_panel_matches_own(own_panel_keys, tf_rows: list[dict]) -> None:
+    """SANITY (brief §B3): the shared-text conditioning panel MUST be the same
+    6-context sycophancy panel as the own-text arm — else the shared-text geometry
+    read compares incommensurable substrates. STOP + report a comparability bug
+    rather than silently capturing over a mismatched panel."""
+    tf_personas = sorted({r["persona"] for r in tf_rows})
+    if sorted(own_panel_keys) != tf_personas:
+        raise RuntimeError(
+            f"[p4_capture] SANITY: shared-text panel {tf_personas} != own-text 6x20 "
+            f"panel {sorted(own_panel_keys)} — comparability bug (STOP)"
+        )
+
+
+def _stage_tf_base_rows(cfg: Cfg) -> list[dict]:
+    """Stage + validate the parent's sycophancy shared base rows at the pinned rev."""
+    from explore_persona_space.orchestrate import hub
+
+    path_in_repo, rev = TF_BASE_ROWS_SYCO
+    dest = cfg.out_root / "inputs" / "tf_base_rows_sycophancy.json"
+    hub.stage_hub_file(R.HF_DATA_REPO, path_in_repo, dest, repo_type="dataset", revision=rev)
+    rows = _read_json(dest)["rows"]
+    assert_tf_base_rows(rows, expect_contexts=6, expect_questions=20)
+    assert len(rows) == 120, len(rows)
+    return rows
+
+
+def run_capture_tf_unit(cfg: Cfg, cell: str, rows: list[dict]) -> dict:
+    """One shared-text capture pass -> capture_tf/<cell>/selected/pooled.pt.
+
+    Feeds the parent's FIXED base-model rows through the cell's selected checkpoint
+    via the UNCHANGED ``_teacher_forced_span_means`` (same 28-layer / 3-arm / bf16
+    / tf_batch_size 8 params as own-text), so every rankem cell teacher-forces over
+    IDENTICAL text — the shared-text geometry substrate the cross-method cosine's
+    shared_text arm consumes. Idempotent on pooled.pt. No separate raw_rows.json:
+    the conditioning text is already durable on HF at the pinned rev, recorded in
+    the store metadata.
+    """
+    import torch
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    out_dir = cfg.out_root / "capture_tf" / cell / "selected"
+    if (out_dir / "pooled.pt").exists():
+        return {"cell": cell, "skipped": "pooled.pt exists"}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model_path, cleanup = _resolve_capture_model(cfg, cell)
+    panel = list(dict.fromkeys(r["persona"] for r in rows))
+    try:
+        pooled = _teacher_forced_span_means(
+            model_path,
+            rows,
+            panel,
+            layers=list(range(N_LAYERS)),
+            device="cuda:0",
+            dtype=torch.bfloat16,
+            tf_batch_size=TF_BATCH_SIZE,
+        )
+        store = {
+            "schema_version": 1,
+            "cell": cell,
+            "dose": "selected",
+            "behavior": R.CELLS[cell].behavior if cell in R.CELLS else "base",
+            "model_path": model_path,
+            "row_meta": [
+                {"context_id": r["persona"], "question_idx": int(r["question_idx"])} for r in rows
+            ],
+            "arms": {
+                arm: {li: t.to(torch.float16) for li, t in per_layer.items()}
+                for arm, per_layer in pooled.items()
+            },
+            "metadata": {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "tf_batch_size": TF_BATCH_SIZE,
+                "conditioning": "tf_shared_base",
+                "conditioning_rows": {
+                    "repo": R.HF_DATA_REPO,
+                    "path": TF_BASE_ROWS_SYCO[0],
+                    "revision": TF_BASE_ROWS_SYCO[1],
+                    "n_rows": len(rows),
+                },
+            },
+        }
+        tmp = out_dir / "pooled.pt.tmp"
+        torch.save(store, tmp)
+        os.replace(tmp, out_dir / "pooled.pt")
+    finally:
+        if cleanup is not None:
+            shutil.rmtree(cleanup, ignore_errors=True)
+    return {"cell": cell, "pooled": str(out_dir / "pooled.pt"), "n_rows": len(rows)}
+
+
+def phase_capture(cfg: Cfg) -> dict:
+    """Own-text + shared-text captures on the parent 6x20 panel.
+
+    GPU-bound (28-layer teacher-forced pooling on a 7B model). Two arms:
+    (1) own-text — base + every installed cell capture over the panel's own greedy
+    generations (capture/<cell>/<dose>/pooled.pt); (2) shared-text (B3) — every
+    installed cell teacher-forces over the parent's FIXED sycophancy base rows via
+    the same _teacher_forced_span_means path (capture_tf/<cell>/selected/pooled.pt),
+    gated by the SANITY check that the shared-text panel matches the own-text 6x20
+    panel. Sharded one cell per GPU on the 4x H100 pod.
     """
     _phase("p4_capture")
     installed = [
@@ -992,11 +1145,33 @@ def phase_capture(cfg: Cfg) -> dict:
     ]
     plan = ["base_sycophancy", *installed]
     if cfg.dry_run:
-        return {"cells_to_capture": plan, "panel": "parent 6x20", "arms": 3, "layers": N_LAYERS}
+        return {
+            "cells_to_capture": plan,
+            "panel": "parent 6x20",
+            "arms": 3,
+            "layers": N_LAYERS,
+            "capture_tf_cells": installed,  # shared-text pass (B3), installed rankem cells
+            "tf_base_rows": TF_BASE_ROWS_SYCO[0],
+        }
+    # Own-text captures (base + every installed cell over the panel's own greedy gens).
     results = {}
     for cell in plan:
         results[cell] = run_capture_unit(cfg, cell)
-    return results
+    # B3: shared-text (capture_tf) pass — every INSTALLED rankem cell teacher-forces
+    # over the parent's FIXED sycophancy base rows (behavior-agnostic; brief: key
+    # all four cells to TF_BASE_ROWS["sycophancy"]). base_sycophancy has no trained
+    # checkpoint, so it stays own-text only (the consumer stages the base own-text
+    # store, never a base capture_tf).
+    tf_results: dict[str, dict] = {}
+    if installed:
+        own_panel, _own_qs = _capture_panel()
+        tf_rows = _stage_tf_base_rows(cfg)
+        _assert_tf_panel_matches_own(list(own_panel), tf_rows)  # STOP on comparability bug
+        if cfg.smoke:
+            tf_rows = _tf_smoke_rows(tf_rows)
+        for cell in installed:
+            tf_results[cell] = run_capture_tf_unit(cfg, cell, tf_rows)
+    return {"own_text": results, "shared_text": tf_results}
 
 
 # ── p5: uploads ──────────────────────────────────────────────────────────────
