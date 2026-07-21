@@ -507,3 +507,28 @@ def test_skill_md_followup_loop_names_canonical_9b_same_id():
     window = text[section_start : section_start + 4000]
     assert "9b-same" in window
     assert "post_step_completed.py" in window
+
+
+def test_resume_table_has_completed_unmerged_row():
+    """#1578: the resume table routes a `completed` task with `epm:done` but
+    no `epm:merged` and an unmerged issue-<N> PR/branch to the Step 10d
+    auto-merge — the recovery arm the watcher's completed_unmerged_pass flag
+    marker names (#1564; incident #1540). Dropping this row re-opens the
+    'flag points at a resume path that does not exist' gap."""
+    text = SKILL_MD_PATH.read_text()
+    rows = [
+        ln
+        for ln in text.splitlines()
+        if ln.strip().startswith("| `completed` |") and "epm:merged" in ln
+    ]
+    assert len(rows) == 1, (
+        f"expected exactly one completed-unmerged resume-table row, got {len(rows)}"
+    )
+    row = rows[0]
+    for token in ("`epm:done`", "unmerged", "Step 10d", "CRON-TEARDOWN", "EXIT"):
+        assert token in row, f"completed-unmerged resume row lost token {token!r}"
+    # Position: the row must sit ABOVE the multi-status follow-up-dispatch row —
+    # that row's "takes precedence over the status rows above" prose is what
+    # keeps a completed task with an unrun follow-up routing to the follow-up
+    # loop first (the substring is unique to the follow-up-dispatch row).
+    assert text.index(rows[0]) < text.index("takes precedence over the status rows above")
