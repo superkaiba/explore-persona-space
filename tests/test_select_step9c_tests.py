@@ -1455,12 +1455,13 @@ def test_cli_json_carries_literal_path_reason(tmp_path: Path, monkeypatch, capsy
     assert payload["untested_touched"] == ["scripts/widgetlib.py"]
 
 
-# --- Case 63: --map-files mode ignores literal-path pins (GLOB_SCAN_TESTS-only) --
-def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
-    """The Step 10d mapping mode (#1147) stays pure GLOB_SCAN_TESTS path
-    arithmetic (zero file reads): a payload naming a literal-PINNED but
-    not-scan-globbed file yields EMPTY stdout + rc 0 (pins the deliberate
-    #1498 scoping decision, plan R4)."""
+# --- Case 63 (#1573, REPLACES test_map_files_ignores_literal_path_hits): the
+# --- mapping mode now INCLUDES literal-path pins — the deliberate contract flip
+def test_map_files_includes_literal_path_hits(tmp_path: Path, capsys):
+    """The Step 10d mapping mode carries the src/scripts dependency arms
+    (#1573): a payload naming a literal-PINNED but not-scan-globbed file now
+    maps to its pinning test (A2 — flips the #1498-era case-63 scoping pin;
+    the old GLOB_SCAN-only contract is the founding bug of #1573)."""
     repo = _make_import_tree(
         tmp_path, {"test_pin.py": 'LIVE = ["src/explore_persona_space/widgetlib.py"]\n'}
     )
@@ -1468,4 +1469,161 @@ def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
     listing.write_text("src/explore_persona_space/widgetlib.py\n")
     rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
     assert rc == 0
-    assert capsys.readouterr().out == ""
+    out = capsys.readouterr().out
+    assert out.splitlines() == ["tests/test_pin.py\tsrc/explore_persona_space/widgetlib.py"]
+
+
+# --- Cases 64+ (#1573): the --map-files src/scripts dependency arms ---------------
+
+
+# --- Case 64: THE durability pin — the founding sft.py edge on the LIVE tree ------
+def test_cli_map_files_import_edge_sft_regression(tmp_path: Path, capsys):
+    """No fixtures (the test_rules_pin_live_tree_known_pairs convention): the
+    real tree's tests/test_artifacts_recipe.py statically imports
+    ``train_lora`` from src/explore_persona_space/train/sft.py (and
+    ``inspect.getsource``s it), yet ``--map-files`` on that payload emitted
+    ZERO pairs pre-#1573 — the founding incident (the ``use_rslora`` change,
+    commit d7908a3837, broke test_rslora_engine_pin with no gate firing).
+    Also pins the WORKFLOW_INVARIANT exclusion on the live tree: sft.py
+    literal-hits the 900 s tests/test_workflow_lint.py (LIVE_WORKFLOW_HELPERS)
+    which must NOT reach the 300 s-class TG legs (A1 + A4 live half)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/train/sft.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo_root)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert "tests/test_artifacts_recipe.py\tsrc/explore_persona_space/train/sft.py" in lines
+    assert not any(line.startswith("tests/test_workflow_lint.py\t") for line in lines)
+    assert "recommended-timeout-s=" in captured.err
+
+
+# --- Case 65: the stem arm maps a DYNAMIC-import (importorskip) test (A3) ---------
+def test_map_files_stem_pair_maps_dynamic_import_test(tmp_path: Path, capsys):
+    """A stem-named test that loads the touched module DYNAMICALLY
+    (``pytest.importorskip`` — invisible to the import arm's ast scan) is
+    mapped via the stem arm; this is the mechanism that closes the
+    dynamic-import getsource subclass (plan D4)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {"test_widgetlib_exactness.py": 'import pytest\nw = pytest.importorskip("widgetlib")\n'},
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_widgetlib_exactness.py\tscripts/widgetlib.py" in lines
+
+
+# --- Case 66: WORKFLOW_INVARIANT members excluded from the dependency arms (A4) ---
+def test_map_files_excludes_invariant_hits(tmp_path: Path, capsys):
+    """An invariant-named test importing the touched module is EXCLUDED from
+    the --map-files pairs (mirror of the rules-pin asymmetry, case 62) while
+    a non-invariant importer of the SAME module is included."""
+    repo = _make_import_tree(
+        tmp_path,
+        {"test_consumer_x.py": "import widgetlib\n"},
+    )
+    # Overwrite an invariant stub with a REAL import of the touched module.
+    (repo / "tests" / "test_verify_plan.py").write_text("import widgetlib\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_consumer_x.py\tscripts/widgetlib.py" in lines
+    assert not any(line.startswith("tests/test_verify_plan.py\t") for line in lines)
+
+
+# --- Case 67: the zero-mapped fail-loud floor (A5) --------------------------------
+def test_map_files_zero_mapped_code_file_warns_rc0(tmp_path: Path, capsys):
+    """An eligible src/scripts .py payload with ZERO pairs across all arms
+    draws exactly one tab-free stderr WARN; rc stays 0 and stdout stays empty
+    (consumers treat helper rc!=0 as crash-class fail-closed)."""
+    bare = tmp_path / "bare"  # no tests/ tree at all
+    bare.mkdir()
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err.count("no mapped tests for code file src/explore_persona_space/widgetlib.py")
+        == 1
+    )
+    assert not any("\t" in line for line in captured.err.splitlines())
+
+
+# --- Case 68: the machine-greppable sizing line (A6) -------------------------------
+def test_map_files_sizing_line(tmp_path: Path, capsys):
+    """A non-empty map prints ONE tab-free `recommended-timeout-s=<T>` stderr
+    line: floor 300 for small maps, the #1046 formula above it."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_consumer_a.py": "from explore_persona_space.widgetlib import f\n",
+            "test_consumer_b.py": "from explore_persona_space.widgetlib import f\n",
+        },
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # 2 tests: 120 + 2*30 = 180 -> floored at MAP_TIMEOUT_FLOOR_S = 300.
+    assert "recommended-timeout-s=300" in captured.err
+    assert not any("\t" in line for line in captured.err.splitlines())
+    assert len(captured.out.splitlines()) == 2
+    # 7 tests clear the floor: 120 + 7*30 = 330.
+    repo7 = _make_import_tree(
+        tmp_path / "seven",
+        {
+            f"test_consumer_{i}.py": "from explore_persona_space.widgetlib import f\n"
+            for i in range(7)
+        },
+    )
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo7)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "recommended-timeout-s=330" in captured.err
+    assert not any("\t" in line for line in captured.err.splitlines())
+
+
+# --- Case 69: recommended_timeout_s floor kwarg (D2) -------------------------------
+def test_recommended_timeout_s_floor_kwarg():
+    """Default floor unchanged (TIMEOUT_FLOOR_S = 900, diff-path callers
+    byte-identical); an explicit floor= is honored; the formula wins above it."""
+    assert sel.MAP_TIMEOUT_FLOOR_S == 300
+    two = ["tests/test_a.py", "tests/test_b.py"]
+    assert sel.recommended_timeout_s(two) == sel.TIMEOUT_FLOOR_S  # default floor binds
+    assert sel.recommended_timeout_s(two, floor=sel.MAP_TIMEOUT_FLOOR_S) == 300
+    forty = [f"tests/test_x{i}.py" for i in range(40)]
+    expected = sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S  # 1320 > both floors
+    assert sel.recommended_timeout_s(forty, floor=sel.MAP_TIMEOUT_FLOOR_S) == expected
+    assert sel.recommended_timeout_s(forty) == expected
+
+
+# --- Case 70: dependency_map_pairs unit — import + literal + stem union, sorted ----
+def test_dependency_map_pairs_import_and_literal_union(tmp_path: Path):
+    """One function-level read: import hits + literal hits + stem hits union
+    into sorted unique (test, matched_path) pairs; a test hit by BOTH the
+    import and literal arms appears once."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_widgetlib.py": "# stub\n",  # stem arm (exact) — no import needed
+            "test_imports_w.py": "import widgetlib\n",  # import arm
+            # BOTH arms hit this one -> dedupes to one pair:
+            "test_both_w.py": 'import widgetlib\nLIVE = ["scripts/widgetlib.py"]\n',
+        },
+    )
+    pairs = sel.dependency_map_pairs(["scripts/widgetlib.py"], repo)
+    assert pairs == sorted(pairs)
+    assert pairs == [
+        ("tests/test_both_w.py", "scripts/widgetlib.py"),
+        ("tests/test_imports_w.py", "scripts/widgetlib.py"),
+        ("tests/test_widgetlib.py", "scripts/widgetlib.py"),
+    ]
