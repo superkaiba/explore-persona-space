@@ -4544,8 +4544,8 @@
     "1583": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1583",
-      "status": "planning",
+      "path": "tasks/approved/1583",
+      "status": "approved",
       "title": "daily-fix: teammate idle semantics + one-implementer rule"
     },
     "1584": {
