@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1579,
+  "highest_id": 1580,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4519,6 +4519,13 @@
       "path": "tasks/on_hold/158",
       "status": "on_hold",
       "title": "Persona drift linked to drift in KL over next token"
+    },
+    "1580": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1580",
+      "status": "proposed",
+      "title": "daily-fix: reconcile wf-fix-fp tag with body fingerprint"
     },
     "159": {
       "has_clean_result": false,
