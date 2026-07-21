@@ -56,6 +56,16 @@ def test_normalize_phases_aliases_and_unknown() -> None:
         D.normalize_phases("bogus")
 
 
+def test_p3_judge_import_path_resolves() -> None:
+    """Review r1 B1 regression: the ladder judge instrument imports via
+    _ensure_scripts_on_syspath() + `import issue1090_fu1` (scripts module, not a
+    package) and exposes _judge_fu1 — the exact form run_ladder_unit uses."""
+    D._ensure_scripts_on_syspath()
+    import issue1090_fu1 as fu1
+
+    assert callable(fu1._judge_fu1)
+
+
 def test_resolve_cells() -> None:
     assert D.resolve_cells(None, False) == R.ALL_CELLS
     assert D.resolve_cells(f"{R.A1},{R.B2}", False) == (R.A1, R.B2)
