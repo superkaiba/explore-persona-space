@@ -4474,8 +4474,8 @@
     "1574": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1574",
-      "status": "approved",
+      "path": "tasks/running/1574",
+      "status": "running",
       "title": "daily-fix: structural digest for GCP/SLURM log excerpts"
     },
     "1575": {
