@@ -139,7 +139,7 @@ def test_pinned_invariant_list_matches_live_tree():
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
     # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 38 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
+    # 42 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
     # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
     # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
     # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
@@ -154,9 +154,12 @@ def test_pinned_invariant_list_matches_live_tree():
     # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
     # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
     # staged-index verification pin suite (test_issue_skill_staged_index_verification —
-    # same tuple rationale: a doc-site edit dropping the duty must still run the pin).
+    # same tuple rationale: a doc-site edit dropping the duty must still run the pin) +
+    # the #1575 cap-park surfacing pin suite (test_issue_skill_followup_cap_park_note_pin
+    # — same tuple rationale: a SKILL.md-only edit dropping the cap-park note duty must
+    # still run the #1548/#1558/#1575 pins).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 41
+    assert len(sel.WORKFLOW_INVARIANT) == 42
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
