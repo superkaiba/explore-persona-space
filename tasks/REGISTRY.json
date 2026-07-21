@@ -4537,8 +4537,8 @@
     "1582": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1582",
-      "status": "running",
+      "path": "tasks/reviewing/1582",
+      "status": "reviewing",
       "title": "daily-fix: escalate keep-running pods with wedged owners"
     },
     "1583": {
