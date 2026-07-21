@@ -140,12 +140,22 @@ Usage::
 
 ``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
 read newline-delimited repo-relative paths from FILE and print one
-``<scan_test>\\t<matched_path>`` line per :data:`GLOB_SCAN_TESTS` hit
+``<test>\\t<matched_path>`` line per :data:`GLOB_SCAN_TESTS` hit
 (:func:`map_scan_tests`) PLUS one ``<pin_test>\\t<rule_path>`` line per
 rules-pin discovery hit on a ``.claude/rules/*.md`` payload file
-(:func:`rules_pin_pairs`, #1496 — WORKFLOW_INVARIANT members excluded),
-skipping the diff-based selection entirely. A scan
-test absent from the work root is dropped with a stderr WARN. Empty stdout on
+(:func:`rules_pin_pairs`, #1496 — WORKFLOW_INVARIANT members excluded) PLUS
+the src/scripts dependency arms (:func:`dependency_map_pairs`, #1573 —
+import-map (#1299) + literal-path (#1498) + stem-map pairs for ``.py``
+payloads under ``scripts/`` | ``src/explore_persona_space/``,
+WORKFLOW_INVARIANT members excluded), skipping the diff-based selection
+entirely (mapping mode never runs git — no fetch). A scan
+test absent from the work root is dropped with a stderr WARN; an eligible
+src/scripts code file with ZERO pairs across all arms draws one tab-free
+``no mapped tests for code file`` stderr WARN (#1573's fail-loud floor —
+rc stays 0). A non-empty map additionally prints a tab-free machine-greppable
+``recommended-timeout-s=<T>`` stderr sizing line
+(``recommended_timeout_s(tests, floor=MAP_TIMEOUT_FLOOR_S)``, floor 300 s —
+the Step-10d TG legs size their pytest bound from it). Empty stdout on
 no match is a SUCCESS (exit 0 — the gate's skip signal); exit 1 only when FILE
 is unreadable (the gate fails CLOSED on an unclassifiable payload).
 
@@ -409,6 +419,44 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
     )
 
 
+# --- src/scripts dependency arms for --map-files (#1573). ---------------------
+MAP_TIMEOUT_FLOOR_S = 300  # Step-10d TG-leg parity floor (SKILL.md measured basis
+#                            ~12.6 s for the historical 2-test scan map, 2026-07-08)
+
+
+def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
+    """Sorted ``(test, matched_path)`` pairs for ``--map-files`` beyond
+    GLOB_SCAN_TESTS + rules-pin (#1573): import-map (#1299) + literal-path
+    (#1498) via the ONE shared :func:`_scan_test_files` read pass, plus
+    stem-map path arithmetic. WORKFLOW_INVARIANT members are EXCLUDED
+    (the :func:`rules_pin_pairs` asymmetry: they already gate every Step 9c
+    run, and exclusion keeps the 900 s tests/test_workflow_lint.py out of the
+    Step 10d / inline-payload gates — sft.py literal-hits it via
+    workflow_lint's LIVE_WORKFLOW_HELPERS list). The stem arm is restricted
+    to the :func:`literal_path_targets` eligibility set (``.py`` under
+    ``scripts/`` | ``src/explore_persona_space/``) — it is the closing
+    mechanism for the dynamic-import (``pytest.importorskip`` / ``importlib``)
+    getsource subclass, where the test file is stem-named after the module.
+    """
+    inv = set(WORKFLOW_INVARIANT)
+    import_hits, _tested, literal_hits = _scan_test_files(files, work_root)
+    pairs: set[tuple[str, str]] = set()
+    for hits in (import_hits, literal_hits):
+        for t, fs in hits.items():
+            if t not in inv:
+                pairs.update((t, f) for f in fs)
+    for f in literal_path_targets(files):  # the same eligibility predicate
+        stem = Path(f).stem
+        exact = f"tests/test_{stem}.py"
+        if (work_root / exact).exists() and exact not in inv:
+            pairs.add((exact, f))
+        for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
+            rel = f"tests/{hit.name}"
+            if rel not in inv:
+                pairs.add((rel, f))
+    return sorted(pairs)
+
+
 # --- Gate-timeout sizing (#1046). --------------------------------------------
 # Measured from 27 Step 9c gate junits on the shared VM (2026-07-04..05,
 # /tmp/step9c-junit-issue-*.xml, per-testcase `time` summed per file;
@@ -503,18 +551,21 @@ def resolve_base(base: str, work_root: Path, *, fetch: bool = True) -> str:
     return branch
 
 
-def recommended_timeout_s(tests: list[str]) -> int:
+def recommended_timeout_s(tests: list[str], *, floor: int = TIMEOUT_FLOOR_S) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (38 files incl. the
-    workflow-lint surcharge) -> 2160 s (36 min), consistent with the existing
-    invariant-set-scale precedents (``step9c_baseline.py refresh``
-    ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
+    *floor* (default ``TIMEOUT_FLOOR_S`` — diff-path callers unchanged;
+    ``--map-files`` mode passes ``floor=MAP_TIMEOUT_FLOOR_S``, the Step-10d
+    TG-leg 300 s parity floor, #1573). Invariant-only selection (38 files
+    incl. the workflow-lint surcharge) -> 2160 s (36 min), consistent with
+    the existing invariant-set-scale precedents (``step9c_baseline.py
+    refresh`` ``--timeout-s`` default 1800 s; the SKILL.md detached
+    refresh's 2100 s).
     """
     t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
     t += sum(SLOW_TESTS.get(x, 0) for x in tests)
-    return max(t, TIMEOUT_FLOOR_S)
+    return max(t, floor)
 
 
 def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
@@ -995,12 +1046,15 @@ def main(argv: list[str] | None = None) -> int:
         metavar="FILE",
         help=(
             "newline-delimited repo-relative paths: print one "
-            "'scan_test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
-            "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496, "
-            "WORKFLOW_INVARIANT members excluded) and exit "
+            "'test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
+            "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496) "
+            "plus the src/scripts import/literal/stem dependency-arm pairs "
+            "(#1573; WORKFLOW_INVARIANT members excluded from both) and exit "
             "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
             "diff-based selection entirely; empty stdout on no match is a "
-            "SUCCESS, the gate's skip signal)"
+            "SUCCESS, the gate's skip signal; a zero-mapped eligible code file "
+            "draws a stderr WARN, and a non-empty map prints a "
+            "recommended-timeout-s=<T> stderr sizing line, floor 300s)"
         ),
     )
     args = parser.parse_args(argv)
@@ -1028,9 +1082,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.map_files is not None:
-        # Mapping mode (#1147): pure GLOB_SCAN_TESTS + rules-pin (#1496)
-        # lookup over an explicit
-        # file list — no git diff, no invariant set, no timeout sizing. The
+        # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
+        # src/scripts dependency arms (import/literal/stem, #1573,
+        # WORKFLOW_INVARIANT excluded) over an explicit file list — no git
+        # diff; stderr carries the zero-mapped WARN floor + the
+        # recommended-timeout-s sizing line (floor 300). The
         # Step 10d merge gate consumes the tab-separated stdout; empty output
         # + exit 0 means "no scan-covered payload" (the gate skips its test
         # leg). Only an unreadable input file is an error (exit 1) — the gate
@@ -1044,21 +1100,52 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         files = [line.strip() for line in raw.splitlines() if line.strip()]
-        pairs = map_scan_tests(files, work_root)
-        for scan_test, f in sorted(_scan_pairs(files) - set(pairs)):
+        scan_pairs = map_scan_tests(files, work_root)
+        for scan_test, f in sorted(_scan_pairs(files) - set(scan_pairs)):
             print(
                 f"select_step9c_tests: WARN — scan test {scan_test} (matched by {f}) "
                 f"absent from {work_root}; pair dropped",
                 file=sys.stderr,
             )
-        # Rules-pin pairs (#1496) join the scan-map pairs (union dedupes; a
-        # test hit by both arms prints once per distinct matched path, and the
-        # consumers' `sort -u` dedupes downstream). WORKFLOW_INVARIANT members
-        # are excluded inside rules_pin_pairs; the existing WARN loop above is
-        # scan-map-only by design (scan-map keys are pinned literals that can
-        # vanish from the tree; rules-pin discovery only ever finds on-disk
-        # tests, so it has no missing-test case).
-        for test, f in sorted({*pairs, *rules_pin_pairs(files, work_root)}):
+        # Rules-pin pairs (#1496) + the src/scripts dependency arms (#1573:
+        # import-map + literal-path + stem-map, WORKFLOW_INVARIANT excluded)
+        # join the scan-map pairs (union dedupes; a test hit by several arms
+        # prints once per distinct matched path, and the consumers' `sort -u`
+        # dedupes downstream). WORKFLOW_INVARIANT members are excluded inside
+        # rules_pin_pairs / dependency_map_pairs; the existing WARN loop above
+        # is scan-map-only by design (scan-map keys are pinned literals that
+        # can vanish from the tree; the discovery arms only ever find on-disk
+        # tests, so they have no missing-test case).
+        all_pairs = sorted(
+            {
+                *scan_pairs,
+                *rules_pin_pairs(files, work_root),
+                *dependency_map_pairs(files, work_root),
+            }
+        )
+        # The #1573 fail-loud floor: an eligible src/scripts code file with
+        # ZERO pairs across ALL arms is loudly visible (stderr, tab-free; rc
+        # stays 0 — consumers treat helper rc!=0 as crash-class fail-closed).
+        mapped = {f for _t, f in all_pairs}
+        for f in sorted(literal_path_targets(files) - mapped):
+            print(
+                f"select_step9c_tests: WARN — no mapped tests for code file {f} "
+                "(src/scripts dependency floor, #1573): a change here reaches the "
+                "Step 10d / inline gates with zero pytest",
+                file=sys.stderr,
+            )
+        if all_pairs:
+            # Machine-greppable sizing line (tab-free stderr) so the Step-10d
+            # TG legs can size their pytest bound from the map (#1573; floor =
+            # the pre-#1573 fixed 300 s TG-leg bound).
+            k_tests = sorted({t for t, _f in all_pairs})
+            map_timeout = recommended_timeout_s(k_tests, floor=MAP_TIMEOUT_FLOOR_S)
+            print(
+                f"select_step9c_tests: map-files — {len(all_pairs)} pairs, "
+                f"{len(k_tests)} tests; recommended-timeout-s={map_timeout}",
+                file=sys.stderr,
+            )
+        for test, f in all_pairs:
             print(f"{test}\t{f}")
         return 0
 

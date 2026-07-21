@@ -1282,3 +1282,66 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     assert "worktree" not in arm, (
         "the pre-check arm must never touch the scratch worktree (it deletes nothing)"
     )
+
+
+# --------------------------------------------------------------------------
+# Task #1573 — TG legs: selector-sized timeout + junit-node-grain subtraction
+# --------------------------------------------------------------------------
+
+
+def _tg_blocks(text: str) -> list[str]:
+    """The two Step 10d TG executable blocks (shared-gate + surgical form
+    (iii)) — same extraction convention as
+    tests/test_step9c_baseline.py::test_skill_tg_blocks_pin_tmpdir_routing."""
+    blocks = [b for b in text.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
+    assert len(blocks) == 2, "expected the shared-gate + surgical TG blocks"
+    return blocks
+
+
+def test_tg_leg_selector_sized_timeout():
+    """#1573: both TG blocks size their pytest bound from the selector's
+    machine-greppable `recommended-timeout-s=` stderr line (gated map,
+    /tmp/issue-<N>-tg-map-err.txt) with the pre-#1573 fixed 300s as the
+    fallback floor; NO fixed `--kill-after=30s 300s` remains as a TG pytest
+    bound. The surgical pass-arm `git push origin main` 300s bound is a
+    DIFFERENT command — exempted by its `git push` CONTENT, never by line
+    number (it may move)."""
+    text = _skill_text()
+    for block in _tg_blocks(text):
+        assert "grep -oE 'recommended-timeout-s=[0-9]+'" in block, (
+            "TG block must grep the selector's sizing line"
+        )
+        assert "/tmp/issue-<N>-tg-map-err.txt" in block
+        assert "TG_T=300" in block, "the 300s floor fallback must be present"
+        assert block.count("timeout --kill-after=30s ${TG_T}s") == 2, (
+            "BOTH pytest legs (baseline + gated) must carry the sized bound"
+        )
+        for line in block.splitlines():
+            if "--kill-after=30s 300s" in line:
+                assert "git push" in line, (
+                    f"a fixed 300s bound must not remain on a TG pytest leg: {line!r}"
+                )
+
+
+def test_tg_leg_node_grain_subtraction():
+    """#1573: both TG blocks carry the junit-NODE-grain NEW-failure pipeline —
+    `FAILED`/`ERROR` summary lines -> sed msg-suffix strip (NOT awk field-2:
+    pytest preserves spaces in string param ids, so field-2 truncation would
+    collide `test_foo[a b]` with `test_foo[a c]`) -> sort -u -> comm -23 into
+    tg-new-nodes.txt — with a stale-file init and the node file OR'd into the
+    verdict beside the file-grain hit set (a unit-test failure names the TEST,
+    not a payload path; file-grain alone verdicts `pass` on the #1573
+    founding incident)."""
+    text = _skill_text()
+    for block in _tg_blocks(text):
+        assert ": > /tmp/issue-<N>-tg-new-nodes.txt" in block, "stale-file init missing"
+        assert "grep -E '^(FAILED|ERROR) '" in block
+        assert "sed -E 's/^(FAILED|ERROR) //; s/ - .*$//'" in block, (
+            "the msg-suffix strip must be the sed form (never awk '{print $2}')"
+        )
+        assert "tg-$leg-nodes.txt" in block
+        assert "comm -23 /tmp/issue-<N>-tg-gated-nodes.txt" in block
+        assert "/tmp/issue-<N>-tg-baseline-nodes.txt > /tmp/issue-<N>-tg-new-nodes.txt" in block
+        assert (
+            "[ -s /tmp/issue-<N>-tg-new.txt ] || [ -s /tmp/issue-<N>-tg-new-nodes.txt ]" in block
+        ), "the verdict must OR the node-grain file beside the file-grain hit set"

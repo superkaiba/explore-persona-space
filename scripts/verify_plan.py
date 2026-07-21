@@ -6746,7 +6746,8 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     (``select_step9c_tests.select_tests_with_reasons``) over the plan's
     declared touched files. #1536 plan v2 claimed two ``test_issue906_*``
     files "sit on the Step-9c mapped-scan path for sft.py edits" — measured
-    false: ``--map-files`` on sft.py is empty and the full selection returns
+    false: ``--map-files`` on sft.py is empty (pre-#1573; the mapping mode now
+    carries the src/scripts dependency arms) and the full selection returns
     56 tests without either anchor (the import map is one-hop; a test
     importing a helper that imports the touched module is never selected).
     NEVER FAILs (task-body constraint: an anchor claim can be legitimately
