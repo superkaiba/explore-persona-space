@@ -4474,36 +4474,36 @@
     "1574": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1574",
-      "status": "planning",
+      "path": "tasks/completed/1574",
+      "status": "completed",
       "title": "daily-fix: structural digest for GCP/SLURM log excerpts"
     },
     "1575": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1575",
-      "status": "planning",
+      "path": "tasks/completed/1575",
+      "status": "completed",
       "title": "daily-fix: cap-park note duty on expensive-band path"
     },
     "1576": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1576",
-      "status": "planning",
+      "path": "tasks/completed/1576",
+      "status": "completed",
       "title": "daily-fix: WARN on inline interpreter workload-cmd body"
     },
     "1577": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1577",
-      "status": "proposed",
+      "path": "tasks/planning/1577",
+      "status": "planning",
       "title": "daily-fix: read-bounding hook for guard hook scripts"
     },
     "1578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1578",
-      "status": "proposed",
+      "path": "tasks/planning/1578",
+      "status": "planning",
       "title": "daily-fix: completed-unmerged resume-table row"
     },
     "1579": {
@@ -4523,8 +4523,8 @@
     "1580": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1580",
-      "status": "planning",
+      "path": "tasks/completed/1580",
+      "status": "completed",
       "title": "daily-fix: reconcile wf-fix-fp tag with body fingerprint"
     },
     "1581": {
@@ -4551,8 +4551,8 @@
     "1584": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1584",
-      "status": "planning",
+      "path": "tasks/completed/1584",
+      "status": "completed",
       "title": "daily-fix: scope gitleaks hook on merge commits"
     },
     "1585": {

@@ -500,6 +500,93 @@ def lint_workload_cmd_lane_env(
     return WorkloadCmdEnvLint(flagged=flagged, certain=certain, reachable_lanes=reachable)
 
 
+#: Sanctioned trailing sentinel append (experimenter.md § item 11):
+#: ``<workload-cmd> && [uv run ]python -c "...write_completion_sentinel..."``.
+#: Leftmost ``&& [uv run ]python -c`` whose remainder mentions
+#: ``write_completion_sentinel``; anchored to end-of-string via DOTALL ``.+$``
+#: so only a TRAILING append (plus anything after the first such join) is
+#: stripped before the inline-interpreter scan.
+_SENTINEL_APPEND_RE = re.compile(r"&&\s*(?:uv\s+run\s+)?python3?\s+-c\s+(?P<rest>.+)$", re.DOTALL)
+#: Inline interpreter as the PRIMARY command: optional ``VAR=val`` env
+#: prefixes, then ``[uv run ]python[3] -c``.
+_INLINE_C_BODY_RE = re.compile(
+    r"^\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:uv\s+run\s+)?python3?\s+-c(?=\s)"
+)
+#: Stdin-heredoc python anywhere: ``python - <<EOF``, ``python - <<'EOF'``,
+#: ``python <<EOF``, with/without ``uv run``, optional ``<<-``.
+_STDIN_HEREDOC_RE = re.compile(r"(?:uv\s+run\s+)?python3?\s+-?\s*<<-?\s*['\"]?\w+")
+
+
+@dataclass(frozen=True)
+class WorkloadCmdInlineLint:
+    """Result of :func:`lint_workload_cmd_inline_interpreter` (#1576).
+
+    ``shape`` names the detected anti-pattern (``"inline_c"`` |
+    ``"stdin_heredoc"``) or ``None`` when unflagged.
+    ``sentinel_append_stripped`` records whether the sanctioned trailing
+    ``write_completion_sentinel`` append was removed before the scan.
+    """
+
+    flagged: bool
+    shape: str | None
+    sentinel_append_stripped: bool
+
+
+def strip_sentinel_append(workload_cmd: str) -> tuple[str, bool]:
+    """Strip the experimenter.md-sanctioned trailing sentinel append.
+
+    Returns ``(body, stripped)``: the command with the leftmost
+    ``&& [uv run ]python -c`` join removed when its remainder mentions
+    ``write_completion_sentinel`` (the ONE sanctioned inline ``-c`` suffix),
+    else the command unchanged.
+    """
+    m = _SENTINEL_APPEND_RE.search(workload_cmd)
+    if m is not None and "write_completion_sentinel" in m.group("rest"):
+        return workload_cmd[: m.start()], True
+    return workload_cmd, False
+
+
+def lint_workload_cmd_inline_interpreter(workload_cmd: str) -> WorkloadCmdInlineLint:
+    """WARN-class #1576 detection: inline interpreter one-liner as the workload BODY.
+
+    Mechanizes the SKILL.md § Backend dispatch prose rule "Ad-hoc probe
+    workloads are committed scripts invoked by path" (incident #1482: a
+    placeholder-broken inline staging one-liner would have SyntaxError'd
+    post-b0 and spuriously failed over to RunPod). Scans the RAW command —
+    never the ``_SINGLE_QUOTED_SEGMENT_RE``-stripped text the lane-env lint
+    uses — because an inline ``-c`` body is usually single-quoted, so the
+    quote strip would erase exactly the evidence this arm needs. The
+    sanctioned trailing ``write_completion_sentinel`` append is removed via
+    :func:`strip_sentinel_append` BEFORE the scan (strip-then-scan: an inline
+    body that ALSO ends with the sentinel append still flags).
+
+    Scope: router-lane dispatches only — this lint runs inside
+    ``dispatch_issue.py launch``; direct-SSH pod launches bypass it.
+
+    Deliberate v1 FALSE NEGATIVES (named, mirroring the
+    ``_bare_reference_re`` docstring discipline — widen if one bites):
+
+    * a mid-chain non-sentinel ``&& python -c`` segment after a
+      committed-script body;
+    * ``bash -c '...'`` / ``sh -c '...'`` wrapping;
+    * ``python -m module`` bodies and non-python interpreters;
+    * the no-space ``python -c'x'`` shape (the ``-c`` lookahead requires
+      whitespace);
+    * sentinel-token smuggling: ``true && uv run python -c "<staging>;
+      ...write_completion_sentinel(...)"`` post-strips to ``true`` and does
+      not flag (the strip keys on the token alone).
+    """
+    body = (workload_cmd or "").strip()
+    if not body:
+        return WorkloadCmdInlineLint(flagged=False, shape=None, sentinel_append_stripped=False)
+    body, stripped = strip_sentinel_append(body)
+    if _INLINE_C_BODY_RE.search(body):
+        return WorkloadCmdInlineLint(True, "inline_c", stripped)
+    if _STDIN_HEREDOC_RE.search(body):
+        return WorkloadCmdInlineLint(True, "stdin_heredoc", stripped)
+    return WorkloadCmdInlineLint(False, None, stripped)
+
+
 def build_run_spec(
     *,
     issue: int,
@@ -1125,15 +1212,18 @@ __all__ = [
     "DispatchOutcome",
     "TerminalTranslation",
     "WorkloadCmdEnvLint",
+    "WorkloadCmdInlineLint",
     "build_run_spec",
     "classify_terminal_exception",
     "default_handle_sidecar_path",
     "deserialize_handle",
     "dispatch_for_issue",
+    "lint_workload_cmd_inline_interpreter",
     "lint_workload_cmd_lane_env",
     "normalize_backend_value",
     "read_handle_sidecar",
     "resolve_handle_sidecar_path",
     "serialize_handle",
+    "strip_sentinel_append",
     "write_handle_sidecar",
 ]
