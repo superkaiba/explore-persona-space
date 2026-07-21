@@ -981,6 +981,30 @@ def _try_recovery(
     return "error"
 
 
+def _apply_wf_fix_provenance(item: dict, body_path: Path, slug: str, fp: str) -> None:
+    """Normalize the body's wf-fix Provenance lines in place (#1173, #1580).
+
+    Injects missing lines / reconciles a mismatched anchored fingerprint line via
+    ensure_wf_fix_provenance (temp+rename write, same pattern as load_ledger) and
+    prints the INJECTED / RECONCILED breadcrumbs the tests pin. No-op when the
+    body is already coherent. Extracted from process_item (C901 budget).
+    """
+    text = body_path.read_text(encoding="utf-8")
+    new_text, actions = ensure_wf_fix_provenance(text, item["target"], fp)
+    if not actions:
+        return
+    tmp = body_path.with_suffix(".md.tmp")
+    tmp.write_text(new_text, encoding="utf-8")
+    os.replace(tmp, body_path)
+    if "target" in actions or "fp-inject" in actions:
+        print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
+    if "fp-reconcile" in actions:
+        print(
+            f"RECONCILED {slug}: body fingerprint -> tag value {fp} "
+            "(#1580; body-carried fp preserved as labeled substring)"
+        )
+
+
 def process_item(
     item: dict,
     *,
@@ -1059,24 +1083,10 @@ def process_item(
     if _wf_fix_enabled(item):
         # Same condition under which _filer_cmd applies the wf-fix tag — the tag and
         # the durable recursion-guard body signal cannot diverge on the driver path
-        # (#1173; both sites key on _wf_fix_enabled, #1228). Idempotent, so a kill
-        # anywhere re-normalizes harmlessly on resume.
-        text = body_path.read_text(encoding="utf-8")
-        new_text, actions = ensure_wf_fix_provenance(text, item["target"], fp)
-        if actions:
-            tmp = body_path.with_suffix(".md.tmp")
-            tmp.write_text(new_text, encoding="utf-8")
-            os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
-            if "target" in actions or "fp-inject" in actions:
-                print(
-                    f"INJECTED {slug}: workflow_fix_target provenance "
-                    "(#1173 recursion-guard signal)"
-                )
-            if "fp-reconcile" in actions:
-                print(
-                    f"RECONCILED {slug}: body fingerprint -> tag value {fp} "
-                    "(#1580; body-carried fp preserved as labeled substring)"
-                )
+        # (#1173; both sites key on _wf_fix_enabled, #1228; #1580 reconciles a
+        # mismatched body fp to the tag value). Idempotent, so a kill anywhere
+        # re-normalizes harmlessly on resume.
+        _apply_wf_fix_provenance(item, body_path, slug, fp)
     else:
         _warn_stray_wf_fix_provenance(item, dirpath)
     # #1467 WARN-only sha-verify backstop: runs AFTER the Provenance injection (so the
