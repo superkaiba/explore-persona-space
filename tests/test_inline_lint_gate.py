@@ -297,6 +297,184 @@ def test_modified_file_hit_without_lineno_blocks_conservatively(tmp_path: Path) 
 
 
 # ---------------------------------------------------------------------------
+# Warnings-summary attribution rows (#1585; the #1112 false-block incident):
+# bare node-id headers / `path: N warnings` aggregates INSIDE pytest's fenced
+# "warnings summary" section report instead of blocking; everything outside
+# the section (or in the lint leg) keeps the conservative block.
+# ---------------------------------------------------------------------------
+def _incident_pytest_out(node: str) -> str:
+    """Verbatim pytest 9.0.2 ``-q -rA`` shape from the #1585 plan §2 probe:
+    fenced warnings-summary header, non-indented bare node-id rows (x2, one
+    per warning group — the #1112 incident repetition), indented warning
+    bodies pointing at site-packages files, the docs-link line, fenced
+    PASSES + short-summary sections, and the UNfenced final summary line."""
+    return (
+        "..                                                                       [100%]\n"
+        "=============================== warnings summary ===============================\n"
+        f"{node}\n"
+        "  /usr/lib/python3.11/site-packages/torch/utils/_pytree.py:185: "
+        "DeprecationWarning: legacy\n"
+        '    warnings.warn("legacy", DeprecationWarning)\n'
+        f"{node}\n"
+        "  /usr/lib/python3.11/site-packages/swig_runtime.py:3: DeprecationWarning: "
+        "builtin type swigvarlink has no __module__ attribute\n"
+        "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n"
+        "==================================== PASSES ====================================\n"
+        "=========================== short test summary info ============================\n"
+        f"PASSED {node}\n"
+        "29 passed, 2 warnings in 3.21s\n"
+    )
+
+
+def test_warnings_summary_attribution_reports_not_blocks(tmp_path: Path) -> None:
+    """Incident-shape repro + durability pin (#1112): a 29/29-green suite whose
+    warnings summary attributes environmental warnings to a MODIFIED payload
+    test file must PASS and certify, with the attribution rows reported."""
+    repo = _repo_with_added_lines(tmp_path)
+    node = "scripts/mod.py::test_x"
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=_incident_pytest_out(node),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert f"[warnings-summary attribution] {node}" in r.stdout, r.stdout
+    assert "conservative block" not in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/mod.py"), lines
+
+
+def test_new_file_warnings_summary_attribution_passes(tmp_path: Path) -> None:
+    """The reclassification covers the NEW-on-origin/main branch too (its
+    "any non-WARN hit blocks" rule would otherwise false-block, D1)."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    node = "scripts/new.py::test_x"
+    r = _run_gate(
+        repo,
+        ["scripts/new.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/new.py\n",
+        pytest_out=_incident_pytest_out(node),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert f"[warnings-summary attribution] {node}" in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/new.py"), lines
+
+
+def test_short_summary_failed_line_still_blocks(tmp_path: Path) -> None:
+    """A FAILED row naming the payload (short-test-summary section) still
+    blocks — it carries spaces + tokens, so the attribution row shape never
+    matches, and the short-summary fence is not a warnings-summary title."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "=========================== short test summary info ============================\n"
+            "FAILED scripts/mod.py::test_x - AssertionError\n"
+            "1 failed, 28 passed in 3.21s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "inline_lint_gate: BLOCK (scripts/mod.py)" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_bare_node_id_outside_section_still_conservative_blocks(tmp_path: Path) -> None:
+    """Double predicate (D3): the bare-row shape alone never whitelists — a
+    node id OUTSIDE any warnings-summary section keeps the conservative block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out="scripts/mod.py::test_x\n1 passed in 0.01s\n",  # no fence anywhere before it
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_aggregated_warning_count_row_reports_not_blocks(tmp_path: Path) -> None:
+    """pytest's aggregated `<path>: N warnings` row inside the section reports
+    (its `path: N` shape carries no parseable `path:<lineno>:` — A4), and the
+    section is subsequently CLOSED by a fence (pins window-close placement)."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "=============================== warnings summary ===============================\n"
+            "scripts/mod.py: 3 warnings\n"
+            "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n"
+            "=========================== short test summary info ============================\n"
+            "3 passed, 3 warnings in 0.05s\n"
+        ),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[warnings-summary attribution] scripts/mod.py: 3 warnings" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
+
+
+def test_lint_leg_fence_never_opens_whitelist(tmp_path: Path) -> None:
+    """Section tracking is scoped to the PYTEST leg only (D2): a fenced
+    warnings-summary header in the LINT leg opens no whitelist window, so a
+    bare node id naming the payload there still conservative-blocks."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=(
+            "=============================== warnings summary ===============================\n"
+            "scripts/mod.py::test_x\n" + LINT_FAIL_TERMINAL
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
+    """Window-CLOSE transition pin: any non-warnings fence (here PASSES) RESETS
+    the section, so a bare payload node id AFTER the close (captured-stdout
+    echo shape) keeps the conservative block. An implementation that never
+    closes the window fails this test."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "=============================== warnings summary ===============================\n"
+            "tests/test_other.py::test_benign\n"
+            "==================================== PASSES ====================================\n"
+            "scripts/mod.py::test_x\n"
+            "1 passed, 1 warning in 0.02s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
 # Direct function tests: parser, ranges, TOCTOU, trim
 # ---------------------------------------------------------------------------
 def test_parse_map_pairs_is_pair_generic() -> None:
