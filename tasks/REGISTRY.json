@@ -4481,8 +4481,8 @@
     "1575": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1575",
-      "status": "approved",
+      "path": "tasks/running/1575",
+      "status": "running",
       "title": "daily-fix: cap-park note duty on expensive-band path"
     },
     "1576": {
