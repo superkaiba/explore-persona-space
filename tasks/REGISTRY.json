@@ -4460,8 +4460,8 @@
     "1572": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1572",
-      "status": "reviewing",
+      "path": "tasks/completed/1572",
+      "status": "completed",
       "title": "workflow-fix: staged-index check for ignored artifacts"
     },
     "158": {
