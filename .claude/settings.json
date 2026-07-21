@@ -142,6 +142,15 @@
             "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_harmful_bank_read.sh"
           }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_trigger_dense_read.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

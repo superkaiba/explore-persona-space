@@ -160,9 +160,12 @@ def test_pinned_invariant_list_matches_live_tree():
     # still run the #1548/#1558/#1575 pins) + the #1584 merge-scoped gitleaks
     # stanza/wrapper pin suite
     # (test_precommit_gitleaks_merge_scope — .pre-commit-config.yaml has no per-file test
-    # map, so a later config diff runs the pin ONLY via this tuple).
+    # map, so a later config diff runs the pin ONLY via this tuple) + the #1577
+    # guard-script read-bounding hook pin suite (test_guard_trigger_dense_read —
+    # the stem/literal/dependency arms are .py-only, so a later .sh-hook /
+    # settings.json diff runs the pin ONLY via this tuple).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 43
+    assert len(sel.WORKFLOW_INVARIANT) == 44
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
