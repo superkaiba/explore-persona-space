@@ -4488,8 +4488,8 @@
     "1576": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1576",
-      "status": "approved",
+      "path": "tasks/running/1576",
+      "status": "running",
       "title": "daily-fix: WARN on inline interpreter workload-cmd body"
     },
     "1577": {
