@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1582,
+  "highest_id": 1583,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4540,6 +4540,13 @@
       "path": "tasks/proposed/1582",
       "status": "proposed",
       "title": "daily-fix: escalate keep-running pods with wedged owners"
+    },
+    "1583": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1583",
+      "status": "proposed",
+      "title": "daily-fix: teammate idle semantics + one-implementer rule"
     },
     "159": {
       "has_clean_result": false,
