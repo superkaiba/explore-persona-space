@@ -596,6 +596,13 @@ class TrainLoraConfig:
     lora_r: int = 32
     lora_alpha: int = 64
     lora_dropout: float = 0.05
+    # rsLoRA scaling selector (alpha/sqrt(r) when True, classic alpha/r when
+    # False). Default True is byte-identical for every existing caller — the
+    # value was hardcoded ``use_rslora=True`` in the LoraConfig below before
+    # #1112 rankem. The low-rank non-rsLoRA arm (arXiv 2410.21228 regime, where
+    # the LoRA/full-FT geometry gap is predicted largest at small r) passes
+    # ``use_rslora=False`` so the classic alpha/r scaling applies at r=1/r=4.
+    use_rslora: bool = True
     batch_size: int = 4
     grad_accum: int = 4
     max_length: int = 1024
@@ -706,7 +713,7 @@ class TrainLoraConfig:
     #     starting point.
     #   - The TRL SFTTrainer receives the prepared PeftModel directly and the
     #     peft_config kwarg is OMITTED (so it does NOT re-wrap with a new adapter).
-    #   - lora_r / lora_alpha / lora_dropout / lora_targets are ignored
+    #   - lora_r / lora_alpha / lora_dropout / lora_targets / use_rslora are ignored
     #     (the loaded adapter's own config wins; we are CONTINUING the same
     #     adapter, not building a different one).
     # Used by Phase-2 survival probes (e.g. issue #475 plan §4.7) where the
@@ -1479,7 +1486,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             lora_alpha=cfg.lora_alpha,
             lora_dropout=cfg.lora_dropout,
             target_modules=effective_lora_targets,
-            use_rslora=True,
+            use_rslora=cfg.use_rslora,
         )
 
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
