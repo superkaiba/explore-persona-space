@@ -74,6 +74,20 @@ adding a pass means adding a numbered item here AND bumping the digit:
      progress for > ``ALERT_STALE_HOURS``. This is the likely-abandoned
      mid-run case. We do NOT stop it: a false alert is a cheap nudge; a false
      stop would kill a healthy run.
+   - **ESCALATE (keep-running wedged-owner arm, #1582 — never a stop)** a
+     RUNNING pod shielded by the ``keep-running`` tag on a DONE-status task
+     once the task shows no real marker progress for >=
+     ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H`` (12h) AND the owning session is
+     provably wedged (transcript idle >= the same floor, self-report equally
+     stale) or absent (no live registration sid, no worktree-cwd daemon
+     child), confirmed >= 2 consecutive ticks: one task marker per episode +
+     a Telegram push + a sidecar row
+     (``.claude/cache/keep-running-wedged-events.jsonl``), re-pushed every
+     ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h) while unresolved. The tag
+     previously made such a pod INVISIBLE (#1345: ~72h of billing behind a
+     frozen wrapper). An "unknown" owner read (daemon unreachable,
+     unresolvable transcript) FREEZES the confirmation counter — fail toward
+     no-fire. Kill switch ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1``.
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -975,6 +989,41 @@ _AUTOSTOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop-failed
 # visible on the dashboard without 20-minute marker spam.
 _KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
 
+# Substring stamped into the #1582 keep-running WEDGED-OWNER escalation marker
+# — posted (once per episode, keyed by the `kr_owner_first_ts` pod-safety
+# state field) when a RUNNING pod shielded by the keep-running tag on a
+# DONE-status task shows >= 12h of real-marker silence AND its owning session
+# is provably wedged (transcript idle >= the same threshold, self-report
+# equally stale) or absent (no live registration sid and no worktree-cwd
+# daemon child maps to the issue), confirmed >= 2 consecutive ticks.
+# ESCALATE-ONLY: the arm never stops/terminates anything (task-body hard
+# constraint — the tag is an explicit user override; incident #1345:
+# pod-1345-onpolicy billed ~72h behind a frozen wrapper before manual
+# recovery). Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS (excluded from "real progress" in
+# _latest_progress_ts — otherwise the escalation marker would reset the very
+# progress-gap clock the arm measures and end its own episode next tick).
+_KEEP_RUNNING_WEDGED_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-wedged-owner]"
+
+#: Marker-gap AND owner-transcript-idle floor (seconds) for the #1582 arm —
+#: ONE knob for both legs: they measure the same construct ("abandoned for N
+#: hours"), and 12h is the project's standing abandonment judgment
+#: (:data:`STALE_REGISTRATION_IDLE_S` == :data:`UNMAPPED_IDLE_REAP_S`, the
+#: #845d/#1039 rationale — already trusted for the MORE invasive
+#: unregister/reap actions). Env-overridable at CALL time via
+#: ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H`` (HOURS;
+#: :func:`_keep_running_owner_idle_s`).
+KEEP_RUNNING_OWNER_IDLE_S = 12 * 3600
+
+#: Re-alert TTL (seconds) for the #1582 arm: push+sidecar repeat cadence
+#: while an escalated episode stays unresolved. 24h matches the watcher's
+#: standing unresolved-condition re-page cadence
+#: (``EPM_ROOT_DRAFT_REALERT_HOURS`` #1341,
+#: ``EPM_COMPLETED_UNMERGED_REALERT_HOURS`` #1564). Env-overridable at CALL
+#: time via ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (HOURS;
+#: :func:`_keep_running_owner_realert_s`).
+KEEP_RUNNING_OWNER_REALERT_S = 24 * 3600
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -1477,6 +1526,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ALERT_NOTE_SENTINEL,
         _AUTOSTOP_FAILED_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
+        _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -3339,6 +3389,74 @@ def decide_unlaunched_orphan(
     if latest_launch_signal_ts is not None and latest_launch_signal_ts > created_ts - skew_sec:
         return "keep"
     return "alert"
+
+
+def decide_keep_running_owner_escalation(
+    *,
+    progress_gap_s: float | None,
+    owner_state: str,
+    missed: int,
+    threshold: int,
+    min_idle_s: float,
+    first_ts: float | None,
+    last_alert_ts: float | None,
+    now: float,
+    realert_s: float,
+) -> tuple[str, int]:
+    """Pure decision for the #1582 keep-running wedged-owner arm.
+
+    Returns ``(action, new_missed)``; ``action`` in
+    ``{"clear", "hold", "escalate", "re-alert"}``. ``progress_gap_s`` is
+    ``now`` minus the newest REAL progress marker (or the pod ``created_at``
+    fallback); ``None`` means unknowable. ``owner_state`` comes from
+    :func:`_keep_running_owner_state` (``"live"`` | ``"wedged"`` |
+    ``"absent"`` | ``"unknown"``). ``missed`` counts CONFIRMED wedged/absent
+    ticks so far (``kr_owner_missed``); ``first_ts`` is the episode onset
+    (``kr_owner_first_ts``; ``None`` = no open episode — it doubles as the
+    once-per-episode marker key); ``last_alert_ts`` is the last push
+    (``kr_owner_last_alert_ts``).
+
+    Cases:
+
+    - ``progress_gap_s is None`` or ``< min_idle_s`` -> ``("clear", 0)`` —
+      the task recently progressed (or the gap is unknowable); episode ends.
+      Boundary: ``progress_gap_s >= min_idle_s`` COUNTS as idle (``>=``
+      fires, mirroring :func:`decide_idle_unmapped`'s
+      ``idle_age_s < idle_reap_s -> clear`` complement).
+    - ``owner_state == "live"`` -> ``("clear", 0)`` — owner demonstrably
+      alive, however stale the markers.
+    - ``owner_state == "unknown"`` (or any unrecognized value) ->
+      ``("hold", missed)`` — FREEZE: fail toward no-fire, keep the episode.
+      NOTE: ``missed`` counts CONFIRMED ticks; unknown ticks freeze it
+      (neither increment nor reset), so two wedged reads separated by
+      unknown ticks still count as consecutive — deliberate, conservative;
+      do not "fix" this later without revisiting the rationale.
+    - ``owner_state in {"wedged", "absent"}`` -> ``new_missed = missed + 1``:
+      below ``threshold`` -> ``("hold", new_missed)`` (accumulate, nothing
+      emitted); at/over the threshold with ``first_ts is None`` ->
+      ``("escalate", new_missed)`` (episode opens: marker + push + sidecar);
+      episode already open and ``last_alert_ts`` is ``None`` or ``now -
+      last_alert_ts >= realert_s`` -> ``("re-alert", new_missed)`` (push +
+      sidecar only, no second marker); else -> ``("hold", new_missed)``.
+
+    ESCALATE-ONLY by contract: the caller never stops/terminates on this
+    arm's account (the keep-running tag is an explicit user override — the
+    #1582 task-body hard constraint).
+    """
+    if progress_gap_s is None or progress_gap_s < min_idle_s:
+        return ("clear", 0)
+    if owner_state == "live":
+        return ("clear", 0)
+    if owner_state not in ("wedged", "absent"):
+        return ("hold", missed)  # "unknown" (or garbage): freeze — fail toward no-fire
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("hold", new_missed)
+    if first_ts is None:
+        return ("escalate", new_missed)
+    if last_alert_ts is None or now - last_alert_ts >= realert_s:
+        return ("re-alert", new_missed)
+    return ("hold", new_missed)
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -8144,6 +8262,9 @@ def _save_pod_safety_state(
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
+    kr_owner_missed: int | None = _CARRY,
+    kr_owner_first_ts: float | None = _CARRY,
+    kr_owner_last_alert_ts: float | None = _CARRY,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -8191,6 +8312,19 @@ def _save_pod_safety_state(
     ``followup_noted`` flags whose only carry-forward signal IS ``None``. MF3:
     without this forward-carry the wedge fields would be silently dropped on
     every save and the wedge miss-guard / alert-dedup would never accumulate.
+
+    The #1582 keep-running wedged-owner fields — ``kr_owner_missed`` (the
+    arm's >=threshold consecutive-confirmed-ticks counter),
+    ``kr_owner_first_ts`` (the episode onset; doubles as the
+    once-per-episode marker key), and ``kr_owner_last_alert_ts`` (the
+    re-alert TTL clock) — carry forward via the SAME ``_CARRY`` sentinel
+    (``None`` is a meaningful clear value for the two ts fields), but the
+    carry is pod_id-KEYED like ``orphan_gcp_noted``: a save under a NEW
+    ``pod_id`` resets them to their defaults (0 / None / None) so a fresh
+    pod incarnation starts a fresh episode — and the reset lives HERE (not
+    only arm-side) so the #692 wedge arm's same-tick ``pod_id`` rewrite
+    cannot launder stale episode state onto the new incarnation (the
+    ``orphan_gcp_noted`` laundering case above).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -8237,6 +8371,30 @@ def _save_pod_safety_state(
         wedge_missed = prev_wedge_missed if isinstance(prev_wedge_missed, int) else 0
     if wedge_alerted is _CARRY:
         wedge_alerted = bool((prev or {}).get("wedge_alerted", False))
+    # #1582 kr_owner_* carry: _CARRY-defaulted like the wedge fields, but
+    # pod_id-KEYED like orphan_gcp_noted — a save under a NEW pod_id resets
+    # the episode (fresh incarnation), and the reset lives in-save so the
+    # #692 wedge arm's same-tick pod_id rewrite cannot launder stale state.
+    kr_same_pod = (prev or {}).get("pod_id") == pod_id
+    if kr_owner_missed is _CARRY:
+        prev_kr_missed = (prev or {}).get("kr_owner_missed", 0)
+        kr_owner_missed = (
+            prev_kr_missed
+            if isinstance(prev_kr_missed, int)
+            and not isinstance(prev_kr_missed, bool)
+            and kr_same_pod
+            else 0
+        )
+    if kr_owner_first_ts is _CARRY:
+        prev_kr_first = (prev or {}).get("kr_owner_first_ts")
+        kr_owner_first_ts = (
+            prev_kr_first if isinstance(prev_kr_first, int | float) and kr_same_pod else None
+        )
+    if kr_owner_last_alert_ts is _CARRY:
+        prev_kr_alert = (prev or {}).get("kr_owner_last_alert_ts")
+        kr_owner_last_alert_ts = (
+            prev_kr_alert if isinstance(prev_kr_alert, int | float) and kr_same_pod else None
+        )
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -8251,6 +8409,9 @@ def _save_pod_safety_state(
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
         "wedge_alerted": bool(wedge_alerted),
+        "kr_owner_missed": int(kr_owner_missed),
+        "kr_owner_first_ts": kr_owner_first_ts,
+        "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -10106,6 +10267,49 @@ def _unlaunched_orphan_grace_sec() -> int:
     return val if val > 0 else UNLAUNCHED_ORPHAN_GRACE_SEC
 
 
+def _keep_running_owner_idle_s() -> float:
+    """#1582 marker-gap + owner-transcript-idle floor in seconds (env
+    ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H``, HOURS; default
+    :data:`KEEP_RUNNING_OWNER_IDLE_S` = 12h). Malformed / non-positive env
+    falls back — a typo'd var must not turn the arm into an instant pager
+    (the :func:`_stale_registration_idle_s` defensive shape)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H")
+    if not raw:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    return parsed
+
+
+def _keep_running_owner_realert_s() -> float:
+    """#1582 re-alert TTL in seconds (env ``EPM_KEEP_RUNNING_WEDGED_REALERT_H``,
+    HOURS; default :data:`KEEP_RUNNING_OWNER_REALERT_S` = 24h). Malformed /
+    non-positive env falls back (same defensive shape as
+    :func:`_keep_running_owner_idle_s`)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_WEDGED_REALERT_H")
+    if not raw:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    return parsed
+
+
+def _keep_running_owner_audit_enabled() -> bool:
+    """#1582 kill switch: False when ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT``
+    is set truthy ("1"/"true"/"yes"/"on", case-insensitive). Default enabled.
+    Mirrors :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
 def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
     """True iff issue ``issue``'s run-handle sidecar resolves AND reads backend=gcp.
 
@@ -10383,6 +10587,367 @@ def _maybe_flag_unlaunched_orphan_pod(
     return True
 
 
+def _proc_cwd(pid: int) -> str | None:
+    """``/proc/<pid>/cwd`` readlink, or ``None`` on any failure (fail-soft per
+    child — the #1582 owner resolver's cwd-mapping seam; the zombie/orphan
+    passes already read ``/proc/<pid>/…`` for the same process family)."""
+    try:
+        return os.readlink(f"/proc/{pid}/cwd")
+    except OSError:
+        return None
+
+
+def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tuple[str, dict]:
+    """Classify the owning session(s) of ``issue`` for the #1582 arm.
+
+    Returns ``(state, evidence)`` with ``state`` in ``"live"`` | ``"wedged"``
+    | ``"absent"`` | ``"unknown"``. Every unresolvable signal fails toward
+    ``"unknown"`` (the caller's decide() FREEZES on unknown — a wrong signal
+    is worse than a missing one, the :func:`_transcript_idle_age_s`
+    contract). Steps:
+
+    1. Daemon unreachable -> ``("unknown", ...)`` (liveness unknowable).
+    2. ``_live_children()`` snapshot unusable -> ``("unknown", ...)``.
+    3. sid -> pid map from the children snapshot (the
+       :func:`stale_registration_pass` pattern).
+    4. Candidate owner pids (union): (a) registration sids —
+       ``issue-<N>.json`` + ``manual-issue-<N>.json`` (field
+       ``happy_session_id``) that appear in the sid->pid map; (b)
+       cwd-mapped children — ``/proc/<pid>/cwd`` (:func:`_proc_cwd`,
+       fail-soft per child) where :func:`attribute_issue` maps the cwd to
+       this issue — covers the #1345 owner class with no registration file.
+    5. A FRESH self-report rescues FIRST, before any absent classification
+       (:func:`_self_report_age_seconds` age < ``min_idle_s`` -> live); a
+       missing/malformed self-report does NOT rescue
+       (:func:`decide_stale_registration` parity).
+    6. No candidates -> ``("absent", ...)``.
+       NOTE: the sidecar ``owner_state`` label may flip wedged -> absent
+       across ticks when the stale-registration pass deletes the
+       registration file (shared 12h judgment) — cosmetic, both
+       classifications fire; keep this comment in the implementation.
+    7. Per candidate pid, :func:`_transcript_idle_age_s`: ANY idle <
+       ``min_idle_s`` -> live; else ANY unresolvable -> unknown; else all
+       >= ``min_idle_s`` -> wedged (evidence carries the max idle).
+    """
+    if not _daemon_reachable():
+        return ("unknown", {"reason": "daemon-unreachable"})
+    children = _live_children()
+    if not isinstance(children, list):
+        return ("unknown", {"reason": "no-children-snapshot"})
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    candidates: dict[int, str | None] = {}
+    for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        try:
+            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(entry, dict):
+            continue
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid and sid in pids_by_sid:
+            candidates[pids_by_sid[sid]] = sid
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        pid = c.get("pid")
+        if not isinstance(pid, int) or isinstance(pid, bool) or pid in candidates:
+            continue
+        cwd = _proc_cwd(pid)
+        if cwd is not None and attribute_issue(cwd, "") == issue:
+            child_sid = c.get("happySessionId")
+            candidates[pid] = child_sid if isinstance(child_sid, str) and child_sid else None
+    # Fresh self-report rescues FIRST — BEFORE any absent classification (a
+    # session can be healthily driving the issue without a registration or a
+    # worktree cwd); missing/malformed does NOT rescue.
+    sr_age, _sr_ts = _self_report_age_seconds(issue, now)
+    if sr_age is not None and sr_age < min_idle_s:
+        return ("live", {"reason": "fresh-self-report", "self_report_age_s": sr_age})
+    if not candidates:
+        # NOTE: the sidecar owner_state label may flip wedged->absent across
+        # ticks when the stale-registration pass deletes the registration
+        # file (shared 12h judgment) — cosmetic; both classifications fire.
+        return ("absent", {"reason": "no-candidates", "self_report_age_s": sr_age})
+    live_evidence: dict | None = None
+    unknown_evidence: dict | None = None
+    wedged_rows: list[tuple[int, str | None, float]] = []
+    for pid in sorted(candidates):
+        idle_s, why = _transcript_idle_age_s(pid, now)
+        if idle_s is None:
+            unknown_evidence = {"reason": f"transcript unresolvable (pid {pid}): {why}"}
+        elif idle_s < min_idle_s:
+            live_evidence = {
+                "reason": "fresh-transcript",
+                "pid": pid,
+                "sid": candidates[pid],
+                "transcript_idle_s": idle_s,
+            }
+        else:
+            wedged_rows.append((pid, candidates[pid], idle_s))
+    if live_evidence is not None:
+        return ("live", live_evidence)
+    if unknown_evidence is not None:
+        return ("unknown", unknown_evidence)  # a wrong signal is worse than none
+    pid, sid, idle_s = max(wedged_rows, key=lambda row: row[2])
+    return (
+        "wedged",
+        {"pid": pid, "sid": sid, "transcript_idle_s": idle_s, "self_report_age_s": sr_age},
+    )
+
+
+def _keep_running_wedged_sidecar_path() -> Path:
+    """DEDICATED #1582 event stream (the one-concern-one-stream convention —
+    `disk-guard-events.jsonl` / `cpu-guard-events.jsonl` siblings)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "keep-running-wedged-events.jsonl"
+
+
+def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
+    """Append one JSON line to the #1582 sidecar (fail-soft; ``ts`` + ``kind``
+    stamped here). ``dry_run`` reports only — no write."""
+    row = {
+        "ts": datetime.now().astimezone().isoformat(),
+        "kind": "keep-running-wedged-owner",
+        **payload,
+    }
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append keep-running-wedged sidecar row: {line[:160]}")
+        return
+    dest = _keep_running_wedged_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _maybe_escalate_keep_running_wedged_owner(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    now: float,
+    latest_progress: float | None,
+    threshold: int,
+    prev_state: dict,
+    dry_run: bool,
+) -> bool:
+    """ESCALATE-ONLY #1582 keep-running wedged-owner arm.
+
+    Called from :func:`_apply_pod_safety_action`'s ``keep-running-skip``
+    branch (the exact blind spot: a tagged pod short-circuits every other
+    check there — incident #1345: pod-1345-onpolicy billed ~72h behind a
+    frozen owner wrapper). Fires ONE task marker per episode + a Telegram
+    push + a sidecar row when the task shows >= 12h of real-marker silence
+    AND the owning session is provably wedged/absent, confirmed >=
+    ``threshold`` consecutive ticks; re-pushes (no second marker) every 24h
+    while unresolved. NEVER stops/terminates anything — the tag stays an
+    explicit user override; recovery is always a human/orchestrator action
+    on the marker's recipe. Returns whether it escalated/re-alerted (for
+    tests).
+
+    Sequenced lazily, cheapest evidence first (the :func:`_task_keep_running`
+    lazy-cost discipline): kill switch -> progress gap (markers already
+    loaded; pod ``created_at`` fallback when the task has no real marker) ->
+    cheap vetoes (provision-in-flight / fresh worktree activity — both fail
+    toward NOT-vetoing: an unreadable signal lets evaluation proceed, the
+    decisive owner-state gate is what fails toward no-fire;
+    stale-registration-pass parity) -> owner resolution (the only
+    daemon/proc-touching step; reached only for a tagged pod with >= 12h
+    marker silence — rare) -> :func:`decide_keep_running_owner_escalation`.
+
+    State rides the pod-safety file's ``kr_owner_*`` fields (pod_id-keyed —
+    a NEW incarnation starts a fresh episode); each save mirrors into the
+    caller's in-memory ``prev_state`` INCLUDING ``pod_id`` (the #1490 r2 /
+    #1519 clobber lesson) so the branch's subsequent save forward-carries.
+    Episode END paths (all already free): evidence clears -> decide returns
+    ``"clear"`` -> fields reset; tag removed -> branch no longer taken; pod
+    leaves RUNNING -> state file GC'd; new incarnation -> pod_id-keyed reset.
+    """
+    if not _keep_running_owner_audit_enabled():
+        return False
+    min_idle_s = _keep_running_owner_idle_s()
+    if latest_progress is not None:
+        progress_gap_s: float | None = now - latest_progress
+    else:
+        created_ts = _parse_event_ts(info.created_at) if info is not None else None
+        progress_gap_s = (now - created_ts) if created_ts is not None else None
+
+    # Episode state, pod_id-keyed (a stale prior incarnation's fields read as
+    # fresh defaults — the noted-flag read pattern of the #1490/#1519 arms).
+    same_pod = prev_state.get("pod_id") == pod_id
+    prev_missed = prev_state.get("kr_owner_missed", 0)
+    if not isinstance(prev_missed, int) or isinstance(prev_missed, bool) or not same_pod:
+        prev_missed = 0
+    prev_first = prev_state.get("kr_owner_first_ts")
+    if not isinstance(prev_first, int | float) or not same_pod:
+        prev_first = None
+    prev_alert = prev_state.get("kr_owner_last_alert_ts")
+    if not isinstance(prev_alert, int | float) or not same_pod:
+        prev_alert = None
+
+    def _persist(missed_val: int, first_val: float | None, alert_val: float | None) -> None:
+        """Persist the kr fields (write only on change) + mirror them AND
+        ``pod_id`` into the in-memory ``prev_state`` so the branch's later
+        save (prev=prev_state, kr fields at _CARRY) forward-carries them."""
+        if (missed_val, first_val, alert_val) == (prev_missed, prev_first, prev_alert):
+            return
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=(
+                    prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0
+                ),
+                alerted=bool(prev_state.get("alerted", False)),
+                last_progress_ts=(
+                    prev_state.get("last_progress_ts")
+                    if isinstance(prev_state.get("last_progress_ts"), int | float)
+                    else None
+                ),
+                kr_owner_missed=missed_val,
+                kr_owner_first_ts=first_val,
+                kr_owner_last_alert_ts=alert_val,
+                prev=prev_state,
+            )
+        prev_state["kr_owner_missed"] = missed_val
+        prev_state["kr_owner_first_ts"] = first_val
+        prev_state["kr_owner_last_alert_ts"] = alert_val
+        prev_state["pod_id"] = pod_id
+
+    if progress_gap_s is None or progress_gap_s < min_idle_s:
+        # Fresh progress / unknowable gap -> clear. No daemon probe, no
+        # subprocess on the common path.
+        _persist(0, None, None)
+        return False
+    if _provision_in_flight_reason(issue, now) is not None:
+        _persist(0, None, None)
+        return False
+    if _worktree_recent_activity(issue, now, _wt_activity_fresh_s()):
+        _persist(0, None, None)
+        return False
+
+    owner_state, evidence = _keep_running_owner_state(issue, now, min_idle_s)
+    action, new_missed = decide_keep_running_owner_escalation(
+        progress_gap_s=progress_gap_s,
+        owner_state=owner_state,
+        missed=prev_missed,
+        threshold=threshold,
+        min_idle_s=min_idle_s,
+        first_ts=prev_first,
+        last_alert_ts=prev_alert,
+        now=now,
+        realert_s=_keep_running_owner_realert_s(),
+    )
+    if action == "clear":
+        _persist(0, None, None)
+        return False
+    if action == "hold":
+        if owner_state not in ("wedged", "absent"):
+            # Unknown-state freeze: log the evidence reason (stderr only, no
+            # sidecar row) so a persistent daemon-down freeze is observable.
+            print(
+                f"  KEEP-RUNNING-WEDGED issue #{issue}: owner state unknown "
+                f"({evidence.get('reason', 'unspecified')}); counters frozen "
+                f"(missed={prev_missed}) — fail toward no-fire.",
+                file=sys.stderr,
+            )
+        _persist(new_missed, prev_first, prev_alert)
+        return False
+
+    # action in {"escalate", "re-alert"}.
+    gap_h = progress_gap_s / 3600.0
+    realert_h = _keep_running_owner_realert_s() / 3600.0
+    spec = ""
+    rate_part = ""
+    pod_name = f"pod-{issue}"
+    if info is not None:
+        pod_name = info.name
+        # Best-effort $/hr (estimate_pod_hourly_rate never raises; 0.0 on
+        # unknown gpu_count -> spec-only wording, the #1519 convention).
+        rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+        spec = f", {info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+        rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    sr_age = evidence.get("self_report_age_s")
+    sr_txt = f"{sr_age / 3600.0:.1f}h stale" if isinstance(sr_age, int | float) else "absent"
+    idle_s = evidence.get("transcript_idle_s")
+    if owner_state == "wedged" and isinstance(idle_s, int | float):
+        owner_desc = (
+            f"wedged (sid={evidence.get('sid') or '?'}, transcript idle "
+            f"{idle_s / 3600.0:.1f}h, self-report {sr_txt})"
+        )
+    else:
+        owner_desc = "absent (no live registration or worktree-cwd session maps to this issue)"
+    payload = {
+        "issue": issue,
+        "pod_id": pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "progress_gap_h": round(gap_h, 2),
+        "owner_state": owner_state,
+        "owner_sid": evidence.get("sid"),
+        "owner_pid": evidence.get("pid"),
+        "owner_transcript_idle_h": (
+            round(idle_s / 3600.0, 2) if isinstance(idle_s, int | float) else None
+        ),
+        "self_report_age_h": (
+            round(sr_age / 3600.0, 2) if isinstance(sr_age, int | float) else None
+        ),
+        "action": "escalated" if action == "escalate" else "re-alerted",
+        "episode_first_ts": now if action == "escalate" else prev_first,
+        "recovery": (
+            f"task.py remove-tag {issue} keep-running (re-arms the auto-stop) / stop the "
+            f"wedged session + respawn — full recipe on the task #{issue} marker"
+        ),
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #1582: keep-running pod {pod_name} ({spec.lstrip(', ') or 'spec-unknown'}"
+        f"{rate_part}) idle {gap_h:.1f}h on task #{issue} ('{status}') with a {owner_state} "
+        f"owner ({owner_desc}) — billing with no live work. Recovery: remove-tag keep-running "
+        f"/ stop wedged session + respawn; see task marker.",
+        dry_run,
+    )
+    if action == "escalate":
+        _post_progress_marker(
+            issue,
+            f"{_KEEP_RUNNING_WEDGED_NOTE_SENTINEL} KEEP-RUNNING WEDGED OWNER (#1582): RUNNING "
+            f"pod {pod_name} (pod_id={pod_id}{spec}{rate_part}) is shielded by the "
+            f"keep-running tag on a task at DONE status '{status}', but no real progress for "
+            f"{gap_h:.1f}h and the owning session is {owner_desc}. NOT auto-stopped "
+            f"(escalate-only — verify no live session is driving this pod from repo root "
+            f"before acting). Recovery: (1) inspect `pod.py list-ephemeral --issue {issue}` + "
+            f"pod-side logs and harvest any completed results; (2) if work remains: "
+            f"`spawn_session.py stop --session-id <sid>` then `spawn_session.py spawn-issue "
+            f"--issue {issue} --auto` (or re-invoke /issue {issue}) — the resumed session "
+            f"harvests + terminates; (3) if no live work: `task.py remove-tag {issue} "
+            f"keep-running` FIRST (re-arms the watcher auto-stop, ~20 min; also required "
+            f"before terminate — the #1485 guard refuses a bare-form terminate while the tag "
+            f"is present, deliberate override --force-keep-running), then `pod.py stop "
+            f"--issue {issue}` or `pod.py terminate --issue {issue} --yes` after upload "
+            f"verification. Re-pushed every {realert_h:.0f}h while unresolved; marker posted "
+            f"once per episode.",
+            dry_run,
+            label="keep-running-wedged-owner",
+        )
+        _persist(new_missed, now, now)
+    else:
+        _persist(new_missed, prev_first, now)
+    print(
+        f"  KEEP-RUNNING-WEDGED issue #{issue}: {action} — pod {pod_name} progress gap "
+        f"{gap_h:.1f}h, owner {owner_state}; escalate-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    return True
+
+
 def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
@@ -10533,6 +11098,7 @@ def _process_pod(
         prev_keep_running_noted=prev_keep_running_noted,
         prev_followup_noted=prev_followup_noted,
         prev_stop_failed_noted=prev_stop_failed_noted,
+        info=info,
     )
 
 
@@ -10553,6 +11119,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_keep_running_noted: bool,
     prev_followup_noted: bool,
     prev_stop_failed_noted: bool,
+    info: PodInfo | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
@@ -10564,7 +11131,12 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     the appropriate once-per-episode marker (deduped
     via the prev-state flags) and persist the per-pod state. Each save
     forward-carries the #692 wedge fields untouched (this is a status-class tick;
-    the wedge arm owns them on its own ticks)."""
+    the wedge arm owns them on its own ticks). ``info`` (the live
+    :class:`runpod_api.PodInfo`, threaded from :func:`_process_pod`; keyword
+    with a ``None`` default so existing direct callers keep passing) feeds
+    the #1582 keep-running wedged-owner arm inside the
+    ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
+    marker/push spec text."""
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -10585,6 +11157,24 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 dry_run,
                 label="keep-running-skip",
             )
+        # #1582 keep-running wedged-owner arm (ESCALATE-ONLY, purely
+        # additive): the tag makes this pod invisible to every other check,
+        # so audit the OWNER here — >= 12h marker silence + a provably
+        # wedged/absent owning session escalates (marker/push/sidecar),
+        # never stops. Runs BEFORE the branch's save; its own saves mirror
+        # the kr fields + pod_id into prev_state so the save below
+        # forward-carries them (the #1490 r2 / #1519 lesson).
+        _maybe_escalate_keep_running_wedged_owner(
+            issue,
+            pod_id,
+            info,
+            status,
+            now,
+            latest_progress,
+            threshold,
+            prev_state,
+            dry_run,
+        )
         if not dry_run:
             _save_pod_safety_state(
                 issue,
@@ -24459,6 +25049,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "live smoke against the real registration set.",
     )
     parser.add_argument(
+        "--pod-safety-only",
+        action="store_true",
+        help="run ONLY the pod-safety pass (RUNNING managed pods vs task "
+        "status, incl. the #1582 keep-running wedged-owner escalation arm) "
+        "and exit; skip every other pass. Daemon-INDEPENDENT (the wedged-"
+        "owner arm probes the daemon lazily and freezes toward no-fire when "
+        "it is down). Pair with --dry-run for a live smoke against the real "
+        "fleet.",
+    )
+    parser.add_argument(
         "--orphan-wrapper-only",
         action="store_true",
         help="run ONLY the orphan-wrapper /proc sweep pass (#1215, "
@@ -24580,6 +25180,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
             args.dry_run,
             children=_live_children() if _daemon_reachable() else None,
         )
+        return 0
+
+    # --pod-safety-only mirrors the other --*-only flags: the pass is
+    # daemon-INDEPENDENT (task status + the live pod list; the #1582
+    # wedged-owner arm probes the daemon lazily and fails toward no-fire),
+    # so run it alone. Pair with --dry-run for a live smoke.
+    if args.pod_safety_only:
+        pod_safety_pass(args.dry_run, args.threshold)
         return 0
 
     # --orphan-wrapper-only mirrors --boot-death-only: run the single pass
