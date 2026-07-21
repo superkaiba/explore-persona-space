@@ -539,7 +539,19 @@ def test_package_exports():
 
 
 def test_rslora_engine_pin():
-    # The unified recipe's rsLoRA posture is INHERITED from the train_lora
-    # hardcode; if the engine ever drops it, fail loud instead of silently
-    # changing the executed recipe.
-    assert "use_rslora=True" in inspect.getsource(train_lora)
+    # The unified recipe's rsLoRA posture is INHERITED from the TrainLoraConfig
+    # default (True) — #1112 rankem made use_rslora a config field (defaulting
+    # True) that train_lora threads into LoraConfig, so the low-rank non-rsLoRA
+    # arm can opt out at r=1/r=4 while every unified-recipe caller keeps rsLoRA.
+    # Pin the new contract: (a) train_lora threads the field (never hardcodes
+    # a literal), (b) UNIFIED_OVERRIDES sets NO use_rslora key, so it inherits
+    # the True default. If the engine ever drops rsLoRA from the default, fail
+    # loud instead of silently changing the executed recipe.
+    from explore_persona_space.artifacts.recipe import UNIFIED_OVERRIDES
+    from explore_persona_space.train.sft import TrainLoraConfig
+
+    src = inspect.getsource(train_lora)
+    assert "use_rslora=cfg.use_rslora" in src
+    assert "use_rslora=True" not in src  # not a hardcoded literal any more
+    assert TrainLoraConfig().use_rslora is True  # unified recipe keeps rsLoRA
+    assert "use_rslora" not in UNIFIED_OVERRIDES  # inherits the True default
