@@ -101,6 +101,30 @@ verify_plan.py at Phase 1.5.0 (`c23_goal_currency`) is the same bounce
 trigger — the one WARN that bounces instead of riding into the critic
 briefs.
 
+**Edit-success gate (pre-persist; EVERY scripted plan edit feeding a
+`new-plan-version` call).** When the draft being persisted was produced or
+modified by a SCRIPTED edit (a python/sed patch of the plan file — Phase 1.5.0
+mechanical-bounce patches, Phase 3 revision edits, and the /issue Step 2b/3
+revise paths included), sequence edit → verify → persist as SEPARATE
+`&&`-chained commands: the `task.py new-plan-version` persist runs ONLY after
+the edit script exited 0 AND a verify step produced POSITIVE evidence the edit
+landed. Verify = grep the draft for the revised text
+(`grep -qF '<distinctive new text>' <draft>`) and/or — on a revision round —
+a non-empty diff vs the prior persisted version
+(`! diff -q <draft> "$(uv run python scripts/task.py find <N>)/plans/plan.md"`
+— the `plan.md` symlink still points at v<K-1> until the persist; identical
+bytes mean the edit silently no-oped); a bare exit 0 is NOT evidence. Never
+`;`-chain the edit and the persist, and never run the persist inside the same
+script before its asserts have executed. On ANY edit failure, abort LOUDLY
+without persisting — print `EDIT FAILED — not persisting`, Read the CURRENT
+draft and re-derive the anchor text from it (anchor-text mismatch is the
+common failure), re-apply, and only then persist. (#1565, 2026-07-20: an edit
+script died on an anchor-text `AssertionError` yet the same compound command
+still ran the persist — v2 landed as an UNMODIFIED copy of v1 under a log
+reading "Plan v2 written … PASS", silently lacking the critic-mandated
+revision; same shape in #1563. The Goal-currency gate above and this gate are
+the two pre-persist duties — run both before every persist.)
+
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
 line plus a `<usage>...</usage>` block. Remove BOTH before writing the
@@ -923,5 +947,6 @@ in as a post-park plan v2.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
 - **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
-- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink.
+- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. A scripted edit gates its persist on verified edit success — `&&`-chain edit
+→ verify → persist, abort loudly on failure (§ Edit-success gate).
 - **Read a Bash-materialized plan copy before Editing it.** When a revision round creates the draft via Bash (`cp plans/plan.md /tmp/...`, a heredoc, or a python writer), the harness requires an in-session `Read` of that file before any `Edit` — firing Edits straight at a just-copied file bounces every one with "File has not been read yet" (7 consecutive bounces in one 2026-07-04 session). Read once, then edit.

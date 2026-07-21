@@ -1625,6 +1625,15 @@ planner against the amended Goal; NOT a critic round). Incident #922
 earlier by `epm:goal-updated`, was auto-approved 3 s later, and was caught
 only by a PM-chat directive one wasted implementer round later.
 
+**Edit-success gate:** when the draft was produced or modified by a SCRIPTED
+edit (the Step 2b/3 revise paths included), `&&`-chain edit → verify
+(positive evidence the revised text is present — grep the draft, or a
+non-empty diff vs the prior version) → the `new-plan-version` persist; an
+edit-script failure aborts the persist loudly, never `;`-chained
+(`adversarial-planner` SKILL.md § Edit-success gate; incident #1565: a
+chained persist landed v2 as an unmodified copy of v1 after the edit script
+died on an anchor-text `AssertionError`).
+
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
 then announce it with an `epm:plan` event. The handoff file carries a
