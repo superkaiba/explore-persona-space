@@ -170,6 +170,14 @@ def _resolve_body_path(item: dict, dirpath: Path) -> Path:
 WF_FIX_TARGET_KEY = "workflow_fix_target:"
 PROVENANCE_HEADING_RE = re.compile(r"^## Provenance[ \t]*$", re.M)
 
+# Anchored Provenance fingerprint line: a list item whose FIRST token after the
+# bullet is `fingerprint:` + a 12-hex fp (wf_fix_fingerprint shape; trailing
+# lookahead per sweep _RECORD_FP_RE). Deliberately does NOT match prose quotes
+# ("... its Provenance fingerprint: 44d3..." sits mid-line) — the #1580 fix.
+_FP_LINE_RE = re.compile(
+    r"(?m)^(?P<indent>\s*)-\s*fingerprint:\s*(?P<fp>[0-9a-f]{12})(?![0-9a-f])(?P<rest>[^\n]*)"
+)
+
 # ── #1467 sha-verify backstop constants (WARN-only; never blocks a filing) ─────
 HEX_TOKEN_RE = re.compile(r"\b[0-9a-f]{7,40}\b")  # git abbrev floor 7; 40 = full SHA-1
 HAS_HEX_LETTER_RE = re.compile(r"[a-f]")  # all-digit tokens are dates/ids — skip
@@ -207,29 +215,62 @@ def _insert_under_provenance(text: str, block: str) -> str:
     return text.rstrip("\n") + f"\n\n## Provenance\n\n{block}\n"
 
 
-def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool]:
-    """Idempotently ensure the durable recursion-guard Provenance lines (#1173).
+def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, list[str]]:
+    """Idempotently ensure + RECONCILE the wf-fix Provenance lines (#1173, #1580).
 
-    Returns (new_text, changed). The ``- workflow_fix_target: <target>`` line is the
-    DURABLE signal task_workflow.is_workflow_fix_session() reads (the env-var leg is
-    lost on a watcher crash-recovery respawn); ``- fingerprint: <fp>`` is the body-side
-    dedup fallback (task_workflow.is_open_workflow_fix_task; sweep _fp_tag_scan).
-    Substring contracts (do not reformat): ``workflow_fix_target: {target}`` and
-    ``fingerprint: {fp}`` with a single space after the colon.
+    Returns (new_text, actions); actions is a subset of ["target", "fp-inject",
+    "fp-reconcile"]; empty list == unchanged (truthiness-compatible with the
+    pre-#1580 bool). The ``- workflow_fix_target: <target>`` line is the DURABLE
+    signal task_workflow.is_workflow_fix_session() reads (the env-var leg is lost
+    on a watcher crash-recovery respawn).
 
-    Presence checks are substring-based BY DESIGN: a body that merely prose-quotes
-    ``workflow_fix_target:`` skips injection — acceptable because that same substring
-    already satisfies the recursion-guard predicate; only the dedup body-needle could
-    miss, and dedup's PRIMARY key is the ``wf-fix-fp:<fp>`` tag.
+    The wf-fix-fp TAG (manifest-computed at the process_item fp) is AUTHORITATIVE
+    for the ``(target_file, fingerprint)`` dedup key (workflow-fix-on-bug.md
+    § Dedup). Body-line policy:
+
+    - no anchored ``- fingerprint: <12hex>`` line -> inject ``- fingerprint: {fp}``.
+      Detection is _FP_LINE_RE-anchored, NOT substring: a prose mention of
+      ``fingerprint:`` no longer suppresses injection (#1580's own body).
+    - an anchored line already carrying ``fp`` -> no-op (idempotent, incl. re-runs
+      over a previously reconciled body; covers the mixed case where another
+      anchored line differs — the tag value is present anchored, the key coherent).
+    - anchored line(s) all carrying a DIFFERENT fp -> each rewritten in place to
+      ``- fingerprint: {fp} (tag-authoritative; supersedes body-carried
+      fingerprint: {old})``. The old value survives as the substring
+      ``fingerprint: {old}`` so sweep _fp_tag_scan and is_open_workflow_fix_task
+      (both substring-OR) still suppress re-raises keyed to it; the ONLY anchored
+      value is the tag's, so tag and body never disagree. Any trailing text on
+      the mismatched line is dropped (the old fp is what is load-bearing).
+
+    ``workflow_fix_target`` handling is unchanged (substring gate — the
+    recursion-guard predicate ``is_workflow_fix_session`` is itself
+    substring-based, so a prose mention already satisfies it).
+    Substring contracts (do not reformat): ``workflow_fix_target: {target}``,
+    ``fingerprint: {fp}``, and on a reconciled line ``fingerprint: {old}`` —
+    single space after each colon.
     """
-    lines = []
+    actions: list[str] = []
+    inject: list[str] = []
     if WF_FIX_TARGET_KEY not in text:
-        lines.append(f"- workflow_fix_target: {target}")
-    if "fingerprint:" not in text:
-        lines.append(f"- fingerprint: {fp}")
-    if not lines:
-        return text, False
-    return _insert_under_provenance(text, "\n".join(lines)), True
+        inject.append(f"- workflow_fix_target: {target}")
+        actions.append("target")
+    matches = list(_FP_LINE_RE.finditer(text))
+    if not matches:
+        inject.append(f"- fingerprint: {fp}")
+        actions.append("fp-inject")
+    elif not any(m.group("fp") == fp for m in matches):
+
+        def _reconcile(m: re.Match) -> str:
+            return (
+                f"{m.group('indent')}- fingerprint: {fp} "
+                f"(tag-authoritative; supersedes body-carried fingerprint: {m.group('fp')})"
+            )
+
+        text = _FP_LINE_RE.sub(_reconcile, text)
+        actions.append("fp-reconcile")
+    if inject:
+        text = _insert_under_provenance(text, "\n".join(inject))
+    return text, actions
 
 
 def _sha_resolves(token: str, root: Path) -> bool:
@@ -597,21 +638,32 @@ def scan_recovery_candidates(tasks_root: Path, title: str, id_floor: int, route:
 
 
 def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
-    """First NON-terminal task body.md carrying ``wf-fix-fp:<fp>`` (route-2 dedup).
+    """First NON-terminal task body.md carrying this fp (route-2 dedup).
 
-    Same predicate as the proven ad-hoc driver: a tag-scan over non-``completed``/
-    ``archived`` statuses. Deliberately COARSER than
+    Keys on the fingerprint TAG (``wf-fix-fp:<fp>``) OR an ANCHORED
+    ``- fingerprint: <fp>`` Provenance line (#1580 — aligned with the OR the two
+    sibling consumers ``_fp_tag_scan`` / ``is_open_workflow_fix_task`` already
+    implement); anchored-bullet, not bare substring, so a prose quote of another
+    task's fp (e.g. #1580's own body quoting #1570's ``44d3a4598f5c``) cannot
+    false-suppress a genuine re-raise. Residual one-way surface, accepted: a
+    reconciled line's parenthetical old fp is NOT anchored-matched here (the
+    substring-OR consumers, which carry kind/target gates, cover it), and a
+    stray anchored fp line in a NON-wf-fix body would match — the shape
+    ``_warn_stray_wf_fix_provenance`` already flags.
+
+    Same predicate family as the proven ad-hoc driver: a scan over
+    non-``completed``/``archived`` statuses. Deliberately COARSER than
     ``task_workflow.is_open_workflow_fix_task`` (which since #1180 DOES see
-    ``daily-fix:`` titles via ``WF_FIX_TITLE_PREFIXES``): this scan keys on the
-    fingerprint tag ALONE — any title, any kind, no ``workflow_fix_target:``
-    requirement, filesystem-only (no REGISTRY read) — so a same-fp task filed
-    by EITHER channel blocks a daily re-file even when its registry row or
-    Provenance line is malformed. Kept (not delegated) for that coarser grain
-    and for the ``tasks_root`` injection the test fixtures use. Called only for
-    ``_wf_fix_enabled`` items (#1228) — a ``wf_fix: false`` filing never carries
-    the fp tag, so its participation would be one-way.
+    ``daily-fix:`` titles via ``WF_FIX_TITLE_PREFIXES``): any title, any kind,
+    no ``workflow_fix_target:`` requirement, filesystem-only (no REGISTRY read)
+    — so a same-fp task filed by EITHER channel blocks a daily re-file even
+    when its registry row is malformed. Kept (not delegated) for that coarser
+    grain and for the ``tasks_root`` injection the test fixtures use. Called
+    only for ``_wf_fix_enabled`` items (#1228) — a ``wf_fix: false`` filing
+    never carries the fp tag, so its participation would be one-way.
     """
     needle = f"wf-fix-fp:{fp}"
+    line_re = re.compile(rf"(?m)^\s*-\s*fingerprint:\s*{re.escape(fp)}(?![0-9a-f])")
     for body in sorted(tasks_root.glob("*/*/body.md")):
         status = body.parent.parent.name
         if status in ("completed", "archived"):
@@ -620,7 +672,7 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
             text = body.read_text(encoding="utf-8")
         except OSError:
             continue
-        if needle in text:
+        if needle in text or line_re.search(text):
             return body
     return None
 
@@ -723,10 +775,12 @@ def _route3_already_tracked(
 
 
 def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
-    """Read-only injection-intent probe for the dry-run FILE line (#1173): write-free.
+    """Read-only injection/reconcile-intent probe for the dry-run FILE line: write-free.
 
     Returns the ' [will inject workflow_fix_target provenance]' suffix when the real
-    path would inject the wf-fix Provenance block, else ''. No exists() guard — a
+    path would inject the wf-fix Provenance block (#1173), plus/or the
+    ' [will reconcile body fingerprint -> tag value]' suffix when it would rewrite a
+    mismatched anchored fp line (#1580), else ''. No exists() guard — a
     missing/unreadable body fails LOUD here, the same fail-fast contract
     load_and_validate_manifest enforces up front. Non-wf-fix items get the
     stray-provenance WARN instead.
@@ -735,9 +789,13 @@ def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
         _warn_stray_wf_fix_provenance(item, dirpath)
         return ""
     body_text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
-    if ensure_wf_fix_provenance(body_text, item["target"], fp)[1]:
-        return " [will inject workflow_fix_target provenance]"
-    return ""
+    _new, actions = ensure_wf_fix_provenance(body_text, item["target"], fp)
+    note = ""
+    if "target" in actions or "fp-inject" in actions:
+        note += " [will inject workflow_fix_target provenance]"  # pinned string, unchanged
+    if "fp-reconcile" in actions:
+        note += " [will reconcile body fingerprint -> tag value]"
+    return note
 
 
 def _filer_cmd(
@@ -1004,12 +1062,21 @@ def process_item(
         # (#1173; both sites key on _wf_fix_enabled, #1228). Idempotent, so a kill
         # anywhere re-normalizes harmlessly on resume.
         text = body_path.read_text(encoding="utf-8")
-        new_text, changed = ensure_wf_fix_provenance(text, item["target"], fp)
-        if changed:
+        new_text, actions = ensure_wf_fix_provenance(text, item["target"], fp)
+        if actions:
             tmp = body_path.with_suffix(".md.tmp")
             tmp.write_text(new_text, encoding="utf-8")
             os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
-            print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
+            if "target" in actions or "fp-inject" in actions:
+                print(
+                    f"INJECTED {slug}: workflow_fix_target provenance "
+                    "(#1173 recursion-guard signal)"
+                )
+            if "fp-reconcile" in actions:
+                print(
+                    f"RECONCILED {slug}: body fingerprint -> tag value {fp} "
+                    "(#1580; body-carried fp preserved as labeled substring)"
+                )
     else:
         _warn_stray_wf_fix_provenance(item, dirpath)
     # #1467 WARN-only sha-verify backstop: runs AFTER the Provenance injection (so the

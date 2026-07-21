@@ -16,6 +16,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -583,6 +584,123 @@ def test_dry_run_injection_reports_but_does_not_write(tmp_path, tasks_root, caps
     assert "[will inject workflow_fix_target provenance]" in capsys.readouterr().out
 
 
+# ── case 13b: #1580 fp reconcile (tag-authoritative) + anchored-line detection ──
+
+
+def test_route2_reconciles_mismatched_body_fingerprint_to_tag(tmp_path, tasks_root, capsys):
+    """A body-carried fp that disagrees with the manifest-computed tag fp is rewritten
+    in place to the tag value, preserving the old value as a labeled substring (#1580;
+    the #1554-#1571/#1579 mismatch shape)."""
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    old = "44d3a4598f5c"  # the #1570 body-carried fp from the parked candidate block
+    assert old != fp
+    pre = (
+        "## Goal\n\nbug text for fix-a\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {item['target']}\n- fingerprint: {old}\n"
+    )
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    # The tag value is the ONLY anchored `- fingerprint:` value post-reconcile ...
+    assert re.search(rf"(?m)^-\s*fingerprint:\s*{fp}(?![0-9a-f])", body)
+    assert f"(tag-authoritative; supersedes body-carried fingerprint: {old})" in body
+    # ... while the old value survives ONLY as the substring the OR-predicates match.
+    assert f"fingerprint: {old}" in body
+    assert re.search(rf"(?m)^\s*-\s*fingerprint:\s*{old}", body) is None
+    assert "RECONCILED fix-a" in capsys.readouterr().out
+    # Filing proceeded under the manifest-computed tag fp.
+    (call,) = filer_calls(d)
+    assert f"wf-fix-fp:{fp}" in tag_values(call)
+    # Neither 12-hex value trips the #1467 sha scan (SHA_EXCLUDE_LINE_RE skips the line).
+    assert "sha-verify (filing-time, #1467)" not in body
+
+
+def test_route2_injects_fingerprint_when_only_prose_mention_present(tmp_path, tasks_root, capsys):
+    """A mid-line prose mention of 'fingerprint:' no longer suppresses injection of the
+    anchored dedup line (#1580's own body was the incident: prose mention, no line)."""
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    prose = "- **Bug observed:** filed tag disagrees with its Provenance fingerprint: 44d3a4598f5c"
+    pre = (
+        "## Goal\n\nbug text for fix-a\n\n## Workflow gap\n\n"
+        f"{prose}\n\n## Provenance\n\n- workflow_fix_target: {item['target']}\n"
+    )
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    body = (d / "fix-a.md").read_text(encoding="utf-8")
+    assert re.search(rf"(?m)^-\s*fingerprint:\s*{fp}(?![0-9a-f])", body)  # injected
+    assert prose in body  # prose line untouched
+    assert "INJECTED fix-a" in capsys.readouterr().out
+
+
+def test_route2_reconcile_idempotent():
+    """One reconcile pass makes every anchored value == tag fp; a second pass is a
+    byte no-op returning [] (the reconciled line's mid-line old fp is not bullet-initial)."""
+    target = ".claude/skills/daily/SKILL.md"
+    fp = "f55e38afc131"
+    pre = (
+        "## Goal\n\nx\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {target}\n- fingerprint: 44d3a4598f5c\n"
+    )
+    once, actions = ddf.ensure_wf_fix_provenance(pre, target, fp)
+    assert actions == ["fp-reconcile"]
+    assert f"- fingerprint: {fp} (tag-authoritative" in once
+    twice, actions2 = ddf.ensure_wf_fix_provenance(once, target, fp)
+    assert actions2 == []
+    assert twice == once  # byte-identical
+
+
+def test_dry_run_reconcile_reports_but_does_not_write(tmp_path, tasks_root, capsys):
+    """Dry-run parity for the reconcile branch: reported, never written (#1580)."""
+    item = make_item("fix-a", route=2)
+    d = make_filings_dir(tmp_path, [item])
+    pre = (
+        "## Goal\n\nbug text for fix-a\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {item['target']}\n- fingerprint: 44d3a4598f5c\n"
+    )
+    (d / "fix-a.md").write_text(pre, encoding="utf-8")
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    assert (d / "fix-a.md").read_text(encoding="utf-8") == pre  # dry-run stays write-free
+    assert not (d / "filed.jsonl").exists()
+    assert filer_calls(d) == []
+    assert "[will reconcile body fingerprint -> tag value]" in capsys.readouterr().out
+
+
+def test_find_open_fp_duplicate_matches_body_fingerprint_line_not_prose(tasks_root):
+    """The route-2 dedup scan matches the tag needle OR an ANCHORED `- fingerprint:`
+    Provenance line — never a mid-line prose quote (#1580: bare substring would let
+    a body quoting another task's fp false-suppress a genuine re-raise)."""
+    fp_line, fp_prose, fp_term = "aabbccddee11", "aabbccddee22", "aabbccddee33"
+    t_line = tasks_root / "proposed" / "101"
+    t_line.mkdir(parents=True)
+    (t_line / "body.md").write_text(
+        f"---\ntitle: a\n---\n## Provenance\n\n- fingerprint: {fp_line}\n", encoding="utf-8"
+    )
+    t_prose = tasks_root / "proposed" / "102"
+    t_prose.mkdir(parents=True)
+    (t_prose / "body.md").write_text(
+        f"---\ntitle: b\n---\n## Goal\n\nquotes a sibling's fingerprint: {fp_prose} in prose\n",
+        encoding="utf-8",
+    )
+    t_term = tasks_root / "completed" / "103"
+    t_term.mkdir(parents=True)
+    (t_term / "body.md").write_text(
+        f"---\ntitle: c\n---\n## Provenance\n\n- fingerprint: {fp_term}\n", encoding="utf-8"
+    )
+    # Anchored Provenance line, NO tag, open status -> found (the #1580 OR-widening).
+    assert ddf.find_open_fp_duplicate(tasks_root, fp_line) == t_line / "body.md"
+    # Mid-line prose quote only -> NOT found (no false suppression).
+    assert ddf.find_open_fp_duplicate(tasks_root, fp_prose) is None
+    # Terminal statuses stay skipped even with an anchored line.
+    assert ddf.find_open_fp_duplicate(tasks_root, fp_term) is None
+
+
 # ── case 14: #1228 wf_fix flag — route-2 non-workflow-surface variant ──────────
 
 
@@ -896,8 +1014,8 @@ def test_check_body_shas_annotates_idempotently(tmp_path):
     text = body_path.read_text(encoding="utf-8")
     assert text.count("sha-verify (filing-time, #1467)") == 1
     # the ensure_wf_fix_provenance needles survive annotation (no re-injection).
-    _new, changed = ddf.ensure_wf_fix_provenance(text, "x.md", "aabbccddee11")
-    assert changed is False
+    _new, actions = ddf.ensure_wf_fix_provenance(text, "x.md", "aabbccddee11")
+    assert actions == []
 
 
 def test_check_body_shas_appends_provenance_when_heading_absent(tmp_path):
