@@ -32,8 +32,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Unique module name so this test's copy of the dispatcher never collides in
+# sys.modules with the sibling rankem-dispatch test files when the full suite
+# loads them in the same process.
 _SPEC = importlib.util.spec_from_file_location(
-    "issue1112_rankem_dispatch", PROJECT_ROOT / "scripts" / "issue1112_rankem_dispatch.py"
+    "issue1112_rankem_dispatch_m5", PROJECT_ROOT / "scripts" / "issue1112_rankem_dispatch.py"
 )
 D = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = D
