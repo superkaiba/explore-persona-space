@@ -4467,8 +4467,8 @@
     "1573": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1573",
-      "status": "running",
+      "path": "tasks/reviewing/1573",
+      "status": "reviewing",
       "title": "workflow-fix: step9c --map-files misses tests importing/source-inspecting a changed src module"
     },
     "158": {
