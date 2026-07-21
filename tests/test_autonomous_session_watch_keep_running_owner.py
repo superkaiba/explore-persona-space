@@ -525,6 +525,43 @@ def test_daemon_unreachable_freezes(rig_1345, monkeypatch):
     assert state["kr_owner_first_ts"] is None
 
 
+def test_daemon_list_failed_freezes(rig_1345, monkeypatch):
+    """Daemon reachable but the strict /list probe raises -> owner "unknown"
+    -> hold: no emission, the confirmation counter FROZEN (#1582 r2 —
+    LENIENT _live_children() returned [] on the same flake, misreading it
+    as "no children" -> owner "absent", the one evidence read that failed
+    toward FIRE)."""
+    rig = rig_1345
+
+    def _raise_strict(**kw):
+        assert kw.get("strict") is True, "owner resolver must probe /list in strict mode"
+        raise RuntimeError("daemon /list failed: flake")
+
+    monkeypatch.setattr(asw, "_live_children", _raise_strict)
+    state, evidence = asw._keep_running_owner_state(1345, rig.t0, float(IDLE_S))
+    assert state == "unknown"
+    assert evidence == {"reason": "daemon-list-failed"}
+    rig.state_path.write_text(
+        json.dumps(
+            {
+                "pod_id": "pm7f1345",
+                "missed": 0,
+                "alerted": False,
+                "last_progress_ts": None,
+                "first_seen": rig.t0 - 7200,
+                "kr_owner_missed": 1,
+            }
+        )
+    )
+    rig.tick(0)
+    assert _wedged_posts(rig.posts) == []
+    assert rig.pushes == []
+    assert rig.sidecar == []
+    state = json.loads(rig.state_path.read_text())
+    assert state["kr_owner_missed"] == 1  # frozen, not incremented to 2
+    assert state["kr_owner_first_ts"] is None
+
+
 def test_vetoes(rig_1345, monkeypatch):
     """Provision-in-flight OR fresh worktree activity -> clear, and the
     daemon is never probed (the owner resolution is the LAST, priciest

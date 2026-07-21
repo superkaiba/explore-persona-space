@@ -10649,7 +10649,11 @@ def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tupl
     contract). Steps:
 
     1. Daemon unreachable -> ``("unknown", ...)`` (liveness unknowable).
-    2. ``_live_children()`` snapshot unusable -> ``("unknown", ...)``.
+    2. ``_live_children(strict=True)`` raises ``RuntimeError`` (a /list
+       flake right after a successful reachability probe) ->
+       ``("unknown", ...)``. STRICT mode is load-bearing: LENIENT mode
+       returns ``[]`` on RPC failure, which would read as "no children"
+       -> owner "absent" — the one evidence read failing toward FIRE.
     3. sid -> pid map from the children snapshot (the
        :func:`stale_registration_pass` pattern).
     4. Candidate owner pids (union): (a) registration sids —
@@ -10673,9 +10677,10 @@ def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tupl
     """
     if not _daemon_reachable():
         return ("unknown", {"reason": "daemon-unreachable"})
-    children = _live_children()
-    if not isinstance(children, list):
-        return ("unknown", {"reason": "no-children-snapshot"})
+    try:
+        children = _live_children(strict=True)
+    except RuntimeError:
+        return ("unknown", {"reason": "daemon-list-failed"})
     candidates = _keep_running_owner_candidates(issue, children)
     # Fresh self-report rescues FIRST — BEFORE any absent classification (a
     # session can be healthily driving the issue without a registration or a
