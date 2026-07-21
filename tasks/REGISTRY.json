@@ -4530,8 +4530,8 @@
     "1581": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1581",
-      "status": "reviewing",
+      "path": "tasks/completed/1581",
+      "status": "completed",
       "title": "daily-fix: edit-success gate before new-plan-version persist"
     },
     "1582": {
