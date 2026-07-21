@@ -1633,3 +1633,145 @@ def test_dependency_map_pairs_import_and_literal_union(tmp_path: Path):
         ("tests/test_imports_w.py", "scripts/widgetlib.py"),
         ("tests/test_widgetlib.py", "scripts/widgetlib.py"),
     ]
+
+
+# --- Cases 71+ (#1579): the .sh stem/literal arms ---------------------------------
+# A .sh-only diff previously selected ZERO stem-matched tests, returned zero
+# --map-files pairs, and skipped the untested_touched WARN entirely (all three
+# code-file arms were .py-gated). These cases pin the .sh extension of the stem
+# arm + the literal_path_targets eligibility; the .py branch stays byte-identical
+# (cases 1-70 unmodified are the pin).
+
+
+# --- Case 71: scripts/X.sh -> test_X.py + test_*X*.py (mirror of case 1) ----------
+def test_sh_stem_map_exact_and_glob(tmp_path: Path):
+    """A touched .sh maps via the exact stem test AND the broad *stem* glob."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_widget_cli.py", "test_other.py"])
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widget.sh"], repo)
+    assert "tests/test_widget.py" in tests  # exact
+    assert "tests/test_widget_cli.py" in tests  # broad *widget* glob
+    assert "tests/test_other.py" not in tests
+    assert untested == []
+    assert "stem-map:scripts/widget.sh" in reasons["tests/test_widget.py"]
+
+
+# --- Case 72: founding live-tree case — guard_repo_root_branch.sh (#1579) ---------
+def test_sh_stem_map_live_tree_founding_case():
+    """#1579 founding incident: a .sh-only diff selected zero stem-matched tests."""
+    repo_root = _HELPER_PATH.parents[1]
+    tests, untested, reasons = sel.select_tests_with_reasons(
+        ["scripts/guard_repo_root_branch.sh"], repo_root
+    )
+    assert "tests/test_guard_repo_root_branch.py" in tests
+    assert (
+        "stem-map:scripts/guard_repo_root_branch.sh"
+        in reasons["tests/test_guard_repo_root_branch.py"]
+    )
+    assert untested == []
+
+
+# --- Case 73: .claude/hooks/*.sh reaches the stem arm (live tree) -----------------
+def test_sh_hooks_stem_map_live_tree():
+    """Hook scripts match no WORKFLOW_SURFACE glob, so the stem arm maps them."""
+    repo_root = _HELPER_PATH.parents[1]
+    tests, untested, _reasons = sel.select_tests_with_reasons(
+        [".claude/hooks/guard_lessons_edit.sh"], repo_root
+    )
+    assert "tests/test_guard_lessons_edit.py" in tests
+    assert untested == []
+
+
+# --- Case 74: an unmatched .sh lands in untested_touched (no longer silent) -------
+def test_sh_untested_code_file_warns(tmp_path: Path):
+    """A .sh with no stem-matched test WARNs, symmetric with .py (#1579 gap 3)."""
+    repo = _make_tree(tmp_path, ["test_other.py"])
+    _tests, untested, _ = sel.select_tests_with_reasons(["scripts/lonely_helper.sh"], repo)
+    assert untested == ["scripts/lonely_helper.sh"]
+
+
+# --- Case 75: literal_path_targets .sh eligibility (unit) -------------------------
+def test_sh_literal_path_targets_eligibility():
+    """The .sh branch admits scripts/ + hooks/ + src/; the .py branch is unchanged."""
+    got = sel.literal_path_targets(
+        [
+            "scripts/a.sh",
+            ".claude/hooks/b.sh",
+            "src/explore_persona_space/c.sh",
+            "tests/d.sh",
+            "external/e.sh",
+            "docs/g.sh",
+            ".claude/agents/h.sh",
+            "scripts/f.py",  # the .py branch: byte-identical eligibility
+        ]
+    )
+    assert got == {
+        "scripts/a.sh",
+        ".claude/hooks/b.sh",
+        "src/explore_persona_space/c.sh",
+        "scripts/f.py",
+    }
+
+
+# --- Case 76: a pinning test hardcoding a .sh path selects via literal-path -------
+def test_sh_literal_path_pin_selected(tmp_path: Path):
+    """A raw-substring .sh path pin is discovered; the WARN is NOT suppressed."""
+    repo = _make_import_tree(tmp_path, {"test_pin_sh.py": 'P = "scripts/guardfoo.sh"\n'})
+    _tests, untested, reasons = sel.select_tests_with_reasons(["scripts/guardfoo.sh"], repo)
+    assert "literal-path:scripts/guardfoo.sh" in reasons["tests/test_pin_sh.py"]
+    assert untested == ["scripts/guardfoo.sh"]  # a literal hit never suppresses the WARN
+
+
+# --- Case 77: dependency_map_pairs carries the .sh stem pair (live tree) ----------
+def test_dependency_map_pairs_sh_live_tree():
+    """--map-files' dependency arms emit .sh stem pairs (exact AND broad glob)."""
+    repo_root = _HELPER_PATH.parents[1]
+    pairs = sel.dependency_map_pairs(["scripts/guard_repo_root_branch.sh"], repo_root)
+    assert (
+        "tests/test_guard_repo_root_branch.py",
+        "scripts/guard_repo_root_branch.sh",
+    ) in pairs
+    # Broad-glob map pair for .sh (the bootstrap_pod class — no exact
+    # tests/test_bootstrap_pod.py exists; reachable by NO other arm):
+    bp = sel.dependency_map_pairs(["scripts/bootstrap_pod.sh"], repo_root)
+    assert ("tests/test_bootstrap_pod_path.py", "scripts/bootstrap_pod.sh") in bp
+
+
+# --- Case 78: CLI --map-files on a .sh payload prints the stem pair ---------------
+def test_cli_map_files_sh_stem_pair(tmp_path: Path, capsys):
+    """A .sh payload with a stem-matched test prints a real pytest pair (was empty)."""
+    repo = _make_tree(tmp_path, ["test_guardfoo.py"])
+    payload = tmp_path / "payload.txt"
+    payload.write_text("scripts/guardfoo.sh\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo)])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "tests/test_guardfoo.py\tscripts/guardfoo.sh" in out
+
+
+# --- Case 79: .py behavior byte-identical — the .sh arm only grows ----------------
+def test_sh_arm_only_grows_selection(tmp_path: Path):
+    """Adding a .sh to a diff never drops a .py-derived test or reason."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_widget_cli.py"])
+    t_before, u_before, r_before = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    t_after, u_after, r_after = sel.select_tests_with_reasons(
+        ["scripts/widget.py", "scripts/unrelated.sh"], repo
+    )
+    assert set(t_before) <= set(t_after)
+    assert u_before == []
+    for t, rs in r_before.items():
+        assert set(rs) <= set(r_after[t])  # every .py-derived reason preserved verbatim
+    assert u_after == ["scripts/unrelated.sh"]
+
+
+# --- Case 80: unmapped eligible .sh payload draws the #1573 WARN floor (CLI) ------
+def test_cli_map_files_sh_unmapped_warns(tmp_path: Path, capsys):
+    """An eligible .sh payload with zero pairs draws the fail-loud stderr WARN."""
+    repo = _make_tree(tmp_path, ["test_other.py"])
+    payload = tmp_path / "payload.txt"
+    payload.write_text("scripts/lonely_helper.sh\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out.strip() == ""  # no pairs
+    assert "no mapped tests for code file" in captured.err  # the fail-loud floor
+    assert "scripts/lonely_helper.sh" in captured.err
