@@ -10597,6 +10597,48 @@ def _proc_cwd(pid: int) -> str | None:
         return None
 
 
+def _keep_running_owner_candidates(issue: int, children: list) -> dict[int, str | None]:
+    """Candidate owner pid -> sid map for the #1582 arm (extracted from
+    :func:`_keep_running_owner_state` for C901): the UNION of (a)
+    registration sids — ``issue-<N>.json`` + ``manual-issue-<N>.json``
+    (field ``happy_session_id``) resolved through the children snapshot's
+    sid -> pid map (the :func:`stale_registration_pass` pattern) — and (b)
+    cwd-mapped children — ``/proc/<pid>/cwd`` (:func:`_proc_cwd`, fail-soft
+    per child) where :func:`attribute_issue` maps the cwd to this issue
+    (covers the #1345 owner class with no registration file). A cwd-mapped
+    child with no usable sid maps to ``None``."""
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    candidates: dict[int, str | None] = {}
+    for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        try:
+            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(entry, dict):
+            continue
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid and sid in pids_by_sid:
+            candidates[pids_by_sid[sid]] = sid
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        pid = c.get("pid")
+        if not isinstance(pid, int) or isinstance(pid, bool) or pid in candidates:
+            continue
+        cwd = _proc_cwd(pid)
+        if cwd is not None and attribute_issue(cwd, "") == issue:
+            child_sid = c.get("happySessionId")
+            candidates[pid] = child_sid if isinstance(child_sid, str) and child_sid else None
+    return candidates
+
+
 def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tuple[str, dict]:
     """Classify the owning session(s) of ``issue`` for the #1582 arm.
 
@@ -10634,35 +10676,7 @@ def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tupl
     children = _live_children()
     if not isinstance(children, list):
         return ("unknown", {"reason": "no-children-snapshot"})
-    pids_by_sid: dict[str, int] = {}
-    for c in children:
-        if not isinstance(c, dict):
-            continue
-        sid = c.get("happySessionId")
-        pid = c.get("pid")
-        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
-            pids_by_sid[sid] = pid
-    candidates: dict[int, str | None] = {}
-    for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
-        try:
-            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
-        except (json.JSONDecodeError, OSError):
-            continue
-        if not isinstance(entry, dict):
-            continue
-        sid = entry.get("happy_session_id")
-        if isinstance(sid, str) and sid and sid in pids_by_sid:
-            candidates[pids_by_sid[sid]] = sid
-    for c in children:
-        if not isinstance(c, dict):
-            continue
-        pid = c.get("pid")
-        if not isinstance(pid, int) or isinstance(pid, bool) or pid in candidates:
-            continue
-        cwd = _proc_cwd(pid)
-        if cwd is not None and attribute_issue(cwd, "") == issue:
-            child_sid = c.get("happySessionId")
-            candidates[pid] = child_sid if isinstance(child_sid, str) and child_sid else None
+    candidates = _keep_running_owner_candidates(issue, children)
     # Fresh self-report rescues FIRST — BEFORE any absent classification (a
     # session can be healthily driving the issue without a registration or a
     # worktree cwd); missing/malformed does NOT rescue.
@@ -10726,6 +10740,101 @@ def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
             fh.write(line + "\n")
     except OSError as exc:
         print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _emit_keep_running_wedged_alert(
+    *,
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    action: str,
+    owner_state: str,
+    evidence: dict,
+    progress_gap_s: float,
+    episode_first_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Emit the #1582 escalation channels (extracted from
+    :func:`_maybe_escalate_keep_running_wedged_owner` for C901): one sidecar
+    row + one fail-soft Telegram push on EVERY ``escalate``/``re-alert``
+    action, plus the recovery-recipe task marker ONLY on the episode-opening
+    ``escalate`` (the once-per-episode key is ``kr_owner_first_ts``, owned by
+    the caller's persist). Pure emission — no state writes here."""
+    gap_h = progress_gap_s / 3600.0
+    realert_h = _keep_running_owner_realert_s() / 3600.0
+    spec = ""
+    rate_part = ""
+    pod_name = f"pod-{issue}"
+    if info is not None:
+        pod_name = info.name
+        # Best-effort $/hr (estimate_pod_hourly_rate never raises; 0.0 on
+        # unknown gpu_count -> spec-only wording, the #1519 convention).
+        rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+        spec = f", {info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+        rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    sr_age = evidence.get("self_report_age_s")
+    sr_txt = f"{sr_age / 3600.0:.1f}h stale" if isinstance(sr_age, int | float) else "absent"
+    idle_s = evidence.get("transcript_idle_s")
+    if owner_state == "wedged" and isinstance(idle_s, int | float):
+        owner_desc = (
+            f"wedged (sid={evidence.get('sid') or '?'}, transcript idle "
+            f"{idle_s / 3600.0:.1f}h, self-report {sr_txt})"
+        )
+    else:
+        owner_desc = "absent (no live registration or worktree-cwd session maps to this issue)"
+    payload = {
+        "issue": issue,
+        "pod_id": pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "progress_gap_h": round(gap_h, 2),
+        "owner_state": owner_state,
+        "owner_sid": evidence.get("sid"),
+        "owner_pid": evidence.get("pid"),
+        "owner_transcript_idle_h": (
+            round(idle_s / 3600.0, 2) if isinstance(idle_s, int | float) else None
+        ),
+        "self_report_age_h": (
+            round(sr_age / 3600.0, 2) if isinstance(sr_age, int | float) else None
+        ),
+        "action": "escalated" if action == "escalate" else "re-alerted",
+        "episode_first_ts": episode_first_ts,
+        "recovery": (
+            f"task.py remove-tag {issue} keep-running (re-arms the auto-stop) / stop the "
+            f"wedged session + respawn — full recipe on the task #{issue} marker"
+        ),
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #1582: keep-running pod {pod_name} ({spec.lstrip(', ') or 'spec-unknown'}"
+        f"{rate_part}) idle {gap_h:.1f}h on task #{issue} ('{status}') with a {owner_state} "
+        f"owner ({owner_desc}) — billing with no live work. Recovery: remove-tag keep-running "
+        f"/ stop wedged session + respawn; see task marker.",
+        dry_run,
+    )
+    if action == "escalate":
+        _post_progress_marker(
+            issue,
+            f"{_KEEP_RUNNING_WEDGED_NOTE_SENTINEL} KEEP-RUNNING WEDGED OWNER (#1582): RUNNING "
+            f"pod {pod_name} (pod_id={pod_id}{spec}{rate_part}) is shielded by the "
+            f"keep-running tag on a task at DONE status '{status}', but no real progress for "
+            f"{gap_h:.1f}h and the owning session is {owner_desc}. NOT auto-stopped "
+            f"(escalate-only — verify no live session is driving this pod from repo root "
+            f"before acting). Recovery: (1) inspect `pod.py list-ephemeral --issue {issue}` + "
+            f"pod-side logs and harvest any completed results; (2) if work remains: "
+            f"`spawn_session.py stop --session-id <sid>` then `spawn_session.py spawn-issue "
+            f"--issue {issue} --auto` (or re-invoke /issue {issue}) — the resumed session "
+            f"harvests + terminates; (3) if no live work: `task.py remove-tag {issue} "
+            f"keep-running` FIRST (re-arms the watcher auto-stop, ~20 min; also required "
+            f"before terminate — the #1485 guard refuses a bare-form terminate while the tag "
+            f"is present, deliberate override --force-keep-running), then `pod.py stop "
+            f"--issue {issue}` or `pod.py terminate --issue {issue} --yes` after upload "
+            f"verification. Re-pushed every {realert_h:.0f}h while unresolved; marker posted "
+            f"once per episode.",
+            dry_run,
+            label="keep-running-wedged-owner",
+        )
 
 
 def _maybe_escalate_keep_running_wedged_owner(
@@ -10862,87 +10971,26 @@ def _maybe_escalate_keep_running_wedged_owner(
         _persist(new_missed, prev_first, prev_alert)
         return False
 
-    # action in {"escalate", "re-alert"}.
-    gap_h = progress_gap_s / 3600.0
-    realert_h = _keep_running_owner_realert_s() / 3600.0
-    spec = ""
-    rate_part = ""
-    pod_name = f"pod-{issue}"
-    if info is not None:
-        pod_name = info.name
-        # Best-effort $/hr (estimate_pod_hourly_rate never raises; 0.0 on
-        # unknown gpu_count -> spec-only wording, the #1519 convention).
-        rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
-        spec = f", {info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
-        rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
-    sr_age = evidence.get("self_report_age_s")
-    sr_txt = f"{sr_age / 3600.0:.1f}h stale" if isinstance(sr_age, int | float) else "absent"
-    idle_s = evidence.get("transcript_idle_s")
-    if owner_state == "wedged" and isinstance(idle_s, int | float):
-        owner_desc = (
-            f"wedged (sid={evidence.get('sid') or '?'}, transcript idle "
-            f"{idle_s / 3600.0:.1f}h, self-report {sr_txt})"
-        )
-    else:
-        owner_desc = "absent (no live registration or worktree-cwd session maps to this issue)"
-    payload = {
-        "issue": issue,
-        "pod_id": pod_id,
-        "pod_name": pod_name,
-        "status": status,
-        "progress_gap_h": round(gap_h, 2),
-        "owner_state": owner_state,
-        "owner_sid": evidence.get("sid"),
-        "owner_pid": evidence.get("pid"),
-        "owner_transcript_idle_h": (
-            round(idle_s / 3600.0, 2) if isinstance(idle_s, int | float) else None
-        ),
-        "self_report_age_h": (
-            round(sr_age / 3600.0, 2) if isinstance(sr_age, int | float) else None
-        ),
-        "action": "escalated" if action == "escalate" else "re-alerted",
-        "episode_first_ts": now if action == "escalate" else prev_first,
-        "recovery": (
-            f"task.py remove-tag {issue} keep-running (re-arms the auto-stop) / stop the "
-            f"wedged session + respawn — full recipe on the task #{issue} marker"
-        ),
-    }
-    _append_keep_running_wedged_event(payload, dry_run)
-    _telegram_push(
-        f"pod-safety #1582: keep-running pod {pod_name} ({spec.lstrip(', ') or 'spec-unknown'}"
-        f"{rate_part}) idle {gap_h:.1f}h on task #{issue} ('{status}') with a {owner_state} "
-        f"owner ({owner_desc}) — billing with no live work. Recovery: remove-tag keep-running "
-        f"/ stop wedged session + respawn; see task marker.",
-        dry_run,
+    # action in {"escalate", "re-alert"} — emit (sidecar + push; marker only
+    # on the episode-opening escalate), then persist the episode state.
+    episode_first_ts = now if action == "escalate" else prev_first
+    _emit_keep_running_wedged_alert(
+        issue=issue,
+        pod_id=pod_id,
+        info=info,
+        status=status,
+        action=action,
+        owner_state=owner_state,
+        evidence=evidence,
+        progress_gap_s=progress_gap_s,
+        episode_first_ts=episode_first_ts,
+        dry_run=dry_run,
     )
-    if action == "escalate":
-        _post_progress_marker(
-            issue,
-            f"{_KEEP_RUNNING_WEDGED_NOTE_SENTINEL} KEEP-RUNNING WEDGED OWNER (#1582): RUNNING "
-            f"pod {pod_name} (pod_id={pod_id}{spec}{rate_part}) is shielded by the "
-            f"keep-running tag on a task at DONE status '{status}', but no real progress for "
-            f"{gap_h:.1f}h and the owning session is {owner_desc}. NOT auto-stopped "
-            f"(escalate-only — verify no live session is driving this pod from repo root "
-            f"before acting). Recovery: (1) inspect `pod.py list-ephemeral --issue {issue}` + "
-            f"pod-side logs and harvest any completed results; (2) if work remains: "
-            f"`spawn_session.py stop --session-id <sid>` then `spawn_session.py spawn-issue "
-            f"--issue {issue} --auto` (or re-invoke /issue {issue}) — the resumed session "
-            f"harvests + terminates; (3) if no live work: `task.py remove-tag {issue} "
-            f"keep-running` FIRST (re-arms the watcher auto-stop, ~20 min; also required "
-            f"before terminate — the #1485 guard refuses a bare-form terminate while the tag "
-            f"is present, deliberate override --force-keep-running), then `pod.py stop "
-            f"--issue {issue}` or `pod.py terminate --issue {issue} --yes` after upload "
-            f"verification. Re-pushed every {realert_h:.0f}h while unresolved; marker posted "
-            f"once per episode.",
-            dry_run,
-            label="keep-running-wedged-owner",
-        )
-        _persist(new_missed, now, now)
-    else:
-        _persist(new_missed, prev_first, now)
+    _persist(new_missed, episode_first_ts, now)
     print(
-        f"  KEEP-RUNNING-WEDGED issue #{issue}: {action} — pod {pod_name} progress gap "
-        f"{gap_h:.1f}h, owner {owner_state}; escalate-only, NOT stopping.",
+        f"  KEEP-RUNNING-WEDGED issue #{issue}: {action} — pod "
+        f"{info.name if info is not None else f'pod-{issue}'} progress gap "
+        f"{progress_gap_s / 3600.0:.1f}h, owner {owner_state}; escalate-only, NOT stopping.",
         file=sys.stderr,
     )
     return True
