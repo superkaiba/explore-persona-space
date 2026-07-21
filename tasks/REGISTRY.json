@@ -4523,8 +4523,8 @@
     "1580": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1580",
-      "status": "running",
+      "path": "tasks/reviewing/1580",
+      "status": "reviewing",
       "title": "daily-fix: reconcile wf-fix-fp tag with body fingerprint"
     },
     "1581": {
