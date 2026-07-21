@@ -963,6 +963,60 @@ def _warn_workload_cmd_env_and_flag_marker(
     )
 
 
+def _warn_workload_cmd_inline_interpreter_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1576 arm of the #1329 workload-cmd lint family. Never blocks.
+
+    Flags an inline-interpreter one-liner BODY (``python -c`` / stdin
+    heredoc) per ``lint_workload_cmd_inline_interpreter``; the sanctioned
+    trailing ``write_completion_sentinel`` append is exempt (strip-then-scan).
+    Shares the family kill switch ``EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1`` — a
+    silenced HIT logs one info line for operator symmetry with the family
+    gate. No strict upgrade: ``--strict-workload-cmd-env`` is lane-env-scoped
+    by contract (#1576 plan §11 D1) — this arm has NO refusal path at all.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        lint_workload_cmd_inline_interpreter,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    lint = lint_workload_cmd_inline_interpreter(spec.workload_cmd)
+    if not lint.flagged:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_ENV_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1 — workload-cmd inline-interpreter "
+            "lint (#1576) silenced a %s hit.",
+            lint.shape,
+        )
+        return marker_poster
+    log.warning(
+        "--workload-cmd body is an inline interpreter one-liner (%s). Ad-hoc probe "
+        "workloads are committed scripts invoked by path (SKILL.md § Backend dispatch; "
+        "incident #1482: a placeholder-broken inline staging one-liner SyntaxError'd "
+        "post-b0 and spuriously failed over to RunPod) — inline bodies are un-lintable, "
+        "un-smokeable, and quoting-fragile. Rewrite as a committed branch script, push, "
+        "re-dispatch by path with --repo-branch. The trailing "
+        "write_completion_sentinel append is exempt%s. Launch continues; "
+        "epm:backend-selected carries extra.workload_cmd_inline_interpreter. Silence "
+        "with EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.",
+        lint.shape,
+        " (stripped before this scan)" if lint.sentinel_append_stripped else "",
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster,
+        {
+            "workload_cmd_inline_interpreter": {
+                "shape": lint.shape,
+                "sentinel_append_stripped": lint.sentinel_append_stripped,
+            }
+        },
+    )
+
+
 def _workload_cmd_env_lint_gate(
     args: argparse.Namespace, spec: Any
 ) -> tuple[Any, dict[str, Any] | None]:
@@ -1554,6 +1608,11 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # epm:backend-selected marker); exit-2 pre-route refusal only when the
     # crash is provably certain on the pinned lane (lint.certain) or under
     # --strict-workload-cmd-env. Kill switch: EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.
+    # A SECOND, WARN-only family arm (#1576, incident #1482) flags an
+    # inline-interpreter one-liner body (python -c / stdin heredoc; the
+    # sanctioned write_completion_sentinel append is exempt) via the
+    # marker-poster decoration below — never a refusal, and
+    # --strict-workload-cmd-env does NOT upgrade it.
     env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
     if env_refusal is not None:
         print(json.dumps(env_refusal, sort_keys=True))
@@ -1561,6 +1620,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 
     deps = backends_factory()
     marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
+    marker_poster = _warn_workload_cmd_inline_interpreter_and_flag_marker(spec, marker_poster)
     marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
@@ -2474,7 +2534,10 @@ def _build_argparser() -> argparse.ArgumentParser:
             "done (#601). SLURM lanes (nibi/fir/mila): the command MUST BLOCK until the "
             "workload finishes — the sbatch terminal block + job COMPLETED fire on command "
             "return and the job-exit cgroup teardown kills detached children (no /workspace "
-            "pid contract exists there; #601 follow-up). Mutually "
+            "pid contract exists there; #601 follow-up). An inline-interpreter one-liner "
+            "BODY (python -c / stdin heredoc) draws a WARN-only lint (#1576, incident "
+            "#1482; the trailing write_completion_sentinel append is exempt) — prefer a "
+            "committed branch script invoked by path. Mutually "
             "exclusive with --hydra; exactly one of the two is required (#588)."
         ),
     )
