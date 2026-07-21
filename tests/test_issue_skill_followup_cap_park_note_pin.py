@@ -39,6 +39,17 @@ the 2-round cap language retained — the change is SURFACING only) and
 the C2 mirror clause in the `epm:same-issue-followup-run` fields block
 of workflow.yaml + the generated markers.md row.
 
+#1575 extends it again to the EXPENSIVE autonomous band (the Step 9b
+autonomous follow-up auto-spawn block, step-3 `same` partition,
+`source: proposer-9b`): two further tests pin the step-3
+§ Expensive-band cap-park surfacing prescription in SKILL.md (primary
+step-3 moment — every surviving eligible proposal NOT dispatched this
+entry, cap state irrelevant — plus the defensive-parity loop step-4
+reminder, with the 2-round cap language retained — SURFACING only) and
+the generalized both-bands mirror clause in the same
+`epm:same-issue-followup-run` fields block of workflow.yaml + the
+generated markers.md row.
+
 Asserts are whitespace-normalized (the prose is line-wrapped in
 SKILL.md / workflow.yaml), per the pin-family convention of substring
 presence checks (mirrors tests/test_issue_skill_followup_defer_repark.py).
@@ -69,6 +80,14 @@ CHEAP_RUN_SOURCE = "proposer-9b-cheap"
 C2_FINAL_SLOT_PHRASE = "consumes the final cheap-band cap slot"
 C2_CAP_PHRASE = "At most **2** cheap-band auto-run rounds per task"
 SAME_ISSUE_RUN_MARKER_KIND = "epm:same-issue-followup-run"
+
+# --- #1575: expensive-band autonomous (step-3 same partition) extension ---
+EXP_ANCHOR = "**Autonomous follow-up auto-spawn"
+EXP_ALTERNATIVE_TOKEN = "raise-9b-expensive-cap-or-manual-pickup"
+EXP_RUN_SOURCE_FIELD = "counting run row (source: proposer-9b)>"  # distinct from -cheap
+EXP_FINAL_SLOT_PHRASE = "consumes the final expensive-band cap slot"
+EXP_CAP_PHRASE = "EXPENSIVE-band round cap allows"  # pre-existing cap language, retained
+EXP_SECTION_NAME = "Expensive-band cap-park surfacing"
 
 
 def _normalized(text: str) -> str:
@@ -219,6 +238,89 @@ def test_cheap_band_cap_park_mirror_in_workflow_yaml_and_markers_md():
         "re-run `workflow_lint.py --emit-tables` after editing workflow.yaml "
         "(the table is generated, never hand-edited)."
     )
+
+
+def test_expensive_band_cap_park_note_pinned_in_skill():
+    """SKILL.md's autonomous-block span prescribes the expensive-band
+    cap-park note (#1575).
+
+    Scoped to the text from the `**Autonomous follow-up auto-spawn`
+    anchor onward (the § block lives in the step-3 `same` partition; the
+    loop step-4 reminder + step-5 parenthetical live later in the same
+    Step 9b section).
+    """
+    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    anchor_idx = skill_norm.find(_normalized(EXP_ANCHOR))
+    assert anchor_idx != -1, (
+        f"SKILL.md lost the {EXP_ANCHOR!r} anchor; if the autonomous "
+        "follow-up auto-spawn block was renamed, update this pin alongside it."
+    )
+    region = skill_norm[anchor_idx:]
+    required = [
+        # The 2-round cap language must survive VERBATIM in intent — the
+        # #1575 change is SURFACING only, never a cap-semantics change.
+        EXP_CAP_PHRASE,
+        # The note itself: fixed leading token, epm:progress reuse, the
+        # verbatim-title idempotency key field, the expensive-band fields.
+        PARK_TOKEN,
+        "epm:progress",
+        "followup_ref=",
+        "cost_class=needs-gpu",
+        "cap_consumed_by=",
+        # The band-distinct cap-raise alternative (NOT the cheap/9a-ter tokens).
+        EXP_ALTERNATIVE_TOKEN,
+        # The expensive-band cap-counting key — pinned with the closing `)>`
+        # so it can never substring-match `proposer-9b-cheap`.
+        EXP_RUN_SOURCE_FIELD,
+        # Defensive-parity moment (the § block AND the loop step-4 reminder
+        # both pin on this phrase).
+        EXP_FINAL_SLOT_PHRASE,
+        # Section name (block heading + step-4 reminder + step-5 parenthetical).
+        EXP_SECTION_NAME,
+        # Primary step-3 moment: every surviving eligible proposal NOT
+        # dispatched this entry is noted, cap state irrelevant.
+        "NOT dispatched this",
+        # The reachability split (primary vs defensive parity) is pinned,
+        # not just the recipe.
+        "DEFENSIVE-PARITY",
+    ]
+    for token in required:
+        assert token in region, (
+            f"SKILL.md autonomous block (after the {EXP_ANCHOR!r} anchor) "
+            f"must carry {token!r} — the #1575 expensive-band cap-park "
+            "surfacing prescription (token, band-keyed fields, primary + "
+            "defensive-parity moments, cap language) must not be silently "
+            "dropped (same bullet-only invisibility class as incident #958)."
+        )
+
+
+def test_expensive_band_cap_park_mirror_in_workflow_yaml_and_markers_md():
+    """workflow.yaml's same-issue-run fields block + the generated
+    markers.md row carry the expensive-band mirror (#1575; markers.md is
+    regenerated via `workflow_lint.py --emit-tables`, never hand-edited)."""
+    wf = _normalized(WORKFLOW_YAML.read_text())
+    kind_idx = wf.find(f'kind: "{SAME_ISSUE_RUN_MARKER_KIND}"')
+    assert kind_idx != -1, f"workflow.yaml lost the `{SAME_ISSUE_RUN_MARKER_KIND}` marker entry"
+    next_kind = wf.find('- kind: "epm:', kind_idx + 1)
+    fields_block = wf[kind_idx : next_kind if next_kind != -1 else len(wf)]
+    for token in (PARK_TOKEN, EXP_SECTION_NAME):
+        assert token in fields_block, (
+            f"workflow.yaml `{SAME_ISSUE_RUN_MARKER_KIND}` fields block must "
+            f"carry {token!r} — the #1575 mirror clause covers BOTH proposer "
+            "bands (cheap #1558 + expensive #1575), not the cheap band alone."
+        )
+
+    markers = _normalized(MARKERS_MD.read_text())
+    row_idx = markers.find(f"| `{SAME_ISSUE_RUN_MARKER_KIND}` |")
+    assert row_idx != -1, f"markers.md lost the `{SAME_ISSUE_RUN_MARKER_KIND}` row"
+    row_end = markers.find("| `epm:", row_idx + 1)
+    row = markers[row_idx : row_end if row_end != -1 else len(markers)]
+    for token in (PARK_TOKEN, EXP_SECTION_NAME):
+        assert token in row, (
+            f"markers.md `{SAME_ISSUE_RUN_MARKER_KIND}` row must carry "
+            f"{token!r} — re-run `workflow_lint.py --emit-tables` after "
+            "editing workflow.yaml (the table is generated, never hand-edited)."
+        )
 
 
 def test_no_new_marker_kind_minted():
