@@ -1,0 +1,431 @@
+{
+  "commit": "48fe05ca85",
+  "created": "2026-07-22T23:04:57Z",
+  "figsize": [
+    10.4,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.7086893137805562,
+      "error": 0.4774923468252555,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.4744164798223198,
+      "error": 0.09677089029108688,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.7570461453080192,
+      "error": 0.47542712931126424,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1166422526680375,
+      "error": 0.4170804144968394,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.07803452599641388,
+      "error": 0.09363883675001566,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.09800957593174134,
+      "error": 0.051792589195593264,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.08331075251213578,
+      "error": 0.09572250938628571,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.015175561431819957,
+      "error": 0.08497405049789518,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "primary/context/L14",
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.7223706237009194,
+      "error": 0.48817108890891897,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "primary/context/L20",
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.46013995016779,
+      "error": 0.09533480147322226,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "primary/prefix/L14",
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.7776279668304873,
+      "error": 0.48906837475384396,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "primary/prefix/L20",
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1055395228214075,
+      "error": 0.42676205072603274,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.6986103937652974,
+      "error": 0.5012214927312587,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.4744164798223198,
+      "error": 0.09677089029108688,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.7570461453080192,
+      "error": 0.47542712931126424,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1166422526680375,
+      "error": 0.4170804144968394,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.7065535794561898,
+      "error": 0.5170735640636999,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.735145499028654,
+      "error": 0.5275093585306805,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.7065535794561898,
+      "error": 0.5170735640636999,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.735145499028654,
+      "error": 0.5275093585306805,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.175044024541121,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.6799999999999999,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.3778987153557318,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.22935193099701323,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.6226206939124852,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.130028718191632,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6799999999999999,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.5714404959379056,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1802061896195417,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.68,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.456781522906164,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.15999999999999998,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.013087849429688866,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.04648896520172031,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.010677972498640095,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.09590198357151027,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.15999999999999998,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.17418982407034247,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.15007414359290683,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.18076704627393134,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.84,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.07404611742428009,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.18250086492152107,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.3649157392070534,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.22798764794885795,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.6030538372780939,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.158843042739359,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.555585342153498,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.2061243974565459,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.4565779387301594,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.1421180260207422,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.3778987153557318,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.22935193099701323,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 0.6226206939124852,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1445610114832596,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.5714404959379056,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.1802061896195417,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.16,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": 1.456781522906164,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -1.2849704013358496,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -1.3215799425810812,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -1.2849704013358496,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -1.3215799425810812,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.25082327320844994,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.2665612255197204,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.25082327320844994,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.32,
+      "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)": -0.2665612255197204,
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "\u0394 = log(mean EARLY \u2016shift\u2016) \u2212 log(mean LATE \u2016shift\u2016)",
+        "legend_labels": [
+          "delta (28 pairs)",
+          "width-matched",
+          "excl. medical",
+          "matched-length",
+          "noise-floor ref"
+        ],
+        "xticklabels": [
+          "primary/context/L14",
+          "primary/context/L20",
+          "primary/prefix/L14",
+          "primary/prefix/L20"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      }
+    ],
+    "series": [
+      "delta (28 pairs)",
+      "width-matched",
+      "excl. medical",
+      "matched-length",
+      "noise-floor ref"
+    ]
+  }
+}

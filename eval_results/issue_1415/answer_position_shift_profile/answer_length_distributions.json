@@ -1,0 +1,5336 @@
+{
+  "callouts": {
+    "terse": "m685_04_terse",
+    "formal": "m685_05_formal"
+  },
+  "distributions": [
+    {
+      "condition": "baseline",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        123,
+        205,
+        162,
+        219,
+        214,
+        276,
+        203,
+        184,
+        240,
+        348
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        167,
+        294,
+        238,
+        189,
+        190,
+        243,
+        199,
+        256,
+        201,
+        191
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        231,
+        155,
+        200,
+        238,
+        230,
+        282,
+        293,
+        264,
+        294,
+        133
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        170,
+        158,
+        246,
+        130,
+        212,
+        101,
+        310,
+        86,
+        182,
+        179
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        363,
+        188,
+        251,
+        265,
+        254,
+        314,
+        293,
+        349,
+        118,
+        85
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        348,
+        238,
+        182,
+        305,
+        224,
+        118,
+        298,
+        183,
+        288,
+        322
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        276,
+        304,
+        223,
+        263,
+        254,
+        189,
+        374,
+        156,
+        253,
+        283
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        310,
+        199,
+        187,
+        282,
+        336,
+        262,
+        231,
+        275,
+        310,
+        150
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        228,
+        320,
+        184,
+        324,
+        197,
+        67,
+        336,
+        121,
+        291,
+        144
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        374,
+        335,
+        95,
+        223,
+        113,
+        334,
+        209,
+        172,
+        232,
+        286
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        402,
+        374,
+        256,
+        377,
+        243,
+        339,
+        300,
+        301,
+        343,
+        316
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        474,
+        429,
+        361,
+        464,
+        534,
+        439,
+        473,
+        597,
+        351,
+        475
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        337,
+        295,
+        337,
+        323,
+        280,
+        330,
+        400,
+        293,
+        308,
+        302
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        358,
+        303,
+        401,
+        382,
+        382,
+        341,
+        256,
+        247,
+        362,
+        351
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        345,
+        308,
+        347,
+        291,
+        390,
+        273,
+        397,
+        375,
+        314,
+        394
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        294,
+        285,
+        462,
+        362,
+        206,
+        327,
+        295,
+        344,
+        383,
+        342
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        388,
+        264,
+        345,
+        350,
+        211,
+        304,
+        233,
+        355,
+        314,
+        342
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        404,
+        342,
+        310,
+        351,
+        326,
+        225,
+        280,
+        361,
+        353,
+        323
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        306,
+        313,
+        353,
+        400,
+        344,
+        368,
+        414,
+        403,
+        292,
+        357
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        255,
+        345,
+        325,
+        284,
+        278,
+        389,
+        297,
+        256,
+        331,
+        361
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        154,
+        162,
+        168,
+        177,
+        215,
+        213,
+        219,
+        224,
+        186,
+        144
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        221,
+        295,
+        111,
+        156,
+        231,
+        230,
+        357,
+        335,
+        172,
+        148
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        298,
+        226,
+        228,
+        114,
+        214,
+        193,
+        196,
+        248,
+        132,
+        235
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        260,
+        115,
+        243,
+        204,
+        165,
+        242,
+        243,
+        96,
+        202,
+        495
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        164,
+        263,
+        172,
+        169,
+        125,
+        130,
+        71,
+        187,
+        190,
+        133
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        144,
+        92,
+        145,
+        221,
+        178,
+        203,
+        222,
+        185,
+        397,
+        149
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        264,
+        141,
+        243,
+        197,
+        283,
+        139,
+        187,
+        255,
+        200,
+        171
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        155,
+        241,
+        91,
+        214,
+        249,
+        104,
+        209,
+        287,
+        181,
+        141
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        231,
+        129,
+        152,
+        162,
+        244,
+        190,
+        235,
+        183,
+        174,
+        210
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        135,
+        173,
+        200,
+        227,
+        181,
+        172,
+        274,
+        180,
+        193,
+        258
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        149,
+        95,
+        77,
+        101,
+        95,
+        149,
+        83,
+        94,
+        70,
+        92
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        506,
+        523,
+        685,
+        585,
+        623,
+        496,
+        567,
+        551,
+        743,
+        644
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        120,
+        96,
+        133,
+        132,
+        143,
+        109,
+        177,
+        130,
+        138,
+        158
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        133,
+        72,
+        99,
+        56,
+        108,
+        142,
+        82,
+        62,
+        81,
+        78
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        189,
+        106,
+        152,
+        123,
+        110,
+        203,
+        91,
+        172,
+        114,
+        111
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        87,
+        71,
+        114,
+        92,
+        83,
+        84,
+        90,
+        89,
+        63,
+        91
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        112,
+        191,
+        120,
+        185,
+        181,
+        172,
+        262,
+        154,
+        127,
+        180
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        134,
+        110,
+        155,
+        135,
+        148,
+        102,
+        231,
+        161,
+        167,
+        200
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        190,
+        155,
+        184,
+        119,
+        83,
+        127,
+        113,
+        101,
+        96,
+        161
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        103,
+        95,
+        160,
+        127,
+        189,
+        101,
+        112,
+        226,
+        124,
+        176
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        258,
+        405,
+        336,
+        291,
+        415,
+        334,
+        340,
+        416,
+        396,
+        379
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        280,
+        274,
+        317,
+        252,
+        314,
+        231,
+        222,
+        227,
+        287,
+        244
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        343,
+        305,
+        365,
+        293,
+        524,
+        408,
+        319,
+        375,
+        385,
+        326
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        392,
+        375,
+        409,
+        388,
+        374,
+        430,
+        350,
+        337,
+        353,
+        395
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        313,
+        370,
+        448,
+        363,
+        327,
+        389,
+        237,
+        306,
+        205,
+        368
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        388,
+        324,
+        379,
+        386,
+        278,
+        495,
+        381,
+        419,
+        585,
+        344
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        512,
+        305,
+        490,
+        576,
+        352,
+        481,
+        497,
+        423,
+        434,
+        347
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        251,
+        294,
+        85,
+        253,
+        466,
+        427,
+        494,
+        442,
+        536,
+        347
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        245,
+        418,
+        575,
+        391,
+        394,
+        354,
+        432,
+        353,
+        381,
+        436
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        368,
+        399,
+        245,
+        417,
+        365,
+        433,
+        543,
+        361,
+        390,
+        384
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        539,
+        424,
+        520,
+        412,
+        382,
+        499,
+        482,
+        406,
+        470,
+        519
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        98,
+        121,
+        144,
+        103,
+        126,
+        152,
+        159,
+        80,
+        106,
+        161
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        377,
+        437,
+        558,
+        559,
+        544,
+        407,
+        544,
+        549,
+        565,
+        375
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        556,
+        489,
+        474,
+        553,
+        493,
+        535,
+        617,
+        483,
+        592,
+        443
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        673,
+        512,
+        385,
+        288,
+        444,
+        555,
+        566,
+        457,
+        599,
+        543
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        283,
+        448,
+        396,
+        421,
+        432,
+        554,
+        409,
+        320,
+        345,
+        351
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        347,
+        480,
+        445,
+        513,
+        405,
+        570,
+        631,
+        503,
+        557,
+        646
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        574,
+        502,
+        542,
+        446,
+        647,
+        408,
+        284,
+        615,
+        465,
+        357
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        395,
+        565,
+        636,
+        530,
+        460,
+        415,
+        568,
+        421,
+        487,
+        497
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_05_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        527,
+        536,
+        632,
+        563,
+        569,
+        586,
+        442,
+        504,
+        473,
+        346
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        245,
+        318,
+        270,
+        177,
+        239,
+        169,
+        397,
+        175,
+        220,
+        311
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        168,
+        113,
+        212,
+        148,
+        165,
+        116,
+        279,
+        170,
+        124,
+        175
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        293,
+        203,
+        78,
+        263,
+        188,
+        206,
+        412,
+        160,
+        151,
+        244
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        318,
+        395,
+        227,
+        256,
+        249,
+        351,
+        267,
+        249,
+        354,
+        340
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        395,
+        399,
+        312,
+        280,
+        259,
+        385,
+        360,
+        264,
+        299,
+        359
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        279,
+        291,
+        343,
+        252,
+        264,
+        427,
+        310,
+        123,
+        369,
+        206
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        362,
+        199,
+        165,
+        167,
+        193,
+        362,
+        338,
+        154,
+        170,
+        215
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        359,
+        253,
+        187,
+        328,
+        366,
+        289,
+        214,
+        336,
+        327,
+        305
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        277,
+        265,
+        388,
+        228,
+        206,
+        212,
+        165,
+        202,
+        356,
+        195
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_06_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        317,
+        389,
+        263,
+        237,
+        424,
+        301,
+        270,
+        249,
+        299,
+        244
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        234,
+        197,
+        213,
+        107,
+        218,
+        208,
+        139,
+        107,
+        150,
+        216
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        485,
+        517,
+        563,
+        478,
+        485,
+        630,
+        400,
+        460,
+        456,
+        480
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        141,
+        160,
+        160,
+        144,
+        153,
+        88,
+        150,
+        183,
+        185,
+        167
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        70,
+        172,
+        78,
+        105,
+        113,
+        323,
+        187,
+        79,
+        196,
+        53
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        179,
+        148,
+        133,
+        191,
+        275,
+        365,
+        338,
+        150,
+        212,
+        172
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        265,
+        383,
+        175,
+        395,
+        196,
+        243,
+        352,
+        105,
+        289,
+        187
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        93,
+        227,
+        162,
+        116,
+        161,
+        184,
+        166,
+        162,
+        236,
+        185
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        203,
+        272,
+        293,
+        160,
+        138,
+        262,
+        298,
+        264,
+        97,
+        191
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        160,
+        157,
+        212,
+        92,
+        287,
+        218,
+        232,
+        81,
+        264,
+        78
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_07_evil_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        228,
+        170,
+        215,
+        222,
+        276,
+        309,
+        115,
+        316,
+        196,
+        377
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        96,
+        86,
+        92,
+        73,
+        90,
+        72,
+        72,
+        73,
+        112,
+        75
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        281,
+        215,
+        216,
+        263,
+        232,
+        201,
+        254,
+        227,
+        240,
+        252
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        84,
+        85,
+        84,
+        75,
+        76,
+        77,
+        97,
+        139,
+        111,
+        99
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        193,
+        144,
+        168,
+        92,
+        92,
+        161,
+        117,
+        105,
+        86,
+        105
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        91,
+        77,
+        94,
+        93,
+        108,
+        105,
+        87,
+        97,
+        103,
+        86
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        117,
+        93,
+        107,
+        100,
+        115,
+        115,
+        101,
+        101,
+        124,
+        114
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        89,
+        84,
+        114,
+        115,
+        121,
+        112,
+        85,
+        76,
+        95,
+        85
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        120,
+        83,
+        100,
+        74,
+        89,
+        94,
+        94,
+        83,
+        78,
+        103
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        86,
+        69,
+        94,
+        80,
+        110,
+        98,
+        82,
+        98,
+        114,
+        116
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_08_sycophancy_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        174,
+        80,
+        101,
+        128,
+        144,
+        85,
+        75,
+        74,
+        79,
+        90
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        192,
+        167,
+        145,
+        205,
+        275,
+        191,
+        96,
+        158,
+        145,
+        231
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        294,
+        359,
+        464,
+        441,
+        370,
+        329,
+        357,
+        426,
+        289,
+        396
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        234,
+        210,
+        206,
+        219,
+        356,
+        207,
+        189,
+        198,
+        432,
+        222
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        134,
+        190,
+        152,
+        201,
+        147,
+        178,
+        117,
+        211,
+        144,
+        179
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        384,
+        148,
+        190,
+        218,
+        231,
+        269,
+        211,
+        226,
+        453,
+        384
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        162,
+        167,
+        123,
+        166,
+        109,
+        149,
+        266,
+        173,
+        194,
+        166
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        240,
+        203,
+        332,
+        375,
+        210,
+        172,
+        290,
+        284,
+        478,
+        260
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        365,
+        296,
+        411,
+        335,
+        364,
+        245,
+        454,
+        271,
+        232,
+        473
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        301,
+        210,
+        181,
+        167,
+        264,
+        277,
+        271,
+        211,
+        396,
+        172
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_09_sycophancy_to_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        250,
+        193,
+        387,
+        261,
+        390,
+        296,
+        200,
+        218,
+        320,
+        278
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        457,
+        467,
+        464,
+        560,
+        513,
+        585,
+        424,
+        511,
+        545,
+        477
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        398,
+        399,
+        401,
+        267,
+        473,
+        393,
+        268,
+        296,
+        368,
+        412
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        490,
+        542,
+        463,
+        407,
+        494,
+        452,
+        542,
+        523,
+        550,
+        456
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        525,
+        574,
+        594,
+        501,
+        496,
+        569,
+        495,
+        464,
+        470,
+        532
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        541,
+        543,
+        533,
+        394,
+        331,
+        516,
+        409,
+        343,
+        400,
+        437
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        481,
+        507,
+        602,
+        458,
+        543,
+        553,
+        625,
+        484,
+        609,
+        585
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        547,
+        450,
+        385,
+        483,
+        531,
+        462,
+        473,
+        466,
+        601,
+        583
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        507,
+        571,
+        583,
+        624,
+        399,
+        497,
+        517,
+        283,
+        589,
+        429
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        449,
+        453,
+        503,
+        536,
+        521,
+        407,
+        558,
+        490,
+        541,
+        436
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_10_hallucination_to_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        594,
+        603,
+        559,
+        479,
+        354,
+        509,
+        545,
+        454,
+        474,
+        553
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        504,
+        506,
+        590,
+        500,
+        505,
+        492,
+        482,
+        388,
+        450,
+        410
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        241,
+        165,
+        176,
+        131,
+        200,
+        160,
+        224,
+        156,
+        91,
+        198
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        462,
+        475,
+        495,
+        439,
+        447,
+        484,
+        483,
+        490,
+        559,
+        484
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        507,
+        498,
+        541,
+        488,
+        585,
+        543,
+        435,
+        517,
+        429,
+        546
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        374,
+        489,
+        488,
+        454,
+        469,
+        396,
+        412,
+        498,
+        401,
+        467
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        676,
+        592,
+        518,
+        491,
+        577,
+        365,
+        348,
+        478,
+        577,
+        478
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        444,
+        490,
+        504,
+        503,
+        411,
+        501,
+        441,
+        500,
+        524,
+        564
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        432,
+        456,
+        487,
+        494,
+        513,
+        577,
+        297,
+        472,
+        539,
+        496
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        533,
+        526,
+        475,
+        523,
+        446,
+        457,
+        482,
+        360,
+        406,
+        508
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_11_hallucination_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        413,
+        440,
+        379,
+        568,
+        396,
+        508,
+        553,
+        480,
+        448,
+        473
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        295,
+        231,
+        301,
+        202,
+        319,
+        301,
+        353,
+        344,
+        346,
+        275
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        232,
+        137,
+        250,
+        283,
+        267,
+        210,
+        246,
+        177,
+        200,
+        323
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        332,
+        371,
+        236,
+        310,
+        518,
+        220,
+        222,
+        224,
+        190,
+        200
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        193,
+        230,
+        318,
+        208,
+        256,
+        248,
+        271,
+        263,
+        225,
+        283
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        279,
+        253,
+        350,
+        253,
+        201,
+        389,
+        364,
+        278,
+        334,
+        316
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        299,
+        321,
+        362,
+        313,
+        209,
+        388,
+        299,
+        352,
+        294,
+        264
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        333,
+        261,
+        308,
+        361,
+        306,
+        256,
+        267,
+        347,
+        353,
+        201
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        391,
+        346,
+        357,
+        453,
+        277,
+        464,
+        241,
+        385,
+        425,
+        329
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        215,
+        311,
+        280,
+        173,
+        235,
+        258,
+        260,
+        384,
+        427,
+        296
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "cross_12_evil_to_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        313,
+        335,
+        259,
+        319,
+        456,
+        230,
+        440,
+        340,
+        453,
+        262
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_00_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        434,
+        539,
+        579,
+        498,
+        497,
+        496,
+        407,
+        480,
+        443,
+        522
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_00_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        93,
+        287,
+        100,
+        86,
+        193,
+        96,
+        106,
+        325,
+        308,
+        77
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        371,
+        395,
+        439,
+        414,
+        457,
+        435,
+        456,
+        426,
+        525,
+        534
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        411,
+        452,
+        476,
+        481,
+        504,
+        553,
+        523,
+        497,
+        547,
+        416
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        439,
+        397,
+        544,
+        474,
+        463,
+        568,
+        478,
+        454,
+        468,
+        471
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        428,
+        347,
+        365,
+        487,
+        442,
+        353,
+        486,
+        368,
+        514,
+        457
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        449,
+        378,
+        411,
+        317,
+        430,
+        425,
+        400,
+        431,
+        345,
+        474
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        429,
+        513,
+        509,
+        455,
+        533,
+        462,
+        508,
+        469,
+        400,
+        470
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        400,
+        427,
+        412,
+        434,
+        400,
+        440,
+        402,
+        425,
+        383,
+        466
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_00_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        412,
+        466,
+        389,
+        476,
+        456,
+        477,
+        490,
+        487,
+        494,
+        556
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_01_refusal",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        567,
+        575,
+        461,
+        572,
+        556,
+        575,
+        596,
+        547,
+        673,
+        523
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_01_refusal",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        18,
+        18,
+        334,
+        44,
+        31,
+        52,
+        41,
+        18,
+        87,
+        292
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        449,
+        321,
+        538,
+        353,
+        616,
+        449,
+        557,
+        453,
+        470,
+        409
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        370,
+        514,
+        704,
+        639,
+        487,
+        576,
+        401,
+        609,
+        455,
+        528
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        553,
+        486,
+        422,
+        464,
+        644,
+        599,
+        569,
+        500,
+        556,
+        520
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        428,
+        468,
+        25,
+        297,
+        549,
+        505,
+        646,
+        492,
+        484,
+        510
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        421,
+        560,
+        420,
+        407,
+        572,
+        468,
+        589,
+        483,
+        516,
+        546
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        699,
+        481,
+        455,
+        626,
+        502,
+        784,
+        698,
+        494,
+        680,
+        639
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        315,
+        472,
+        376,
+        420,
+        446,
+        412,
+        266,
+        578,
+        479,
+        331
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_01_refusal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        492,
+        510,
+        681,
+        532,
+        639,
+        689,
+        746,
+        439,
+        594,
+        548
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_02_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        498,
+        444,
+        412,
+        448,
+        443,
+        403,
+        342,
+        413,
+        433,
+        379
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_02_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        297,
+        356,
+        276,
+        263,
+        392,
+        239,
+        348,
+        297,
+        348,
+        251
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_02_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        367,
+        324,
+        330,
+        389,
+        331,
+        451,
+        271,
+        390,
+        373,
+        393
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_02_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        454,
+        338,
+        407,
+        494,
+        415,
+        401,
+        337,
+        479,
+        375,
+        461
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_02_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        300,
+        332,
+        374,
+        366,
+        345,
+        372,
+        458,
+        418,
+        402,
+        468
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_02_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        384,
+        279,
+        441,
+        548,
+        384,
+        409,
+        423,
+        384,
+        349,
+        414
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_02_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        406,
+        359,
+        491,
+        372,
+        370,
+        411,
+        364,
+        404,
+        448,
+        367
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_02_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        377,
+        402,
+        364,
+        425,
+        370,
+        366,
+        350,
+        399,
+        363,
+        392
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_02_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        373,
+        416,
+        386,
+        465,
+        421,
+        380,
+        308,
+        360,
+        297,
+        341
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_02_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        377,
+        452,
+        415,
+        428,
+        358,
+        383,
+        384,
+        418,
+        335,
+        380
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_03_hedging",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        472,
+        517,
+        577,
+        626,
+        411,
+        475,
+        568,
+        414,
+        503,
+        482
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_03_hedging",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        434,
+        324,
+        579,
+        389,
+        303,
+        451,
+        210,
+        716,
+        213,
+        350
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        385,
+        504,
+        447,
+        404,
+        491,
+        424,
+        437,
+        522,
+        514,
+        461
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        567,
+        532,
+        352,
+        574,
+        564,
+        354,
+        597,
+        533,
+        566,
+        463
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        410,
+        496,
+        330,
+        449,
+        356,
+        627,
+        430,
+        532,
+        388,
+        579
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        437,
+        326,
+        401,
+        359,
+        752,
+        25,
+        306,
+        417,
+        562,
+        371
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        445,
+        392,
+        639,
+        558,
+        337,
+        569,
+        401,
+        341,
+        500,
+        519
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        411,
+        370,
+        494,
+        481,
+        368,
+        340,
+        478,
+        544,
+        528,
+        422
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        423,
+        322,
+        476,
+        461,
+        474,
+        426,
+        543,
+        501,
+        557,
+        425
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_03_hedging",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        385,
+        508,
+        364,
+        373,
+        557,
+        353,
+        286,
+        504,
+        480,
+        471
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_04_terse",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        703,
+        559,
+        727,
+        555,
+        510,
+        542,
+        442,
+        677,
+        553,
+        524
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_04_terse",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        17,
+        17,
+        12,
+        20,
+        17,
+        17,
+        17,
+        16,
+        17,
+        20
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_04_terse",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        471,
+        397,
+        394,
+        666,
+        403,
+        419,
+        399,
+        583,
+        457,
+        379
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_04_terse",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        408,
+        437,
+        332,
+        650,
+        596,
+        483,
+        530,
+        527,
+        635,
+        840
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_04_terse",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        12,
+        20,
+        24,
+        19,
+        33,
+        22,
+        44,
+        22,
+        19,
+        29
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_04_terse",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        402,
+        644,
+        644,
+        700,
+        457,
+        420,
+        549,
+        566,
+        506,
+        616
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_04_terse",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        444,
+        392,
+        514,
+        484,
+        464,
+        276,
+        426,
+        668,
+        414,
+        511
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_04_terse",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        19,
+        21,
+        27,
+        64,
+        18,
+        22,
+        18,
+        18,
+        23,
+        50
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_04_terse",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        428,
+        463,
+        312,
+        25,
+        41,
+        50,
+        84,
+        558,
+        592,
+        19
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_04_terse",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        17,
+        18,
+        18,
+        690,
+        20,
+        17,
+        23,
+        20,
+        591,
+        18
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_05_formal",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        724,
+        583,
+        661,
+        638,
+        624,
+        507,
+        566,
+        617,
+        599,
+        634
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_05_formal",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        381,
+        400,
+        324,
+        550,
+        519,
+        512,
+        313,
+        363,
+        532,
+        578
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_05_formal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        613,
+        507,
+        661,
+        577,
+        409,
+        591,
+        319,
+        517,
+        474,
+        449
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_05_formal",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        538,
+        674,
+        508,
+        549,
+        556,
+        376,
+        604,
+        556,
+        539,
+        662
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_05_formal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        501,
+        554,
+        595,
+        492,
+        547,
+        572,
+        607,
+        452,
+        550,
+        527
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_05_formal",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        706,
+        366,
+        623,
+        529,
+        408,
+        426,
+        559,
+        453,
+        352,
+        467
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_05_formal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        643,
+        602,
+        496,
+        654,
+        609,
+        622,
+        624,
+        593,
+        612,
+        610
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_05_formal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        527,
+        478,
+        590,
+        547,
+        551,
+        390,
+        496,
+        498,
+        739,
+        479
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_05_formal",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        579,
+        477,
+        510,
+        607,
+        481,
+        525,
+        440,
+        522,
+        537,
+        486
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_05_formal",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        477,
+        518,
+        479,
+        508,
+        378,
+        36,
+        427,
+        508,
+        594,
+        557
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_06_villain",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        274,
+        332,
+        333,
+        488,
+        428,
+        436,
+        495,
+        405,
+        502,
+        564
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_06_villain",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        221,
+        200,
+        298,
+        346,
+        379,
+        250,
+        319,
+        246,
+        180,
+        314
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_06_villain",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        383,
+        387,
+        429,
+        508,
+        407,
+        475,
+        411,
+        333,
+        401,
+        708
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_06_villain",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        326,
+        421,
+        467,
+        369,
+        474,
+        394,
+        376,
+        323,
+        340,
+        337
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_06_villain",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        494,
+        302,
+        350,
+        383,
+        425,
+        480,
+        443,
+        341,
+        340,
+        281
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_06_villain",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        301,
+        352,
+        314,
+        421,
+        150,
+        353,
+        1024,
+        347,
+        420,
+        564
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_06_villain",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        349,
+        443,
+        381,
+        415,
+        379,
+        507,
+        467,
+        435,
+        308,
+        238
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_06_villain",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        395,
+        284,
+        410,
+        379,
+        409,
+        394,
+        398,
+        310,
+        311,
+        394
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_06_villain",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        460,
+        280,
+        504,
+        610,
+        442,
+        259,
+        361,
+        421,
+        345,
+        443
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_06_villain",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        405,
+        364,
+        356,
+        296,
+        355,
+        411,
+        492,
+        383,
+        362,
+        383
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        585,
+        692,
+        576,
+        587,
+        614,
+        667,
+        587,
+        488,
+        480,
+        540
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        679,
+        603,
+        498,
+        647,
+        592,
+        588,
+        559,
+        510,
+        588,
+        543
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        706,
+        564,
+        553,
+        611,
+        577,
+        597,
+        611,
+        740,
+        550,
+        598
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        490,
+        850,
+        591,
+        661,
+        560,
+        503,
+        296,
+        703,
+        545,
+        521
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        631,
+        487,
+        556,
+        601,
+        596,
+        540,
+        564,
+        472,
+        618,
+        646
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        413,
+        546,
+        445,
+        601,
+        485,
+        558,
+        619,
+        576,
+        635,
+        665
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        482,
+        451,
+        662,
+        572,
+        546,
+        665,
+        647,
+        650,
+        546,
+        534
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        672,
+        549,
+        493,
+        622,
+        355,
+        482,
+        542,
+        488,
+        628,
+        656
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        551,
+        508,
+        514,
+        509,
+        566,
+        441,
+        630,
+        491,
+        574,
+        592
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_07_medical_doctor",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        667,
+        510,
+        552,
+        657,
+        636,
+        606,
+        542,
+        571,
+        746,
+        605
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_08_french_person",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        484,
+        439,
+        405,
+        372,
+        380,
+        436,
+        449,
+        385,
+        284,
+        373
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_08_french_person",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        404,
+        373,
+        363,
+        394,
+        336,
+        389,
+        530,
+        292,
+        365,
+        479
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        371,
+        510,
+        423,
+        449,
+        416,
+        445,
+        533,
+        312,
+        433,
+        384
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        364,
+        506,
+        423,
+        365,
+        445,
+        566,
+        429,
+        405,
+        330,
+        483
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        286,
+        421,
+        301,
+        388,
+        581,
+        244,
+        244,
+        424,
+        365,
+        434
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        449,
+        425,
+        383,
+        387,
+        469,
+        526,
+        440,
+        508,
+        511,
+        419
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        321,
+        341,
+        234,
+        396,
+        261,
+        353,
+        540,
+        483,
+        337,
+        442
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        425,
+        501,
+        335,
+        344,
+        277,
+        436,
+        498,
+        401,
+        364,
+        339
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        496,
+        344,
+        378,
+        349,
+        432,
+        372,
+        399,
+        488,
+        336,
+        408
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_08_french_person",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        319,
+        295,
+        439,
+        443,
+        765,
+        278,
+        374,
+        465,
+        340,
+        445
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m685_09_comedian",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        377,
+        476,
+        474,
+        477,
+        445,
+        433,
+        526,
+        532,
+        616,
+        528
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m685_09_comedian",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        264,
+        281,
+        213,
+        190,
+        233,
+        228,
+        146,
+        268,
+        284,
+        248
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        366,
+        390,
+        347,
+        719,
+        540,
+        454,
+        442,
+        401,
+        467,
+        413
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        374,
+        458,
+        319,
+        475,
+        477,
+        570,
+        516,
+        555,
+        461,
+        451
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        389,
+        414,
+        447,
+        462,
+        394,
+        458,
+        369,
+        342,
+        389,
+        352
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        409,
+        444,
+        394,
+        511,
+        427,
+        451,
+        392,
+        252,
+        599,
+        440
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        394,
+        459,
+        540,
+        500,
+        462,
+        420,
+        451,
+        512,
+        341,
+        385
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        475,
+        441,
+        326,
+        459,
+        453,
+        371,
+        448,
+        398,
+        464,
+        354
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        498,
+        355,
+        466,
+        509,
+        350,
+        466,
+        538,
+        644,
+        662,
+        388
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m685_09_comedian",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        538,
+        451,
+        258,
+        357,
+        423,
+        400,
+        377,
+        404,
+        467,
+        506
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m779_00_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        360,
+        442,
+        518,
+        474,
+        460,
+        385,
+        449,
+        433,
+        523,
+        330
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m779_00_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        204,
+        200,
+        294,
+        249,
+        238,
+        250,
+        367,
+        358,
+        256,
+        299
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_00_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        365,
+        387,
+        405,
+        551,
+        527,
+        433,
+        488,
+        424,
+        470,
+        446
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_00_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        503,
+        643,
+        523,
+        710,
+        420,
+        449,
+        562,
+        535,
+        361,
+        467
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_00_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        459,
+        380,
+        551,
+        561,
+        353,
+        462,
+        420,
+        171,
+        447,
+        302
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_00_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        391,
+        369,
+        371,
+        487,
+        355,
+        329,
+        447,
+        338,
+        342,
+        409
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_00_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        443,
+        404,
+        428,
+        366,
+        474,
+        714,
+        426,
+        425,
+        551,
+        478
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_00_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        358,
+        437,
+        438,
+        409,
+        479,
+        382,
+        498,
+        385,
+        351,
+        542
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_00_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        409,
+        499,
+        432,
+        450,
+        472,
+        284,
+        485,
+        394,
+        404,
+        604
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_00_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        57,
+        334,
+        429,
+        422,
+        367,
+        353,
+        419,
+        539,
+        235,
+        308
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m779_01_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        318,
+        305,
+        322,
+        394,
+        361,
+        359,
+        362,
+        376,
+        216,
+        309
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m779_01_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        167,
+        184,
+        73,
+        99,
+        144,
+        81,
+        224,
+        174,
+        122,
+        136
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        273,
+        240,
+        418,
+        208,
+        183,
+        153,
+        306,
+        317,
+        468,
+        212
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        267,
+        316,
+        349,
+        374,
+        329,
+        346,
+        419,
+        320,
+        386,
+        327
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        215,
+        357,
+        382,
+        70,
+        382,
+        320,
+        356,
+        357,
+        239,
+        315
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        15,
+        383,
+        347,
+        330,
+        336,
+        277,
+        304,
+        397,
+        277,
+        300
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        205,
+        222,
+        352,
+        259,
+        411,
+        211,
+        280,
+        326,
+        281,
+        187
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        272,
+        294,
+        225,
+        72,
+        340,
+        154,
+        438,
+        301,
+        266,
+        382
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        237,
+        248,
+        300,
+        327,
+        315,
+        274,
+        314,
+        307,
+        286,
+        448
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_01_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        297,
+        171,
+        322,
+        252,
+        370,
+        347,
+        251,
+        351,
+        426,
+        65
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m779_02_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        456,
+        388,
+        425,
+        494,
+        412,
+        430,
+        444,
+        392,
+        367,
+        414
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m779_02_hallucination",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        471,
+        438,
+        474,
+        417,
+        536,
+        463,
+        419,
+        405,
+        638,
+        516
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        311,
+        431,
+        352,
+        440,
+        412,
+        448,
+        414,
+        378,
+        436,
+        415
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        350,
+        464,
+        391,
+        410,
+        407,
+        380,
+        352,
+        364,
+        450,
+        293
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        439,
+        357,
+        430,
+        414,
+        375,
+        487,
+        346,
+        434,
+        384,
+        385
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        414,
+        390,
+        428,
+        438,
+        405,
+        395,
+        323,
+        396,
+        401,
+        550
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        354,
+        387,
+        383,
+        429,
+        426,
+        459,
+        419,
+        351,
+        403,
+        430
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        468,
+        432,
+        422,
+        312,
+        367,
+        410,
+        407,
+        367,
+        483,
+        540
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        455,
+        462,
+        424,
+        423,
+        362,
+        402,
+        435,
+        450,
+        403,
+        428
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_02_hallucination",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        386,
+        513,
+        418,
+        310,
+        355,
+        356,
+        466,
+        444,
+        422,
+        426
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m779_03_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        333,
+        388,
+        389,
+        349,
+        460,
+        393,
+        385,
+        350,
+        475,
+        428
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m779_03_evil",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        210,
+        111,
+        216,
+        121,
+        201,
+        253,
+        210,
+        118,
+        53,
+        127
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_03_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        391,
+        397,
+        359,
+        245,
+        237,
+        396,
+        360,
+        350,
+        392,
+        361
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_03_evil",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        447,
+        412,
+        348,
+        340,
+        358,
+        377,
+        376,
+        375,
+        305,
+        414
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_03_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        325,
+        288,
+        390,
+        336,
+        404,
+        356,
+        363,
+        447,
+        314,
+        272
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_03_evil",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        380,
+        494,
+        468,
+        435,
+        326,
+        364,
+        321,
+        205,
+        399,
+        500
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_03_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        366,
+        378,
+        325,
+        434,
+        346,
+        431,
+        360,
+        414,
+        329,
+        337
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_03_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        355,
+        328,
+        55,
+        434,
+        297,
+        388,
+        120,
+        256,
+        76,
+        66
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_03_evil",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        416,
+        376,
+        303,
+        354,
+        335,
+        410,
+        304,
+        372,
+        361,
+        369
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_03_evil",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        350,
+        369,
+        340,
+        423,
+        415,
+        342,
+        336,
+        298,
+        287,
+        457
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "baseline",
+      "pair_id": "m779_04_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        422,
+        296,
+        406,
+        288,
+        262,
+        401,
+        294,
+        464,
+        394,
+        324
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "ceiling",
+      "pair_id": "m779_04_sycophancy",
+      "arm": null,
+      "layer": null,
+      "token_counts": [
+        132,
+        101,
+        80,
+        85,
+        109,
+        107,
+        104,
+        84,
+        88,
+        92
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        264,
+        293,
+        320,
+        286,
+        298,
+        109,
+        310,
+        282,
+        277,
+        373
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "prefix",
+      "layer": 20,
+      "token_counts": [
+        292,
+        334,
+        316,
+        401,
+        305,
+        388,
+        365,
+        390,
+        398,
+        372
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        364,
+        70,
+        268,
+        316,
+        259,
+        235,
+        61,
+        75,
+        80,
+        101
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "context",
+      "layer": 20,
+      "token_counts": [
+        382,
+        355,
+        336,
+        385,
+        282,
+        325,
+        300,
+        323,
+        380,
+        300
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        285,
+        361,
+        174,
+        295,
+        235,
+        219,
+        190,
+        304,
+        287,
+        264
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep43_steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        260,
+        112,
+        266,
+        57,
+        44,
+        94,
+        233,
+        253,
+        150,
+        300
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "prefix",
+      "layer": 14,
+      "token_counts": [
+        223,
+        295,
+        103,
+        337,
+        278,
+        321,
+        261,
+        315,
+        249,
+        239
+      ],
+      "n_empty": 0
+    },
+    {
+      "condition": "rep44_steered",
+      "pair_id": "m779_04_sycophancy",
+      "arm": "context",
+      "layer": 14,
+      "token_counts": [
+        127,
+        69,
+        344,
+        403,
+        322,
+        366,
+        266,
+        323,
+        293,
+        77
+      ],
+      "n_empty": 0
+    }
+  ],
+  "repro": {
+    "git_commit": "48fe05ca85485baa5e96f8f17743077dd7e53c8d",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-22T23:02:01.329324+00:00"
+  }
+}

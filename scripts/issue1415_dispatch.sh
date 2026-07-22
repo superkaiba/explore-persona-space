@@ -131,7 +131,18 @@ if [ "$POSITION_PROFILE" -eq 1 ]; then
       PP_HALT="parity_gate"
       echo "[phase=kill_halt] §3.5 parity gate HALTed the sweep — reporting (see $PP_OUT_ROOT/parity_gate_report.json)"
     else
-      echo "[phase=position_profile_failed] driver exited rc=${PP_RC} with no matching parity report" >&2
+      # Accurate per-rc diagnostic (the pre-fix message said "no matching
+      # parity report" for ANY rc, wrongly implying the parity gate was
+      # involved — misleading for an ordinary rc=1 crash whose parity report
+      # exists and PASSed). Tail the driver log into THIS log so the
+      # traceback reaches the GCE crash-persisted workload.log (the
+      # per-phase driver log is not in the crash-persist glob set).
+      if [ "$PP_RC" -eq 8 ]; then
+        echo "[phase=position_profile_failed] rc=8 (parity-HALT code) but no FIRED parity report at $PP_OUT_ROOT/parity_gate_report.json — treating as a crash" >&2
+      else
+        echo "[phase=position_profile_failed] driver crashed rc=${PP_RC} (NOT a parity HALT; a present parity_gate_report.json is unrelated) — driver-log tail follows" >&2
+      fi
+      tail -n 60 "$LOG_DIR/issue-${ISSUE}-position-profile.log" >&2 || true
       exit "$PP_RC"
     fi
   fi

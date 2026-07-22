@@ -1,0 +1,868 @@
+{
+  "commit": "48fe05ca85",
+  "created": "2026-07-22T23:04:44Z",
+  "figsize": [
+    12.8,
+    9.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 0.33599182858597487,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 0.38843505688211216,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 0.33941779932605903,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 0.23371104542664917,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 0.12170519343843418,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 0.11322986367823822,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 0.13032061534301778,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 0.07228939747022066,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 0.04220630524546972,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 0.08937185801499124,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 0.07058561458584986,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 0.17966330438918834,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 0.2658391577923404,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 0.35363950819841455,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 0.4227809399765517,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 0.4071995772288314,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 0.3646118451974222,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 0.29232227163655417,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.3004349208037768,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 0.32228579545127495,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 0.26754332140886355,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 0.23481920561087982,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.2744736215764923,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.26522831645395073,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 0.3337361443388675,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 0.3846102215216628,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 0.4289693704673222,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 0.4051013649524456,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 0.28638670787248494,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 0.09533168534315857,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 0.06944553917440187,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": 0.06472345462368269,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": 0.04090628685662523,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": 0.054627791134407744,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 0.05857157673952835,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": 0.012662395003384777,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": 0.05794639142862122,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": 0.09569325211590954,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": 0.16649844174805498,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": 0.442502631539745,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.43483666323923637,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 0.3511602121870965,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 0.20883075663420772,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 0.2223923323409898,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 0.2316640265552061,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": 0.21299173217266798,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": 0.23062188507589912,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 0.2533847593835422,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": 0.18897965443985804,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": 0.23147317447832652,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": 0.24126051259892328,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": 0.26748037271733793,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.43945439282106236,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4281777272449939,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.3777241945333247,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.24382370095866332,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.12448101701115125,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.1279578475763888,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.12937768704224645,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.08040254304069094,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.12095898472138547,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": 0.13590657706039824,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": 0.14527533206689572,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "y": 0.23323920223836986,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "y": 0.3280148969372801,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.462520109115368,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.4675739877441499,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.4480191192456654,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.37752252870372366,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.292899632028171,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.30771147765751394,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.3257133700286171,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.27396159286477734,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.323425309200372,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": 0.3256154136200036,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": 0.3513316177829568,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": 0.3849842896951096,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": 0.4372683376339929,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.5444355129064726,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.5367664230455246,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.3946331301704049,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.1683849439806571,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.09290790404026796,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.11585030396236107,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.08629013738910933,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.055544002896307836,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.0652161325394575,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.06975989873587553,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": 0.08745105112653359,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": 0.14780552913102188,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 0.29667605083834914,
+      "series": "disjoint (primary)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.5550846990996173,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.5607950586293425,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.4410548337868282,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.27801182912662625,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.24471947836822697,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.2813234580680728,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.2584292846066611,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.21904816278921707,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.24464006708668812,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.24390470422804356,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.2589503625141723,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": 0.2796918811675693,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.38583958368482335,
+      "series": "shared (secondary)",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 104,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix \u00b7 L14 \u2014 convention dumbbells",
+        "legend_labels": [
+          "disjoint (primary)",
+          "shared (secondary)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      },
+      {
+        "title_left": "prefix \u00b7 L20 \u2014 convention dumbbells",
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "context \u00b7 L14 \u2014 convention dumbbells",
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      },
+      {
+        "title_left": "context \u00b7 L20 \u2014 convention dumbbells",
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "disjoint (primary)",
+      "shared (secondary)"
+    ]
+  }
+}

@@ -1,0 +1,806 @@
+{
+  "commit": "48fe05ca85",
+  "created": "2026-07-22T23:04:28Z",
+  "figsize": [
+    12.8,
+    9.2
+  ],
+  "points": [
+    {
+      "first-token \u2016shift\u2016": 28.055635452270508,
+      "mean decile \u2016shift\u2016": 12.14727873802185,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "first-token \u2016shift\u2016": 13.42188310623169,
+      "mean decile \u2016shift\u2016": 10.421066975593567,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "first-token \u2016shift\u2016": 28.87090301513672,
+      "mean decile \u2016shift\u2016": 12.257865905761719,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "first-token \u2016shift\u2016": 32.13613414764404,
+      "mean decile \u2016shift\u2016": 18.129519128799437,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "first-token \u2016shift\u2016": 43.45601272583008,
+      "mean decile \u2016shift\u2016": 9.299206972122192,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "first-token \u2016shift\u2016": 0.11029595136642456,
+      "mean decile \u2016shift\u2016": 7.498091077804565,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "first-token \u2016shift\u2016": 10.464948415756226,
+      "mean decile \u2016shift\u2016": 10.829121541976928,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "first-token \u2016shift\u2016": 39.83071994781494,
+      "mean decile \u2016shift\u2016": 11.912198209762574,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "first-token \u2016shift\u2016": 0.7676090598106384,
+      "mean decile \u2016shift\u2016": 16.605902004241944,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "first-token \u2016shift\u2016": 6.822077006101608,
+      "mean decile \u2016shift\u2016": 13.995035982131958,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "first-token \u2016shift\u2016": 31.77170753479004,
+      "mean decile \u2016shift\u2016": 8.357717299461365,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "first-token \u2016shift\u2016": 11.823263168334961,
+      "mean decile \u2016shift\u2016": 8.749846124649048,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "first-token \u2016shift\u2016": 8.933670043945312,
+      "mean decile \u2016shift\u2016": 9.422172570228577,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "first-token \u2016shift\u2016": 60.744712829589844,
+      "mean decile \u2016shift\u2016": 9.310724592208862,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "first-token \u2016shift\u2016": 60.75230026245117,
+      "mean decile \u2016shift\u2016": 13.352405524253845,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "first-token \u2016shift\u2016": 66.4793701171875,
+      "mean decile \u2016shift\u2016": 11.548066091537475,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "first-token \u2016shift\u2016": 52.224510192871094,
+      "mean decile \u2016shift\u2016": 11.937148237228394,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "first-token \u2016shift\u2016": 50.801918029785156,
+      "mean decile \u2016shift\u2016": 9.300322198867798,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "first-token \u2016shift\u2016": 50.107330322265625,
+      "mean decile \u2016shift\u2016": 9.602668833732604,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "first-token \u2016shift\u2016": 61.9387321472168,
+      "mean decile \u2016shift\u2016": 10.851974081993102,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "first-token \u2016shift\u2016": 12.079907417297363,
+      "mean decile \u2016shift\u2016": 9.488593697547913,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "first-token \u2016shift\u2016": 44.524513244628906,
+      "mean decile \u2016shift\u2016": 11.32550859451294,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "first-token \u2016shift\u2016": 47.28767967224121,
+      "mean decile \u2016shift\u2016": 12.399969983100892,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "first-token \u2016shift\u2016": 0.0,
+      "mean decile \u2016shift\u2016": 8.559313750267028,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "first-token \u2016shift\u2016": 52.16141891479492,
+      "mean decile \u2016shift\u2016": 12.07191801071167,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "first-token \u2016shift\u2016": 44.520076751708984,
+      "mean decile \u2016shift\u2016": 7.748689723014832,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "first-token \u2016shift\u2016": 58.770931243896484,
+      "mean decile \u2016shift\u2016": 10.003915190696716,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "first-token \u2016shift\u2016": 68.34071350097656,
+      "mean decile \u2016shift\u2016": 12.405116176605224,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "first-token \u2016shift\u2016": 29.315732955932617,
+      "mean decile \u2016shift\u2016": 19.82328200340271,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "first-token \u2016shift\u2016": 44.792030334472656,
+      "mean decile \u2016shift\u2016": 19.067507839202882,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "first-token \u2016shift\u2016": 82.83409881591797,
+      "mean decile \u2016shift\u2016": 22.238580322265626,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "first-token \u2016shift\u2016": 61.50532913208008,
+      "mean decile \u2016shift\u2016": 26.997385692596435,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "first-token \u2016shift\u2016": 96.34194946289062,
+      "mean decile \u2016shift\u2016": 15.94030442237854,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "first-token \u2016shift\u2016": 0.23297789692878723,
+      "mean decile \u2016shift\u2016": 14.43410677909851,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "first-token \u2016shift\u2016": 67.6275405883789,
+      "mean decile \u2016shift\u2016": 19.94605326652527,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "first-token \u2016shift\u2016": 78.14657211303711,
+      "mean decile \u2016shift\u2016": 21.960818099975587,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "first-token \u2016shift\u2016": 123.72997283935547,
+      "mean decile \u2016shift\u2016": 30.081746578216553,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "first-token \u2016shift\u2016": 55.17146301269531,
+      "mean decile \u2016shift\u2016": 21.34563465118408,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "first-token \u2016shift\u2016": 84.32815551757812,
+      "mean decile \u2016shift\u2016": 14.880870628356934,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "first-token \u2016shift\u2016": 133.580810546875,
+      "mean decile \u2016shift\u2016": 13.823699808120727,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "first-token \u2016shift\u2016": 23.081335067749023,
+      "mean decile \u2016shift\u2016": 17.25623664855957,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "first-token \u2016shift\u2016": 133.60789489746094,
+      "mean decile \u2016shift\u2016": 15.615302276611327,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "first-token \u2016shift\u2016": 105.61238098144531,
+      "mean decile \u2016shift\u2016": 17.451128911972045,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "first-token \u2016shift\u2016": 124.04141235351562,
+      "mean decile \u2016shift\u2016": 16.270605182647706,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "first-token \u2016shift\u2016": 73.19660186767578,
+      "mean decile \u2016shift\u2016": 17.1568510055542,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "first-token \u2016shift\u2016": 99.90673065185547,
+      "mean decile \u2016shift\u2016": 18.56401400566101,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "first-token \u2016shift\u2016": 117.04766845703125,
+      "mean decile \u2016shift\u2016": 15.409931564331055,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "first-token \u2016shift\u2016": 93.04067993164062,
+      "mean decile \u2016shift\u2016": 19.13784704208374,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "first-token \u2016shift\u2016": 87.18255233764648,
+      "mean decile \u2016shift\u2016": 14.074499607086182,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "first-token \u2016shift\u2016": 96.8223876953125,
+      "mean decile \u2016shift\u2016": 16.812266492843627,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "first-token \u2016shift\u2016": 97.34679794311523,
+      "mean decile \u2016shift\u2016": 15.656807088851929,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "first-token \u2016shift\u2016": 111.72903442382812,
+      "mean decile \u2016shift\u2016": 17.562798738479614,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "first-token \u2016shift\u2016": 86.34557342529297,
+      "mean decile \u2016shift\u2016": 14.719136810302734,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "first-token \u2016shift\u2016": 64.33927917480469,
+      "mean decile \u2016shift\u2016": 12.338551425933838,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "first-token \u2016shift\u2016": 101.0636978149414,
+      "mean decile \u2016shift\u2016": 15.764285850524903,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "first-token \u2016shift\u2016": 104.71215057373047,
+      "mean decile \u2016shift\u2016": 15.353851079940796,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "first-token \u2016shift\u2016": 30.995946884155273,
+      "mean decile \u2016shift\u2016": 12.252637004852295,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "first-token \u2016shift\u2016": 15.547994136810303,
+      "mean decile \u2016shift\u2016": 10.977927637100219,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "first-token \u2016shift\u2016": 42.27189636230469,
+      "mean decile \u2016shift\u2016": 13.586008882522583,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "first-token \u2016shift\u2016": 34.15648174285889,
+      "mean decile \u2016shift\u2016": 20.186364603042602,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "first-token \u2016shift\u2016": 64.90656280517578,
+      "mean decile \u2016shift\u2016": 9.54957194328308,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "first-token \u2016shift\u2016": 27.893413543701172,
+      "mean decile \u2016shift\u2016": 8.12910075187683,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "first-token \u2016shift\u2016": 24.11132526397705,
+      "mean decile \u2016shift\u2016": 11.364714288711548,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "first-token \u2016shift\u2016": 47.91033744812012,
+      "mean decile \u2016shift\u2016": 11.951331520080567,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "first-token \u2016shift\u2016": 0.5459604859352112,
+      "mean decile \u2016shift\u2016": 16.095229959487916,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "first-token \u2016shift\u2016": 8.448723793029785,
+      "mean decile \u2016shift\u2016": 13.786188316345214,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "first-token \u2016shift\u2016": 53.26372718811035,
+      "mean decile \u2016shift\u2016": 9.662106776237488,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "first-token \u2016shift\u2016": 77.69114685058594,
+      "mean decile \u2016shift\u2016": 7.843435263633728,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "first-token \u2016shift\u2016": 58.007389068603516,
+      "mean decile \u2016shift\u2016": 9.546876740455627,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "first-token \u2016shift\u2016": 8.21008014678955,
+      "mean decile \u2016shift\u2016": 7.925468993186951,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "first-token \u2016shift\u2016": 16.992034912109375,
+      "mean decile \u2016shift\u2016": 8.136296200752259,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "first-token \u2016shift\u2016": 5.774656772613525,
+      "mean decile \u2016shift\u2016": 9.089362049102784,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "first-token \u2016shift\u2016": 49.032135009765625,
+      "mean decile \u2016shift\u2016": 15.599259042739869,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "first-token \u2016shift\u2016": 33.17634963989258,
+      "mean decile \u2016shift\u2016": 26.4280855178833,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "first-token \u2016shift\u2016": 57.47227096557617,
+      "mean decile \u2016shift\u2016": 9.131862831115722,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "first-token \u2016shift\u2016": 0.15151740610599518,
+      "mean decile \u2016shift\u2016": 9.26618754863739,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "first-token \u2016shift\u2016": 10.902549743652344,
+      "mean decile \u2016shift\u2016": 8.149112343788147,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "first-token \u2016shift\u2016": 74.06214904785156,
+      "mean decile \u2016shift\u2016": 14.611846017837525,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "first-token \u2016shift\u2016": 67.68939208984375,
+      "mean decile \u2016shift\u2016": 10.900991797447205,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "first-token \u2016shift\u2016": 49.96023941040039,
+      "mean decile \u2016shift\u2016": 10.607667899131775,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "first-token \u2016shift\u2016": 56.6590461730957,
+      "mean decile \u2016shift\u2016": 12.371108484268188,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "first-token \u2016shift\u2016": 32.39735412597656,
+      "mean decile \u2016shift\u2016": 8.591284537315369,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "first-token \u2016shift\u2016": 52.17184829711914,
+      "mean decile \u2016shift\u2016": 10.797582650184632,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "first-token \u2016shift\u2016": 72.39262390136719,
+      "mean decile \u2016shift\u2016": 15.061901903152465,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "first-token \u2016shift\u2016": 84.50250625610352,
+      "mean decile \u2016shift\u2016": 20.2753044128418,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "first-token \u2016shift\u2016": 80.59484100341797,
+      "mean decile \u2016shift\u2016": 20.02139892578125,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "first-token \u2016shift\u2016": 63.2337646484375,
+      "mean decile \u2016shift\u2016": 21.03940076828003,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "first-token \u2016shift\u2016": 83.67898178100586,
+      "mean decile \u2016shift\u2016": 25.61240644454956,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "first-token \u2016shift\u2016": 107.2125473022461,
+      "mean decile \u2016shift\u2016": 16.387785720825196,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "first-token \u2016shift\u2016": 119.4074478149414,
+      "mean decile \u2016shift\u2016": 28.146873950958252,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "first-token \u2016shift\u2016": 82.4708137512207,
+      "mean decile \u2016shift\u2016": 20.688885974884034,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "first-token \u2016shift\u2016": 86.26981735229492,
+      "mean decile \u2016shift\u2016": 23.51661882400513,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "first-token \u2016shift\u2016": 105.56483459472656,
+      "mean decile \u2016shift\u2016": 24.213278102874757,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "first-token \u2016shift\u2016": 74.0701789855957,
+      "mean decile \u2016shift\u2016": 19.114025163650513,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "first-token \u2016shift\u2016": 91.72966384887695,
+      "mean decile \u2016shift\u2016": 16.054311752319336,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "first-token \u2016shift\u2016": 121.34188842773438,
+      "mean decile \u2016shift\u2016": 15.687474727630615,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "first-token \u2016shift\u2016": 91.23224639892578,
+      "mean decile \u2016shift\u2016": 16.736498594284058,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "first-token \u2016shift\u2016": 117.12437438964844,
+      "mean decile \u2016shift\u2016": 19.721896266937257,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "first-token \u2016shift\u2016": 120.39462280273438,
+      "mean decile \u2016shift\u2016": 20.04080104827881,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "first-token \u2016shift\u2016": 128.4925537109375,
+      "mean decile \u2016shift\u2016": 18.733759880065918,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "first-token \u2016shift\u2016": 110.28877258300781,
+      "mean decile \u2016shift\u2016": 25.29967803955078,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "first-token \u2016shift\u2016": 111.48429870605469,
+      "mean decile \u2016shift\u2016": 19.247916889190673,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "first-token \u2016shift\u2016": 113.52017974853516,
+      "mean decile \u2016shift\u2016": 22.767310237884523,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "first-token \u2016shift\u2016": 118.3750991821289,
+      "mean decile \u2016shift\u2016": 20.09422378540039,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "first-token \u2016shift\u2016": 108.93630981445312,
+      "mean decile \u2016shift\u2016": 13.933166313171387,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "first-token \u2016shift\u2016": 121.84171295166016,
+      "mean decile \u2016shift\u2016": 17.367720365524292,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "first-token \u2016shift\u2016": 96.79463577270508,
+      "mean decile \u2016shift\u2016": 22.834900093078613,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "first-token \u2016shift\u2016": 118.40766143798828,
+      "mean decile \u2016shift\u2016": 15.900863647460938,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "first-token \u2016shift\u2016": 107.80741119384766,
+      "mean decile \u2016shift\u2016": 19.06414294242859,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "first-token \u2016shift\u2016": 88.39802551269531,
+      "mean decile \u2016shift\u2016": 13.261956548690796,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "first-token \u2016shift\u2016": 106.12074279785156,
+      "mean decile \u2016shift\u2016": 17.932946920394897,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "first-token \u2016shift\u2016": 122.11416244506836,
+      "mean decile \u2016shift\u2016": 17.065655279159547,
+      "_kind": "scatter",
+      "_group": 111
+    }
+  ],
+  "n_series": 112,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix \u00b7 L14",
+        "xlabel": "first-token \u2016shift\u2016",
+        "ylabel": "mean decile \u2016shift\u2016",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "prefix \u00b7 L20",
+        "xlabel": "first-token \u2016shift\u2016",
+        "ylabel": "mean decile \u2016shift\u2016",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140",
+          "160"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140",
+          "160"
+        ]
+      },
+      {
+        "title_left": "context \u00b7 L14",
+        "xlabel": "first-token \u2016shift\u2016",
+        "ylabel": "mean decile \u2016shift\u2016",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      },
+      {
+        "title_left": "context \u00b7 L20",
+        "xlabel": "first-token \u2016shift\u2016",
+        "ylabel": "mean decile \u2016shift\u2016",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      }
+    ]
+  }
+}

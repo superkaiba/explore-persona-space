@@ -961,11 +961,23 @@ def _delta_stats(
 ) -> dict:
     """EARLY-vs-LATE paired log-magnitude contrast Delta over pairs (§3.4).
 
-    ``per_pair_mag``: pair_id -> {bin: magnitude|None}. A pair with an
-    all-None EARLY or LATE set is DROPPED (named); > ``max_drop_frac`` of
-    pairs dropping fails LOUD naming the cell + pairs (plan §8)."""
+    ``per_pair_mag``: pair_id -> {bin: magnitude|None}. Two DISTINCT drop
+    classes, both NAMED (plan §3.4 (iii)):
+
+    - **all-NaN EARLY/LATE set** (``dropped_pairs``) — the plan §8 data-
+      integrity class; > ``max_drop_frac`` of pairs dropping HERE fails LOUD
+      naming the cell + pairs.
+    - **non-positive EARLY/LATE mean** (``dropped_nonpositive_pairs``) — a
+      log-ratio degeneracy, NOT data corruption: on real data the Delta_floor
+      companion legitimately reads EXACTLY-ZERO EARLY noise floors whenever
+      all baseline draws share their first ~5 tokens (identical teacher-forced
+      early activations => even-half mean == odd-half mean bit-exactly; 7/28
+      pairs on the production store — the 2026-07-22 p3 crash). Recorded with
+      the offending means, excluded from the log-ratio, NEVER counted toward
+      the integrity guard, never a -inf/NaN leaking into the JSON."""
     deltas: dict[str, float] = {}
     dropped: list[str] = []
+    dropped_nonpos: dict[str, dict] = {}
     for pid, mags in sorted(per_pair_mag.items()):
         e_vals = [mags[b] for b in early if mags.get(b) is not None]
         l_vals = [mags[b] for b in late if mags.get(b) is not None]
@@ -974,12 +986,20 @@ def _delta_stats(
             continue
         e_mean, l_mean = float(np.mean(e_vals)), float(np.mean(l_vals))
         if e_mean <= 0.0 or l_mean <= 0.0:
-            # A zero mean magnitude (measure-zero on real data; possible on
-            # degenerate shared-prefix inputs) makes the log-ratio non-finite:
-            # NAMED drop, never a -inf leaking into the JSON.
-            dropped.append(pid)
+            dropped_nonpos[pid] = {"early_mean": e_mean, "late_mean": l_mean}
             continue
         deltas[pid] = float(np.log(e_mean) - np.log(l_mean))
+    if dropped_nonpos:
+        # Fix-engaged signal for the 2026-07-22 p3 crash fix: the zero-floor
+        # class is now a recorded exclusion, not a guard-tripping drop.
+        logger.info(
+            "[phase=p3_profiles] %s: %d pair(s) excluded from the log-ratio for "
+            "non-positive EARLY/LATE mean (zero split-half floor — token-identical "
+            "early baseline draws): %s",
+            cell_label,
+            len(dropped_nonpos),
+            sorted(dropped_nonpos),
+        )
     n_total = len(per_pair_mag)
     if n_total and len(dropped) / n_total > max_drop_frac:
         raise RuntimeError(
@@ -992,7 +1012,8 @@ def _delta_stats(
         "early_bins": list(early),
         "late_bins": list(late),
         "n_pairs_kept": int(arr.size),
-        "dropped_pairs": dropped,  # NAMED, not only counted (plan §3.4 (iii))
+        "dropped_pairs": dropped,  # NAMED all-NaN class (plan §3.4 (iii))
+        "dropped_nonpositive_pairs": dropped_nonpos,  # NAMED zero-floor class
         "per_pair_delta": {k: float(v) for k, v in deltas.items()},
     }
     if arr.size == 0:

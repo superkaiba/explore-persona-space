@@ -1,0 +1,1833 @@
+{
+  "registered_statistic": "Delta = log(mean EARLY-bin ||shift||) - log(mean LATE-bin ||shift||), per pair; mean over pairs per (arm x steer layer) cell with pair-bootstrap 95% percentile CI (B, seed 14151) + Wilcoxon companion; 4 pre-registered primary cells reported side by side — never pooled or maxed",
+  "early_bins": [
+    "first",
+    "tok2_5"
+  ],
+  "late_bins": [
+    "dec8",
+    "dec9",
+    "dec10"
+  ],
+  "width_early_bins": [
+    "dec1",
+    "dec2"
+  ],
+  "n_boot": 10000,
+  "boot_seed": 14151,
+  "max_drop_frac": 0.2,
+  "cells": [
+    {
+      "cell": "primary/context/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.9844572051707736,
+        "cross_01_evil_to_hallucination": 0.1714082351970725,
+        "cross_02_sycophancy_to_evil": 1.2220683809238273,
+        "cross_03_sycophancy_to_hallucination": 0.3136711527939551,
+        "cross_04_hallucination_to_evil": 1.7844063911655308,
+        "cross_05_hallucination_to_sycophancy": 0.8169622635408258,
+        "cross_06_evil_to_sycophancy": 0.7664985627734895,
+        "cross_07_evil_to_hallucination": 1.0348226475950475,
+        "cross_08_sycophancy_to_evil": -1.4713473678118254,
+        "cross_09_sycophancy_to_hallucination": 0.2495142731545661,
+        "cross_10_hallucination_to_evil": 1.490794579153421,
+        "cross_11_hallucination_to_sycophancy": 1.8709656093875897,
+        "cross_12_evil_to_sycophancy": 1.6356262279512186,
+        "m685_00_sycophancy": -0.5392031175176297,
+        "m685_01_refusal": 0.21038110267380494,
+        "m685_02_evil": -0.4228587849131664,
+        "m685_03_hedging": 0.9753629344180315,
+        "m685_04_terse": 0.2314440649827918,
+        "m685_05_formal": 1.6907549061726583,
+        "m685_06_villain": -4.450080484053112,
+        "m685_07_medical_doctor": 0.3392939459307498,
+        "m685_08_french_person": 1.4925622670727496,
+        "m685_09_comedian": 1.7282290472402022,
+        "m779_00_evil": 1.5789721152332699,
+        "m779_01_sycophancy": 1.5806234545719318,
+        "m779_02_hallucination": 1.5094558739986148,
+        "m779_03_evil": 1.60052881607414,
+        "m779_04_sycophancy": 1.4479864829750477
+      },
+      "delta_mean": 0.7086893137805562,
+      "ci95": [
+        0.17504402454112103,
+        1.130028718191632
+      ],
+      "wilcoxon_p": 0.0005833879113197327,
+      "registered_primary": true,
+      "delta_width": {
+        "cell": "primary/context/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.23896195849478197,
+          "cross_01_evil_to_hallucination": -0.1669799832583987,
+          "cross_02_sycophancy_to_evil": 0.26842788279394014,
+          "cross_03_sycophancy_to_hallucination": -0.08335816466785317,
+          "cross_04_hallucination_to_evil": 0.13874269825317942,
+          "cross_05_hallucination_to_sycophancy": -0.07933338258886646,
+          "cross_06_evil_to_sycophancy": 0.1351454028632193,
+          "cross_07_evil_to_hallucination": -0.031834340477613576,
+          "cross_08_sycophancy_to_evil": 0.0872811521743957,
+          "cross_09_sycophancy_to_hallucination": 0.128285982089273,
+          "cross_10_hallucination_to_evil": 0.16918603637086127,
+          "cross_11_hallucination_to_sycophancy": -0.15469727167922365,
+          "cross_12_evil_to_sycophancy": -0.16353108799923488,
+          "m685_00_sycophancy": -0.1848544496982778,
+          "m685_01_refusal": -0.13259459845655797,
+          "m685_02_evil": -0.19575684357370315,
+          "m685_03_hedging": 0.2760663164845307,
+          "m685_04_terse": 0.13755667399809024,
+          "m685_05_formal": 0.058597046295846056,
+          "m685_06_villain": -0.4787417618301948,
+          "m685_07_medical_doctor": -0.18681226312789811,
+          "m685_08_french_person": 0.12992625262953927,
+          "m685_09_comedian": 0.1550488269032404,
+          "m779_00_evil": 0.5597900377788481,
+          "m779_01_sycophancy": 0.3514116553569471,
+          "m779_02_hallucination": 0.055199648538689416,
+          "m779_03_evil": 0.701767101223123,
+          "m779_04_sycophancy": 0.45206620300890554
+        },
+        "delta_mean": 0.07803452599641388,
+        "ci95": [
+          -0.013087849429688872,
+          0.17418982407034247
+        ],
+        "wilcoxon_p": 0.2015676274895668
+      },
+      "delta_floor": {
+        "cell": "primary/context/L14/floor",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 21,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {
+          "cross_05_hallucination_to_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 9.150941530863443
+          },
+          "m685_00_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 9.793365478515625
+          },
+          "m685_01_refusal": {
+            "early_mean": 0.0,
+            "late_mean": 10.554590861002604
+          },
+          "m685_06_villain": {
+            "early_mean": 0.0,
+            "late_mean": 14.036243120829264
+          },
+          "m779_00_evil": {
+            "early_mean": 0.0,
+            "late_mean": 9.675964991251627
+          },
+          "m779_01_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 10.405260562896729
+          },
+          "m779_02_hallucination": {
+            "early_mean": 0.0,
+            "late_mean": 7.734570185343425
+          }
+        },
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": -0.09145544941052819,
+          "cross_01_evil_to_hallucination": -0.09724289863842195,
+          "cross_02_sycophancy_to_evil": -0.17322868651402112,
+          "cross_03_sycophancy_to_hallucination": -0.21458518677475036,
+          "cross_04_hallucination_to_evil": -0.5401166794079231,
+          "cross_06_evil_to_sycophancy": 0.3636075298810888,
+          "cross_07_evil_to_hallucination": 0.3075376035877979,
+          "cross_08_sycophancy_to_evil": -2.0670385346818163,
+          "cross_09_sycophancy_to_hallucination": -0.4225433237729401,
+          "cross_10_hallucination_to_evil": 0.6620212053906744,
+          "cross_11_hallucination_to_sycophancy": -1.6689604365593809,
+          "cross_12_evil_to_sycophancy": -0.6861154297435466,
+          "m685_02_evil": -1.1883837229953667,
+          "m685_03_hedging": -1.4830983330620553,
+          "m685_04_terse": 0.17256167896997532,
+          "m685_05_formal": -5.076531818171156,
+          "m685_07_medical_doctor": 0.3504904382590257,
+          "m685_08_french_person": -1.5083883098347688,
+          "m685_09_comedian": -0.2853324440636906,
+          "m779_03_evil": -0.6760637518434662,
+          "m779_04_sycophancy": -0.5147586191947151
+        },
+        "delta_mean": -0.7065535794561898,
+        "ci95": [
+          -1.2849704013358496,
+          -0.25082327320844994
+        ],
+        "wilcoxon_p": 0.0071010589599609375
+      },
+      "delta_cos_mean": 0.2623423562444735,
+      "delta_cos_per_pair": {
+        "cross_00_evil_to_sycophancy": 0.37941561740202207,
+        "cross_01_evil_to_hallucination": -0.14358164432148138,
+        "cross_02_sycophancy_to_evil": 0.1252499899516503,
+        "cross_03_sycophancy_to_hallucination": -0.030701405058304487,
+        "cross_04_hallucination_to_evil": 0.6528561011267205,
+        "cross_05_hallucination_to_sycophancy": 0.6608991601776021,
+        "cross_06_evil_to_sycophancy": 0.21647038528074822,
+        "cross_07_evil_to_hallucination": 0.1681868409117063,
+        "cross_08_sycophancy_to_evil": -0.07340098079293966,
+        "cross_09_sycophancy_to_hallucination": -0.12025680020451546,
+        "cross_10_hallucination_to_evil": 0.28482432663440704,
+        "cross_11_hallucination_to_sycophancy": 0.5653975385551652,
+        "cross_12_evil_to_sycophancy": 0.4666769861554106,
+        "m685_00_sycophancy": 0.5731262359768152,
+        "m685_01_refusal": 0.44729661600043374,
+        "m685_02_evil": 0.5867772589748105,
+        "m685_03_hedging": 0.1523689329624176,
+        "m685_04_terse": 0.04780307908852899,
+        "m685_05_formal": 0.46720384309689206,
+        "m685_06_villain": 0.27636934343415,
+        "m685_07_medical_doctor": -0.12311471812427044,
+        "m685_08_french_person": 0.42800483107566833,
+        "m685_09_comedian": 0.607761025428772,
+        "m779_00_evil": 0.22129700084527335,
+        "m779_01_sycophancy": 0.4146383356613418,
+        "m779_02_hallucination": -0.27431128119739395,
+        "m779_03_evil": 0.14511276750514904,
+        "m779_04_sycophancy": 0.22321658829847973
+      },
+      "sensitivity_exclude_medical": {
+        "cell": "primary/context/L14/exclude_medical",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 27,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.9844572051707736,
+          "cross_01_evil_to_hallucination": 0.1714082351970725,
+          "cross_02_sycophancy_to_evil": 1.2220683809238273,
+          "cross_03_sycophancy_to_hallucination": 0.3136711527939551,
+          "cross_04_hallucination_to_evil": 1.7844063911655308,
+          "cross_05_hallucination_to_sycophancy": 0.8169622635408258,
+          "cross_06_evil_to_sycophancy": 0.7664985627734895,
+          "cross_07_evil_to_hallucination": 1.0348226475950475,
+          "cross_08_sycophancy_to_evil": -1.4713473678118254,
+          "cross_09_sycophancy_to_hallucination": 0.2495142731545661,
+          "cross_10_hallucination_to_evil": 1.490794579153421,
+          "cross_11_hallucination_to_sycophancy": 1.8709656093875897,
+          "cross_12_evil_to_sycophancy": 1.6356262279512186,
+          "m685_00_sycophancy": -0.5392031175176297,
+          "m685_01_refusal": 0.21038110267380494,
+          "m685_02_evil": -0.4228587849131664,
+          "m685_03_hedging": 0.9753629344180315,
+          "m685_04_terse": 0.2314440649827918,
+          "m685_05_formal": 1.6907549061726583,
+          "m685_06_villain": -4.450080484053112,
+          "m685_08_french_person": 1.4925622670727496,
+          "m685_09_comedian": 1.7282290472402022,
+          "m779_00_evil": 1.5789721152332699,
+          "m779_01_sycophancy": 1.5806234545719318,
+          "m779_02_hallucination": 1.5094558739986148,
+          "m779_03_evil": 1.60052881607414,
+          "m779_04_sycophancy": 1.4479864829750477
+        },
+        "delta_mean": 0.7223706237009194,
+        "ci95": [
+          0.18250086492152112,
+          1.158843042739359
+        ],
+        "wilcoxon_p": 0.0007440149784088135
+      },
+      "sensitivity_matched_length": {
+        "kept_pairs": [
+          "cross_00_evil_to_sycophancy",
+          "cross_01_evil_to_hallucination",
+          "cross_02_sycophancy_to_evil",
+          "cross_03_sycophancy_to_hallucination",
+          "cross_04_hallucination_to_evil",
+          "cross_05_hallucination_to_sycophancy",
+          "cross_06_evil_to_sycophancy",
+          "cross_07_evil_to_hallucination",
+          "cross_08_sycophancy_to_evil",
+          "cross_09_sycophancy_to_hallucination",
+          "cross_10_hallucination_to_evil",
+          "cross_11_hallucination_to_sycophancy",
+          "cross_12_evil_to_sycophancy",
+          "m685_00_sycophancy",
+          "m685_01_refusal",
+          "m685_02_evil",
+          "m685_03_hedging",
+          "m685_05_formal",
+          "m685_06_villain",
+          "m685_07_medical_doctor",
+          "m685_08_french_person",
+          "m685_09_comedian",
+          "m779_00_evil",
+          "m779_01_sycophancy",
+          "m779_02_hallucination",
+          "m779_03_evil"
+        ],
+        "ratio_window": [
+          0.5,
+          2.0
+        ],
+        "stats": {
+          "cell": "primary/context/L14/matched_length",
+          "early_bins": [
+            "first",
+            "tok2_5"
+          ],
+          "late_bins": [
+            "dec8",
+            "dec9",
+            "dec10"
+          ],
+          "n_pairs_kept": 26,
+          "dropped_pairs": [],
+          "dropped_nonpositive_pairs": {},
+          "per_pair_delta": {
+            "cross_00_evil_to_sycophancy": 0.9844572051707736,
+            "cross_01_evil_to_hallucination": 0.1714082351970725,
+            "cross_02_sycophancy_to_evil": 1.2220683809238273,
+            "cross_03_sycophancy_to_hallucination": 0.3136711527939551,
+            "cross_04_hallucination_to_evil": 1.7844063911655308,
+            "cross_05_hallucination_to_sycophancy": 0.8169622635408258,
+            "cross_06_evil_to_sycophancy": 0.7664985627734895,
+            "cross_07_evil_to_hallucination": 1.0348226475950475,
+            "cross_08_sycophancy_to_evil": -1.4713473678118254,
+            "cross_09_sycophancy_to_hallucination": 0.2495142731545661,
+            "cross_10_hallucination_to_evil": 1.490794579153421,
+            "cross_11_hallucination_to_sycophancy": 1.8709656093875897,
+            "cross_12_evil_to_sycophancy": 1.6356262279512186,
+            "m685_00_sycophancy": -0.5392031175176297,
+            "m685_01_refusal": 0.21038110267380494,
+            "m685_02_evil": -0.4228587849131664,
+            "m685_03_hedging": 0.9753629344180315,
+            "m685_05_formal": 1.6907549061726583,
+            "m685_06_villain": -4.450080484053112,
+            "m685_07_medical_doctor": 0.3392939459307498,
+            "m685_08_french_person": 1.4925622670727496,
+            "m685_09_comedian": 1.7282290472402022,
+            "m779_00_evil": 1.5789721152332699,
+            "m779_01_sycophancy": 1.5806234545719318,
+            "m779_02_hallucination": 1.5094558739986148,
+            "m779_03_evil": 1.60052881607414
+          },
+          "delta_mean": 0.6986103937652974,
+          "ci95": [
+            0.1421180260207422,
+            1.1445610114832596
+          ],
+          "wilcoxon_p": 0.0011651217937469482
+        }
+      },
+      "terse_pair_delta": 0.2314440649827918
+    },
+    {
+      "cell": "primary/context/L20",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 1.1873869012443805,
+        "cross_01_evil_to_hallucination": 1.0945007519093197,
+        "cross_02_sycophancy_to_evil": 1.0846247786721945,
+        "cross_03_sycophancy_to_hallucination": 1.1348818059177788,
+        "cross_04_hallucination_to_evil": 1.831283258221995,
+        "cross_05_hallucination_to_sycophancy": 1.2635100351748552,
+        "cross_06_evil_to_sycophancy": 1.18113090374161,
+        "cross_07_evil_to_hallucination": 1.042446324018444,
+        "cross_08_sycophancy_to_evil": 1.1816287855181016,
+        "cross_09_sycophancy_to_hallucination": 1.1976092934416163,
+        "cross_10_hallucination_to_evil": 1.6913959697076737,
+        "cross_11_hallucination_to_sycophancy": 1.649935354719255,
+        "cross_12_evil_to_sycophancy": 1.4897770611919228,
+        "m685_00_sycophancy": 1.5771444043866487,
+        "m685_01_refusal": 1.593656692475197,
+        "m685_02_evil": 1.6802628698682898,
+        "m685_03_hedging": 1.4922569567262611,
+        "m685_04_terse": 1.6964429288848035,
+        "m685_05_formal": 1.3494225703594327,
+        "m685_06_villain": 1.6622541424320745,
+        "m685_07_medical_doctor": 1.8598827804946185,
+        "m685_08_french_person": 1.742375958793541,
+        "m685_09_comedian": 1.359842736022609,
+        "m779_00_evil": 1.9181797054412786,
+        "m779_01_sycophancy": 1.6768695753818363,
+        "m779_02_hallucination": 1.4149661786882484,
+        "m779_03_evil": 1.593806059268553,
+        "m779_04_sycophancy": 1.636186652322412
+      },
+      "delta_mean": 1.4744164798223198,
+      "ci95": [
+        1.3778987153557318,
+        1.5714404959379056
+      ],
+      "wilcoxon_p": 7.450580596923828e-09,
+      "registered_primary": true,
+      "delta_width": {
+        "cell": "primary/context/L20/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.08154477805881921,
+          "cross_01_evil_to_hallucination": -0.0712579313925259,
+          "cross_02_sycophancy_to_evil": 0.10256196822780073,
+          "cross_03_sycophancy_to_hallucination": 0.14799913575705315,
+          "cross_04_hallucination_to_evil": 0.13080446787273647,
+          "cross_05_hallucination_to_sycophancy": -0.0035708273581827044,
+          "cross_06_evil_to_sycophancy": 0.04868757019269676,
+          "cross_07_evil_to_hallucination": -0.007944211768452725,
+          "cross_08_sycophancy_to_evil": 0.20351194644144277,
+          "cross_09_sycophancy_to_hallucination": -0.100550804894175,
+          "cross_10_hallucination_to_evil": 0.28962580996679765,
+          "cross_11_hallucination_to_sycophancy": -0.06699764085277282,
+          "cross_12_evil_to_sycophancy": -0.17150266373745904,
+          "m685_00_sycophancy": 0.007417993537504053,
+          "m685_01_refusal": 0.11754718524423424,
+          "m685_02_evil": 0.08126312839482797,
+          "m685_03_hedging": 0.3158015057213346,
+          "m685_04_terse": 0.26624125011673083,
+          "m685_05_formal": -0.08605698810132179,
+          "m685_06_villain": 0.2374817901451367,
+          "m685_07_medical_doctor": 0.24793255908656064,
+          "m685_08_french_person": -0.0462053355553671,
+          "m685_09_comedian": 0.2421392749721547,
+          "m779_00_evil": 0.34500278121049277,
+          "m779_01_sycophancy": 0.297175840973372,
+          "m779_02_hallucination": 0.03626967672046,
+          "m779_03_evil": 0.07942325087686841,
+          "m779_04_sycophancy": 0.019922616231990986
+        },
+        "delta_mean": 0.09800957593174134,
+        "ci95": [
+          0.04648896520172031,
+          0.15007414359290683
+        ],
+        "wilcoxon_p": 0.0022339224815368652
+      },
+      "delta_floor": {
+        "cell": "primary/context/L20/floor",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 21,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {
+          "cross_05_hallucination_to_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 17.33887990315755
+          },
+          "m685_00_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 17.1646728515625
+          },
+          "m685_01_refusal": {
+            "early_mean": 0.0,
+            "late_mean": 17.586148262023926
+          },
+          "m685_06_villain": {
+            "early_mean": 0.0,
+            "late_mean": 26.37407112121582
+          },
+          "m779_00_evil": {
+            "early_mean": 0.0,
+            "late_mean": 17.51328468322754
+          },
+          "m779_01_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 18.05533440907796
+          },
+          "m779_02_hallucination": {
+            "early_mean": 0.0,
+            "late_mean": 14.111100196838379
+          }
+        },
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": -0.10343600682158227,
+          "cross_01_evil_to_hallucination": -0.08058450362825553,
+          "cross_02_sycophancy_to_evil": -0.46645445181235123,
+          "cross_03_sycophancy_to_hallucination": -0.3060335493893813,
+          "cross_04_hallucination_to_evil": -0.5477882172949,
+          "cross_06_evil_to_sycophancy": 0.5309053950022529,
+          "cross_07_evil_to_hallucination": 0.39227371228253505,
+          "cross_08_sycophancy_to_evil": -2.2946645914507613,
+          "cross_09_sycophancy_to_hallucination": -0.4409122068902933,
+          "cross_10_hallucination_to_evil": 0.6373826804209846,
+          "cross_11_hallucination_to_sycophancy": -1.4252547509225257,
+          "cross_12_evil_to_sycophancy": -0.8119918732015599,
+          "m685_02_evil": -1.1517703367379748,
+          "m685_03_hedging": -1.572644973641951,
+          "m685_04_terse": -0.05786820263930714,
+          "m685_05_formal": -5.120426336581682,
+          "m685_07_medical_doctor": 0.5211859351268222,
+          "m685_08_french_person": -1.568012654382557,
+          "m685_09_comedian": -0.13604069389009021,
+          "m779_03_evil": -0.7375752156605466,
+          "m779_04_sycophancy": -0.6983446374886118
+        },
+        "delta_mean": -0.735145499028654,
+        "ci95": [
+          -1.3215799425810812,
+          -0.2665612255197204
+        ],
+        "wilcoxon_p": 0.004878997802734375
+      },
+      "delta_cos_mean": 0.43892880831152153,
+      "delta_cos_per_pair": {
+        "cross_00_evil_to_sycophancy": 0.48425359713534516,
+        "cross_01_evil_to_hallucination": 0.29614076173553866,
+        "cross_02_sycophancy_to_evil": 0.2386457227791349,
+        "cross_03_sycophancy_to_hallucination": 0.3560188159657021,
+        "cross_04_hallucination_to_evil": 0.6494875326752663,
+        "cross_05_hallucination_to_sycophancy": 0.6915522705142697,
+        "cross_06_evil_to_sycophancy": 0.3018706552684307,
+        "cross_07_evil_to_hallucination": 0.09837908049424487,
+        "cross_08_sycophancy_to_evil": 0.24822688661515713,
+        "cross_09_sycophancy_to_hallucination": 0.4000192278375228,
+        "cross_10_hallucination_to_evil": 0.3788614869117737,
+        "cross_11_hallucination_to_sycophancy": 0.6441984629879395,
+        "cross_12_evil_to_sycophancy": 0.34696300576130545,
+        "m685_00_sycophancy": 0.5515718596676985,
+        "m685_01_refusal": 0.47354067737857497,
+        "m685_02_evil": 0.6132853316764036,
+        "m685_03_hedging": 0.40422620127598446,
+        "m685_04_terse": 0.6180246074994405,
+        "m685_05_formal": 0.48478965212901437,
+        "m685_06_villain": 0.7673903399457535,
+        "m685_07_medical_doctor": -0.0018864613957703114,
+        "m685_08_french_person": 0.7256225859746337,
+        "m685_09_comedian": 0.6470342601339022,
+        "m779_00_evil": 0.41819437853215885,
+        "m779_01_sycophancy": 0.7110582059249282,
+        "m779_02_hallucination": -0.17907924856990576,
+        "m779_03_evil": 0.2368957499663035,
+        "m779_04_sycophancy": 0.6847209859018525
+      },
+      "sensitivity_exclude_medical": {
+        "cell": "primary/context/L20/exclude_medical",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 27,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 1.1873869012443805,
+          "cross_01_evil_to_hallucination": 1.0945007519093197,
+          "cross_02_sycophancy_to_evil": 1.0846247786721945,
+          "cross_03_sycophancy_to_hallucination": 1.1348818059177788,
+          "cross_04_hallucination_to_evil": 1.831283258221995,
+          "cross_05_hallucination_to_sycophancy": 1.2635100351748552,
+          "cross_06_evil_to_sycophancy": 1.18113090374161,
+          "cross_07_evil_to_hallucination": 1.042446324018444,
+          "cross_08_sycophancy_to_evil": 1.1816287855181016,
+          "cross_09_sycophancy_to_hallucination": 1.1976092934416163,
+          "cross_10_hallucination_to_evil": 1.6913959697076737,
+          "cross_11_hallucination_to_sycophancy": 1.649935354719255,
+          "cross_12_evil_to_sycophancy": 1.4897770611919228,
+          "m685_00_sycophancy": 1.5771444043866487,
+          "m685_01_refusal": 1.593656692475197,
+          "m685_02_evil": 1.6802628698682898,
+          "m685_03_hedging": 1.4922569567262611,
+          "m685_04_terse": 1.6964429288848035,
+          "m685_05_formal": 1.3494225703594327,
+          "m685_06_villain": 1.6622541424320745,
+          "m685_08_french_person": 1.742375958793541,
+          "m685_09_comedian": 1.359842736022609,
+          "m779_00_evil": 1.9181797054412786,
+          "m779_01_sycophancy": 1.6768695753818363,
+          "m779_02_hallucination": 1.4149661786882484,
+          "m779_03_evil": 1.593806059268553,
+          "m779_04_sycophancy": 1.636186652322412
+        },
+        "delta_mean": 1.46013995016779,
+        "ci95": [
+          1.3649157392070534,
+          1.555585342153498
+        ],
+        "wilcoxon_p": 1.4901161193847656e-08
+      },
+      "sensitivity_matched_length": {
+        "kept_pairs": [
+          "cross_00_evil_to_sycophancy",
+          "cross_01_evil_to_hallucination",
+          "cross_02_sycophancy_to_evil",
+          "cross_03_sycophancy_to_hallucination",
+          "cross_04_hallucination_to_evil",
+          "cross_05_hallucination_to_sycophancy",
+          "cross_06_evil_to_sycophancy",
+          "cross_07_evil_to_hallucination",
+          "cross_08_sycophancy_to_evil",
+          "cross_09_sycophancy_to_hallucination",
+          "cross_10_hallucination_to_evil",
+          "cross_11_hallucination_to_sycophancy",
+          "cross_12_evil_to_sycophancy",
+          "m685_00_sycophancy",
+          "m685_01_refusal",
+          "m685_02_evil",
+          "m685_03_hedging",
+          "m685_04_terse",
+          "m685_05_formal",
+          "m685_06_villain",
+          "m685_07_medical_doctor",
+          "m685_08_french_person",
+          "m685_09_comedian",
+          "m779_00_evil",
+          "m779_01_sycophancy",
+          "m779_02_hallucination",
+          "m779_03_evil",
+          "m779_04_sycophancy"
+        ],
+        "ratio_window": [
+          0.5,
+          2.0
+        ],
+        "stats": {
+          "cell": "primary/context/L20/matched_length",
+          "early_bins": [
+            "first",
+            "tok2_5"
+          ],
+          "late_bins": [
+            "dec8",
+            "dec9",
+            "dec10"
+          ],
+          "n_pairs_kept": 28,
+          "dropped_pairs": [],
+          "dropped_nonpositive_pairs": {},
+          "per_pair_delta": {
+            "cross_00_evil_to_sycophancy": 1.1873869012443805,
+            "cross_01_evil_to_hallucination": 1.0945007519093197,
+            "cross_02_sycophancy_to_evil": 1.0846247786721945,
+            "cross_03_sycophancy_to_hallucination": 1.1348818059177788,
+            "cross_04_hallucination_to_evil": 1.831283258221995,
+            "cross_05_hallucination_to_sycophancy": 1.2635100351748552,
+            "cross_06_evil_to_sycophancy": 1.18113090374161,
+            "cross_07_evil_to_hallucination": 1.042446324018444,
+            "cross_08_sycophancy_to_evil": 1.1816287855181016,
+            "cross_09_sycophancy_to_hallucination": 1.1976092934416163,
+            "cross_10_hallucination_to_evil": 1.6913959697076737,
+            "cross_11_hallucination_to_sycophancy": 1.649935354719255,
+            "cross_12_evil_to_sycophancy": 1.4897770611919228,
+            "m685_00_sycophancy": 1.5771444043866487,
+            "m685_01_refusal": 1.593656692475197,
+            "m685_02_evil": 1.6802628698682898,
+            "m685_03_hedging": 1.4922569567262611,
+            "m685_04_terse": 1.6964429288848035,
+            "m685_05_formal": 1.3494225703594327,
+            "m685_06_villain": 1.6622541424320745,
+            "m685_07_medical_doctor": 1.8598827804946185,
+            "m685_08_french_person": 1.742375958793541,
+            "m685_09_comedian": 1.359842736022609,
+            "m779_00_evil": 1.9181797054412786,
+            "m779_01_sycophancy": 1.6768695753818363,
+            "m779_02_hallucination": 1.4149661786882484,
+            "m779_03_evil": 1.593806059268553,
+            "m779_04_sycophancy": 1.636186652322412
+          },
+          "delta_mean": 1.4744164798223198,
+          "ci95": [
+            1.3778987153557318,
+            1.5714404959379056
+          ],
+          "wilcoxon_p": 7.450580596923828e-09
+        }
+      },
+      "terse_pair_delta": 1.6964429288848035
+    },
+    {
+      "cell": "primary/prefix/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 27,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {
+        "m779_00_evil": {
+          "early_mean": 0.0,
+          "late_mean": 7.779158353805542
+        }
+      },
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.8293437745358214,
+        "cross_01_evil_to_hallucination": 0.04235631079689517,
+        "cross_02_sycophancy_to_evil": 1.0654791563306332,
+        "cross_03_sycophancy_to_hallucination": 0.23521582718623257,
+        "cross_04_hallucination_to_evil": 1.4687700682124234,
+        "cross_05_hallucination_to_sycophancy": -4.376990443193617,
+        "cross_06_evil_to_sycophancy": 0.09448099307435376,
+        "cross_07_evil_to_hallucination": 0.8524051232599392,
+        "cross_08_sycophancy_to_evil": -1.5589168983947683,
+        "cross_09_sycophancy_to_hallucination": 0.2658817148756225,
+        "cross_10_hallucination_to_evil": 1.1881445142137483,
+        "cross_11_hallucination_to_sycophancy": -0.06507351248795645,
+        "cross_12_evil_to_sycophancy": -0.007678412413460567,
+        "m685_00_sycophancy": 1.5759753863001666,
+        "m685_01_refusal": 1.7976582298317765,
+        "m685_02_evil": 1.4742778576666606,
+        "m685_03_hedging": 1.4941263385346315,
+        "m685_04_terse": 1.4908150245807343,
+        "m685_05_formal": 1.4218679685621707,
+        "m685_06_villain": 1.6752395694864428,
+        "m685_07_medical_doctor": 0.22191878572384693,
+        "m685_08_french_person": 1.3857626687501199,
+        "m685_09_comedian": 1.5310513484820878,
+        "m779_01_sycophancy": 1.464363590648658,
+        "m779_02_hallucination": 1.7389188627228407,
+        "m779_03_evil": 1.5574126397798684,
+        "m779_04_sycophancy": 1.5774394362506419
+      },
+      "delta_mean": 0.7570461453080192,
+      "ci95": [
+        0.22935193099701326,
+        1.1802061896195417
+      ],
+      "wilcoxon_p": 0.0005356669425964355,
+      "registered_primary": true,
+      "delta_width": {
+        "cell": "primary/prefix/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.0329965573637474,
+          "cross_01_evil_to_hallucination": -0.2264961982791598,
+          "cross_02_sycophancy_to_evil": 0.007732151551393507,
+          "cross_03_sycophancy_to_hallucination": 0.008954157790974637,
+          "cross_04_hallucination_to_evil": 0.008086261931286476,
+          "cross_05_hallucination_to_sycophancy": -0.16263760078938572,
+          "cross_06_evil_to_sycophancy": -0.017505020816820593,
+          "cross_07_evil_to_hallucination": -0.08371729670576,
+          "cross_08_sycophancy_to_evil": -0.08431390613159406,
+          "cross_09_sycophancy_to_hallucination": 0.21484646593607915,
+          "cross_10_hallucination_to_evil": -0.004468109738601012,
+          "cross_11_hallucination_to_sycophancy": -0.32709272192567673,
+          "cross_12_evil_to_sycophancy": -0.22180839897389326,
+          "m685_00_sycophancy": 0.11984311420549698,
+          "m685_01_refusal": 0.7641155095046748,
+          "m685_02_evil": 0.12029961163211178,
+          "m685_03_hedging": 0.4644777705274472,
+          "m685_04_terse": 0.15631959431966402,
+          "m685_05_formal": -0.026033110253585345,
+          "m685_06_villain": -0.04118347548961987,
+          "m685_07_medical_doctor": -0.41272390742463916,
+          "m685_08_french_person": 0.1614180758086663,
+          "m685_09_comedian": 0.4121414818788258,
+          "m779_00_evil": 0.12015651820660267,
+          "m779_01_sycophancy": 0.3995175811590528,
+          "m779_02_hallucination": 0.09145727539313642,
+          "m779_03_evil": 0.31047789421956473,
+          "m779_04_sycophancy": 0.5478407954398126
+        },
+        "delta_mean": 0.08331075251213578,
+        "ci95": [
+          -0.0106779724986401,
+          0.18076704627393134
+        ],
+        "wilcoxon_p": 0.17090606689453125
+      },
+      "delta_floor": {
+        "cell": "primary/prefix/L14/floor",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 21,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {
+          "cross_05_hallucination_to_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 9.150941530863443
+          },
+          "m685_00_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 9.793365478515625
+          },
+          "m685_01_refusal": {
+            "early_mean": 0.0,
+            "late_mean": 10.554590861002604
+          },
+          "m685_06_villain": {
+            "early_mean": 0.0,
+            "late_mean": 14.036243120829264
+          },
+          "m779_00_evil": {
+            "early_mean": 0.0,
+            "late_mean": 9.675964991251627
+          },
+          "m779_01_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 10.405260562896729
+          },
+          "m779_02_hallucination": {
+            "early_mean": 0.0,
+            "late_mean": 7.734570185343425
+          }
+        },
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": -0.09145544941052819,
+          "cross_01_evil_to_hallucination": -0.09724289863842195,
+          "cross_02_sycophancy_to_evil": -0.17322868651402112,
+          "cross_03_sycophancy_to_hallucination": -0.21458518677475036,
+          "cross_04_hallucination_to_evil": -0.5401166794079231,
+          "cross_06_evil_to_sycophancy": 0.3636075298810888,
+          "cross_07_evil_to_hallucination": 0.3075376035877979,
+          "cross_08_sycophancy_to_evil": -2.0670385346818163,
+          "cross_09_sycophancy_to_hallucination": -0.4225433237729401,
+          "cross_10_hallucination_to_evil": 0.6620212053906744,
+          "cross_11_hallucination_to_sycophancy": -1.6689604365593809,
+          "cross_12_evil_to_sycophancy": -0.6861154297435466,
+          "m685_02_evil": -1.1883837229953667,
+          "m685_03_hedging": -1.4830983330620553,
+          "m685_04_terse": 0.17256167896997532,
+          "m685_05_formal": -5.076531818171156,
+          "m685_07_medical_doctor": 0.3504904382590257,
+          "m685_08_french_person": -1.5083883098347688,
+          "m685_09_comedian": -0.2853324440636906,
+          "m779_03_evil": -0.6760637518434662,
+          "m779_04_sycophancy": -0.5147586191947151
+        },
+        "delta_mean": -0.7065535794561898,
+        "ci95": [
+          -1.2849704013358496,
+          -0.25082327320844994
+        ],
+        "wilcoxon_p": 0.0071010589599609375
+      },
+      "delta_cos_mean": 0.2490065170707004,
+      "delta_cos_per_pair": {
+        "cross_00_evil_to_sycophancy": 0.1968516643779973,
+        "cross_01_evil_to_hallucination": -0.20145656168460846,
+        "cross_02_sycophancy_to_evil": 0.3236006259297331,
+        "cross_03_sycophancy_to_hallucination": -0.2653302360170831,
+        "cross_04_hallucination_to_evil": 0.5390492971831312,
+        "cross_05_hallucination_to_sycophancy": 0.1123617053963244,
+        "cross_06_evil_to_sycophancy": -0.054608840650568403,
+        "cross_07_evil_to_hallucination": 0.2796155071506898,
+        "cross_08_sycophancy_to_evil": -0.11342391340682903,
+        "cross_09_sycophancy_to_hallucination": -0.1579887943031887,
+        "cross_10_hallucination_to_evil": -0.018703918283184365,
+        "cross_11_hallucination_to_sycophancy": 0.49915701399246853,
+        "cross_12_evil_to_sycophancy": 0.028368957340717316,
+        "m685_00_sycophancy": 0.7864375486969948,
+        "m685_01_refusal": 0.4797247971097628,
+        "m685_02_evil": 0.6886918077555796,
+        "m685_03_hedging": 0.29904357343912125,
+        "m685_04_terse": 0.45551751119395095,
+        "m685_05_formal": 0.47552623723944026,
+        "m685_06_villain": 0.7758369970445832,
+        "m685_07_medical_doctor": 0.08887533098459244,
+        "m685_08_french_person": 0.5483734582861265,
+        "m685_09_comedian": 0.542952795823415,
+        "m779_00_evil": 0.043848566400508084,
+        "m779_01_sycophancy": 0.37266310676932335,
+        "m779_02_hallucination": -0.11413241301973662,
+        "m779_03_evil": -0.05602265646060306,
+        "m779_04_sycophancy": 0.4173533096909523
+      },
+      "sensitivity_exclude_medical": {
+        "cell": "primary/prefix/L14/exclude_medical",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 26,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {
+          "m779_00_evil": {
+            "early_mean": 0.0,
+            "late_mean": 7.779158353805542
+          }
+        },
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.8293437745358214,
+          "cross_01_evil_to_hallucination": 0.04235631079689517,
+          "cross_02_sycophancy_to_evil": 1.0654791563306332,
+          "cross_03_sycophancy_to_hallucination": 0.23521582718623257,
+          "cross_04_hallucination_to_evil": 1.4687700682124234,
+          "cross_05_hallucination_to_sycophancy": -4.376990443193617,
+          "cross_06_evil_to_sycophancy": 0.09448099307435376,
+          "cross_07_evil_to_hallucination": 0.8524051232599392,
+          "cross_08_sycophancy_to_evil": -1.5589168983947683,
+          "cross_09_sycophancy_to_hallucination": 0.2658817148756225,
+          "cross_10_hallucination_to_evil": 1.1881445142137483,
+          "cross_11_hallucination_to_sycophancy": -0.06507351248795645,
+          "cross_12_evil_to_sycophancy": -0.007678412413460567,
+          "m685_00_sycophancy": 1.5759753863001666,
+          "m685_01_refusal": 1.7976582298317765,
+          "m685_02_evil": 1.4742778576666606,
+          "m685_03_hedging": 1.4941263385346315,
+          "m685_04_terse": 1.4908150245807343,
+          "m685_05_formal": 1.4218679685621707,
+          "m685_06_villain": 1.6752395694864428,
+          "m685_08_french_person": 1.3857626687501199,
+          "m685_09_comedian": 1.5310513484820878,
+          "m779_01_sycophancy": 1.464363590648658,
+          "m779_02_hallucination": 1.7389188627228407,
+          "m779_03_evil": 1.5574126397798684,
+          "m779_04_sycophancy": 1.5774394362506419
+        },
+        "delta_mean": 0.7776279668304873,
+        "ci95": [
+          0.22798764794885798,
+          1.2061243974565459
+        ],
+        "wilcoxon_p": 0.0008353888988494873
+      },
+      "sensitivity_matched_length": {
+        "kept_pairs": [
+          "cross_00_evil_to_sycophancy",
+          "cross_01_evil_to_hallucination",
+          "cross_02_sycophancy_to_evil",
+          "cross_03_sycophancy_to_hallucination",
+          "cross_04_hallucination_to_evil",
+          "cross_05_hallucination_to_sycophancy",
+          "cross_06_evil_to_sycophancy",
+          "cross_07_evil_to_hallucination",
+          "cross_08_sycophancy_to_evil",
+          "cross_09_sycophancy_to_hallucination",
+          "cross_10_hallucination_to_evil",
+          "cross_11_hallucination_to_sycophancy",
+          "cross_12_evil_to_sycophancy",
+          "m685_00_sycophancy",
+          "m685_01_refusal",
+          "m685_02_evil",
+          "m685_03_hedging",
+          "m685_04_terse",
+          "m685_05_formal",
+          "m685_06_villain",
+          "m685_07_medical_doctor",
+          "m685_08_french_person",
+          "m685_09_comedian",
+          "m779_00_evil",
+          "m779_01_sycophancy",
+          "m779_02_hallucination",
+          "m779_03_evil",
+          "m779_04_sycophancy"
+        ],
+        "ratio_window": [
+          0.5,
+          2.0
+        ],
+        "stats": {
+          "cell": "primary/prefix/L14/matched_length",
+          "early_bins": [
+            "first",
+            "tok2_5"
+          ],
+          "late_bins": [
+            "dec8",
+            "dec9",
+            "dec10"
+          ],
+          "n_pairs_kept": 27,
+          "dropped_pairs": [],
+          "dropped_nonpositive_pairs": {
+            "m779_00_evil": {
+              "early_mean": 0.0,
+              "late_mean": 7.779158353805542
+            }
+          },
+          "per_pair_delta": {
+            "cross_00_evil_to_sycophancy": 0.8293437745358214,
+            "cross_01_evil_to_hallucination": 0.04235631079689517,
+            "cross_02_sycophancy_to_evil": 1.0654791563306332,
+            "cross_03_sycophancy_to_hallucination": 0.23521582718623257,
+            "cross_04_hallucination_to_evil": 1.4687700682124234,
+            "cross_05_hallucination_to_sycophancy": -4.376990443193617,
+            "cross_06_evil_to_sycophancy": 0.09448099307435376,
+            "cross_07_evil_to_hallucination": 0.8524051232599392,
+            "cross_08_sycophancy_to_evil": -1.5589168983947683,
+            "cross_09_sycophancy_to_hallucination": 0.2658817148756225,
+            "cross_10_hallucination_to_evil": 1.1881445142137483,
+            "cross_11_hallucination_to_sycophancy": -0.06507351248795645,
+            "cross_12_evil_to_sycophancy": -0.007678412413460567,
+            "m685_00_sycophancy": 1.5759753863001666,
+            "m685_01_refusal": 1.7976582298317765,
+            "m685_02_evil": 1.4742778576666606,
+            "m685_03_hedging": 1.4941263385346315,
+            "m685_04_terse": 1.4908150245807343,
+            "m685_05_formal": 1.4218679685621707,
+            "m685_06_villain": 1.6752395694864428,
+            "m685_07_medical_doctor": 0.22191878572384693,
+            "m685_08_french_person": 1.3857626687501199,
+            "m685_09_comedian": 1.5310513484820878,
+            "m779_01_sycophancy": 1.464363590648658,
+            "m779_02_hallucination": 1.7389188627228407,
+            "m779_03_evil": 1.5574126397798684,
+            "m779_04_sycophancy": 1.5774394362506419
+          },
+          "delta_mean": 0.7570461453080192,
+          "ci95": [
+            0.22935193099701326,
+            1.1802061896195417
+          ],
+          "wilcoxon_p": 0.0005356669425964355
+        }
+      },
+      "terse_pair_delta": 1.4908150245807343
+    },
+    {
+      "cell": "primary/prefix/L20",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.22589559778309676,
+        "cross_01_evil_to_hallucination": 0.6323449891220139,
+        "cross_02_sycophancy_to_evil": 1.1475093103210767,
+        "cross_03_sycophancy_to_hallucination": 0.6229315002907763,
+        "cross_04_hallucination_to_evil": 1.6566904405305123,
+        "cross_05_hallucination_to_sycophancy": -4.360892377739336,
+        "cross_06_evil_to_sycophancy": 1.079238126261644,
+        "cross_07_evil_to_hallucination": 0.9983665576631506,
+        "cross_08_sycophancy_to_evil": 1.2411116000086695,
+        "cross_09_sycophancy_to_hallucination": 0.613457975077401,
+        "cross_10_hallucination_to_evil": 1.4238503253223551,
+        "cross_11_hallucination_to_sycophancy": 1.750666083335597,
+        "cross_12_evil_to_sycophancy": 0.16888496690535204,
+        "m685_00_sycophancy": 2.0743735970630035,
+        "m685_01_refusal": 1.7267459182229858,
+        "m685_02_evil": 1.7746455329854594,
+        "m685_03_hedging": 1.445462298827978,
+        "m685_04_terse": 1.4577424466414346,
+        "m685_05_formal": 1.9090377128507785,
+        "m685_06_villain": 1.2654112938299127,
+        "m685_07_medical_doctor": 1.4164159585270482,
+        "m685_08_french_person": 1.5433589574769448,
+        "m685_09_comedian": 1.5891973194533788,
+        "m779_00_evil": 1.7442130068363846,
+        "m779_01_sycophancy": 1.5588268382088595,
+        "m779_02_hallucination": 1.3090106507869304,
+        "m779_03_evil": 1.7939439458839264,
+        "m779_04_sycophancy": 1.4575425022277182
+      },
+      "delta_mean": 1.1166422526680375,
+      "ci95": [
+        0.6226206939124852,
+        1.456781522906164
+      ],
+      "wilcoxon_p": 1.1049211025238037e-05,
+      "registered_primary": true,
+      "delta_width": {
+        "cell": "primary/prefix/L20/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": -0.2204926551860864,
+          "cross_01_evil_to_hallucination": -0.1748904145000032,
+          "cross_02_sycophancy_to_evil": 0.07767693011862375,
+          "cross_03_sycophancy_to_hallucination": 0.00869451210893235,
+          "cross_04_hallucination_to_evil": 0.2377997199041646,
+          "cross_05_hallucination_to_sycophancy": -0.11136820033604344,
+          "cross_06_evil_to_sycophancy": 0.002548725080971259,
+          "cross_07_evil_to_hallucination": -0.06396333549724931,
+          "cross_08_sycophancy_to_evil": 0.38519406953490076,
+          "cross_09_sycophancy_to_hallucination": -0.3396177761497574,
+          "cross_10_hallucination_to_evil": -0.06092702660762095,
+          "cross_11_hallucination_to_sycophancy": -0.3343468551043287,
+          "cross_12_evil_to_sycophancy": -0.16376200908890937,
+          "m685_00_sycophancy": 0.3622898512221915,
+          "m685_01_refusal": 0.4728669137124548,
+          "m685_02_evil": 0.04791640293789401,
+          "m685_03_hedging": 0.08186242391996146,
+          "m685_04_terse": 0.029746059304213812,
+          "m685_05_formal": -0.003927424015319314,
+          "m685_06_villain": -0.278531273478662,
+          "m685_07_medical_doctor": -0.09452797841583793,
+          "m685_08_french_person": -0.1308240113467085,
+          "m685_09_comedian": -0.2085027680564493,
+          "m779_00_evil": 0.30878559739092415,
+          "m779_01_sycophancy": -0.17296016511528656,
+          "m779_02_hallucination": -0.10753892001836673,
+          "m779_03_evil": 0.3828644727912516,
+          "m779_04_sycophancy": -0.35698058520081366
+        },
+        "delta_mean": -0.015175561431819957,
+        "ci95": [
+          -0.09590198357151027,
+          0.07404611742428009
+        ],
+        "wilcoxon_p": 0.551873967051506
+      },
+      "delta_floor": {
+        "cell": "primary/prefix/L20/floor",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 21,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {
+          "cross_05_hallucination_to_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 17.33887990315755
+          },
+          "m685_00_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 17.1646728515625
+          },
+          "m685_01_refusal": {
+            "early_mean": 0.0,
+            "late_mean": 17.586148262023926
+          },
+          "m685_06_villain": {
+            "early_mean": 0.0,
+            "late_mean": 26.37407112121582
+          },
+          "m779_00_evil": {
+            "early_mean": 0.0,
+            "late_mean": 17.51328468322754
+          },
+          "m779_01_sycophancy": {
+            "early_mean": 0.0,
+            "late_mean": 18.05533440907796
+          },
+          "m779_02_hallucination": {
+            "early_mean": 0.0,
+            "late_mean": 14.111100196838379
+          }
+        },
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": -0.10343600682158227,
+          "cross_01_evil_to_hallucination": -0.08058450362825553,
+          "cross_02_sycophancy_to_evil": -0.46645445181235123,
+          "cross_03_sycophancy_to_hallucination": -0.3060335493893813,
+          "cross_04_hallucination_to_evil": -0.5477882172949,
+          "cross_06_evil_to_sycophancy": 0.5309053950022529,
+          "cross_07_evil_to_hallucination": 0.39227371228253505,
+          "cross_08_sycophancy_to_evil": -2.2946645914507613,
+          "cross_09_sycophancy_to_hallucination": -0.4409122068902933,
+          "cross_10_hallucination_to_evil": 0.6373826804209846,
+          "cross_11_hallucination_to_sycophancy": -1.4252547509225257,
+          "cross_12_evil_to_sycophancy": -0.8119918732015599,
+          "m685_02_evil": -1.1517703367379748,
+          "m685_03_hedging": -1.572644973641951,
+          "m685_04_terse": -0.05786820263930714,
+          "m685_05_formal": -5.120426336581682,
+          "m685_07_medical_doctor": 0.5211859351268222,
+          "m685_08_french_person": -1.568012654382557,
+          "m685_09_comedian": -0.13604069389009021,
+          "m779_03_evil": -0.7375752156605466,
+          "m779_04_sycophancy": -0.6983446374886118
+        },
+        "delta_mean": -0.735145499028654,
+        "ci95": [
+          -1.3215799425810812,
+          -0.2665612255197204
+        ],
+        "wilcoxon_p": 0.004878997802734375
+      },
+      "delta_cos_mean": 0.3616013548605787,
+      "delta_cos_per_pair": {
+        "cross_00_evil_to_sycophancy": 0.022301605825001992,
+        "cross_01_evil_to_hallucination": 0.298932494285206,
+        "cross_02_sycophancy_to_evil": 0.1334629679719607,
+        "cross_03_sycophancy_to_hallucination": 0.20821675083910426,
+        "cross_04_hallucination_to_evil": 0.6094592269510031,
+        "cross_05_hallucination_to_sycophancy": 0.08074544835835695,
+        "cross_06_evil_to_sycophancy": 0.4191370187327266,
+        "cross_07_evil_to_hallucination": 0.32409224286675453,
+        "cross_08_sycophancy_to_evil": 0.33045961459477746,
+        "cross_09_sycophancy_to_hallucination": 0.3852146764596303,
+        "cross_10_hallucination_to_evil": 0.28158415233095485,
+        "cross_11_hallucination_to_sycophancy": 0.42562066546330846,
+        "cross_12_evil_to_sycophancy": -0.5736314244568348,
+        "m685_00_sycophancy": 0.6133585036732256,
+        "m685_01_refusal": 0.6845531885822614,
+        "m685_02_evil": 0.7320031070460876,
+        "m685_03_hedging": 0.3540775192280611,
+        "m685_04_terse": 0.43567633504668873,
+        "m685_05_formal": 0.5301891925434271,
+        "m685_06_villain": 0.7849306464195251,
+        "m685_07_medical_doctor": -0.3261880429539209,
+        "m685_08_french_person": 0.6897838866959015,
+        "m685_09_comedian": 0.719438996942093,
+        "m779_00_evil": 0.24233879055827856,
+        "m779_01_sycophancy": 0.6298919276644787,
+        "m779_02_hallucination": 0.007655158328513302,
+        "m779_03_evil": 0.24866548304756483,
+        "m779_04_sycophancy": 0.8328678030520678
+      },
+      "sensitivity_exclude_medical": {
+        "cell": "primary/prefix/L20/exclude_medical",
+        "early_bins": [
+          "first",
+          "tok2_5"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 27,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.22589559778309676,
+          "cross_01_evil_to_hallucination": 0.6323449891220139,
+          "cross_02_sycophancy_to_evil": 1.1475093103210767,
+          "cross_03_sycophancy_to_hallucination": 0.6229315002907763,
+          "cross_04_hallucination_to_evil": 1.6566904405305123,
+          "cross_05_hallucination_to_sycophancy": -4.360892377739336,
+          "cross_06_evil_to_sycophancy": 1.079238126261644,
+          "cross_07_evil_to_hallucination": 0.9983665576631506,
+          "cross_08_sycophancy_to_evil": 1.2411116000086695,
+          "cross_09_sycophancy_to_hallucination": 0.613457975077401,
+          "cross_10_hallucination_to_evil": 1.4238503253223551,
+          "cross_11_hallucination_to_sycophancy": 1.750666083335597,
+          "cross_12_evil_to_sycophancy": 0.16888496690535204,
+          "m685_00_sycophancy": 2.0743735970630035,
+          "m685_01_refusal": 1.7267459182229858,
+          "m685_02_evil": 1.7746455329854594,
+          "m685_03_hedging": 1.445462298827978,
+          "m685_04_terse": 1.4577424466414346,
+          "m685_05_formal": 1.9090377128507785,
+          "m685_06_villain": 1.2654112938299127,
+          "m685_08_french_person": 1.5433589574769448,
+          "m685_09_comedian": 1.5891973194533788,
+          "m779_00_evil": 1.7442130068363846,
+          "m779_01_sycophancy": 1.5588268382088595,
+          "m779_02_hallucination": 1.3090106507869304,
+          "m779_03_evil": 1.7939439458839264,
+          "m779_04_sycophancy": 1.4575425022277182
+        },
+        "delta_mean": 1.1055395228214075,
+        "ci95": [
+          0.6030538372780939,
+          1.4565779387301594
+        ],
+        "wilcoxon_p": 1.8790364265441895e-05
+      },
+      "sensitivity_matched_length": {
+        "kept_pairs": [
+          "cross_00_evil_to_sycophancy",
+          "cross_01_evil_to_hallucination",
+          "cross_02_sycophancy_to_evil",
+          "cross_03_sycophancy_to_hallucination",
+          "cross_04_hallucination_to_evil",
+          "cross_05_hallucination_to_sycophancy",
+          "cross_06_evil_to_sycophancy",
+          "cross_07_evil_to_hallucination",
+          "cross_08_sycophancy_to_evil",
+          "cross_09_sycophancy_to_hallucination",
+          "cross_10_hallucination_to_evil",
+          "cross_11_hallucination_to_sycophancy",
+          "cross_12_evil_to_sycophancy",
+          "m685_00_sycophancy",
+          "m685_01_refusal",
+          "m685_02_evil",
+          "m685_03_hedging",
+          "m685_04_terse",
+          "m685_05_formal",
+          "m685_06_villain",
+          "m685_07_medical_doctor",
+          "m685_08_french_person",
+          "m685_09_comedian",
+          "m779_00_evil",
+          "m779_01_sycophancy",
+          "m779_02_hallucination",
+          "m779_03_evil",
+          "m779_04_sycophancy"
+        ],
+        "ratio_window": [
+          0.5,
+          2.0
+        ],
+        "stats": {
+          "cell": "primary/prefix/L20/matched_length",
+          "early_bins": [
+            "first",
+            "tok2_5"
+          ],
+          "late_bins": [
+            "dec8",
+            "dec9",
+            "dec10"
+          ],
+          "n_pairs_kept": 28,
+          "dropped_pairs": [],
+          "dropped_nonpositive_pairs": {},
+          "per_pair_delta": {
+            "cross_00_evil_to_sycophancy": 0.22589559778309676,
+            "cross_01_evil_to_hallucination": 0.6323449891220139,
+            "cross_02_sycophancy_to_evil": 1.1475093103210767,
+            "cross_03_sycophancy_to_hallucination": 0.6229315002907763,
+            "cross_04_hallucination_to_evil": 1.6566904405305123,
+            "cross_05_hallucination_to_sycophancy": -4.360892377739336,
+            "cross_06_evil_to_sycophancy": 1.079238126261644,
+            "cross_07_evil_to_hallucination": 0.9983665576631506,
+            "cross_08_sycophancy_to_evil": 1.2411116000086695,
+            "cross_09_sycophancy_to_hallucination": 0.613457975077401,
+            "cross_10_hallucination_to_evil": 1.4238503253223551,
+            "cross_11_hallucination_to_sycophancy": 1.750666083335597,
+            "cross_12_evil_to_sycophancy": 0.16888496690535204,
+            "m685_00_sycophancy": 2.0743735970630035,
+            "m685_01_refusal": 1.7267459182229858,
+            "m685_02_evil": 1.7746455329854594,
+            "m685_03_hedging": 1.445462298827978,
+            "m685_04_terse": 1.4577424466414346,
+            "m685_05_formal": 1.9090377128507785,
+            "m685_06_villain": 1.2654112938299127,
+            "m685_07_medical_doctor": 1.4164159585270482,
+            "m685_08_french_person": 1.5433589574769448,
+            "m685_09_comedian": 1.5891973194533788,
+            "m779_00_evil": 1.7442130068363846,
+            "m779_01_sycophancy": 1.5588268382088595,
+            "m779_02_hallucination": 1.3090106507869304,
+            "m779_03_evil": 1.7939439458839264,
+            "m779_04_sycophancy": 1.4575425022277182
+          },
+          "delta_mean": 1.1166422526680375,
+          "ci95": [
+            0.6226206939124852,
+            1.456781522906164
+          ],
+          "wilcoxon_p": 1.1049211025238037e-05
+        }
+      },
+      "terse_pair_delta": 1.4577424466414346
+    },
+    {
+      "cell": "rep43/context/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.8639549031266824,
+        "cross_01_evil_to_hallucination": 0.5109737142731441,
+        "cross_02_sycophancy_to_evil": 1.1600318615412348,
+        "cross_03_sycophancy_to_hallucination": 0.37447702703840235,
+        "cross_04_hallucination_to_evil": 1.6055439781937375,
+        "cross_05_hallucination_to_sycophancy": 1.0493724191548544,
+        "cross_06_evil_to_sycophancy": 0.9025109182294124,
+        "cross_07_evil_to_hallucination": 1.1170361618553653,
+        "cross_08_sycophancy_to_evil": 0.060104188840853556,
+        "cross_09_sycophancy_to_hallucination": 0.4561140353507209,
+        "cross_10_hallucination_to_evil": 1.9610736168380691,
+        "cross_11_hallucination_to_sycophancy": 2.0398331779497463,
+        "cross_12_evil_to_sycophancy": 1.584555161258185,
+        "m685_00_sycophancy": -0.19095507528065636,
+        "m685_01_refusal": 0.9699664157930648,
+        "m685_02_evil": -1.4713503510998773,
+        "m685_03_hedging": 1.042537028611251,
+        "m685_04_terse": 0.1718671752919665,
+        "m685_05_formal": 1.8939564278597572,
+        "m685_06_villain": 0.506063420193942,
+        "m685_07_medical_doctor": -0.4318092549719976,
+        "m685_08_french_person": 1.7753712821947705,
+        "m685_09_comedian": 2.036324614206829,
+        "m779_00_evil": 1.9583889546940227,
+        "m779_01_sycophancy": 1.689949280016322,
+        "m779_02_hallucination": 1.7481106315954869,
+        "m779_03_evil": 1.3516580891340229,
+        "m779_04_sycophancy": 1.5539969954364659
+      },
+      "delta_mean": 1.0103448856187778,
+      "ci95": [
+        0.6832303619353745,
+        1.305371084403579
+      ],
+      "wilcoxon_p": 6.735324859619141e-06,
+      "registered_primary": false,
+      "delta_width": {
+        "cell": "rep43/context/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.08221169323691058,
+          "cross_01_evil_to_hallucination": 0.07225197091345192,
+          "cross_02_sycophancy_to_evil": 0.030411609970049103,
+          "cross_03_sycophancy_to_hallucination": 0.10170159213539254,
+          "cross_04_hallucination_to_evil": -0.09098954944011028,
+          "cross_05_hallucination_to_sycophancy": -0.12686803242402456,
+          "cross_06_evil_to_sycophancy": -0.018224327868846313,
+          "cross_07_evil_to_hallucination": 0.1626187254579179,
+          "cross_08_sycophancy_to_evil": 0.34492052395636197,
+          "cross_09_sycophancy_to_hallucination": 0.12793516812057826,
+          "cross_10_hallucination_to_evil": 0.35965562260772344,
+          "cross_11_hallucination_to_sycophancy": -0.0027745159529015684,
+          "cross_12_evil_to_sycophancy": -0.15837667199309857,
+          "m685_00_sycophancy": -0.4446132301871448,
+          "m685_01_refusal": -0.03763057442674067,
+          "m685_02_evil": -0.5036290939174859,
+          "m685_03_hedging": 0.23042504299218525,
+          "m685_04_terse": 0.09314949974797138,
+          "m685_05_formal": 0.11235295050345862,
+          "m685_06_villain": -0.16376617511347646,
+          "m685_07_medical_doctor": -0.13613874127075998,
+          "m685_08_french_person": 0.25351178788673634,
+          "m685_09_comedian": 0.22815493718916713,
+          "m779_00_evil": 0.7478843807440736,
+          "m779_01_sycophancy": 0.5363995245812467,
+          "m779_02_hallucination": 0.02212479600753725,
+          "m779_03_evil": 0.47888587136668326,
+          "m779_04_sycophancy": 0.5763657833601039
+        },
+        "delta_mean": 0.10278394886367714,
+        "ci95": [
+          0.0026509473840806647,
+          0.20749241202473612
+        ],
+        "wilcoxon_p": 0.06623983383178711
+      }
+    },
+    {
+      "cell": "rep43/prefix/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.5502979087576527,
+        "cross_01_evil_to_hallucination": 0.6813175261848357,
+        "cross_02_sycophancy_to_evil": 0.8953609931531044,
+        "cross_03_sycophancy_to_hallucination": 0.20507542811286106,
+        "cross_04_hallucination_to_evil": 1.3859320608347863,
+        "cross_05_hallucination_to_sycophancy": -4.07660191239782,
+        "cross_06_evil_to_sycophancy": -0.3062356366213055,
+        "cross_07_evil_to_hallucination": 0.6811864682588022,
+        "cross_08_sycophancy_to_evil": -0.15526549532476874,
+        "cross_09_sycophancy_to_hallucination": -0.13333781453655202,
+        "cross_10_hallucination_to_evil": 1.1246312119120605,
+        "cross_11_hallucination_to_sycophancy": 1.530313902697434,
+        "cross_12_evil_to_sycophancy": 0.6907011311023445,
+        "m685_00_sycophancy": 1.8743240930782428,
+        "m685_01_refusal": 1.711728153106912,
+        "m685_02_evil": 1.6645687882953828,
+        "m685_03_hedging": 1.7283253398977894,
+        "m685_04_terse": 1.5121979243847026,
+        "m685_05_formal": 1.8436136559867407,
+        "m685_06_villain": 1.8579934019799822,
+        "m685_07_medical_doctor": 0.815931993646855,
+        "m685_08_french_person": 1.6942258867079754,
+        "m685_09_comedian": 1.8502001991637376,
+        "m779_00_evil": -0.16409203806663109,
+        "m779_01_sycophancy": 1.2866483677846445,
+        "m779_02_hallucination": 1.7310126967216548,
+        "m779_03_evil": 1.8461625502644212,
+        "m779_04_sycophancy": 1.571545914919243
+      },
+      "delta_mean": 0.9249200964287532,
+      "ci95": [
+        0.42639759895153034,
+        1.3094502665983547
+      ],
+      "wilcoxon_p": 5.529820919036865e-05,
+      "registered_primary": false,
+      "delta_width": {
+        "cell": "rep43/prefix/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.028155041121940005,
+          "cross_01_evil_to_hallucination": 0.15644271026651735,
+          "cross_02_sycophancy_to_evil": -0.40015136940492546,
+          "cross_03_sycophancy_to_hallucination": -0.07890777546418404,
+          "cross_04_hallucination_to_evil": 0.25308851242734254,
+          "cross_05_hallucination_to_sycophancy": 0.006422822686909413,
+          "cross_06_evil_to_sycophancy": -0.30317744211661646,
+          "cross_07_evil_to_hallucination": 0.033169201188886,
+          "cross_08_sycophancy_to_evil": -0.1005243912724727,
+          "cross_09_sycophancy_to_hallucination": -0.006967090380436414,
+          "cross_10_hallucination_to_evil": 0.07105628268830322,
+          "cross_11_hallucination_to_sycophancy": -0.3068520656703102,
+          "cross_12_evil_to_sycophancy": 0.05572509556043337,
+          "m685_00_sycophancy": 0.2654099190780561,
+          "m685_01_refusal": 0.49792484132017156,
+          "m685_02_evil": 0.5033804450320214,
+          "m685_03_hedging": 0.34459118432029534,
+          "m685_04_terse": 0.32448812146064476,
+          "m685_05_formal": 0.10942022566953424,
+          "m685_06_villain": 0.3614195427375728,
+          "m685_07_medical_doctor": 0.25669224856857387,
+          "m685_08_french_person": 0.20101329027261272,
+          "m685_09_comedian": 0.35057784090829625,
+          "m779_00_evil": 0.2413393076988335,
+          "m779_01_sycophancy": 0.38846555732398036,
+          "m779_02_hallucination": -0.011987319413740094,
+          "m779_03_evil": 0.3504696884211387,
+          "m779_04_sycophancy": 0.6703903399058007
+        },
+        "delta_mean": 0.15218124160482782,
+        "ci95": [
+          0.05756711469644442,
+          0.24383157175203748
+        ],
+        "wilcoxon_p": 0.004778154194355011
+      }
+    },
+    {
+      "cell": "rep44/context/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 1.0608028205923246,
+        "cross_01_evil_to_hallucination": 1.056012905411353,
+        "cross_02_sycophancy_to_evil": 1.155455404829092,
+        "cross_03_sycophancy_to_hallucination": 0.7324238416394842,
+        "cross_04_hallucination_to_evil": 1.9203125278162099,
+        "cross_05_hallucination_to_sycophancy": 0.7006341344871183,
+        "cross_06_evil_to_sycophancy": 0.7472038938295706,
+        "cross_07_evil_to_hallucination": 1.1396971262492546,
+        "cross_08_sycophancy_to_evil": -0.17219379587346095,
+        "cross_09_sycophancy_to_hallucination": 0.038648797479289065,
+        "cross_10_hallucination_to_evil": 1.668919543788575,
+        "cross_11_hallucination_to_sycophancy": 2.1016057311458844,
+        "cross_12_evil_to_sycophancy": 1.7833523467460335,
+        "m685_00_sycophancy": -0.2945085928441269,
+        "m685_01_refusal": 0.184291573590585,
+        "m685_02_evil": -1.6232462665452176,
+        "m685_03_hedging": 1.295263271337789,
+        "m685_04_terse": 0.10902633749602542,
+        "m685_05_formal": 1.5857047218400653,
+        "m685_06_villain": -1.6654086024731332,
+        "m685_07_medical_doctor": -4.21512648044898,
+        "m685_08_french_person": 1.5494878026352272,
+        "m685_09_comedian": 1.837080774298736,
+        "m779_00_evil": 1.6240717520759729,
+        "m779_01_sycophancy": 1.7761876453999563,
+        "m779_02_hallucination": 1.641025873819511,
+        "m779_03_evil": 1.881603005988406,
+        "m779_04_sycophancy": 1.8054322675980279
+      },
+      "delta_mean": 0.7651342986396277,
+      "ci95": [
+        0.2211470836421106,
+        1.2275655670841394
+      ],
+      "wilcoxon_p": 0.0018673688173294067,
+      "registered_primary": false,
+      "delta_width": {
+        "cell": "rep44/context/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.22537579049983325,
+          "cross_01_evil_to_hallucination": 0.19825039683416534,
+          "cross_02_sycophancy_to_evil": -0.0071831946506462074,
+          "cross_03_sycophancy_to_hallucination": 0.26837626083012944,
+          "cross_04_hallucination_to_evil": 0.28498508029181213,
+          "cross_05_hallucination_to_sycophancy": -0.10977413481323861,
+          "cross_06_evil_to_sycophancy": 0.1356419459306939,
+          "cross_07_evil_to_hallucination": 0.17619400197825552,
+          "cross_08_sycophancy_to_evil": 0.061973443166591924,
+          "cross_09_sycophancy_to_hallucination": 0.05788477349409993,
+          "cross_10_hallucination_to_evil": 0.22427894431354667,
+          "cross_11_hallucination_to_sycophancy": 0.11537013516828387,
+          "cross_12_evil_to_sycophancy": -0.12187869200089985,
+          "m685_00_sycophancy": -0.3843670768106564,
+          "m685_01_refusal": -0.2185839720323477,
+          "m685_02_evil": -0.30438487720521823,
+          "m685_03_hedging": 0.38167804605279754,
+          "m685_04_terse": 0.06861092668089297,
+          "m685_05_formal": 0.04038883932148574,
+          "m685_06_villain": -0.04091688940674709,
+          "m685_07_medical_doctor": -0.28683782785626666,
+          "m685_08_french_person": 0.1577210686090429,
+          "m685_09_comedian": 0.18711249569373534,
+          "m779_00_evil": 0.5200250736911789,
+          "m779_01_sycophancy": 0.65583911329853,
+          "m779_02_hallucination": -0.025180621929969726,
+          "m779_03_evil": 0.8224963036184363,
+          "m779_04_sycophancy": 0.6007619801136763
+        },
+        "delta_mean": 0.13156633331718562,
+        "ci95": [
+          0.029367132761355805,
+          0.23901137312076176
+        ],
+        "wilcoxon_p": 0.029833190143108368
+      }
+    },
+    {
+      "cell": "rep44/prefix/L14",
+      "early_bins": [
+        "first",
+        "tok2_5"
+      ],
+      "late_bins": [
+        "dec8",
+        "dec9",
+        "dec10"
+      ],
+      "n_pairs_kept": 28,
+      "dropped_pairs": [],
+      "dropped_nonpositive_pairs": {},
+      "per_pair_delta": {
+        "cross_00_evil_to_sycophancy": 0.7999205786053745,
+        "cross_01_evil_to_hallucination": 1.0944924449105087,
+        "cross_02_sycophancy_to_evil": 0.9537415607012751,
+        "cross_03_sycophancy_to_hallucination": 0.7070133235492779,
+        "cross_04_hallucination_to_evil": 1.2475750108439356,
+        "cross_05_hallucination_to_sycophancy": -4.083810669621486,
+        "cross_06_evil_to_sycophancy": 0.4467859235313125,
+        "cross_07_evil_to_hallucination": 1.022953159779298,
+        "cross_08_sycophancy_to_evil": -0.14504590507093384,
+        "cross_09_sycophancy_to_hallucination": 0.11791154736563536,
+        "cross_10_hallucination_to_evil": 1.2428933963868727,
+        "cross_11_hallucination_to_sycophancy": 1.3035760328894421,
+        "cross_12_evil_to_sycophancy": 1.0166640132064808,
+        "m685_00_sycophancy": 1.6248435379363508,
+        "m685_01_refusal": 1.8036826583240035,
+        "m685_02_evil": 2.1156062194193463,
+        "m685_03_hedging": 1.6536162157612306,
+        "m685_04_terse": 0.9094129694302744,
+        "m685_05_formal": 1.5788453479198845,
+        "m685_06_villain": 1.9523796247324428,
+        "m685_07_medical_doctor": 0.48835284911941423,
+        "m685_08_french_person": 1.4945030985744139,
+        "m685_09_comedian": 1.656678239327412,
+        "m779_00_evil": 0.1806161284138934,
+        "m779_01_sycophancy": 1.5975251643231747,
+        "m779_02_hallucination": 1.9561393870361996,
+        "m779_03_evil": 1.722431295123561,
+        "m779_04_sycophancy": 1.8043901150763513
+      },
+      "delta_mean": 1.0094176166998194,
+      "ci95": [
+        0.5220121838395512,
+        1.3660033361497226
+      ],
+      "wilcoxon_p": 1.5139579772949219e-05,
+      "registered_primary": false,
+      "delta_width": {
+        "cell": "rep44/prefix/L14/width",
+        "early_bins": [
+          "dec1",
+          "dec2"
+        ],
+        "late_bins": [
+          "dec8",
+          "dec9",
+          "dec10"
+        ],
+        "n_pairs_kept": 28,
+        "dropped_pairs": [],
+        "dropped_nonpositive_pairs": {},
+        "per_pair_delta": {
+          "cross_00_evil_to_sycophancy": 0.08774651563653446,
+          "cross_01_evil_to_hallucination": -3.902587648463296e-05,
+          "cross_02_sycophancy_to_evil": -0.3210463753315893,
+          "cross_03_sycophancy_to_hallucination": 0.31021692541834556,
+          "cross_04_hallucination_to_evil": 0.14876807310255757,
+          "cross_05_hallucination_to_sycophancy": 0.01199099265800263,
+          "cross_06_evil_to_sycophancy": -0.05359766621684292,
+          "cross_07_evil_to_hallucination": 0.1075634937867882,
+          "cross_08_sycophancy_to_evil": 0.1575837159544502,
+          "cross_09_sycophancy_to_hallucination": 0.06739027219967797,
+          "cross_10_hallucination_to_evil": 0.19283271918229072,
+          "cross_11_hallucination_to_sycophancy": -0.31082177034695824,
+          "cross_12_evil_to_sycophancy": 0.18938638209113323,
+          "m685_00_sycophancy": 0.09738175686926942,
+          "m685_01_refusal": 0.6526571702424095,
+          "m685_02_evil": 0.5520333569794011,
+          "m685_03_hedging": 0.2345607344866023,
+          "m685_04_terse": 0.03637776420844885,
+          "m685_05_formal": 0.13996860960897695,
+          "m685_06_villain": 0.7123906850507002,
+          "m685_07_medical_doctor": -0.5633558934139309,
+          "m685_08_french_person": 0.09235723839808463,
+          "m685_09_comedian": 0.26850661916101304,
+          "m779_00_evil": 0.026864848722308654,
+          "m779_01_sycophancy": 0.47521823059177226,
+          "m779_02_hallucination": 0.26767156876694487,
+          "m779_03_evil": 0.4570655394567642,
+          "m779_04_sycophancy": 0.5272710632016819
+        },
+        "delta_mean": 0.16303369802101256,
+        "ci95": [
+          0.05674795994943518,
+          0.2677500237342945
+        ],
+        "wilcoxon_p": 0.0022339224815368652
+      }
+    }
+  ],
+  "revisions": {
+    "parent": "79dacd5239869e8de65c89a04437a606af436ad0",
+    "rep": "7ea5ae87e9b21342522a4ac66226f1daa29899d8"
+  },
+  "repro": {
+    "git_commit": "48fe05ca85485baa5e96f8f17743077dd7e53c8d",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-22T23:02:04.326233+00:00"
+  }
+}
