@@ -1,0 +1,716 @@
+{
+  "commit": "c2fb3959d9",
+  "created": "2026-07-22T19:51:27Z",
+  "figsize": [
+    12.5,
+    4.2
+  ],
+  "points": [
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": -1.3818108856122404,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 5.15,
+      "per-condition mean projection\n(z-scored within direction)": -0.04118638972693319,
+      "label": "system 2",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.96,
+      "per-condition mean projection\n(z-scored within direction)": 0.09751552986279269,
+      "label": "system 2",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 49.94,
+      "per-condition mean projection\n(z-scored within direction)": 0.4302104579476708,
+      "label": "20-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.73,
+      "per-condition mean projection\n(z-scored within direction)": -0.5330232177702138,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 85.66,
+      "per-condition mean projection\n(z-scored within direction)": 1.49725662574268,
+      "label": "system 0",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 48.08,
+      "per-condition mean projection\n(z-scored within direction)": 1.7196519784636086,
+      "label": "system 1",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 11.17,
+      "per-condition mean projection\n(z-scored within direction)": 1.0107764711986114,
+      "label": "system 2",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.96,
+      "per-condition mean projection\n(z-scored within direction)": 0.6121186194337218,
+      "label": "system 2",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.01,
+      "per-condition mean projection\n(z-scored within direction)": -0.14597122581628444,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.02,
+      "per-condition mean projection\n(z-scored within direction)": -0.5528373215333192,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": -1.2909645769887965,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": -1.421736065201299,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": -1.4690087270383636,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 5.15,
+      "per-condition mean projection\n(z-scored within direction)": 0.7134100689820112,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.96,
+      "per-condition mean projection\n(z-scored within direction)": 1.1691710634588217,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 49.94,
+      "per-condition mean projection\n(z-scored within direction)": 1.1793288180732082,
+      "label": "20-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.73,
+      "per-condition mean projection\n(z-scored within direction)": 0.8708138615521903,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 85.66,
+      "per-condition mean projection\n(z-scored within direction)": -2.195965839531412,
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 48.08,
+      "per-condition mean projection\n(z-scored within direction)": -1.1615856720177442,
+      "label": "20-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 11.17,
+      "per-condition mean projection\n(z-scored within direction)": -0.016434872693491732,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.96,
+      "per-condition mean projection\n(z-scored within direction)": -0.14441860169458778,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.01,
+      "per-condition mean projection\n(z-scored within direction)": 0.07935279738142666,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.02,
+      "per-condition mean projection\n(z-scored within direction)": -0.10446035772420492,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": 0.4301239058977117,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 0.0,
+      "per-condition mean projection\n(z-scored within direction)": 0.6496735553544346,
+      "label": "system 2",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.3,
+      "y": -0.9102503474767702,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 7.31,
+      "y": -0.43264756117369463,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 7.5,
+      "y": -0.49904842027753776,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.28,
+      "y": -0.5066862521319506,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 4.19,
+      "y": -0.7750115172004657,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 55.52,
+      "y": 2.0487224626108174,
+      "label": "system 0",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 32.69,
+      "y": 1.7557537392535296,
+      "label": "system 1",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 24.73,
+      "y": 1.4122369905339838,
+      "label": "system 2",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 13.57,
+      "y": 0.22793050449576666,
+      "label": "system 3",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 5.62,
+      "y": -0.4300588065763622,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.53,
+      "y": -0.31972029846399874,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 3.26,
+      "y": -0.6631395627008001,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.04,
+      "y": -0.9080809308925144,
+      "label": "system 7",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.3,
+      "y": -1.3844241330224059,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 7.31,
+      "y": 0.2235327385748674,
+      "label": "system 3",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 7.5,
+      "y": 0.002061514645779781,
+      "label": "system 3",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.28,
+      "y": -0.10273833145341321,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 4.19,
+      "y": 0.17595287010841704,
+      "label": "system 3",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 55.52,
+      "y": 2.6315386469327473,
+      "label": "system 0",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 32.69,
+      "y": 1.0563403739405488,
+      "label": "system 1",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 24.73,
+      "y": 0.48413283597804563,
+      "label": "system 3",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 13.57,
+      "y": 0.04120287009627982,
+      "label": "system 3",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 5.62,
+      "y": -0.6447059055532416,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 6.53,
+      "y": -0.4897187884840326,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 3.26,
+      "y": -0.8053959235954213,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 2.04,
+      "y": -1.1877787681681713,
+      "label": "system 7",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "condition mean judged trait score (0-100)": 59.88,
+      "y": 0.4909633407535157,
+      "label": "15-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 67.92,
+      "y": -0.009767775095581487,
+      "label": "15-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 69.7,
+      "y": -0.008158831236086322,
+      "label": "15-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 71.88,
+      "y": 0.03604006665344618,
+      "label": "20-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 67.74,
+      "y": -0.0425472051466909,
+      "label": "15-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 72.98,
+      "y": 2.122531012512644,
+      "label": "system 0",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 69.34,
+      "y": 1.3497539322757441,
+      "label": "system 1",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 66.64,
+      "y": 0.585581788557593,
+      "label": "15-shot",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 54.69,
+      "y": 0.07289339633765086,
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 55.34,
+      "y": -0.503104023623879,
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 51.87,
+      "y": -1.044811667905748,
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 37.59,
+      "y": -1.732538810477909,
+      "label": "system 6",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 39.91,
+      "y": -1.3168352236047,
+      "label": "system 6",
+      "series": "pre-image (rank-truncated)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "condition mean judged trait score (0-100)": 59.88,
+      "y": 0.9749824386576655,
+      "label": "system 1",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 67.92,
+      "y": 0.8153180976418233,
+      "label": "system 1",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 69.7,
+      "y": 0.8095746695917646,
+      "label": "system 1",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 71.88,
+      "y": 0.8189136794385142,
+      "label": "20-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 67.74,
+      "y": 0.885930734181945,
+      "label": "system 1",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 72.98,
+      "y": 0.8439892615349328,
+      "label": "20-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 69.34,
+      "y": 0.7644550474377984,
+      "label": "15-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 66.64,
+      "y": 0.15900592632842053,
+      "label": "15-shot",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 54.69,
+      "y": -0.6883617732651204,
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 55.34,
+      "y": -1.2889775960089231,
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 51.87,
+      "y": -1.2408672609432243,
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 37.59,
+      "y": -1.7464808795717384,
+      "label": "system 6",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "condition mean judged trait score (0-100)": 39.91,
+      "y": -1.1074823450238584,
+      "label": "system 6",
+      "series": "pre-image (full rank)",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 78,
+  "text": {
+    "suptitle": "Per-condition mean projection vs judged trait score, truncated vs full-rank pre-image",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (L14)",
+        "xlabel": "condition mean judged trait score (0-100)",
+        "ylabel": "per-condition mean projection\n(z-scored within direction)",
+        "legend_labels": [
+          "pre-image (rank-truncated)",
+          "pre-image (full rank)"
+        ],
+        "annotations": [
+          "20-shot",
+          "system 0",
+          "system 1",
+          "system 2",
+          "system 7"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ],
+        "yticklabels": [
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "title_left": "sycophancy (L26)",
+        "xlabel": "condition mean judged trait score (0-100)",
+        "annotations": [
+          "system 0",
+          "system 1",
+          "system 2",
+          "system 3",
+          "system 7"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "hallucination (L17)",
+        "xlabel": "condition mean judged trait score (0-100)",
+        "annotations": [
+          "15-shot",
+          "20-shot",
+          "system 0",
+          "system 1",
+          "system 6"
+        ],
+        "xticklabels": [
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75"
+        ]
+      }
+    ],
+    "series": [
+      "pre-image (rank-truncated)",
+      "pre-image (full rank)"
+    ]
+  }
+}
