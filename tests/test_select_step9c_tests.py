@@ -5,8 +5,9 @@ plus a pinned workflow-invariant literal set, for the ``/issue`` Step 9c
 test-verdict gate. Most cases inject a fake ``git diff`` runner and a
 ``tmp_path`` ``tests/`` tree so no real git / real branch state is needed.
 
-Two exceptions: the pinned-list test (case 6) asserts the literal
-``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree so an added/removed
+Two exceptions: the pinned-list tests (cases 6/6b) assert the literal
+``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree and the sorted
+manifest (``tests/step9c_workflow_invariant_manifest.txt``) so an added/removed
 invariant test forces a deliberate edit of the literal; and the #851 regression
 tests (cases 13-14) build a real throwaway git repo + worktree to pin the
 work-root resolution end to end (branch-new test selected, deleted-on-branch
@@ -129,8 +130,8 @@ def test_pinned_invariant_list_matches_live_tree():
     """Every WORKFLOW_INVARIANT entry must exist in the real repo tests/ tree.
 
     Fails LOUDLY if any pinned invariant test was renamed/removed without
-    updating the literal — forcing a deliberate edit (plan §4a-note). This is
-    the only test that reads the live repo rather than a tmp_path fixture.
+    updating the literal — forcing a deliberate edit. Reads the live repo
+    rather than a tmp_path fixture (as does case 6b below).
     """
     repo_root = Path(sel.__file__).resolve().parents[1]
     missing = sel.missing_invariants(repo_root)
@@ -138,34 +139,80 @@ def test_pinned_invariant_list_matches_live_tree():
         f"WORKFLOW_INVARIANT entries missing from the live tests/ tree: {missing}. "
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
-    # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 43 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
-    # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
-    # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
-    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
-    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin) + the
-    # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
-    # rationale: a SKILL.md-only recipe revert must still run the pin) + the #1397
-    # fit-loop batching review-lens pin suite (test_fit_loop_batching_review_pin —
-    # agent-`.md` diffs gate ONLY via this tuple) + the #1546 SKILL.md forensics-ingest
-    # pointer pin suite (test_issue_skill_forensics_ingest_pointer — same tuple
-    # rationale: a SKILL.md-only edit dropping the pointer must still run the pin) + the
-    # #1563 SKILL.md orchestrator-turn discipline pointer pin suite
-    # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
-    # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
-    # staged-index verification pin suite (test_issue_skill_staged_index_verification —
-    # same tuple rationale: a doc-site edit dropping the duty must still run the pin) +
-    # the #1575 cap-park surfacing pin suite (test_issue_skill_followup_cap_park_note_pin
-    # — same tuple rationale: a SKILL.md-only edit dropping the cap-park note duty must
-    # still run the #1548/#1558/#1575 pins) + the #1584 merge-scoped gitleaks
-    # stanza/wrapper pin suite
-    # (test_precommit_gitleaks_merge_scope — .pre-commit-config.yaml has no per-file test
-    # map, so a later config diff runs the pin ONLY via this tuple) + the #1577
-    # guard-script read-bounding hook pin suite (test_guard_trigger_dense_read —
-    # the stem/literal/dependency arms are .py-only, so a later .sh-hook /
-    # settings.json diff runs the pin ONLY via this tuple).
+    # De-duplicated (no accidental double-listing). Cardinality is deliberately
+    # NOT pinned as an integer (#1593): the retired `== N` count pin made every
+    # pair of same-window registering PRs conflict on one shared line (#1584);
+    # accidental-removal coverage lives in the manifest set-equality pin below
+    # (case 6b). Per-addition rationale belongs as an inline comment on the
+    # tuple entry itself, NOT in an accreting block here.
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 44
+
+
+# --- Case 6b (#1593): tuple <-> sorted-manifest set-equality pin -------------
+# NOTE: this literal relpath is also the GLOB_SCAN_TESTS drift-pin anchor
+# (test_glob_scan_map_matches_live_tree asserts it appears verbatim here).
+_MANIFEST_RELPATH = "tests/step9c_workflow_invariant_manifest.txt"
+
+
+def _manifest_lines(path: Path) -> list[str]:
+    """Data lines of a WORKFLOW_INVARIANT manifest (blank + '#' lines skipped)."""
+    return [
+        ln.strip()
+        for ln in path.read_text().splitlines()
+        if ln.strip() and not ln.strip().startswith("#")
+    ]
+
+
+def _assert_manifest_matches(entries: tuple[str, ...], manifest: Path) -> None:
+    """Core two-place pin: manifest well-formed (unique, sorted) + set-equal."""
+    assert manifest.exists(), f"manifest missing: {manifest}"
+    lines = _manifest_lines(manifest)
+    assert len(lines) == len(set(lines)), f"duplicate lines in {manifest}"
+    assert lines == sorted(lines), (
+        f"{manifest} must stay sorted (python sorted()); add new entries at their sorted position."
+    )
+    tuple_set, manifest_set = set(entries), set(lines)
+    only_tuple = sorted(tuple_set - manifest_set)
+    only_manifest = sorted(manifest_set - tuple_set)
+    assert tuple_set == manifest_set, (
+        "WORKFLOW_INVARIANT (scripts/select_step9c_tests.py) and the manifest "
+        f"disagree. In tuple only (add its manifest line, or a manifest line "
+        f"was removed): {only_tuple}. In manifest only (add its tuple entry, "
+        f"or a tuple entry was removed): {only_manifest}."
+    )
+
+
+def test_workflow_invariant_matches_manifest():
+    """The tuple and the sorted manifest agree as SETS (#1593 count-pin
+    replacement): an accidental tuple-entry removal (file still on disk, so
+    missing_invariants() stays silent) fails HERE unless the manifest line
+    was removed too — a deliberate two-place change. Registration = one tuple
+    entry + one sorted manifest line; no shared line is ever edited, so
+    concurrent registrations 3-way-merge cleanly server-side (#1584)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    _assert_manifest_matches(sel.WORKFLOW_INVARIANT, repo_root / _MANIFEST_RELPATH)
+
+
+def test_manifest_pin_negative_paths(tmp_path: Path):
+    """The pin's predicates fire on removal / unsorted / duplicate / empty manifests."""
+    m = tmp_path / "manifest.txt"
+    m.write_text("# header\n\ntests/test_a.py\ntests/test_b.py\n")
+    _assert_manifest_matches(("tests/test_b.py", "tests/test_a.py"), m)  # order-free
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)  # dropped tuple entry
+    with pytest.raises(AssertionError, match="disagree"):  # dropped manifest line
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py", "tests/test_c.py"), m)
+    m.write_text("tests/test_b.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="sorted"):
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py"), m)
+    m.write_text("tests/test_a.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="duplicate"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
+    # Empty / comments-only manifest: zero data lines against a non-empty tuple
+    # is a loud set mismatch, never a silent pass (critic concern 1).
+    m.write_text("# header only\n\n")
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----

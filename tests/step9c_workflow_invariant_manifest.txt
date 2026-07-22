@@ -1,0 +1,50 @@
+# Step 9c WORKFLOW_INVARIANT manifest (#1593) — one repo-relative test path
+# per line, KEPT SORTED (python sorted()); must stay set-equal to
+# WORKFLOW_INVARIANT in scripts/select_step9c_tests.py. Pinned by
+# tests/test_select_step9c_tests.py::test_workflow_invariant_matches_manifest.
+# Register a new pin test by adding one line at its sorted position (plus the
+# tuple entry) — never edit an existing line.
+tests/test_autonomous_plan_gate.py
+tests/test_autonomous_session_watch.py
+tests/test_check_mcp_json_no_secrets.py
+tests/test_check_no_secret_shaped_strings.py
+tests/test_clean_result_critic_planned_vs_actual.py
+tests/test_diff_base_origin_main_pin.py
+tests/test_failure_classifier.py
+tests/test_fit_loop_batching_review_pin.py
+tests/test_guard_trigger_dense_read.py
+tests/test_issue_skill_exit_breadcrumb.py
+tests/test_issue_skill_followup_cap_park_note_pin.py
+tests/test_issue_skill_forensics_ingest_pointer.py
+tests/test_issue_skill_marker_contract.py
+tests/test_issue_skill_merge_resnapshot_pin.py
+tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
+tests/test_issue_skill_staged_index_verification.py
+tests/test_no_auto_runpod_path_under_any_failure.py
+tests/test_no_direct_task_path_construction.py
+tests/test_no_dollar_budget_caps.py
+tests/test_no_per_file_raw_completions_loop.py
+tests/test_no_pod_side_task_py_shellout.py
+tests/test_plan_handoff_path_convention.py
+tests/test_precommit_gitleaks_merge_scope.py
+tests/test_sparse_worktree.py
+tests/test_step10d_guard3.py
+tests/test_step_completed_resume.py
+tests/test_task_workflow.py
+tests/test_task_workflow_list_children.py
+tests/test_task_workflow_post_marker_echo.py
+tests/test_task_workflow_worktree.py
+tests/test_verify_clean_result.py
+tests/test_verify_clean_result_body_stdin.py
+tests/test_verify_paper.py
+tests/test_verify_plan.py
+tests/test_verify_task_body.py
+tests/test_verify_task_body_audit_claim.py
+tests/test_verify_uploads_card_fallback.py
+tests/test_verify_uploads_claimed_urls.py
+tests/test_verify_uploads_type_selection.py
+tests/test_workflow_fix_dedup.py
+tests/test_workflow_hub_upload_as_file.py
+tests/test_workflow_lint.py
+tests/test_workflow_lint_dotenv_check.py
+tests/test_workflow_yaml.py
