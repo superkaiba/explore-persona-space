@@ -193,7 +193,7 @@ I recomputed the aggregated layer-19 fits from the persisted store with identica
 
 ### The four character maps are dominantly one shared operator with a small per-character slope residual
 
-Cross-persona reads at layer 19 on the scene-aggregated cells: 4×4 held-out transfer matrices (row = source map, column = target points; diagonal = within-cells); the shared-vs-specific lattice per persona (M0 global map, M1 shared map + per-persona offsets, M2 per-persona maps) with bootstrap CIs and shuffle-null ticks; operator statistics each against its own null, with cross-project anchor lines.
+Cross-persona reads at layer 19, scene-aggregated cells: 4×4 held-out transfer matrices (row = source map, column = target points; diagonal = within-cells); the shared-vs-specific lattice per persona (M0 global map, M1 + per-persona offsets, M2 per-persona maps); operator statistics against their nulls, with cross-project anchors.
 
 ![Cross-persona transfer matrices at layer 19, base and instruct](https://raw.githubusercontent.com/superkaiba/explore-persona-space/82d85db5ee9ad578ca36f7320266cb98e2aa64c2/figures/issue_1310/xpersona_transfer_matrix.png)
 
@@ -203,7 +203,7 @@ Cross-persona reads at layer 19 on the scene-aggregated cells: 4×4 held-out tra
 
 > **Figure.** Top: every off-diagonal raw transfer is strongly negative (base −0.22 to −2.11; instruct −0.84 to −2.59). Middle: M0 ≈ M1 sits just below M2 for every persona (M1÷M2 base 0.81–0.92, instruct 0.90–0.98; M1 shuffle nulls ≈ −0.05). Bottom: raw cosine 0.23/0.32 and Procrustes-aligned cosine 0.516/0.593 clear their nulls; the spectrum cosine's shuffle-fit null is ≈ 0.99 (descriptive only).
 
-Per-persona maps do not cross-apply raw, yet one pooled map with a single global offset recovers 81–98% of each persona's own ceiling; per-persona offsets add nothing (M1−M0 CIs straddle zero) and the persona-specific remainder is a small slope residual (M2−M1 = +0.007 to +0.025, every CI above zero, Vex largest). The data-paired Procrustes-aligned cosine — 0.516 base / 0.593 instruct — sits between the paired story↔chat anchor (0.455) and the base↔instruct anchor (0.686); prediction-space response cosine reads 0.37/0.55 against shuffle-fit nulls ≈ 0. Round 1's spectrum-cosine ≈ 0.99 and the input-subspace overlap carry no evidence (both ≈ their shuffle-fit nulls); round 1's reparameterization recoveries land below the pooled rungs — pooling beats any single-source map plus learned alignments.
+Per-persona maps do not cross-apply raw, yet one pooled map with a single global offset recovers 81–98% of each persona's own ceiling; per-persona offsets add nothing (M1−M0 CIs straddle zero) and the remainder is a small per-character slope residual (M2−M1 = +0.007 to +0.025, every CI above zero, Vex largest). The Procrustes-aligned cosine — 0.516 base / 0.593 instruct — sits between the story↔chat (0.455) and base↔instruct (0.686) anchors; prediction-space response cosine reads 0.37/0.55 vs nulls ≈ 0. The spectrum cosine and input-subspace overlap carry no evidence (≈ their shuffle-fit nulls); round 1's reparameterization recoveries land below the pooled rungs — pooling beats single-source maps plus learned alignments.
 
 ---
 
