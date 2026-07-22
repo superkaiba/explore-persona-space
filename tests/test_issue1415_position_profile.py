@@ -197,6 +197,68 @@ def test_capture_all_empty_completions_fails_loud():
         capture_binned_answer_profiles(_NeverForward(), tok, ctx, ["", ""], [0])
 
 
+# ── disattenuated alignment (plan v9 §3.4 amendment) ──────────────────
+
+
+def _synth_disatt_legs(H, n, sigma, cos_true, seed):
+    """Synthetic legs with a KNOWN true shift/target cosine: c_i = base + eps,
+    s_i = base + S + eps, cp_i = base + T + eps with unit S, T and
+    cos(S, T) = cos_true; eps ~ N(0, sigma^2 I) i.i.d. per draw per leg."""
+    g = torch.Generator().manual_seed(seed)
+    base = torch.randn(H, generator=g)
+    S = torch.randn(H, generator=g)
+    S = S / S.norm()
+    r = torch.randn(H, generator=g)
+    r = r - (r @ S) * S
+    T = cos_true * S + math.sqrt(1.0 - cos_true**2) * r / r.norm()
+    assert abs(float(S @ T) - cos_true) < 1e-6
+    c = base + sigma * torch.randn(n, H, generator=g)
+    s = base + S + sigma * torch.randn(n, H, generator=g)
+    cp = base + T + sigma * torch.randn(n, H, generator=g)
+    mask = torch.arange(n) % 2 == 0
+    return s, c, cp, mask
+
+
+def test_disattenuation_recovers_known_cosine():
+    """With injected noise sized for r_half ≈ 0.7, the corrected cosine
+    recovers the known cos_true = 0.6 within tolerance, sits closer to the
+    truth than the attenuated raw disjoint read, and the correction only
+    ever RAISES a positive cosine (dividing by sqrt(r·r) < 1)."""
+    H, n, cos_true = 2048, 40, 0.6
+    sigma = math.sqrt(0.4 * n / (4 * H))  # half-estimator noise/signal ≈ 0.4
+    s, c, cp, mask = _synth_disatt_legs(H, n, sigma, cos_true, seed=7)
+    out = drv.disattenuate_cell(s, c, cp, mask, mask, mask, n_boot=200, seed=0)
+    assert out["below_floor"] is False
+    assert 0.3 < out["r_shift_half"] < 0.999 and 0.3 < out["r_target_half"] < 0.999
+    assert out["r_shift_est"] > out["r_shift_half"]  # SB step-UP (k=4/3)
+    assert abs(out["corrected"] - cos_true) < 0.08
+    assert out["cos_disjoint_span"] < out["corrected"]  # attenuated raw < corrected
+    assert abs(out["cos_disjoint_span"] - cos_true) > abs(out["corrected"] - cos_true) - 0.02
+    lo, hi = out["ci95_corrected"]
+    assert lo <= out["corrected"] <= hi
+    assert out["n_valid_boot"] > 150
+
+
+def test_disattenuation_floor_gating_below_floor():
+    """Noise-dominated legs (r_est <= 0.1) gate the correction: corrected is
+    None + below_floor True, while the raw disjoint read stays reported."""
+    s, c, cp, mask = _synth_disatt_legs(256, 10, sigma=25.0, cos_true=0.6, seed=11)
+    out = drv.disattenuate_cell(s, c, cp, mask, mask, mask, n_boot=100, seed=0)
+    assert out["below_floor"] is True
+    assert out["corrected"] is None and out["ci95_corrected"] is None
+    assert out["cos_disjoint_span"] is not None  # raw always beside corrected
+    assert out["r_shift_est"] <= drv.DISATT_FLOOR or out["r_target_est"] <= drv.DISATT_FLOOR
+
+
+def test_disattenuation_empty_half_recorded_not_crashed():
+    """A leg with an empty parity half returns a recorded degenerate result
+    (reason named), never a crash or a silent skip."""
+    s, c, cp, _ = _synth_disatt_legs(64, 4, sigma=0.1, cos_true=0.5, seed=3)
+    all_even = torch.ones(4, dtype=torch.bool)
+    out = drv.disattenuate_cell(s, c, cp, all_even, all_even, all_even, n_boot=50, seed=0)
+    assert out["corrected"] is None and out["reason"] == "empty_half_steered"
+
+
 # ── FULL --tiny e2e (phase chain p0 -> p4, real schema, real tokenizer) ──
 
 
@@ -214,10 +276,48 @@ def test_tiny_e2e_writes_all_registered_jsons(tiny_run):
         "summary.json",
         "answer_length_distributions.json",
         "null_bands_binned.json",
+        "disattenuated_alignment.json",
         "parity_gate_report.json",
         "revisions.json",
     ):
         assert (out / name).exists(), name
+
+
+def test_tiny_e2e_disattenuated_alignment_schema(tiny_run):
+    d = json.loads((tiny_run / "out" / "disattenuated_alignment.json").read_text())
+    assert d["convention"]["floor"] == drv.DISATT_FLOOR
+    assert "spearman_brown" in d["convention"]
+    assert d["convention"]["draw_bootstrap"]["seed"] == drv.DISATT_SEED
+    cells = d["cells"]
+    assert sorted(cells) == sorted(
+        f"primary/{arm}/L{layer}" for arm in ("prefix", "context") for layer in (0, 1)
+    )
+    for cell in cells.values():
+        per_pair = cell["per_pair"]
+        assert len(per_pair) == 2
+        for row in per_pair.values():
+            for key in (
+                "cos_disjoint_span",
+                "r_shift_half",
+                "r_target_half",
+                "r_shift_est",
+                "r_target_est",
+                "corrected",
+                "below_floor",
+                "ci95_disjoint",
+                "per_bin",
+            ):
+                assert key in row, key
+            assert row["cos_disjoint_span"] is not None  # raw always reported
+            assert set(row["per_bin"]) == set(BIN_NAMES)
+        agg = cell["aggregate"]
+        assert "corrected_mean" in agg and "excluded" in agg
+        # tiny pairs are not the medical pair; eligibility tracks the floor gate
+        n_eligible = sum(1 for r in per_pair.values() if r["corrected"] is not None)
+        assert agg["n_pairs_eligible"] == n_eligible
+        if n_eligible:
+            assert agg["ci95_corrected"] is not None
+            assert agg["disjoint_mean_same_pairs"] is not None
 
 
 def test_tiny_e2e_parity_gate_passes_self_consistent(tiny_run):
