@@ -3351,11 +3351,21 @@ def _failover_queued_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path)
        janitor (``gcp_audit.py``) as the backstop, never blocks the failover.
     2. ``reason=ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD`` — the marker
        trail tells a stuck FLEX_START queue apart from a crashed workload.
+
+    Like the queue-vanish sibling it ALSO arms the on-demand retry —
+    ``gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY``
+    (#1601): a capacity-class RunPod refusal with CLEAN provision residue
+    retries the GCP ladder's STANDARD (on-demand) rungs before minting the
+    terminal (the #1112 manual recovery, automated). The ``teardown_first``
+    DELETE runs at core entry — BEFORE the RunPod rung and hence before any
+    retry create — so the timed-out queued instance is already released when
+    the fresh on-demand create runs.
     """
     # Lazy import (module convention: backend_poll -> router imports stay inside
     # functions so the --help path is fast and the import direction is one-way).
     from explore_persona_space.backends.router import (
         ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
     )
 
     return _failover_gcp_to_runpod(
@@ -3369,6 +3379,7 @@ def _failover_queued_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path)
         evidence_source="async_poller_queue_timeout",
         failover_tag="#783 queue-timeout failover",
         teardown_first=True,
+        gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
     )
 
 
@@ -3437,15 +3448,18 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
       clock discriminator) + the ladder-rung label, so the
       ``epm:backend-selected`` marker records WHICH rung's queue dropped the
       request.
-    * ``gcp_ondemand_retry_on_capacity_refusal=True`` (#1596) — the ONLY
-      caller that sets it: a capacity-class RunPod refusal with CLEAN
-      provision residue retries the GCP ladder's STANDARD (on-demand) rungs
-      before minting the terminal (the #1112 manual recovery, automated).
+    * ``gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY``
+      (#1596) — one of the two queue-loss callers that arm the retry (the
+      #1601 queue-timeout wrapper is the other): a capacity-class RunPod
+      refusal with CLEAN provision residue retries the GCP ladder's STANDARD
+      (on-demand) rungs before minting the terminal (the #1112 manual
+      recovery, automated).
     """
     # Lazy import (module convention: backend_poll -> router imports stay inside
     # functions so the --help path is fast and the import direction is one-way).
     from explore_persona_space.backends.router import (
         ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
     extra = getattr(handle, "extra", None) or {}
@@ -3462,11 +3476,11 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
         failover_tag="#1116 queue-vanish failover",
         teardown_first=False,
         extra_evidence={"last_observed_phase": GCP_PENDING_PHASE, "gcp_ladder_rung": rung},
-        gcp_ondemand_retry_on_capacity_refusal=True,
+        gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
 
-def _retry_gcp_ondemand_after_vanish_refusal(
+def _retry_gcp_ondemand_after_capacity_refusal(
     *,
     issue: int,
     handle,
@@ -3474,14 +3488,19 @@ def _retry_gcp_ondemand_after_vanish_refusal(
     cause_label: str,
     failover_tag: str,
     reclaim: dict,
+    retry_reason: str,
 ) -> dict | None:
-    """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-vanish
-    RunPod refusal with CLEAN provision residue (#1596/#1112).
+    """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-loss
+    (vanish #1596/#1112, timeout #1601/#779) RunPod refusal with CLEAN
+    provision residue.
 
     Automates the #1112 manual ``--provisioning-model STANDARD`` recovery:
     called ONLY from :func:`_failover_gcp_to_runpod`'s
     ``NoComputeAvailableError`` clean-residue tail, and ONLY when the caller
-    is the queue-vanish wrapper (``gcp_ondemand_retry_on_capacity_refusal``).
+    armed the retry (``gcp_ondemand_retry_reason`` — the queue-vanish and
+    queue-timeout wrappers). ``retry_reason`` labels the retry launch: the
+    running-JSON ``current_phase`` here and (threaded as ``reason``) the
+    final ``epm:backend-selected`` marker.
     The rung walk lives in ``router.retry_gcp_ondemand_after_queue_vanish``
     (cap accounting — the retry BURNS ``gcp_attempts_today`` — headroom/boot-
     loop skips, zone ladder, markers, in-flock exactly-once stamp); this
@@ -3489,8 +3508,8 @@ def _retry_gcp_ondemand_after_vanish_refusal(
 
     Returns:
 
-    * a RUNNING-shaped poll JSON (``current_phase ==
-      "queue_vanish_gcp_ondemand_retry"``) when a fresh on-demand GCP
+    * a RUNNING-shaped poll JSON (``current_phase == retry_reason``, e.g.
+      ``"queue_vanish_gcp_ondemand_retry"``) when a fresh on-demand GCP
       instance launched and the sidecar was authoritatively re-pointed at it
       (write + readback) — or when a CONCURRENT winner's newer handle was
       found on the sidecar and preserved;
@@ -3512,7 +3531,6 @@ def _retry_gcp_ondemand_after_vanish_refusal(
         write_handle_sidecar,
     )
     from explore_persona_space.backends.router import (
-        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
         NoComputeAvailableError,
         retry_gcp_ondemand_after_queue_vanish,
     )
@@ -3530,6 +3548,7 @@ def _retry_gcp_ondemand_after_vanish_refusal(
             marker_poster=post_marker_via_task_py,
             on_launched=lambda h: write_handle_sidecar(h, sidecar),
             gcp_failover_of_identity=_gcp_handle_identity(handle),
+            reason=retry_reason,
         )
     except NoComputeAvailableError as exc:
         logging.warning(
@@ -3572,7 +3591,7 @@ def _retry_gcp_ondemand_after_vanish_refusal(
             _clear_failover_sentinel(sentinel)
             return {
                 "status": "running",
-                "current_phase": ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+                "current_phase": retry_reason,
                 "new_milestone": True,
                 "last_log_mtime_sec_ago": 0,
                 "pid_alive": True,
@@ -3663,7 +3682,7 @@ def _retry_gcp_ondemand_after_vanish_refusal(
     rung = str((rr.handle.extra or {}).get("gcp_ladder_rung") or "unknown_rung")
     return {
         "status": "running",
-        "current_phase": ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        "current_phase": retry_reason,
         "new_milestone": True,
         "last_log_mtime_sec_ago": 0,
         "pid_alive": True,
@@ -3691,11 +3710,12 @@ def _clean_residue_terminal_or_ondemand_retry(
     cause_label: str,
     failover_tag: str,
     reclaim: dict,
-    gcp_ondemand_retry_on_capacity_refusal: bool,
+    gcp_ondemand_retry_reason: str | None,
 ) -> dict:
     """The clean-residue tail of the shared core's ``NoComputeAvailableError``
-    branch: the #1596 on-demand retry (queue-vanish caller only), else / on
-    retry exhaustion the re-drivable ``no_compute_available`` terminal.
+    branch: the #1596/#1601 on-demand retry (queue-loss callers: vanish
+    #1596, timeout #1601), else / on retry exhaustion the re-drivable
+    ``no_compute_available`` terminal.
 
     #1596 gate = clean residue only (the ``leaked`` branch never reaches
     here): every clean-residue refusal already authorizes the watcher to
@@ -3709,14 +3729,15 @@ def _clean_residue_terminal_or_ondemand_retry(
     across episodes).
     """
     retried = False
-    if gcp_ondemand_retry_on_capacity_refusal:
-        retry_json = _retry_gcp_ondemand_after_vanish_refusal(
+    if gcp_ondemand_retry_reason is not None:
+        retry_json = _retry_gcp_ondemand_after_capacity_refusal(
             issue=issue,
             handle=handle,
             sidecar=sidecar,
             cause_label=cause_label,
             failover_tag=failover_tag,
             reclaim=reclaim,
+            retry_reason=gcp_ondemand_retry_reason,
         )
         if retry_json is not None:
             return retry_json
@@ -3769,7 +3790,7 @@ def _failover_gcp_to_runpod(
     failover_tag: str,
     teardown_first: bool,
     extra_evidence: dict | None = None,
-    gcp_ondemand_retry_on_capacity_refusal: bool = False,
+    gcp_ondemand_retry_reason: str | None = None,
 ) -> dict:
     """Shared core for the GCP->RunPod async failover (#659 crash + #783 queue timeout).
 
@@ -3793,16 +3814,18 @@ def _failover_gcp_to_runpod(
     keeps the #659/#783 callers' evidence byte-identical
     (``test_failover_seam_default_reason_unchanged_byte_for_byte``).
 
-    ``gcp_ondemand_retry_on_capacity_refusal`` (#1596, keyword-only, default
-    ``False`` — passed ``True`` ONLY by the queue-vanish caller
-    :func:`_failover_vanished_gcp_to_runpod`): when the RunPod terminal rung
-    raises ``NoComputeAvailableError`` AND the #1490 residue reclaim reports a
+    ``gcp_ondemand_retry_reason`` (#1596/#1601, keyword-only, default ``None``
+    = no retry — set by the two QUEUE-LOSS callers,
+    :func:`_failover_vanished_gcp_to_runpod` (#1596) and
+    :func:`_failover_queued_gcp_to_runpod` (#1601), each passing its own
+    retry-reason constant): when the RunPod terminal rung raises
+    ``NoComputeAvailableError`` AND the #1490 residue reclaim reports a
     CLEAN outcome (never ``leaked``), retry the GCP ladder's STANDARD
-    (on-demand) rungs (:func:`_retry_gcp_ondemand_after_vanish_refusal` — the
-    #1112 manual recovery, automated) before falling through to today's
-    re-drivable ``no_compute_available`` terminal. The #659 crash / #783
-    queue-timeout / #1029 boot-loop callers keep the flag off, so their
-    no-cascade bound stays byte-identical.
+    (on-demand) rungs (:func:`_retry_gcp_ondemand_after_capacity_refusal` —
+    the #1112 manual recovery, automated) before falling through to today's
+    re-drivable ``no_compute_available`` terminal, labeling the retry launch
+    with the given reason. The #659 crash / #1029 boot-loop callers keep the
+    retry off, so their no-cascade bound stays byte-identical.
     """
     # Lazy imports — keep the --help path fast and match the patch targets the
     # poller tests monkeypatch (RunPodBackend from backends.runpod;
@@ -3988,8 +4011,9 @@ def _failover_gcp_to_runpod(
         # another actor and a watcher re-drive's provision idempotency-refuses
         # on it). No lease stamp here — nothing launched (or the residue is
         # torn down), so a later poll SHOULD retry against a clean slate.
-        # #1596 (queue-vanish caller ONLY): the helper first retries the GCP
-        # ladder's STANDARD (on-demand) rungs before minting the terminal.
+        # #1596/#1601 (queue-loss callers: vanish + timeout): the helper first
+        # retries the GCP ladder's STANDARD (on-demand) rungs before minting
+        # the terminal.
         return _clean_residue_terminal_or_ondemand_retry(
             issue=issue,
             handle=handle,
@@ -3997,7 +4021,7 @@ def _failover_gcp_to_runpod(
             cause_label=cause_label,
             failover_tag=failover_tag,
             reclaim=reclaim,
-            gcp_ondemand_retry_on_capacity_refusal=gcp_ondemand_retry_on_capacity_refusal,
+            gcp_ondemand_retry_reason=gcp_ondemand_retry_reason,
         )
 
     # DURABLE IDEMPOTENCY STAMP (#659 round-3). RunPod has now launched. Stamp
