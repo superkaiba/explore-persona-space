@@ -1,1 +1,2 @@
 {"ts": "2026-07-22T05:55:44Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-22T05:58:04Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1586 to open question(s) implant-which-behaviors, leak-behavior-vs-marker; created_new=none; mode=auto-match (same anchors as parent #1333)."}
