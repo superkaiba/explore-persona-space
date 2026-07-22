@@ -926,6 +926,31 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     acceptance claim about committed code has no committed-test backing and no stated reason a test
     cannot exercise it; a doc-file target is the named escape (`N/A — fail-loud claim not
     test-backable` — a .md instruction has no code path a pytest can exercise).
+15. **Mapping-baselines pair (identity+bias baseline + kNN retrieval) for every fitted
+    representation map.** If the plan FITS a map between activation summaries
+    (context→answer, prefix→context, cross-model / cross-framing reparameterization — any
+    v_X→v_Y predictor), verify §6 registers BOTH standing reads alongside held-out R², per
+    the CLAUDE.md standing rule (2026-07-22): (a) the identity-family baseline including the
+    learned-bias form x + b, b = train-fold mean of (y − x) — canonical helper
+    `analysis/mapping_baselines.identity_bias_predict` — whenever input and output spaces
+    share dimension (a dimension mismatch is STATED as inapplicable, never silently
+    skipped); and (b) the kNN-retrieval read P(true target within the k nearest neighbors
+    of the prediction) among the held-out candidate pool — canonical helper
+    `analysis/mapping_baselines.knn_retrieval` (euclidean + cosine, k scaled to the pool,
+    chance = k/n_pool stated; a constant predictor reads exactly chance). Conclusion-
+    changing because the two reads DISSOCIATE in both directions (first measurement
+    2026-07-22): identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1 0.84 vs the
+    LOFO ridge map's 0.04 on the #722 prefix-level battery map
+    (`eval_results/issue_722/identity_bias_knn/`), while the #779 LMSYS single-context
+    fitted ridge dominated retrieval (acc@1 0.72 vs 0.50 identity+bias, chance 0.001;
+    `eval_results/issue_779/identity_bias_knn/`) — R² alone can both overstate a map
+    (variance a constant shift already explains) and understate one (discriminative but
+    mis-scaled predictions). REVISE when the plan fits a map and omits either read without
+    a stated exemption. Not a REVISE when: the plan fits no map (geometry reads without a
+    fitted predictor, direction extraction without a regression) — "N/A — no representation
+    map fitted" satisfies this item; the omission carries a stated exemption per the
+    standing rule; or the task is `kind: analysis|infra|batch|survey` with no map fit.
+    Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".
 
 ### Alternative Explanations lens
 

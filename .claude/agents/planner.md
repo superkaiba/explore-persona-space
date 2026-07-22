@@ -367,8 +367,14 @@ completion-probability SECONDARY) · **Install-strength control** for
 cross-condition leakage comparisons · **Statistical-input existence** for
 registered corrections · **Selection-symmetric nulls** for max-over-axis
 headlines · **OOD generalization folds** for group-structured held-out
-predictive DVs · **Figures to produce** (hero figure + over-produced
-exploratory dump).
+predictive DVs · **Mapping-baselines pair** for every FITTED representation
+map (any v_X→v_Y predictor): report BOTH the identity+learned-bias baseline
+(`analysis/mapping_baselines.identity_bias_predict`; dimension mismatch
+stated as inapplicable) AND the kNN-retrieval read
+(`analysis/mapping_baselines.knn_retrieval`; chance = k/n_pool stated)
+alongside held-out R² — omit only with a stated exemption (CLAUDE.md
+§ Identity+learned-bias baseline bullet) · **Figures to produce** (hero
+figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 6. Evaluation — read that section (grep the heading, chunked Read) BEFORE writing

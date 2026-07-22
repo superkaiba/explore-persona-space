@@ -283,6 +283,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_stopped_volume_persist_pin.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
     "tests/test_issue_skill_trigger_dense_tag_adoption.py",
+    # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
+    # planner/critic/statistics-critic/experiment-guidelines + helper)
+    "tests/test_mapping_baselines_wiring_pins.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1598) — CLAUDE.md teammate-coordination bullet pins (a)-(d)
