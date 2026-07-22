@@ -36,7 +36,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - persona-vectors-recipe.md — a plan elects persona vectors / a mean-difference contrastive direction (arXiv 2507.21509 EXCEPT logit scoring).
 - plan-compute-sizing.md — a plan sizes §9 compute (HBM, disk/ckpt retention, fan-out accumulation, out-root mount binding, sentinel lanes, store/IO, RAM/RSS routing, wall-time floors incl. the MEASURED 1-cell pilot basis (fit loops AND draw batteries), p90 fences).
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
-- pod-config.md — pod SSH/MCP keeps failing or you touch the pod scripts/pods.conf (live-API vs pods.conf authority split).
+- pod-config.md — pod SSH/MCP keeps failing, you touch the pod scripts/pods.conf (live-API vs pods.conf authority split), or you stop/park a pod for >~1h (STOPPED volume is NON-durable — persist resume state to HF first).
 - pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller-facing code (incl. a dispatcher reading back its OWN sentinels — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation), or pushing result commits.
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).

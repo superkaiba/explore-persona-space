@@ -328,11 +328,17 @@ where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
 alert fires too:
 
 1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
-   backstop cron must not outlive the pause), then Step 8-bis: stop any
-   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; volume
-   preserved until the daily stale-pod audit terminates EXITED pods >24h —
-   add the `keep-running` tag if the volume must outlive that) and post
-   `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
+   backstop cron must not outlive the pause). Then persist resume state
+   OFF-POD: a stopped volume is NOT durable — RunPod can destroy a stopped
+   pod despite `keep-running` + the 7-day idle window (#1112 lost its
+   done-JSONs this way; `.claude/rules/pod-config.md` § "Stopped pod volume
+   is NOT durable") — so BEFORE stopping, upload done-JSONs / phase
+   sentinels / partial eval JSONs (KB–MB, non-LFS path) to the issue's HF
+   prefix, and prefer those copies on resume. Then Step 8-bis: stop any
+   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; add
+   `keep-running` if the stopped pod should outlive the 24h stale-pod
+   audit — the tag buys the cache/venv only, shielding against PROJECT
+   janitors, never provider-side reclaim) and post `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
    self-terminates at its `--max-run-duration` fence, or run
    `uv run python scripts/dispatch_issue.py finalize --issue <N>`. The
    autonomous "never stop a pod to PARK" ban does not apply here: a user
@@ -5921,7 +5927,14 @@ pod (or the parent's pod for a follow-up) exists and is RUNNING, run
 `uv run python scripts/pod.py stop --issue <N>` (volume preserved; `resume`
 re-provisions) — or `terminate --issue <N> --yes` when the work is truly
 done — and post `epm:pod-stopped v1` / `epm:pod-terminated v1` with the
-command output. NEVER leave a pod RUNNING while awaiting human input or
+command output. A gate/crash park routinely outlasts an hour, and a STOPPED
+volume is NOT durable (provider-side loss despite `keep-running`, #1112 —
+`.claude/rules/pod-config.md` § "Stopped pod volume is NOT durable"): BEFORE
+the stop, push the run's resume state (done-JSONs / phase sentinels /
+partial eval JSONs — KB–MB text) to the issue's HF prefix so a later resume
+restarts from off-pod copies even if the volume is gone. Skip only when the
+pod demonstrably holds no unpersisted resume state (state it in the
+`epm:pod-stopped` note either way). NEVER leave a pod RUNNING while awaiting human input or
 after a crash. (Incident 2026-06-01: #444 idled a 4×H100 ~21h on an
 unfired gate, #404 ~2 days after Step 8 never fired, #407 ~1 day after an
 `aggregate`-phase crash — ~$1k of idle burn combined.)
