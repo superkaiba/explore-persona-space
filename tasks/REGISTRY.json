@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1586,
+  "highest_id": 1587,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4569,6 +4569,13 @@
       "path": "tasks/planning/1586",
       "status": "planning",
       "title": "Matched-install LoRA vs full fine-tune method comparison for sycophancy / impolite / casual (+ marker second seed) at the persona context"
+    },
+    "1587": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1587",
+      "status": "proposed",
+      "title": "daily-fix: dispatch-time trigger-dense tag auto-adoption"
     },
     "159": {
       "has_clean_result": false,
