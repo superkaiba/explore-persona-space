@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1590,
+  "highest_id": 1591,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4604,6 +4604,13 @@
       "path": "tasks/proposed/1590",
       "status": "proposed",
       "title": "daily-fix: fix red asw-stub pin test on main (conftest:288)"
+    },
+    "1591": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1591",
+      "status": "proposed",
+      "title": "daily-fix: widen piped-git guard to hook-running git commit"
     },
     "16": {
       "has_clean_result": false,
