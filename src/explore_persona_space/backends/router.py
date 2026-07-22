@@ -526,7 +526,9 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: ``epm:backend-selected`` marker trail tells a queue timeout apart from a
 #: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: it
 #: does NOT touch the per-day GCP attempt counter (that bumps only on a
-#: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters
+#: on this path — the queue-vanish #1596 on-demand retry is the one poller
+#: path that does, and it burns attempts by design).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
 
 #: The ASYNC poller detected a GCP PRE-WORKLOAD BOOT LOOP (#1029): N (default
@@ -543,7 +545,9 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 #: detection cause so the ``epm:backend-selected`` marker trail tells a boot
 #: loop apart from a crash, a queue timeout, and a capacity miss. The trigger
 #: never touches the per-day GCP attempt counter (that bumps only on a create,
-#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters on this
+#: path — the queue-vanish #1596 on-demand retry is the one poller path that
+#: does, and it burns attempts by design).
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
 
 #: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
@@ -561,10 +565,29 @@ ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod
 #: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
 #: this create SUCCEEDED). Same RunPod target + terminal rung, distinct
 #: detection cause so the ``epm:backend-selected`` marker trail tells a queue
-#: vanish apart from every sibling. The trigger never touches the per-day GCP
-#: attempt counter (that bumps only on a create, inside
-#: ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: vanish apart from every sibling. The vanish→RunPod failover LEG never
+#: touches the per-day GCP attempt counter (that bumps only on a create,
+#: inside ``_attempt_one_gcp_rung``); the #1596 on-demand RETRY leg
+#: (:data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY` below) DOES re-enter
+#: the rung and burns attempts normally.
 ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_runpod"
+
+#: The poller RETRIED the GCP ladder's STANDARD (on-demand) rungs after a
+#: #1116 queue-vanish failover's RunPod terminal rung REFUSED for
+#: capacity/cap reasons with CLEAN provision residue (#1596/#1112). DISTINCT
+#: from :data:`ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD` — that reason
+#: labels the vanish's GCP→RunPod leg (a RunPod launch); THIS one labels the
+#: RunPod-refused→GCP-on-demand leg (a fresh GCP create via
+#: :func:`retry_gcp_ondemand_after_queue_vanish`, which re-enters
+#: :func:`_attempt_one_gcp_rung` and therefore DOES burn
+#: ``gcp_attempts_today`` — unlike every poller-side failover above, whose
+#: no-burn is structural). Rides the existing ``epm:backend-selected``
+#: marker ``reason`` field + the poller's running-JSON ``current_phase``
+#: (additive value per the documented-drift precedent — no ``workflow.yaml``
+#: schema change). NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS``: it
+#: labels a LAUNCH, never a terminal (retry exhaustion falls through to the
+#: re-drivable ``no_compute_available`` terminal unchanged).
+ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY: str = "queue_vanish_gcp_ondemand_retry"
 
 #: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
 #: same-rung pre-workload boot death fails over to RunPod, and a rung whose
@@ -3441,6 +3464,136 @@ def failover_to_runpod_after_async_workload_crash(
     )
 
 
+def retry_gcp_ondemand_after_queue_vanish(
+    *,
+    spec: RunSpec,
+    gcp_backend: ComputeBackend,
+    marker_poster: Callable[..., None] | None = None,
+    on_launched: Callable[[RunHandle], None] | None = None,
+    lease_store: LeaseStore | None = None,
+    now_fn: Callable[[], float] | None = None,
+    config: RouterConfig | None = None,
+    gcp_failover_of_identity: dict[str, Any] | None = None,
+) -> RouteResult | None:
+    """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-vanish
+    RunPod refusal (#1596/#1112).
+
+    The GCP-target sibling of
+    :func:`failover_to_runpod_after_async_workload_crash` (same seam-defaulting
+    shape): when a #1116 queue-vanish failover's RunPod terminal rung raised
+    :class:`NoComputeAvailableError` with CLEAN provision residue, the poller
+    (``scripts/backend_poll.py``) calls this to walk EXACTLY the on-demand
+    rungs a caller ``provisioning_model="STANDARD"`` pin enumerates
+    (:func:`_gcp_ladder_specs`'s pin branch — base machine, then A100-40 when
+    the intent fits 40 GB, pinned wide rungs when width is declared) via
+    :func:`_attempt_one_gcp_rung` — inheriting the cap accounting
+    (``count_attempt_cap=True``: the retry IS a fresh create, so it BURNS
+    ``gcp_attempts_today``, unlike the poller-side failovers whose no-burn is
+    structural), the headroom/boot-loop skips, the zone ladder, the marker
+    posts, and the in-flock lease writes for free.
+
+    Returns the launched :class:`RouteResult` (final ``epm:backend-selected``
+    marker labeled :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`;
+    intermediate per-rung markers wear the generic ``auto_fallback_gcp``
+    reason, accepted trail noise), or ``None`` when a CONCURRENT triggerer
+    already launched the retry (the rung's #1596 in-flock
+    ``failover_of_identity`` short-circuit — the caller preserves the winner's
+    sidecar instead of double-provisioning).
+
+    Raises:
+    * :class:`NoComputeAvailableError` — H100 intents up front (there is no
+      on-demand H100 pool and ``gcp.render_create_argv`` refuses
+      H100+STANDARD; never build a rung guaranteed to crash), and on
+      exhaustion / daily-cap hit (the caller falls through to today's
+      re-drivable ``no_compute_available`` terminal, keeping the watcher
+      capacity-retry backstop reachable).
+    * :class:`gcp.GcpWorkloadError` — a workload-class create failure on the
+      retry re-raises the UNDERLYING error (``_GcpWorkloadFailover.__cause__``,
+      always set: the rung raises ``from exc``) instead of cascading back to
+      RunPod, which just refused; the caller maps it to a distinct
+      non-re-drivable terminal.
+    """
+    store = lease_store or LeaseStore()
+    now_fn = now_fn or time.monotonic
+    cfg = config or RouterConfig()
+    attempts: list[RouteAttempt] = []
+    started_at = now_fn()
+    machine = machine_for_intent(spec)
+    if str(machine.gpu_kind).startswith("H100"):
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="ondemand_retry_unservable_h100",
+                detail=(
+                    f"queue-vanish on-demand retry: {machine.machine_type} resolves to "
+                    f"{machine.gpu_kind} and GCP offers no on-demand H100 pool "
+                    f"(render_create_argv refuses H100+STANDARD); refusing up front"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        raise NoComputeAvailableError(
+            "queue-vanish on-demand retry: no on-demand H100 pool "
+            f"({machine.machine_type} / {machine.gpu_kind})",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+    # STANDARD pin on the caller spec: _gcp_ladder_specs' pin branch then
+    # enumerates EXACTLY the on-demand rungs (single source of truth for rung
+    # shape / labels / A100-40 eligibility / width — never a hand-built list;
+    # spot/flex are structurally absent under the pin).
+    pinned = replace(
+        spec,
+        backend="gcp",
+        extra={**dict(spec.extra or {}), "provisioning_model": "STANDARD"},
+    )
+    underlying: BaseException | None = None
+    try:
+        for rung_spec, rung_label in _gcp_ladder_specs(pinned):
+            outcome = _attempt_one_gcp_rung(
+                spec=rung_spec,
+                rung_label=rung_label,
+                gcp_backend=gcp_backend,
+                store=store,
+                attempts=attempts,
+                started_at=started_at,
+                cfg=cfg,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                on_launched=on_launched,
+                terminal=True,
+                reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+                count_attempt_cap=True,
+                failover_of_identity=gcp_failover_of_identity,
+            )
+            if isinstance(outcome, RouteResult):
+                return outcome
+            if outcome == "already_launched":
+                # A concurrent triggerer's retry already launched (in-flock
+                # gcp_failover_of match) — the caller preserves ITS sidecar.
+                return None
+            if outcome == "cap_hit":
+                break
+            # "advance" -> next on-demand rung.
+    except _GcpWorkloadFailover as sig:
+        # A workload-class create failure on the RETRY must NOT cascade back
+        # to RunPod — it just refused for capacity. Re-raise the UNDERLYING
+        # GcpWorkloadError typed for the caller (__cause__ is always set: the
+        # rung raises `from exc`); hoisted out of the except clause so the
+        # original chain is preserved verbatim (no B904 re-chaining).
+        underlying = sig.__cause__
+        if underlying is None:  # unreachable today — fail LOUD, never a
+            raise  # silent capacity mislabel of a workload failure
+    if underlying is not None:
+        raise underlying
+    raise NoComputeAvailableError(
+        "queue-vanish on-demand retry: STANDARD rungs exhausted",
+        attempts=[_attempt_to_dict(a) for a in attempts],
+    )
+
+
 def _override_free_or_gcp(
     *,
     spec: RunSpec,
@@ -4776,15 +4929,31 @@ def _attempt_one_gcp_rung(
     reason: str = ROUTE_REASON_AUTO_FALLBACK_GCP,
     requested_kind: BackendKind | None = None,
     count_attempt_cap: bool = True,
+    failover_of_identity: dict[str, Any] | None = None,
 ) -> RouteResult | str:
     """Attempt ONE GCP ladder rung. Returns a launched :class:`RouteResult`,
     or ``"advance"`` (this rung failed/skipped — try the next rung), or
-    ``"cap_hit"`` (per-day attempt cap reached — stop issuing creates).
+    ``"cap_hit"`` (per-day attempt cap reached — stop issuing creates), or
+    ``"already_launched"`` (``failover_of_identity`` only: the in-flock lease
+    already records a failover of that identity — a CONCURRENT triggerer won;
+    no create, no counter bump).
 
     ``count_attempt_cap=False`` (the explicit ``backend: gcp`` pin) skips
     BOTH the cap-check and the per-day counter bump — an explicit user ask
     attempts regardless of the auto-escalation cap (pre-#656 explicit-gcp
     behavior never touched the counter).
+
+    ``failover_of_identity`` (#1596, keyword-only, default ``None`` =
+    byte-identical for every existing caller) is the VANISHED GCP run's
+    stable identity (``{"pod_name": ..., "job_id": ...}``) when this rung is
+    the queue-vanish on-demand RETRY
+    (:func:`retry_gcp_ondemand_after_queue_vanish`). Two in-flock touch
+    points give the retry an exactly-once bound STRONGER than the RunPod
+    path's post-hoc ``_stamp_lease_failover_of``: (1) immediately after the
+    lease materialization the rung short-circuits ``"already_launched"``
+    when ``lease.gcp_failover_of`` already matches the identity; (2) the
+    post-launch lease write stamps ``gcp_failover_of`` in the SAME flock
+    transaction as the create — no launch→stamp window at all.
 
     The rung-spec already carries its machine override + provisioning model
     (via :func:`_with_machine`), so the headroom pre-check, the create, the
@@ -4878,6 +5047,28 @@ def _attempt_one_gcp_rung(
                 # Suffixed anyway for consistency (#934).
                 attempt_id=_make_attempt_id(spec.extra.get("lane_suffix")),
             )
+        # #1596 in-flock exactly-once short-circuit (queue-vanish on-demand
+        # retry only; failover_of_identity is None for every other caller). A
+        # CONCURRENT second triggerer that acquires the flock AFTER the first
+        # stamped sees the matching gcp_failover_of and returns WITHOUT a
+        # create or a counter bump. NOTE: a ``backend="runpod"`` lease stamped
+        # with the same old-handle identity ALSO matches — that flow should be
+        # unreachable (the poller's shared-core pre-check fires first), and
+        # the match direction is conservatively correct either way: never
+        # double-provision.
+        if (
+            failover_of_identity is not None
+            and lease is not None
+            and lease.gcp_failover_of == failover_of_identity
+        ):
+            logger.warning(
+                "route: GCP rung %s for issue %d already launched by a concurrent "
+                "queue-vanish on-demand retry (in-flock gcp_failover_of match, #1596); "
+                "returning already_launched — NO second create.",
+                rung_label,
+                spec.issue,
+            )
+            return "already_launched"
         today = _today_utc_iso()
         attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
         if count_attempt_cap and attempts_already_today >= cfg.max_gcp_attempts_per_day:
@@ -5065,7 +5256,14 @@ def _attempt_one_gcp_rung(
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still under the flock).
         _invoke_on_launched(on_launched, gcp_handle)
-        write(_lease_after_submit(lease, spec, "gcp", None, gcp_handle))
+        submitted = _lease_after_submit(lease, spec, "gcp", None, gcp_handle)
+        if failover_of_identity is not None:
+            # #1596: stamp the exactly-once record in the SAME flock
+            # transaction as the create (_lease_after_submit mutates the
+            # materialized lease in place and never touches gcp_failover_of;
+            # assigning on its return value is equivalent either way).
+            submitted.gcp_failover_of = failover_of_identity
+        write(submitted)
 
     attempts.append(
         RouteAttempt(
@@ -5253,10 +5451,19 @@ def _lease_already_failed_over(
     GCP run's stable identity (``pod_name``/``job_id``), so a genuinely-new GCP
     crash on the same issue (fresh dispatch → new identity) does NOT match and
     still gets its own single failover.
+
+    #1596 cross-rung extension: a ``backend="gcp"`` lease carrying the SAME
+    identity ALSO matches — the queue-vanish on-demand retry
+    (:func:`retry_gcp_ondemand_after_queue_vanish`) stamps ``gcp_failover_of``
+    in-flock on a GCP lease, and a concurrent second vanish-triggerer racing
+    toward THIS RunPod rung must short-circuit on that stamp rather than
+    launch a paid RunPod pod alongside the GCP retry. The identity comparison
+    is unchanged, so a fresh GCP dispatch (new pod_name/job_id, no stamp)
+    never matches.
     """
     return (
         lease is not None
-        and lease.backend == "runpod"
+        and lease.backend in ("runpod", "gcp")
         and lease.gcp_failover_of == gcp_failover_of_identity
     )
 
@@ -5719,6 +5926,7 @@ __all__ = [
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
+    "ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
@@ -5748,6 +5956,7 @@ __all__ = [
     "failover_to_runpod_after_async_workload_crash",
     "park_until_running_or_cap",
     "rank_lanes",
+    "retry_gcp_ondemand_after_queue_vanish",
     "route",
     "spec_hash",
 ]
