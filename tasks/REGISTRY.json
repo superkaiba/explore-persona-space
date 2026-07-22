@@ -4685,8 +4685,8 @@
     "1600": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1600",
-      "status": "planning",
+      "path": "tasks/approved/1600",
+      "status": "approved",
       "title": "workflow-fix: scope RunPod burn cap for shared team account"
     },
     "1601": {
