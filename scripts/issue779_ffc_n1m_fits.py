@@ -409,6 +409,521 @@ def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
     return cx, vx, ci
 
 
+# ── multi-layer one-pass memmap streaming (#779 n1m-readout round) ───────────────
+#
+# The --layers path streams the capture ONCE and slices ALL requested layers per
+# chunk into preallocated on-disk fp32 .npy memmaps (np.lib.format.open_memmap),
+# one cx/vx pair per layer, with the 5,000 pass_b rows seeded at the memmap HEAD
+# (rows [0, N_PASS_B)) so the fitters' existing block/minibatch X[idx] access
+# patterns consume the memmap views directly — no in-RAM concat (3 layers in RAM
+# would be ~83 GB; this keeps RSS <20 GB). A cursor sidecar (atomic tmp+replace,
+# same torn-write-guard semantics as _write_stream_ckpt) makes the stream
+# resumable: rows are written at deterministic offsets in chunk order, so a
+# crash between memmap flush and sidecar update simply rewrites the same bytes.
+# Downloads are prefetched through a bounded ThreadPoolExecutor (K in flight,
+# STRICTLY ordered processing, the existing _download_chunk_with_retry per-chunk
+# retry preserved) — the measured serial stream was per-file-latency-bound.
+
+ROWS_PER_CHUNK_EST = int(os.environ.get("EPM_N1M_ROWS_PER_CHUNK", "500"))
+PREFETCH_DEFAULT = 6
+_ML_CURSOR_NAME = "cursor.json"
+
+
+def _ml_fingerprint(layers: list[int], hf_prefix: str, names: list[str], n_head: int) -> str:
+    """Stream identity for the multi-layer memmap dir: (sorted layers, prefix,
+    chunk universe, head row count). Mismatch => the memmaps belong to a
+    different run and are REFUSED (re-stream from scratch)."""
+    h = hashlib.sha256()
+    h.update(f"layers={sorted(int(x) for x in layers)}\nprefix={hf_prefix}\n".encode())
+    h.update(f"n_head={int(n_head)}\n".encode())
+    for n in names:
+        h.update(n.encode())
+        h.update(b"\n")
+    return h.hexdigest()
+
+
+def _ml_paths(mm_dir: Path, layers: list[int]) -> dict:
+    out = {("cx", int(li)): mm_dir / f"cx_L{li}.npy" for li in layers}
+    out.update({("vx", int(li)): mm_dir / f"vx_L{li}.npy" for li in layers})
+    out["ci"] = mm_dir / "ci.npy"
+    out["cursor"] = mm_dir / _ML_CURSOR_NAME
+    return out
+
+
+def _ml_write_cursor(mm_dir: Path, meta: dict) -> None:
+    cur = mm_dir / _ML_CURSOR_NAME
+    tmp = cur.parent / (cur.name + ".tmp")
+    tmp.write_text(json.dumps(meta))
+    os.replace(tmp, cur)
+
+
+def _ml_load_cursor(mm_dir: Path) -> dict | None:
+    cur = mm_dir / _ML_CURSOR_NAME
+    if not cur.exists():
+        return None
+    try:
+        return json.loads(cur.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _truncate_npy_rows(path: Path, n_rows: int) -> None:
+    """Truncate a C-order .npy on disk to its first ``n_rows`` rows.
+
+    In-place header rewrite + os.truncate when the padded header length is
+    unchanged (the common case — numpy pads headers to a 64-byte boundary);
+    otherwise a chunked copy to a tmp file + os.replace (logged). Fails loud on
+    fortran-order or n_rows > current rows."""
+    import io
+
+    import numpy.lib.format as nf
+
+    with open(path, "rb") as f:
+        version = nf.read_magic(f)
+        if version == (1, 0):
+            shape, fortran, dtype = nf.read_array_header_1_0(f)
+        elif version == (2, 0):
+            shape, fortran, dtype = nf.read_array_header_2_0(f)
+        else:
+            raise RuntimeError(f"unsupported .npy version {version} at {path}")
+        data_off = f.tell()
+    if fortran:
+        raise RuntimeError(f"fortran-order .npy not supported for truncation: {path}")
+    if n_rows > shape[0]:
+        raise RuntimeError(f"cannot grow {path}: {n_rows} > {shape[0]}")
+    if n_rows == shape[0]:
+        return
+    hdr = {
+        "descr": nf.dtype_to_descr(dtype),
+        "fortran_order": False,
+        "shape": (int(n_rows),) + tuple(shape[1:]),
+    }
+    buf = io.BytesIO()
+    buf.write(nf.magic(*version))
+    if version == (1, 0):
+        nf.write_array_header_1_0(buf, hdr)
+    else:
+        nf.write_array_header_2_0(buf, hdr)
+    row_bytes = int(dtype.itemsize * int(np.prod(shape[1:], dtype=np.int64)))
+    if buf.tell() == data_off:
+        with open(path, "rb+") as f:
+            f.write(buf.getvalue())
+        os.truncate(path, data_off + n_rows * row_bytes)
+    else:  # padded header length changed — chunked copy (rare; logged, not silent)
+        logger.info("[n1m-ml] truncate via chunked copy (header length changed): %s", path)
+        src = np.load(path, mmap_mode="r")
+        tmp = path.parent / (path.name + ".trunc.tmp")
+        dst = np.lib.format.open_memmap(
+            tmp, mode="w+", dtype=src.dtype, shape=(int(n_rows),) + src.shape[1:]
+        )
+        step = 50_000
+        for s in range(0, int(n_rows), step):
+            e = min(int(n_rows), s + step)
+            dst[s:e] = src[s:e]
+        dst.flush()
+        del dst, src
+        os.replace(tmp, path)
+
+
+def _iter_chunks_prefetched(names, start: int, fetch, k: int):
+    """Yield ``(i, Path)`` for chunks [start, len(names)) in STRICT order, with up
+    to ``k`` fetches in flight (bounded prefetch). ``k <= 1`` degrades to the
+    serial path. Any fetch error cancels the remaining futures and re-raises
+    (fail loud); per-chunk retry lives inside ``fetch``."""
+    if k <= 1:
+        for i in range(start, len(names)):
+            yield i, Path(fetch(names[i]))
+        return
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=int(k)) as ex:
+        futs: dict[int, object] = {}
+        nxt = start
+        while nxt < min(start + int(k), len(names)):
+            futs[nxt] = ex.submit(fetch, names[nxt])
+            nxt += 1
+        for i in range(start, len(names)):
+            try:
+                got = futs.pop(i).result()
+            except BaseException:
+                for f in futs.values():
+                    f.cancel()
+                raise
+            if nxt < len(names):
+                futs[nxt] = ex.submit(fetch, names[nxt])
+                nxt += 1
+            yield i, Path(got)
+
+
+def _stream_n1m_multilayer(
+    prefix: str,
+    layers: list[int],
+    cache_dir: Path,
+    mm_dir: Path,
+    pb_head: dict[int, tuple[np.ndarray, np.ndarray]],
+    *,
+    local_dir: Path | None = None,
+    ckpt_every: int = STREAM_CKPT_EVERY,
+    fresh: bool = False,
+    prefetch: int = PREFETCH_DEFAULT,
+    max_chunks: int | None = None,
+) -> tuple[dict, int]:
+    """One-pass multi-layer stream of the n1m capture into per-layer memmaps.
+
+    ``pb_head`` maps layer -> (cx, vx) fp32 arrays seeded at rows [0, n_head)
+    (the pass_b half the pinned val/test index). Returns ``(arrays, n_rows)``
+    where ``arrays`` maps ``("cx"|"vx", layer)`` -> np.memmap view of the
+    realized rows and ``"ci"`` -> int64 view (head rows carry ci=-1)."""
+    layers = [int(x) for x in layers]
+    n_head = int(next(iter(pb_head.values()))[0].shape[0])
+    for li, (cxh, vxh) in pb_head.items():
+        assert cxh.shape == vxh.shape and cxh.shape[0] == n_head, (li, cxh.shape, vxh.shape)
+    hidden = int(next(iter(pb_head.values()))[0].shape[1])
+
+    if local_dir is not None:
+        names = sorted(p.name for p in local_dir.glob("shard*_chunk*.pt"))
+        if not names:
+            raise FileNotFoundError(f"no n1m capture chunks under {local_dir}")
+
+        def fetch(nm: str) -> str:
+            return str(local_dir / nm)
+
+        delete_after = False
+    else:
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate import hub
+
+        names = hub.retry_transient(
+            lambda: sorted(
+                f.path.rsplit("/", 1)[-1]
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
+                for f in HfApi().list_repo_tree(
+                    C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+                if getattr(f, "size", None) is not None and f.path.endswith(".pt")
+            ),
+            what=f"n1m chunk listing ({prefix})",
+        )
+        if not names:
+            raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        def fetch(nm: str) -> str:
+            return _download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{nm}", cache_dir)
+
+        delete_after = True
+
+    if max_chunks is not None:
+        names = names[: int(max_chunks)]
+    fp = _ml_fingerprint(layers, prefix, names, n_head)
+    capacity = n_head + len(names) * ROWS_PER_CHUNK_EST
+    paths = _ml_paths(mm_dir, layers)
+
+    meta = None if fresh else _ml_load_cursor(mm_dir)
+    if meta is not None and (
+        meta.get("fingerprint") != fp
+        or meta.get("layers") != layers
+        or meta.get("hf_prefix") != prefix
+    ):
+        logger.warning(
+            "[n1m-ml] memmap cursor present but MISMATCHED (layers/prefix/chunk-universe); "
+            "re-streaming from scratch"
+        )
+        meta = None
+    if fresh and (mm_dir / _ML_CURSOR_NAME).exists():
+        logger.info("[n1m-ml] --fresh-stream: ignoring existing memmap cursor")
+
+    def _open_views(n_rows: int) -> dict:
+        arrays: dict = {}
+        for key in [("cx", li) for li in layers] + [("vx", li) for li in layers]:
+            arrays[key] = np.load(paths[key], mmap_mode="r")[:n_rows]
+        arrays["ci"] = np.load(paths["ci"], mmap_mode="r")[:n_rows]
+        return arrays
+
+    if meta is not None and meta.get("complete"):
+        n_rows = int(meta["n_rows"])
+        logger.info("[n1m-ml] memmap stream COMPLETE (%d rows); reuse", n_rows)
+        return _open_views(n_rows), n_rows
+
+    if meta is None:
+        mm_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "[n1m-ml] creating memmaps: %d layers x (%d, %d) fp32 (+ci) under %s",
+            len(layers),
+            capacity,
+            hidden,
+            mm_dir,
+        )
+        mms = {}
+        for key in [("cx", li) for li in layers] + [("vx", li) for li in layers]:
+            mms[key] = np.lib.format.open_memmap(
+                paths[key], mode="w+", dtype=np.float32, shape=(capacity, hidden)
+            )
+        mms["ci"] = np.lib.format.open_memmap(
+            paths["ci"], mode="w+", dtype=np.int64, shape=(capacity,)
+        )
+        for li in layers:
+            mms[("cx", li)][:n_head] = pb_head[li][0]
+            mms[("vx", li)][:n_head] = pb_head[li][1]
+        mms["ci"][:n_head] = -1
+        start, row_off = 0, n_head
+        _ml_write_cursor(
+            mm_dir,
+            {
+                "fingerprint": fp,
+                "layers": layers,
+                "hf_prefix": prefix,
+                "cursor": 0,
+                "n_chunks": len(names),
+                "n_rows": row_off,
+                "n_head": n_head,
+                "capacity": capacity,
+                "complete": False,
+            },
+        )
+    else:
+        if int(meta.get("capacity", -1)) != capacity or int(meta.get("n_head", -1)) != n_head:
+            raise RuntimeError(
+                f"[n1m-ml] cursor capacity/n_head mismatch ({meta.get('capacity')}/"
+                f"{meta.get('n_head')} vs {capacity}/{n_head}) — pass --fresh-stream"
+            )
+        start, row_off = int(meta["cursor"]), int(meta["n_rows"])
+        logger.info(
+            "[n1m-ml] RESUMED memmap stream: %d/%d chunks (%d rows); continuing",
+            start,
+            len(names),
+            row_off,
+        )
+        mms = {}
+        for key in [("cx", li) for li in layers] + [("vx", li) for li in layers]:
+            mms[key] = np.lib.format.open_memmap(paths[key], mode="r+")
+            assert mms[key].shape == (capacity, hidden), (key, mms[key].shape)
+        mms["ci"] = np.lib.format.open_memmap(paths["ci"], mode="r+")
+
+    t_stream = time.time()
+    for i, got in _iter_chunks_prefetched(names, start, fetch, prefetch):
+        b = F._mmap_load(got)
+        rows = None
+        for li in layers:
+            arr_cx = N50._slice_layer(b, "cx_last", li)
+            arr_vx = N50._slice_layer(b, "v_x", li)
+            if rows is None:
+                rows = int(arr_cx.shape[0])
+                if row_off + rows > capacity:
+                    raise RuntimeError(
+                        f"[n1m-ml] memmap capacity overflow at chunk {i} "
+                        f"({row_off}+{rows} > {capacity}) — raise EPM_N1M_ROWS_PER_CHUNK"
+                    )
+            mms[("cx", li)][row_off : row_off + rows] = arr_cx
+            mms[("vx", li)][row_off : row_off + rows] = arr_vx
+        mms["ci"][row_off : row_off + rows] = np.asarray([int(x) for x in b["ci"]], dtype=np.int64)
+        row_off += rows
+        del b
+        if delete_after:
+            got.unlink()
+        done = i + 1
+        if ckpt_every > 0 and done % ckpt_every == 0:
+            for mm in mms.values():
+                mm.flush()
+            _ml_write_cursor(
+                mm_dir,
+                {
+                    "fingerprint": fp,
+                    "layers": layers,
+                    "hf_prefix": prefix,
+                    "cursor": done,
+                    "n_chunks": len(names),
+                    "n_rows": row_off,
+                    "n_head": n_head,
+                    "capacity": capacity,
+                    "complete": False,
+                },
+            )
+            logger.info(
+                "[n1m-ml] memmap checkpoint @ %d/%d chunks (%d rows, %.0fs)",
+                done,
+                len(names),
+                row_off,
+                time.time() - t_stream,
+            )
+        elif done % 25 == 0:
+            logger.info("[n1m-ml] streamed %d/%d chunks", done, len(names))
+
+    for mm in mms.values():
+        mm.flush()
+    del mms
+    for key in [("cx", li) for li in layers] + [("vx", li) for li in layers] + ["ci"]:
+        _truncate_npy_rows(paths[key], row_off)
+    _ml_write_cursor(
+        mm_dir,
+        {
+            "fingerprint": fp,
+            "layers": layers,
+            "hf_prefix": prefix,
+            "cursor": len(names),
+            "n_chunks": len(names),
+            "n_rows": row_off,
+            "n_head": n_head,
+            "capacity": capacity,
+            "complete": True,
+        },
+    )
+    logger.info(
+        "[n1m-ml] stream complete: %d chunks -> %d rows (%.0fs)",
+        len(names),
+        row_off,
+        time.time() - t_stream,
+    )
+    return _open_views(row_off), row_off
+
+
+def assemble_multilayer(args, layers: list[int]):
+    """Multi-layer analogue of ``assemble``: ONE capture pass, per-layer memmap
+    (X, Y) views (pass_b rows at the head, capture rows after), shared
+    provenance + the SAME pinned split asserts. Returns
+    ``(per_layer, prov, orig_train, val, test, split)`` with
+    ``per_layer[layer] = (X_view, Y_view)``."""
+    layers = [int(x) for x in layers]
+    pb = N1G._load_pass_b_bundle(args.pass_b)
+    for fld in ("cx_last", "v_x"):
+        assert fld in pb, f"pass_b missing {fld}"
+    assert int(pb["cx_last"].shape[0]) == N_PASS_B, (pb["cx_last"].shape[0], N_PASS_B)
+    pb_head = {
+        li: (N50._slice_layer(pb, "cx_last", li), N50._slice_layer(pb, "v_x", li)) for li in layers
+    }
+    del pb
+
+    manifest_args = argparse.Namespace(
+        out_dir=args.out_dir,
+        manifest_from_hf=args.manifest_from_hf,
+        hf_prefix=args.manifest_hf_prefix,
+    )
+    manifest_dir = N1G._resolve_manifest_dir(manifest_args)
+    pool, man_meta = N1G.read_manifest_pool(manifest_dir)
+    ci_to_corpus = {int(r["i"]): r["corpus"] for r in pool}
+
+    mm_dir = args.mm_dir if args.mm_dir else (PROJECT_ROOT / "data" / "issue_779" / "n1m_mm")
+    cache_dir = (
+        args.out_dir / ".n1m_stream_cache"
+        if args.n1m_capture_dir
+        else PROJECT_ROOT / "data" / "issue_779" / "hf_dl" / "n1m_chunks"
+    )
+    arrays, n_rows = _stream_n1m_multilayer(
+        args.hf_prefix,
+        layers,
+        cache_dir,
+        mm_dir,
+        pb_head,
+        local_dir=args.n1m_capture_dir if args.n1m_capture_dir else None,
+        ckpt_every=STREAM_CKPT_EVERY,
+        fresh=args.fresh_stream,
+        prefetch=args.prefetch,
+        max_chunks=args.max_chunks,
+    )
+
+    ci = np.asarray(arrays["ci"])
+    assert (ci[:N_PASS_B] == -1).all(), "pass_b head rows must carry ci=-1"
+    new_ci = ci[N_PASS_B:]
+    new_prov = np.array([ci_to_corpus[int(c)] for c in new_ci], dtype=object)
+    prov = np.array(["lmsys"] * N_PASS_B + list(new_prov), dtype=object)
+    assert prov.shape[0] == n_rows, (prov.shape, n_rows)
+
+    pinned = N50._pinned_original_shas(args.orig_dir)
+    r1_train, val, test = F.fixed_split(
+        N_PASS_B, N_PASS_B - N_VAL - N_TEST, N_VAL, N_TEST, SPLIT_SEED
+    )
+    val_sha, test_sha = F._sha_ids(val), F._sha_ids(test)
+    assert val_sha == pinned["val_sha256"], (
+        f"n1m val sha {val_sha} != pinned original {pinned['val_sha256']} — NOT byte-identical"
+    )
+    assert test_sha == pinned["test_sha256"], (
+        f"n1m test sha {test_sha} != pinned original {pinned['test_sha256']}"
+    )
+    assert (val < N_PASS_B).all() and (test < N_PASS_B).all(), "val/test must index the pass_b half"
+
+    per_layer = {}
+    for li in layers:
+        X = arrays[("cx", li)]
+        Y = arrays[("vx", li)]
+        assert X.shape == (n_rows, C.EXPECTED_HIDDEN) and Y.shape == X.shape, (X.shape, Y.shape)
+        per_layer[li] = (X, Y)
+
+    split = {
+        "orig_train_ids": len(r1_train),
+        "n_new_captured": int(n_rows - N_PASS_B),
+        "n_new_manifest": int(man_meta["n_new"]),
+        "n_lmsys_manifest": int(man_meta["n_lmsys"]),
+        "n_wildchat_manifest": int(man_meta["n_wildchat"]),
+        "n_val": len(val),
+        "n_test": len(test),
+        "val_sha256": val_sha,
+        "test_sha256": test_sha,
+        "pinned_val_sha256": pinned["val_sha256"],
+        "pinned_test_sha256": pinned["test_sha256"],
+        "pinned_source": pinned["source"],
+        "val_test_byte_identical_original": True,
+        "layers": layers,
+        "near_dupe": man_meta.get("near_dupe"),
+        "manifest_new_prompt_sha256": man_meta.get("new_prompt_sha256"),
+        "max_chunks": args.max_chunks,
+    }
+    return per_layer, prov, r1_train, val, test, split
+
+
+def apply_map(payload: dict, X_eval: np.ndarray, dev: torch.device) -> np.ndarray:
+    """Apply a persisted (layer, fitter) map to RAW eval activations.
+
+    Mirrors each fitter's own predict path exactly (ridge: standardize-X /
+    W / +ymu in fp64; mlp: fp32 standardize + net + ymu; krr: raw-X fp64
+    Nystrom features @ dual weights + ymu). Weights are persisted fp32 and
+    upcast where the fit path ran fp64 — the fp32 roundtrip is gated by the
+    persist-apply equivalence smoke. Returns (n, D) float64 numpy."""
+    kind = payload["kind"]
+    Xe = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64, device=dev)
+    if kind == "ridge":
+        xmu = payload["xmu"].to(dev, torch.float64)
+        xsd = payload["xsd"].to(dev, torch.float64)
+        ymu = payload["ymu"].to(dev, torch.float64)
+        W = payload["W"].to(dev, torch.float64)
+        return (((Xe - xmu) / xsd) @ W + ymu).cpu().numpy()
+    if kind == "mlp":
+        sd = payload["state_dict"]
+        hid, dout = int(payload["width"]), int(sd["2.weight"].shape[0])
+        hin = int(sd["0.weight"].shape[1])
+        net = torch.nn.Sequential(
+            torch.nn.Linear(hin, hid), torch.nn.GELU(), torch.nn.Linear(hid, dout)
+        ).to(dev)
+        net.load_state_dict(sd)
+        net.eval()
+        xb = (Xe.to(torch.float32) - payload["xmu"].to(dev)) / payload["xsd"].to(dev)
+        with torch.no_grad():
+            out = net(xb) + payload["ymu"].to(dev)
+        return out.double().cpu().numpy()
+    if kind == "krr_nystrom":
+        Z = payload["landmarks"].to(dev, torch.float64)
+        inv_sqrt = payload["inv_sqrt"].to(dev, torch.float64)
+        W = payload["W_dual"].to(dev, torch.float64)
+        ymu = payload["ymu"].to(dev, torch.float64)
+        gamma = float(payload["gamma"])
+        phi = torch.exp(-gamma * torch.cdist(Xe, Z) ** 2) @ inv_sqrt
+        return (phi @ W + ymu).cpu().numpy()
+    raise ValueError(f"unknown persisted map kind {kind!r}")
+
+
+def _persist_weights(weights_dir: Path, layer: int, name: str, payload: dict) -> Path:
+    """Atomically save one (layer, fitter) weight payload (fp32 tensors)."""
+    dest = weights_dir / f"L{int(layer)}" / f"{name}.pt"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    payload = dict(payload)
+    payload.update({"layer": int(layer), "fitter": name})
+    tmp = dest.parent / (dest.name + ".tmp")
+    torch.save(payload, tmp)
+    os.replace(tmp, dest)
+    logger.info("[persist] wrote %s (%.0f MB)", dest, dest.stat().st_size / 1e6)
+    return dest
+
+
 def assemble(args, layer: int):
     """Combined (X=cx_last, Y=v_x) at ``layer`` + provenance + the pinned split.
 
@@ -687,17 +1202,73 @@ def fit_ridge(X, Y, tr, val, te, lambdas, dev, block):
     }
 
 
+def fit_ridge_with_weights(X, Y, tr, val, te, lambdas, dev, block):
+    """``fit_ridge`` with the selected-lambda primal W captured for persistence.
+
+    Same factorization (_ridge_factorize), same val-lambda selection order, same
+    _ridge_predict_one test predictions — asserted prediction- and
+    lambda-identical to ``fit_ridge`` in ``_smoke``. Returns
+    ``(pred_te, meta, payload)`` where payload carries the fp32 standardizer +
+    W for ``apply_map``."""
+    fac = _ridge_factorize(X, Y, tr, dev, block)
+    best_lam, best_vr2 = float(lambdas[0]), -np.inf
+    for lam in lambdas:
+        vr2 = PR._pooled_r2(_ridge_predict_one(X, val, fac, lam, dev, block), Y[val])
+        if np.isfinite(vr2) and vr2 > best_vr2:
+            best_vr2, best_lam = vr2, float(lam)
+    edge = None
+    if np.isclose(best_lam, float(lambdas[0])):
+        edge = "low"
+    elif np.isclose(best_lam, float(lambdas[-1])):
+        edge = "high"
+    pred_te = _ridge_predict_one(X, te, fac, best_lam, dev, block)
+    W = fac["U"] @ (fac["UtXtY"] / (fac["s_eig"] + best_lam)[:, None])
+    payload = {
+        "kind": "ridge",
+        "selected_lambda": best_lam,
+        "xmu": fac["xmu"].detach().cpu().to(torch.float32),
+        "xsd": fac["xsd"].detach().cpu().to(torch.float32),
+        "ymu": fac["ymu"].detach().cpu().to(torch.float32),
+        "W": W.detach().cpu().to(torch.float32),
+    }
+    meta = {
+        "n_train": len(tr),
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": best_lam,
+        "val_r2_at_selected": float(best_vr2),
+        "lambda_grid_edge": edge,
+        "ridge_block": int(block),
+    }
+    return pred_te, meta, payload
+
+
 # ── minibatched MLP (single large-n fit; the full-batch battery cannot hold 1M) ──
 
 
 def _fit_mlp_minibatch(
-    X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, *, base_tr=None, base_te=None
+    X,
+    Y,
+    tr,
+    te,
+    width,
+    lr,
+    max_epochs,
+    batch,
+    seed,
+    dev,
+    *,
+    base_tr=None,
+    base_te=None,
+    capture_out=None,
 ):
     """Single full-dim MLP (GELU, MSE) trained MINIBATCHED with AdamW + internal-val
     early stop. Standardizes X on train stats; centers Y on train mean (or fits the
     residual Y - base_* when base_tr/base_te given, for residual_skip). Predicts te
     minibatched. FLOP-bound single large-n fit — NOT a many-cell loop (the
-    vectorized_mlp_skill helper batches CELLS, a different regime)."""
+    vectorized_mlp_skill helper batches CELLS, a different regime).
+    ``capture_out`` (#779 n1m-readout, optional dict): receives the selected
+    (early-stopped) fp32 state_dict + standardizer for ``apply_map``
+    persistence. Default ``None`` — behavior unchanged (no rng use)."""
     tr = np.asarray(tr, dtype=np.int64)
     te = np.asarray(te, dtype=np.int64)
     H = X.shape[1]
@@ -765,6 +1336,17 @@ def _fit_mlp_minibatch(
     if best_state is not None:
         net.load_state_dict(best_state)
     net.eval()
+    if capture_out is not None:
+        capture_out.update(
+            {
+                "kind": "mlp",
+                "width": int(width),
+                "state_dict": {k: v.detach().cpu().clone() for k, v in net.state_dict().items()},
+                "xmu": xmu_c.detach().cpu().clone(),
+                "xsd": xsd_c.detach().cpu().clone(),
+                "ymu": ymu_c.detach().cpu().clone(),
+            }
+        )
     preds = []
     with torch.no_grad():
         for bs in range(0, len(te), batch):
@@ -784,8 +1366,12 @@ def _fit_mlp_minibatch(
     }
 
 
-def fit_mlp(X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, *, capacity_arm=False):
-    pred_te, meta = _fit_mlp_minibatch(X, Y, tr, te, width, lr, max_epochs, batch, seed, dev)
+def fit_mlp(
+    X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, *, capacity_arm=False, capture_out=None
+):
+    pred_te, meta = _fit_mlp_minibatch(
+        X, Y, tr, te, width, lr, max_epochs, batch, seed, dev, capture_out=capture_out
+    )
     meta["n_train"] = len(tr)
     meta["capacity_arm"] = bool(capacity_arm)
     return pred_te, meta
@@ -844,10 +1430,16 @@ def _nystrom_features_block(Xblock, landmarks_t, gamma, inv_sqrt):
     return K_bm @ inv_sqrt
 
 
-def fit_krr_nystrom(X, Y, tr, val, te, *, m_centers, gamma_mult, lambdas, seed, dev, block):
+def fit_krr_nystrom(
+    X, Y, tr, val, te, *, m_centers, gamma_mult, lambdas, seed, dev, block, capture_out=None
+):
     """Nystrom RBF KRR, (gamma, lambda) val-selected. Phi^TPhi accumulated STREAMING
     over train blocks so the (ntr, m) feature matrix is never materialized whole.
-    Raw X + median-heuristic gamma (matches N50.fit_krr_exact for the validation)."""
+    Raw X + median-heuristic gamma (matches N50.fit_krr_exact for the validation).
+    ``capture_out`` (#779 n1m-readout, optional dict): receives the SELECTED
+    (gamma, lambda)'s fp32 landmarks + K_mm^{-1/2} + dual weights + ymu for
+    ``apply_map`` persistence (updated on each new val best — copies only, no
+    rng use). Default ``None`` — behavior unchanged."""
     tr = np.asarray(tr, dtype=np.int64)
     Xtr_sub = np.asarray(X[tr[: min(len(tr), 4000)]], dtype=np.float64)  # gamma est subsample
     base_gamma = F.median_heuristic_gamma(Xtr_sub, np.random.default_rng(seed + 1))
@@ -901,6 +1493,18 @@ def fit_krr_nystrom(X, Y, tr, val, te, *, m_centers, gamma_mult, lambdas, seed, 
                     "val_r2": float(val_r2),
                     "pred_te": pred_te,
                 }
+                if capture_out is not None:
+                    capture_out.update(
+                        {
+                            "kind": "krr_nystrom",
+                            "gamma": float(gamma),
+                            "selected_lambda": float(lam),
+                            "ymu": ymu.detach().cpu().to(torch.float32),
+                            "landmarks": torch.as_tensor(landmarks, dtype=torch.float32),
+                            "inv_sqrt": inv_sqrt.detach().cpu().to(torch.float32),
+                            "W_dual": W.detach().cpu().to(torch.float32),
+                        }
+                    )
         del G, PhiY, inv_sqrt, landmarks_t, phi_val, phi_te
         if dev.type == "cuda":
             torch.cuda.empty_cache()
@@ -1050,6 +1654,199 @@ def _fit_one_predictor(name, X, Y, tr, val, test, lambdas, gamma_mult, krr_lambd
         dev=dev,
         block=args.ridge_block,
     )
+
+
+def _fit_one_predictor_ml(
+    name, X, Y, tr, val, test, lambdas, gamma_mult, krr_lambdas, args, dev, want_weights
+):
+    """Multi-layer dispatch: like ``_fit_one_predictor`` but returns
+    ``(pred_te, meta, payload|None)`` with the persisted-weight payload when
+    ``want_weights``. Fit numerics identical to the single-layer dispatch."""
+    if name == "ridge":
+        if want_weights:
+            return fit_ridge_with_weights(X, Y, tr, val, test, lambdas, dev, args.ridge_block)
+        pred, meta = fit_ridge(X, Y, tr, val, test, lambdas, dev, args.ridge_block)
+        return pred, meta, None
+    if name in ("mlp_w8192", "mlp_w32768"):
+        cap: dict | None = {} if want_weights else None
+        width = MLP_W_PROTOCOL if name == "mlp_w8192" else MLP_W_CAPACITY
+        pred, meta = fit_mlp(
+            X,
+            Y,
+            tr,
+            test,
+            width,
+            args.mlp_lr,
+            args.mlp_max_epochs,
+            args.mlp_batch,
+            args.seed,
+            dev,
+            capacity_arm=(name == "mlp_w32768"),
+            capture_out=cap,
+        )
+        return pred, meta, cap
+    if name == "krr_nystrom":
+        cap = {} if want_weights else None
+        pred, meta = fit_krr_nystrom(
+            X,
+            Y,
+            tr,
+            val,
+            test,
+            m_centers=args.krr_nystrom_centers,
+            gamma_mult=gamma_mult,
+            lambdas=krr_lambdas,
+            seed=args.seed,
+            dev=dev,
+            block=args.ridge_block,
+            capture_out=cap,
+        )
+        return pred, meta, cap
+    if want_weights:
+        raise SystemExit(f"--persist-weights not supported for predictor {name!r}")
+    pred, meta = _fit_one_predictor(
+        name, X, Y, tr, val, test, lambdas, gamma_mult, krr_lambdas, args, dev
+    )
+    return pred, meta, None
+
+
+def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
+    """--layers driver: one capture pass into per-layer memmaps, then per layer x
+    (point x predictor) fits with per-cell checkpointing into ONE JSON keyed
+    ``per_layer.<L>``; ``--persist-weights`` saves each fitter's map for
+    ``apply_map``. Single-layer semantics (selection, split asserts, grids,
+    seed) unchanged."""
+    t0 = time.time()
+    per_layer, prov, orig_train, val, test, split = assemble_multilayer(args, layers)
+    n_rows = prov.shape[0]
+    pools = _pool_rows(prov, orig_train, n_rows, val, test)
+    logger.info(
+        "[ml] assembled: %d contexts (%d lmsys pool, %d full pool), layers=%s (%.0fs)",
+        n_rows,
+        len(pools["lmsys"]),
+        len(pools["full"]),
+        layers,
+        time.time() - t0,
+    )
+    lambdas = LAMBDAS_N1M
+    gamma_mult = tuple(float(g) for g in args.krr_gamma_mult.split(",") if g.strip())
+    krr_lambdas = tuple(float(x) for x in args.krr_lambdas.split(",") if x.strip())
+
+    results = json.loads(args.out_json.read_text()) if args.out_json.exists() else {}
+    if results.get("seed") is not None and results["seed"] != args.seed:
+        raise SystemExit(
+            f"--out-json {args.out_json} written for seed {results['seed']}, not --seed={args.seed}"
+        )
+    if results.get("layers") is not None and sorted(results["layers"]) != sorted(layers):
+        raise SystemExit(
+            f"--out-json {args.out_json} written for layers {results['layers']}, not {layers}"
+        )
+    results.setdefault("per_layer", {})
+    results.update(
+        {
+            "layers": [int(x) for x in layers],
+            "seed": int(args.seed),
+            "split": split,
+            "lambda_grid": {"n": len(lambdas), "min": float(lambdas[0]), "max": float(lambdas[-1])},
+            "krr_grid": {
+                "gamma_mult": list(gamma_mult),
+                "lambdas": list(krr_lambdas),
+                "nystrom_centers": int(args.krr_nystrom_centers),
+            },
+            "predictor_labels": PREDICTOR_LABEL,
+            "fit_points": {p[0]: {"n_train_target": p[1], "corpus_mode": p[2]} for p in FIT_POINTS},
+            "weights_dir": str(args.weights_dir) if args.persist_weights else None,
+            "note": (
+                "multi-layer one-pass memmap rerun of the n1m fits (#779 "
+                "n1m-nonlinear-map-behavior-readout): same fitters/grids/seed/pinned "
+                "val-test as n1m_fits.json, refit at the capture layers with weights "
+                "persisted for the behavior read-out."
+            ),
+            "metadata": C.reproducibility_metadata(
+                {
+                    "script": "issue779_ffc_n1m_fits --layers",
+                    "device": args.device,
+                    "prefetch": int(args.prefetch),
+                    "max_chunks": args.max_chunks,
+                }
+            ),
+        }
+    )
+    C.write_json_atomic(args.out_json, results)
+
+    for li in layers:
+        X, Y = per_layer[li]
+        lres = results["per_layer"].setdefault(str(li), {"per_point": {}})
+        if (
+            "krr_nystrom" in want_pred
+            and not args.no_validate_krr
+            and lres.get("nystrom_validation") is None
+        ):
+            lres["nystrom_validation"] = _validate_nystrom_vs_exact(
+                X,
+                Y,
+                pools,
+                val,
+                test,
+                m_centers=args.krr_nystrom_centers,
+                gamma_mult=gamma_mult,
+                krr_lambdas=krr_lambdas,
+                seed=args.seed,
+                dev=dev,
+                tol=args.krr_validate_tol,
+            )
+            C.write_json_atomic(args.out_json, results)
+        for pn in want_points:
+            _, n_target, mode = point_by_name[pn]
+            tr, sel_diag = select_train(pools, pn, n_target, mode, args.seed)
+            pres = lres["per_point"].setdefault(pn, {"selection": sel_diag, "predictors": {}})
+            pres["selection"] = sel_diag
+            logger.info("[ml L%d point %s] n_train=%d (%s)", li, pn, len(tr), mode)
+            for name in want_pred:
+                wpath = args.weights_dir / f"L{li}" / f"{name}.pt"
+                if (
+                    args.resume
+                    and name in pres["predictors"]
+                    and (not args.persist_weights or wpath.exists())
+                ):
+                    logger.info("[ml resume] L%d/%s/%s present; skip", li, pn, name)
+                    continue
+                ts = time.time()
+                pred_te, meta, payload = _fit_one_predictor_ml(
+                    name,
+                    X,
+                    Y,
+                    tr,
+                    val,
+                    test,
+                    lambdas,
+                    gamma_mult,
+                    krr_lambdas,
+                    args,
+                    dev,
+                    args.persist_weights,
+                )
+                curve = _curve(pred_te, Y[test], args.n_boot, args.seed)
+                curve["fit_meta"] = meta
+                curve["wall_time_s"] = round(time.time() - ts, 1)
+                if args.persist_weights:
+                    assert payload, f"--persist-weights but no payload for {name}"
+                    curve["weights_file"] = str(
+                        _persist_weights(args.weights_dir, li, name, payload)
+                    )
+                pres["predictors"][name] = curve
+                C.write_json_atomic(args.out_json, results)
+                logger.info(
+                    "[ml done] L%d/%s/%s: whole-map R2=%.4f mean-cos=%.4f (%.0fs)",
+                    li,
+                    pn,
+                    name,
+                    curve["whole_map_r2"],
+                    curve["mean_cosine"],
+                    curve["wall_time_s"],
+                )
+    logger.info("[ml] wrote %s (%.0fs total)", args.out_json, time.time() - t0)
+    return 0
 
 
 def _run_fit_points(
@@ -1236,6 +2033,203 @@ def _smoke_download_retry(cache: Path) -> int:
     return 3
 
 
+def _smoke_multilayer_stream(root: Path) -> dict:
+    """CPU smoke for the multi-layer memmap stream (#779 n1m-readout).
+
+    Fakes list_repo_tree + hf_hub_download over 8 synthetic 3-layer chunks and
+    asserts: (a) K=6 prefetch produces BYTE-IDENTICAL memmaps to the K=1 serial
+    path; (b) each layer's capture rows are byte-identical to the EXISTING
+    single-layer accumulate path (``_stream_n1m_layer``) on the same chunks;
+    (c) a crash-after-checkpoint resume is byte-identical to the uninterrupted
+    reference; (d) files are truncated to realized rows; (e) ``max_chunks``
+    truncates the universe. Returns a small diag dict."""
+    from unittest import mock
+
+    hdim, n_chunks, layers = 4, 8, [14, 19, 26]
+    n_head = 5
+    prefix = "smoke_prefix/final_token_capture"
+    remote = {f"shard00_chunk{i:04d}.pt": i for i in range(n_chunks)}
+    rng = np.random.default_rng(11)
+    pb_head = {
+        li: (
+            rng.standard_normal((n_head, hdim)).astype(np.float32),
+            rng.standard_normal((n_head, hdim)).astype(np.float32),
+        )
+        for li in layers
+    }
+
+    def _chunk(idx: int) -> dict:
+        rows = 2 + (idx % 2)
+        base = float(idx * 100)
+        shape = (rows, len(layers), hdim)
+        cx = base + torch.arange(rows * len(layers) * hdim, dtype=torch.float32).reshape(shape)
+        return {
+            "cx_last": cx.clone(),
+            "v_x": (cx + 0.5).clone(),
+            "ci": [idx * 1000 + r for r in range(rows)],
+            "layers": list(layers),
+        }
+
+    crash_at: dict = {"i": None}
+
+    class _SmokeCrash(RuntimeError):
+        pass
+
+    class _FakeEntry:
+        def __init__(self, path):
+            self.path, self.size = path, 1
+
+    class _FakeHfApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+            return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
+
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+        base = filename.rsplit("/", 1)[-1]
+        idx = remote[base]
+        if crash_at["i"] is not None and idx >= crash_at["i"]:
+            raise _SmokeCrash(f"synthetic crash at chunk {idx}")
+        out = Path(local_dir) / base
+        out.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(_chunk(idx), out)
+        return str(out)
+
+    def _digest(mm_dir: Path) -> dict:
+        out = {}
+        for p in sorted(mm_dir.glob("*.npy")):
+            arr = np.load(p)
+            out[p.name] = (arr.shape, hashlib.sha256(arr.tobytes()).hexdigest())
+        return out
+
+    cache = root / "cache"
+    with (
+        mock.patch("huggingface_hub.HfApi", _FakeHfApi),
+        mock.patch("huggingface_hub.hf_hub_download", _fake_dl),
+    ):
+        # (a) serial reference vs K=6 prefetch — byte identical.
+        _arr_ser, n_ser = _stream_n1m_multilayer(
+            prefix, layers, cache, root / "mm_serial", pb_head, ckpt_every=2, prefetch=1
+        )
+        _arr_pre, n_pre = _stream_n1m_multilayer(
+            prefix, layers, cache, root / "mm_prefetch", pb_head, ckpt_every=2, prefetch=6
+        )
+        assert n_ser == n_pre, (n_ser, n_pre)
+        d_ser, d_pre = _digest(root / "mm_serial"), _digest(root / "mm_prefetch")
+        assert d_ser == d_pre, f"prefetch memmaps != serial memmaps:\n{d_ser}\nvs\n{d_pre}"
+
+        # (b) per-layer capture rows == the EXISTING single-layer accumulate path.
+        for li in layers:
+            cx_1l, vx_1l, ci_1l = _stream_n1m_layer(
+                prefix, li, None, cache, ckpt_dir=root / f"1l_{li}", ckpt_every=4
+            )
+            cx_ml = np.load(root / "mm_serial" / f"cx_L{li}.npy")
+            vx_ml = np.load(root / "mm_serial" / f"vx_L{li}.npy")
+            ci_ml = np.load(root / "mm_serial" / "ci.npy")
+            assert np.array_equal(cx_ml[n_head:], cx_1l), f"L{li} cx multi != single-layer path"
+            assert np.array_equal(vx_ml[n_head:], vx_1l), f"L{li} vx multi != single-layer path"
+            assert np.array_equal(ci_ml[n_head:], ci_1l), f"L{li} ci multi != single-layer path"
+            assert np.array_equal(cx_ml[:n_head], pb_head[li][0]), "pass_b head rows drifted"
+            assert (ci_ml[:n_head] == -1).all(), "head ci != -1"
+
+        # (c) crash-after-checkpoint resume == uninterrupted reference.
+        crash_at["i"] = 5
+        crashed = False
+        try:
+            _stream_n1m_multilayer(
+                prefix, layers, cache, root / "mm_crash", pb_head, ckpt_every=2, prefetch=1
+            )
+        except _SmokeCrash:
+            crashed = True
+        assert crashed, "synthetic crash did not fire"
+        cur = _ml_load_cursor(root / "mm_crash")
+        assert cur is not None and cur["cursor"] > 0 and not cur["complete"], cur
+        crash_at["i"] = None
+        _arr_res, n_res = _stream_n1m_multilayer(
+            prefix, layers, cache, root / "mm_crash", pb_head, ckpt_every=2, prefetch=1
+        )
+        assert n_res == n_ser
+        assert _digest(root / "mm_crash") == d_ser, "resumed memmaps != reference"
+
+        # (d) truncation: realized rows, not capacity.
+        cap = n_head + n_chunks * ROWS_PER_CHUNK_EST
+        got_shape = np.load(root / "mm_serial" / f"cx_L{layers[0]}.npy", mmap_mode="r").shape
+        assert got_shape[0] == n_ser < cap, (got_shape, n_ser, cap)
+
+        # (e) max_chunks truncates the universe.
+        _arr3, n3 = _stream_n1m_multilayer(
+            prefix,
+            layers,
+            cache,
+            root / "mm_max3",
+            pb_head,
+            ckpt_every=2,
+            prefetch=6,
+            max_chunks=3,
+        )
+        expect3 = n_head + sum(2 + (i % 2) for i in range(3))
+        assert n3 == expect3, (n3, expect3)
+    return {"n_rows": int(n_ser), "n_chunks": n_chunks, "n_rows_max3": int(n3)}
+
+
+def _smoke_weight_persist_apply(root: Path) -> dict:
+    """CPU smoke: persisted-weight APPLY == in-fit test predictions (#779).
+
+    On the synthetic RBF problem: (1) ``fit_ridge_with_weights`` is prediction-
+    and lambda-identical to ``fit_ridge``; (2) for each of ridge / MLP / KRR the
+    ``apply_map`` of the persisted (fp32, disk-roundtripped) payload matches the
+    fitter's own ``pred_te`` within fp32-roundtrip tolerance. This gates the
+    read-out script's apply path against the fit path."""
+    dev = torch.device("cpu")
+    rng = np.random.default_rng(9)
+    n, H, D = 400, 24, 6
+    Wt = rng.standard_normal((H, D)) * 0.3
+    Xs = rng.standard_normal((n, H)).astype(np.float32)
+    Ys = (np.tanh(Xs @ Wt.astype(np.float32)) + 0.05 * rng.standard_normal((n, D))).astype(
+        np.float32
+    )
+    tr, vl, ts = np.arange(0, 300), np.arange(300, 340), np.arange(340, 400)
+    lambdas = np.logspace(-2, 3, 6)
+
+    def _load_roundtrip(name: str, payload: dict) -> dict:
+        path = _persist_weights(root, 19, name, payload)
+        return torch.load(path, weights_only=False, map_location="cpu")
+
+    def _rel(a: np.ndarray, b: np.ndarray) -> float:
+        return float(np.max(np.abs(a - b))) / (float(np.max(np.abs(b))) + 1e-12)
+
+    pred_ref, meta_ref = fit_ridge(Xs, Ys, tr, vl, ts, lambdas, dev, 64)
+    pred_w, meta_w, payload = fit_ridge_with_weights(Xs, Ys, tr, vl, ts, lambdas, dev, 64)
+    assert meta_w["selected_lambda"] == meta_ref["selected_lambda"], (meta_w, meta_ref)
+    assert np.array_equal(pred_w, pred_ref), "fit_ridge_with_weights pred != fit_ridge pred"
+    rel_r = _rel(apply_map(_load_roundtrip("ridge", payload), Xs[ts], dev), pred_ref)
+    assert rel_r < 5e-4, f"ridge persisted-apply rel diff {rel_r:.2e}"
+
+    cap: dict = {}
+    pred_mlp, _mm = fit_mlp(Xs, Ys, tr, ts, 32, 3e-3, 20, 64, 0, dev, capture_out=cap)
+    rel_m = _rel(apply_map(_load_roundtrip("mlp_w32", cap), Xs[ts], dev), pred_mlp)
+    assert rel_m < 1e-3, f"mlp persisted-apply rel diff {rel_m:.2e}"
+
+    cap_k: dict = {}
+    pred_krr, meta_krr = fit_krr_nystrom(
+        Xs,
+        Ys,
+        tr,
+        vl,
+        ts,
+        m_centers=100,
+        gamma_mult=(1.0,),
+        lambdas=(1e-1, 1e1),
+        seed=0,
+        dev=dev,
+        block=64,
+        capture_out=cap_k,
+    )
+    assert cap_k.get("gamma") == meta_krr["selected"]["gamma"], (cap_k.get("gamma"), meta_krr)
+    assert cap_k.get("selected_lambda") == meta_krr["selected"]["lambda"]
+    rel_k = _rel(apply_map(_load_roundtrip("krr_nystrom", cap_k), Xs[ts], dev), pred_krr)
+    assert rel_k < 1e-3, f"krr persisted-apply rel diff {rel_k:.2e}"
+    return {"rel_ridge": rel_r, "rel_mlp": rel_m, "rel_krr": rel_k}
+
+
 def _smoke() -> int:
     """CPU numeric-sanity smoke (synthetic; no capture data, no GPU).
 
@@ -1357,6 +2351,12 @@ def _smoke() -> int:
     with tempfile.TemporaryDirectory() as td:
         n_rows_ck, n_ck = _smoke_stream_ckpt(Path(td) / "ck")
         n_att = _smoke_download_retry(Path(td) / "rt")
+        # (9) multi-layer memmap stream: prefetch byte-identity vs serial, parity
+        #     with the existing single-layer path, crash resume, truncation.
+        ml_diag = _smoke_multilayer_stream(Path(td) / "ml")
+        # (10) persisted-weight apply == in-fit predictions (ridge/MLP/KRR).
+        pa_diag = _smoke_weight_persist_apply(Path(td) / "wp")
+    logger.info("[smoke] multilayer-stream PASS %s | persist-apply PASS %s", ml_diag, pa_diag)
 
     logger.info(
         "[smoke] PASS: split shas byte-id; select (lmsys/mixed-ratio %.2f/whole); "
@@ -1377,6 +2377,39 @@ def _smoke() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #779 n1m fits (up to n_train=1,000,000).")
     ap.add_argument("--layer", type=int, default=19)
+    ap.add_argument(
+        "--layers",
+        default=None,
+        help="comma layer list (e.g. 14,19,26): the multi-layer ONE-PASS memmap path "
+        "(#779 n1m-readout). Streams the capture once, slices every listed layer into "
+        "preallocated fp32 .npy memmaps, fits per layer, writes per_layer JSON. The "
+        "single-layer --layer path is untouched when absent.",
+    )
+    ap.add_argument(
+        "--prefetch",
+        type=int,
+        default=PREFETCH_DEFAULT,
+        help="bounded download prefetch (K in flight, ordered processing; <=1 = serial)",
+    )
+    ap.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help="truncate the chunk universe to the first N chunks (smoke slices only)",
+    )
+    ap.add_argument(
+        "--persist-weights",
+        action="store_true",
+        help="save per (layer, fitter) standardizer + parameters for apply_map "
+        "(--layers path only)",
+    )
+    ap.add_argument("--weights-dir", type=Path, default=None)
+    ap.add_argument(
+        "--mm-dir",
+        type=Path,
+        default=None,
+        help="memmap dir for the --layers stream (default data/issue_779/n1m_mm)",
+    )
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--points", default=",".join(p[0] for p in FIT_POINTS))
     ap.add_argument("--predictors", default=",".join(PREDICTORS))
@@ -1432,6 +2465,18 @@ def main() -> int:
         if pn not in point_by_name:
             raise ValueError(f"unknown fit point {pn!r}")
     args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.layers:  # multi-layer one-pass memmap path (#779 n1m-readout)
+        layers = [int(x) for x in str(args.layers).split(",") if x.strip()]
+        assert layers, f"--layers parsed empty from {args.layers!r}"
+        if args.out_json is None:
+            args.out_json = args.out_dir / "n1m_multilayer_fits.json"
+        if args.weights_dir is None:
+            args.weights_dir = args.out_dir / "weights"
+        if args.persist_weights and "residual_skip" in want_pred:
+            raise SystemExit("--persist-weights does not support residual_skip")
+        return _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev)
+
     if args.out_json is None:
         args.out_json = args.out_dir / "n1m_fits.json"
 
