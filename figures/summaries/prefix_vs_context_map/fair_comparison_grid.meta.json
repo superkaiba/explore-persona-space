@@ -1,8 +1,8 @@
 {
-  "commit": "3235d93dd8",
-  "created": "2026-07-22T18:55:57Z",
+  "commit": "68a2afc631",
+  "created": "2026-07-22T19:06:16Z",
   "figsize": [
-    11.0,
+    8.0,
     5.0
   ],
   "points": [
@@ -14,7 +14,7 @@
     },
     {
       "x": 0.82,
-      "held-out $R^2$": 0.5290446256305392,
+      "held-out $R^2$": 0.06507882598789749,
       "_kind": "bar",
       "_group": 0
     },
@@ -26,43 +26,19 @@
     },
     {
       "x": 1.18,
-      "held-out $R^2$": 0.935504559387362,
+      "held-out $R^2$": 0.8141832948824597,
       "_kind": "bar",
       "_group": 1
-    },
-    {
-      "x": -0.18,
-      "y": 0.06507882598789749,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "x": 0.82,
-      "y": 0.09834634098719763,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "x": 0.18,
-      "y": 0.8141832948824597,
-      "_kind": "bar",
-      "_group": 3
-    },
-    {
-      "x": 1.18,
-      "y": 0.9141533323752868,
-      "_kind": "bar",
-      "_group": 3
     }
   ],
-  "n_series": 4,
-  "total_points": 8,
+  "n_series": 2,
+  "total_points": 4,
   "text": {
-    "suptitle": "Prefix-end vs context map by target grain \u2014 instruct model, own answers, layer 14",
+    "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Averaged targets\n(per-prefix profile over 48 queries)",
+        "title_left": "Prefix-end vs context map by target grain \u2014 instruct model, own answers, layer 14",
         "ylabel": "held-out $R^2$",
         "legend_labels": [
           "Prefix-end map",
@@ -70,8 +46,8 @@
           "achievable ceiling per arm"
         ],
         "xticklabels": [
-          "ambient basis",
-          "pca48 basis"
+          "Averaged targets\n(per-prefix profile over 48 queries)",
+          "Single-context targets\n(one answer state per row)"
         ],
         "yticklabels": [
           "0.0",
@@ -80,13 +56,6 @@
           "0.6",
           "0.8",
           "1.0"
-        ]
-      },
-      {
-        "title_left": "Single-context targets\n(one answer state per row)",
-        "xticklabels": [
-          "ambient basis",
-          "pca48 basis"
         ]
       }
     ],
