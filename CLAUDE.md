@@ -306,7 +306,7 @@ Override with `--gpu-type` / `--gpu-count`. `pod.py provision --list-intents` fo
 # Lifecycle
 uv run python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
 uv run python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
-uv run python scripts/pod.py stop --issue 137                          # pause; volume preserved (manual only)
+uv run python scripts/pod.py stop --issue 137                          # pause; volume preserved but NOT durable (#1112) — persist resume state first (pod-config.md)
 uv run python scripts/pod.py resume --issue 137                        # new IP/port → pods.conf, SSH/MCP regenerated
 uv run python scripts/pod.py terminate --issue 137 --yes               # destroy (volume gone); /issue Step 8 auto-runs
 uv run python scripts/pod.py list-ephemeral [--issue 137]              # live API queried every invocation
