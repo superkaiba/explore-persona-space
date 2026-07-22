@@ -30,9 +30,9 @@ Per-context map: held-out R² **0.74–0.81** in 5 of 6 coherent cells (0.50 in 
 
 ## Result 2 — The pre-query prefix-end state carries almost none of the map's skill, and it is NOT the averaged map
 
-![fair comparison, prefix-end vs context arms, matched targets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/issue_1092/fair_comparison_prefix_vs_context.png)
+![fair comparison grid: arm x grain x basis](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5d2a145742d68d81a7449b8ce4f8ada1aaef34b6/figures/summaries/prefix_vs_context_map/fair_comparison_grid.png)
 
-> Matched-target fair comparison (instruct, own answers, layer 14): both arms fit on the same crossed corpus, scored against the same pooled targets, at both grains. Source: `eval_results/issue_1092/inline_fair_comparison/fair_comparison.json`.
+> Matched-target fair comparison (instruct, own answers, layer 14): both arms fit on the same crossed corpus, scored against the same pooled targets. Panels = target grain, x = basis, color = input arm; dashed ticks = each arm's achievable ceiling on single-context targets (prefix arm: between-prefix variance share — its input is constant within a prefix; context arm: MLP companion for pca48 / additive ceiling for ambient). Bars are single pooled held-out R² point estimates (no fold-spread error bars). Source: `eval_results/issue_1092/inline_fair_comparison/fair_comparison.json`; original two-panel version: `figures/issue_1092/fair_comparison_prefix_vs_context.png`.
 
 | (instruct, own answers, L14) | prefix-end | context |
 |---|---|---|
