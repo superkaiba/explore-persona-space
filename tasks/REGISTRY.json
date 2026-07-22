@@ -4650,8 +4650,8 @@
     "1597": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1597",
-      "status": "running",
+      "path": "tasks/reviewing/1597",
+      "status": "reviewing",
       "title": "daily-fix: rotate inner append-mode logs on relaunch"
     },
     "1598": {
