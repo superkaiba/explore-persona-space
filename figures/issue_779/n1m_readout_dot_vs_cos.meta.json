@@ -1,0 +1,263 @@
+{
+  "commit": "7f19f6747",
+  "created": "2026-07-22T23:15:28Z",
+  "figsize": [
+    5.2,
+    5.0
+  ],
+  "points": [
+    {
+      "within-condition r \u2014 dot readout": -0.07822249677864532,
+      "within-condition r \u2014 cosine readout": -0.06401421748338615,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.5748838459092711,
+      "within-condition r \u2014 cosine readout": 0.5779038991429006,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.5413057833384319,
+      "within-condition r \u2014 cosine readout": 0.5477935148788626,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6947032652069816,
+      "within-condition r \u2014 cosine readout": 0.699975145543774,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.3536575739063433,
+      "within-condition r \u2014 cosine readout": 0.34814813162932323,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.4828848017500724,
+      "within-condition r \u2014 cosine readout": 0.4841415758751914,
+      "series": "h n5k linear",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.0950026624400385,
+      "within-condition r \u2014 cosine readout": 0.08665927304705857,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.5505615771050815,
+      "within-condition r \u2014 cosine readout": 0.5794946223286459,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.5962440517469703,
+      "within-condition r \u2014 cosine readout": 0.6093940263449872,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6780300629320758,
+      "within-condition r \u2014 cosine readout": 0.6746135310311968,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.3572281975913273,
+      "within-condition r \u2014 cosine readout": 0.35292517921004163,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.49012472004682717,
+      "within-condition r \u2014 cosine readout": 0.48137068842955494,
+      "series": "n1m ridge",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "within-condition r \u2014 dot readout": -0.07150673541333781,
+      "within-condition r \u2014 cosine readout": -0.04561434633171568,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6550577258112569,
+      "within-condition r \u2014 cosine readout": 0.6814363411638094,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6374428522666675,
+      "within-condition r \u2014 cosine readout": 0.6367507115615587,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6719122426794911,
+      "within-condition r \u2014 cosine readout": 0.6649131263908108,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.4007853867376076,
+      "within-condition r \u2014 cosine readout": 0.4002016910800952,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.4837055472521497,
+      "within-condition r \u2014 cosine readout": 0.46711980167780676,
+      "series": "n1m mlp w8192",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "within-condition r \u2014 dot readout": -0.003366478606171071,
+      "within-condition r \u2014 cosine readout": 0.007424779217854546,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6178808503241845,
+      "within-condition r \u2014 cosine readout": 0.6403294117183694,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6403132348742648,
+      "within-condition r \u2014 cosine readout": 0.6401335694530296,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6686579690687721,
+      "within-condition r \u2014 cosine readout": 0.6604860373705443,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.45196457427649167,
+      "within-condition r \u2014 cosine readout": 0.4527632213847683,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.508703412274073,
+      "within-condition r \u2014 cosine readout": 0.5002879555021398,
+      "series": "n1m mlp w32768",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "within-condition r \u2014 dot readout": -0.029843459240645923,
+      "within-condition r \u2014 cosine readout": -0.03889304202600487,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6145664072882986,
+      "within-condition r \u2014 cosine readout": 0.6244741037882473,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6026067135603872,
+      "within-condition r \u2014 cosine readout": 0.6085242395971623,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.6736805618843322,
+      "within-condition r \u2014 cosine readout": 0.6777370059704524,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.47686425246109476,
+      "within-condition r \u2014 cosine readout": 0.47453992043569543,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "within-condition r \u2014 dot readout": 0.539307983816468,
+      "within-condition r \u2014 cosine readout": 0.5287490700746378,
+      "series": "n1m krr nystrom",
+      "_kind": "scatter",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "dot vs cosine readout per (arm, cell)",
+        "xlabel": "within-condition r \u2014 dot readout",
+        "ylabel": "within-condition r \u2014 cosine readout",
+        "legend_labels": [
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "h n5k linear",
+      "n1m ridge",
+      "n1m mlp w8192",
+      "n1m mlp w32768",
+      "n1m krr nystrom"
+    ]
+  }
+}
