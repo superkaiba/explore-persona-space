@@ -11,6 +11,7 @@ origin_prompt: 'Run: persona context only, matched-install LoRA<->full-FT pair, 
   new full-FT organisms, ~40-50 GPU-h); add marker''s missing seed-137 pair at persona
   to make it 2-seed too (~4 cells).'
 workflow: v1
+backend: runpod
 goal: Test whether the matched-install LoRA-vs-full-fine-tune method signature (full
   FT shifts activations farther and leaks differently at equal install) generalizes
   from the marker to sycophancy, impolite, and casual writing style and replicates
