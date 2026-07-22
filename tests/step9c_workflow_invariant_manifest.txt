@@ -36,6 +36,7 @@ tests/test_task_workflow.py
 tests/test_task_workflow_list_children.py
 tests/test_task_workflow_post_marker_echo.py
 tests/test_task_workflow_worktree.py
+tests/test_teammate_coordination_pins.py
 tests/test_verify_clean_result.py
 tests/test_verify_clean_result_body_stdin.py
 tests/test_verify_paper.py
