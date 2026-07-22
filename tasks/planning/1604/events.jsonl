@@ -3,3 +3,4 @@
 {"ts": "2026-07-22T19:58:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-22T20:19:54Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS n_fail=0 n_warn=0 (plan v1); no overridden checks."}
 {"ts": "2026-07-22T20:37:10Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py PASS n_fail=0 n_warn=0 (plan v3; v2 fixed fact-checker WARN-count baseline, v3 made header version-neutral per c40). Fact-checker: 15/16 CONFIRMED, 1 WRONG (cosmetic WARN-count baseline — corrected in v2), 0 UNVERIFIED."}
+{"ts": "2026-07-22T20:37:13Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics."}
