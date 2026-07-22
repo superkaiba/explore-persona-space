@@ -207,14 +207,20 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
-# --- + 1 #1268 pin + 1 #1289 pin + 1 #1397 pin + 1 #1546 pin + 1 #1563 pin
-# --- + 1 #1572 pin + 1 #1575 pin, 42 files). -
+# --- Pinned workflow-invariant tests. ----------------------------------------
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
 # on-disk existence check (a vanished entry prints WORKFLOW-INVARIANT MISSING) and
 # pinned against the live tree by tests/test_select_step9c_tests.py.
+# REGISTERING A NEW PIN TEST (#1593 — deliberately NO count to bump anywhere):
+# add ONE tuple entry below (at its group's position — prefer within-group
+# alphabetical placement, which scatters concurrent insertions — with a one-line
+# inline rationale comment) and ONE line at its sorted position in
+# tests/step9c_workflow_invariant_manifest.txt. The manifest set-equality pin
+# (tests/test_select_step9c_tests.py::test_workflow_invariant_matches_manifest)
+# replaces the retired integer count pin, whose single shared line made every
+# pair of same-window registering PRs merge-conflict (#1584).
 WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 1 — task-workflow API
     "tests/test_task_workflow.py",
@@ -346,6 +352,11 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
         "src/explore_persona_space/experiments/*/dispatch_*.py",
         "src/explore_persona_space/experiments/*/__main__.py",
     ),
+    # #1593: the WORKFLOW_INVARIANT manifest is READ by the pin test at test
+    # time (a .txt takes the data-suffix skip, so no stem/literal/import arm
+    # can reach the pin from a manifest-only diff); a touched manifest must
+    # re-run the tuple<->manifest set-equality pin.
+    "tests/test_select_step9c_tests.py": ("tests/step9c_workflow_invariant_manifest.txt",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------
