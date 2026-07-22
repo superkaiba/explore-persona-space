@@ -15,6 +15,9 @@ goal: Test whether the matched-install LoRA-vs-full-fine-tune method signature (
   FT shifts activations farther and leaks differently at equal install) generalizes
   from the marker to sycophancy, impolite, and casual writing style and replicates
   across two seeds, at the canonical persona context.
+relates_to:
+- implant-which-behaviors
+- leak-behavior-vs-marker
 ---
 # Matched-install LoRA vs full fine-tune, extended to sycophancy / impolite / casual (+ marker second seed)
 
