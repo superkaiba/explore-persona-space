@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1593,
+  "highest_id": 1594,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4625,6 +4625,13 @@
       "path": "tasks/proposed/1593",
       "status": "proposed",
       "title": "daily-fix: self-derive WORKFLOW_INVARIANT count pin"
+    },
+    "1594": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1594",
+      "status": "proposed",
+      "title": "daily-fix: MooseFS fix-engaged needs pod content read"
     },
     "16": {
       "has_clean_result": false,
