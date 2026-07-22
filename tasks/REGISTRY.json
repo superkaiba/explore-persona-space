@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1603,
+  "highest_id": 1604,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4709,6 +4709,13 @@
       "path": "tasks/planning/1603",
       "status": "planning",
       "title": "workflow-fix: RunPod terminal rung re-drives exit-75 still-waiting instead of parking"
+    },
+    "1604": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1604",
+      "status": "proposed",
+      "title": "workflow-fix: wire identity+bias baseline + kNN retrieval mandate into planner/critic lenses"
     },
     "161": {
       "has_clean_result": false,
