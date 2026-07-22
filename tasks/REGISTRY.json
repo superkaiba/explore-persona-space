@@ -4573,8 +4573,8 @@
     "1587": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1587",
-      "status": "planning",
+      "path": "tasks/approved/1587",
+      "status": "approved",
       "title": "daily-fix: dispatch-time trigger-dense tag auto-adoption"
     },
     "1588": {
