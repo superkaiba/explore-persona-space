@@ -4706,8 +4706,8 @@
     "1603": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1603",
-      "status": "planning",
+      "path": "tasks/approved/1603",
+      "status": "approved",
       "title": "workflow-fix: RunPod terminal rung re-drives exit-75 still-waiting instead of parking"
     },
     "1604": {
