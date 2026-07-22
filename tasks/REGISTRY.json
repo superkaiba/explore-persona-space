@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1594,
+  "highest_id": 1595,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4632,6 +4632,13 @@
       "path": "tasks/proposed/1594",
       "status": "proposed",
       "title": "daily-fix: MooseFS fix-engaged needs pod content read"
+    },
+    "1595": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1595",
+      "status": "proposed",
+      "title": "daily-fix: persist resume state before multi-hour pod stop"
     },
     "16": {
       "has_clean_result": false,
