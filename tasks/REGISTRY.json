@@ -4629,8 +4629,8 @@
     "1594": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1594",
-      "status": "planning",
+      "path": "tasks/approved/1594",
+      "status": "approved",
       "title": "daily-fix: MooseFS fix-engaged needs pod content read"
     },
     "1595": {
