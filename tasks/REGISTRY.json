@@ -4664,8 +4664,8 @@
     "1599": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1599",
-      "status": "planning",
+      "path": "tasks/approved/1599",
+      "status": "approved",
       "title": "daily-fix: sweep subsumption by fix merge time not creation"
     },
     "16": {
