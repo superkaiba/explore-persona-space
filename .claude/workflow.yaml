@@ -2233,8 +2233,11 @@ markers:
       claim. Idempotent: presence of this marker on a parent task makes
       the Step 9b filing block a no-op on re-entry / backstop tick — the
       re-entry runs the RECONCILE pass (verifies each listed child
-      exists, re-creating a missing one; it never spawns sessions and
-      never re-creates an existing child). Interactive mode
+      exists, re-creating a missing one; it never spawns sessions,
+      never re-creates an existing child, and never re-partitions the
+      proposal set or posts a new `epm:followup-scope v1` — the Step 9b
+      step-3 partition, including the expensive-band `same` selection,
+      runs at most ONCE per task lifetime, #1588). Interactive mode
       (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
       child executes only when a human triages it and invokes
       `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
@@ -2300,7 +2303,11 @@ markers:
       per task: the CHEAP band (both session modes) counts markers with
       `source: proposer-9b-cheap` (`0 < est_gpu_hours < 20`); the
       EXPENSIVE autonomous band counts markers with `source: proposer-9b`
-      (`est_gpu_hours >= 20`, autonomous only). A proposer-band marker
+      (`est_gpu_hours >= 20`, autonomous only; its dispatcher — the
+      Step 9b autonomous-block step-3 partition — runs at most once per
+      task lifetime, so this cap is a defensive bound: at most one
+      proposer-9b round is dispatchable under the current contract,
+      #1588). A proposer-band marker
       that consumes the FINAL cap slot of ITS band is followed by a
       `followup-parked-by-cap` structured `epm:progress` note per
       remaining unrun band-eligible proposal (idempotent per verbatim
