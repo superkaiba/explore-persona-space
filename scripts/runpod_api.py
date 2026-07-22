@@ -24,7 +24,8 @@ Public surface
 - list_team_pods()
 - wait_for_ssh(pod_id, timeout=600)  # poll until 22/tcp is publicly mapped
 - estimate_pod_hourly_rate(gpu_type_id, gpu_count)  # USD/hr best-effort
-- current_account_hourly_burn()  # sum estimated $/hr across RUNNING managed pods
+- current_account_hourly_burn()  # sum estimated $/hr across ALL RUNNING team pods
+                                 # (the pre-flight guard scopes to managed — see pod_lifecycle)
 
 CLI usage is via scripts/pod_lifecycle.py — this module is the library.
 """
@@ -994,9 +995,12 @@ def current_account_hourly_burn() -> tuple[float, list[tuple[str, float]]]:
 
     Returns ``(total_usd_per_hr, breakdown)`` where ``breakdown`` is a list of
     ``(pod_name, pod_hourly_usd)`` for each RUNNING pod (sorted by cost
-    descending). Includes both managed (`pod-N` / `epm-issue-N`) and unmanaged
-    pods on the account — the RunPod spending cap applies to ALL of them, so
-    the guard must too.
+    descending). Includes managed (`pod-N` / `epm-issue-N`) AND unmanaged pods
+    — this is the account-wide view the fleet-burn one-liners display. The
+    pre-flight $/hr guard (``pod_lifecycle._assert_under_account_hourly_cap``)
+    scopes this sum to managed pods by default (``EPM_RUNPOD_BURN_SCOPE``,
+    #1600): the team account is shared with the fellows cluster, whose burn
+    our cap must not gate on.
 
     Stopped (EXITED) pods are excluded because they don't accrue hourly GPU
     charges — only volume storage, which is not subject to the $/hr cap.
