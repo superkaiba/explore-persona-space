@@ -28,6 +28,8 @@
 
 Per-context map: held-out R² **0.74–0.81** in 5 of 6 coherent cells (0.50 in the base-model-reading-instruct-text cell); shuffled-pairing floor 0.06–0.08, and the fitted map sits far above trivial-transport floors (identity / scaled-identity / diagonal-affine) — a real learned operator. Query-averaged map: R² **0.82–0.94**, consistent with the earlier ~0.8 prefix-map result, which is this object. Moving from averaged to per-context grain loses nothing: the map exists at the single-(prefix, query) level.
 
+**Operator-coincidence check (2026-07-22).** "One object, two grains" is now measured, not just argued from linearity. An INDEPENDENTLY-fit averaged map (PRESS-ridge on v̄_C → per-prefix profile, same battery-excluded rows, prefix folds aligned with the per-row grouped folds) is a strictly weaker, noisier estimate of the same predictor, not a second mechanism: held-out R² 0.655/0.873 (instruct, ambient/pca48; base 0.602/0.803) vs the induced map's 0.819/0.936 (0.763/0.884); the induced map wins on 90–95% of prefixes; the two arms' held-out predictions agree at R² 0.79–0.93; and the fitted operators share both singular subspaces beyond chance — output k48 principal angle 42.7° vs Haar null ≈86.7°, input 78.6° vs null ≈84.3° (instruct ambient) — with the refit operator at ≈0.49× the Frobenius norm (heavier small-n shrinkage; many sparse-crossing prefixes average as few as 3 rows, so part of the refit's deficit is input/target noise). No evidence of between-prefix structure beyond the context map. Source: `eval_results/issue_1092/inline_operator_coincidence/operator_coincidence.json` (`scripts/issue1092_operator_coincidence.py`).
+
 ## Result 2 — The pre-query prefix-end state carries almost none of the map's skill, and it is NOT the averaged map
 
 ![fair comparison: arm x target grain, ambient basis](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f61b5bc49abaa9888bc2455465a599c9bfd83e41/figures/summaries/prefix_vs_context_map/fair_comparison_grid.png)
@@ -115,5 +117,5 @@ Natural prefixes (does not transfer; raw-L2 spread, 996 real conversations):
 ## Sources
 
 - Underlying summaries: `docs/results_summaries/2026-07-17-how-prefix-map-relates-to-context-map.md`, `2026-07-17-fair-comparison-deep-dive.md`, `2026-07-15-link-prefix-context-answer-maps.md`, `2026-07-14-prefix-vs-context-map.md`; glossary: `docs/glossary_context_answer_map.md`.
-- Artifacts: `eval_results/issue_1092/{inline_fair_comparison, inline_fair_comparison_deepdive, inline_prefixend_monitoring, inline_compose_chain}`; `eval_results/issue_658/inline_a3_5a_coherence/`.
+- Artifacts: `eval_results/issue_1092/{inline_fair_comparison, inline_fair_comparison_deepdive, inline_prefixend_monitoring, inline_compose_chain, inline_operator_coincidence}`; `eval_results/issue_658/inline_a3_5a_coherence/`.
 - Task bodies: #1092 (realistic crossed corpus, HIGH), #923 (constructed grid + stitch, MODERATE), #658 (coherence), #779 (map definitions), #813 (grain transfer).
