@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    paper_palette,
     savefig_paper,
     set_paper_style,
 )
@@ -83,6 +84,48 @@ def fig_error_vs_length() -> None:
     plt.close(fig)
 
 
+def fig_error_vs_spread() -> None:
+    """Per-prefix held-out error vs within-prefix context-vector spread (raw L2).
+
+    The natural-prefix test of the #658 coherence hypothesis (spread should
+    predict the averaged-map error); Spearman rho + p per series on-figure.
+    """
+    from scipy.stats import spearmanr
+
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharey=False)
+    for ax, cell in zip(axes, CELLS, strict=True):
+        a = _arrays(cell)
+        s = a["spread"]
+        for key, label, color in (
+            ("err_ctx", "Context-vector map", colors[0]),
+            ("err_prefix", "Prefix-end map", colors[1]),
+        ):
+            e = a[key]
+            rho, p = spearmanr(s, e)
+            p_txt = f"p = {p:.1g}" if p >= 1e-200 else "p < 1e-200"
+            ax.scatter(
+                s,
+                e,
+                s=8,
+                alpha=0.35,
+                edgecolor="none",
+                color=color,
+                label=f"{label} (Spearman ρ = {rho:+.2f}, {p_txt})",
+            )
+        ax.set_xlabel("Within-prefix context-vector spread (raw L2)")
+        ax.set_ylabel("Per-prefix held-out prediction error")
+        ax.set_title(CELL_LABEL[cell])
+        ax.legend(loc="upper left", frameon=False, fontsize=9)
+    fig.suptitle(
+        "Per-prefix prediction error vs within-prefix context-vector spread (996 prefixes)"
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "perprefix_error_vs_spread", dir=FIGDIR)
+    plt.close(fig)
+
+
 def fig_shrinkage() -> None:
     dd = json.loads((DD / "deepdive.json").read_text())
     labels, glob_res, diag_res = [], [], []
@@ -117,6 +160,7 @@ def main() -> int:
     FIGDIR.mkdir(parents=True, exist_ok=True)
     fig_error_scatter()
     fig_error_vs_length()
+    fig_error_vs_spread()
     fig_shrinkage()
     print(f"wrote figures to {FIGDIR}")
     return 0
