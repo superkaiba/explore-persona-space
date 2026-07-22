@@ -435,8 +435,14 @@ def test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue(tmp_path
     A stamped RunPod-failover lease suppresses a repeat poll of the SAME GCP run
     (identity match) but NOT a genuinely-new GCP run on the same issue (a fresh
     dispatch -> new pod_name/job_id), which must still get its own one failover.
-    Also: a lease whose backend is NOT ``runpod`` (a fresh GCP dispatch wrote it)
-    never suppresses, even if a stale ``gcp_failover_of`` lingers on it."""
+
+    #1596 amendment (deliberate — Change 4): a ``backend="gcp"`` lease whose
+    ``gcp_failover_of`` matches the probed handle's identity NOW suppresses too
+    — that is the queue-vanish on-demand retry's in-flock stamp (the
+    crash-window record: retry launched, sidecar write failed). The identity
+    comparison is what keeps the fresh-dispatch case unsuppressed (a fresh GCP
+    run's NEW job_id never matches a stale stamp); a lease on any OTHER
+    backend never suppresses."""
     from explore_persona_space.backends.router import Lease, LeaseStore
     from scripts.backend_poll import _gcp_handle_identity, _lease_records_failover_of
 
@@ -472,8 +478,8 @@ def test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue(tmp_path
     )
     assert _lease_records_failover_of(659, new_gcp, lease_store=store) is False
 
-    # A non-runpod lease (a fresh GCP dispatch re-wrote it) never suppresses,
-    # even with a stale gcp_failover_of carried over.
+    # #1596: a backend="gcp" lease whose stamp MATCHES the probed handle's
+    # identity is the on-demand retry's crash-window record -> suppress.
     store.write(
         Lease(
             issue=659,
@@ -481,7 +487,23 @@ def test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue(tmp_path
             attempt_id="att-2",
             backend="gcp",
             job_id="instance-fake-2",
-            gcp_failover_of=_gcp_handle_identity(crashed),  # stale stamp
+            gcp_failover_of=_gcp_handle_identity(crashed),
+        )
+    )
+    assert _lease_records_failover_of(659, crashed, lease_store=store) is True
+    # ... but a genuinely-new GCP run (new job_id -> new identity) probed
+    # against that same gcp-stamped lease is NOT suppressed (per-crash keying
+    # is what protects the fresh-dispatch case under the #1596 relaxation).
+    assert _lease_records_failover_of(659, new_gcp, lease_store=store) is False
+    # A lease on any OTHER backend never suppresses, stamp or no stamp.
+    store.write(
+        Lease(
+            issue=659,
+            spec_hash="cafef00d",
+            attempt_id="att-3",
+            backend="cluster",
+            job_id="job-1",
+            gcp_failover_of=_gcp_handle_identity(crashed),
         )
     )
     assert _lease_records_failover_of(659, crashed, lease_store=store) is False
@@ -3529,12 +3551,25 @@ def _reclaim_setup(tmp_path, monkeypatch, *, team_list, backend=None):
     Returns ``(sidecar, rp, terminations)`` — the vanish-shaped sidecar, the
     (by default provision-failing) RunPod backend fake, and the recorded
     ``terminate_pod`` calls.
+
+    #1596: a CLEAN-residue RunPod refusal on the vanish caller now retries the
+    GCP on-demand rungs before minting the terminal, so ``_resolve_backend``
+    returns a poll+launch double whose launch capacity-misses — the retry
+    exhausts and falls through to the SAME terminal these tests pin (their
+    reason / terminate / log_tail-fragment contract is unchanged; the
+    log_tail additionally carries the retry-exhausted note).
     """
+    from explore_persona_space.backends.gcp import GcpProvisioningError
+
     runpod_api = _import_runpod_api()
     sidecar = tmp_path / "issue-1116-handle.json"
     write_handle_sidecar(_vanish_handle(), sidecar)
     monkeypatch.setattr(
-        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _GcpPollLaunchDouble(
+            _not_found_poll(),
+            launch_raises=GcpProvisioningError("ZONE_RESOURCE_POOL_EXHAUSTED (scripted)"),
+        ),
     )
     rp = backend if backend is not None else _ProvisionFailedRunpodBackend()
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
@@ -3960,3 +3995,333 @@ def test_failover_terminate_http_404_transient_leaked_not_torn_down(tmp_path, mo
     assert out["reason"] == "runpod_provision_leaked_pod"
     assert "torn-down" not in out["log_tail_excerpt"]
     assert terminations == []
+
+
+# ---------------------------------------------------------------------------
+# issue #1596 — queue-vanish on-demand RETRY (poller end-to-end).
+#
+# When the #1116 queue-vanish failover's RunPod terminal rung refuses for
+# capacity/cap reasons (NoComputeAvailableError) AND the #1490 reclaim reports
+# CLEAN residue, the poller now retries the GCP ladder's STANDARD (on-demand)
+# rungs (router.retry_gcp_ondemand_after_queue_vanish via
+# _retry_gcp_ondemand_after_vanish_refusal) — the #1112 manual
+# `--provisioning-model STANDARD` recovery, automated. On success the sidecar
+# is authoritatively re-pointed at the NEW gcp handle and the poll emits a
+# running-shaped JSON (current_phase "queue_vanish_gcp_ondemand_retry"); on
+# exhaustion it falls through to today's re-drivable no_compute_available
+# terminal. Every test drives backend_poll_main (the production entry point) —
+# NEVER the shared core directly.
+# ---------------------------------------------------------------------------
+
+
+class _GcpPollLaunchDouble:
+    """#1596 combined GCP double: ``_resolve_backend`` returns it for BOTH the
+    poll read (scripted result) AND the on-demand retry's launch seam.
+
+    ``launch`` records every ATTEMPT (``launch_calls``) and, on success, mints
+    a FRESH per-create instance id (``job_id`` — the production discriminator)
+    while ``pod_name`` stays the issue-keyed ``eps-issue-<N>`` exactly as
+    ``gcp.instance_name_for`` does (the vanished and the retry instance SHARE
+    a pod_name). ``teardown`` is recorded for the #783 queue-timeout caller.
+    """
+
+    def __init__(self, result: PollResult, *, launch_raises: BaseException | None = None) -> None:
+        self._result = result
+        self._launch_raises = launch_raises
+        self.launch_calls = 0
+        self.launches: list = []
+        self.teardowns: list = []
+
+    def poll(self, handle: RunHandle) -> PollResult:
+        return self._result
+
+    def teardown(self, handle: RunHandle) -> None:
+        self.teardowns.append(handle)
+
+    def launch(self, spec):
+        self.launch_calls += 1
+        if self._launch_raises is not None:
+            raise self._launch_raises
+        self.launches.append(spec)
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id=f"instance-ondemand-{len(self.launches)}",
+            pod_name=f"eps-issue-{spec.issue}",
+            scratch_dir=f"/workspace/eps-issue-{spec.issue}",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={"issue": spec.issue, "zone": "us-central1-a"},
+        )
+
+
+def test_gcp_queue_vanish_runpod_refusal_clean_residue_retries_gcp_ondemand(
+    tmp_path, monkeypatch, capsys
+):
+    """#1596 HEADLINE (criterion 1): vanish -> RunPod NoComputeAvailableError ->
+    clean residue => a GCP STANDARD-rung create is attempted; on launch the
+    sidecar is re-pointed at the NEW gcp handle (fresh instance id; the stale
+    "pending" phase clock dropped by construction) and the poll emits a
+    running-shaped JSON with current_phase == "queue_vanish_gcp_ondemand_retry";
+    the FINAL epm:backend-selected marker carries the retry reason."""
+    gcp = _GcpPollLaunchDouble(_not_found_poll())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **kw: captured.append(kw),
+        raising=False,
+    )
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "queue_vanish_gcp_ondemand_retry"
+    assert len(rp.launches) == 1  # RunPod refused exactly once
+    assert len(gcp.launches) == 1  # exactly ONE on-demand create
+    # Sidecar authoritatively re-pointed at the NEW gcp handle (the per-create
+    # instance id is the discriminator — pod_name is issue-keyed and shared).
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.job_id == "instance-ondemand-1"
+    assert recovered.job_id != _vanish_handle().job_id
+    # The rewritten sidecar carries NO stale "pending" phase clock, so a later
+    # death of the on-demand instance cannot false-match the vanish predicate.
+    raw_extra = json.loads(sidecar.read_text()).get("extra") or {}
+    assert "last_phase" not in raw_extra
+    # Directive (b): the FINAL epm:backend-selected marker carries the retry
+    # reason (intermediate rung markers wear the generic auto_fallback_gcp).
+    selected = [m for m in captured if m.get("marker") == "epm:backend-selected"]
+    assert selected, "no epm:backend-selected marker posted by the retry"
+    assert json.loads(selected[-1]["note"])["reason"] == "queue_vanish_gcp_ondemand_retry"
+
+
+def test_gcp_queue_vanish_ondemand_retry_exhausted_falls_through_no_compute(
+    tmp_path, monkeypatch, capsys
+):
+    """#1596 criterion 3: every on-demand rung capacity-misses => the retry
+    exhausts and falls through to the SAME re-drivable no_compute_available
+    terminal (the watcher capacity-retry backstop stays reachable); log_tail
+    carries the retry note + provision-residue + the ORIGINAL RunPod refusal
+    evidence."""
+    from explore_persona_space.backends.gcp import GcpProvisioningError
+
+    gcp = _GcpPollLaunchDouble(
+        _not_found_poll(),
+        launch_raises=GcpProvisioningError("ZONE_RESOURCE_POOL_EXHAUSTED"),
+    )
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "no_compute_available"
+    tail = out["log_tail_excerpt"]
+    assert "GCP on-demand retry also exhausted (#1596)" in tail
+    assert "provision-residue:" in tail
+    assert "RunPod also unavailable" in tail  # the ORIGINAL refusal evidence kept
+    # The retry actually walked the on-demand rungs (base + A100-40 for the
+    # fits-40 lora-7b intent) before exhausting.
+    assert gcp.launch_calls == 2
+    assert read_handle_sidecar(sidecar).backend == "gcp"  # sidecar untouched
+
+
+def test_gcp_queue_vanish_ondemand_retry_skipped_on_leaked_residue(tmp_path, monkeypatch, capsys):
+    """#1596 criterion 4: a LEAKED reclaim outcome keeps today's
+    runpod_provision_leaked_pod terminal byte-identical — ZERO GCP creates
+    (the retry never runs while an unattributable pod bills)."""
+    runpod_api = _import_runpod_api()
+    gcp = _GcpPollLaunchDouble(_not_found_poll())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    # The #1490 row-3 leaked cell: pre-probe fails, post snapshot non-empty.
+    team_list = _ScriptedTeamList([RuntimeError("graphql flake"), [_residue_pod("podX")]])
+    monkeypatch.setattr(runpod_api, "list_team_pods", team_list, raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "runpod_provision_leaked_pod"
+    assert gcp.launch_calls == 0  # the retry never fired
+    assert terminations == []
+
+
+def test_gcp_queue_vanish_ondemand_retry_crash_window_short_circuits(tmp_path, monkeypatch, capsys):
+    """#1596 criterion 6 (pins Change 4): a PRIOR tick's retry launched (the
+    in-flock stamp landed a backend="gcp" lease carrying the OLD vanished
+    handle's identity) but the sidecar write crashed — the next tick's
+    shared-core pre-check (_lease_records_failover_of, relaxed to match the
+    gcp-stamped lease) short-circuits to sidecar_persistence_failed with ZERO
+    new creates on EITHER backend."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    handle = _vanish_handle()
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    store = LeaseStore()  # resolves to the tmp ~/.eps-routing (autouse fixture)
+    store.write(
+        Lease(
+            issue=1116,
+            spec_hash="deadbeef",
+            attempt_id="att-1",
+            backend="gcp",
+            job_id="instance-ondemand-1",
+            gcp_failover_of={"pod_name": handle.pod_name, "job_id": handle.job_id},
+        )
+    )
+    gcp = _GcpPollLaunchDouble(_not_found_poll())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "sidecar_persistence_failed"
+    assert len(rp.launches) == 0  # no paid RunPod pod
+    assert gcp.launch_calls == 0  # no second GCP create
+
+
+@pytest.mark.parametrize("caller", ["crash-659", "queue-timeout-783", "boot-loop-1029"], ids=str)
+def test_crash_boot_loop_and_queue_timeout_failovers_do_not_retry_gcp_ondemand(
+    tmp_path, monkeypatch, capsys, caller
+):
+    """#1596 criterion 5 (poller side, ALL THREE unchanged callers): the #659
+    workload-crash, #783 queue-timeout, and #1029 boot-loop failovers keep the
+    retry flag OFF — a clean-residue RunPod capacity refusal mints today's
+    re-drivable no_compute_available terminal with ZERO GCP on-demand creates
+    and NO #1596 retry note."""
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    if caller == "crash-659":
+        gcp = _GcpPollLaunchDouble(_poll("dead", "terminal_workload_failed"))
+        monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+        sidecar = tmp_path / "issue-659-handle.json"
+        write_handle_sidecar(_gcp_handle(), sidecar)
+        rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    elif caller == "queue-timeout-783":
+        gcp = _GcpPollLaunchDouble(_pending_poll())
+        monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+        sidecar = tmp_path / "issue-783-handle.json"
+        write_handle_sidecar(
+            _gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar
+        )
+        rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    else:  # boot-loop-1029: death #1 records the streak, death #2 fails over
+        gcp = _GcpPollLaunchDouble(_poll("dead", "terminal_setup_failed"))
+        monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+        sidecar1 = tmp_path / "launch1" / "issue-1029-handle.json"
+        sidecar1.parent.mkdir(parents=True, exist_ok=True)
+        write_handle_sidecar(_boot_handle(job_id="instance-boot-1"), sidecar1)
+        backend_poll_main(["--issue", "1029", "--handle-file", str(sidecar1)])
+        sidecar = tmp_path / "launch2" / "issue-1029-handle.json"
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        write_handle_sidecar(_boot_handle(job_id="instance-boot-2"), sidecar)
+        rc = backend_poll_main(["--issue", "1029", "--handle-file", str(sidecar)])
+
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "no_compute_available"
+    assert rp.launches  # the RunPod rung was reached and refused
+    assert gcp.launch_calls == 0  # ZERO GCP on-demand creates (flag defaults off)
+    assert "#1596" not in out["log_tail_excerpt"]
+
+
+def test_gcp_workload_error_on_ondemand_retry_parks_non_redrivable(tmp_path, monkeypatch, capsys):
+    """#1596 (Change 5 step 4): a WORKLOAD-class failure on the retry create
+    must NOT wear the re-drivable capacity label (the #931 mislabel class) —
+    the distinct gcp_workload_failed_on_ondemand_retry terminal parks at
+    blocked; allowlist-shape pin against the watcher's re-drive set."""
+    import scripts.autonomous_session_watch as asw
+    from explore_persona_space.backends.gcp import GcpWorkloadError
+
+    gcp = _GcpPollLaunchDouble(
+        _not_found_poll(),
+        launch_raises=GcpWorkloadError("entrypoint crashed on retry", evidence={"exit_code": 1}),
+    )
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "gcp_workload_failed_on_ondemand_retry"
+    assert "NOT" in out["log_tail_excerpt"] and "re-drivable" in out["log_tail_excerpt"]
+    assert "gcp_workload_failed_on_ondemand_retry" not in asw.TRANSIENT_CAPACITY_REASONS
+
+
+def test_gcp_queue_vanish_ondemand_retry_sidecar_write_failure_mints_persistence_terminal(
+    tmp_path, monkeypatch, capsys
+):
+    """#1596 (Change 5 step 6 failure branch): the retry LAUNCHED but the
+    authoritative sidecar write fails (EDQUOT) — sentinel written + terminal
+    sidecar_persistence_failed, and the NEXT tick short-circuits at the
+    shared-core pre-check with NO second create (the in-flock lease stamp +
+    the sentinel both bound it)."""
+    gcp = _GcpPollLaunchDouble(_not_found_poll())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: gcp)
+    rp = _ProvisionFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    real_write = write_handle_sidecar
+
+    def _raising_write(handle, path):
+        if str(getattr(handle, "job_id", "")).startswith("instance-ondemand-"):
+            raise OSError("Disk quota exceeded (EDQUOT) writing the retry sidecar")
+        return real_write(handle, path)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "sidecar_persistence_failed"
+    assert gcp.launch_calls == 1  # the create happened once
+
+    # SECOND tick on the unchanged GCP sidecar: the pre-check short-circuits
+    # (sentinel + the Change-4-relaxed lease record) — no second create on
+    # EITHER backend.
+    launches_rp = len(rp.launches)
+    rc2 = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert out2["reason"] == "sidecar_persistence_failed"
+    assert gcp.launch_calls == 1
+    assert len(rp.launches) == launches_rp

@@ -2555,6 +2555,14 @@ def _lease_records_failover_of(issue: int, handle, *, lease_store=None) -> bool:
     "no record" (return ``False``) — the worst case is one extra RunPod launch
     (the same bound the sentinel fast-path and the ``recovered.backend`` guard
     already provide), NEVER a silent suppression of a legitimate retry.
+
+    #1596: a ``backend="gcp"`` lease ALSO matches — the queue-vanish on-demand
+    retry stamps ``gcp_failover_of`` in-flock on a GCP lease
+    (``router._attempt_one_gcp_rung``'s ``failover_of_identity``), and a
+    later tick whose sidecar write crashed must short-circuit on that stamp
+    instead of firing a second launch. Safe for #659: the identity comparison
+    is unchanged, so only a lease carrying the OLD vanished handle's identity
+    matches — a fresh GCP dispatch (new pod_name/job_id) never does.
     """
     from explore_persona_space.backends.router import LeaseStore
 
@@ -2570,7 +2578,7 @@ def _lease_records_failover_of(issue: int, handle, *, lease_store=None) -> bool:
             exc,
         )
         return False
-    if lease is None or lease.backend != "runpod":
+    if lease is None or lease.backend not in ("runpod", "gcp"):
         return False
     return lease.gcp_failover_of == _gcp_handle_identity(handle)
 
@@ -3429,6 +3437,10 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
       clock discriminator) + the ladder-rung label, so the
       ``epm:backend-selected`` marker records WHICH rung's queue dropped the
       request.
+    * ``gcp_ondemand_retry_on_capacity_refusal=True`` (#1596) — the ONLY
+      caller that sets it: a capacity-class RunPod refusal with CLEAN
+      provision residue retries the GCP ladder's STANDARD (on-demand) rungs
+      before minting the terminal (the #1112 manual recovery, automated).
     """
     # Lazy import (module convention: backend_poll -> router imports stay inside
     # functions so the --help path is fast and the import direction is one-way).
@@ -3450,7 +3462,225 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
         failover_tag="#1116 queue-vanish failover",
         teardown_first=False,
         extra_evidence={"last_observed_phase": GCP_PENDING_PHASE, "gcp_ladder_rung": rung},
+        gcp_ondemand_retry_on_capacity_refusal=True,
     )
+
+
+def _retry_gcp_ondemand_after_vanish_refusal(
+    *,
+    issue: int,
+    handle,
+    sidecar: Path,
+    cause_label: str,
+    failover_tag: str,
+    reclaim: dict,
+) -> dict | None:
+    """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-vanish
+    RunPod refusal with CLEAN provision residue (#1596/#1112).
+
+    Automates the #1112 manual ``--provisioning-model STANDARD`` recovery:
+    called ONLY from :func:`_failover_gcp_to_runpod`'s
+    ``NoComputeAvailableError`` clean-residue tail, and ONLY when the caller
+    is the queue-vanish wrapper (``gcp_ondemand_retry_on_capacity_refusal``).
+    The rung walk lives in ``router.retry_gcp_ondemand_after_queue_vanish``
+    (cap accounting — the retry BURNS ``gcp_attempts_today`` — headroom/boot-
+    loop skips, zone ladder, markers, in-flock exactly-once stamp); this
+    helper owns the poller-side sidecar/sentinel mechanics.
+
+    Returns:
+
+    * a RUNNING-shaped poll JSON (``current_phase ==
+      "queue_vanish_gcp_ondemand_retry"``) when a fresh on-demand GCP
+      instance launched and the sidecar was authoritatively re-pointed at it
+      (write + readback) — or when a CONCURRENT winner's newer handle was
+      found on the sidecar and preserved;
+    * a TERMINAL infra JSON on a sidecar-persistence failure
+      (``sidecar_persistence_failed`` — sentinel written so the next tick
+      short-circuits) or on a workload-class create failure
+      (``gcp_workload_failed_on_ondemand_retry`` — a workload crash must NOT
+      wear the re-drivable capacity label, the #931 mislabel class; the
+      unlisted reason parks at ``blocked`` for a human, fail-loud);
+    * ``None`` when the retry exhausted every on-demand rung / hit the daily
+      cap — the caller falls through to today's re-drivable
+      ``no_compute_available`` terminal, keeping the watcher capacity-retry
+      backstop reachable.
+    """
+    # Lazy imports (module convention — --help stays fast, one-way direction).
+    from explore_persona_space.backends.gcp import GcpWorkloadError
+    from explore_persona_space.backends.issue_dispatch import (
+        read_handle_sidecar,
+        write_handle_sidecar,
+    )
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        NoComputeAvailableError,
+        retry_gcp_ondemand_after_queue_vanish,
+    )
+    from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+    sentinel = _failover_sentinel_path(sidecar)
+    # The builder fails loud on a blank-workload handle — keep that. The
+    # STANDARD pin is applied INSIDE the router function (single source of
+    # truth); here we only re-target the reconstructed spec at GCP.
+    spec = replace(_runspec_from_gcp_handle(handle, issue), backend="gcp")
+    try:
+        rr = retry_gcp_ondemand_after_queue_vanish(
+            spec=spec,
+            gcp_backend=_resolve_backend("gcp"),
+            marker_poster=post_marker_via_task_py,
+            on_launched=lambda h: write_handle_sidecar(h, sidecar),
+            gcp_failover_of_identity=_gcp_handle_identity(handle),
+        )
+    except NoComputeAvailableError as exc:
+        logging.warning(
+            "backend_poll: #1596 GCP on-demand retry for issue %s exhausted "
+            "(%s); falling through to the re-drivable no_compute_available terminal",
+            issue,
+            str(exc)[:300],
+        )
+        return None
+    except GcpWorkloadError as exc:
+        # A workload-class failure on the RETRY create. Do NOT return the
+        # re-drivable no_compute_available (the #931 mislabel class: the
+        # watcher's capacity-retry pass would re-drive a broken workload).
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="gcp_workload_failed_on_ondemand_retry",
+            log_tail=(
+                f"{cause_label} on {handle.pod_name}; RunPod refused for capacity "
+                f"(provision-residue: {reclaim['outcome']}), and the #1596 GCP on-demand "
+                f"retry hit a WORKLOAD-class failure ({str(exc)[:500]}); NOT "
+                f"watcher-re-drivable — needs a human/crash-fix round ({failover_tag})"
+            ),
+        )
+    if rr is None:
+        # CONCURRENT already-launched (the rung's in-flock #1596 short-circuit
+        # matched): mirror the shared core's M3b block — read the sidecar and
+        # preserve the winner's handle. The winner's fresh GCP instance shares
+        # the OLD handle's pod_name (eps-issue-<N> is issue-keyed), so the
+        # discriminator is job_id (the per-create GCE instance id); a
+        # cross-rung race winner may also have re-pointed to RunPod.
+        try:
+            existing = read_handle_sidecar(sidecar)
+        except (OSError, json.JSONDecodeError, KeyError, ValueError):
+            existing = None
+        if existing is not None and (
+            existing.backend == "runpod"
+            or (existing.backend == "gcp" and existing.job_id != handle.job_id)
+        ):
+            _clear_failover_sentinel(sentinel)
+            return {
+                "status": "running",
+                "current_phase": ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+                "new_milestone": True,
+                "last_log_mtime_sec_ago": 0,
+                "pid_alive": True,
+                "log_tail_excerpt": (
+                    f"{cause_label} on {handle.pod_name}; a concurrent triggerer already "
+                    f"retried GCP on-demand (#1596 in-flock re-check); preserved its "
+                    f"sidecar handle {existing.pod_name} ({existing.backend} "
+                    f"{existing.job_id})"
+                ),
+                "gate": None,
+                "sentinels_processed": 0,
+                "phase_log_mtime_sec_ago": 0,
+                "shard_log_mtime_sec_ago": 0,
+                "gpu_util": "unknown",
+                "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+                "issue": int(issue),
+            }
+        # The winner's handle is NOT on disk yet — refuse to emit running
+        # rather than poll the stale vanished handle; persist the sentinel so
+        # the next tick short-circuits at the shared-core pre-check.
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_concurrent"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"#1596 GCP on-demand retry: a concurrent triggerer already launched for "
+                f"issue {issue} but its handle is not yet on the sidecar "
+                f"(backend={existing.backend if existing is not None else 'absent'!r}); "
+                f"refusing to emit running (would re-poll the vanished GCP handle)"
+            ),
+        )
+
+    # AUTHORITATIVE post-launch sidecar write + readback (the shared core's
+    # MF4 contract). The on_launched hook above is best-effort (the router
+    # swallows its exceptions), so re-point HERE and PROVE it landed as the
+    # NEW gcp handle. pod_name alone cannot discriminate (both the vanished
+    # and the retry instance are eps-issue-<N>), so the readback additionally
+    # checks job_id — the per-create GCE instance id.
+    try:
+        write_handle_sidecar(rr.handle, sidecar)
+        recovered = read_handle_sidecar(sidecar)
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_write"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"#1596 GCP on-demand retry launched {rr.handle.pod_name} (instance "
+                f"{rr.handle.job_id}) but sidecar persistence FAILED "
+                f"({type(exc).__name__}: {exc}); refusing to emit running (a later tick "
+                f"would re-poll the vanished handle; the in-flock lease stamp bounds any "
+                f"re-launch)"
+            ),
+        )
+    if (
+        recovered.backend != "gcp"
+        or recovered.pod_name != rr.handle.pod_name
+        or recovered.job_id != rr.handle.job_id
+    ):
+        _write_failover_sentinel(
+            sentinel, issue=issue, handle=handle, reason="sidecar_persistence_failed_readback"
+        )
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="sidecar_persistence_failed",
+            log_tail=(
+                f"#1596 GCP on-demand retry: sidecar readback shows "
+                f"backend={recovered.backend!r} pod={recovered.pod_name!r} "
+                f"job_id={recovered.job_id!r}, not the launched "
+                f"{rr.handle.pod_name!r}/{rr.handle.job_id!r}; refusing to emit running"
+            ),
+        )
+
+    # Sidecar authoritatively re-pointed at the NEW gcp handle. The fresh
+    # serialization drops the old handle's extra["last_phase"]=="pending"
+    # clock by construction (the clock lives in the serialized handle's
+    # extra), so a later death of the on-demand instance cannot false-match
+    # the vanish predicate. No post-hoc lease stamp needed — the rung stamped
+    # gcp_failover_of in the SAME flock transaction as the create.
+    _clear_failover_sentinel(sentinel)
+    rung = str((rr.handle.extra or {}).get("gcp_ladder_rung") or "unknown_rung")
+    return {
+        "status": "running",
+        "current_phase": ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 0,
+        "pid_alive": True,
+        "log_tail_excerpt": (
+            f"{cause_label} on {handle.pod_name} (instance {handle.job_id}); RunPod refused "
+            f"for capacity with clean residue (provision-residue: {reclaim['outcome']}); "
+            f"#1596 retried the GCP on-demand ladder and launched {rr.handle.pod_name} "
+            f"(instance {rr.handle.job_id}, rung {rung}) ({failover_tag})"
+        ),
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 0,
+        "shard_log_mtime_sec_ago": 0,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+        "issue": int(issue),
+    }
 
 
 def _provision_failure_evidence(exc: BaseException) -> tuple[str, int | None]:
@@ -3487,6 +3717,7 @@ def _failover_gcp_to_runpod(
     failover_tag: str,
     teardown_first: bool,
     extra_evidence: dict | None = None,
+    gcp_ondemand_retry_on_capacity_refusal: bool = False,
 ) -> dict:
     """Shared core for the GCP->RunPod async failover (#659 crash + #783 queue timeout).
 
@@ -3509,6 +3740,17 @@ def _failover_gcp_to_runpod(
     the evidence dict the terminal rung records on the marker — the default
     keeps the #659/#783 callers' evidence byte-identical
     (``test_failover_seam_default_reason_unchanged_byte_for_byte``).
+
+    ``gcp_ondemand_retry_on_capacity_refusal`` (#1596, keyword-only, default
+    ``False`` — passed ``True`` ONLY by the queue-vanish caller
+    :func:`_failover_vanished_gcp_to_runpod`): when the RunPod terminal rung
+    raises ``NoComputeAvailableError`` AND the #1490 residue reclaim reports a
+    CLEAN outcome (never ``leaked``), retry the GCP ladder's STANDARD
+    (on-demand) rungs (:func:`_retry_gcp_ondemand_after_vanish_refusal` — the
+    #1112 manual recovery, automated) before falling through to today's
+    re-drivable ``no_compute_available`` terminal. The #659 crash / #783
+    queue-timeout / #1029 boot-loop callers keep the flag off, so their
+    no-cascade bound stays byte-identical.
     """
     # Lazy imports — keep the --help path fast and match the patch targets the
     # poller tests monkeypatch (RunPodBackend from backends.runpod;
@@ -3694,6 +3936,34 @@ def _failover_gcp_to_runpod(
         # another actor and a watcher re-drive's provision idempotency-refuses
         # on it). No lease stamp here — nothing launched (or the residue is
         # torn down), so a later poll SHOULD retry against a clean slate.
+        #
+        # #1596 (queue-vanish caller ONLY): before minting the terminal, retry
+        # the GCP ladder's STANDARD (on-demand) rungs — the #1112 manual
+        # `--provisioning-model STANDARD` recovery, automated. Gate = clean
+        # residue only (the `leaked` branch above is untouched): every
+        # clean-residue refusal already authorizes the watcher to re-run the
+        # FULL ladder via the re-drivable terminal, so this bounded immediate
+        # retry is strictly narrower than what the system already permits —
+        # and an evidence-text classifier would have MISSED the motivating
+        # #1112 cost-cap shape (it classifies `unknown`).
+        retried = False
+        if gcp_ondemand_retry_on_capacity_refusal:
+            retry_json = _retry_gcp_ondemand_after_vanish_refusal(
+                issue=issue,
+                handle=handle,
+                sidecar=sidecar,
+                cause_label=cause_label,
+                failover_tag=failover_tag,
+                reclaim=reclaim,
+            )
+            if retry_json is not None:
+                return retry_json
+            # Retry exhausted (NoComputeAvailableError inside the helper) ->
+            # fall through to the SAME re-drivable terminal, log_tail extended
+            # with the retry note while KEEPING the original RunPod refusal
+            # evidence (a recurring account-level cost-cap — a config problem
+            # masquerading as capacity — stays visible across episodes).
+            retried = True
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
@@ -3702,6 +3972,7 @@ def _failover_gcp_to_runpod(
                 f"{cause_label} on {handle.pod_name}; RunPod also unavailable "
                 f"({failover_tag}; provision-residue: {reclaim['outcome']}"
                 + (f" — {reclaim['detail']}" if reclaim["detail"] else "")
+                + ("; GCP on-demand retry also exhausted (#1596)" if retried else "")
                 + ")"
             ),
         )
