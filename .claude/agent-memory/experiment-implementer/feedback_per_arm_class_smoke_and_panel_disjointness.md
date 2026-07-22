@@ -24,3 +24,17 @@ EVERY ModelOrganism construction site the new class reaches — the library
 refusal is load-bearing, never relax it; (2) make the smoke default cover one
 run per ARM CLASS, not one run total — a per-arm seam (context / panel /
 organism assembly) is invisible to a single-arm smoke.
+
+**READ-side variant (#1586 r3, 2026-07-22):** the same crash fires when a
+dispatcher constructs organisms as READ-identity carriers at PANEL contexts —
+a six-context leakage-panel read (`_content_rate` per read cid) legitimately
+reads AT `default` / the held-out `neg_sp_*` members, and the training-time
+guard fires at construction even though the panel field is semantically unused
+by `make_source_rate_fn` (it consumes only behavior_spec + context). Fix shape:
+one `_read_organism(behavior, cid, seed)` helper threading `panel_name_for` +
+point-of-use `default_panel()` member registration, used at EVERY read-side
+construction site (parity / ladder / tier2 / panel) — a no-op at source
+contexts (`default_v1` returned unchanged). Both pods' p6 smoke died on this
+(the source-context p3/p5 reads passed, so a source-read smoke is blind to it —
+the read-context sweep must cover a panel-member cid). Worked example:
+`scripts/issue1586_dispatch.py::_read_organism` + `tests/test_issue1586_read_organism.py`.
