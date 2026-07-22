@@ -524,9 +524,16 @@ def _realized_training_panel(cfg: Cfg, beh_key: str, regime: str) -> list[str]:
     return a1481.realized_panel_context_ids(meta, G.BEHAVIOR_BY_KEY[beh_key])
 
 
-def _assert_mix_composition(path: Path, beh_key: str, expected_rows: int) -> dict:
+def _assert_mix_composition(path: Path, beh_key: str, regime: str, expected_rows: int) -> dict:
     """Composition asserts on a staged mix (row counts only — harmful-content
-    digest discipline: never print row text)."""
+    digest discipline: never print row text).
+
+    The marker sub-check is REGIME-aware (r4 crash fix, epm:failure v4): a
+    ``con`` mix is the 200:800 pos:neg interleave (#1112/#1333) so marker rows
+    must be a strict subset (0 < n_marker < n); a ``po`` mix is the con mix's
+    positives BY CONSTRUCTION (no negatives), so EVERY row carries the marker
+    (n_marker == n) — 200/200 is correct there, not degenerate.
+    """
     n = 0
     n_marker = 0
     with path.open(encoding="utf-8") as f:
@@ -544,10 +551,28 @@ def _assert_mix_composition(path: Path, beh_key: str, expected_rows: int) -> dic
         raise RuntimeError(f"mix {path.name}: {n} rows != expected {expected_rows}")
     rec = {"rows": n, "sha256": _sha256_file(path)}
     if beh_key == "mk":
-        # 200:800 pos:neg convention (#1112/#1333) — positives carry the marker.
         rec["rows_with_marker"] = n_marker
-        if not (0 < n_marker < n):
-            raise RuntimeError(f"marker mix {path.name}: degenerate marker rows {n_marker}/{n}")
+        if regime == "po":
+            if n_marker != n:
+                raise RuntimeError(
+                    f"marker po mix {path.name}: {n_marker}/{n} marker rows — a "
+                    "positive-only mix must carry the marker on EVERY row"
+                )
+        elif regime == "con":
+            if not (0 < n_marker < n):
+                raise RuntimeError(
+                    f"marker con mix {path.name}: degenerate marker rows {n_marker}/{n}"
+                )
+        else:
+            raise RuntimeError(f"marker mix {path.name}: unknown regime {regime!r}")
+    logger.info(
+        "[stage] mix %s (%s_%s): rows=%d%s composition OK",
+        path.name,
+        beh_key,
+        regime,
+        n,
+        f" rows_with_marker={n_marker}" if beh_key == "mk" else "",
+    )
     return rec
 
 
@@ -598,7 +623,7 @@ def phase_stage(cfg: Cfg) -> dict:
         _stage_file(path_in_repo, dest, revision=data_rev)
         mixes[f"{beh_key}_{regime}"] = {
             "path_in_repo": path_in_repo,
-            **_assert_mix_composition(dest, beh_key, n_rows),
+            **_assert_mix_composition(dest, beh_key, regime, n_rows),
         }
         # consumer-open probe (mix family x trainer-jsonl consumer): parse row 1.
         with dest.open(encoding="utf-8") as f:
