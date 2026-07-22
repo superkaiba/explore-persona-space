@@ -3683,6 +3683,58 @@ def _retry_gcp_ondemand_after_vanish_refusal(
     }
 
 
+def _clean_residue_terminal_or_ondemand_retry(
+    *,
+    issue: int,
+    handle,
+    sidecar: Path,
+    cause_label: str,
+    failover_tag: str,
+    reclaim: dict,
+    gcp_ondemand_retry_on_capacity_refusal: bool,
+) -> dict:
+    """The clean-residue tail of the shared core's ``NoComputeAvailableError``
+    branch: the #1596 on-demand retry (queue-vanish caller only), else / on
+    retry exhaustion the re-drivable ``no_compute_available`` terminal.
+
+    #1596 gate = clean residue only (the ``leaked`` branch never reaches
+    here): every clean-residue refusal already authorizes the watcher to
+    re-run the FULL ladder via the re-drivable terminal, so this bounded
+    immediate retry is strictly narrower than what the system already
+    permits — and an evidence-text classifier would have MISSED the
+    motivating #1112 cost-cap shape (it classifies ``unknown``). On retry
+    exhaustion the log_tail is extended with the retry note while KEEPING
+    the original RunPod refusal evidence (a recurring account-level
+    cost-cap — a config problem masquerading as capacity — stays visible
+    across episodes).
+    """
+    retried = False
+    if gcp_ondemand_retry_on_capacity_refusal:
+        retry_json = _retry_gcp_ondemand_after_vanish_refusal(
+            issue=issue,
+            handle=handle,
+            sidecar=sidecar,
+            cause_label=cause_label,
+            failover_tag=failover_tag,
+            reclaim=reclaim,
+        )
+        if retry_json is not None:
+            return retry_json
+        retried = True
+    return _terminal_infra_json(
+        issue=issue,
+        sidecar=sidecar,
+        reason="no_compute_available",
+        log_tail=(
+            f"{cause_label} on {handle.pod_name}; RunPod also unavailable "
+            f"({failover_tag}; provision-residue: {reclaim['outcome']}"
+            + (f" — {reclaim['detail']}" if reclaim["detail"] else "")
+            + ("; GCP on-demand retry also exhausted (#1596)" if retried else "")
+            + ")"
+        ),
+    )
+
+
 def _provision_failure_evidence(exc: BaseException) -> tuple[str, int | None]:
     """Evidence text + returncode from a failed RunPod-fallback provision (#1490).
 
@@ -3936,45 +3988,16 @@ def _failover_gcp_to_runpod(
         # another actor and a watcher re-drive's provision idempotency-refuses
         # on it). No lease stamp here — nothing launched (or the residue is
         # torn down), so a later poll SHOULD retry against a clean slate.
-        #
-        # #1596 (queue-vanish caller ONLY): before minting the terminal, retry
-        # the GCP ladder's STANDARD (on-demand) rungs — the #1112 manual
-        # `--provisioning-model STANDARD` recovery, automated. Gate = clean
-        # residue only (the `leaked` branch above is untouched): every
-        # clean-residue refusal already authorizes the watcher to re-run the
-        # FULL ladder via the re-drivable terminal, so this bounded immediate
-        # retry is strictly narrower than what the system already permits —
-        # and an evidence-text classifier would have MISSED the motivating
-        # #1112 cost-cap shape (it classifies `unknown`).
-        retried = False
-        if gcp_ondemand_retry_on_capacity_refusal:
-            retry_json = _retry_gcp_ondemand_after_vanish_refusal(
-                issue=issue,
-                handle=handle,
-                sidecar=sidecar,
-                cause_label=cause_label,
-                failover_tag=failover_tag,
-                reclaim=reclaim,
-            )
-            if retry_json is not None:
-                return retry_json
-            # Retry exhausted (NoComputeAvailableError inside the helper) ->
-            # fall through to the SAME re-drivable terminal, log_tail extended
-            # with the retry note while KEEPING the original RunPod refusal
-            # evidence (a recurring account-level cost-cap — a config problem
-            # masquerading as capacity — stays visible across episodes).
-            retried = True
-        return _terminal_infra_json(
+        # #1596 (queue-vanish caller ONLY): the helper first retries the GCP
+        # ladder's STANDARD (on-demand) rungs before minting the terminal.
+        return _clean_residue_terminal_or_ondemand_retry(
             issue=issue,
+            handle=handle,
             sidecar=sidecar,
-            reason="no_compute_available",
-            log_tail=(
-                f"{cause_label} on {handle.pod_name}; RunPod also unavailable "
-                f"({failover_tag}; provision-residue: {reclaim['outcome']}"
-                + (f" — {reclaim['detail']}" if reclaim["detail"] else "")
-                + ("; GCP on-demand retry also exhausted (#1596)" if retried else "")
-                + ")"
-            ),
+            cause_label=cause_label,
+            failover_tag=failover_tag,
+            reclaim=reclaim,
+            gcp_ondemand_retry_on_capacity_refusal=gcp_ondemand_retry_on_capacity_refusal,
         )
 
     # DURABLE IDEMPOTENCY STAMP (#659 round-3). RunPod has now launched. Stamp
