@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1595,
+  "highest_id": 1596,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4639,6 +4639,13 @@
       "path": "tasks/proposed/1595",
       "status": "proposed",
       "title": "daily-fix: persist resume state before multi-hour pod stop"
+    },
+    "1596": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1596",
+      "status": "proposed",
+      "title": "daily-fix: queue-vanish failover retries GCP on-demand"
     },
     "16": {
       "has_clean_result": false,
