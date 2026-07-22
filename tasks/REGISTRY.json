@@ -4622,8 +4622,8 @@
     "1593": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1593",
-      "status": "proposed",
+      "path": "tasks/planning/1593",
+      "status": "planning",
       "title": "daily-fix: self-derive WORKFLOW_INVARIANT count pin"
     },
     "1594": {
