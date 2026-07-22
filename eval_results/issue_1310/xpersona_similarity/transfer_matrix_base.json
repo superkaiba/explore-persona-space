@@ -1,0 +1,437 @@
+{
+  "metadata": {
+    "git_commit": "ad140f16772bc25cf6aef680e520f64bd2884c49",
+    "timestamp": "2026-07-22T07:11:52Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "personas": [
+    "Wren",
+    "HELIOS",
+    "Dana",
+    "Vex"
+  ],
+  "frozen_layers": [
+    14,
+    18,
+    19,
+    26
+  ],
+  "headline_layer": 19,
+  "gcv_dof_cap": 0.9,
+  "convention_note": "matrix[source->target] = held-out R^2 of source's fitted map on target's aggregated points under the shared scenario->fold partition; diagonal = within (equality-gated vs committed).",
+  "matrices": {
+    "14": {
+      "foldmean": {
+        "Wren->Wren": 0.16866079296521608,
+        "Wren->HELIOS": -1.2006839058633711,
+        "Wren->Dana": -0.19147667698527004,
+        "Wren->Vex": -0.6274550745946739,
+        "HELIOS->Wren": -1.480743916386459,
+        "HELIOS->HELIOS": 0.17408413383044685,
+        "HELIOS->Dana": -1.7698132647542275,
+        "HELIOS->Vex": -1.374415405993247,
+        "Dana->Wren": -0.19125265542373304,
+        "Dana->HELIOS": -1.338264253393905,
+        "Dana->Dana": 0.19005684193872474,
+        "Dana->Vex": -0.5875171954899625,
+        "Vex->Wren": -0.5633305915348978,
+        "Vex->HELIOS": -0.9532134336778615,
+        "Vex->Dana": -0.5618405266767839,
+        "Vex->Vex": 0.10920308330509187
+      },
+      "globalmean": {
+        "Wren->Wren": 0.17894567515640358,
+        "Wren->HELIOS": -1.1720598342056259,
+        "Wren->Dana": -0.17399385148381108,
+        "Wren->Vex": -0.6059180504374038,
+        "HELIOS->Wren": -1.4500534849589015,
+        "HELIOS->HELIOS": 0.18482673746994216,
+        "HELIOS->Dana": -1.7291711246983703,
+        "HELIOS->Vex": -1.342993437573623,
+        "Dana->Wren": -0.1765151173438526,
+        "Dana->HELIOS": -1.3078506881537697,
+        "Dana->Dana": 0.2019413338234629,
+        "Dana->Vex": -0.5665086916467068,
+        "Vex->Wren": -0.5439899050572734,
+        "Vex->HELIOS": -0.9278081852732603,
+        "Vex->Dana": -0.5389232628172131,
+        "Vex->Vex": 0.1209914976297446
+      }
+    },
+    "18": {
+      "foldmean": {
+        "Wren->Wren": 0.17036249034947704,
+        "Wren->HELIOS": -1.187754077809703,
+        "Wren->Dana": -0.26595998101782947,
+        "Wren->Vex": -0.6585542306554171,
+        "HELIOS->Wren": -1.360916551544495,
+        "HELIOS->HELIOS": 0.16365020394494356,
+        "HELIOS->Dana": -1.735480761292425,
+        "HELIOS->Vex": -1.3371107153794086,
+        "Dana->Wren": -0.23622470781075466,
+        "Dana->HELIOS": -1.3694741892477071,
+        "Dana->Dana": 0.18378051851707988,
+        "Dana->Vex": -0.6993486113781069,
+        "Vex->Wren": -0.551212138463476,
+        "Vex->HELIOS": -0.9624766197867225,
+        "Vex->Dana": -0.6431116307052345,
+        "Vex->Vex": 0.10236081370572403
+      },
+      "globalmean": {
+        "Wren->Wren": 0.1808477529323299,
+        "Wren->HELIOS": -1.1601486262110825,
+        "Wren->Dana": -0.24711006048523876,
+        "Wren->Vex": -0.637023347438227,
+        "HELIOS->Wren": -1.3310784238185978,
+        "HELIOS->HELIOS": 0.17420340736423723,
+        "HELIOS->Dana": -1.6947499358777574,
+        "HELIOS->Vex": -1.306771003268461,
+        "Dana->Wren": -0.22060084736323637,
+        "Dana->HELIOS": -1.3395757624963118,
+        "Dana->Dana": 0.19593388244153465,
+        "Dana->Vex": -0.6772881470166745,
+        "Vex->Wren": -0.5316073515483457,
+        "Vex->HELIOS": -0.9377137573194805,
+        "Vex->Dana": -0.6186459887186151,
+        "Vex->Vex": 0.11401371243767422
+      }
+    },
+    "19": {
+      "foldmean": {
+        "Wren->Wren": 0.19648846768114947,
+        "Wren->HELIOS": -1.525974111000402,
+        "Wren->Dana": -0.23835149944349432,
+        "Wren->Vex": -0.7979501057286162,
+        "HELIOS->Wren": -1.7397050233945963,
+        "HELIOS->HELIOS": 0.1974782359913172,
+        "HELIOS->Dana": -2.107982390360148,
+        "HELIOS->Vex": -1.5768892932117362,
+        "Dana->Wren": -0.2179301882571556,
+        "Dana->HELIOS": -1.6713592478065666,
+        "Dana->Dana": 0.21775009509535348,
+        "Dana->Vex": -0.7901928948973878,
+        "Vex->Wren": -0.6867979552920909,
+        "Vex->HELIOS": -1.1808962902780369,
+        "Vex->Dana": -0.6991004326369472,
+        "Vex->Vex": 0.13266438854640195
+      },
+      "globalmean": {
+        "Wren->Wren": 0.2067350054810243,
+        "Wren->HELIOS": -1.4950371462705196,
+        "Wren->Dana": -0.21989626051604994,
+        "Wren->Vex": -0.7753807684284755,
+        "HELIOS->Wren": -1.7047677636869412,
+        "HELIOS->HELIOS": 0.20730715205184957,
+        "HELIOS->Dana": -2.061663911622758,
+        "HELIOS->Vex": -1.5445420754228167,
+        "Dana->Wren": -0.20239890188523435,
+        "Dana->HELIOS": -1.6386416730419118,
+        "Dana->Dana": 0.2294080200887616,
+        "Dana->Vex": -0.7677209324394092,
+        "Vex->Wren": -0.6652875745265867,
+        "Vex->HELIOS": -1.1541856793822096,
+        "Vex->Dana": -0.6737786201627576,
+        "Vex->Vex": 0.1435518931022568
+      }
+    },
+    "26": {
+      "foldmean": {
+        "Wren->Wren": 0.31474564784257064,
+        "Wren->HELIOS": -0.8799295049030842,
+        "Wren->Dana": -0.02201226517801813,
+        "Wren->Vex": -0.6301466985144271,
+        "HELIOS->Wren": -1.2395733498479276,
+        "HELIOS->HELIOS": 0.3108534336798878,
+        "HELIOS->Dana": -1.2590802552335516,
+        "HELIOS->Vex": -1.1404101386700605,
+        "Dana->Wren": -0.056824579055560376,
+        "Dana->HELIOS": -0.9421963233462005,
+        "Dana->Dana": 0.3637434303338949,
+        "Dana->Vex": -0.6111524415291019,
+        "Vex->Wren": -0.49956699003928784,
+        "Vex->HELIOS": -0.637224242340432,
+        "Vex->Dana": -0.44590936782716306,
+        "Vex->Vex": 0.25174959505194283
+      },
+      "globalmean": {
+        "Wren->Wren": 0.3231499458045155,
+        "Wren->HELIOS": -0.8552872750942373,
+        "Wren->Dana": -0.007926565940339803,
+        "Wren->Vex": -0.6095839947912196,
+        "HELIOS->Wren": -1.212106115702686,
+        "HELIOS->HELIOS": 0.3198868086096107,
+        "HELIOS->Dana": -1.227944890117894,
+        "HELIOS->Vex": -1.1134109614992407,
+        "Dana->Wren": -0.04386316023650916,
+        "Dana->HELIOS": -0.9167378963099908,
+        "Dana->Dana": 0.3725125214531221,
+        "Dana->Vex": -0.5908293317511442,
+        "Vex->Wren": -0.4811755595310261,
+        "Vex->HELIOS": -0.6157634078127834,
+        "Vex->Dana": -0.4259813834241504,
+        "Vex->Vex": 0.2611880409303037
+      }
+    }
+  },
+  "equality_gate": {
+    "tolerance": 1e-06,
+    "per_cell": {
+      "base/Wren/L14": {
+        "mine": 0.16866079296521608,
+        "committed": 0.16866079296521608,
+        "abs_delta": 0.0
+      },
+      "base/HELIOS/L14": {
+        "mine": 0.17408413383044685,
+        "committed": 0.17408413383044685,
+        "abs_delta": 0.0
+      },
+      "base/Dana/L14": {
+        "mine": 0.19005684193872474,
+        "committed": 0.19005684193872474,
+        "abs_delta": 0.0
+      },
+      "base/Vex/L14": {
+        "mine": 0.10920308330509187,
+        "committed": 0.10920308330509187,
+        "abs_delta": 0.0
+      },
+      "base/Wren/L18": {
+        "mine": 0.17036249034947704,
+        "committed": 0.17036249034947704,
+        "abs_delta": 0.0
+      },
+      "base/HELIOS/L18": {
+        "mine": 0.16365020394494356,
+        "committed": 0.16365020394494356,
+        "abs_delta": 0.0
+      },
+      "base/Dana/L18": {
+        "mine": 0.18378051851707988,
+        "committed": 0.18378051851707988,
+        "abs_delta": 0.0
+      },
+      "base/Vex/L18": {
+        "mine": 0.10236081370572403,
+        "committed": 0.10236081370572403,
+        "abs_delta": 0.0
+      },
+      "base/Wren/L19": {
+        "mine": 0.19648846768114947,
+        "committed": 0.19648846768114947,
+        "abs_delta": 0.0
+      },
+      "base/HELIOS/L19": {
+        "mine": 0.1974782359913172,
+        "committed": 0.1974782359913172,
+        "abs_delta": 0.0
+      },
+      "base/Dana/L19": {
+        "mine": 0.21775009509535348,
+        "committed": 0.21775009509535348,
+        "abs_delta": 0.0
+      },
+      "base/Vex/L19": {
+        "mine": 0.13266438854640195,
+        "committed": 0.13266438854640195,
+        "abs_delta": 0.0
+      },
+      "base/Wren/L26": {
+        "mine": 0.31474564784257064,
+        "committed": 0.31474564784257064,
+        "abs_delta": 0.0
+      },
+      "base/HELIOS/L26": {
+        "mine": 0.3108534336798878,
+        "committed": 0.3108534336798878,
+        "abs_delta": 0.0
+      },
+      "base/Dana/L26": {
+        "mine": 0.3637434303338949,
+        "committed": 0.3637434303338949,
+        "abs_delta": 0.0
+      },
+      "base/Vex/L26": {
+        "mine": 0.25174959505194283,
+        "committed": 0.25174959505194283,
+        "abs_delta": 0.0
+      }
+    },
+    "worst_abs_delta": 0.0,
+    "passed": true
+  },
+  "l19_offdiag_bootstrap": {
+    "HELIOS->Wren": {
+      "transfer_r2_foldmean": -1.7397050233945963,
+      "transfer_r2_globalmean": -1.7047677636869412,
+      "within_r2_foldmean": 0.19648846768114947,
+      "within_r2_globalmean": 0.2067350054810243,
+      "transfer_r2_boot": -1.7047677636869412,
+      "within_r2_boot": 0.2067350054810243,
+      "delta_transfer_minus_within": -1.9115027691679654,
+      "delta_ci_lo": -2.0385802031607736,
+      "delta_ci_hi": -1.807582993782918,
+      "transfer_frac_of_within": -8.853980306964848,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Dana->Wren": {
+      "transfer_r2_foldmean": -0.2179301882571556,
+      "transfer_r2_globalmean": -0.20239890188523435,
+      "within_r2_foldmean": 0.19648846768114947,
+      "within_r2_globalmean": 0.2067350054810243,
+      "transfer_r2_boot": -0.20239890188523435,
+      "within_r2_boot": 0.2067350054810243,
+      "delta_transfer_minus_within": -0.40913390736625865,
+      "delta_ci_lo": -0.44415751939514264,
+      "delta_ci_hi": -0.3773334651944376,
+      "transfer_frac_of_within": -1.1091245752437775,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Vex->Wren": {
+      "transfer_r2_foldmean": -0.6867979552920909,
+      "transfer_r2_globalmean": -0.6652875745265867,
+      "within_r2_foldmean": 0.19648846768114947,
+      "within_r2_globalmean": 0.2067350054810243,
+      "transfer_r2_boot": -0.6652875745265867,
+      "within_r2_boot": 0.2067350054810243,
+      "delta_transfer_minus_within": -0.872022580007611,
+      "delta_ci_lo": -0.9240423487144402,
+      "delta_ci_hi": -0.8298138501229159,
+      "transfer_frac_of_within": -3.495360126715367,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Wren->HELIOS": {
+      "transfer_r2_foldmean": -1.525974111000402,
+      "transfer_r2_globalmean": -1.4950371462705196,
+      "within_r2_foldmean": 0.1974782359913172,
+      "within_r2_globalmean": 0.20730715205184957,
+      "transfer_r2_boot": -1.4950371462705196,
+      "within_r2_boot": 0.20730715205184957,
+      "delta_transfer_minus_within": -1.702344298322369,
+      "delta_ci_lo": -1.8057479898089965,
+      "delta_ci_hi": -1.6265081863589106,
+      "transfer_frac_of_within": -7.727302724475909,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Dana->HELIOS": {
+      "transfer_r2_foldmean": -1.6713592478065666,
+      "transfer_r2_globalmean": -1.6386416730419118,
+      "within_r2_foldmean": 0.1974782359913172,
+      "within_r2_globalmean": 0.20730715205184957,
+      "transfer_r2_boot": -1.6386416730419118,
+      "within_r2_boot": 0.20730715205184957,
+      "delta_transfer_minus_within": -1.8459488250937612,
+      "delta_ci_lo": -1.9482203765176844,
+      "delta_ci_hi": -1.7623744599959892,
+      "transfer_frac_of_within": -8.463511127778423,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Vex->HELIOS": {
+      "transfer_r2_foldmean": -1.1808962902780369,
+      "transfer_r2_globalmean": -1.1541856793822096,
+      "within_r2_foldmean": 0.1974782359913172,
+      "within_r2_globalmean": 0.20730715205184957,
+      "transfer_r2_boot": -1.1541856793822096,
+      "within_r2_boot": 0.20730715205184957,
+      "delta_transfer_minus_within": -1.361492831434059,
+      "delta_ci_lo": -1.4359939262267698,
+      "delta_ci_hi": -1.3001014045162849,
+      "transfer_frac_of_within": -5.979880690902865,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Wren->Dana": {
+      "transfer_r2_foldmean": -0.23835149944349432,
+      "transfer_r2_globalmean": -0.21989626051604994,
+      "within_r2_foldmean": 0.21775009509535348,
+      "within_r2_globalmean": 0.2294080200887616,
+      "transfer_r2_boot": -0.21989626051604994,
+      "within_r2_boot": 0.2294080200887616,
+      "delta_transfer_minus_within": -0.44930428060481153,
+      "delta_ci_lo": -0.48022709453144136,
+      "delta_ci_hi": -0.4215296166169262,
+      "transfer_frac_of_within": -1.0946103116011012,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "HELIOS->Dana": {
+      "transfer_r2_foldmean": -2.107982390360148,
+      "transfer_r2_globalmean": -2.061663911622758,
+      "within_r2_foldmean": 0.21775009509535348,
+      "within_r2_globalmean": 0.2294080200887616,
+      "transfer_r2_boot": -2.061663911622758,
+      "within_r2_boot": 0.2294080200887616,
+      "delta_transfer_minus_within": -2.2910719317115196,
+      "delta_ci_lo": -2.4082840141196087,
+      "delta_ci_hi": -2.1913655062831325,
+      "transfer_frac_of_within": -9.68074153738971,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Vex->Dana": {
+      "transfer_r2_foldmean": -0.6991004326369472,
+      "transfer_r2_globalmean": -0.6737786201627576,
+      "within_r2_foldmean": 0.21775009509535348,
+      "within_r2_globalmean": 0.2294080200887616,
+      "transfer_r2_boot": -0.6737786201627576,
+      "within_r2_boot": 0.2294080200887616,
+      "delta_transfer_minus_within": -0.9031866402515192,
+      "delta_ci_lo": -0.9440081206949156,
+      "delta_ci_hi": -0.8695210036991746,
+      "transfer_frac_of_within": -3.2105631564974004,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Wren->Vex": {
+      "transfer_r2_foldmean": -0.7979501057286162,
+      "transfer_r2_globalmean": -0.7753807684284755,
+      "within_r2_foldmean": 0.13266438854640195,
+      "within_r2_globalmean": 0.1435518931022568,
+      "transfer_r2_boot": -0.7753807684284755,
+      "within_r2_boot": 0.1435518931022568,
+      "delta_transfer_minus_within": -0.9189326615307323,
+      "delta_ci_lo": -0.973131434863825,
+      "delta_ci_hi": -0.8716261409522622,
+      "transfer_frac_of_within": -6.014802574162679,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "HELIOS->Vex": {
+      "transfer_r2_foldmean": -1.5768892932117362,
+      "transfer_r2_globalmean": -1.5445420754228167,
+      "within_r2_foldmean": 0.13266438854640195,
+      "within_r2_globalmean": 0.1435518931022568,
+      "transfer_r2_boot": -1.5445420754228167,
+      "within_r2_boot": 0.1435518931022568,
+      "delta_transfer_minus_within": -1.6880939685250735,
+      "delta_ci_lo": -1.7765640187776957,
+      "delta_ci_hi": -1.6123193439882242,
+      "transfer_frac_of_within": -11.886304308862725,
+      "n_groups": 300,
+      "n_boot": 1000
+    },
+    "Dana->Vex": {
+      "transfer_r2_foldmean": -0.7901928948973878,
+      "transfer_r2_globalmean": -0.7677209324394092,
+      "within_r2_foldmean": 0.13266438854640195,
+      "within_r2_globalmean": 0.1435518931022568,
+      "transfer_r2_boot": -0.7677209324394092,
+      "within_r2_boot": 0.1435518931022568,
+      "delta_transfer_minus_within": -0.911272825541666,
+      "delta_ci_lo": -0.9742281912328262,
+      "delta_ci_hi": -0.8592405657599071,
+      "transfer_frac_of_within": -5.956330131661538,
+      "n_groups": 300,
+      "n_boot": 1000
+    }
+  }
+}

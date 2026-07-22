@@ -384,7 +384,13 @@ trigger-dense-review.md § Orchestrator ordinary turns: authored text
 guard content by path + abstract class only, and own-turn reads of
 guard-surface diffs/files stay counts-first + grep-anchored windows —
 never wholesale-paged into context. Failure/forensics text stays
-governed by the Step 6d.2 forensics-ingest discipline (#1546).
+governed by the Step 6d.2 forensics-ingest discipline (#1546). When the
+heuristic fires — at Step 0 or any later recognition point — ALSO
+persist it as the durable task tag
+(`uv run python scripts/task.py add-tag <N> trigger-dense`, idempotent)
+so successor sessions and the poll-tick digest consumers (#1556/#1574)
+key on the tag instead of re-deriving each turn; the Step 6d.2
+loop-entry check is the dispatch-time backstop (#1587).
 
 **Chat title updates (single-source-of-truth canonical string).** The
 session's phone title AND the terminal/dashboard progress column (read
@@ -4046,6 +4052,34 @@ Enter a polling loop that runs in THIS orchestrator's context. Each tick
 is a single bg-Bash call that sleeps then runs the BACKEND-AGNOSTIC
 poller once; the harness re-invokes the orchestrator when the bg-Bash
 exits, which is when one tick has completed:
+
+**Trigger-dense tag adoption (at loop entry, BEFORE the first tick —
+#1587; the producer side of the #1556/#1574 digest chain).** Apply the
+`.claude/rules/trigger-dense-review.md` recognition heuristic
+("Recognition heuristic (any one suffices)") to THIS run's workload —
+the task body's target/scope lines, the plan §4 targets, and the
+round's realized diff pathspec / training-eval data sources. If ANY
+recognition class fires and the task does not already carry the tag,
+adopt it now:
+
+    uv run python scripts/task.py add-tag <N> trigger-dense
+
+`add_tag` is idempotent (an already-tagged task no-ops with no commit),
+and every consumer reads the tag FRESH per tick
+(`backends/excerpt_digest.py::issue_trigger_dense` — RunPod
+`poll_pipeline.py` and the GCP/SLURM lane tails alike), so loop-entry
+adoption lands before the first poll tick on every lane, and a
+respawned session re-entering this loop self-heals a missed adoption.
+Negative case: when NO recognition class fires, do NOT tag — the
+digest replaces raw log tails, so a false-positive tag costs log
+visibility on a healthy run; a wrongly-adopted tag is reversible
+mid-run (`uv run python scripts/task.py remove-tag <N> trigger-dense`,
+effective next tick). This persists the Step-0 recognition (the #1563
+guard-surface turn discipline) as a durable marker: successor
+sessions and the poll-tick digest consumers (#1556/#1574) key on
+the tag; review-round brief composition still applies the rule's
+"Fires when" heuristic per turn — the tag is a durable floor,
+never a substitute for it.
 
 ```python
 result = None  # parsed JSON line of the PREVIOUS poll tick; None before the first tick

@@ -20,6 +20,7 @@ tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py
 tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
 tests/test_issue_skill_staged_index_verification.py
+tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py
 tests/test_no_dollar_budget_caps.py

@@ -4573,22 +4573,22 @@
     "1587": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1587",
-      "status": "running",
+      "path": "tasks/completed/1587",
+      "status": "completed",
       "title": "daily-fix: dispatch-time trigger-dense tag auto-adoption"
     },
     "1588": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1588",
-      "status": "planning",
+      "path": "tasks/reviewing/1588",
+      "status": "reviewing",
       "title": "daily-fix: clarify autonomous-block reconcile re-park scope"
     },
     "1589": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1589",
-      "status": "proposed",
+      "path": "tasks/planning/1589",
+      "status": "planning",
       "title": "daily-fix: step9c selector-module diff selects zero tests"
     },
     "159": {
@@ -4601,8 +4601,8 @@
     "1590": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1590",
-      "status": "proposed",
+      "path": "tasks/planning/1590",
+      "status": "planning",
       "title": "daily-fix: fix red asw-stub pin test on main (conftest:288)"
     },
     "1591": {
@@ -4622,8 +4622,8 @@
     "1593": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1593",
-      "status": "running",
+      "path": "tasks/completed/1593",
+      "status": "completed",
       "title": "daily-fix: self-derive WORKFLOW_INVARIANT count pin"
     },
     "1594": {
@@ -4643,8 +4643,8 @@
     "1596": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1596",
-      "status": "approved",
+      "path": "tasks/running/1596",
+      "status": "running",
       "title": "daily-fix: queue-vanish failover retries GCP on-demand"
     },
     "1597": {
