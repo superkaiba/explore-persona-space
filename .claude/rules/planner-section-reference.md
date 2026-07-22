@@ -269,6 +269,33 @@ predictive DV write "N/A — no held-out predictive DV" and move on; a
 plan claiming a genuinely iid sample writes the iid argument here
 instead of the N/A.
 
+**Required: mapping-baselines pair (fitted representation maps).** If the
+plan FITS a map between activation summaries (context→answer,
+prefix→context, cross-model / cross-framing reparameterization — any
+v_X→v_Y predictor), §6 MUST register BOTH standing reads alongside
+held-out R², per the CLAUDE.md standing rule (2026-07-22): (a) the
+identity-family baseline including the learned-bias form x + b with
+b = train-fold mean of (y − x) — canonical helper
+`analysis/mapping_baselines.identity_bias_predict` — whenever input and
+output spaces share dimension (a dimension mismatch is STATED as
+inapplicable, never silently skipped); and (b) the kNN-retrieval read
+P(true target within the k nearest neighbors of the prediction) among the
+held-out candidate pool — canonical helper
+`analysis/mapping_baselines.knn_retrieval` (euclidean + cosine, k scaled
+to the pool, chance = k/n_pool stated; a constant predictor reads exactly
+chance). The two reads DISSOCIATE in both directions (first measurement
+2026-07-22): identity+bias scored pooled-OOF R² −6.5 yet retrieval acc@1
+0.84 vs the LOFO ridge map's 0.04 on the #722 prefix-level 50-context
+battery map (`eval_results/issue_722/identity_bias_knn/`), while the #779
+LMSYS single-context fitted ridge dominated retrieval (acc@1 0.72 vs 0.50
+identity+bias, chance 0.001; `eval_results/issue_779/identity_bias_knn/`)
+— R² alone can both overstate a map (variance a constant shift already
+explains) and understate one (discriminative but mis-scaled predictions).
+Omitting either read is a stated deviation, never a silent default. Plans
+that fit no map write "N/A — no representation map fitted" and move on.
+Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval
+metric".
+
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ## 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
