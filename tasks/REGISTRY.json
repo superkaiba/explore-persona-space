@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1597,
+  "highest_id": 1598,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4653,6 +4653,13 @@
       "path": "tasks/proposed/1597",
       "status": "proposed",
       "title": "daily-fix: rotate inner append-mode logs on relaunch"
+    },
+    "1598": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1598",
+      "status": "proposed",
+      "title": "daily-fix: teammate report SendMessage as final turn action"
     },
     "16": {
       "has_clean_result": false,
