@@ -148,6 +148,34 @@ def test_delta_stats_named_drop_below_threshold_and_exact_value():
     assert out["ci95"][0] <= out["delta_mean"] <= out["ci95"][1]
 
 
+def test_delta_stats_zero_floor_pairs_named_not_fatal():
+    """Regression for the 2026-07-22 p3 production crash (epm:failure v4):
+    the Delta_floor companion legitimately reads EXACTLY-ZERO EARLY noise
+    floors on pairs whose baseline draws share their first ~5 tokens
+    (token-identical early activations => even-half mean == odd-half mean).
+    Reproduces the production shape — 7/28 pairs with zero EARLY floors —
+    and asserts: NO RuntimeError (the >20% integrity guard is all-NaN-class
+    only), the pairs are NAMED under dropped_nonpositive_pairs with their
+    offending means, kept pairs still get finite deltas, and no -inf/NaN
+    leaks into the result."""
+    floors = {f"p{i:02d}": {b: 5.0 for b in BIN_NAMES} for i in range(28)}
+    zero_pairs = [f"p{i:02d}" for i in range(7)]  # 7/28 = 25% > MAX_DROP_FRAC
+    for pid in zero_pairs:
+        floors[pid] = {**floors[pid], "first": 0.0, "tok2_5": 0.0}
+    out = drv._delta_stats(floors, drv.EARLY_BINS, drv.LATE_BINS, 100, "probe/floor")
+    assert sorted(out["dropped_nonpositive_pairs"]) == zero_pairs
+    assert out["dropped_nonpositive_pairs"]["p00"]["early_mean"] == 0.0
+    assert out["dropped_pairs"] == []  # all-NaN integrity class untouched
+    assert out["n_pairs_kept"] == 21
+    assert all(math.isfinite(v) for v in out["per_pair_delta"].values())
+    assert math.isfinite(out["delta_mean"])
+    # the all-NaN guard itself is UNCHANGED (still fails loud > 20%):
+    nan_floors = {f"q{i}": {b: None for b in BIN_NAMES} for i in range(3)}
+    nan_floors["q9"] = {b: 1.0 for b in BIN_NAMES}
+    with pytest.raises(RuntimeError, match="all-NaN"):
+        drv._delta_stats(nan_floors, drv.EARLY_BINS, drv.LATE_BINS, 50, "probe/nan")
+
+
 def test_delta_stats_wilcoxon_degenerate_recorded_not_crashed():
     """Degenerate all-zero deltas never crash the companion: the installed
     scipy returns p=1.0 (RuntimeWarning) on all-zero diffs; older scipys raise

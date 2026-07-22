@@ -1,0 +1,171 @@
+{
+  "fired": false,
+  "demoted_to_warn": false,
+  "n_cells": 10,
+  "n_bad": 0,
+  "n_warn": 0,
+  "halt_cos": 0.995,
+  "warn_cos": 0.9999,
+  "max_bad": 2,
+  "cells": [
+    {
+      "cell_id": "gen1c/context/cross_00_evil_to_sycophancy/L20/a4",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "context",
+      "per_layer_cos": [
+        0.9999997615814209,
+        0.9999998807907104,
+        1.0000001192092896,
+        1.0000001192092896,
+        1.0,
+        1.0000003576278687,
+        1.0
+      ],
+      "min_cos": 0.9999997615814209
+    },
+    {
+      "cell_id": "gen1c/prefix/cross_00_evil_to_sycophancy/L20/a4",
+      "pair_id": "cross_00_evil_to_sycophancy",
+      "arm": "prefix",
+      "per_layer_cos": [
+        1.0,
+        1.0,
+        0.9999997615814209,
+        1.000000238418579,
+        1.0,
+        0.9999998211860657,
+        0.9999998807907104
+      ],
+      "min_cos": 0.9999997615814209
+    },
+    {
+      "cell_id": "gen1c/context/cross_01_evil_to_hallucination/L20/a4",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "context",
+      "per_layer_cos": [
+        0.9999998807907104,
+        0.9999996423721313,
+        1.000000238418579,
+        1.0000004768371582,
+        0.9999998807907104,
+        1.0000001192092896,
+        1.0000001192092896
+      ],
+      "min_cos": 0.9999996423721313
+    },
+    {
+      "cell_id": "gen1c/prefix/cross_01_evil_to_hallucination/L20/a4",
+      "pair_id": "cross_01_evil_to_hallucination",
+      "arm": "prefix",
+      "per_layer_cos": [
+        0.9999999403953552,
+        0.9999998807907104,
+        1.0000001192092896,
+        1.0000003576278687,
+        1.0,
+        1.0000001192092896,
+        1.0
+      ],
+      "min_cos": 0.9999998807907104
+    },
+    {
+      "cell_id": "gen1c/context/cross_02_sycophancy_to_evil/L20/a4",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "context",
+      "per_layer_cos": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0000001192092896,
+        1.000000238418579,
+        1.000000238418579
+      ],
+      "min_cos": 1.0
+    },
+    {
+      "cell_id": "gen1c/prefix/cross_02_sycophancy_to_evil/L20/a4",
+      "pair_id": "cross_02_sycophancy_to_evil",
+      "arm": "prefix",
+      "per_layer_cos": [
+        1.000000238418579,
+        1.000000238418579,
+        1.0000001192092896,
+        1.0000004768371582,
+        1.0,
+        1.0,
+        1.0000003576278687
+      ],
+      "min_cos": 1.0
+    },
+    {
+      "cell_id": "gen1c/context/cross_03_sycophancy_to_hallucination/L20/a4",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "context",
+      "per_layer_cos": [
+        0.9999998807907104,
+        0.9999997019767761,
+        0.9999999403953552,
+        1.0000001192092896,
+        0.9999998807907104,
+        0.9999998211860657,
+        0.9999996423721313
+      ],
+      "min_cos": 0.9999996423721313
+    },
+    {
+      "cell_id": "gen1c/prefix/cross_03_sycophancy_to_hallucination/L20/a4",
+      "pair_id": "cross_03_sycophancy_to_hallucination",
+      "arm": "prefix",
+      "per_layer_cos": [
+        1.0,
+        1.0000001192092896,
+        1.0,
+        1.0000001192092896,
+        0.9999997615814209,
+        1.0000001192092896,
+        1.000000238418579
+      ],
+      "min_cos": 0.9999997615814209
+    },
+    {
+      "cell_id": "gen1c/context/cross_04_hallucination_to_evil/L20/a4",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "context",
+      "per_layer_cos": [
+        1.0000001192092896,
+        0.9999998807907104,
+        0.9999999403953552,
+        0.9999998807907104,
+        1.0000001192092896,
+        1.0,
+        1.0
+      ],
+      "min_cos": 0.9999998807907104
+    },
+    {
+      "cell_id": "gen1c/prefix/cross_04_hallucination_to_evil/L20/a4",
+      "pair_id": "cross_04_hallucination_to_evil",
+      "arm": "prefix",
+      "per_layer_cos": [
+        1.0000001192092896,
+        1.0000001192092896,
+        0.9999999403953552,
+        1.0000003576278687,
+        1.0,
+        0.9999999403953552,
+        0.9999998807907104
+      ],
+      "min_cos": 0.9999998807907104
+    }
+  ],
+  "demotions": [],
+  "repro": {
+    "git_commit": "48fe05ca85485baa5e96f8f17743077dd7e53c8d",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-22T22:31:38.573021+00:00"
+  }
+}
