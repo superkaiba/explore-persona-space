@@ -52,6 +52,11 @@
 #                             fitter-fair-comparison-n1m/n1m_fits.json (the Gate-A
 #                             ridge-anchor fixture; missing line surfaced as a
 #                             sparse-worktree FileNotFoundError on #1571's gate run)
+#   eval_results/issue_1415 — test_issue1415_position_profile.py's real staging probe
+#                             builds the PRODUCTION cfg and enumerate_cells hard-reads
+#                             the committed phase1{,_rep43,_rep44}/cells/ metadata
+#                             (28-pair count asserts; a sparse worktree without the
+#                             cone FileNotFoundErrors — the #671 class)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -67,3 +72,4 @@ eval_results/issue_1417
 eval_results/issue_1434
 eval_results/issue_1482
 eval_results/issue_779
+eval_results/issue_1415
