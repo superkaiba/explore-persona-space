@@ -4657,8 +4657,8 @@
     "1598": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1598",
-      "status": "proposed",
+      "path": "tasks/planning/1598",
+      "status": "planning",
       "title": "daily-fix: teammate report SendMessage as final turn action"
     },
     "1599": {
