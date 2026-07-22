@@ -4587,8 +4587,8 @@
     "1589": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1589",
-      "status": "reviewing",
+      "path": "tasks/completed/1589",
+      "status": "completed",
       "title": "daily-fix: step9c selector-module diff selects zero tests"
     },
     "159": {
