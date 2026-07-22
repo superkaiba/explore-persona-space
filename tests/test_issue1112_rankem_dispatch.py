@@ -368,3 +368,15 @@ def test_base_rate_reads_base_side_no_adapter(tmp_path, monkeypatch) -> None:
     assert calls["side_path"] is None
     assert calls["judge_side"] == "base"
     assert calls.get("closed") is True
+
+
+def test_arma_dose_extension_knobs_default_byte_exact(tmp_path) -> None:
+    """Dose-extension knobs: defaults preserve the original regime dict exactly
+    (resume compatibility); set knobs enter the regime key and thread the ceiling."""
+    base = _cfg(tmp_path)
+    assert "arma_max_steps" not in base.regime_key()
+    assert "arma_eval_grid" not in base.regime_key()
+    ext = _cfg(tmp_path, arma_max_steps=300, arma_eval_grid=(60, 100, 300))
+    rk = ext.regime_key()
+    assert rk["arma_max_steps"] == 300
+    assert rk["arma_eval_grid"] == [60, 100, 300]
