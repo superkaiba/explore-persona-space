@@ -4486,6 +4486,149 @@ def test_render_startup_script_diagnostics_present_on_both_branches() -> None:
         assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
+def test_render_startup_script_repo_reuse_else_branch_branch_switch_safe() -> None:
+    """#1602 (incident #779 att-20260722-155004): the repo-reuse else-branch
+    must not require a local/remote-tracking ref to pre-exist — a reused
+    workspace disk can hold a single-branch clone of a DIFFERENT branch,
+    where the old by-name `checkout <branch>` died on `error: pathspec`.
+    Pin the FETCH_HEAD-anchored form + the forced destination refspec the
+    push-verify leg's `rev-list origin/<branch>..HEAD` depends on."""
+    branch = "issue-779-n1m-readout"
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(
+            spec=spec, config=_test_config(), attempt_id="att-fixed-001", repo_branch=branch
+        )
+        setbr = f'git -C "$WORKLOAD_ROOT" remote set-branches origin {branch}'
+        fetch = (
+            f'git -C "$WORKLOAD_ROOT" fetch --depth 1 origin '
+            f"+refs/heads/{branch}:refs/remotes/origin/{branch}"
+        )
+        reset = 'git -C "$WORKLOAD_ROOT" reset --hard FETCH_HEAD'
+        checkout = f'git -C "$WORKLOAD_ROOT" checkout -B {branch} FETCH_HEAD'
+        assert setbr in script
+        assert fetch in script
+        assert reset in script
+        assert checkout in script
+        # ordering: set-branches (config converge) -> fetch -> reset (tree
+        # forced clean) -> checkout -B
+        assert (
+            script.index(setbr) < script.index(fetch) < script.index(reset) < script.index(checkout)
+        )
+        # the by-name branch switch + origin/<branch> reset are GONE
+        # (`checkout {branch}` cannot false-match `checkout -B {branch}`)
+        assert f"checkout {branch}" not in script
+        assert f"reset --hard origin/{branch}" not in script
+        # fresh-clone if-branch unchanged
+        assert f"git clone --depth 1 --branch {branch} " in script
+
+
+def test_repo_reuse_else_branch_switches_branch_on_single_branch_clone(tmp_path) -> None:
+    """Replay the RENDERED else-branch git lines against a real
+    `--depth 1 --branch A` clone (the #779 reused-disk shape) targeting
+    branch B, with a dirty tracked file. Asserts: rc 0 per line, local
+    branch == B, HEAD == origin's B tip, clean tree, and
+    refs/remotes/origin/B resolvable (the push-verify leg's read). A second
+    same-branch replay (B -> B) pins the no-regression reuse path, and a
+    post-replay commit + `git push origin HEAD:B` leaves the unpushed count
+    at 0 — the push-verify pass condition (#1602 round-1 critique)."""
+    branch = "feature-b"
+    script = render_startup_script(
+        spec=_spec(), config=_test_config(), attempt_id="att-fixed-001", repo_branch=branch
+    )
+    lines = script.split("\n")
+    start = lines.index("# === Repo clone / pull (idempotent) ===")
+    else_i = lines.index("else", start)
+    fi_i = lines.index("fi", else_i)
+    git_cmds = [ln.strip() for ln in lines[else_i + 1 : fi_i] if ln.strip().startswith("git ")]
+    assert len(git_cmds) == 4, git_cmds
+
+    ident = ["-c", "user.email=eps@test", "-c", "user.name=eps"]
+    origin = tmp_path / "origin"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(origin)], check=True)
+    (origin / "f.txt").write_text("v1\n")
+    subprocess.run(["git", "-C", str(origin), "add", "f.txt"], check=True)
+    subprocess.run(["git", "-C", str(origin), *ident, "commit", "-qm", "c1"], check=True)
+    subprocess.run(["git", "-C", str(origin), "checkout", "-qb", branch], check=True)
+    (origin / "f.txt").write_text("v2\n")
+    (origin / "g.txt").write_text("extra\n")
+    subprocess.run(["git", "-C", str(origin), "add", "f.txt", "g.txt"], check=True)
+    subprocess.run(["git", "-C", str(origin), *ident, "commit", "-qm", "c2"], check=True)
+    subprocess.run(["git", "-C", str(origin), "checkout", "-q", "main"], check=True)
+    tip = subprocess.run(
+        ["git", "-C", str(origin), "rev-parse", branch],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    work = tmp_path / "work"
+    subprocess.run(
+        ["git", "clone", "-q", "--depth", "1", "--branch", "main", f"file://{origin}", str(work)],
+        check=True,
+    )
+    (work / "f.txt").write_text("v1\ndirty-crashed-run-leftover\n")  # dirty tracked file
+
+    env = {**os.environ, "WORKLOAD_ROOT": str(work)}
+    for _phase in ("cross-branch", "same-branch-reuse"):
+        for cmd in git_cmds:
+            proc = subprocess.run(["bash", "-c", cmd], env=env, capture_output=True, text=True)
+            assert proc.returncode == 0, f"{_phase}: {cmd}\n{proc.stderr}"
+
+    head_branch = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", "--abbrev-ref", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert head_branch == branch
+    head = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert head == tip
+    porcelain = subprocess.run(
+        ["git", "-C", str(work), "status", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert porcelain == ""
+    tracking = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", f"refs/remotes/origin/{branch}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert tracking == tip
+    unpushed = subprocess.run(
+        ["git", "-C", str(work), "rev-list", "--count", f"origin/{branch}..HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert unpushed == "0"  # the push-verify leg's rev-list read works
+    # Post-push leg (#1602 round-1 critique Must-Fix): a successful
+    # in-workload push must ADVANCE origin/<b> (git maps push -> tracking-ref
+    # updates through remote.origin.fetch, converged by set-branches), so the
+    # push-verify count returns to 0 instead of sticking at 1 (exit 86).
+    (work / "h.txt").write_text("workload-output\n")
+    subprocess.run(["git", "-C", str(work), "add", "h.txt"], check=True)
+    subprocess.run(["git", "-C", str(work), *ident, "commit", "-qm", "c3"], check=True)
+    subprocess.run(["git", "-C", str(work), "push", "-q", "origin", f"HEAD:{branch}"], check=True)
+    unpushed_after_push = subprocess.run(
+        ["git", "-C", str(work), "rev-list", "--count", f"origin/{branch}..HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert unpushed_after_push == "0"
+
+
 def test_render_startup_script_is_valid_bash() -> None:
     """Both rendered branches must parse — the #658 helper embeds a Python
     heredoc inside a function inside a subshell; a quoting slip would only
