@@ -1418,7 +1418,14 @@ def _nystrom_inv_sqrt(landmarks, gamma, dev, eig_floor=1e-10):
     """K_mm^{-1/2} whitener (m, m) fp64 on dev."""
     Z = torch.as_tensor(np.asarray(landmarks), dtype=torch.float64, device=dev)
     K_mm = torch.exp(-gamma * torch.cdist(Z, Z) ** 2)
-    w, V = torch.linalg.eigh(K_mm)
+    try:
+        w, V = torch.linalg.eigh(K_mm)
+    except torch.linalg.LinAlgError:
+        # cusolver syevd rejects very large fp64 matrices (observed: m=32768,
+        # CUSOLVER_STATUS_INVALID_VALUE at the bufferSize query; m=16384 fine).
+        # Same quantity on CPU LAPACK, then back to dev (att-20260722-165214 r2).
+        w, V = torch.linalg.eigh(K_mm.cpu())
+        w, V = w.to(K_mm.device), V.to(K_mm.device)
     w = torch.clamp(w, min=eig_floor)
     return V @ torch.diag(w.rsqrt()) @ V.T  # (m, m)
 
