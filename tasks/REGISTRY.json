@@ -4636,8 +4636,8 @@
     "1595": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1595",
-      "status": "approved",
+      "path": "tasks/running/1595",
+      "status": "running",
       "title": "daily-fix: persist resume state before multi-hour pod stop"
     },
     "1596": {
