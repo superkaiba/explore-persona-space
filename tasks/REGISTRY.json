@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1601,
+  "highest_id": 1602,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4695,6 +4695,13 @@
       "path": "tasks/reviewing/1601",
       "status": "reviewing",
       "title": "workflow-fix: arm on-demand retry on GCP queue-timeout path"
+    },
+    "1602": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1602",
+      "status": "proposed",
+      "title": "workflow-fix: gcp startup-script repo-reuse else-branch is not branch-switch-safe"
     },
     "161": {
       "has_clean_result": false,
