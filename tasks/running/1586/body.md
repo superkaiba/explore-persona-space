@@ -2,8 +2,7 @@
 title: Matched-install LoRA vs full fine-tune method comparison for sycophancy / impolite
   / casual (+ marker second seed) at the persona context
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-07-22T05:55:44Z'
 has_clean_result: false
 parent_id: 1333
