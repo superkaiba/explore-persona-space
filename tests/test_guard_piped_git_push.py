@@ -1,11 +1,13 @@
 """End-to-end tests for the ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook.
 
 The guard mechanizes CLAUDE.md § Concurrent repo-root committers ("Never pipe
-a `git push` (or merge/PR command) through `tail`/`grep`/`head` — the pipe
+a `git push` (or merge/PR/`git commit` command) through `tail`/`grep`/`head`
+— the pipe
 masks the non-zero exit code ... run it bare and check the exit code, or use
 `set -o pipefail` when a pipe is unavoidable"; the prose rule failed open in
-4 sessions on 2026-07-02 and masked #957's Step 10d push on 2026-07-04): a
-Bash tool call that pipes a ``git push`` / ``git merge`` /
+4 sessions on 2026-07-02, masked #957's Step 10d push on 2026-07-04, and
+#1584's piped commit was SIGPIPE-killed mid-pre-commit-hook): a
+Bash tool call that pipes a ``git push`` / ``git merge`` / ``git commit`` /
 ``gh pr merge|create`` PRODUCER into a consumer on the producer's own
 pipeline segment is BLOCKED (exit 2 + a ``BLOCKED`` stderr naming the
 bare-push + pipefail remediation), while pipefail-carrying commands,

@@ -2388,7 +2388,7 @@ def test_check_piped_git_push_fail_simple_pipe(tmp_path):
 
 def test_check_piped_git_push_fail_gh_pr_merge(tmp_path):
     """FAIL — `gh pr merge ... | head` masks a failed merge the same way
-    (the prose rule's 'merge/PR command' clause)."""
+    (the prose rule's 'merge/PR/`git commit` command' clause)."""
     (tmp_path / "x.sh").write_text("gh pr merge 123 --squash | head\n")
     errors = check_piped_git_push(scripts_dir=tmp_path)
     assert len(errors) == 1, f"expected exactly one error, got: {errors}"
