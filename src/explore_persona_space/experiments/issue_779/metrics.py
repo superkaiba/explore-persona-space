@@ -58,12 +58,16 @@ def bootstrap_within_condition_ci(
     min_y_std: float = 1.0,
     min_n: int = 3,
     ci: float = 0.95,
+    replicates_out: list | None = None,
 ) -> dict:
     """Bootstrap 95% CI for the within-condition mean r (resample CONDITIONS).
 
     Resamples the CONDITIONS (not points) with replacement — the correct unit for
     a within-condition mean, matching PV's condition-averaged statistic. Returns
     {"point": r, "lo": .., "hi": .., "n_conditions": .., "n_boot_valid": ..}.
+    ``replicates_out`` (#779 n1m-readout, optional): when a list is passed, the
+    finite bootstrap replicate r values (the exact draws the CI quantiles read)
+    are appended to it. Default ``None`` — behavior unchanged.
     """
     rng = np.random.default_rng(seed)
     base = within_condition_pearson(cond_x, cond_y, min_y_std=min_y_std, min_n=min_n)
@@ -85,6 +89,8 @@ def bootstrap_within_condition_ci(
         r = within_condition_pearson(bx, by, min_y_std=min_y_std, min_n=min_n)["r"]
         if np.isfinite(r):
             boot_rs.append(r)
+    if replicates_out is not None:
+        replicates_out.extend(boot_rs)
     if not boot_rs:
         return {
             "point": base["r"],
@@ -115,6 +121,7 @@ def bootstrap_delta_ci(
     min_y_std: float = 1.0,
     min_n: int = 3,
     ci: float = 0.95,
+    replicates_out: list | None = None,
 ) -> dict:
     """Bootstrap CI for the within-condition r DIFFERENCE (method A - method B).
 
@@ -122,6 +129,9 @@ def bootstrap_delta_ci(
     difference r_A - r_B on the SAME resampled conditions (so the CI reflects the
     paired comparison the success criterion uses: "R1 beats pv_raw by >= +0.05,
     CI excludes 0"). Returns {"delta", "lo", "hi", "excludes_zero"}.
+    ``replicates_out`` (#779 n1m-readout, optional): when a list is passed, the
+    finite paired-delta replicates are appended to it. Default ``None`` —
+    behavior unchanged.
     """
     rng = np.random.default_rng(seed)
     ra = within_condition_pearson(cond_x_a, cond_y, min_y_std=min_y_std, min_n=min_n)["r"]
@@ -145,6 +155,8 @@ def bootstrap_delta_ci(
         )["r"]
         if np.isfinite(r_a) and np.isfinite(r_b):
             deltas.append(r_a - r_b)
+    if replicates_out is not None:
+        replicates_out.extend(deltas)
     delta = (ra - rb) if (np.isfinite(ra) and np.isfinite(rb)) else float("nan")
     if not deltas:
         return {"delta": delta, "lo": float("nan"), "hi": float("nan"), "excludes_zero": False}
