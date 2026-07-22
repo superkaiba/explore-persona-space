@@ -4664,8 +4664,8 @@
     "1599": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1599",
-      "status": "running",
+      "path": "tasks/reviewing/1599",
+      "status": "reviewing",
       "title": "daily-fix: sweep subsumption by fix merge time not creation"
     },
     "16": {
