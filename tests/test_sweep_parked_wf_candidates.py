@@ -225,7 +225,7 @@ def test_terminal_fp_task_created_after_candidate_suppresses(tmp_path: Path) -> 
         events=[{"ts": T2, "kind": "epm:created", "note": "created after the park"}],
     )
     c = only(run_sweep(tmp_path, include_routed=True))
-    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#61"}
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#61", "basis": "creation"}
 
 
 def test_terminal_fp_task_created_before_candidate_is_re_raise(tmp_path: Path) -> None:
@@ -875,3 +875,226 @@ def test_casual_parked_negation_near_recursion_guard_not_enumerated(tmp_path: Pa
         ],
     )
     assert run_sweep(tmp_path, include_routed=True)["candidates"] == []
+
+
+# ── 20. #1599: merge/close-time subsumption for terminal fp-tag hits ────────
+#
+# Byte-verbatim fixture rows: each _RAW_1599_* constant is the EXACT JSONL line
+# from the live tasks/completed/1579/events.jsonl (lines 1 / 25 / 27; ts values
+# verified 2026-07-22). The incident temporal shape: #1577's fp-computable-class
+# park at 2026-07-21T10:59:07Z sat BETWEEN #1579's terminal status flip
+# (10:46:50Z) and its Step 10d merge (11:00:26Z) — 79 s before the merge — so
+# the pre-#1599 creation-only key read it as a genuine re-raise. The close rule
+# is max over {epm:merged, epm:done, epm:promoted, terminal epm:status-changed}
+# because marker order varies (#1577 posted epm:done AFTER epm:merged).
+
+_RAW_1599_CREATED = r"""{"ts": "2026-07-21T06:38:56Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}"""  # noqa: E501
+_RAW_1599_FLIP = r"""{"ts": "2026-07-21T10:46:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "completed", "note": "Step 10 auto-complete: kind=infra, code-review PASS r1, test-verdict PASS (4236 passed, compare clean), completion audit PASS. No children."}"""  # noqa: E501
+_RAW_1599_MERGED = r"""{"ts": "2026-07-21T11:00:26Z", "kind": "epm:merged", "version": 1, "by": "unknown", "note": "Step 10d auto-merge: PR #1356 squash-merged to main (merge_form: squash; merge_attempts: 1; merge sha f0770307ce5c08bea3ed44f90d01d0ec762f425e; branch tip 3351767f5a certified by the pre-push lint gate: verdict pass, BASE_RC=0 GATED_RC=0 TG legs 0/0, pre-gate re-sync no-drift, choom=ok). Worktree kept."}"""  # noqa: E501
+
+# The real #1577 park ts (tasks/completed/1577/events.jsonl, verified 2026-07-22).
+_1599_PARK_TS = "2026-07-21T10:59:07Z"
+
+
+def _make_1599_fix_task(root: Path, fp: str) -> None:
+    """The byte-verbatim #1579 fixture: a completed infra fix task carrying fp."""
+    # round-trip guard: the embedded fixture lines are single valid JSON rows
+    assert json.loads(_RAW_1599_CREATED)["ts"] == "2026-07-21T06:38:56Z"
+    flip = json.loads(_RAW_1599_FLIP)
+    assert (flip["ts"], flip["to"]) == ("2026-07-21T10:46:50Z", "completed")
+    assert json.loads(_RAW_1599_MERGED)["ts"] == "2026-07-21T11:00:26Z"
+    make_task(
+        root,
+        1579,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        raw_event_lines=[_RAW_1599_CREATED, _RAW_1599_FLIP, _RAW_1599_MERGED],
+    )
+
+
+def test_issue1599_terminal_fp_task_merged_after_park_suppresses(tmp_path: Path) -> None:
+    """#1599 red-green + durability pin (acceptance criterion 1): a candidate
+    parked BETWEEN the fix task's terminal status flip and its Step 10d merge
+    is subsumed — the epm:merged arm, not the status flip, decides (the park ts
+    postdates the flip, so a status-changed-only key would NOT suppress)."""
+    bug, change = "bug 1599-a.", "change 1599-a."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        1577,
+        "completed",
+        events=[cand_row(_1599_PARK_TS, block_note("a/b.md", bug, change))],
+    )
+    _make_1599_fix_task(tmp_path, fp)
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#1579", "basis": "close"}
+    # and the DEFAULT (unsuppressed) listing drops it
+    assert run_sweep(tmp_path)["candidates"] == []
+
+
+def test_issue1599_candidate_parked_after_merge_is_re_raise(tmp_path: Path) -> None:
+    """Criterion 2: a candidate parked AFTER the fix task's merge/close is a
+    genuine re-raise and stays enumerated."""
+    bug, change = "bug 1599-b.", "change 1599-b."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        30,
+        "completed",
+        events=[cand_row("2026-07-21T12:00:00Z", block_note("a/b.md", bug, change))],
+    )
+    _make_1599_fix_task(tmp_path, fp)
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_unparseable_events_fail_open_to_enumeration(tmp_path: Path) -> None:
+    """Criterion 3: unreadable / garbage / ts-less events.jsonl → neither the
+    creation nor the close ts parses → enumerated (fail-open preserved)."""
+    bug, change = "bug 1599-c.", "change 1599-c."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 31, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        65,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        raw_event_lines=[
+            "{this is not json",
+            json.dumps({"kind": "epm:status-changed", "to": "completed", "note": "no ts"}),
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_creation_after_park_takes_creation_basis(tmp_path: Path) -> None:
+    """Ordering pin: creation-after-park decides FIRST (the pre-#1599 rule),
+    even when a later epm:merged row would also decide."""
+    bug, change = "bug 1599-d.", "change 1599-d."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 32, "archived", events=[cand_row(T0, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        66,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T2, "kind": "epm:created", "note": "created after the park"},
+            {"ts": "2026-07-07T10:00:00Z", "kind": "epm:merged", "note": "merged later still"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#66", "basis": "creation"}
+
+
+def test_issue1599_non_terminal_to_status_change_is_not_a_close_signal(tmp_path: Path) -> None:
+    """Criterion 5: an epm:status-changed row with a NON-terminal ``to`` is
+    never a close signal (the structured-``to`` discrimination)."""
+    bug, change = "bug 1599-e.", "change 1599-e."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 33, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        67,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:status-changed", "from": "approved", "to": "reviewing"},
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_archived_close_via_terminal_status_change(tmp_path: Path) -> None:
+    """Criterion 6 (the archived shape, grounded on tasks/archived/1101): an
+    archived task closes via its ``to: archived`` status-changed row alone —
+    archived tasks carry no epm:merged / epm:done rows."""
+    bug, change = "bug 1599-f.", "change 1599-f."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 34, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        68,
+        "archived",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:status-changed", "from": "proposed", "to": "archived"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#68", "basis": "close"}
+
+
+def test_issue1599_close_equal_to_park_ts_is_not_subsumption(tmp_path: Path) -> None:
+    """Tie boundary (advisory): closed == cand_ts does NOT suppress — the rule
+    is strict ``closed > cand_ts``, mirroring the creation check."""
+    bug, change = "bug 1599-g.", "change 1599-g."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 35, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        69,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T1, "kind": "epm:merged", "note": "merged at exactly the park ts"},
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_done_only_close_arm_suppresses(tmp_path: Path) -> None:
+    """epm:done-only close arm (advisory): a completed task with neither an
+    epm:merged row nor a terminal status-changed row still closes via epm:done."""
+    bug, change = "bug 1599-h.", "change 1599-h."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 36, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        70,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:done", "note": "outcome recorded"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#70", "basis": "close"}
+
+
+def test_issue1599_scan_continues_past_non_suppressing_terminal_hit(tmp_path: Path) -> None:
+    """Multi-hit continue-scanning (advisory): a terminal fp hit that fails
+    BOTH temporal checks does not end the scan — a later fp-bearing body may
+    still decide."""
+    bug, change = "bug 1599-i.", "change 1599-i."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 37, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    # sorts first (completed/71 < completed/72): created before the park, no close rows
+    make_task(
+        tmp_path,
+        71,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[{"ts": T0, "kind": "epm:created", "note": "created before the park"}],
+    )
+    # sorts second: closes after the park → decides
+    make_task(
+        tmp_path,
+        72,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:merged", "note": "merged after the park"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#72", "basis": "close"}
