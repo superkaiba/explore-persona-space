@@ -34,7 +34,11 @@ chain on a 2-layer from-config Qwen over the real vocab — PASS_UNIFIED):
               pair-bootstrap CI (ONE vectorized resample, seed 14151) +
               Wilcoxon companion + registered companions Delta_floor /
               Delta_width, named-dropped-pairs list, 28-pair primary +
-              27-pair exclude-medical + matched-length sensitivity reads.
+              27-pair exclude-medical + matched-length sensitivity reads;
+              PLUS the plan v9 §3.4 disattenuated alignment (cos_disjoint /
+              sqrt(r_shift_est · r_target_est), SB-matched split-half
+              reliabilities, floor 0.1, draw + pair bootstraps) ->
+              disattenuated_alignment.json.
   p4_upload   batched upload_folder of any tensor residue + the store
               manifest.json (git commit of the eval_results JSONs is the
               DISPATCHER's commit_push_verify, not this driver).
@@ -126,6 +130,21 @@ FORMAL_PAIR = "m685_05_formal"
 MATCHED_LENGTH_RATIO = (0.5, 2.0)  # steered/baseline median-length sensitivity window
 
 REP_LABELS = (43, 44)
+
+# ── Disattenuated alignment (plan v9 §3.4 SCOPE AMENDMENT, user-approved
+# 2026-07-22; 0 GPU-h — a pure re-reduction of the persisted per-draw span
+# means, key `span_mean` in each per-cell store since round 1) ──────────
+DISATT_FLOOR = 0.1  # registered reliability floor: corrected ONLY when BOTH r_est > floor
+# Generalized Spearman–Brown step matching the DISJOINT estimators: the
+# measured split-half reliability compares two HALF estimators (n/2-draw
+# numerator leg + n/2-draw baseline leg -> noise 4σ²/n under equal per-draw
+# noise), while the disjoint cosine's legs use the FULL numerator mean +
+# a HALF baseline mean (noise σ²/n + 2σ²/n = 3σ²/n). Noise ratio 4/3 for
+# every n, so r_est = SB_k(r_half) with k = 4/3 (r_k = k·r/(1+(k−1)·r)).
+# The equal-per-draw-noise assumption is recorded in the artifact.
+DISATT_SB_K = 4.0 / 3.0
+DISATT_DRAW_BOOT = 1000  # per-cell draw bootstrap (stratified within even/odd halves)
+DISATT_SEED = 14152  # derived from the registered bootstrap seed 14151 (recorded)
 
 
 # ── config + cell inventory ───────────────────────────────────────────
@@ -854,8 +873,9 @@ def _load_reduced(cfg: ProfileConfig, cell_id: str) -> dict:
     prof = rec["profiles"].float()  # (n_kept, 13, L, H); NaN rows for empty bins
     kept = list(rec["kept_indices"])
     idx = torch.tensor(kept)
-    even = prof[(idx % 2 == 0).nonzero().squeeze(-1)]
-    odd = prof[(idx % 2 == 1).nonzero().squeeze(-1)]
+    even_mask = idx % 2 == 0  # ORIGINAL draw-index parity over the kept axis
+    even = prof[even_mask]
+    odd = prof[~even_mask]
     contrib = (~prof.isnan().any(dim=-1)).sum(dim=0)  # (13, L) draws with the bin defined
     return {
         "full": prof.nanmean(dim=0),  # (13, L, H)
@@ -865,6 +885,11 @@ def _load_reduced(cfg: ProfileConfig, cell_id: str) -> dict:
         "n_kept": prof.shape[0],
         "n_even": int(even.shape[0]),
         "n_odd": int(odd.shape[0]),
+        # per-draw SPAN means (the parity-gate reduction, persisted per plan
+        # v9 §3.4 so 5-draw half-means at span level are exact) + the parity
+        # mask — the disattenuation inputs.
+        "span_per_draw": rec["span_mean"].float(),  # (n_kept, L, H)
+        "even_mask": even_mask,
         "comp_token_counts": list(rec["comp_token_counts"]),
         "n_empty": int(rec["n_empty_completions"]),
     }
@@ -872,6 +897,14 @@ def _load_reduced(cfg: ProfileConfig, cell_id: str) -> dict:
 
 def _cos(a: torch.Tensor, b: torch.Tensor) -> float:
     return float(torch.nn.functional.cosine_similarity(a, b, dim=0))
+
+
+def _cos_finite(a: torch.Tensor, b: torch.Tensor) -> float | None:
+    """Cosine, or None when either vector is non-finite (NaN empty-bin rows)."""
+    if bool(a.isnan().any()) or bool(b.isnan().any()):
+        return None
+    v = _cos(a, b)
+    return v if math.isfinite(v) else None
 
 
 def _bin_stats(steered: dict, base: dict, ceil_full: torch.Tensor | None, li: int) -> list[dict]:
@@ -1006,6 +1039,134 @@ def _unit(v: torch.Tensor) -> torch.Tensor | None:
     return v / n
 
 
+# ── disattenuated alignment (plan v9 §3.4 amendment) ──────────────────
+
+
+def _sb_step(r: float, k: float = DISATT_SB_K) -> float:
+    """Generalized Spearman–Brown step: reliability of an estimator whose
+    noise variance is 1/k of the measured split-half estimator's
+    (r_k = k·r / (1 + (k−1)·r)); k = 4/3 matches the disjoint estimator's
+    full-numerator + half-baseline legs (see the DISATT_SB_K note)."""
+    return k * r / (1.0 + (k - 1.0) * r)
+
+
+def _boot_half_means(
+    X: torch.Tensor, even_mask: torch.Tensor, n_boot: int, rng: np.random.Generator
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Stratified draw bootstrap preserving the even/odd half structure:
+    resample WITHIN each half with replacement. Returns (even_mean, odd_mean,
+    full_mean), each ``(n_boot, H)`` — one multiplicity-matrix GEMM per half
+    (vectorize rule; never a per-replicate loop)."""
+    E, O = X[even_mask], X[~even_mask]
+    assert E.shape[0] >= 1 and O.shape[0] >= 1, (E.shape, O.shape)
+
+    def _half(Y: torch.Tensor) -> torch.Tensor:
+        n = Y.shape[0]
+        idx = torch.from_numpy(rng.integers(0, n, size=(n_boot, n)))
+        M = torch.zeros(n_boot, n, dtype=Y.dtype)
+        M.scatter_add_(1, idx, torch.ones(n_boot, n, dtype=Y.dtype))
+        return (M / n) @ Y  # (n_boot, H)
+
+    e, o = _half(E), _half(O)
+    ne, no = E.shape[0], O.shape[0]
+    f = (ne * e + no * o) / (ne + no)
+    return e, o, f
+
+
+def disattenuate_cell(
+    s_draws: torch.Tensor,
+    c_draws: torch.Tensor,
+    cp_draws: torch.Tensor,
+    s_even: torch.Tensor,
+    c_even: torch.Tensor,
+    cp_even: torch.Tensor,
+    *,
+    floor: float = DISATT_FLOOR,
+    sb_k: float = DISATT_SB_K,
+    n_boot: int = DISATT_DRAW_BOOT,
+    seed: int = DISATT_SEED,
+) -> dict:
+    """Spearman disattenuation of the span-level DISJOINT alignment cosine
+    for ONE (pair, arm, layer) cell: cos_true ≈ cos_disjoint /
+    sqrt(r_shift_est · r_target_est).
+
+    Inputs: per-draw span-mean vectors ``(n, H)`` for the steered (s),
+    baseline (c) and ceiling (cp) legs at ONE layer + each leg's even/odd
+    parity mask. Reliabilities are matched split-halves (shift:
+    cos(s_e−c_e, s_o−c_o) — the parent recount (D) convention; target:
+    cos(cp_e−c_e, cp_o−c_o) — the parent K1 convention), stepped up with the
+    generalized Spearman–Brown k=4/3 to the disjoint estimator's noise level.
+    Corrected is reported ONLY when BOTH stepped reliabilities exceed
+    ``floor``; raw disjoint always rides beside it. CI: stratified
+    within-half draw bootstrap (ONE multiplicity GEMM per leg-half),
+    percentile over replicates whose reliabilities clear the floor.
+    A leg with an empty half returns a recorded degenerate result
+    (``reason``), never a crash and never a silent skip."""
+    cos = torch.nn.functional.cosine_similarity
+    for leg, mask in (("steered", s_even), ("baseline", c_even), ("ceiling", cp_even)):
+        if not bool(mask.any()) or not bool((~mask).any()):
+            return {
+                "cos_disjoint_span": None,
+                "r_shift_half": None,
+                "r_target_half": None,
+                "r_shift_est": None,
+                "r_target_est": None,
+                "corrected": None,
+                "below_floor": None,
+                "ci95_corrected": None,
+                "ci95_disjoint": None,
+                "n_valid_boot": 0,
+                "reason": f"empty_half_{leg}",
+            }
+
+    def _halves(X: torch.Tensor, m: torch.Tensor) -> tuple:
+        return X[m].mean(0), X[~m].mean(0), X.mean(0)
+
+    s_e, s_o, s_f = _halves(s_draws, s_even)
+    c_e, c_o, c_f = _halves(c_draws, c_even)
+    cp_e, cp_o, cp_f = _halves(cp_draws, cp_even)
+
+    cos_dis = 0.5 * (
+        float(cos(s_f - c_o, cp_f - c_e, dim=0)) + float(cos(s_f - c_e, cp_f - c_o, dim=0))
+    )
+    r_shift_half = float(cos(s_e - c_e, s_o - c_o, dim=0))
+    r_target_half = float(cos(cp_e - c_e, cp_o - c_o, dim=0))
+    r_shift_est = _sb_step(r_shift_half, sb_k)
+    r_target_est = _sb_step(r_target_half, sb_k)
+    below_floor = not (r_shift_est > floor and r_target_est > floor)
+    corrected = None if below_floor else cos_dis / math.sqrt(r_shift_est * r_target_est)
+
+    # Draw bootstrap: all legs resampled independently, half structure kept.
+    rng = np.random.default_rng(seed)
+    se_b, so_b, sf_b = _boot_half_means(s_draws, s_even, n_boot, rng)
+    ce_b, co_b, cf_b = _boot_half_means(c_draws, c_even, n_boot, rng)
+    cpe_b, cpo_b, cpf_b = _boot_half_means(cp_draws, cp_even, n_boot, rng)
+    dis_b = 0.5 * (cos(sf_b - co_b, cpf_b - ce_b, dim=1) + cos(sf_b - ce_b, cpf_b - co_b, dim=1))
+    rs_b = torch.tensor([_sb_step(float(r), sb_k) for r in cos(se_b - ce_b, so_b - co_b, dim=1)])
+    rt_b = torch.tensor([_sb_step(float(r), sb_k) for r in cos(cpe_b - ce_b, cpo_b - co_b, dim=1)])
+    valid = (rs_b > floor) & (rt_b > floor)
+    n_valid = int(valid.sum())
+    ci_corrected = None
+    if corrected is not None and n_valid > 0:
+        corr_b = (dis_b[valid] / torch.sqrt(rs_b[valid] * rt_b[valid])).numpy()
+        ci_corrected = [float(np.quantile(corr_b, 0.025)), float(np.quantile(corr_b, 0.975))]
+    return {
+        "cos_disjoint_span": cos_dis,
+        "r_shift_half": r_shift_half,
+        "r_target_half": r_target_half,
+        "r_shift_est": r_shift_est,
+        "r_target_est": r_target_est,
+        "corrected": corrected,
+        "below_floor": below_floor,
+        "ci95_corrected": ci_corrected,
+        "ci95_disjoint": [
+            float(np.quantile(dis_b.numpy(), 0.025)),
+            float(np.quantile(dis_b.numpy(), 0.975)),
+        ],
+        "n_valid_boot": n_valid,
+    }
+
+
 def phase_p3(cfg: ProfileConfig, cells: list[ProfileCell], revisions: dict[str, str]) -> None:
     """CPU statistics over the per-cell stores (streamed per pair)."""
     pairs = sorted({c.pair_id for c in cells})
@@ -1019,6 +1180,7 @@ def phase_p3(cfg: ProfileConfig, cells: list[ProfileCell], revisions: dict[str, 
     align_by_cell: dict[str, dict[str, dict[str, float | None]]] = {}
     floor_by_cell: dict[str, dict[str, dict[str, float | None]]] = {}
     median_len: dict[tuple[str, str], float] = {}  # (kind, pair) -> median tokens
+    disatt_by_cell: dict[str, dict[str, dict]] = {}  # cell_label -> pair -> disatt row
 
     by_id = {c.cell_id: c for c in cells}
     for pid in pairs:
@@ -1062,6 +1224,48 @@ def phase_p3(cfg: ProfileConfig, cells: list[ProfileCell], revisions: dict[str, 
                     r["bin"]: r["noise_floor"] for r in rows
                 }
                 median_len[(cell_label, pid)] = float(np.median(st["comp_token_counts"]))
+                # Disattenuated alignment (plan v9 §3.4): span level from the
+                # persisted per-draw span means; per-bin variant from the
+                # binned even/odd half-means where reliabilities permit.
+                disatt = disattenuate_cell(
+                    st["span_per_draw"][:, li],
+                    base["span_per_draw"][:, li],
+                    ceil["span_per_draw"][:, li],
+                    st["even_mask"],
+                    base["even_mask"],
+                    ceil["even_mask"],
+                    n_boot=min(DISATT_DRAW_BOOT, cfg.n_boot),
+                )
+                per_bin: dict[str, dict] = {}
+                for b, name in enumerate(BIN_NAMES):
+                    r_sh = _cos_finite(
+                        st["even"][b, li] - base["even"][b, li],
+                        st["odd"][b, li] - base["odd"][b, li],
+                    )
+                    r_tg = _cos_finite(
+                        ceil["even"][b, li] - base["even"][b, li],
+                        ceil["odd"][b, li] - base["odd"][b, li],
+                    )
+                    cos_dis_b = rows[b]["alignment_disjoint"]
+                    rs_est = _sb_step(r_sh) if r_sh is not None else None
+                    rt_est = _sb_step(r_tg) if r_tg is not None else None
+                    ok = (
+                        cos_dis_b is not None
+                        and rs_est is not None
+                        and rt_est is not None
+                        and rs_est > DISATT_FLOOR
+                        and rt_est > DISATT_FLOOR
+                    )
+                    per_bin[name] = {
+                        "corrected": (cos_dis_b / math.sqrt(rs_est * rt_est) if ok else None),
+                        "r_shift_est": rs_est,
+                        "r_target_est": rt_est,
+                    }
+                disatt_by_cell.setdefault(cell_label, {})[pid] = {
+                    **disatt,
+                    "per_bin": per_bin,
+                    "flags": {"medical_noise_target": pid == MEDICAL_PAIR},
+                }
                 # Null targets: mean of the two half-assignment UNIT targets
                 # (mirrors the averaged-assignment disjoint alignment read).
                 for b, name in enumerate(BIN_NAMES):
@@ -1300,7 +1504,112 @@ def phase_p3(cfg: ProfileConfig, cells: list[ProfileCell], revisions: dict[str, 
             "repro": _repro(cfg),
         },
     )
-    logger.info("[phase=p3_profiles] wrote 4 JSONs under %s", cfg.out_root)
+
+    # ── disattenuated alignment deliverable (plan v9 §3.4 amendment) ──
+    disatt_cells: dict[str, dict] = {}
+    pair_rng = np.random.default_rng(DISATT_SEED)
+    for cell_label in sorted(disatt_by_cell):
+        per_pair = disatt_by_cell[cell_label]
+        below_floor = sorted(p for p, r in per_pair.items() if r["below_floor"] or r.get("reason"))
+        eligible = sorted(
+            p for p, r in per_pair.items() if r["corrected"] is not None and p != MEDICAL_PAIR
+        )
+        agg: dict = {
+            "n_pairs_eligible": len(eligible),
+            "eligible_pairs": eligible,
+            "excluded": {
+                "medical_noise_target": [p for p in per_pair if p == MEDICAL_PAIR],
+                "below_floor_or_degenerate": below_floor,
+            },
+        }
+        if eligible:
+            corr = np.array([per_pair[p]["corrected"] for p in eligible])
+            dis = np.array([per_pair[p]["cos_disjoint_span"] for p in eligible])
+            idx = pair_rng.integers(0, corr.size, size=(cfg.n_boot, corr.size))
+            boot = corr[idx].mean(axis=1)  # ONE vectorized pair resample
+            agg.update(
+                {
+                    "corrected_mean": float(corr.mean()),
+                    "ci95_corrected": [
+                        float(np.quantile(boot, 0.025)),
+                        float(np.quantile(boot, 0.975)),
+                    ],
+                    "disjoint_mean_same_pairs": float(dis.mean()),
+                }
+            )
+        else:
+            agg.update(
+                {"corrected_mean": None, "ci95_corrected": None, "disjoint_mean_same_pairs": None}
+            )
+        disatt_cells[cell_label] = {"per_pair": per_pair, "aggregate": agg}
+
+    parent_ref_path = REPO_ROOT / "eval_results/issue_1415/disjoint_baseline_recount.json"
+    parent_reference = None
+    if parent_ref_path.exists():
+        rel = json.loads(parent_ref_path.read_text())["realized_shift_reliability_L20"]
+        parent_reference = {
+            "realized_shift_reliability_L20_mean": {a: rel[a]["mean"] for a in rel},
+            "note": (
+                "parent (D) convention = cos(s_even − c_even, s_odd − c_odd) at read-L20 "
+                "— the SAME formula as r_shift_half here (cross-check at L20 cells); "
+                "parent target split-half (0.85–0.99, 27/28 pairs) is the K1 convention "
+                "matching r_target_half"
+            ),
+        }
+    _write_json_atomic(
+        cfg.out_root / "disattenuated_alignment.json",
+        {
+            "statistic": (
+                "cos_true ≈ cos_disjoint / sqrt(r_shift_est · r_target_est) at span level "
+                "(Spearman disattenuation of the DISJOINT alignment cosine), per pair and "
+                "aggregate, both arms, L14+L20 matched-layer, alpha=4; raw disjoint always "
+                "beside corrected; per-bin variant where reliabilities permit"
+            ),
+            "convention": {
+                "reliabilities": (
+                    "matched split-halves of the estimators in the disjoint cosine — "
+                    "r_shift_half = cos(s_even−c_even, s_odd−c_odd) (parent recount (D) "
+                    "convention), r_target_half = cos(cp_even−c_even, cp_odd−c_odd) "
+                    "(parent K1 convention); halves = even/odd ORIGINAL draw-index parity "
+                    "(5-draw half-means at production n=10)"
+                ),
+                "spearman_brown": (
+                    f"generalized SB step-UP with k = {DISATT_SB_K:.6g} "
+                    "(r_est = k·r_half/(1+(k−1)·r_half)): the measured split-half compares "
+                    "two HALF estimators (noise 4σ²/n), the disjoint estimator uses a FULL "
+                    "numerator mean + HALF baseline mean (noise 3σ²/n) — ratio 4/3 for every "
+                    "n under the recorded equal-per-draw-noise assumption"
+                ),
+                "floor": DISATT_FLOOR,
+                "floor_rule": "corrected reported ONLY when BOTH stepped reliabilities > floor",
+                "medical_rule": f"{MEDICAL_PAIR} excluded from aggregates + flagged per pair",
+                "inputs": (
+                    "per-draw span means persisted in each per-cell store (key `span_mean`, "
+                    "(n_kept, L, H) fp16) + `kept_indices` parity"
+                ),
+                "draw_bootstrap": {
+                    "n_boot": min(DISATT_DRAW_BOOT, cfg.n_boot),
+                    "seed": DISATT_SEED,
+                    "scheme": (
+                        "stratified WITHIN even/odd halves per leg (structure-preserving), "
+                        "all three legs resampled independently; percentile CI over "
+                        "replicates whose stepped reliabilities clear the floor "
+                        "(n_valid_boot recorded)"
+                    ),
+                },
+                "pair_bootstrap": {
+                    "n_boot": cfg.n_boot,
+                    "seed": DISATT_SEED,
+                    "note": "seed derived from the registered 14151 (14152), recorded here",
+                },
+                "caveat": "corrected values may exceed 1 (standard disattenuation caveat)",
+            },
+            "cells": disatt_cells,
+            "parent_reference": parent_reference,
+            "repro": _repro(cfg),
+        },
+    )
+    logger.info("[phase=p3_profiles] wrote 5 JSONs under %s", cfg.out_root)
 
 
 # ── p4: upload residue ────────────────────────────────────────────────

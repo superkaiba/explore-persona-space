@@ -168,6 +168,7 @@ eval_paths = sorted(
         "summary.json",
         "answer_length_distributions.json",
         "null_bands_binned.json",
+        "disattenuated_alignment.json",
         "parity_gate_report.json",
         "revisions.json",
     )
