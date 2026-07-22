@@ -316,11 +316,19 @@ def panel_context_ids(cfg: Cfg, beh_key: str) -> list[str]:
         for ctx in panel.values():
             _register_ctx(ctx)
         return list(panel)
+    behavior = G.BEHAVIOR_BY_KEY[beh_key]
+    # ICL contexts are NOT registered by register_fu3_contexts — build them
+    # from the committed bank via the fu3 factory (the #1315 _context path;
+    # verified 2026-07-22: icl_prefix_* absent from CONTEXTS after the fu3
+    # registrar alone).
+    import issue1090_fu3_worker as fu3w
+
+    fu3w.ensure_context(c1481.context_id_for(behavior, "icl"), behavior)
     ordered = [
-        c1481.context_id_for(G.BEHAVIOR_BY_KEY[beh_key], "pers"),
+        c1481.context_id_for(behavior, "pers"),
         "default",
-        c1481.context_id_for(G.BEHAVIOR_BY_KEY[beh_key], "conv"),
-        c1481.context_id_for(G.BEHAVIOR_BY_KEY[beh_key], "icl"),
+        c1481.context_id_for(behavior, "conv"),
+        c1481.context_id_for(behavior, "icl"),
     ]
     held = 0
     for member in default_panel():
