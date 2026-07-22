@@ -133,10 +133,16 @@ PHASE_HEADROOM_GB = {
     "p9_upload": 5.0,
 }
 
-# Compute-pilot kill (plan §7 item 2): p2+p3 plan wall for the content fan-out.
-PILOT_PLAN_P2P3_WALL_H = 3.7  # §9 rows p2 (2.2h) + p3 (1.5h)
-PILOT_PARALLELISM = 2.0  # 2 concurrent ZeRO-3 quads / 8-way eval fan-out
+# Compute-pilot kill (plan §7 item 2): per-phase plan walls, each gated
+# against its OWN §9 row (review r1 Minor 5 — a combined p2+p3 wall was
+# structurally looser than either row, and a ladder-side blowup escaped it).
+PILOT_PLAN_P2_WALL_H = 2.2  # §9 p2 row (content FT fan-out)
+PILOT_PLAN_P3_WALL_H = 2.3  # §9 p3 (1.5h content ladders) + p3b (0.8h marker reads)
+PILOT_PARALLELISM = 2.0  # 2 concurrent ZeRO-3 quads (p2)
 PILOT_GATE_RC = 7  # designed halt (never bare rc=1 — gotchas #1415)
+
+# keep-cell needs the GCE 750 GB boot-disk class (plan §9 disk split).
+KEEPCELL_MIN_FREE_GB = 300.0
 
 MARKER_TEXT = " ※"
 MARKER_TOKEN_ID = 83399
@@ -195,17 +201,68 @@ class Cfg:
         }
 
     def resolved_disk_mode(self) -> str:
-        """auto -> keep-cell when the out-root filesystem has >=300 GB free
-        (the GCP 750 GB boot-disk case), else stream-reap (the RunPod ~130 GB
-        MooseFS quota case) — plan §9 disk split."""
+        """``auto`` -> resolved ONCE per out_root and PERSISTED (disk_mode.json).
+
+        Every later consumer — ``regime_key``, the stream-reap decision,
+        resumes, and unit subprocesses (which receive the resolved LITERAL via
+        ``_unit_args``) — reads the persisted value, so mid-run free-space
+        drift or a resume can never flip the regime (review r1 Majors 1+2;
+        the spurious "ladder regime drift" class). Explicit modes pass
+        through unchanged."""
         if self.ladder_disk_mode != "auto":
             return self.ladder_disk_mode
-        try:
-            st = os.statvfs(self.out_root if self.out_root.exists() else self.out_root.parent)
-            free_gb = st.f_bavail * st.f_frsize / 1e9
-        except OSError:
-            return "stream-reap"  # unknown filesystem -> conservative
-        return "keep-cell" if free_gb >= 300.0 else "stream-reap"
+        p = self.out_root / "disk_mode.json"
+        if p.exists():
+            return str(_read_json(p)["resolved"])
+        mode = probe_disk_mode(self.out_root)
+        self.out_root.mkdir(parents=True, exist_ok=True)
+        _atomic_json(
+            p,
+            {
+                "resolved": mode,
+                "probed_from": "auto",
+                "runpod_quota_lane": _runpod_workspace_quota_lane(),
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+        )
+        logger.info("[disk-mode] auto resolved ONCE -> %s (persisted %s)", mode, p)
+        return mode
+
+
+def _runpod_workspace_quota_lane() -> bool:
+    """True on the RunPod lane, where /workspace is the MooseFS volume with a
+    ~130 GB per-pod EDQUOT quota that statvfs/df CANNOT see (gotchas.md
+    "RunPod MooseFS per-pod disk quota") — keep-cell's ~456 GB ladder
+    high-water is never holdable there. Detection: the RunPod container env
+    marker, plus a /proc/mounts FUSE probe on /workspace (GCE's /workspace is
+    a plain boot-disk dir, never a fuse mount)."""
+    if os.environ.get("RUNPOD_POD_ID"):
+        return True
+    try:
+        with open("/proc/mounts", encoding="utf-8") as fh:
+            for ln in fh:
+                parts = ln.split()
+                if len(parts) >= 3 and parts[1] == "/workspace" and "fuse" in parts[2].lower():
+                    return True
+    except OSError:
+        pass
+    return False
+
+
+def probe_disk_mode(out_root: Path) -> str:
+    """One-shot disk-mode probe (called exactly once per out_root, then
+    persisted — see Cfg.resolved_disk_mode). RunPod lane -> stream-reap
+    UNCONDITIONALLY (statvfs reads the MooseFS SHARE free space, TBs, and is
+    blind to the ~130 GB per-pod quota — review r1 Major 1); else statvfs on
+    the out-root filesystem (GCE 750 GB boot disk / VM)."""
+    if _runpod_workspace_quota_lane():
+        return "stream-reap"
+    try:
+        st = os.statvfs(out_root if out_root.exists() else out_root.parent)
+        free_gb = st.f_bavail * st.f_frsize / 1e9
+    except OSError:
+        return "stream-reap"  # unknown filesystem -> conservative
+    return "keep-cell" if free_gb >= KEEPCELL_MIN_FREE_GB else "stream-reap"
 
 
 _PHASE_ALIASES = {
@@ -423,6 +480,21 @@ def _mix_local(cfg: Cfg, beh_key: str, regime: str) -> Path:
     return cfg.out_root / "inputs" / "mixes" / f"{beh_key}_{regime}.jsonl"
 
 
+def _mix_meta_local(cfg: Cfg, beh_key: str, regime: str) -> Path:
+    return cfg.out_root / "inputs" / "mixes" / f"{beh_key}_{regime}_meta.json"
+
+
+def _realized_training_panel(cfg: Cfg, beh_key: str, regime: str) -> list[str]:
+    """REALIZED training-panel context ids for one content mix, resolved from
+    the mix builder's own staged mix_meta.json via the #1481 MF-3 resolver
+    (fail-loud on meta-shape/panel drift; po mixes with zero realized
+    negatives resolve to [])."""
+    import issue1481_analysis as a1481
+
+    meta = _read_json(_mix_meta_local(cfg, beh_key, regime))
+    return a1481.realized_panel_context_ids(meta, G.BEHAVIOR_BY_KEY[beh_key])
+
+
 def _assert_mix_composition(path: Path, beh_key: str, expected_rows: int) -> dict:
     """Composition asserts on a staged mix (row counts only — harmful-content
     digest discipline: never print row text)."""
@@ -502,6 +574,19 @@ def phase_stage(cfg: Cfg) -> dict:
         # consumer-open probe (mix family x trainer-jsonl consumer): parse row 1.
         with dest.open(encoding="utf-8") as f:
             json.loads(next(iter(f)))
+        if beh_key != "mk":
+            # sibling mix_meta.json (Hub-verified 2026-07-22 beside all 6
+            # content mixes) — the REALIZED training-panel source for the
+            # §4.5 held-out-only leakage decomposition (review r1 Minor 7;
+            # the #1481 MF-3 convention). Consumer-open: resolve the realized
+            # panel NOW so a meta-shape drift fails at p0, not in p6.
+            meta_dest = _mix_meta_local(cfg, beh_key, regime)
+            _stage_file(
+                f"{path_in_repo.rsplit('/', 1)[0]}/mix_meta.json", meta_dest, revision=data_rev
+            )
+            mixes[f"{beh_key}_{regime}"]["realized_panel"] = _realized_training_panel(
+                cfg, beh_key, regime
+            )
     rec["mixes"] = mixes
 
     # marker ICL bank -> the exact path mk1481._icl_context opens
@@ -830,7 +915,14 @@ def phase_train(cfg: Cfg) -> dict:
             _await_train(cfg, cell, p)
         if first_cell_wall is None:
             first_cell_wall = time.time() - t0
-            _pilot_gate(cfg, first_cell_wall)
+            _pilot_gate(
+                cfg,
+                label="p2_train",
+                unit_wall_s=first_cell_wall,
+                n_units=len([c for c in cfg.cells if c != G.REUSED_FT_CELL]),
+                parallelism=PILOT_PARALLELISM,
+                plan_wall_h=PILOT_PLAN_P2_WALL_H,
+            )
     return {
         c: _read_json(cfg.out_root / c / "build_result.json")
         for c in cfg.cells
@@ -838,24 +930,34 @@ def phase_train(cfg: Cfg) -> dict:
     }
 
 
-def _pilot_gate(cfg: Cfg, cell_wall_s: float) -> None:
-    """Compute-pilot kill (plan §7 item 2): cell 1 of p2 is the measured
-    pilot; >2x re-projection HALTs with a report JSON + rc=7 (a DESIGNED
-    artifact-routed halt — never a bare rc=1; gotchas #1415)."""
+def _pilot_gate(
+    cfg: Cfg,
+    *,
+    label: str,
+    unit_wall_s: float,
+    n_units: int,
+    parallelism: float,
+    plan_wall_h: float,
+) -> None:
+    """Compute-pilot kill (plan §7 item 2): unit 1 of a pilot-gated phase is
+    the measured pilot; >2x re-projection against the phase's OWN §9 row
+    HALTs with a report JSON + rc=7 (a DESIGNED artifact-routed halt — never
+    a bare rc=1; gotchas #1415). Per-phase gates: p2 vs the p2 row, p3 vs
+    the p3+p3b rows (review r1 Minor 5)."""
     if cfg.smoke:
         return
-    n_cells = len([c for c in cfg.cells if c != G.REUSED_FT_CELL])
-    projected_h = n_cells * (cell_wall_s / 3600.0) / PILOT_PARALLELISM
+    projected_h = n_units * (unit_wall_s / 3600.0) / max(parallelism, 1.0)
     rec = {
-        "measured_cell_wall_s": cell_wall_s,
-        "n_cells": n_cells,
-        "parallelism": PILOT_PARALLELISM,
+        "label": label,
+        "measured_unit_wall_s": unit_wall_s,
+        "n_units": n_units,
+        "parallelism": parallelism,
         "projected_wall_h": projected_h,
-        "plan_wall_h": PILOT_PLAN_P2P3_WALL_H,
-        "ratio": projected_h / PILOT_PLAN_P2P3_WALL_H,
-        "verdict": "PASS" if projected_h <= 2 * PILOT_PLAN_P2P3_WALL_H else "HALT",
+        "plan_wall_h": plan_wall_h,
+        "ratio": projected_h / plan_wall_h,
+        "verdict": "PASS" if projected_h <= 2 * plan_wall_h else "HALT",
     }
-    _atomic_json(cfg.out_root / "pilot_gate_report.json", rec)
+    _atomic_json(cfg.out_root / f"pilot_gate_report_{label}.json", rec)
     logger.info("[pilot-gate] %s", json.dumps(rec))
     if rec["verdict"] == "HALT":
         raise SystemExit(PILOT_GATE_RC)
@@ -1111,12 +1213,30 @@ def phase_ladder(cfg: Cfg) -> dict:
         if not (cfg.out_root / c / "ladder_done.json").exists()
     ]
     if units:
+        # p3 pilot (review r1 Minor 5): the FIRST ladder unit runs inline,
+        # timed, gated against the §9 p3+p3b rows — a full-FT-rung engine
+        # churn blowup HALTs here instead of escaping the p2-only gate.
+        gate_rep = cfg.out_root / "pilot_gate_report_p3_ladder.json"
+        if not cfg.smoke and not gate_rep.exists():
+            t0 = time.time()
+            run_ladder_unit(cfg, units[0][2])
+            _pilot_gate(
+                cfg,
+                label="p3_ladder",
+                unit_wall_s=time.time() - t0,
+                n_units=len(units),
+                parallelism=float(min(_n_gpus(), 8)),
+                plan_wall_h=PILOT_PLAN_P3_WALL_H,
+            )
+            units = units[1:]
+    if units:
         if len(units) == 1 or _n_gpus() == 1:
             for u in units:
                 run_ladder_unit(cfg, u[2])
         else:
             _fanout_units(cfg, units)
-        for c in trainable:
+    for c in trainable:
+        if not (cfg.out_root / c / "ladder_done.json").exists():
             _atomic_json(cfg.out_root / c / "ladder_done.json", {"ts": time.time()})
     # Registered one-shot extensions (plan §4.2) BEFORE selection.
     if not cfg.smoke:
@@ -1153,12 +1273,12 @@ def _maybe_extend(cfg: Cfg, cell: str) -> None:
         top = max(reads)
         if float(reads[top]["delta_logp_mean"]) >= G.MARKER_EXT_MIN_DELTA_NATS:
             return
-        cmd = _marker_ft_cmd(
-            cfg,
-            cell,
-            out_dir=train_dir,
-            grid=tuple(sorted(set(G.MARKER_FT_GRID) | set(G.MARKER_FT_EXT_GRID))),
-        )
+        # EXTENSION grid ONLY (7-12): --ckpt-steps 7..12 / --max-steps 12, so
+        # run-A checkpoints 1-6 (whose ladder.json reads stand) are never
+        # overwritten by the re-train's different-LR-schedule weights —
+        # mirroring the content path, whose extension ckpts start at 32
+        # (review r1 Minor 1).
+        cmd = _marker_ft_cmd(cfg, cell, out_dir=train_dir, grid=G.MARKER_FT_EXT_GRID)
         log = cell_root / "extend.log"
     else:
         lo, hi = G.JUDGED_RATE_BAND
@@ -1195,8 +1315,10 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
             str(cfg.out_root),
             "--cells",
             ",".join(cfg.cells),
+            # ALWAYS the resolved LITERAL (never "auto") so unit subprocesses
+            # can't re-resolve differently mid-run (review r1 Major 2).
             "--ladder-disk-mode",
-            cfg.ladder_disk_mode,
+            cfg.resolved_disk_mode(),
         ]
         + (
             ["--eval-question-limit", str(cfg.eval_question_limit)]
@@ -1264,6 +1386,35 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
     return ckpt
 
 
+def _stage_for_upload(stage: Path, src: Path, rel: str) -> None:
+    """Hardlink (fallback copy) one file into the batched-commit staging tree
+    at its DATA_PREFIX-relative path (review r1 Major 3: uploads go out as a
+    handful of upload_folder commits, never per-file loops — #664/#1547)."""
+    if not src.exists() or not src.is_file():
+        return
+    dst = stage / rel
+    if dst.exists():
+        return
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.link(src, dst)
+    except OSError:
+        shutil.copy2(src, dst)
+
+
+def _stage_tree_for_upload(stage: Path, src_dir: Path, rel: str) -> None:
+    """Stage every file under src_dir (recursive) at rel/<relative path>."""
+    if not src_dir.exists():
+        return
+    for p in sorted(src_dir.rglob("*")):
+        if p.is_file():
+            _stage_for_upload(stage, p, f"{rel}/{p.relative_to(src_dir)}")
+
+
+def _stage_has_files(stage: Path) -> bool:
+    return stage.exists() and any(p.is_file() for p in stage.rglob("*"))
+
+
 def phase_persist(cfg: Cfg, selections: dict) -> dict:
     _phase("p4_persist")
     rec_path = cfg.out_root / "persist_done.json"
@@ -1280,13 +1431,14 @@ def phase_persist(cfg: Cfg, selections: dict) -> dict:
             if not url:
                 raise RuntimeError(f"selected-rung upload returned no path for {cell}")
             uploaded[cell] = str(url)
+        # Selection records: ONE batched upload_folder commit for ALL cells
+        # (was 3 file commits x 16 cells — review r1 Major 3 bug-class sweep).
+        stage = cfg.out_root / "_upload_stage" / "p4_records"
         for cell in cfg.cells:
             for name in ("selection.json", "ladder.json", "parity.json"):
-                p = cfg.out_root / cell / name
-                if p.exists():
-                    _upload_with_transport_retry(
-                        p, f"{G.DATA_PREFIX}/selection/{cell}/{name}", upload_as_file=True
-                    )
+                _stage_for_upload(stage, cfg.out_root / cell / name, f"selection/{cell}/{name}")
+        if _stage_has_files(stage):
+            uploaded["__records__"] = _upload_with_transport_retry(stage, G.DATA_PREFIX)
     _atomic_json(rec_path, {"uploaded": uploaded})
     return {"uploaded": uploaded}
 
@@ -1324,52 +1476,79 @@ def _content_rate(
             close()
 
 
+def _parity_failed_cells(cfg: Cfg) -> list[str]:
+    """Cells whose reused-FT parity re-read FAILED (plan §7 item 3) — the
+    analyzer's mechanical exclusion list (review r1 Minor 6). Written only by
+    run_tier2_unit for the reused cell (single writer)."""
+    p = cfg.out_root / "parity_failed_cells.json"
+    return list(_read_json(p).get("cells", [])) if p.exists() else []
+
+
+def run_tier2_unit(cfg: Cfg, cell: str) -> dict:
+    """One content cell's Tier-2 confirm read (fan-out unit kind ``tier2`` —
+    review r1 Major 4: p5 shards over cells instead of a serial 1-GPU loop).
+    ``step`` reads from the cell's persisted selection.json (unit subprocesses
+    hold no in-memory selections dict)."""
+    res_path = cfg.out_root / cell / "tier2.json"
+    if res_path.exists():
+        return _read_json(res_path)
+    beh, _regime, seed = G.parse_ft_cell(cell)
+    panel_context_ids(cfg, beh)  # point-of-use registration
+    ckpt = _selected_ft_ckpt(cfg, cell)
+    sel_path = cfg.out_root / cell / "selection.json"
+    step = int(_read_json(sel_path)["step"]) if sel_path.exists() else -1
+    rate = _content_rate(
+        cfg,
+        behavior=G.BEHAVIOR_BY_KEY[beh],
+        context_id=source_context_id(beh),
+        seed=seed,
+        model_path=str(ckpt),
+        out_dir=cfg.out_root / cell / "tier2_rate",
+        n=cfg.tier2_n,
+        draws=cfg.tier2_draws,
+        questions=_eval_questions(cfg, beh),
+    )
+    arm = G.lora_pair_of(cell)
+    rec = {
+        "cell": cell,
+        "step": step,
+        "tier2_rate": rate,
+        "dose_label": G.content_dose_label(rate, arm),
+    }
+    if cell == G.REUSED_FT_CELL:
+        # fresh re-read parity vs #1112's committed selection (plan §4.4).
+        committed = _reused_ft_committed_rate(cfg)
+        lo, hi = G.JUDGED_RATE_BAND
+        rec["reused_parity"] = {
+            "committed": committed,
+            "abs_delta": abs(rate - committed),
+            "pass": bool(lo <= rate <= hi and abs(rate - committed) <= G.REUSED_FT_PARITY_TOL),
+        }
+        rec["parity_failed"] = not rec["reused_parity"]["pass"]
+        if rec["parity_failed"]:
+            # registered contingency (plan §7 item 3): kills the REUSE only —
+            # the orchestrator retrains this one cell fresh. Downstream
+            # panel/margin records for the cell get stamped parity_failed so
+            # the analyzer excludes it MECHANICALLY (review r1 Minor 6).
+            logger.error("[tier2] reused FT parity FAILED: %s", rec["reused_parity"])
+            failed = sorted({*_parity_failed_cells(cfg), cell})
+            _atomic_json(cfg.out_root / "parity_failed_cells.json", {"cells": failed})
+    _atomic_json(res_path, rec)
+    return rec
+
+
 def phase_tier2(cfg: Cfg, selections: dict) -> dict:
     _phase("p5_tier2")
-    out: dict[str, dict] = {}
-    for cell in cfg.cells:
-        if _is_marker(cell):
-            continue  # marker install confirm IS the slot-read ladder (§4.3)
-        res_path = cfg.out_root / cell / "tier2.json"
-        if res_path.exists():
-            out[cell] = _read_json(res_path)
-            continue
-        beh, _regime, seed = G.parse_ft_cell(cell)
-        panel_context_ids(cfg, beh)  # point-of-use registration
-        ckpt = _selected_ft_ckpt(cfg, cell)
-        rate = _content_rate(
-            cfg,
-            behavior=G.BEHAVIOR_BY_KEY[beh],
-            context_id=source_context_id(beh),
-            seed=seed,
-            model_path=str(ckpt),
-            out_dir=cfg.out_root / cell / "tier2_rate",
-            n=cfg.tier2_n,
-            draws=cfg.tier2_draws,
-            questions=_eval_questions(cfg, beh),
-        )
-        arm = G.lora_pair_of(cell)
-        rec = {
-            "cell": cell,
-            "step": int(selections.get(cell, {}).get("step", -1)),
-            "tier2_rate": rate,
-            "dose_label": G.content_dose_label(rate, arm),
-        }
-        if cell == G.REUSED_FT_CELL:
-            # fresh re-read parity vs #1112's committed selection (plan §4.4).
-            committed = _reused_ft_committed_rate(cfg)
-            lo, hi = G.JUDGED_RATE_BAND
-            rec["reused_parity"] = {
-                "committed": committed,
-                "abs_delta": abs(rate - committed),
-                "pass": bool(lo <= rate <= hi and abs(rate - committed) <= G.REUSED_FT_PARITY_TOL),
-            }
-            if not rec["reused_parity"]["pass"]:
-                # registered contingency (plan §7 item 3): kills the REUSE only
-                # — the orchestrator retrains this one cell fresh.
-                logger.error("[tier2] reused FT parity FAILED: %s", rec["reused_parity"])
-        _atomic_json(res_path, rec)
-        out[cell] = rec
+    content = [c for c in cfg.cells if not _is_marker(c)]
+    # marker install confirm IS the slot-read ladder (§4.3) — no mk cells here.
+    pending = [c for c in content if not (cfg.out_root / c / "tier2.json").exists()]
+    if pending:
+        if len(pending) == 1 or _n_gpus() == 1:
+            for c in pending:
+                run_tier2_unit(cfg, c)
+        else:
+            _fanout_units(cfg, [_unit_args(cfg, "tier2", c) for c in pending])
+    out: dict[str, dict] = {c: _read_json(cfg.out_root / c / "tier2.json") for c in content}
     # #1112 po checkpoint: parity cross-check ROW only (never a contrast arm).
     xcheck_path = cfg.out_root / "xcheck_s4_po.json"
     if (
@@ -1473,14 +1652,33 @@ def run_panel_unit(cfg: Cfg, arg: str) -> dict:
                 )
             src = source_context_id(beh_key)
             non_src = [v for k, v in per_ctx.items() if k != src]
+            # §4.5 held-out-only decomposition (review r1 Minor 7; #1481 MF-3
+            # convention): read contexts DISJOINT from this arm's REALIZED
+            # training panel (resolved from the staged mix_meta at p0),
+            # asserted mechanically before the held-out-only rate is computed.
+            regime = arm_id.split("-")[3]
+            realized = set(_realized_training_panel(cfg, beh_key, regime))
+            held = [c for c in ctx_ids if c != src and c not in realized]
+            overlap = sorted(set(ctx_ids) - {src} - set(held))
+            assert set(held).isdisjoint(realized), (arm_id, held, sorted(realized))
+            if not held:
+                raise RuntimeError(
+                    f"[panel] {arm_id}: NO held-out read context — every non-source "
+                    f"panel member is in the realized training panel {sorted(realized)}"
+                )
             rec = {
                 "arm": arm_id,
                 "kind": kind,
                 "rates_by_context": per_ctx,
                 "source_rate": per_ctx[src],
                 "pooled_nonsource_rate": float(sum(non_src) / len(non_src)),
+                "heldout_contexts": held,
+                "train_overlap_contexts": overlap,
+                "heldout_only_rate": float(sum(per_ctx[c] for c in held) / len(held)),
                 "n_contexts": len(per_ctx),
             }
+        if arm_id in _parity_failed_cells(cfg):
+            rec["parity_failed"] = True  # mechanical analyzer exclusion (Minor 6)
         _atomic_json(res, rec)
         return rec
     finally:
@@ -1583,53 +1781,155 @@ def phase_panel(cfg: Cfg) -> dict:
 
 
 def _margin_pools(cfg: Cfg, beh_key: str) -> tuple[list[dict], list[dict], dict]:
-    """Per-behavior FIXED judged +/- pools, staged from the pinned factory
-    records (A8: sizes READ from the pool records, never hardcoded). Pool
-    file paths are discovered by scoped listing under the factory prefix and
-    persisted (sha-pinned) into the inputs manifest."""
+    """Per-behavior FIXED judged +/- pools via the COMMITTED factory loaders
+    (plan §4.7 A8: sizes READ from the pool records, never hardcoded).
+
+    Round 1's name-filter discovery over ``fu1-margin-qwen`` was WRONG — that
+    prefix holds per-source margin READ records (c3-sycophancy-claude.json),
+    not pos/neg pool files (probe 2026-07-22; open concern
+    ``margin-pool-discovery-imp-cas``, now closed by delegating to the
+    committed per-behavior instruments):
+
+    - sycophancy: the #1112 instrument VERBATIM — pinned C3 datagen sidecars
+      + ``fu1.derive_margin_pools_topup``, sha-ASSERTED against the pinned
+      fu1 pool record (mirror of ``issue1112_dispatch._margin_pools``).
+    - impolite: ``fu3w._behavior_margin_pools`` (the fu3 instrument verbatim,
+      c2-impolite-claude/datagen).
+    - writing_style: ``issue1434_cells.i1434_margin_pools`` (ws-pers datagen,
+      cap 25/25, 15/15 floor with the smoke demotion).
+
+    Pools equalize-down to min(n_pos, n_neg); realized sizes + pool sha
+    persist to pools_meta.json (the inputs manifest)."""
     behavior = G.BEHAVIOR_BY_KEY[beh_key]
     dest = cfg.out_root / "inputs" / "margin_pools" / behavior
-    rec_path = dest / "pools_meta.json"
-    if not rec_path.exists():
-        dest.mkdir(parents=True, exist_ok=True)
-        rev = P1112.MARGIN_POOLS_REV
-        from huggingface_hub import HfApi as _HfApi
-
-        entries = hub.list_hf_files_under_path(
-            _HfApi(), G.HF_DATA_REPO, P1112.MARGIN_POOLS_PREFIX, repo_type="dataset", revision=rev
+    dest.mkdir(parents=True, exist_ok=True)
+    if behavior == "sycophancy":
+        cell_root = dest / "c3_cell"
+        for rel in P1112.C3_MARGIN_SIDECARS:
+            _stage_file(f"{P1112.C3_CELL_PREFIX}/{rel}", cell_root / rel, revision=P1112.C3_MIX_REV)
+        pinned_path = _stage_file(
+            f"{P1112.MARGIN_POOLS_PREFIX}/margin/c3-sycophancy-claude.json",
+            dest / "fu1_margin_c3.json",
+            revision=P1112.MARGIN_POOLS_REV,
         )
-        wanted = [e for e in entries if behavior in e and e.endswith((".json", ".jsonl"))]
-        if not wanted:
-            raise FileNotFoundError(
-                f"no margin pool files for {behavior!r} under "
-                f"{P1112.MARGIN_POOLS_PREFIX} @ {rev} — consult the committed fu4 "
-                f"margin record (plan A8) and extend the discovery filter"
+        pos, neg, meta = fu1.derive_margin_pools_topup(
+            cell_root, BEHAVIORS[behavior], scratch=dest / "_replay"
+        )
+        pinned_sha = _read_json(pinned_path)["pool"]["pool_sha256"]
+        if meta["pool_sha256"] != pinned_sha:
+            raise RuntimeError(
+                f"margin pool sha mismatch: derived {meta['pool_sha256']} != pinned fu1 "
+                f"{pinned_sha} — the re-derived fixed pools do not reproduce #1090's; "
+                "refusing a drifted-instrument margin read"
             )
-        for e in wanted:
-            _stage_file(e, dest / Path(e).name, revision=rev)
-        _atomic_json(
-            rec_path,
-            {
-                "revision": rev,
-                "files": {Path(e).name: _sha256_file(dest / Path(e).name) for e in wanted},
-            },
-        )
-    meta = _read_json(rec_path)
-    pos_f = next((dest / n for n in meta["files"] if "pos" in n), None)
-    neg_f = next((dest / n for n in meta["files"] if "neg" in n), None)
-    if pos_f is None or neg_f is None:
-        raise RuntimeError(f"margin pools for {behavior} lack pos/neg files: {meta['files']}")
+    elif behavior == "writing_style":
+        import issue1434_cells as c1434
 
-    def _load(p: Path) -> list[dict]:
-        txt = p.read_text(encoding="utf-8")
-        if p.suffix == ".jsonl":
-            return [json.loads(ln) for ln in txt.split("\n") if ln.strip()]
-        obj = json.loads(txt)
-        return obj if isinstance(obj, list) else obj.get("pool") or obj.get("rows")
+        pos, neg, meta = c1434.i1434_margin_pools(cfg)
+        if pos is None:
+            raise RuntimeError(f"writing_style margin pools below floor: {meta}")
+    else:
+        import issue1090_fu3_worker as fu3w
 
-    pos, neg = _load(pos_f), _load(neg_f)
+        pos, neg = fu3w._behavior_margin_pools(cfg, behavior)
+        meta = {
+            "behavior": behavior,
+            "pool_source": "/".join(fu3w.V4_POOL_SOURCE[behavior]),
+            "n_pos_raw": len(pos),
+            "n_neg_raw": len(neg),
+            "pool_sha256": fu1._sha256_json(
+                [
+                    {
+                        k: p[k]
+                        for k in ("probe", "answer", "question_id", "variant_id", "request_id")
+                    }
+                    for p in pos + neg
+                ]
+            ),
+        }
     n = min(len(pos), len(neg))  # equalize-down (the factory pool convention)
-    return pos[:n], neg[:n], {"behavior": behavior, "pool_n": n, **meta}
+    pos, neg = pos[:n], neg[:n]
+    meta = {**meta, "behavior": behavior, "pool_n": n}
+    _atomic_json(dest / "pools_meta.json", meta)
+    return pos, neg, meta
+
+
+def _margin_setup(cfg: Cfg, beh_key: str):
+    """Shared margin-unit setup: pinned pools (smoke-sliced AFTER the pin),
+    source ctx, questions, TF contexts."""
+    pos, neg, meta = _margin_pools(cfg, beh_key)
+    if cfg.smoke:
+        pos, neg = pos[:2], neg[:2]  # tiny-real slice AFTER the pool pin
+    panel_context_ids(cfg, beh_key)
+    ctx = CONTEXTS[source_context_id(beh_key)]
+    questions = _eval_questions(cfg, beh_key)
+    ctxs = fu4._fu4_margin_contexts(ctx, questions)
+    return pos, neg, meta, questions, ctxs
+
+
+def run_margin_unit(cfg: Cfg, arg: str) -> dict:
+    """One margin fan-out unit (review r1 Major 4: p7 shards over arms).
+
+    ``arg`` = ``base:<beh_key>`` (the per-behavior BASE sweep — sequenced as
+    its own unit wave BEFORE any arm unit, so concurrent arm units never race
+    the shared base file; the #1315 shared-staging-race family) or
+    ``<kind>:<arm_id>`` (one arm's trained sweep + aggregate, requiring the
+    behavior's base file to already exist). Each unit builds its OWN
+    margin_fn (1 engine per CVD-pinned GPU)."""
+    head, tail = arg.split(":", 1)
+    out_dir = cfg.out_root / "margin"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if head == "base":
+        beh_key = tail
+        base_path = out_dir / f"base_{beh_key}.json"
+        pos, neg, _meta, _questions, ctxs = _margin_setup(cfg, beh_key)
+        margin_fn = _default_margin_read_fn(DEFAULT_BASE_MODEL)
+        try:
+            fu4._margin_sweep(margin_fn, None, ctxs, pos, neg, base_path)
+        finally:
+            close = getattr(margin_fn, "close", None)
+            if callable(close):
+                close()
+        return _read_json(base_path)
+    kind, arm_id = head, tail
+    rec_path = out_dir / arm_id / "margin.json"
+    if rec_path.exists():
+        return _read_json(rec_path)
+    beh_key = arm_id.split("-")[0]
+    pos, neg, meta, questions, ctxs = _margin_setup(cfg, beh_key)
+    base_path = out_dir / f"base_{beh_key}.json"
+    if not base_path.exists():
+        raise RuntimeError(f"margin base sweep missing for {beh_key}: {base_path} (unit ordering)")
+    base_reads = _read_json(base_path)
+    margin_fn = _default_margin_read_fn(DEFAULT_BASE_MODEL)
+    model_path, cleanup = _resolve_arm_model(cfg, arm_id, kind)
+    try:
+        trained_reads = fu4._margin_sweep(
+            margin_fn, model_path, ctxs, pos, neg, out_dir / f"trained_{arm_id}.json"
+        )
+    finally:
+        if cleanup is not None:
+            shutil.rmtree(cleanup, ignore_errors=True)
+        close = getattr(margin_fn, "close", None)
+        if callable(close):
+            close()
+    rec = {
+        "arm": arm_id,
+        "kind": kind,
+        **{k: v for k, v in meta.items() if k != "files"},
+        "smoke_pool_slice": len(pos) if cfg.smoke else None,
+        **fu1.aggregate_margin_reads(
+            {
+                **{f"base__{k}": v for k, v in base_reads.items()},
+                **{f"trained__{k}": v for k, v in trained_reads.items()},
+            },
+            fu1._q_labels(len(questions)),
+        ),
+    }
+    if arm_id in _parity_failed_cells(cfg):
+        rec["parity_failed"] = True  # mechanical analyzer exclusion (Minor 6)
+    _atomic_json(rec_path, rec)
+    return rec
 
 
 def phase_margin(cfg: Cfg, selections: dict) -> dict:
@@ -1639,56 +1939,29 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
         return {"skipped": "no content arms in scope"}
     out_dir = cfg.out_root / "margin"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out: dict[str, dict] = {}
-    margin_fn = None
-    try:
-        for arm_id, kind in arms:
-            rec_path = out_dir / arm_id / "margin.json"
-            if rec_path.exists():
-                out[arm_id] = _read_json(rec_path)
-                continue
-            beh_key = arm_id.split("-")[0]
-            pos, neg, meta = _margin_pools(cfg, beh_key)
-            if cfg.smoke:
-                pos, neg = pos[:2], neg[:2]  # tiny-real slice AFTER the pool pin
-            panel_context_ids(cfg, beh_key)
-            ctx = CONTEXTS[source_context_id(beh_key)]
-            questions = _eval_questions(cfg, beh_key)
-            ctxs = fu4._fu4_margin_contexts(ctx, questions)
-            if margin_fn is None:
-                margin_fn = _default_margin_read_fn(DEFAULT_BASE_MODEL)
-            base_reads = fu4._margin_sweep(
-                margin_fn, None, ctxs, pos, neg, out_dir / f"base_{beh_key}.json"
-            )
-            model_path, cleanup = _resolve_arm_model(cfg, arm_id, kind)
-            try:
-                trained_reads = fu4._margin_sweep(
-                    margin_fn, model_path, ctxs, pos, neg, out_dir / f"trained_{arm_id}.json"
-                )
-            finally:
-                if cleanup is not None:
-                    shutil.rmtree(cleanup, ignore_errors=True)
-            rec = {
-                "arm": arm_id,
-                "kind": kind,
-                **{k: v for k, v in meta.items() if k != "files"},
-                "smoke_pool_slice": len(pos) if cfg.smoke else None,
-                **fu1.aggregate_margin_reads(
-                    {
-                        **{f"base__{k}": v for k, v in base_reads.items()},
-                        **{f"trained__{k}": v for k, v in trained_reads.items()},
-                    },
-                    fu1._q_labels(len(questions)),
-                ),
-            }
-            _atomic_json(rec_path, rec)
-            out[arm_id] = rec
-    finally:
-        if margin_fn is not None:
-            close = getattr(margin_fn, "close", None)
-            if callable(close):
-                close()
-    return out
+    behs = sorted({a.split("-")[0] for a, _k in arms})
+    # Pre-stage the shared pinned pools ONCE in the parent BEFORE any fan-out
+    # (CPU/network only) — concurrent units must never race the staging dest
+    # (#1315 shared-staging race; gotchas "Concurrent fan-out units").
+    for beh_key in behs:
+        _margin_pools(cfg, beh_key)
+    # Wave 1: per-behavior BASE sweeps (own units — single writer per file).
+    base_pending = [b for b in behs if not (out_dir / f"base_{b}.json").exists()]
+    if base_pending:
+        if len(base_pending) == 1 or _n_gpus() == 1:
+            for b in base_pending:
+                run_margin_unit(cfg, f"base:{b}")
+        else:
+            _fanout_units(cfg, [_unit_args(cfg, "margin", f"base:{b}") for b in base_pending])
+    # Wave 2: 8-way arm fan-out (plan §9 p5-p7 row).
+    arm_pending = [(a, k) for a, k in arms if not (out_dir / a / "margin.json").exists()]
+    if arm_pending:
+        if len(arm_pending) == 1 or _n_gpus() == 1:
+            for a, k in arm_pending:
+                run_margin_unit(cfg, f"{k}:{a}")
+        else:
+            _fanout_units(cfg, [_unit_args(cfg, "margin", f"{k}:{a}") for a, k in arm_pending])
+    return {a: _read_json(out_dir / a / "margin.json") for a, _k in arms}
 
 
 # ── p8: activation-shift capture (all cells + per-behavior base + TF) ────────
@@ -1956,21 +2229,33 @@ def _git_commit() -> str:
 
 
 def phase_upload(cfg: Cfg, selections: dict) -> dict:
+    """p9 residual uploads as ~22 BATCHED upload_folder commits — one per
+    cell + one per panel/marker_panel/margin/capture/capture_tf tree + one
+    misc (review r1 Major 3: the per-file loop projected ~450+ Hub commits
+    against the fleet-shared 256/hr cap — the #664 504-storm class). Files
+    are hardlinked into a staging tree at their DATA_PREFIX-relative paths;
+    each commit is label-keyed in the persisted manifest (per-cell resume).
+    §6.5 glob-parity: every plan-declared class stages (selection records,
+    raw completions ALL stages — incl. reselect_rate / rung slot reads /
+    xcheck gens, review r1 Minor 3 — margin, capture text + tensors)."""
     _phase("p9_upload")
     _headroom(cfg, "p9_upload")
-    uploaded: dict[str, str] = {}
+    manifest_path = cfg.out_root / "upload_manifest.json"
+    uploaded: dict[str, str] = _read_json(manifest_path) if manifest_path.exists() else {}
     if not cfg.upload:
         return uploaded
+    stage_root = cfg.out_root / "_upload_stage" / "p9"
 
-    def _up(local: Path, path_in_repo: str, **kw) -> None:
-        if not Path(local).exists():
+    def _commit(label: str, stage: Path) -> None:
+        if label in uploaded or not _stage_has_files(stage):
             return
-        uploaded[path_in_repo] = _upload_with_transport_retry(local, path_in_repo, **kw)
-        _atomic_json(cfg.out_root / "upload_manifest.json", uploaded)
+        uploaded[label] = _upload_with_transport_retry(stage, G.DATA_PREFIX)
+        _atomic_json(manifest_path, uploaded)
 
-    # per-cell selection/parity/tier2 records + rollout text (unconditional)
+    # per-cell staged subtree -> ONE commit per cell (resume granularity).
     for cell in cfg.cells:
         cell_root = cfg.out_root / cell
+        stage = stage_root / f"cell_{cell}"
         for name in (
             "build_result.json",
             "ladder.json",
@@ -1979,58 +2264,65 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
             "tier2.json",
             "extended.json",
         ):
-            _up(cell_root / name, f"{G.DATA_PREFIX}/selection/{cell}/{name}", upload_as_file=True)
-        for stage, sub in (("tier1", "rate"), ("tier2", "tier2_rate"), ("parity", "parity_rate")):
-            _up(cell_root / sub, f"{G.DATA_PREFIX}/raw_completions/{stage}/{cell}")
+            _stage_for_upload(stage, cell_root / name, f"selection/{cell}/{name}")
+        for stage_name, sub in (
+            ("tier1", "rate"),
+            ("tier2", "tier2_rate"),
+            ("parity", "parity_rate"),
+            ("reselect", "reselect_rate"),  # stream-reap spot re-read gens (Minor 3)
+        ):
+            _stage_tree_for_upload(stage, cell_root / sub, f"raw_completions/{stage_name}/{cell}")
         for rung_dir in sorted(cell_root.glob("rung*/")):
-            _up(
+            _stage_for_upload(
+                stage,
                 rung_dir / "rollouts.json",
-                f"{G.DATA_PREFIX}/raw_completions/ladder/{cell}/{rung_dir.name}.json",
-                upload_as_file=True,
+                f"raw_completions/ladder/{cell}/{rung_dir.name}.json",
             )
-    # panel + marker panel + margin records
-    for sub, glob_pat in (("panel", "*/panel_summary.json"), ("marker_panel", "*/slot_reads.json")):
+            # per-rung four-float slot reads (Minor 3 gap)
+            _stage_for_upload(
+                stage,
+                rung_dir / "slot_read.json",
+                f"slot_reads/ladder/{cell}/{rung_dir.name}.json",
+            )
+        _commit(f"cell::{cell}", stage)
+    # panel + marker panel trees (summaries + rollout text + judged gens)
+    for sub, summary_name in (("panel", "panel_summary.json"), ("marker_panel", "slot_reads.json")):
         root = cfg.out_root / sub
-        for p in sorted(root.glob(glob_pat)) if root.exists() else []:
-            _up(p, f"{G.DATA_PREFIX}/{sub}/{p.parent.name}/{p.name}", upload_as_file=True)
-        for p in sorted(root.glob("*/rollouts.json")) if root.exists() else []:
-            _up(
-                p,
-                f"{G.DATA_PREFIX}/raw_completions/{sub}/{p.parent.name}.json",
-                upload_as_file=True,
-            )
-        for p in sorted(root.glob("*/rate_*/")) if root.exists() else []:
-            _up(p, f"{G.DATA_PREFIX}/raw_completions/{sub}/{p.parent.name}/{p.name}")
+        stage = stage_root / sub
+        if root.exists():
+            for p in sorted(root.glob(f"*/{summary_name}")):
+                _stage_for_upload(stage, p, f"{sub}/{p.parent.name}/{p.name}")
+            for p in sorted(root.glob("*/rollouts.json")):
+                _stage_for_upload(stage, p, f"raw_completions/{sub}/{p.parent.name}.json")
+            for d in sorted(root.glob("*/rate_*/")):
+                _stage_tree_for_upload(stage, d, f"raw_completions/{sub}/{d.parent.name}/{d.name}")
+        _commit(sub, stage)
+    # margin tree (base + trained sweeps + per-arm records)
     mroot = cfg.out_root / "margin"
-    for p in sorted(mroot.rglob("*.json")) if mroot.exists() else []:
-        rel = p.relative_to(mroot)
-        _up(p, f"{G.DATA_PREFIX}/margin/{rel}", upload_as_file=True)
+    stage = stage_root / "margin"
+    if mroot.exists():
+        for p in sorted(mroot.rglob("*.json")):
+            _stage_for_upload(stage, p, f"margin/{p.relative_to(mroot)}")
+    _commit("margin", stage)
     # capture stores: rollout text (unconditional) + pooled tensors
     for tree in ("capture", "capture_tf"):
         root = cfg.out_root / tree
-        for p in sorted(root.glob("*/raw_rows.json")) if root.exists() else []:
-            _up(
-                p,
-                f"{G.DATA_PREFIX}/raw_completions/{tree}/{p.parent.name}/raw_rows.json",
-                upload_as_file=True,
-            )
-        for p in sorted(root.glob("*/pooled.pt")) if root.exists() else []:
-            _up(
-                p,
-                f"{G.DATA_PREFIX}/analysis_tensors/{tree}/{p.parent.name}/pooled.pt",
-                upload_as_file=True,
-            )
-    _up(
-        cfg.out_root / "xcheck_s4_po.json",
-        f"{G.DATA_PREFIX}/selection/xcheck_s4_po.json",
-        upload_as_file=True,
-    )
-    _up(cfg.out_root / "run_config.json", f"{G.DATA_PREFIX}/run_config.json", upload_as_file=True)
-    _up(
-        cfg.out_root / "pilot_gate_report.json",
-        f"{G.DATA_PREFIX}/pilot_gate_report.json",
-        upload_as_file=True,
-    )
+        stage = stage_root / tree
+        if root.exists():
+            for p in sorted(root.glob("*/raw_rows.json")):
+                _stage_for_upload(stage, p, f"raw_completions/{tree}/{p.parent.name}/raw_rows.json")
+            for p in sorted(root.glob("*/pooled.pt")):
+                _stage_for_upload(stage, p, f"analysis_tensors/{tree}/{p.parent.name}/pooled.pt")
+        _commit(tree, stage)
+    # misc run-level records (one commit)
+    stage = stage_root / "misc"
+    _stage_for_upload(stage, cfg.out_root / "xcheck_s4_po.json", "selection/xcheck_s4_po.json")
+    # xcheck Tier-2 gens (Minor 3 gap)
+    _stage_tree_for_upload(stage, cfg.out_root / "xcheck_s4_rate", "raw_completions/xcheck_s4")
+    for name in ("run_config.json", "disk_mode.json", "parity_failed_cells.json"):
+        _stage_for_upload(stage, cfg.out_root / name, name)
+    for p in sorted(cfg.out_root.glob("pilot_gate_report_*.json")):
+        _stage_for_upload(stage, p, p.name)
     # CJK intrusion audit (plan §4.5 — the #1481 CJK_RE over THIS run's own
     # generation pools; counts only, digest-only discipline. The zeroed /
     # excluded headline recount is the analyzer-side sensitivity read over
@@ -2038,7 +2330,8 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
     cjk_out = cfg.out_root / "cjk_audit.json"
     if not cjk_out.exists():
         _atomic_json(cjk_out, _cjk_scan(cfg))
-    _up(cjk_out, f"{G.DATA_PREFIX}/cjk_audit.json", upload_as_file=True)
+    _stage_for_upload(stage, cjk_out, "cjk_audit.json")
+    _commit("misc", stage)
     return uploaded
 
 
@@ -2149,6 +2442,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         default=None,
         metavar=("KIND", "ARG"),
         help="internal: one fanout unit (ladder <cell> | parity <cell> | "
+        "tier2 <cell> | margin base:<beh>|<kind>:<arm> | "
         "panel <kind>:<arm> | capture <kind>:<arm> | capture_tf <kind>:<arm>)",
     )
     p.add_argument(
@@ -2176,10 +2470,19 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 def build_cfg(args: argparse.Namespace) -> Cfg:
     smoke = bool(args.smoke)
+    # Smoke default out_root prefers /workspace (GCE boot disk / RunPod
+    # volume) over /tmp: the RunPod container disk is ~50 GB, below the
+    # p2_train 60 GB headroom floor + a ~15 GB full-FT smoke ckpt (review r1
+    # Minor 2; the sentinel_dir logic below already keys on /workspace).
+    smoke_root = (
+        f"/workspace/issue-{G.ISSUE}-smoke"
+        if Path("/workspace").is_dir()
+        else f"/tmp/issue-{G.ISSUE}-smoke"
+    )
     out_root = Path(
         args.out_root
         if args.out_root is not None
-        else (f"/tmp/issue-{G.ISSUE}-smoke" if smoke else f"data/issue_{G.ISSUE}/out")
+        else (smoke_root if smoke else f"data/issue_{G.ISSUE}/out")
     )
     return Cfg(
         smoke=smoke,
@@ -2223,6 +2526,10 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
             run_ladder_unit(cfg, arg)
         elif kind == "parity":
             run_parity_unit(cfg, arg)
+        elif kind == "tier2":
+            run_tier2_unit(cfg, arg)
+        elif kind == "margin":
+            run_margin_unit(cfg, arg)
         elif kind == "panel":
             run_panel_unit(cfg, arg)
         elif kind == "capture":
@@ -2285,6 +2592,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
             }
             for k, v in t2.items()
         }
+        summary["parity_failed_cells"] = _parity_failed_cells(cfg)
     if want("panel"):
         summary["panel"] = phase_panel(cfg)
     if want("margin"):
