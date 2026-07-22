@@ -4601,8 +4601,8 @@
     "1590": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1590",
-      "status": "approved",
+      "path": "tasks/running/1590",
+      "status": "running",
       "title": "daily-fix: fix red asw-stub pin test on main (conftest:288)"
     },
     "1591": {
