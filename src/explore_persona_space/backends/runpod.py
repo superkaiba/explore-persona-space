@@ -111,6 +111,17 @@ _POD_LIFECYCLE_TAIL_MAX_LINES = 60
 _POD_LIFECYCLE_TAIL_MAX_LINE_CHARS = 400
 
 
+#: pod_lifecycle.py's structured still-waiting exit (EX_TEMPFAIL, #603): the
+#: bounded wait-for-capacity loop reached its per-process wall-clock budget
+#: with NOTHING provisioned and NOTHING billing — the caller RE-RUNS the same
+#: command to continue waiting (the wait loop is state-free). Mirrored (not
+#: imported) from ``scripts/pod_lifecycle.py::EXIT_STILL_WAITING`` — this
+#: module's imports stay ``base``-only by documented convention (see the
+#: _GPU_VOLUME_FLOOR_GB note above). Parity pinned by
+#: tests/test_dispatch_issue_cli.py::test_exit_still_waiting_matches_pod_lifecycle.
+EXIT_STILL_WAITING = 75
+
+
 class PodLifecycleProcessError(subprocess.CalledProcessError):
     """``CalledProcessError`` whose ``str()`` carries the child's stderr tail.
 

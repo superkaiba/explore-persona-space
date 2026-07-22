@@ -193,6 +193,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import time
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
@@ -3233,7 +3234,10 @@ def _runpod_terminal_rung(
             # Lazy import (module convention — matches the existing lazy
             # ``backends.runpod`` import below; runpod.py imports only ``base``
             # at module top, so no cycle either way — lazy is belt-and-braces).
-            from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+            from explore_persona_space.backends.runpod import (
+                EXIT_STILL_WAITING,
+                RunPodWorkloadStartError,
+            )
 
             partial_handle = exc.handle if isinstance(exc, RunPodWorkloadStartError) else None
             if partial_handle is not None:
@@ -3293,6 +3297,51 @@ def _runpod_terminal_rung(
                     reason=ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
                     chosen_kind="runpod",
                     attempts=attempts,
+                )
+                raise
+            # Exit-75 still-waiting (#1603, incident #1586): pod_lifecycle's
+            # bounded wait-for-capacity loop reached its per-process budget —
+            # NOTHING provisioned, NOTHING billing; the contract is "re-run
+            # the same command to continue waiting" (state-free wait,
+            # pod_lifecycle._emit_still_waiting_and_exit). NOT a failure: do
+            # NOT post the terminal failure marker (the orchestrator would
+            # post epm:failure + set-status blocked — the #1586 mis-park) and
+            # do NOT collapse into NoComputeAvailableError. Re-raise verbatim
+            # — returncode + cmd + stderr tail ride the exception (the #1465
+            # relay preserved them for exactly this consumer) — so the sync
+            # producer contract (dispatch_issue._provision_still_waiting →
+            # exit 75, still_waiting: true + rerun: true) covers the terminal
+            # rung exactly as it covers the explicit `backend: runpod`
+            # override. The ASYNC wrapper
+            # (failover_to_runpod_after_async_workload_crash) converts this
+            # to NoComputeAvailableError so the poller's terminal contract is
+            # byte-unchanged.
+            if (
+                isinstance(exc, subprocess.CalledProcessError)
+                and exc.returncode == EXIT_STILL_WAITING
+            ):
+                attempts.append(
+                    RouteAttempt(
+                        kind="runpod",
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="runpod_still_waiting",
+                        detail=(
+                            "runpod terminal rung STILL WAITING for capacity "
+                            f"(pod_lifecycle exit {EXIT_STILL_WAITING}: wait-for-capacity "
+                            "budget reached; nothing provisioned, nothing billing; "
+                            "re-run the same launch command to continue waiting)"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                logger.warning(
+                    "route: runpod terminal rung still WAITING for capacity on "
+                    "issue %d (exit-%d still-waiting contract, #1603; NOT a "
+                    "failure — re-run the same launch command).",
+                    spec.issue,
+                    EXIT_STILL_WAITING,
                 )
                 raise
             # RunPod is the LAST resort — ANY OTHER failure here (prepare /
@@ -3435,6 +3484,13 @@ def failover_to_runpod_after_async_workload_crash(
     propagates here unchanged — the poller maps it to a terminal infra JSON
     with ``reason: no_compute_available`` (re-drivable by the watcher's
     capacity-retry pass once a lane frees).
+
+    Exit-75 still-waiting (#1603): the rung re-raises pod_lifecycle's
+    still-waiting ``CalledProcessError`` VERBATIM for the sync launch path
+    (dispatch_issue's exit-75 re-run contract); on THIS async leg no
+    orchestrator re-runs "the same command", so the wrapper converts rc=75
+    to :class:`NoComputeAvailableError` (terminal marker posted) — every
+    ``backend_poll`` consumer sees the same type as today.
     """
     store = lease_store or LeaseStore()
     now_fn = now_fn or time.monotonic
@@ -3458,24 +3514,56 @@ def failover_to_runpod_after_async_workload_crash(
             "lane has no backend-side executor for hydra runs (named residual, #909)",
             spec.issue,
         )
-    return _runpod_terminal_rung(
-        spec=replace(spec, backend="runpod"),
-        runpod_backend=runpod_backend,
-        store=store,
-        attempts=[],
-        started_at=now_fn(),
-        now_fn=now_fn,
-        marker_poster=marker_poster,
-        on_launched=on_launched,
-        residual_gap=residual_gap,
-        reason=reason,
-        failover_evidence=evidence,
-        # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
-        # OF, so the in-flock re-check + stamp can make N concurrent triggerers
-        # launch RunPod exactly once. None on the legacy single-triggerer path
-        # leaves the existing #659 behavior unchanged.
-        gcp_failover_of_identity=gcp_failover_of_identity,
-    )
+    attempts: list[RouteAttempt] = []
+    try:
+        return _runpod_terminal_rung(
+            spec=replace(spec, backend="runpod"),
+            runpod_backend=runpod_backend,
+            store=store,
+            attempts=attempts,
+            started_at=now_fn(),
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            residual_gap=residual_gap,
+            reason=reason,
+            failover_evidence=evidence,
+            # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
+            # OF, so the in-flock re-check + stamp can make N concurrent triggerers
+            # launch RunPod exactly once. None on the legacy single-triggerer path
+            # leaves the existing #659 behavior unchanged.
+            gcp_failover_of_identity=gcp_failover_of_identity,
+        )
+    except subprocess.CalledProcessError as exc:
+        from explore_persona_space.backends.runpod import EXIT_STILL_WAITING
+
+        if exc.returncode != EXIT_STILL_WAITING:
+            # Defensive: the rung converts every non-75 CalledProcessError to
+            # NoComputeAvailableError before this wrapper sees it (currently
+            # unreachable) — cheap insurance against future rung edits.
+            raise
+        # Exit-75 still-waiting on an ASYNC failover leg (#1603): no
+        # orchestrator re-runs "the same command" here — the poller owns a
+        # bounded tick — so surface the typed capacity terminal the poller
+        # already maps (reason: no_compute_available, re-drivable by the
+        # watcher's capacity-retry pass). The #1596/#1601 queue-loss legs'
+        # clean-residue GCP-STANDARD retry gates on this same type, and an
+        # exit-75 IS a clean-residue capacity outcome by construction
+        # (nothing provisioned, nothing billing).
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="runpod",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "runpod async-failover leg still WAITING for capacity when the "
+            f"wait-for-capacity budget expired (pod_lifecycle exit "
+            f"{EXIT_STILL_WAITING}: nothing provisioned, nothing billing); "
+            "surfaced as the re-drivable no-compute terminal for the poller",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        ) from exc
 
 
 def retry_gcp_ondemand_after_queue_vanish(
