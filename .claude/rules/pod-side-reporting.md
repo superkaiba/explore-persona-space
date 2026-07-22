@@ -239,6 +239,30 @@ relaunch, a watch-session correction — not just first launches:
    fresh timestamped log and re-point the watcher), exactly as item 1
    rewrites the pid file — an un-rotated log under a pattern poller is
    the log-side twin of the stale-pid-file violation.
+1c. **The 1b rotation duty covers EVERY log a crash-signature or
+   completion-pattern grep may scan — including INNER per-cell logs a
+   dispatcher SUBPROCESS opens in append mode — not only the
+   dispatcher-level phase log.** A relaunch that rotates the outer
+   phase log but leaves an inner append-mode
+   `<out_root>/<cell>/train.log` in place feeds the previous crash's
+   lines to any monitor grep scanning it (#1112 fix-4 relaunch,
+   2026-07-21: a health monitor false-fired "ASSERT-FAILED-AGAIN" on
+   the PREVIOUS crash's assert lines in the un-rotated inner
+   `train.log` — the inner-log twin of 1b's #952 false-fire). Rotate
+   inner logs in the same command chain where practical. Where rotation
+   is IMPRACTICAL (a live subprocess owns the append-mode handle; the
+   per-cell log set is enumerated dynamically), scope every
+   crash-signature grep past the relaunch instead — PREFERRED: a
+   byte-offset sentinel, `OFF=$(wc -c < <log>)` recorded at launch
+   beside the pid file (0 when the log does not yet exist), scan only
+   the suffix (`tail -c +$((OFF+1)) <log> | grep ...`), re-capturing
+   OFF on any later rotation (a stale offset silently skips fresh
+   bytes); FALLBACK: a launch-timestamp line filter (weaker — inner
+   train.logs carry untimestamped traceback/tqdm lines it silently
+   misses). A whole-file pattern match against an un-rotated
+   append-mode log that may contain a predecessor's lines is NEVER a
+   valid crash-signature read — the grep-side sibling of the #779
+   stale-existing-file false-DONE (CLAUDE.md § Monitoring).
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
