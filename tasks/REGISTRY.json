@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1592,
+  "highest_id": 1593,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4618,6 +4618,13 @@
       "path": "tasks/proposed/1592",
       "status": "proposed",
       "title": "daily-fix: planner self-counts grep-c acceptance criteria"
+    },
+    "1593": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1593",
+      "status": "proposed",
+      "title": "daily-fix: self-derive WORKFLOW_INVARIANT count pin"
     },
     "16": {
       "has_clean_result": false,
