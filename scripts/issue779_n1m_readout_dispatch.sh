@@ -58,7 +58,12 @@ else
   OUT_DIR="$REPO_ROOT/eval_results/issue_779/n1m-nonlinear-map-behavior-readout"
   FIG_DIR="$REPO_ROOT/figures/issue_779"
   DEVICE=cuda
-  KRR_CENTERS=16384        # plan SS10/SS11 pin (the n1m round's REALIZED m)
+  KRR_CENTERS=32768        # raised 16384->32768 (recorded plan deviation, att-20260722-165214):
+                           # L26 pre-fit Nystrom-vs-exact gate read gap 0.0151 > tol 0.0100 at the
+                           # SS10/SS11 pin; the script's own fail-fast remedy prescribes raising m.
+                           # The tol gate is unchanged. With --resume, L14/L19 keep realized m=16384
+                           # (weights persisted); only L26 fits at 32768 — carry per-layer m into the
+                           # clean-result.
   FITS_SCALE=()
   TRAITS="evil,sycophancy,hallucination"
   COLLECT_DIR="$REPO_ROOT/data/issue779_hfstage/issue779_monitoring/analysis_tensors"
