@@ -2834,28 +2834,26 @@ def render_startup_script(
         # in FETCH_HEAD (the clone's configured single-branch refspec covers
         # no other branch, so no local/remote-tracking ref is created); the
         # old by-name `checkout <branch>` died with `error: pathspec
-        # '<branch>' did not match any file(s) known to git`, and
-        # `reset --hard origin/<branch>` would die the same way. Four
-        # steps: (0) `remote set-branches origin <branch>` — converge the
-        # clone's fetch-refspec CONFIG to the fresh-clone-of-<branch> shape:
-        # git updates remote-tracking refs ON PUSH by mapping through this
-        # config, so without it a committing workload's successful push
-        # leaves origin/<branch> stale and the workload-cmd shape's
-        # push-verify leg reads a false nonzero unpushed count post-workload
-        # (#1602 round-1 critique probe: a healthy pushed run exits 86);
-        # byte-no-op on same-branch reuse; (1) fetch with an EXPLICIT forced
-        # destination refspec —
-        # creates/updates refs/remotes/origin/<branch>, which the
+        # '<branch>' did not match any file(s) known to git`, and the old
+        # tracking-ref reset against origin/<branch> would die the same way.
+        # Four steps: (0) converge the clone's fetch-refspec CONFIG to the
+        # fresh-clone-of-<branch> shape (set-branches): git updates
+        # remote-tracking refs ON PUSH by mapping through this config, so
+        # without it a committing workload's successful push leaves
+        # origin/<branch> stale and the workload-cmd shape's push-verify leg
+        # reads a false nonzero unpushed count post-workload (#1602 round-1
+        # critique probe: a healthy pushed run exits 86); byte-no-op on
+        # same-branch reuse; (1) fetch with an EXPLICIT forced destination
+        # refspec — creates/updates refs/remotes/origin/<branch>, which the
         # workload-cmd shape's push-verify leg's `rev-list
         # origin/<branch>..HEAD` reads post-workload (`+` tolerates a
         # rebased/force-pushed tip on a stale disk); (2) `reset --hard
         # FETCH_HEAD` FIRST — a crashed prior run can leave dirty tracked
-        # files that would abort a bare `checkout -B` carry-over (sibling
-        # form: scripts/bootstrap_pod.sh fetch + reset --hard FETCH_HEAD);
-        # (3) `checkout -B <branch> FETCH_HEAD` — creates or resets the
-        # local branch (works from any current branch or detached HEAD;
-        # conflict-free because the tree already matches FETCH_HEAD
-        # after (2)).
+        # files that would abort a bare create-or-reset checkout carry-over
+        # (sibling form: scripts/bootstrap_pod.sh fetch + reset --hard
+        # FETCH_HEAD); (3) create or reset the local branch from FETCH_HEAD
+        # (works from any current branch or detached HEAD; conflict-free
+        # because the tree already matches FETCH_HEAD after (2)).
         '  echo "[startup-script] reusing repo at $WORKLOAD_ROOT (HEAD was'
         ' $(git -C "$WORKLOAD_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown))"',
         f'  git -C "$WORKLOAD_ROOT" remote set-branches origin {shlex.quote(repo_branch)}',
