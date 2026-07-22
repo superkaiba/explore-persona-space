@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "git_commit": "2e6075f8a487cf5a700a0c1aaa301ffaf988c802",
-    "timestamp": "2026-07-22T19:58:25Z",
+    "git_commit": "877dbff59f2daaba8fcf6f46e8f90072b0bf7973",
+    "timestamp": "2026-07-22T20:27:10Z",
     "seed": 0,
     "n": 0,
     "script": "scripts/issue1310_xpersona_similarity_v2.py",
@@ -120,7 +120,14 @@
         "issue1345_chat_vs_plain_instruct": 0.855,
         "issue1345_chat_vs_plain_base": 0.732,
         "issue1345_paired_story_vs_chat": 0.455
-      }
+      },
+      "activation_procrustes_aligned_cosine_mean": 0.5157533431507232,
+      "activation_procrustes_aligned_cosine_range": [
+        0.49744855452987846,
+        0.5483294055504877
+      ],
+      "activation_procrustes_rotation_null_mean": -8.723515837294077e-05,
+      "activation_procrustes_shuffle_fit_null_mean": 0.002568272943995369
     },
     "instruct": {
       "equality_gate_worst_abs_delta": 0.0,
@@ -221,7 +228,15 @@
         "issue1345_chat_vs_plain_instruct": 0.855,
         "issue1345_chat_vs_plain_base": 0.732,
         "issue1345_paired_story_vs_chat": 0.455
-      }
+      },
+      "activation_procrustes_aligned_cosine_mean": 0.5929358404952204,
+      "activation_procrustes_aligned_cosine_range": [
+        0.569614727352927,
+        0.6151882961226524
+      ],
+      "activation_procrustes_rotation_null_mean": -6.274183888953069e-05,
+      "activation_procrustes_shuffle_fit_null_mean": 0.001741493145728827
     }
-  }
+  },
+  "schema_note": "v2 + activation-Procrustes addendum: per_model now carries activation_procrustes_* (data-paired aligned cosine mean/range + rotation and shuffle-fit null means; full detail in activation_procrustes_<m>.json). All prior keys preserved."
 }

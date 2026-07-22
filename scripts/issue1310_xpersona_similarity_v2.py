@@ -118,6 +118,13 @@ def parse_args() -> argparse.Namespace:
         "per-model JSONs already in --out-dir (split-run pattern)",
     )
     ap.add_argument(
+        "--activation-procrustes",
+        action="store_true",
+        help="addendum leg: write standalone activation_procrustes_<m>.json (data-paired "
+        "activation-Procrustes aligned cosine + rotation null reused from operator_stats + "
+        "a NEW shuffle-fit null) and fold means into summary_v2.json (schema_note bump)",
+    )
+    ap.add_argument(
         "--only-operator",
         action="store_true",
         help="recompute ONLY Leg C (operator_stats_nulled_<m>.json) and rewrite it; "
@@ -428,6 +435,50 @@ def _procrustes_aligned_cosine(arrays: dict, a: str, b: str, layer: int, *, n_dr
     return ma._procrustes_cosine_null(xa, xb, ya, yb, n_draws=n_draws, seed=seed)
 
 
+def _orth_align(a_ctr: torch.Tensor, b_ctr: torch.Tensor) -> torch.Tensor:
+    """Orthogonal Procrustes rotation a_ctr -> b_ctr (both mean-centered).
+    Replicates ma._procrustes_cosine_null's internal `_orth`."""
+    m = a_ctr.T @ b_ctr
+    u, _s, vh = torch.linalg.svd(m, full_matrices=False)
+    return u @ vh
+
+
+def _aligned_frobenius_cos(
+    beta_src: torch.Tensor, r_in: torch.Tensor, r_out: torch.Tensor, beta_tgt: torch.Tensor
+) -> float:
+    """Frobenius cosine of the Procrustes-aligned source operator (R_in^T beta_src R_out)
+    against the target operator. Orthogonal transforms preserve the Frobenius norm."""
+    m_fit = (r_in.T @ beta_src @ r_out).reshape(-1)
+    vt = beta_tgt.reshape(-1)
+    return float((m_fit @ vt) / (m_fit.norm() * vt.norm() + 1e-12))
+
+
+def activation_procrustes_shuffle_null(
+    arrays: dict, a: str, b: str, layer: int, *, shuf_a, shuf_b
+) -> dict:
+    """Shuffle-fit null for the data-paired aligned cosine: fit R_in/R_out from the
+    REAL scenario-paired activations, then apply them to SHUFFLE-FIT maps (context->
+    dialogue structure broken) — a stricter null than random rotation. Returns the
+    draw list + mean/p975. Reuses the same 5 shuffle-fit betas as Leg C's null."""
+    xa = _t(arrays[a]["X"][:, layer, :])
+    ya = _t(arrays[a]["Y"][:, layer, :])
+    xb = _t(arrays[b]["X"][:, layer, :])
+    yb = _t(arrays[b]["Y"][:, layer, :])
+    # Same orientation as ma._procrustes_cosine_null(xa, xb, ya, yb): align a's map
+    # into b's frame — R_in from (xa,xb), R_out from (ya,yb).
+    r_in = _orth_align(xa - xa.mean(0), xb - xb.mean(0))
+    r_out = _orth_align(ya - ya.mean(0), yb - yb.mean(0))
+    draws = [_aligned_frobenius_cos(shuf_a[d], r_in, r_out, shuf_b[d]) for d in range(len(shuf_a))]
+    arr = np.asarray(draws)
+    return {
+        "n_draws": int(len(draws)),
+        "draws": [float(v) for v in draws],
+        "null_mean": float(arr.mean()) if len(arr) else float("nan"),
+        "null_std": float(arr.std()) if len(arr) else float("nan"),
+        "null_p975": float(np.quantile(arr, 0.975)) if len(arr) else float("nan"),
+    }
+
+
 def run_operator_nulled(model_kind: str, arrays: dict, args) -> dict:
     """Leg C: operator-space stats observed vs SHUFFLE-FIT null (5 draws)."""
     cm.GCV_DOF_CAP = DOF_CAP
@@ -511,6 +562,9 @@ def _load_results(out_dir: Path, models: list[str]) -> dict:
                 (out_dir / f"operator_stats_nulled_{m}.json").read_text()
             ),
         }
+        ap_path = out_dir / f"activation_procrustes_{m}.json"
+        if ap_path.exists():
+            res[m]["activation_procrustes"] = json.loads(ap_path.read_text())
     return res
 
 
@@ -743,6 +797,32 @@ def _build_summary(res: dict, models: list[str], gate_ok: bool, args) -> None:
             ),
             "procrustes_calibration_anchors": PROCRUSTES_ANCHORS,
         }
+        # Addendum leg: fold the standalone activation-Procrustes means (incl. the
+        # shuffle-fit null) when the standalone file is present.
+        apr = res[m].get("activation_procrustes")
+        if apr is not None:
+            aps = apr["pairs"]
+            vals = [aps[k]["observed_aligned_cosine"] for k in aps]
+            summary["per_model"][m]["activation_procrustes_aligned_cosine_mean"] = float(
+                np.mean(vals)
+            )
+            summary["per_model"][m]["activation_procrustes_aligned_cosine_range"] = [
+                float(min(vals)),
+                float(max(vals)),
+            ]
+            summary["per_model"][m]["activation_procrustes_rotation_null_mean"] = float(
+                np.mean([aps[k]["rotation_null"]["null_mean"] for k in aps])
+            )
+            summary["per_model"][m]["activation_procrustes_shuffle_fit_null_mean"] = float(
+                np.mean([aps[k]["shuffle_fit_null"]["null_mean"] for k in aps])
+            )
+    if any("activation_procrustes" in res[m] for m in models):
+        summary["schema_note"] = (
+            "v2 + activation-Procrustes addendum: per_model now carries "
+            "activation_procrustes_* (data-paired aligned cosine mean/range + rotation "
+            "and shuffle-fit null means; full detail in activation_procrustes_<m>.json). "
+            "All prior keys preserved."
+        )
     c1310.write_json(args.out_dir / "summary_v2.json", summary)
 
 
@@ -765,6 +845,85 @@ def main() -> int:
             make_figures(res, args)
         print(f"[xpersona-v2] summary+figures from disk; gate_all_pass={gate_ok}")
         return 0 if gate_ok else 1
+
+    if args.activation_procrustes:
+        # Addendum leg: standalone activation_procrustes_<m>.json. Reuse the
+        # observed aligned cosine + raw cosine + rotation null already in
+        # operator_stats_nulled_<m>.json (procrustes_aligned block, commit
+        # 7e367f9a5a) and ADD a NEW shuffle-fit null (R_in/R_out from the real
+        # paired activations applied to 5 shuffle-fit maps). Fold means into
+        # summary_v2.json with a schema_note bump.
+        cm.GCV_DOF_CAP = DOF_CAP
+        cm.LAMBDA_SELECTION = "gcv"
+        layer = HEADLINE_LAYER
+        for m in models:
+            print(f"[xpersona-v2] {m}: --activation-procrustes (standalone + shuffle-fit null)")
+            op_path = args.out_dir / f"operator_stats_nulled_{m}.json"
+            existing = json.loads(op_path.read_text())
+            arrays = v1.load_persona_arrays(args.store_root, m)
+            n = arrays[PERSONAS[0]]["X"].shape[0]
+            # 5 shuffle-fit betas per persona (same recipe/dof as Leg C; fresh seed).
+            rng = np.random.default_rng(args.seed + 505)
+            shuf_betas = {
+                p: [
+                    _fit_beta(arrays, p, layer, y_perm=rng.permutation(n))
+                    for _ in range(args.null_draws)
+                ]
+                for p in PERSONAS
+            }
+            pairs = {}
+            for i in range(len(PERSONAS)):
+                for j in range(i + 1, len(PERSONAS)):
+                    a, b = PERSONAS[i], PERSONAS[j]
+                    proc = existing["pairs"][f"{a}~{b}"]["procrustes_aligned"]
+                    shuf_null = activation_procrustes_shuffle_null(
+                        arrays, a, b, layer, shuf_a=shuf_betas[a], shuf_b=shuf_betas[b]
+                    )
+                    obs = proc["observed_aligned_cosine"]
+                    pairs[f"{a}~{b}"] = {
+                        "observed_aligned_cosine": obs,
+                        "raw_vec_cosine": proc["raw_vec_cosine"],
+                        "rotation_null": {
+                            "n_draws": proc["n_draws"],
+                            "null_mean": proc["null_mean"],
+                            "null_p975": proc["null_p975"],
+                        },
+                        "shuffle_fit_null": shuf_null,
+                        "aligned_over_rotation_null": obs - proc["null_mean"],
+                        "aligned_over_shuffle_null": obs - shuf_null["null_mean"],
+                    }
+                    print(
+                        f"[xpersona-v2]   {m} {a}~{b}: aligned={obs:.3f} "
+                        f"rot_null={proc['null_mean']:.2e} shuf_null={shuf_null['null_mean']:.3f} "
+                        f"({time.time() - t0:.0f}s)"
+                    )
+            c1310.write_json(
+                args.out_dir / f"activation_procrustes_{m}.json",
+                {
+                    "metadata": c1310.metadata(SCRIPT, args.seed, 0),
+                    "model_kind": m,
+                    "headline_layer": layer,
+                    "gcv_dof_cap": DOF_CAP,
+                    "convention": (
+                        "DATA-PAIRED activation-Procrustes aligned operator cosine "
+                        "(ma._procrustes_cosine_null, the project headline convention; "
+                        "full-data, scenario-paired). Full-data (NOT held-out train-fold) "
+                        "for cross-project comparability to the calibration anchors, which "
+                        "are all full-data. observed_aligned_cosine + raw_vec_cosine + "
+                        "rotation_null reused from operator_stats_nulled_<m>.json; "
+                        "shuffle_fit_null is the stricter structure-free null (same 5 "
+                        "shuffle-fit maps as Leg C, same R_in/R_out from real activations)."
+                    ),
+                    "calibration_anchors": PROCRUSTES_ANCHORS,
+                    "n_shuffle_fit_draws": int(args.null_draws),
+                    "pairs": pairs,
+                },
+            )
+            del arrays, shuf_betas
+            gc.collect()
+            print(f"[xpersona-v2] {m}: activation_procrustes written ({time.time() - t0:.1f}s)")
+        print("[xpersona-v2] --activation-procrustes done; run --summary-from-disk to fold means")
+        return 0
 
     if args.only_operator:
         # Addendum: PATCH the existing operator_stats_nulled_<m>.json with ONLY
