@@ -1,0 +1,304 @@
+{
+  "metadata": {
+    "git_commit": "3235d93dd8e9f4242e3c72fb519ed292d5435b72",
+    "timestamp": "2026-07-22T18:59:02Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity_v2.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "headline_layer": 19,
+  "n_null_draws": 5,
+  "subspace_note": "input_subspace = left singular vectors of beta (X-space, expected elevated under the shuffle-fit null via the shared scenario X covariance); output_subspace = right singular vectors (Y-space, carries the directional evidence). spectrum_cosine is DESCRIPTIVE only \u2014 its shuffle-fit null is ~1 by the shared shrinkage profile.",
+  "pairs": {
+    "Wren~HELIOS": {
+      "observed": {
+        "spectrum_cosine": 0.995928222208967,
+        "raw_frobenius_cosine": 0.24619242161128116,
+        "input_subspace_k10": {
+          "mean_cos": 0.5505889512931287,
+          "min_cos": 0.008132074840617766
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.4324978313273057,
+          "min_cos": 0.016695561464402434
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.7654716165913744,
+          "min_cos": 0.009685771359653454
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.4884379710987376,
+          "min_cos": 4.8874161252475585e-05
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9973315234432757,
+          "p975": 0.9981871666004576
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.004374256372682748,
+          "p975": 0.005691650586059374
+        },
+        "input_subspace_k10": {
+          "mean": 0.29099431173730655,
+          "p975": 0.30968804235483477
+        },
+        "output_subspace_k10": {
+          "mean": 0.4409636450698614,
+          "p975": 0.45277421369982884
+        },
+        "input_subspace_k50": {
+          "mean": 0.6411501565397865,
+          "p975": 0.6479236869970522
+        },
+        "output_subspace_k50": {
+          "mean": 0.469250809883132,
+          "p975": 0.47160403753762964
+        }
+      }
+    },
+    "Wren~Dana": {
+      "observed": {
+        "spectrum_cosine": 0.9762564046559259,
+        "raw_frobenius_cosine": 0.25999663748391544,
+        "input_subspace_k10": {
+          "mean_cos": 0.3995775142501979,
+          "min_cos": 0.053931289894399555
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.5628582598057716,
+          "min_cos": 0.0643346616894452
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.6613525362871758,
+          "min_cos": 0.012937830839549741
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.5804907447739108,
+          "min_cos": 0.0049480876360323165
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9971505440140582,
+          "p975": 0.9988976699160704
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.01188754068693554,
+          "p975": -0.006002069698121217
+        },
+        "input_subspace_k10": {
+          "mean": 0.28628481394564353,
+          "p975": 0.3106195433635612
+        },
+        "output_subspace_k10": {
+          "mean": 0.5695251113372917,
+          "p975": 0.5933217430217843
+        },
+        "input_subspace_k50": {
+          "mean": 0.6538224689175594,
+          "p975": 0.6587179832729375
+        },
+        "output_subspace_k50": {
+          "mean": 0.5499954270649808,
+          "p975": 0.5536559595299806
+        }
+      }
+    },
+    "Wren~Vex": {
+      "observed": {
+        "spectrum_cosine": 0.995781271168677,
+        "raw_frobenius_cosine": 0.2280584683283654,
+        "input_subspace_k10": {
+          "mean_cos": 0.4560980950755379,
+          "min_cos": 0.04602610634323
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.4889820623498496,
+          "min_cos": 0.0031115204304539164
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.7761492880877008,
+          "min_cos": 0.0854957311999539
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.5246667490559601,
+          "min_cos": 0.0033197467339129124
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9988219179143822,
+          "p975": 0.9991927772116953
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.0026582888306126455,
+          "p975": 0.004643469787354087
+        },
+        "input_subspace_k10": {
+          "mean": 0.29852540778953246,
+          "p975": 0.3125431904480937
+        },
+        "output_subspace_k10": {
+          "mean": 0.494439960317103,
+          "p975": 0.516598704305796
+        },
+        "input_subspace_k50": {
+          "mean": 0.6467456759044138,
+          "p975": 0.652652141991259
+        },
+        "output_subspace_k50": {
+          "mean": 0.5089347755455506,
+          "p975": 0.5144087426430431
+        }
+      }
+    },
+    "HELIOS~Dana": {
+      "observed": {
+        "spectrum_cosine": 0.9868144945182843,
+        "raw_frobenius_cosine": 0.2045522479600846,
+        "input_subspace_k10": {
+          "mean_cos": 0.3557309097579568,
+          "min_cos": 0.04629633153159541
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.41189221181147867,
+          "min_cos": 0.021224292570942757
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.6504150527956262,
+          "min_cos": 0.01985128767692094
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.48769029009928966,
+          "min_cos": 0.0014321841012957092
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.999023828067228,
+          "p975": 0.9994909947733626
+        },
+        "raw_frobenius_cosine": {
+          "mean": 0.007303961148392669,
+          "p975": 0.018598943575962555
+        },
+        "input_subspace_k10": {
+          "mean": 0.2875524814958449,
+          "p975": 0.3083559379487856
+        },
+        "output_subspace_k10": {
+          "mean": 0.42330865101793036,
+          "p975": 0.4505025756312932
+        },
+        "input_subspace_k50": {
+          "mean": 0.6493486898185593,
+          "p975": 0.652188708611484
+        },
+        "output_subspace_k50": {
+          "mean": 0.45927914651516366,
+          "p975": 0.46173446571313903
+        }
+      }
+    },
+    "HELIOS~Vex": {
+      "observed": {
+        "spectrum_cosine": 0.9967471949166811,
+        "raw_frobenius_cosine": 0.19977855998997182,
+        "input_subspace_k10": {
+          "mean_cos": 0.4731268332111454,
+          "min_cos": 0.1096237174243156
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.4100394485590537,
+          "min_cos": 0.10241178587469645
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.7659297321787498,
+          "min_cos": 0.005594179718295312
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.49226181766723043,
+          "min_cos": 0.014466509437981404
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9967399686729138,
+          "p975": 0.9981075711415622
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.0049047056727528,
+          "p975": 0.00884341259356939
+        },
+        "input_subspace_k10": {
+          "mean": 0.2828010408833801,
+          "p975": 0.31102806248676557
+        },
+        "output_subspace_k10": {
+          "mean": 0.4419529577350933,
+          "p975": 0.4602202350157806
+        },
+        "input_subspace_k50": {
+          "mean": 0.6512372049927843,
+          "p975": 0.6567171819751916
+        },
+        "output_subspace_k50": {
+          "mean": 0.4723808236853856,
+          "p975": 0.475487800207671
+        }
+      }
+    },
+    "Dana~Vex": {
+      "observed": {
+        "spectrum_cosine": 0.9861185432851292,
+        "raw_frobenius_cosine": 0.22058487474604052,
+        "input_subspace_k10": {
+          "mean_cos": 0.39863718995702274,
+          "min_cos": 0.05799545514098492
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.5512158534219337,
+          "min_cos": 0.11177130213079103
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.6537686919645774,
+          "min_cos": 0.016412763901765822
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.554806093307146,
+          "min_cos": 0.0030671435427944804
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9964970697831355,
+          "p975": 0.9990552693853476
+        },
+        "raw_frobenius_cosine": {
+          "mean": 0.006782336793729823,
+          "p975": 0.019856545309273846
+        },
+        "input_subspace_k10": {
+          "mean": 0.3149597945663878,
+          "p975": 0.3310091628965542
+        },
+        "output_subspace_k10": {
+          "mean": 0.5275801281779069,
+          "p975": 0.5465849597131692
+        },
+        "input_subspace_k50": {
+          "mean": 0.6573561719229871,
+          "p975": 0.6600491069427679
+        },
+        "output_subspace_k50": {
+          "mean": 0.5222592731012939,
+          "p975": 0.5242237056230119
+        }
+      }
+    }
+  }
+}

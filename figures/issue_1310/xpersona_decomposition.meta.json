@@ -1,0 +1,257 @@
+{
+  "commit": "68a2afc631",
+  "created": "2026-07-22T19:07:20Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.1819929255867262,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.17408998429681466,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.20215439642564126,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.10823300258706137,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Wren",
+      "held-out R\u00b2 (fold-test-mean)": 0.18112495868583467,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "HELIOS",
+      "held-out R\u00b2 (fold-test-mean)": 0.1746050018134221,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Dana",
+      "held-out R\u00b2 (fold-test-mean)": 0.20059980675862055,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Vex",
+      "held-out R\u00b2 (fold-test-mean)": 0.10740284228239849,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.19648846768114947,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.1974782359913172,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.21775009509535348,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.13266438854640195,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.13,
+      "held-out R\u00b2 (fold-test-mean)": 0.13483904207349404,
+      "series": "reparam rung (round 1)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.05752405165660721,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.05752405165660721,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.35074089227915894,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.3875027483153908,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.3171977807434766,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.21206553425629815,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Wren",
+      "held-out R\u00b2 (fold-test-mean)": 0.3475371608692135,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "HELIOS",
+      "held-out R\u00b2 (fold-test-mean)": 0.3866044870616153,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Dana",
+      "held-out R\u00b2 (fold-test-mean)": 0.31558412872901265,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Vex",
+      "held-out R\u00b2 (fold-test-mean)": 0.2094804343469835,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.3548299086061537,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.40107670413358276,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.3285635376004241,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.2328833350537587,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.13,
+      "held-out R\u00b2 (fold-test-mean)": 0.3278052309234716,
+      "series": "reparam rung (round 1)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.05653445973285507,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.05653445973285507,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 30,
+  "text": {
+    "suptitle": "Cross-persona map: how much structure is shared vs per-character",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "base: shared-vs-specific decomposition (L19)",
+        "ylabel": "held-out R\u00b2 (fold-test-mean)",
+        "legend_labels": [
+          "reparam rung (round 1)",
+          "M1 shuffle null",
+          "M0 one map, global offset",
+          "M1 shared map, per-persona offset",
+          "M2 per-persona maps (within)"
+        ],
+        "xticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title": "instruct: shared-vs-specific decomposition (L19)",
+        "ylabel": "held-out R\u00b2 (fold-test-mean)",
+        "xticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "reparam rung (round 1)",
+      "M1 shuffle null",
+      "M0 one map, global offset",
+      "M1 shared map, per-persona offset",
+      "M2 per-persona maps (within)"
+    ]
+  }
+}

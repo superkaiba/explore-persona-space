@@ -1,6 +1,6 @@
 {
-  "commit": "3ba9d8f7d2",
-  "created": "2026-07-22T07:32:18Z",
+  "commit": "68a2afc631",
+  "created": "2026-07-22T19:07:25Z",
   "figsize": [
     11.0,
     8.0
@@ -8,670 +8,896 @@
   "points": [
     {
       "x": -0.2,
-      "operator cosine": 0.995928222208967,
+      "operator similarity": 0.24619242161128116,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.8,
-      "operator cosine": 0.9762564046559259,
+      "operator similarity": 0.25999663748391544,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.8,
-      "operator cosine": 0.995781271168677,
+      "operator similarity": 0.2280584683283654,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.8,
-      "operator cosine": 0.9868144945182843,
+      "operator similarity": 0.2045522479600846,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.8,
-      "operator cosine": 0.9967471949166811,
+      "operator similarity": 0.19977855998997182,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.8,
-      "operator cosine": 0.9861185432851292,
+      "operator similarity": 0.22058487474604052,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.2,
-      "operator cosine": 0.24619242161128116,
+      "operator similarity": 0.4884379710987376,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.2,
-      "operator cosine": 0.25999663748391544,
+      "operator similarity": 0.5804907447739108,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.2,
-      "operator cosine": 0.2280584683283654,
+      "operator similarity": 0.5246667490559601,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.2,
-      "operator cosine": 0.2045522479600846,
+      "operator similarity": 0.48769029009928966,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.2,
-      "operator cosine": 0.19977855998997182,
+      "operator similarity": 0.49226181766723043,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.2,
-      "operator cosine": 0.22058487474604052,
+      "operator similarity": 0.554806093307146,
       "_kind": "bar",
       "_group": 1
-    },
-    {
-      "x": 0.0,
-      "operator cosine": 0.0004229238652355041,
-      "series": "raw-cosine rotation null p97.5 (4.2e-04)",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 1.0,
-      "operator cosine": 0.0004229238652355041,
-      "series": "raw-cosine rotation null p97.5 (4.2e-04)",
-      "_kind": "line",
-      "_group": 2
     },
     {
       "x": -0.2,
-      "operator cosine": 0.9952257439384181,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": 0.005691650586059374,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 0.8,
-      "operator cosine": 0.9967122479149769,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": -0.006002069698121217,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 1.8,
-      "operator cosine": 0.9875626448356458,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": 0.004643469787354087,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 2.8,
-      "operator cosine": 0.9878539621668678,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": 0.018598943575962555,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 3.8,
-      "operator cosine": 0.9865121421714109,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": 0.00884341259356939,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 4.8,
-      "operator cosine": 0.9827188531958344,
-      "_kind": "bar",
-      "_group": 3
+      "operator similarity": 0.019856545309273846,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 2
     },
     {
       "x": 0.2,
-      "operator cosine": 0.3501189600081717,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.47160403753762964,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 1.2,
-      "operator cosine": 0.2842874208868378,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.5536559595299806,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 2.2,
-      "operator cosine": 0.32156651475939413,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.5144087426430431,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 3.2,
-      "operator cosine": 0.289241024840088,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.46173446571313903,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 4.2,
-      "operator cosine": 0.3514329740834298,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.475487800207671,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 5.2,
-      "operator cosine": 0.30746308269886935,
-      "_kind": "bar",
-      "_group": 4
+      "operator similarity": 0.5242237056230119,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 3
     },
     {
       "x": 0.0,
-      "operator cosine": 0.0004296533150109704,
-      "series": "raw-cosine rotation null p97.5 (4.3e-04)",
+      "operator similarity": 0.995928222208967,
+      "series": "spectrum cosine (descriptive; null\u22481)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "x": 1.0,
-      "operator cosine": 0.0004296533150109704,
-      "series": "raw-cosine rotation null p97.5 (4.3e-04)",
+      "operator similarity": 0.9762564046559259,
+      "series": "spectrum cosine (descriptive; null\u22481)",
       "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "operator similarity": 0.995781271168677,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "operator similarity": 0.9868144945182843,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "operator similarity": 0.9967471949166811,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "operator similarity": 0.9861185432851292,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.2,
+      "operator similarity": 0.3501189600081717,
+      "_kind": "bar",
       "_group": 5
+    },
+    {
+      "x": 0.8,
+      "operator similarity": 0.2842874208868378,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.8,
+      "operator similarity": 0.32156651475939413,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.8,
+      "operator similarity": 0.289241024840088,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.8,
+      "operator similarity": 0.3514329740834298,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.8,
+      "operator similarity": 0.30746308269886935,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.2,
+      "operator similarity": 0.5911117851403206,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.2,
+      "operator similarity": 0.5669413942404575,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.2,
+      "operator similarity": 0.5335520528778188,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.2,
+      "operator similarity": 0.5350388394004782,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 4.2,
+      "operator similarity": 0.5260517898000149,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 5.2,
+      "operator similarity": 0.5183636607336248,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.2,
+      "operator similarity": 0.02372458667648219,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8,
+      "operator similarity": 0.03836481133774273,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.8,
+      "operator similarity": 0.011276338881208464,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.8,
+      "operator similarity": 0.018055251660594036,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.8,
+      "operator similarity": 0.01516006190757243,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.8,
+      "operator similarity": 0.008326783789293595,
+      "series": "raw-cos shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.2,
+      "operator similarity": 0.5333689926169817,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2,
+      "operator similarity": 0.5106622343833838,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.2,
+      "operator similarity": 0.48599568058543646,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.2,
+      "operator similarity": 0.46986766433604643,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.2,
+      "operator similarity": 0.47741251754953606,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.2,
+      "operator similarity": 0.4739648247077159,
+      "series": "output-subspace shuffle null p97.5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "operator similarity": 0.9952257439384181,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator similarity": 0.9967122479149769,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "operator similarity": 0.9875626448356458,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "operator similarity": 0.9878539621668678,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "operator similarity": 0.9865121421714109,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "operator similarity": 0.9827188531958344,
+      "series": "spectrum cosine (descriptive; null\u22481)",
+      "_kind": "line",
+      "_group": 9
     },
     {
       "category": "Wren\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.124383914120198,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Wren\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.1719442299913475,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Wren\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.08149818988602586,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "HELIOS\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.12798728502360646,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "HELIOS\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.1481452662758812,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "HELIOS\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.08398374720178936,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Dana\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.13254867473690102,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Dana\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.13499618997180673,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Dana\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.09023959295260775,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Vex\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.1439811664599746,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Vex\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.11787877315694406,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "category": "Vex\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.15908498039772023,
       "_kind": "bar",
-      "_group": 6
+      "_group": 10
     },
     {
       "x": 0.0,
       "held-out R\u00b2 (fold-test-mean)": 0.1974782359913172,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 1.0,
       "held-out R\u00b2 (fold-test-mean)": 0.21775009509535348,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 2.0,
       "held-out R\u00b2 (fold-test-mean)": 0.13266438854640195,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 3.0,
       "held-out R\u00b2 (fold-test-mean)": 0.19648846768114947,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 4.0,
       "held-out R\u00b2 (fold-test-mean)": 0.21775009509535348,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 5.0,
       "held-out R\u00b2 (fold-test-mean)": 0.13266438854640195,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 6.0,
       "held-out R\u00b2 (fold-test-mean)": 0.19648846768114947,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 7.0,
       "held-out R\u00b2 (fold-test-mean)": 0.1974782359913172,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 8.0,
       "held-out R\u00b2 (fold-test-mean)": 0.13266438854640195,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 9.0,
       "held-out R\u00b2 (fold-test-mean)": 0.19648846768114947,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 10.0,
       "held-out R\u00b2 (fold-test-mean)": 0.1974782359913172,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 11.0,
       "held-out R\u00b2 (fold-test-mean)": 0.21775009509535348,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "x": 0.0,
       "held-out R\u00b2 (fold-test-mean)": -0.01922337062550352,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 1.0,
       "held-out R\u00b2 (fold-test-mean)": -0.023676544616316873,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 2.0,
       "held-out R\u00b2 (fold-test-mean)": -0.019599785363583734,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 3.0,
       "held-out R\u00b2 (fold-test-mean)": -0.020415788107784973,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 4.0,
       "held-out R\u00b2 (fold-test-mean)": -0.023992150573669414,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 5.0,
       "held-out R\u00b2 (fold-test-mean)": -0.020036422391578858,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 6.0,
       "held-out R\u00b2 (fold-test-mean)": -0.020442217568847232,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 7.0,
       "held-out R\u00b2 (fold-test-mean)": -0.019478408795648904,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 8.0,
       "held-out R\u00b2 (fold-test-mean)": -0.019853750131323223,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 9.0,
       "held-out R\u00b2 (fold-test-mean)": -0.02046655386778031,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 10.0,
       "held-out R\u00b2 (fold-test-mean)": -0.0193936155303041,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "x": 11.0,
       "held-out R\u00b2 (fold-test-mean)": -0.023793938578489816,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "category": "Wren\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.3794893928805362,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Wren\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.31300982992628257,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Wren\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.20087330899930178,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "HELIOS\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.34368494225377444,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "HELIOS\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.3197755440109209,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "HELIOS\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.20246067625485054,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Dana\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.3375253483041908,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Dana\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.3793513023089138,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Dana\u2192Vex",
       "held-out R\u00b2 (fold-test-mean)": 0.19595052167824512,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Vex\u2192Wren",
       "held-out R\u00b2 (fold-test-mean)": 0.3022054022124495,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Vex\u2192HELIOS",
       "held-out R\u00b2 (fold-test-mean)": 0.3399357255688852,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "category": "Vex\u2192Dana",
       "held-out R\u00b2 (fold-test-mean)": 0.2831481576068794,
       "_kind": "bar",
-      "_group": 9
+      "_group": 13
     },
     {
       "x": 0.0,
       "held-out R\u00b2 (fold-test-mean)": 0.40107670413358276,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 1.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3285635376004241,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 2.0,
       "held-out R\u00b2 (fold-test-mean)": 0.2328833350537587,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 3.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3548299086061537,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 4.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3285635376004241,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 5.0,
       "held-out R\u00b2 (fold-test-mean)": 0.2328833350537587,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 6.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3548299086061537,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 7.0,
       "held-out R\u00b2 (fold-test-mean)": 0.40107670413358276,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 8.0,
       "held-out R\u00b2 (fold-test-mean)": 0.2328833350537587,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 9.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3548299086061537,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 10.0,
       "held-out R\u00b2 (fold-test-mean)": 0.40107670413358276,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 11.0,
       "held-out R\u00b2 (fold-test-mean)": 0.3285635376004241,
       "series": "target within ceiling",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "x": 0.0,
       "held-out R\u00b2 (fold-test-mean)": -0.02634054160011958,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 1.0,
       "held-out R\u00b2 (fold-test-mean)": -0.020861774846325877,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 2.0,
       "held-out R\u00b2 (fold-test-mean)": -0.022262003767476956,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 3.0,
       "held-out R\u00b2 (fold-test-mean)": -0.018433361215475008,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 4.0,
       "held-out R\u00b2 (fold-test-mean)": -0.021061237046411784,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 5.0,
       "held-out R\u00b2 (fold-test-mean)": -0.022295512281439132,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 6.0,
       "held-out R\u00b2 (fold-test-mean)": -0.018276900182560007,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 7.0,
       "held-out R\u00b2 (fold-test-mean)": -0.02614725223986176,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 8.0,
       "held-out R\u00b2 (fold-test-mean)": -0.02222130225466592,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 9.0,
       "held-out R\u00b2 (fold-test-mean)": -0.017881369434633587,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 10.0,
       "held-out R\u00b2 (fold-test-mean)": -0.025618884663456677,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "x": 11.0,
       "held-out R\u00b2 (fold-test-mean)": -0.02009299762752752,
       "series": "matched-capacity null",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     }
   ],
-  "n_series": 12,
-  "total_points": 100,
+  "n_series": 16,
+  "total_points": 132,
   "text": {
-    "suptitle": "Operator similarity and data-paired reparameterization across personas",
+    "suptitle": "Operator similarity (shuffle-fit-nulled) and reparameterization",
     "fig_texts": [],
     "axes": [
       {
-        "title": "base: pairwise operator similarity (L19)",
-        "ylabel": "operator cosine",
+        "title": "base: operator stats vs shuffle-fit null (L19)",
+        "ylabel": "operator similarity",
         "legend_labels": [
-          "raw-cosine rotation null p97.5 (4.2e-04)",
-          "aligned (Procrustes optimum)",
-          "raw Frobenius cosine"
+          "raw-cos shuffle-fit null p97.5",
+          "output-subspace shuffle null p97.5",
+          "spectrum cosine (descriptive; null\u22481)",
+          "raw Frobenius cosine",
+          "output-subspace k=50 mean cos"
         ],
         "xticklabels": [
           "Wren~HELIOS",
@@ -692,8 +918,8 @@
         ]
       },
       {
-        "title": "instruct: pairwise operator similarity (L19)",
-        "ylabel": "operator cosine",
+        "title": "instruct: operator stats vs shuffle-fit null (L19)",
+        "ylabel": "operator similarity",
         "xticklabels": [
           "Wren~HELIOS",
           "Wren~Dana",
@@ -713,7 +939,7 @@
         ]
       },
       {
-        "title": "base: reparameterization (source\u2192target, L19)",
+        "title": "base: reparameterization (round 1, L19)",
         "ylabel": "held-out R\u00b2 (fold-test-mean)",
         "legend_labels": [
           "target within ceiling",
@@ -745,7 +971,7 @@
         ]
       },
       {
-        "title": "instruct: reparameterization (source\u2192target, L19)",
+        "title": "instruct: reparameterization (round 1, L19)",
         "ylabel": "held-out R\u00b2 (fold-test-mean)",
         "xticklabels": [
           "Wren\u2192HELIOS",
@@ -773,10 +999,11 @@
       }
     ],
     "series": [
-      "raw-cosine rotation null p97.5 (4.2e-04)",
-      "aligned (Procrustes optimum)",
+      "raw-cos shuffle-fit null p97.5",
+      "output-subspace shuffle null p97.5",
+      "spectrum cosine (descriptive; null\u22481)",
       "raw Frobenius cosine",
-      "raw-cosine rotation null p97.5 (4.3e-04)",
+      "output-subspace k=50 mean cos",
       "target within ceiling",
       "matched-capacity null",
       "reparam recovery R\u00b2"
