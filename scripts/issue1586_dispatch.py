@@ -1993,12 +1993,10 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
             )
         for p in sorted(root.glob("*/rate_*/")) if root.exists() else []:
             _up(p, f"{G.DATA_PREFIX}/raw_completions/{sub}/{p.parent.name}/{p.name}")
-    for p in (
-        sorted((cfg.out_root / "margin").glob("*.json"))
-        if (cfg.out_root / "margin").exists()
-        else []
-    ):
-        _up(p, f"{G.DATA_PREFIX}/margin/{p.name}", upload_as_file=True)
+    mroot = cfg.out_root / "margin"
+    for p in sorted(mroot.rglob("*.json")) if mroot.exists() else []:
+        rel = p.relative_to(mroot)
+        _up(p, f"{G.DATA_PREFIX}/margin/{rel}", upload_as_file=True)
     # capture stores: rollout text (unconditional) + pooled tensors
     for tree in ("capture", "capture_tf"):
         root = cfg.out_root / tree
