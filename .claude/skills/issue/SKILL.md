@@ -819,7 +819,10 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   `epm:followup-scope v1`, re-enter the abbreviated cycle at status
   `followups_running` with tag `followup-auto`; capped at 2
   autonomous rounds per task, counted by `epm:same-issue-followup-run
-  v1` markers with `source: proposer-9b`). All automatic follow-up
+  v1` markers with `source: proposer-9b` — a defensive bound: the
+  expensive-band partition runs at most once per task lifetime, so at
+  most one such round is dispatchable today; see Step 9b § Round caps,
+  #1588). All automatic follow-up
   EXECUTION is same-issue; a filed child runs only when a human
   triages it. Cost is still gated at the
   Step 2c plan-approval GPU-hour cap in BOTH paths — no new cost gate
@@ -7851,7 +7854,10 @@ The autonomous flow:
    - If `EPM_AUTONOMOUS_SESSION` is unset → skip the block.
    - If `epm:follow-ups-autospawned v1` is ALREADY present → run the
      **RECONCILE pass** (step R) instead of re-running the proposer, then
-     continue to park. (With no session spawning there is no
+     continue to park — step R is filing-verification ONLY and never
+     re-evaluates the step-3 partition (at most one step-3 partition per
+     task lifetime; see step R's scope contract, #1588). (With no session
+     spawning there is no
      crash-between-marker-and-spawn window; the residual self-heal is a
      crash between child creation and the marker post, which the
      duplicate-title guard in step 3 covers.)
@@ -8035,15 +8041,26 @@ read the `spawned` list from `epm:follow-ups-autospawned v1`. For each
 listed child, verify it exists via `task.py view <CHILD_ID> --json`;
 re-create one that is missing (same atomic `task.py new --parent`
 call as step 4). NEVER spawn sessions — this pass only verifies
-filing. Then continue to park.
+filing. **Scope contract (#1588):** step R does NOT re-read
+`epm:follow-ups v1`, does NOT re-run the step-3 partition (neither the
+child-filing side nor the expensive-band `same` selection), and NEVER
+posts a new `epm:followup-scope v1` — the step-3 partition runs at most
+ONCE per task lifetime, at the first (marker-less) entry (zero times
+when step 0's depth cap fires), so a re-park can never dispatch an
+additional expensive-band round; non-dispatched survivors stay in
+`epm:follow-ups v1` for the user's Step 10b pick (their cap parks were
+already surfaced at the step-3 § Expensive-band cap-park surfacing
+moment, #1575). Then continue to park.
 
 Cost discipline: this block adds NO new cost gate. A filed child, once
 a human triages it and runs `/issue <CHILD_ID>`, hits its own Step 2c
 `--auto-approve-if-autonomous --gpu-hours` cap; over-cap plans park at
 `plan_pending`, consistent with `tests/test_no_dollar_budget_caps.py`.
 Promotion of the parent stays human-only. The recursive surface is
-bounded twice over: same-issue rounds are capped at 2 per task, and
-child FILING is capped at 2 per parent per round AND hard-stopped at
+bounded twice over: same-issue rounds are capped at 2 per task
+(expensive band: at most one round is dispatchable under the current
+contract — see step 5 § Round caps / step R's scope contract, #1588),
+and child FILING is capped at 2 per parent per round AND hard-stopped at
 chain depth 3 by step 0 (so even if filed children are later run, the
 filing tree is both width-bounded and depth-bounded, not exponential).
 
@@ -8361,7 +8378,15 @@ orchestrators driving one round is the #778 root cause.
    - **Expensive autonomous band:** at most **2** rounds per task,
      counted by `epm:same-issue-followup-run v1` markers with
      `source: proposer-9b` (the `est_gpu_hours >= 20` / no-estimate
-     autonomous-only path).
+     autonomous-only path). Reachability (#1588): the band's only
+     dispatcher is the autonomous block's step-3 partition, which runs
+     at most ONCE per task lifetime (step 1's marker-presence
+     idempotency routes every re-entry to step R, which never
+     re-partitions), so at most ONE proposer-9b round is dispatchable
+     under the current contract — the 2-round cap is a defensive bound
+     that binds only if a future contract change makes multiple
+     expensive-band rounds dispatchable (the same change the step-4
+     DEFENSIVE-PARITY clause anticipates, #1575).
    - **Cheap band (both modes):** at most **2** rounds per task, counted
      by `epm:same-issue-followup-run v1` markers with
      `source: proposer-9b-cheap` (the `0 < est_gpu_hours < 20` path,
