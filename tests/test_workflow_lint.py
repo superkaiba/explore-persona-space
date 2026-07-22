@@ -2360,10 +2360,13 @@ def test_pipe_python_hook_subprocess_blocks_attached_arg():
 
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_piped_git_push`` (incident class #957 / #1048: a
-# `git push` / `git merge` / `gh pr merge|create` piped into a filter masks
+# `git push` / `git merge` / `git commit` / `gh pr merge|create` piped into
+# a filter masks
 # the producer's non-zero exit code — bash makes the pipeline's status the
 # LAST stage's — so a rejected push reads as success; 4 sessions hit the
-# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04). Each
+# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04; the
+# commit verb was added by #1591 after #1584's piped commit was
+# SIGPIPE-killed mid-pre-commit-hook). Each
 # fixture case writes a tiny ``*.sh`` under ``tmp_path`` and calls
 # ``check_piped_git_push(scripts_dir=tmp_path)``. The hook/lint agreement
 # test drives the SHARED semantic subset through BOTH the
@@ -2490,11 +2493,35 @@ def test_check_piped_git_push_pass_no_files(tmp_path):
     assert check_piped_git_push(scripts_dir=tmp_path) == []
 
 
+def test_check_piped_git_push_fail_piped_commit(tmp_path):
+    """FAIL — a piped `git commit` (#1591): the masked-exit harm plus the
+    #1584 SIGPIPE-mid-pre-commit-hook kill."""
+    (tmp_path / "x.sh").write_text('#!/usr/bin/env bash\ngit commit -m "wip" 2>&1 | head -20\n')
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "commit" in errors[0]
+
+
+def test_check_piped_git_push_pass_commit_dry_run(tmp_path):
+    """PASS — the verb-independent `--dry-run` span skip covers the commit
+    form (a dry-run commit lands nothing and runs no pre-commit hook)."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ngit commit --dry-run 2>&1 | head -5\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_commit_as_consumer(tmp_path):
+    """PASS — a message piped INTO commit (`cat msg | git commit -F -`) is
+    producer-as-consumer/final stage: nothing is masked."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ncat msg.txt | git commit -F -\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
 def test_check_piped_git_push_repo_tree_is_clean():
-    """The committed scripts/*.sh tree must carry no piped push/merge-class
-    commands — the regression lock (the plan #1048 §2 item-8 scan found the
-    tree clean: the sole `git push`+`|` hit, issue931_dispatch.sh:253, is an
-    `||` disjunction)."""
+    """The committed scripts/*.sh tree must carry no piped push/merge/
+    commit-class commands — the regression lock (the plan #1048 §2 item-8
+    scan found the tree clean: the sole `git push`+`|` hit,
+    issue931_dispatch.sh:253, is an `||` disjunction; the #1591 widened-verb
+    re-scan measured 0 commit-class hits too)."""
     errors = check_piped_git_push()
     assert errors == [], (
         "scripts/*.sh has piped git push/merge-class commands "
@@ -2548,11 +2575,16 @@ _PIPED_PUSH_SHARED = [
     ("gh pr merge 123 --squash | head", True),  # B3 gh producer
     ("git merge issue-x 2>&1 | tail -5", True),  # B7 git merge
     ("git push |& tail -5", True),  # B9 |& shorthand
+    ('git commit -m "wip" 2>&1 | head -20', True),  # B12 piped commit (#1584/#1591)
+    ('git commit -m "wip" |& head -3', True),  # B17 |& shorthand, commit form
     ('git push origin main || echo "push failed"', False),  # A7 || chain
     ("git merge-base --all main HEAD | head -1", False),  # A9 merge-base
     ("echo foo | git push", False),  # A14 producer as consumer
     ("git status | grep x && git push", False),  # A5 different segment
     ("git push --dry-run 2>&1 | head -5", False),  # A8 dry-run carve-out
+    ("cat msg.txt | git commit -F -", False),  # A21 commit as consumer/final stage
+    ("git commit --dry-run 2>&1 | head -5", False),  # A20 dry-run carve-out, commit form
+    ("git commit-tree HEAD^{tree} -m x | head -1", False),  # A22 verb-prefix word
 ]
 
 
