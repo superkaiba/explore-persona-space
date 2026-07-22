@@ -985,6 +985,22 @@ def _add_glob_scan_reasons(f: str, work_root: Path, add) -> None:
             add(scan_test, f"glob-scan:{f}")
 
 
+def _seed_transitive_consumer_reasons(
+    touched: list[str], work_root: Path, selected: dict[str, set[str]]
+) -> None:
+    """Transitive-consumer pin arm (#1589): additive seed, same only-grows
+    contract; never sets ``matched`` (the glob-scan/literal precedent —
+    over-WARN is the safe direction). Invariant members are KEPT here
+    (harmless extra reason; the union dedupes — the rules-pin asymmetry).
+    Extracted as a module-level seed (the :func:`_add_glob_scan_reasons`
+    precedent) to keep :func:`select_tests_with_reasons` under the C901 cap.
+    """
+    for f in touched:
+        for t in TRANSITIVE_CONSUMER_TESTS.get(f, ()):
+            if (work_root / t).exists():
+                selected.setdefault(t, set()).add(f"transitive-consumer:{f}")
+
+
 def select_tests_with_reasons(
     touched: list[str], work_root: Path
 ) -> tuple[list[str], list[str], dict[str, list[str]]]:
@@ -1016,13 +1032,8 @@ def select_tests_with_reasons(
     for t, rule_files in rules_pin_hits(touched, work_root).items():
         selected.setdefault(t, set()).update(f"rules-pin:{r}" for r in rule_files)
     # Transitive-consumer pin arm (#1589): additive seed, same only-grows
-    # contract; never sets ``matched`` (the glob-scan/literal precedent —
-    # over-WARN is the safe direction). Invariant members are KEPT here
-    # (harmless extra reason; the union dedupes — the rules-pin asymmetry).
-    for f in touched:
-        for t in TRANSITIVE_CONSUMER_TESTS.get(f, ()):
-            if (work_root / t).exists():
-                selected.setdefault(t, set()).add(f"transitive-consumer:{f}")
+    # contract — see _seed_transitive_consumer_reasons.
+    _seed_transitive_consumer_reasons(touched, work_root, selected)
     untested: list[str] = []
 
     def _add(test: str, reason: str) -> None:
