@@ -20,7 +20,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - code-style.md — you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - compute-backend-failover.md — you touch the backend router/dispatch/poll, or reason about GCP↔RunPod failover.
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
-- crash-fix-rounds.md — any retry/revision round, or a relaunch after a code-fix round (fix-engaged signal, stale-artifact disposition, relaunch ancestry, kill-before-relaunch, per-leg out-roots).
+- crash-fix-rounds.md — any retry/revision round, or a relaunch after a code-fix round (fix-engaged signal, stale-artifact disposition, relaunch ancestry + MooseFS content read, kill-before-relaunch, per-leg out-roots).
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
