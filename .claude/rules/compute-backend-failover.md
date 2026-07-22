@@ -767,7 +767,13 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
   queue-vanish, "On-demand retry after a clean-residue RunPod refusal".
   The `teardown_first` DELETE runs at core entry, BEFORE the RunPod rung
   and hence before any retry create, so the timed-out queued instance is
-  already released. (Motivating incident #779, 2026-07-22: three
+  already released. Documented pre-existing residual (bounded, NOT a bug):
+  a FAILED best-effort teardown can leave the timed-out PENDING instance
+  alive under the same `eps-issue-<N>` name, so the retry create may
+  reconnect to it — the exactly-once `gcp_failover_of` lease still bounds
+  paid launches, the re-pointed sidecar re-matures the timeout predicate
+  after another `EPS_GCP_QUEUE_WAIT_SECONDS`, and the stale-GCP janitor
+  reaps the orphan. (Motivating incident #779, 2026-07-22: three
   consecutive queue-timeouts each hit a capacity-class RunPod refusal with
   clean residue and minted `no_compute_available` without probing STANDARD
   — ~6h lost to the #1112 manual recovery.)
