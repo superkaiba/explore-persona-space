@@ -41,10 +41,14 @@ Five predictors per point:
 Nystrom validation (gate): before the KRR fits, ``_validate_nystrom_vs_exact``
 runs BOTH this driver's Nystrom fitter AND the n50k EXACT KRR
 (``N50.fit_krr_exact``) on the SAME deterministic 50,000-row train slice + the
-pinned val/test, and asserts ``|R2_nystrom - R2_exact| <= --krr-validate-tol``
-(default 0.01) — a larger gap FAILS LOUD (the Nystrom fitter is biased). The
-committed n50k exact anchor (0.8076 wide-grid / 0.8066 small-grid) is recorded
-for reference. Requires ``--device cuda`` (the 50k^2 exact kernel).
+pinned val/test, and compares ``|R2_nystrom - R2_exact|`` to
+``--krr-validate-tol`` (default 0.01). A larger (finite) gap FLAGS the layer's
+KRR arm — ``gate_passed: false`` in the recorded ``nystrom_validation`` dict,
+mirrored into the KRR ``fit_meta`` — and the run CONTINUES (plan v10 Risks
+disposition: "on FAIL report KRR flagged, headline carried by MLP arms").
+Genuine errors (exceptions, non-finite R2) still fail fast. The committed n50k
+exact anchor (0.8076 wide-grid / 0.8066 small-grid) is recorded for reference.
+Requires ``--device cuda`` (the 50k^2 exact kernel).
 
 Output (``eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json``): per
 (point, predictor) whole-map R2 + mean cosine + 1000-resample bootstrap 95% CI +
@@ -1529,10 +1533,13 @@ def fit_krr_nystrom(
 def _validate_nystrom_vs_exact(
     X, Y, pools, val, te, *, m_centers, gamma_mult, krr_lambdas, seed, dev, tol
 ):
-    """Run Nystrom AND exact KRR on the SAME 50k train slice; assert R2 agreement.
+    """Run Nystrom AND exact KRR on the SAME 50k train slice; compare test R2.
 
-    A gap > tol means the Nystrom fitter is numerically biased vs exact — FAIL LOUD
-    (not a shrug), per the brief. Requires cuda (the 50k^2 exact kernel)."""
+    Genuine errors (exceptions, non-finite R2) FAIL FAST. A finite gap > tol is
+    NOT an error: the returned dict carries ``gate_passed: false`` (plus the
+    measured exact/nystrom R2, gap, tol, m) and the caller CONTINUES — the
+    layer's KRR arm is flagged, headline carried by the MLP arms (plan v10
+    Risks-table disposition). Requires cuda (the 50k^2 exact kernel)."""
     if dev.type != "cuda":
         raise SystemExit("--validate-krr requires --device cuda (the exact 50k^2 KRR kernel)")
     pool = pools["lmsys"]  # pure-lmsys 50k slice (comparable to the n50k exact anchor)
@@ -1576,10 +1583,24 @@ def _validate_nystrom_vs_exact(
         tol,
         time.time() - ts,
     )
-    if gap > tol:
+    if not (np.isfinite(r2_ex) and np.isfinite(r2_ny)):
+        # genuine numerical failure (NaN/inf R2) — NOT a tolerance miss; fail fast.
         raise SystemExit(
-            f"Nystrom-vs-exact KRR gap {gap:.4f} > tol {tol:.4f} at n={n} (exact {r2_ex:.4f}, "
-            f"nystrom {r2_ny:.4f}) — the Nystrom fitter is biased; raise --krr-nystrom-centers"
+            f"Nystrom-vs-exact validation produced non-finite R2 at n={n} m={m_centers} "
+            f"(exact {r2_ex}, nystrom {r2_ny}) — genuine error, failing fast"
+        )
+    gate_passed = bool(gap <= tol)
+    if not gate_passed:
+        logger.warning(
+            "[krr-validate] GATE FAIL (flag-and-continue): Nystrom-vs-exact gap %.4f > tol %.4f "
+            "at n=%d m=%d (exact R2 %.4f, nystrom R2 %.4f) — KRR arm flagged gate_passed=false; "
+            "continuing per plan v10 Risks disposition (headline carried by MLP arms)",
+            gap,
+            tol,
+            n,
+            m_centers,
+            r2_ex,
+            r2_ny,
         )
     return {
         "n": int(n),
@@ -1588,6 +1609,7 @@ def _validate_nystrom_vs_exact(
         "nystrom_r2": float(r2_ny),
         "gap": float(gap),
         "tol": float(tol),
+        "gate_passed": gate_passed,
         "committed_n50k_exact_r2_widegrid": N50K_EXACT_R2_WIDEGRID,
         "committed_n50k_exact_r2_smallgrid": N50K_EXACT_R2_SMALLGRID,
         "exact_selected": meta_ex.get("selected"),
@@ -1802,6 +1824,12 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                 dev=dev,
                 tol=args.krr_validate_tol,
             )
+            if lres["nystrom_validation"].get("gate_passed", True) is False:
+                logger.warning(
+                    "[krr-validate] L%d KRR arm FLAGGED (gate_passed=false) — "
+                    "fitting all predictors anyway",
+                    li,
+                )
             C.write_json_atomic(args.out_json, results)
         for pn in want_points:
             _, n_target, mode = point_by_name[pn]
@@ -1835,6 +1863,14 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                 )
                 curve = _curve(pred_te, Y[test], args.n_boot, args.seed)
                 curve["fit_meta"] = meta
+                if name == "krr_nystrom" and isinstance(lres.get("nystrom_validation"), dict):
+                    # mirror the per-layer Nystrom-vs-exact gate outcome into the KRR
+                    # arm's fit_meta so the readout/analyzer can flag the arm without
+                    # joining on nystrom_validation (key absent on legacy records that
+                    # predate the flag = gate passed; a FAIL used to hard-raise).
+                    curve["fit_meta"]["nystrom_gate_passed"] = bool(
+                        lres["nystrom_validation"].get("gate_passed", True)
+                    )
                 curve["wall_time_s"] = round(time.time() - ts, 1)
                 if args.persist_weights:
                     assert payload, f"--persist-weights but no payload for {name}"
