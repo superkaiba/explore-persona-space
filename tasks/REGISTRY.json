@@ -4713,8 +4713,8 @@
     "1604": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1604",
-      "status": "proposed",
+      "path": "tasks/planning/1604",
+      "status": "planning",
       "title": "workflow-fix: wire identity+bias baseline + kNN retrieval mandate into planner/critic lenses"
     },
     "161": {
