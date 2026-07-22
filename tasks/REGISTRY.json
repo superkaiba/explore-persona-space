@@ -4692,8 +4692,8 @@
     "1601": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1601",
-      "status": "reviewing",
+      "path": "tasks/completed/1601",
+      "status": "completed",
       "title": "workflow-fix: arm on-demand retry on GCP queue-timeout path"
     },
     "1602": {
