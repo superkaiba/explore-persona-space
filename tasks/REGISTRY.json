@@ -4643,8 +4643,8 @@
     "1596": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1596",
-      "status": "proposed",
+      "path": "tasks/planning/1596",
+      "status": "planning",
       "title": "daily-fix: queue-vanish failover retries GCP on-demand"
     },
     "1597": {
