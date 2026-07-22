@@ -6857,6 +6857,9 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
         "   brief's stale-checkpoint disposition before launch, confirming\n"
         "   the resume glob resolves as the disposition requires (empty /\n"
         "   the fresh path / exactly the RETAINED expected paths).\n"
+        "   On a MooseFS-backed pod (`/workspace` lane), ALSO run the MooseFS\n"
+        "   content read of every fix-touched path — `git hash-object -- <f>`\n"
+        "   vs `git rev-parse HEAD:<f>` (#1112).\n"
         "3. **Run preflight.**\n"
         "\n"
         "Decoy AFTER the span: the glob resolves EMPTY unconditionally.\n"
@@ -6891,11 +6894,13 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
     ),
 }
 
-# The three load-bearing pins (#1181 plan § deviations): the disposition trio,
-# the disposition-conditional confirm, and the fix_sha= note-token duty.
+# The four load-bearing pins (#1181 plan § deviations; MooseFS added by #1594):
+# the disposition trio, the disposition-conditional confirm, the fix_sha=
+# note-token duty, and the MooseFS content-read duty (#1112).
 _CRASH_FIX_TRIO_TOKEN = "empty / the fresh path / exactly the RETAINED expected paths"
 _CRASH_FIX_CONFIRM_TOKEN = "confirming the resume glob resolves as the disposition requires"
 _CRASH_FIX_SHA_TOKEN = "records `fix_sha=<sha>` and the executed disposition"
+_CRASH_FIX_MOOSEFS_TOKEN = "MooseFS content read"
 
 
 def _write_crash_fix_tree(tmp_path, bodies: dict[str, str] | None = None) -> None:
@@ -6993,12 +6998,19 @@ def test_crash_fix_relaunch_contract_fails_on_duplicate_anchor(tmp_path) -> None
             _CRASH_FIX_SHA_TOKEN,
             id="fix-sha-note-token",
         ),
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "ALSO run the MooseFS\n   content read of every fix-touched path",
+            "ALSO run a served-bytes\n   check of every fix-touched path",
+            _CRASH_FIX_MOOSEFS_TOKEN,
+            id="moosefs-content-read",
+        ),
     ],
 )
 def test_crash_fix_relaunch_contract_fails_on_missing_load_bearing_token(
     tmp_path, surface, old, new, token
 ) -> None:
-    """Deleting any of the THREE load-bearing pins from its fixture FAILs with
+    """Deleting any of the FOUR load-bearing pins from its fixture FAILs with
     a missing-token error naming that token — mutation-visibility for the
     surfaces table: an edit that drops one of these tokens from
     ``_CRASH_FIX_CONTRACT_SURFACES`` makes the corresponding case pass on the

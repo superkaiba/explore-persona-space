@@ -10104,6 +10104,8 @@ _CRASH_FIX_CONTRACT_SURFACES: tuple[tuple[tuple[str, ...], str, str, str, tuple[
             "execute the brief's stale-checkpoint disposition before launch",
             "confirming the resume glob resolves as the disposition requires",
             "empty / the fresh path / exactly the RETAINED expected paths",
+            # MooseFS served-bytes content-read duty on same-pod relaunches (#1112/#1594)
+            "MooseFS content read",
         ),
     ),
     (
