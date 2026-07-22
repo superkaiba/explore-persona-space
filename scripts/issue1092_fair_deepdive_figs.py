@@ -126,6 +126,82 @@ def fig_error_vs_spread() -> None:
     plt.close(fig)
 
 
+def fig_fair_grid() -> None:
+    """Restructured fair comparison with explicit axes of variation:
+    panels = target grain, x-groups = basis, color = input arm; per-arm
+    achievable ceilings as dashed ticks (single-context panel only — the
+    banked Panel-B denominators; averaged-grain ceilings are not
+    artifact-backed)."""
+    fc = json.loads(
+        (
+            PROJECT_ROOT / "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json"
+        ).read_text()
+    )
+    meta = json.loads(
+        (
+            PROJECT_ROOT / "figures/issue_1092/fair_comparison_prefix_vs_context.meta.json"
+        ).read_text()
+    )
+    bases = ["ambient", "pca48"]
+    cell = fc["cells"]["cell_inst_own"]["bases"]
+
+    def _r2(basis: str, grain: str, arm: str) -> float:
+        d = cell[basis][grain]
+        key = [k for k in d if k.startswith(f"r2_{arm}")][0]
+        return float(d[key])
+
+    def _ceiling(basis: str, arm: str) -> float | None:
+        rc = meta["raw_ceilings"][basis]
+        if arm == "prefix":
+            return rc.get("prefix_between_prefix_share_full")
+        return rc.get("context_mlp_companion_ceiling") or rc.get(
+            "context_additive_ceiling_densecore"
+        )
+
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    arms = [("prefix", "Prefix-end map", colors[1]), ("context", "Context map", colors[0])]
+    grains = [
+        ("averaged_grain", "Averaged targets\n(per-prefix profile over 48 queries)", False),
+        ("single_grain", "Single-context targets\n(one answer state per row)", True),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharey=True)
+    x = np.arange(len(bases))
+    w = 0.36
+    for ax, (grain, title, show_ceilings) in zip(axes, grains, strict=True):
+        for i, (arm, label, color) in enumerate(arms):
+            vals = [_r2(b, grain, arm) for b in bases]
+            ax.bar(x + (i - 0.5) * w, vals, w, label=label, color=color)
+            if show_ceilings:
+                for xc, b in zip(x, bases, strict=True):
+                    c = _ceiling(b, arm)
+                    if c is not None:
+                        ax.plot(
+                            [xc + (i - 1) * w, xc + i * w],
+                            [c, c],
+                            ls="--",
+                            color="0.25",
+                            lw=1.3,
+                        )
+        ax.set_xticks(x)
+        ax.set_xticklabels(["ambient basis", "pca48 basis"])
+        ax.set_title(title)
+        ax.set_ylim(0, 1.0)
+    axes[0].set_ylabel("held-out $R^2$")
+    handles, labels = axes[0].get_legend_handles_labels()
+    from matplotlib.lines import Line2D
+
+    handles.append(Line2D([0], [0], ls="--", color="0.25", lw=1.3))
+    labels.append("achievable ceiling per arm")
+    axes[0].legend(handles, labels, loc="upper left", frameon=False, fontsize=9)
+    fig.suptitle(
+        "Prefix-end vs context map by target grain — instruct model, own answers, layer 14"
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "fair_comparison_grid", dir=FIGDIR)
+    plt.close(fig)
+
+
 def fig_shrinkage() -> None:
     dd = json.loads((DD / "deepdive.json").read_text())
     labels, glob_res, diag_res = [], [], []
