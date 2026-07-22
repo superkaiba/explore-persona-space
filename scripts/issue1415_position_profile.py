@@ -776,6 +776,12 @@ def _capture_cell(cfg: ProfileConfig, cell: ProfileCell, model, tok, state: Mani
     kept_indices = [
         i for i, t in enumerate(draws) if len(tok(t, add_special_tokens=False)["input_ids"]) > 0
     ]
+    # Per-cell decode-round-trip mismatch telemetry (plan §8 risk 1): a
+    # tokenize->decode drift is shared by every condition AND the parent
+    # reference (same rig), so this is persisted diagnostics, not a gate.
+    n_roundtrip_mismatch = sum(
+        1 for t in draws if t and tok.decode(tok(t, add_special_tokens=False)["input_ids"]) != t
+    )
     cap = capture_binned_answer_profiles(
         model,
         tok,
@@ -802,6 +808,7 @@ def _capture_cell(cfg: ProfileConfig, cell: ProfileCell, model, tok, state: Mani
         "comp_token_counts": cap["comp_token_counts"],
         "kept_indices": kept_indices,
         "n_empty_completions": cap["n_empty_completions"],
+        "n_roundtrip_mismatch": n_roundtrip_mismatch,
         "repro": _repro(cfg),
     }
     _save_pt_atomic(out_path, record)
