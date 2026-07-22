@@ -193,7 +193,7 @@ I recomputed the aggregated layer-19 fits from the persisted store with identica
 
 ### The four character maps are dominantly one shared operator with a small per-character slope residual
 
-Cross-persona reads at layer 19, scene-aggregated cells: 4×4 held-out transfer matrices (row = source map, column = target points; diagonal = within-cells); the shared-vs-specific lattice per persona (M0 global map, M1 + per-persona offsets, M2 per-persona maps); operator statistics against their nulls, with cross-project anchors.
+Cross-persona reads at layer 19, scene-aggregated cells: 4×4 held-out transfer matrices (source map × target points; diagonal = within-cells); the shared-vs-specific lattice per persona (M0 global map, M1 + per-persona offsets, M2 per-persona maps); operator statistics against their nulls, with cross-project anchors.
 
 ![Cross-persona transfer matrices at layer 19, base and instruct](https://raw.githubusercontent.com/superkaiba/explore-persona-space/82d85db5ee9ad578ca36f7320266cb98e2aa64c2/figures/issue_1310/xpersona_transfer_matrix.png)
 
