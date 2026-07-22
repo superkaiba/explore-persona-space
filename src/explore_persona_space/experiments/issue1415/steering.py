@@ -442,3 +442,108 @@ def capture_vectors(
             records[b]["n_empty_completions"] = n_empty
 
     return {"layers": list(layers), "per_context": records}
+
+
+# ── position-binned answer profiles (answer-position-shift-profile) ───
+
+# The 13 overlapping bin views over answer positions 0..n-1 (plan v8 §3.2):
+# two absolute early bins, ten relative deciles, one absolute last bin.
+BIN_NAMES: tuple[str, ...] = (
+    "first",
+    "tok2_5",
+    *(f"dec{d}" for d in range(1, 11)),
+    "last",
+)
+
+
+def bin_matrix(n: int) -> torch.Tensor:
+    """Pooling matrix ``(13, n)`` over answer positions ``0..n-1``.
+
+    Rows follow :data:`BIN_NAMES` — ``first`` (idx 0), ``tok2_5`` (idx 1-4),
+    relative deciles ``dec1..dec10`` (``clamp((10*idx)//n, max=9)``), ``last``
+    (idx n-1). Bins are deliberately OVERLAPPING views, not a partition
+    (first ⊂ dec1, last ⊂ dec10). Non-empty rows sum to 1 (mean-pooling
+    weights); an EMPTY bin (e.g. deciles at n < 10) is a NaN row — einsum
+    against it yields NaN, the pre-registered short-span fallback (excluded
+    from within-bin means downstream, never a zero). Asserts ``n >= 1``.
+    """
+    assert n >= 1, n
+    idx = torch.arange(n)
+    masks = [
+        idx == 0,  # "first"   (absolute)
+        (idx >= 1) & (idx <= 4),  # "tok2_5"  (absolute)
+    ]
+    dec = torch.clamp((10 * idx) // n, max=9)  # relative deciles
+    masks += [dec == d for d in range(10)]  # "dec1".."dec10"
+    masks += [idx == n - 1]  # "last"    (absolute)
+    M = torch.stack([m.float() for m in masks])
+    assert M.shape == (len(BIN_NAMES), n), M.shape
+    s = M.sum(1, keepdim=True)
+    return torch.where(s > 0, M / s, torch.nan)
+
+
+@torch.no_grad()
+def capture_binned_answer_profiles(
+    model,
+    tokenizer,
+    context: dict,
+    completions: list[str],
+    layers: list[int],
+    batch_size: int = 8,
+) -> dict:
+    """Per-position-binned answer profiles for ONE context's completions.
+
+    Mirrors :func:`capture_vectors`'s V_a pass EXACTLY — token-ID
+    concatenation ``ctx_ids + comp_ids`` (never re-tokenized concatenated
+    strings; BPE-seam gotcha), the same :func:`_right_pad_batch` +
+    :func:`extract_layer_activations` forward (``logits_to_keep=1`` inherited),
+    the same answer span ``slice(ctx_len, ctx_len + len(comp_ids))`` — with the
+    mean-pool replaced by the 13-bin :func:`bin_matrix` einsum. Per KEPT
+    completion it ALSO returns the plain span mean (one extra reduction; the
+    §3.5 parity-gate input). Empty completions are dropped with a recorded
+    count; all-empty fails loud (parent convention).
+
+    Returns a dict with fp32 CPU tensors:
+    ``profiles`` ``(n_kept, 13, L, H)`` (NaN rows for empty bins),
+    ``span_mean`` ``(n_kept, L, H)``, plus ``layers``, ``bin_names``,
+    ``comp_token_counts`` (kept completions, in kept order) and
+    ``n_empty_completions``.
+    """
+    assert len(completions) >= 1 and len(layers) >= 1
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    device = next(model.parameters()).device
+    pad_id = tokenizer.pad_token_id
+
+    ctx_ids = context_token_ids(tokenizer, context)
+    ctx_len = len(ctx_ids)
+    comp_ids_list = [tokenizer(text, add_special_tokens=False)["input_ids"] for text in completions]
+    kept = [ids for ids in comp_ids_list if len(ids) > 0]
+    n_empty = len(comp_ids_list) - len(kept)
+    assert len(kept) >= 1, f"all {len(comp_ids_list)} completions empty for context {context}"
+
+    profiles: list[torch.Tensor] = []
+    span_means: list[torch.Tensor] = []
+    for start in range(0, len(kept), batch_size):
+        chunk = kept[start : start + batch_size]
+        rows = [ctx_ids + cids for cids in chunk]
+        input_ids, mask = _right_pad_batch(rows, pad_id, device)
+        captured = extract_layer_activations(model, input_ids, layers, attention_mask=mask)
+        for j, cids in enumerate(chunk):
+            span = slice(ctx_len, ctx_len + len(cids))  # answer span, unpadded coords
+            acts = torch.stack([captured[L][j, span].float() for L in layers])  # (L, n, H)
+            assert acts.shape[:2] == (len(layers), len(cids)), acts.shape
+            M = bin_matrix(len(cids)).to(acts)  # (13, n); NaN rows for empty bins
+            prof = torch.einsum("bn,lnh->blh", M, acts)  # (13, L, H)
+            profiles.append(prof.cpu())
+            span_means.append(acts.mean(dim=1).cpu())  # (L, H)
+        del captured
+
+    return {
+        "layers": list(layers),
+        "bin_names": list(BIN_NAMES),
+        "profiles": torch.stack(profiles),  # (n_kept, 13, L, H) fp32
+        "span_mean": torch.stack(span_means),  # (n_kept, L, H) fp32
+        "comp_token_counts": [len(c) for c in kept],
+        "n_empty_completions": n_empty,
+    }

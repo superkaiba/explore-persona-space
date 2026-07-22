@@ -44,11 +44,13 @@ export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 
 SMOKE=0
 REPLICATE=0
+POSITION_PROFILE=0
 EXTRA_ARGS=()
 for a in "$@"; do
   case "$a" in
     --smoke) SMOKE=1 ;;
     --replicate) REPLICATE=1 ;;
+    --position-profile) POSITION_PROFILE=1 ;;
     *) EXTRA_ARGS+=("$a") ;;
   esac
 done
@@ -102,6 +104,124 @@ if [ "$SMOKE" -eq 1 ]; then
   TINY_FLAG=(--tiny)
   KIND="epm:smoke-result"
   OUT_ROOT="data/issue_1415/tiny_smoke/out"
+fi
+
+# ── answer-position-shift-profile branch (--position-profile) ───────
+# Same-issue follow-up (plan v8): re-forward the parent's PERSISTED
+# completions through the UNHOOKED binned capture rig (single-GPU intent —
+# sequential batched forwards saturate the one card; nothing to shard).
+# Driver phases p0_stage -> p1_parity -> p2_capture -> p3_profiles ->
+# p4_upload run in ONE invocation; the §3.5 parity gate is a DESIGNED
+# artifact-routed HALT (rc=8 + parity_gate_report.json — never a bare rc=1).
+if [ "$POSITION_PROFILE" -eq 1 ]; then
+  PP_OUT_ROOT="eval_results/issue_1415/answer_position_shift_profile"
+  if [ "$SMOKE" -eq 1 ]; then
+    PP_OUT_ROOT="data/issue_1415/tiny_smoke/position_profile/out"
+  fi
+  echo "[phase=position_profile] binned answer-profile run (smoke=${SMOKE})"
+  set +e
+  uv run python scripts/issue1415_position_profile.py \
+    ${TINY_FLAG[@]+"${TINY_FLAG[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
+    > "$LOG_DIR/issue-${ISSUE}-position-profile.log" 2>&1
+  PP_RC=$?
+  set -e
+  PP_HALT=""
+  if [ "$PP_RC" -ne 0 ]; then
+    if [ "$PP_RC" -eq 8 ] && grep -q '"fired": true' "$PP_OUT_ROOT/parity_gate_report.json" 2>/dev/null; then
+      PP_HALT="parity_gate"
+      echo "[phase=kill_halt] §3.5 parity gate HALTed the sweep — reporting (see $PP_OUT_ROOT/parity_gate_report.json)"
+    else
+      echo "[phase=position_profile_failed] driver exited rc=${PP_RC} with no matching parity report" >&2
+      exit "$PP_RC"
+    fi
+  fi
+
+  if [ "$SMOKE" -eq 0 ]; then
+    echo "[phase=commit_results] committing position-profile JSONs to ${GIT_BRANCH}"
+    commit_push_verify \
+      "issue-1415 answer-position-shift-profile pod run: per-pair profiles, summary, null bands, lengths, parity report" \
+      "$PP_OUT_ROOT"
+  fi
+
+  echo "[phase=sentinel] writing results sentinel"
+  PP_KIND="epm:results"
+  if [ "$SMOKE" -eq 1 ]; then PP_KIND="epm:smoke-result"; fi
+  uv run python - "$PP_KIND" "$ISSUE" "$GIT_SHA" "$PP_OUT_ROOT" "$SMOKE" "$PP_HALT" "$LOG_DIR" <<'PY'
+import json
+import sys
+import time
+from pathlib import Path
+
+kind, issue, git_sha, out_root, smoke, halt, log_dir = sys.argv[1:8]
+# Honor the dispatcher's LOG_DIR (a VM smoke redirects it; the pod default is
+# /workspace/logs) — the parent heredocs' bare /workspace/logs probe leaked a
+# VM smoke sentinel into the pod-side namespace.
+logs_dir = Path(log_dir)
+logs_dir.mkdir(parents=True, exist_ok=True)
+kind_slug = kind.replace(":", "_")
+path = logs_dir / f"issue-{issue}-{kind_slug}-{int(time.time())}.json"
+
+eval_paths = sorted(
+    str(p)
+    for pat in (
+        "per_pair_profiles.json",
+        "summary.json",
+        "answer_length_distributions.json",
+        "null_bands_binned.json",
+        "parity_gate_report.json",
+        "revisions.json",
+    )
+    for p in Path(out_root).glob(pat)
+)
+summary_line = (
+    "issue-1415 answer-position-shift-profile GPU run complete: 336 persisted-completion "
+    "cells re-forwarded UNHOOKED into 13-bin position profiles (L14+L20 matched-layer, "
+    "both arms, disjoint-halves primary; Delta early-vs-late lattice in summary.json)"
+)
+if halt:
+    summary_line = (
+        f"issue-1415 answer-position-shift-profile HALTED by the pre-registered §3.5 "
+        f"parity gate; see {out_root}/parity_gate_report.json"
+    )
+note = {
+    "summary": summary_line,
+    "followup_label": "answer-position-shift-profile",
+    "kill_halt": halt or None,
+    "eval_paths": eval_paths,
+    "reproducibility_card": {
+        "adapter_paths": "n/a (no training in this follow-up)",
+        "wandb_url": "n/a (no training metrics)",
+        "hf_artifact_prefixes": [
+            "analysis_tensors/issue_1415/position_profile/ (336 per-cell binned fp16 stores + manifest.json)",
+            "raw_completions/issue_1415/ (REUSED parent inputs at the pinned revisions, not re-generated)",
+        ],
+        "eval_json_paths": eval_paths,
+        "seeds": {
+            "null_pool": 14150,
+            "bootstrap": 14151,
+            "half_split": "even/odd draw indices (deterministic, parent recount convention)",
+        },
+        "git_commit": git_sha,
+    },
+    "smoke": bool(int(smoke)),
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": kind,
+    "version": 1,
+    "note": json.dumps(note, indent=2),
+    "task_id": int(issue),
+    "by": "issue1415_dispatch",
+    "smoke": bool(int(smoke)),
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+}
+with open(path, "w") as f:
+    json.dump(payload, f, indent=2)
+print(f"wrote sentinel {path}")
+PY
+
+  echo "[phase=done]"
+  exit 0
 fi
 
 # ── l14-behavioral-replication branch (--replicate) ─────────────────
