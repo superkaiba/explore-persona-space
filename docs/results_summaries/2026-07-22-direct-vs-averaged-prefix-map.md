@@ -9,9 +9,9 @@
 ## TLDR
 
 - The direct prefix vector is much worse than the averaged prefix vector at predicting average mean answer activation: held-out $R^2$ 0.37 vs 0.82 in the instruct model; 0.26 vs 0.76 in the base model (Result 1).
-- However, it predicts averaged behavior expression **as well as the averaged prefix vector** (r 0.76/0.89 vs 0.77/0.89), indicating that the part of the answer state the direct vector fails to predict is **not** the behaviorally relevant part (at least for sycophancy and hallucination). In other words, the model has already "decided" whether to be sycophantic or to hallucinate before the query (Result 2).
+- However, it predicts averaged behavior expression **as well as the averaged prefix vector** (r 0.76/0.89 vs 0.77/0.89), indicating that the part of the answer state the direct vector fails to predict is **not** the behaviorally relevant part (at least for sycophancy and hallucination). In other words, the model has already "decided" how inclined it is to be sycophantic or to hallucinate before the query; the query decides whether that inclination is expressed (per-answer outcomes stay mostly query-driven — Result 2's scope caveat).
 - The direct map's predictions are approximately a **uniform shrinkage ($\alpha \approx 0.6$)** of the averaged map's — the same deviations from the average answer state at ~60% amplitude plus noise (Result 3).
-- **Why averaging helps:** most answer-state variance is query-driven (query 60–72%, prefix 10–12%, interaction 18–28%), so single-query behavior reads are query-noise-dominated and averaging cancels it (r 0.48 at N=1 → 0.77 at N=48) (Result 4).
+- **Why averaging is needed at all — and why it's not what makes the averaged vector better:** most answer-state variance is query-driven (query 60–72%, prefix 10–12%, interaction 18–28%), so a single-context behavior read is query-noise-dominated and averaging cancels the noise (r 0.48 at N=1 → 0.77 at N=48); the direct prefix vector never had query noise and reads 0.76 from one state. This explains how the context-based read catches UP to the direct read on behavior (parity) — it does NOT explain the averaged vector's answer-state advantage (Result 1), which survives on query-averaged targets where the noise is already cancelled: the averaged states carry prefix information the prefix-end state doesn't linearly hold (Result 4).
 - **When the averaged map fails on real data: whitened spread is the difficulty axis — but it is not averaging-specific.** Raw-L2 spread read null/inverted and length looked like the axis (turns ρ +0.83); whitened within-prefix spread — the constructed substrate's own metric — predicts the averaged map's per-prefix error at ρ +0.93 (instruct) / +0.89 (base), surviving length control (+0.78/+0.69) AND an answer-side-dispersion control (+0.91/+0.80 — the "noisy target" explanation is refuted). But it predicts every construction's error equally, so it marks generally-hard (atypical) prefixes rather than averaging failure; the genuine averaging-specific failure — the nonlinear (Jensen/curvature) gap — is real and tracks RAW dispersion instead (Result 5).
 
 ## Methodology (shared)
@@ -58,7 +58,7 @@ Result 1 says the direct prefix vector loses a lot of answer-state prediction. I
 
 **Takeaways**
 - Parity: sycophancy r = 0.759 (direct) vs 0.774 (averaged); hallucination 0.888 vs 0.887; paired difference +0.015, 95% CI [−0.026, +0.052]. Reliability ceilings are 0.86/0.91, so both reads sit near ceiling.
-- So the part of the answer the direct prefix map is worse at predicting (Result 1) is NOT the behaviorally relevant part: the model has already "decided" whether to be sycophantic / hallucination-prone by the end of the prefix, before the query is seen.
+- So the part of the answer the direct prefix map is worse at predicting (Result 1) is NOT the behaviorally relevant part: the model has already "decided" how inclined it is to be sycophantic / hallucination-prone by the end of the prefix; the query decides whether that inclination is expressed.
 - The raw persona-vector projection inverts the parity: $\langle \text{state}, r_B \rangle$ reads sycophancy on the direct prefix vector (r 0.665) but not on the averaged one (r 0.037); hallucination projects with flipped sign (−0.43 vs −0.21). Either way the trait signal sits in $r_B$-shape (or its negation) before the query and is rotated into other directions once the query is read; the fitted probe recovers it there.
 - Instruct-only: base-model direct-prefix reads collapse (r 0.01–0.05; averaged read 0.13 sycophancy / 0.62 hallucination).
 - Scope caveat: this is average behavior for a prefix — a between-prefix disposition read that ranks contexts by how much they tilt the model. It does not predict behavior on any single query.
@@ -84,7 +84,7 @@ How do Result 1's two maps relate — is the direct map reading *different* pref
 - Plain reading: the direct map predicts the SAME deviations from the average answer state as the averaged map, in the same directions, at ~60% amplitude, plus extra noise. It is a uniformly attenuated version of the same signal, not a different read — and it is worse on 100% of 996 prefixes (mean per-prefix error ratio ≈2×).
 - For a cross-validated ridge predictor this is exactly the "same signal, lower fidelity" signature: when the input carries the target's signal with more noise, the optimal prediction hedges toward the mean in proportion to what it can explain — α ≈ 0.6 is itself a measurement of how much of the prefix information survives at the prefix-end state.
 
-### Result 4 — why averaging helps: it cancels the query component, which the direct prefix vector never had
+### Result 4 — what averaging does: it cancels the query component the direct prefix vector never had (and that is not the source of the averaged vector's advantage)
 
 **Methodology**
 - Crossed ANOVA over the dense core (99 prefixes × 48 shared queries = 4,752 contexts): decompose the answer summary into prefix / query / prefix×query interaction.
@@ -95,7 +95,7 @@ How do Result 1's two maps relate — is the direct map reading *different* pref
 **Takeaways**
 - Query explains 60–72% of answer-state variance, prefix 10–12%, interaction 18–28% (L14, ambient; instruct/base own-answer cells).
 - So each single context read is mostly "what question is this?", which is noise for persona readout. Averaging cancels it: the averaged behavior read climbs r 0.48 (N=1) → 0.70 (N=6) → 0.77 (N=48). The direct prefix vector never contained the query component, so it reads 0.76 from ONE state — for disposition monitoring, one pre-query forward pass replaces 48 queries of averaging.
-- But denoising is not the whole story: Result 1's ceiling gap (0.37 vs a ≈0.95 ceiling) means the query-averaged context states also carry prefix information — expressed through how the prefix transforms each query — that the prefix-end state does not linearly hold.
+- What this does NOT explain: the averaged vector's answer-state advantage over the direct one (Result 1). On query-averaged targets the query noise is already cancelled on the target side (ceiling ≈0.95), yet the direct vector still reaches only 0.37 vs 0.82 — a content gap, not a noise gap: the query-averaged context states carry prefix information — expressed through how the prefix transforms each query — that the prefix-end state does not linearly hold (consistent with Result 3's shrinkage: same signal at ~60% amplitude, missing the rest).
 
 ### Result 5 — when the averaged map fails on real data: whitened spread is the difficulty axis, and it dissociates from the averaging-specific failure
 
