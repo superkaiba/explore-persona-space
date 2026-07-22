@@ -818,6 +818,14 @@ def _capture_cell(cfg: ProfileConfig, cell: ProfileCell, model, tok, state: Mani
 
 
 def phase_p2(cfg: ProfileConfig, cells: list[ProfileCell], model, tok, state: Manifest) -> None:
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    # Plan §9 preamble assert (fail-loud statvfs + posix_fallocate canary —
+    # EDQUOT-aware) BEFORE any capture writes, at BOTH p2 write roots (the
+    # tensor store is the heavy write; out_root takes the manifest/JSONs —
+    # same disk on every lane, so the duplicate probe costs ~nothing).
+    assert_out_root_headroom(cfg.tensors_root, need_gb=10, phase="p2_capture")
+    assert_out_root_headroom(cfg.out_root, need_gb=10, phase="p2_capture")
     families: dict[str, list[ProfileCell]] = {}
     for c in cells:
         families.setdefault(c.cell_id.split("/", 1)[0], []).append(c)
