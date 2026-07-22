@@ -831,7 +831,7 @@ problem).
   NEVER `leaked`, whose non-re-drivable terminal is untouched), the poller
   retries the GCP ladder's STANDARD (on-demand) rungs itself — the #1112
   manual `--provisioning-model STANDARD` recovery, automated. Mechanics:
-  `backend_poll._retry_gcp_ondemand_after_vanish_refusal` →
+  `backend_poll._retry_gcp_ondemand_after_capacity_refusal` →
   `router.retry_gcp_ondemand_after_queue_vanish`, which pins
   `provisioning_model="STANDARD"` on `_gcp_ladder_specs` (base machine, then
   A100-40 when the intent fits 40 GB, pinned wide rungs when width is
