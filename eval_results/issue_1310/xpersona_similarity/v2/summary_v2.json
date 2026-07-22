@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "git_commit": "68a2afc631771853134a8b60656dafd7a6dc032d",
-    "timestamp": "2026-07-22T19:07:17Z",
+    "git_commit": "2e6075f8a487cf5a700a0c1aaa301ffaf988c802",
+    "timestamp": "2026-07-22T19:58:25Z",
     "seed": 0,
     "n": 0,
     "script": "scripts/issue1310_xpersona_similarity_v2.py",
@@ -108,7 +108,19 @@
       "operator_input_k50_obs_mean": 0.7121811529842007,
       "operator_input_k50_null_mean": 0.6499433946826817,
       "operator_output_k50_obs_mean": 0.5213922776670458,
-      "operator_output_k50_null_mean": 0.49701670929925107
+      "operator_output_k50_null_mean": 0.49701670929925107,
+      "procrustes_aligned_cosine_mean": 0.5157533431507232,
+      "procrustes_aligned_cosine_range": [
+        0.49744855452987846,
+        0.5483294055504877
+      ],
+      "procrustes_rotation_null_p975_mean": 0.00021105360994347493,
+      "procrustes_calibration_anchors": {
+        "issue825_base_vs_instruct": 0.6864,
+        "issue1345_chat_vs_plain_instruct": 0.855,
+        "issue1345_chat_vs_plain_base": 0.732,
+        "issue1345_paired_story_vs_chat": 0.455
+      }
     },
     "instruct": {
       "equality_gate_worst_abs_delta": 0.0,
@@ -197,7 +209,19 @@
       "operator_input_k50_obs_mean": 0.6760335385143081,
       "operator_input_k50_null_mean": 0.6444928029706221,
       "operator_output_k50_obs_mean": 0.5451765870321191,
-      "operator_output_k50_null_mean": 0.4871688684920128
+      "operator_output_k50_null_mean": 0.4871688684920128,
+      "procrustes_aligned_cosine_mean": 0.5929358404952204,
+      "procrustes_aligned_cosine_range": [
+        0.569614727352927,
+        0.6151882961226524
+      ],
+      "procrustes_rotation_null_p975_mean": 0.0002752667579329039,
+      "procrustes_calibration_anchors": {
+        "issue825_base_vs_instruct": 0.6864,
+        "issue1345_chat_vs_plain_instruct": 0.855,
+        "issue1345_chat_vs_plain_base": 0.732,
+        "issue1345_paired_story_vs_chat": 0.455
+      }
     }
   }
 }

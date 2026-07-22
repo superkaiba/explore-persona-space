@@ -72,6 +72,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import issue825_crossmodel_map_transfer as cm  # noqa: E402
 import issue825_fit_cells as fit825  # noqa: E402
+import issue825_map_alignment as ma  # noqa: E402
 import issue931_fit_cells as fit931  # noqa: E402
 import issue1310_common as c1310  # noqa: E402
 import issue1310_xpersona_similarity as v1  # noqa: E402
@@ -86,6 +87,15 @@ DOF_CAP = v1.DOF_CAP  # 0.9
 N_FOLDS = v1.N_FOLDS  # 5
 FIT_SEED = v1.FIT_SEED  # 0
 V1_REPARAM_DIR = Path("eval_results/issue_1310/xpersona_similarity")
+
+# Cross-project calibration anchors for the data-paired activation-Procrustes
+# aligned cosine (all computed via ma._procrustes_cosine_null, full-data).
+PROCRUSTES_ANCHORS = {
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_instruct": 0.855,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_paired_story_vs_chat": 0.455,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -106,6 +116,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="skip compute; assemble summary_v2.json + both figures from the "
         "per-model JSONs already in --out-dir (split-run pattern)",
+    )
+    ap.add_argument(
+        "--only-operator",
+        action="store_true",
+        help="recompute ONLY Leg C (operator_stats_nulled_<m>.json) and rewrite it; "
+        "reuse the existing decomposition/pred_similarity JSONs (addendum: adds the "
+        "data-paired activation-Procrustes-aligned cosine without re-running Legs A/B)",
     )
     return ap.parse_args()
 
@@ -382,6 +399,10 @@ def _op_stats(beta_a: torch.Tensor, beta_b: torch.Tensor, q: int) -> dict:
     return rec
 
 
+def _t(a: np.ndarray) -> torch.Tensor:
+    return torch.as_tensor(np.asarray(a), dtype=torch.float64)
+
+
 def _fit_beta(arrays: dict, persona: str, layer: int, y_perm=None) -> torch.Tensor:
     x = arrays[persona]["X"][:, layer, :]
     y = arrays[persona]["Y"][:, layer, :]
@@ -389,6 +410,22 @@ def _fit_beta(arrays: dict, persona: str, layer: int, y_perm=None) -> torch.Tens
         y = y[y_perm]
     beta, _lam = cm.fit_primal_beta(x, y)
     return beta.detach()
+
+
+def _procrustes_aligned_cosine(arrays: dict, a: str, b: str, layer: int, *, n_draws, seed) -> dict:
+    """DATA-PAIRED activation-Procrustes-aligned operator cosine (the project's
+    headline aligned-cosine convention — ma._procrustes_cosine_null, NOT the
+    spectrum cosine). Orthogonal input/output alignments are fit from the
+    scenario-paired activations (personas are row-aligned by scenario), beta_b
+    is rotated into beta_a's frame, then Frobenius cosine; reported with the
+    canonical random-rotation null. Full-data, matching the cross-project
+    anchors (#825 0.6864; #1345 0.855/0.732/0.455)."""
+    xa = _t(arrays[a]["X"][:, layer, :])
+    ya = _t(arrays[a]["Y"][:, layer, :])
+    xb = _t(arrays[b]["X"][:, layer, :])
+    yb = _t(arrays[b]["Y"][:, layer, :])
+    # ma._procrustes_cosine_null(Xb, Xi, Yb, Yi): aligns beta_b -> beta_i frame.
+    return ma._procrustes_cosine_null(xa, xb, ya, yb, n_draws=n_draws, seed=seed)
 
 
 def run_operator_nulled(model_kind: str, arrays: dict, args) -> dict:
@@ -428,6 +465,16 @@ def run_operator_nulled(model_kind: str, arrays: dict, args) -> dict:
                 rec["shuffle_fit_null"][f"output_subspace_k{k}"] = _agg(
                     f"output_subspace_k{k}", "mean_cos"
                 )
+            # Addendum: data-paired activation-Procrustes aligned cosine (the
+            # project headline convention; reported beside the cross-project
+            # anchors). Its own null is the canonical random-rotation null.
+            # Rotation null is ~1/d (measured ~4e-4); 3 draws suffice to confirm
+            # the observed aligned cosine clears chance — the CROSS-PROJECT ANCHORS
+            # are the real reference. Each draw is ~8s (3584^2 matmuls), so this is
+            # kept small deliberately (the addendum is "cheap").
+            rec["procrustes_aligned"] = _procrustes_aligned_cosine(
+                arrays, a, b, layer, n_draws=3, seed=args.seed + 400 + i * 10 + j
+            )
             pairs[f"{a}~{b}"] = rec
     return {
         "headline_layer": layer,
@@ -439,6 +486,14 @@ def run_operator_nulled(model_kind: str, arrays: dict, args) -> dict:
             "carries the directional evidence). spectrum_cosine is DESCRIPTIVE "
             "only — its shuffle-fit null is ~1 by the shared shrinkage profile."
         ),
+        "procrustes_note": (
+            "procrustes_aligned.observed_aligned_cosine = the DATA-PAIRED "
+            "activation-Procrustes aligned operator cosine (ma._procrustes_cosine_null, "
+            "the project headline convention; full-data, scenario-paired), reported "
+            "beside the calibration anchors. Its rotation null (null_mean/null_p975) is "
+            "the canonical random-rotation reference."
+        ),
+        "calibration_anchors": PROCRUSTES_ANCHORS,
         "pairs": pairs,
     }
 
@@ -535,45 +590,61 @@ def make_figures(res: dict, args) -> None:
         outk = [op[k]["observed"]["output_subspace_k50"]["mean_cos"] for k in labels]
         out_null = [op[k]["shuffle_fit_null"]["output_subspace_k50"]["p975"] for k in labels]
         spec = [op[k]["observed"]["spectrum_cosine"] for k in labels]
+        proc = [op[k]["procrustes_aligned"]["observed_aligned_cosine"] for k in labels]
+        proc_null = [op[k]["procrustes_aligned"]["null_p975"] for k in labels]
+        bw = 0.27
         ax.bar(
-            xx - 0.2,
-            raw,
-            0.4,
-            color=pp.paper_palette_role("baseline"),
-            label="raw Frobenius cosine",
+            xx - bw, raw, bw, color=pp.paper_palette_role("baseline"), label="raw Frobenius cosine"
         )
         ax.bar(
-            xx + 0.2,
-            outk,
-            0.4,
+            xx,
+            proc,
+            bw,
             color=pp.paper_palette_role("primary"),
+            label="data-paired Procrustes aligned cosine",
+        )
+        ax.bar(
+            xx + bw,
+            outk,
+            bw,
+            color=pp.paper_palette_role("neutral"),
             label="output-subspace k=50 mean cos",
         )
         ax.plot(
-            xx - 0.2,
+            xx - bw,
             raw_null,
             "_",
             color="0.3",
-            ms=13,
+            ms=11,
             mew=2,
             label="raw-cos shuffle-fit null p97.5",
         )
         ax.plot(
-            xx + 0.2,
+            xx, proc_null, "_", color="0.5", ms=11, mew=2, label="Procrustes rotation null p97.5"
+        )
+        ax.plot(
+            xx + bw,
             out_null,
             "_",
             color=c_acc,
-            ms=13,
+            ms=11,
             mew=2,
             label="output-subspace shuffle null p97.5",
         )
-        ax.plot(xx, spec, "^", color="0.55", ms=6, label="spectrum cosine (descriptive; null≈1)")
+        ax.plot(xx, spec, "^", color="0.55", ms=5, label="spectrum cosine (descriptive; null≈1)")
+        # Cross-project Procrustes anchors (dashed reference lines).
+        for aname, aval, acol in (
+            ("#825 base↔instruct 0.686", 0.6864, "0.35"),
+            ("#1345 chat↔plain 0.732–0.855", 0.732, "0.6"),
+            ("#1345 story↔chat 0.455", 0.455, "0.75"),
+        ):
+            ax.axhline(aval, color=acol, ls="--", lw=0.9, label=aname if col == 0 else None)
         ax.set_xticks(xx, labels, rotation=45, ha="right")
         ax.set_ylabel("operator similarity")
         ax.set_ylim(0, 1.02)
-        ax.set_title(f"{m}: operator stats vs shuffle-fit null (L{HEADLINE_LAYER})")
+        ax.set_title(f"{m}: operator similarity vs shuffle-fit null + anchors (L{HEADLINE_LAYER})")
         if col == 0:
-            ax.legend(fontsize=6.5, loc="center right")
+            ax.legend(fontsize=5.8, loc="center right", ncol=1)
 
     for col, m in enumerate(MODEL_KINDS):
         ax = axes[1, col]
@@ -660,6 +731,17 @@ def _build_summary(res: dict, models: list[str], gate_ok: bool, args) -> None:
             "operator_output_k50_null_mean": float(
                 np.mean([op[k]["shuffle_fit_null"]["output_subspace_k50"]["mean"] for k in op])
             ),
+            "procrustes_aligned_cosine_mean": float(
+                np.mean([op[k]["procrustes_aligned"]["observed_aligned_cosine"] for k in op])
+            ),
+            "procrustes_aligned_cosine_range": [
+                float(min(op[k]["procrustes_aligned"]["observed_aligned_cosine"] for k in op)),
+                float(max(op[k]["procrustes_aligned"]["observed_aligned_cosine"] for k in op)),
+            ],
+            "procrustes_rotation_null_p975_mean": float(
+                np.mean([op[k]["procrustes_aligned"]["null_p975"] for k in op])
+            ),
+            "procrustes_calibration_anchors": PROCRUSTES_ANCHORS,
         }
     c1310.write_json(args.out_dir / "summary_v2.json", summary)
 
@@ -683,6 +765,48 @@ def main() -> int:
             make_figures(res, args)
         print(f"[xpersona-v2] summary+figures from disk; gate_all_pass={gate_ok}")
         return 0 if gate_ok else 1
+
+    if args.only_operator:
+        # Addendum: PATCH the existing operator_stats_nulled_<m>.json with ONLY
+        # the data-paired activation-Procrustes cosine per pair (+ anchors),
+        # reusing the already-committed betas/shuffle-fit/principal-angle blocks
+        # byte-for-byte. Avoids the full Leg-C recompute (each _procrustes call
+        # is ~45-60s of 3584^2 matmuls; a full recompute overruns the budget).
+        cm.GCV_DOF_CAP = DOF_CAP
+        cm.LAMBDA_SELECTION = "gcv"
+        layer = HEADLINE_LAYER
+        for m in models:
+            print(f"[xpersona-v2] {m}: --only-operator (patch Procrustes into Leg C)")
+            op_path = args.out_dir / f"operator_stats_nulled_{m}.json"
+            existing = json.loads(op_path.read_text())
+            arrays = v1.load_persona_arrays(args.store_root, m)
+            for i in range(len(PERSONAS)):
+                for j in range(i + 1, len(PERSONAS)):
+                    a, b = PERSONAS[i], PERSONAS[j]
+                    existing["pairs"][f"{a}~{b}"]["procrustes_aligned"] = (
+                        _procrustes_aligned_cosine(
+                            arrays, a, b, layer, n_draws=3, seed=args.seed + 400 + i * 10 + j
+                        )
+                    )
+                    print(
+                        f"[xpersona-v2]   {m} {a}~{b}: procrustes aligned="
+                        f"{existing['pairs'][f'{a}~{b}']['procrustes_aligned']['observed_aligned_cosine']:.3f}"
+                        f" ({time.time() - t0:.0f}s)"
+                    )
+            existing["procrustes_note"] = (
+                "procrustes_aligned.observed_aligned_cosine = the DATA-PAIRED "
+                "activation-Procrustes aligned operator cosine (ma._procrustes_cosine_null, "
+                "the project headline convention; full-data, scenario-paired), reported "
+                "beside the calibration anchors. Its rotation null is the canonical "
+                "random-rotation reference (~1/d, 3 draws)."
+            )
+            existing["calibration_anchors"] = PROCRUSTES_ANCHORS
+            c1310.write_json(op_path, existing)
+            del arrays
+            gc.collect()
+            print(f"[xpersona-v2] {m}: Procrustes patched into Leg C ({time.time() - t0:.1f}s)")
+        print("[xpersona-v2] --only-operator done; run --summary-from-disk to reassemble")
+        return 0
 
     print(f"[phase=xpersona_v2] models={models} dof_cap={DOF_CAP} store_root={args.store_root}")
     for m in models:

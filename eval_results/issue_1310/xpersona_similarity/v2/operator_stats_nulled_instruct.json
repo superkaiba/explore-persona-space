@@ -58,6 +58,21 @@
           "mean": 0.5243793616121573,
           "p975": 0.5333689926169817
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.606389390284908,
+        "raw_vec_cosine": 0.3501189600081717,
+        "n_draws": 3,
+        "null_mean": 8.118949104654247e-05,
+        "null_std": 0.0004552578132583038,
+        "null_p975": 0.000560977043274131,
+        "null_max": 0.0005808730050514263,
+        "z_observed_vs_null": 1331.7908705897685,
+        "draws": [
+          0.00018295376950552044,
+          -0.0005202583014173193,
+          0.0005808730050514263
+        ]
       }
     },
     "Wren~Dana": {
@@ -106,6 +121,21 @@
           "mean": 0.5047003142321229,
           "p975": 0.5106622343833838
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.569614727352927,
+        "raw_vec_cosine": 0.2842874208868378,
+        "n_draws": 3,
+        "null_mean": -0.0001415223383526339,
+        "null_std": 0.00033492355996090104,
+        "null_p975": 0.00011865709457332229,
+        "null_max": 0.00012130679748729282,
+        "z_observed_vs_null": 1701.1530871600667,
+        "draws": [
+          -0.0006141865517530768,
+          0.00012130679748729282,
+          6.83127392078822e-05
+        ]
       }
     },
     "Wren~Vex": {
@@ -154,6 +184,21 @@
           "mean": 0.4801477826288062,
           "p975": 0.48599568058543646
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.5884169582963779,
+        "raw_vec_cosine": 0.32156651475939413,
+        "n_draws": 3,
+        "null_mean": 0.00011276483116791276,
+        "null_std": 0.0003252139568118315,
+        "null_p975": 0.000496776325068529,
+        "null_max": 0.0005177043022633553,
+        "z_observed_vs_null": 1808.9758429298479,
+        "draws": [
+          -0.0002785545671264471,
+          0.0005177043022633553,
+          9.914475836683005e-05
+        ]
       }
     },
     "HELIOS~Dana": {
@@ -202,6 +247,21 @@
           "mean": 0.4680723571914598,
           "p975": 0.46986766433604643
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.5930315993498952,
+        "raw_vec_cosine": 0.289241024840088,
+        "n_draws": 3,
+        "null_mean": -0.00019894070597653772,
+        "null_std": 0.0004021352178733207,
+        "null_p975": 0.00024516159623069067,
+        "null_max": 0.0002658274883663272,
+        "z_observed_vs_null": 1475.2016541051814,
+        "draws": [
+          -0.00014749035434640306,
+          0.0002658274883663272,
+          -0.0007151592519495372
+        ]
       }
     },
     "HELIOS~Vex": {
@@ -250,6 +310,21 @@
           "mean": 0.47353336313717415,
           "p975": 0.47741251754953606
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.6151882961226524,
+        "raw_vec_cosine": 0.3514329740834298,
+        "n_draws": 3,
+        "null_mean": 1.83029791984787e-05,
+        "null_std": 0.0001547070413277806,
+        "null_p975": 0.00021574542731208688,
+        "null_max": 0.00022899353535356146,
+        "z_observed_vs_null": 3976.3541716483865,
+        "draws": [
+          -3.5968625475929966e-05,
+          -0.0001381159722821954,
+          0.00022899353535356146
+        ]
       }
     },
     "Dana~Vex": {
@@ -298,7 +373,29 @@
           "mean": 0.4721800321503566,
           "p975": 0.4739648247077159
         }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.5849740715645623,
+        "raw_vec_cosine": 0.30746308269886935,
+        "n_draws": 3,
+        "null_mean": -0.0002482452904209465,
+        "null_std": 0.0002706210437168386,
+        "null_p975": 1.4283061138663834e-05,
+        "null_max": 2.2926621553323892e-05,
+        "z_observed_vs_null": 2162.515917663847,
+        "draws": [
+          -0.0006177179060762862,
+          -0.00014994458673987712,
+          2.2926621553323892e-05
+        ]
       }
     }
+  },
+  "procrustes_note": "procrustes_aligned.observed_aligned_cosine = the DATA-PAIRED activation-Procrustes aligned operator cosine (ma._procrustes_cosine_null, the project headline convention; full-data, scenario-paired), reported beside the calibration anchors. Its rotation null is the canonical random-rotation reference (~1/d, 3 draws).",
+  "calibration_anchors": {
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_instruct": 0.855,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_paired_story_vs_chat": 0.455
   }
 }
