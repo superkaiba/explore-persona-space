@@ -1,0 +1,951 @@
+{
+  "commit": "7f19f6747",
+  "created": "2026-07-22T23:15:22Z",
+  "figsize": [
+    14.399999999999999,
+    8.6
+  ],
+  "points": [
+    {
+      "category": "PV raw projection",
+      "within-condition Pearson r (dot readout)": 0.17225165704905313,
+      "error": 0.22054077390785579,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "h n5k linear",
+      "within-condition Pearson r (dot readout)": -0.07822249677864532,
+      "error": 0.2448025204445451,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "n1m ridge",
+      "within-condition Pearson r (dot readout)": 0.0950026624400385,
+      "error": 0.2830723695833468,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "n1m mlp w8192",
+      "within-condition Pearson r (dot readout)": -0.07150673541333781,
+      "error": 0.13333435318587916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "n1m mlp w32768",
+      "within-condition Pearson r (dot readout)": -0.003366478606171071,
+      "error": 0.18526528768350647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "n1m krr nystrom",
+      "within-condition Pearson r (dot readout)": -0.029843459240645923,
+      "error": 0.21368181436036218,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "within-condition Pearson r (dot readout)": 0.4280513347183994,
+      "error": 0.1228519770714259,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r (dot readout)": -0.06656688168628616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r (dot readout)": -0.35763317106786074,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r (dot readout)": -0.2367705506899879,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r (dot readout)": -0.2247838067817815,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r (dot readout)": -0.1953776262736525,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r (dot readout)": -0.2899714238834061,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r (dot readout)": 0.3217990870597955,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r (dot readout)": 0.3745146661294254,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r (dot readout)": 0.13197186982122946,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r (dot readout)": 0.3293741884767057,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r (dot readout)": 0.04188489958997685,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r (dot readout)": 0.17515294909336046,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r (dot readout)": 0.1373922048373183,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r (dot readout)": 0.5675030412026473,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "PV raw projection",
+      "y": 0.6023495002275518,
+      "error": 0.05320801271547776,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "h n5k linear",
+      "y": 0.5413057833384319,
+      "error": 0.060726800112246765,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "n1m ridge",
+      "y": 0.5962440517469703,
+      "error": 0.038832824257365284,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "n1m mlp w8192",
+      "y": 0.6374428522666675,
+      "error": 0.04233499640441635,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "n1m mlp w32768",
+      "y": 0.6403132348742648,
+      "error": 0.029794959276125133,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "n1m krr nystrom",
+      "y": 0.6026067135603872,
+      "error": 0.044768703532900966,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "y": 0.66419261557887,
+      "error": 0.026235948333472425,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.5486117711952504,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4797973974814084,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.5546976587722294,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.592253391730912,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.6094689089197862,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.5576250134774515,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.638648223083576,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.6550277966262059,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.601250997705902,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.63236330728696,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.6769233845397447,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.6690588274720365,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.6471624205432535,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.6911201197505209,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "PV raw projection",
+      "y": 0.41424242948618545,
+      "error": 0.11059602226554993,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "h n5k linear",
+      "y": 0.3536575739063433,
+      "error": 0.08481408192632334,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "n1m ridge",
+      "y": 0.3572281975913273,
+      "error": 0.07938383574931601,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "n1m mlp w8192",
+      "y": 0.4007853867376076,
+      "error": 0.07037827118290418,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "n1m mlp w32768",
+      "y": 0.45196457427649167,
+      "error": 0.07958551153802029,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "n1m krr nystrom",
+      "y": 0.47686425246109476,
+      "error": 0.06862605491406049,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "y": 0.573917120905655,
+      "error": 0.09397366400171109,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.30065727963264566,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.26690217642208797,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.2762635948569581,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.32760900947837684,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.37126598878324424,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.4046437550175568,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.4757184050822588,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.5218493241637455,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.43653034027473464,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.43503126635559014,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.4683655518441852,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.5304370118592848,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.5418958648456778,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.663665733085681,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "category": "PV raw projection",
+      "within-condition Pearson r (dot readout)": 0.3447799771956705,
+      "error": 0.15298923889615054,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "h n5k linear",
+      "within-condition Pearson r (dot readout)": 0.5748838459092711,
+      "error": 0.13436287783847195,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "n1m ridge",
+      "within-condition Pearson r (dot readout)": 0.5505615771050815,
+      "error": 0.15200827841973036,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "n1m mlp w8192",
+      "within-condition Pearson r (dot readout)": 0.6550577258112569,
+      "error": 0.11149159530671304,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "n1m mlp w32768",
+      "within-condition Pearson r (dot readout)": 0.6178808503241845,
+      "error": 0.1283082914745869,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "n1m krr nystrom",
+      "within-condition Pearson r (dot readout)": 0.6145664072882986,
+      "error": 0.14182421872531226,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "within-condition Pearson r (dot readout)": 0.7132847666145685,
+      "error": 0.2373965490756225,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r (dot readout)": 0.20865795130215542,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r (dot readout)": 0.44888208995533596,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r (dot readout)": 0.4095894119486284,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r (dot readout)": 0.5532497729981372,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r (dot readout)": 0.5028596659591892,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r (dot readout)": 0.47871921070131573,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r (dot readout)": 0.4399236072798936,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r (dot readout)": 0.5146364290944565,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r (dot readout)": 0.7176078456322799,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r (dot readout)": 0.7136059687880891,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r (dot readout)": 0.7762329636115632,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r (dot readout)": 0.759476248908363,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r (dot readout)": 0.7623676481519402,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r (dot readout)": 0.9147167054311386,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "category": "PV raw projection",
+      "y": 0.5519739189001603,
+      "error": 0.037815225039126654,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "h n5k linear",
+      "y": 0.6947032652069816,
+      "error": 0.07777737484834996,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "n1m ridge",
+      "y": 0.6780300629320758,
+      "error": 0.09994685981797147,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "n1m mlp w8192",
+      "y": 0.6719122426794911,
+      "error": 0.09430416438807071,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "n1m mlp w32768",
+      "y": 0.6686579690687721,
+      "error": 0.10898160668837581,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "n1m krr nystrom",
+      "y": 0.6736805618843322,
+      "error": 0.12139624879516975,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "y": 0.725817648089209,
+      "error": 0.06762713718945706,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.5106645091288102,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.6010445629532256,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.5506386990351869,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.5526145971332437,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.529804455526113,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.5248931155241496,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "y": 0.6463781950415507,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.5862949592070635,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.7565993126499255,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.7505324186711299,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.7412229259093851,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.7477676689028646,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "y": 0.7676856131144891,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.7816324694204648,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "category": "PV raw projection",
+      "y": 0.4720784506904012,
+      "error": 0.10652075758015239,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "h n5k linear",
+      "y": 0.4828848017500724,
+      "error": 0.10759032760127796,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "n1m ridge",
+      "y": 0.49012472004682717,
+      "error": 0.12144949703898289,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "n1m mlp w8192",
+      "y": 0.4837055472521497,
+      "error": 0.12202631505483291,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "n1m mlp w32768",
+      "y": 0.508703412274073,
+      "error": 0.11359399719494784,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "n1m krr nystrom",
+      "y": 0.539307983816468,
+      "error": 0.10473707293405135,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "y": 0.5147335834381551,
+      "error": 0.10377931078161554,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": 0.3926595258397759,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": 0.3890397458928402,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.3899844537669658,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "y": 0.3902040058013003,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": 0.42101868478264926,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "y": 0.4569431587077198,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "y": 0.4357970495890366,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 0.6057010410000807,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.6042204010953961,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.6328834478449316,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 0.6342566359109661,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.6482066791725449,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "y": 0.6664173045758225,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "y": 0.6433556711522677,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 126,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil \u2014 system prompting (L14)",
+        "ylabel": "within-condition Pearson r (dot readout)",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 system prompting (L26)",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 system prompting (L19 (substitute layer))",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 many-shot (L26)",
+        "ylabel": "within-condition Pearson r (dot readout)",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 many-shot (L26)",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 many-shot (L26 (substitute layer))",
+        "xticklabels": [
+          "PV raw projection",
+          "h n5k linear",
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom",
+          "oracle (true answer proj.)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

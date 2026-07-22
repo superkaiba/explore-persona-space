@@ -1,0 +1,136 @@
+{
+  "commit": "7f19f6747",
+  "created": "2026-07-22T23:15:27Z",
+  "figsize": [
+    6.4,
+    4.4
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "held-out whole-map R2 (pinned test)": 0.6708212397689644,
+      "series": "n1m ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out whole-map R2 (pinned test)": 0.7541708417500046,
+      "series": "n1m ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out whole-map R2 (pinned test)": 0.683922951725668,
+      "series": "n1m ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out whole-map R2 (pinned test)": 0.7593135255668365,
+      "series": "n1m mlp w8192",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out whole-map R2 (pinned test)": 0.8103576072186821,
+      "series": "n1m mlp w8192",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out whole-map R2 (pinned test)": 0.7580715905033035,
+      "series": "n1m mlp w8192",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out whole-map R2 (pinned test)": 0.7579235711036836,
+      "series": "n1m mlp w32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out whole-map R2 (pinned test)": 0.8134194594608872,
+      "series": "n1m mlp w32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out whole-map R2 (pinned test)": 0.7722463827028128,
+      "series": "n1m mlp w32768",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out whole-map R2 (pinned test)": 0.743291369721075,
+      "series": "n1m krr nystrom",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out whole-map R2 (pinned test)": 0.8066491770626179,
+      "series": "n1m krr nystrom",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out whole-map R2 (pinned test)": 0.7479334550888455,
+      "series": "n1m krr nystrom",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "n1m map fit quality across capture layers",
+        "xlabel": "layer",
+        "ylabel": "held-out whole-map R2 (pinned test)",
+        "legend_labels": [
+          "n1m ridge",
+          "n1m mlp w8192",
+          "n1m mlp w32768",
+          "n1m krr nystrom"
+        ],
+        "xticklabels": [
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.66",
+          "0.68",
+          "0.70",
+          "0.72",
+          "0.74",
+          "0.76",
+          "0.78",
+          "0.80",
+          "0.82",
+          "0.84"
+        ]
+      }
+    ],
+    "series": [
+      "n1m ridge",
+      "n1m mlp w8192",
+      "n1m mlp w32768",
+      "n1m krr nystrom"
+    ]
+  }
+}
