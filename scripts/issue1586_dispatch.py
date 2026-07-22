@@ -1398,6 +1398,17 @@ def _reused_selection(cfg: Cfg) -> dict:
     return sel
 
 
+def _ext_headroom(cfg: Cfg, cell: str, n_ext_rungs: int) -> None:
+    """Registered-extension demand assert (code-review v5 Minor 1; CONCERN
+    marker-extension-disk-unmodeled): an extension retrain writes
+    ``n_ext_rungs`` fresh rung checkpoints into the cell's train dir — the
+    same per-rung bytes the wave assert models — so assert that headroom
+    AFTER the pre-reap and BEFORE the retrain subprocess. Fail-loud here
+    beats safetensors ENOSPC mid-write (the epm:failure v5 class)."""
+    need = n_ext_rungs * RUNG_GB + WAVE_MARGIN_GB
+    assert_out_root_headroom(cfg.out_root, need_gb=need, phase=f"p3_extend_{cell}")
+
+
 def _maybe_extend(cfg: Cfg, cell: str) -> None:
     """One-shot registered extensions: content 30->60 when no in-band rung;
     marker grid 1-6 -> 7-12 when ΔG@6 < 5 nat (plan §4.2)."""
@@ -1410,6 +1421,16 @@ def _maybe_extend(cfg: Cfg, cell: str) -> None:
         top = max(reads)
         if float(reads[top]["delta_logp_mean"]) >= G.MARKER_EXT_MIN_DELTA_NATS:
             return
+        # Pre-reap run-A rungs to the top read BEFORE the extension retrain
+        # (code-review v5 CONCERN marker-extension-disk-unmodeled — mirror of
+        # the content branch below): grid 1-6 + ext 7-12 co-resident is
+        # 12 x 15.2 GB per cell, ~455 GB when both marker cells extend in one
+        # wave > pod B's 400 GB disk. Ladder reads for reaped rungs persist in
+        # ladder.json and a reaped SELECTED rung re-derives deterministically
+        # via _retrain_to_step (_select_cell), so grid + selection stay
+        # byte-identical.
+        _reap_rungs(train_dir, {top})
+        _ext_headroom(cfg, cell, len(G.MARKER_FT_EXT_GRID))
         # EXTENSION grid ONLY (7-12): --ckpt-steps 7..12 / --max-steps 12, so
         # run-A checkpoints 1-6 (whose ladder.json reads stand) are never
         # overwritten by the re-train's different-LR-schedule weights —
@@ -1423,12 +1444,14 @@ def _maybe_extend(cfg: Cfg, cell: str) -> None:
             return
         # keep only the latest rung as the resume source (plan §9)
         _reap_rungs(train_dir, {max(reads)})
+        ext_steps = tuple(range(32, G.CONTENT_EXT_CEILING + 1, 2))
+        _ext_headroom(cfg, cell, len(ext_steps))
         cmd = _content_ft_cmd(
             cfg,
             cell,
             out_dir=train_dir,
             max_steps=G.CONTENT_EXT_CEILING,
-            ckpt_steps=tuple(range(32, G.CONTENT_EXT_CEILING + 1, 2)),
+            ckpt_steps=ext_steps,
         )
         log = cell_root / "extend.log"
     _run_subprocess(cmd, log, env=_ft_lane_env(0))
@@ -1523,12 +1546,29 @@ def _wave_partition(cfg: Cfg) -> list[list[str]]:
 
 
 def _wave_headroom(cfg: Cfg, k: int, wave: Sequence[str]) -> None:
-    """Per-wave demand assert (crash-fix r5): the phase-start canary
+    """Per-wave demand assert (crash-fix r5; resume-aware per code-review v5
+    BLOCKER wave-headroom-resume-deadlock): the phase-start canary
     (PHASE_HEADROOM_GB floor 60 GB) is blind to per-wave rung demand — a
     wave's TRAINING writes every rung regardless of disk mode (stream-reap
-    only bounds ladder-time retention), so demand = the wave's full rung
-    accumulation + a working margin."""
-    need = sum(_cell_rung_demand_gb(c, smoke=cfg.smoke) for c in wave) + WAVE_MARGIN_GB
+    only bounds ladder-time retention), so demand = the wave's PENDING rung
+    accumulation + a working margin. Completed cells — build_result.json
+    present, the SAME per-cell resume predicate phase_train no-ops on — are
+    excluded: their rungs are already on disk (or reaped post-persist), so
+    asserting the FULL wave's bytes on a resume deadlocks the standard
+    relaunch (481 GB demanded vs ~226 GB free after wave-1 training on pod
+    A); a fully-completed wave skips the assert entirely."""
+    pending = [c for c in wave if not (cfg.out_root / c / "build_result.json").exists()]
+    if not pending:
+        logger.info("[wave] headroom skip wave %d: 0 pending / %d done", k, len(wave))
+        return
+    need = sum(_cell_rung_demand_gb(c, smoke=cfg.smoke) for c in pending) + WAVE_MARGIN_GB
+    logger.info(
+        "[wave] headroom wave %d: %d pending / %d done, need %.1f GB (pending only)",
+        k,
+        len(pending),
+        len(wave) - len(pending),
+        need,
+    )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     assert_out_root_headroom(cfg.out_root, need_gb=need, phase=f"p2_train_wave{k}")
 
@@ -1728,7 +1768,23 @@ def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None
             rec_path = cfg.out_root / cell / "persist.json"
             if cell not in uploaded and rec_path.exists():
                 uploaded[cell] = str(_read_json(rec_path).get("url", ""))
-        _atomic_json(done_path, {"uploaded": uploaded})
+        # Coverage-aware done sentinel (code-review v5 Minor 2): a subset
+        # persist_done.json — reachable via ``--phases persist`` on a
+        # partially-laddered root — would permanently short-circuit later
+        # persist passes, orphaning later-laddered cells' uploads. Write it
+        # ONLY when every non-reused cfg cell has a per-cell persist record;
+        # per-cell resume (<cell>/persist.json) keeps partial passes cheap.
+        missing = [c for c in cfg.cells if c != G.REUSED_FT_CELL and c not in uploaded]
+        if missing:
+            logger.warning(
+                "[persist] terminal pass NOT writing persist_done.json — "
+                "%d/%d cells lack persist records: %s",
+                len(missing),
+                len(cfg.cells),
+                ",".join(missing),
+            )
+        else:
+            _atomic_json(done_path, {"uploaded": uploaded})
     return {"uploaded": uploaded}
 
 

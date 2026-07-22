@@ -363,3 +363,159 @@ def test_wave_headroom_asserts_wave_demand(monkeypatch, tmp_path):
     cfg = _cfg(tmp_path, cells=tuple(content2))
     d._wave_headroom(cfg, 1, content2)
     assert seen["p2_train_wave1"] == pytest.approx(2 * 15 * d.RUNG_GB + d.WAVE_MARGIN_GB)
+
+
+# ── resume-aware wave headroom (code-review v5 Critical pin) ─────────────────
+
+
+def test_run_waves_resume_headroom_pending_only(monkeypatch, tmp_path):
+    """Critical pin (code-review v5 BLOCKER wave-headroom-resume-deadlock):
+    on a standard relaunch, _wave_headroom SKIPS a fully-completed wave and
+    sizes ``need`` over PENDING cells only (build_result.json — the same
+    per-cell resume predicate phase_train no-ops on). The headroom stub below
+    FAILS any full-wave demand (simulating the post-crash disk state: wave-1
+    rungs still on disk), so the pre-fix unconditional full-wave assert
+    (be0020c050, run_waves L1615-17) raises at wave 1 and this test fails
+    against that shape — verified by stashing the dispatch fix."""
+    _eight_gpus(monkeypatch)
+    content4 = tuple(
+        c for c in d.G.ALL_FT_CELLS if not d._is_marker(c) and c != d.G.REUSED_FT_CELL
+    )[:4]
+    cfg = _cfg(tmp_path, cells=content4)
+    # wave 1 (cells 0,1) fully trained pre-crash; wave 2 cell 2 trained,
+    # cell 3 pending — the mid-train-crash shape.
+    for c in content4[:3]:
+        _write_json(tmp_path / c / "build_result.json", {"cell": c})
+    pending_need = d._cell_rung_demand_gb(content4[3]) + d.WAVE_MARGIN_GB
+    asserted: list[tuple[str, float]] = []
+
+    def fake_assert(out_root, *, need_gb, phase):
+        asserted.append((phase, need_gb))
+        if need_gb > pending_need + 1e-6:
+            raise RuntimeError(f"insufficient headroom for {phase}: need {need_gb:.1f} GB")
+
+    monkeypatch.setattr(d, "assert_out_root_headroom", fake_assert)
+    trained: list[tuple[str, ...]] = []
+    monkeypatch.setattr(
+        d, "phase_train", lambda cfg, cells=None: trained.append(tuple(cells)) or {}
+    )
+
+    d.run_waves(cfg, do_train=True, do_ladder=False, do_persist=False)  # no RuntimeError
+
+    # wave 1 (both cells done): the assert is skipped entirely; wave 2
+    # (1 done / 1 pending): need sized to the PENDING cell only.
+    assert asserted == [("p2_train_wave2", pytest.approx(pending_need))]
+    # training semantics unchanged: phase_train still receives the FULL wave
+    # (its own per-cell build_result.json resume no-ops the completed cells).
+    assert trained == [content4[:2], content4[2:]]
+
+
+# ── registered-extension disk demand (code-review v5 Minor 1 / CONCERN) ──────
+
+
+def test_maybe_extend_marker_prereaps_and_asserts_headroom(monkeypatch, tmp_path):
+    """CONCERN marker-extension-disk-unmodeled: the marker extension pre-reaps
+    run-A rungs to the top read (content-branch mirror) and asserts headroom
+    for the EXT grid's rung bytes BEFORE the retrain subprocess — un-modeled,
+    both marker cells extending held 12 co-resident rungs each (~455 GB >
+    pod B's 400 GB disk). Grid + selection logic untouched (a reaped selected
+    rung re-derives via _retrain_to_step)."""
+    _eight_gpus(monkeypatch)
+    mk = next(c for c in d.G.ALL_FT_CELLS if d._is_marker(c))
+    cfg = _cfg(tmp_path, cells=(mk,))
+    train = tmp_path / mk / "train"
+    _mk_rungs(train, d.G.MARKER_FT_GRID)
+    _write_json(tmp_path / mk / "build_result.json", {"adapter_root": str(train)})
+    reads = {str(s): {"delta_logp_mean": 1.0} for s in d.G.MARKER_FT_GRID}  # ΔG@6 < 5 nat
+    _write_json(tmp_path / mk / "ladder.json", {"reads_by_step": reads})
+    seen: dict[str, float] = {}
+    monkeypatch.setattr(
+        d,
+        "assert_out_root_headroom",
+        lambda out_root, *, need_gb, phase: seen.setdefault(phase, need_gb),
+    )
+    fake_run = create_autospec(d._run_subprocess)
+    monkeypatch.setattr(d, "_run_subprocess", fake_run)
+    fake_ladder_unit = create_autospec(d.run_ladder_unit, return_value={})
+    monkeypatch.setattr(d, "run_ladder_unit", fake_ladder_unit)
+
+    d._maybe_extend(cfg, mk)
+
+    # pre-reap took: only the top run-A rung survives at retrain launch
+    top = max(d.G.MARKER_FT_GRID)
+    assert sorted(p.name for p in train.glob("checkpoint-*")) == [f"checkpoint-{top}"]
+    assert seen == {
+        f"p3_extend_{mk}": pytest.approx(len(d.G.MARKER_FT_EXT_GRID) * d.RUNG_GB + d.WAVE_MARGIN_GB)
+    }
+    assert fake_run.call_count == 1
+    assert fake_ladder_unit.call_count == 1
+    assert (tmp_path / mk / "extended.json").exists()
+
+
+def test_maybe_extend_content_asserts_ext_headroom(monkeypatch, tmp_path):
+    """Content branch: the same modeled demand — 15 ext rungs (32..60 step 2)
+    asserted after the existing latest-rung pre-reap."""
+    _eight_gpus(monkeypatch)
+    cc = next(c for c in d.G.ALL_FT_CELLS if not d._is_marker(c))
+    cfg = _cfg(tmp_path, cells=(cc,))
+    train = tmp_path / cc / "train"
+    _mk_rungs(train, [30])
+    _write_json(tmp_path / cc / "build_result.json", {"adapter_root": str(train)})
+    reads = {str(s): {"rate": 0.1} for s in (10, 20, 30)}  # no rate in band -> extends
+    _write_json(tmp_path / cc / "ladder.json", {"reads_by_step": reads})
+    seen: dict[str, float] = {}
+    monkeypatch.setattr(
+        d,
+        "assert_out_root_headroom",
+        lambda out_root, *, need_gb, phase: seen.setdefault(phase, need_gb),
+    )
+    monkeypatch.setattr(d, "_run_subprocess", create_autospec(d._run_subprocess))
+    monkeypatch.setattr(d, "run_ladder_unit", create_autospec(d.run_ladder_unit, return_value={}))
+
+    d._maybe_extend(cfg, cc)
+
+    n_ext = len(range(32, d.G.CONTENT_EXT_CEILING + 1, 2))
+    assert seen == {f"p3_extend_{cc}": pytest.approx(n_ext * d.RUNG_GB + d.WAVE_MARGIN_GB)}
+
+
+# ── coverage-aware persist_done.json (code-review v5 Minor 2) ────────────────
+
+
+def test_phase_persist_terminal_pass_is_coverage_aware(monkeypatch, tmp_path):
+    """Minor 2 (code-review v5): a terminal pass with a cell still missing its
+    selection does NOT write persist_done.json (whose existence permanently
+    short-circuits later persist passes, orphaning later-laddered cells'
+    uploads); once every non-reused cell has records the marker lands."""
+    cells = ("cA", "cB")
+    cfg = _cfg(tmp_path, cells=cells)
+
+    def _seed_cell(c, step):
+        _write_json(tmp_path / c / "selection.json", {"cell": c, "step": step})
+        _write_json(
+            tmp_path / c / "build_result.json", {"adapter_root": str(tmp_path / c / "train")}
+        )
+        _mk_rungs(tmp_path / c / "train", [step])
+
+    _seed_cell("cA", 4)  # cB not yet laddered (--phases persist on a partial root)
+    monkeypatch.setattr(
+        d, "_ensure_dir_tokenizer", create_autospec(d._ensure_dir_tokenizer, return_value=True)
+    )
+    monkeypatch.setattr(
+        d.hub, "_upload", create_autospec(d.hub._upload, return_value="https://hf.co/x")
+    )
+    monkeypatch.setattr(
+        d,
+        "_upload_with_transport_retry",
+        create_autospec(d._upload_with_transport_retry, return_value="https://hf.co/r"),
+    )
+
+    out1 = d.phase_persist(cfg, {}, cells=None)
+    assert "cA" in out1["uploaded"] and "cB" not in out1["uploaded"]
+    # pre-fix: persist_done.json was written here, masking cB forever
+    assert not (tmp_path / "persist_done.json").exists()
+
+    _seed_cell("cB", 6)  # cB ladders later; the next persist pass must still fire
+    out2 = d.phase_persist(cfg, {}, cells=None)
+    assert set(out2["uploaded"]) >= {"cA", "cB"}
+    done = json.loads((tmp_path / "persist_done.json").read_text())
+    assert set(done["uploaded"]) >= {"cA", "cB"}
