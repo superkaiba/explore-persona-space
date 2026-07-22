@@ -1,7 +1,5 @@
 # Result: How does the direct prefix map (prefix end → answer) compare to the averaged prefix map (context end averaged over queries → answer)?
 
-*2026-07-22. The direct-prefix vs averaged-prefix half of the 07-22 consolidated writeup, split out as its own question; sibling: [2026-07-17-how-prefix-map-relates-to-context-map.md](2026-07-17-how-prefix-map-relates-to-context-map.md). Every number read from the named #1092 artifacts; sources at the bottom. Ambient (3584-dim) basis throughout; all comparisons are the fair per-prefix averaged targets.*
-
 ## Motivation
 
 - We've been using an "averaged over queries" prefix map up till now: the **averaged prefix map**, fit on the **averaged prefix vector** — a prefix's context-end states averaged over many queries. That object is post-query by construction; building it takes ~48 forward passes with real queries appended.
@@ -10,36 +8,25 @@
 
 ## TLDR
 
-- **Average mean answer activation: the direct prefix vector is much worse.** Held-out $R^2$ 0.37 vs 0.82 (instruct; base 0.26 vs 0.76), against a ceiling of ≈0.95 — it captures under 40% of the reachable variance. The two maps are different objects.
-- The direct map's predictions are approximately a **uniform shrinkage ($\alpha \approx 0.6$)** of the averaged map's — the same deviations from the average answer state at ~60% amplitude plus noise, worse on 100% of 996 prefixes — not a different read.
-- **Average behavior expression: parity.** The single direct prefix vector predicts per-prefix sycophancy/hallucination judge scores as well as the 48-query-averaged read (r 0.76/0.89 vs 0.77/0.89, paired diff n.s.), and the parity survives dropping the constructed battery conditions. So the part of the answer state the direct vector fails to predict is NOT the behaviorally relevant part — the disposition is readable before the query. Instruct model only.
-- **As a raw persona-vector projection the direct vector carries far more trait signal** (sycophancy r 0.665 vs 0.037 on the averaged vector; hallucination projects sign-flipped, −0.43 vs −0.21): before the query the trait signal is aligned with $r_B$ (for hallucination, anti-aligned); reading the query rotates it into other directions, where only a fitted probe recovers it.
-- **Why averaging helps:** most answer-state variance is query-driven (query 60–72%, prefix 10–12%, interaction 18–28%), so single-query behavior reads are query-noise-dominated and averaging cancels it (r 0.48 at N=1 → 0.77 at N=48); the direct prefix vector never contained query variance, so it reads 0.76 from one state. But denoising isn't the whole story: the activation ceiling gap means the query-averaged states also carry prefix information the prefix-end state does not linearly hold.
-- **When the averaged map fails on real data it's length, not spread** (spread ρ = −0.03 n.s.; conversation turns ρ = +0.83), and there is no averaging-specific spread penalty either (Jensen gap ρ ≤ 0 everywhere). The spread-predicts-error result holds only on the constructed substrate.
+- The direct prefix vector is much worse than the averaged prefix vector at predicting average mean answer activation: held-out $R^2$ 0.37 vs 0.82 in the instruct model; 0.26 vs 0.76 in the base model (Result 1).
+- However, it predicts averaged behavior expression **as well as the averaged prefix vector** (r 0.76/0.89 vs 0.77/0.89), indicating that the part of the answer state the direct vector fails to predict is **not** the behaviorally relevant part (at least for sycophancy and hallucination). In other words, the model has already "decided" whether to be sycophantic or to hallucinate before the query (Result 2).
+- The direct map's predictions are approximately a **uniform shrinkage ($\alpha \approx 0.6$)** of the averaged map's — the same deviations from the average answer state at ~60% amplitude plus noise (Result 3).
+- **Why averaging helps:** most answer-state variance is query-driven (query 60–72%, prefix 10–12%, interaction 18–28%), so single-query behavior reads are query-noise-dominated and averaging cancels it (r 0.48 at N=1 → 0.77 at N=48) (Result 4).
+- **When the averaged map fails on real data, spread DOES predict it — once measured right.** Raw-L2 spread read null/inverted (ρ −0.03 instruct) and length looked like the only axis (turns ρ +0.83); the whitened-spread replication flips this: whitened within-prefix spread — the same metric as the constructed substrate — predicts the averaged map's per-prefix error at ρ +0.93 (instruct) / +0.89 (base), surviving length control (+0.78/+0.69), and an averaging-specific (Jensen) penalty appears too (+0.66 instruct). Open caveat: whitened spread predicts every arm's error nearly equally, so part of this may be target-side noise; the disentangling read is in flight (Result 5).
 
 ## Methodology (shared)
 
-- Model: Qwen-2.5-7B-Instruct + Qwen-2.5-7B (base); teacher-forced capture of own-policy greedy (temp 0.0) answers; layer 14 (the line's standing read-out layer), ambient 3584-dim activation basis.
-- Corpus (#1092): 1,145 real WildChat/LMSYS conversation prefixes sparse-crossed with 1,397 real user queries → 21,193 (prefix, query) contexts; dense core = 99 prefixes × 48 shared queries.
+- Model: Qwen-2.5-7B-Instruct + Qwen-2.5-7B (base); teacher-forced captures of own-policy greedy answers; layer 14, ambient basis.
+- Corpus: 1,145 real WildChat/LMSYS conversation prefixes sparse-crossed with 1,397 real user queries → 21,193 (prefix, query) contexts.
 - Two inputs per prefix:
     - **direct prefix vector**: the prefix-end state, from one forward pass over the prefix alone (figures label it "prefix-end")
     - **averaged prefix vector**: mean of the prefix's context-end states over its queries
-- Targets: per-prefix averages only — the mean answer activation averaged over the prefix's queries (Result 1), and the mean judge score averaged over the prefix's queries (Result 2). Both arms are always scored against the SAME targets on the same folds.
-- Fits: ridge, grouped 6-fold CV by prefix id (a held-out fold never shares a prefix with training; convenience choice carried from #1092, FOLD_SEED=0).
-
-## Experiments in this write-up
-
-1. **Fair comparison** (07-16) — both maps fit on the same crossed corpus, scored on the same per-prefix averaged targets, each against its own ceiling. `eval_results/issue_1092/inline_fair_comparison/fair_comparison.json`
-2. **Fair-comparison deep-dive** (07-17) — how the two maps relate: prediction agreement, the global-shrinkage test, per-prefix error ratios. `eval_results/issue_1092/inline_fair_comparison_deepdive/`
-3. **Prefix-end behavior monitoring** (07-17) — 149 prefixes × 48 queries; per-prefix mean graded Sonnet judge score (sycophancy, hallucination); ridge probes on both vectors + the raw persona-vector projection + the averaging curve. `eval_results/issue_1092/inline_prefixend_monitoring/results.json`
-4. **Divergence/robustness follow-up** (07-22) — battery-vs-real subset parity, real-only refit, where the two reads disagree. `eval_results/issue_1092/inline_prefixend_monitoring/divergence_analysis.json`
-5. **Crossed ANOVA** on the dense core (99 × 48 = 4,752 contexts) — prefix / query / interaction shares of the answer summary (the reason averaging matters).
-6. **Spread-vs-error** — the constructed-substrate coherence analysis (#658) re-run on the 996 natural prefixes, plus the length correlate (07-22).
-7. **Theory-sharp spread delta test** (07-22) — does spread predict the averaging-specific penalty (the averaged-vs-direct gap, and the Jensen gap). `eval_results/issue_1092/inline_avgctx_spread_delta/avgctx_spread_delta.json`
+- Targets: the mean answer activation averaged over the prefix's queries (Result 1), and the mean judge score averaged over the prefix's queries (Result 2).
+- Fit: ridge regression, held out by prefix (grouped 6-fold; a held-out fold never shares a prefix with training).
 
 ## Results
 
-### Result 1 — average mean answer activation: the direct map is a ~0.6-shrunk sub-map of the averaged map
+### Result 1 — average mean answer activation: the direct prefix vector is much worse
 
 **Methodology**
 - Fit direct-prefix → answer and context → answer maps on the same crossed corpus; score both against each prefix's mean answer summary over its queries.
@@ -56,8 +43,7 @@
 
 **Takeaways**
 - The direct prefix vector is a strictly weaker summary of the prefix than the averaged one, not the same object: 0.37 vs 0.82 against a ≈0.95 ceiling, i.e. under 40% of the reachable variance (base: 0.26 → ~27%).
-- How the two relate: their predictions agree at only $R^2$ 0.26/0.41 (instruct, per direction; base 0.08/0.28). The direct map's predictions are approximately a global shrinkage of the averaged map's ($\alpha \approx 0.60$; 100% of per-dimension coefficients < 1, and per-dimension coefficients improve residual variance only ~11 points over the single scalar), and worse on 100% of 996 prefixes (mean per-prefix error ratio ≈2×).
-- Reading: the direct map predicts the same deviations from the average answer state as the averaged map, at ~60% amplitude plus extra noise — a uniformly attenuated version of the same signal, not a different read.
+- How exactly the two maps relate is Result 3.
 
 ### Result 2 — average behavior expression: the direct prefix vector reads disposition at parity with the averaged read (instruct model)
 
@@ -72,8 +58,8 @@ Result 1 says the direct prefix vector loses a lot of answer-state prediction. I
 
 **Takeaways**
 - Parity: sycophancy r = 0.759 (direct) vs 0.774 (averaged); hallucination 0.888 vs 0.887; paired difference +0.015, 95% CI [−0.026, +0.052]. Reliability ceilings are 0.86/0.91, so both reads sit near ceiling.
-- So the part of the answer the direct prefix map is worse at predicting (Result 1) is NOT the behaviorally relevant part: the disposition to be sycophantic / hallucination-prone is already readable at the end of the prefix, before the query is seen.
-- The raw persona-vector projection inverts the parity: $\langle \text{state}, r_B \rangle$ reads sycophancy on the direct prefix vector (r 0.665 [0.57, 0.75]) but not on the averaged one (r 0.037 [−0.12, 0.18]). Hallucination projects with FLIPPED sign on this corpus (−0.43 at prefix-end vs −0.21 averaged) — more |signal| at prefix-end again, but anti-aligned with $r_B$. Either way the trait signal sits in $r_B$-shape (or its negation) before the query and is rotated into other directions once the query is read; the fitted probe recovers it there. Source: `readout_constructions.json`.
+- So the part of the answer the direct prefix map is worse at predicting (Result 1) is NOT the behaviorally relevant part: the model has already "decided" whether to be sycophantic / hallucination-prone by the end of the prefix, before the query is seen.
+- The raw persona-vector projection inverts the parity: $\langle \text{state}, r_B \rangle$ reads sycophancy on the direct prefix vector (r 0.665) but not on the averaged one (r 0.037); hallucination projects with flipped sign (−0.43 vs −0.21). Either way the trait signal sits in $r_B$-shape (or its negation) before the query and is rotated into other directions once the query is read; the fitted probe recovers it there.
 - Instruct-only: base-model direct-prefix reads collapse (r 0.01–0.05; averaged read 0.13 sycophancy / 0.62 hallucination).
 - Scope caveat: this is average behavior for a prefix — a between-prefix disposition read that ranks contexts by how much they tilt the model. It does not predict behavior on any single query.
 
@@ -84,11 +70,21 @@ Since 50 of the 149 "prefixes" are constructed battery conditions, the worry was
 ![divergence between the two reads](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5bdc1a568b/figures/issue_1092/prefixend_monitoring_divergence.png)
 
 - Parity holds on purely natural conversations. Stored held-out predictions restricted to subsets: real-only r = 0.757 vs 0.784 (sycophancy) and 0.921 vs 0.908 (hallucination); battery-only 0.772 vs 0.754 and 0.794 vs 0.836. A full refit on only the 99 real prefixes gives 0.802 vs 0.828 (sycophancy, diff CI [−0.009, +0.060]) and 0.941 vs 0.921 (hallucination, CI [−0.041, +0.0002], direct prefix marginally ahead).
-- The two reads' predictions correlate r 0.93/0.95, so divergence is the exception. Where they disagree concentrates on battery format conditions (mean |Δ| ≈1.7×/2.2× the real-prefix level for sycophancy/hallucination) and on LONG real conversations (|Δ| vs user turns ρ ≈ +0.77) — the same length axis as Result 4: on a long prefix, the last-token state and the query-averaged state have drifted apart as summaries, so probes built on them disagree.
+- The two reads' predictions correlate r 0.93/0.95, so divergence is the exception. Where they disagree concentrates on battery format conditions (mean |Δ| ≈1.7×/2.2× the real-prefix level for sycophancy/hallucination) and on LONG real conversations (|Δ| vs user turns ρ ≈ +0.77) — the same length axis as Result 5: on a long prefix, the last-token state and the query-averaged state have drifted apart as summaries, so probes built on them disagree.
 - Neither read is systematically more accurate where they disagree (mean differential |error| +0.02 sycophancy / −0.14 hallucination, and per-prefix wins go both ways: the direct read overpredicts sycophancy at 8.2 on fmt_code_comment where the truth is 4.0 and the averaged read gets 3.1, but beats the averaged read on fmt_json, fmt_xml, and some high-hallucination creative-writing prefixes). The disagreement looks like two differently-noisy encodings of the same disposition, not one good and one broken read.
 - Full per-prefix tables: `eval_results/issue_1092/inline_prefixend_monitoring/divergence_analysis.json`.
 
-### Result 3 — why averaging helps: it cancels the query component, which the direct prefix vector never had
+### Result 3 — the direct map is a uniform ~0.6 shrinkage of the averaged map
+
+How do Result 1's two maps relate — is the direct map reading *different* prefix information, or the same information more weakly? Compare their held-out predictions of each prefix's averaged answer state, with the shared mean removed.
+
+**Takeaways**
+- Their predictions agree at only $R^2$ 0.26/0.41 (instruct, per direction; base 0.08/0.28) — but the disagreement has a simple structure.
+- The direct map's predictions are approximately a global shrinkage of the averaged map's: $\hat{y}_{\text{direct}} \approx 0.60 \times \hat{y}_{\text{averaged}}$. "Uniform" means one scalar for the whole vector: 100% of per-dimension coefficients are < 1, and letting each dimension have its own coefficient improves residual variance only ~11 points over the single scalar.
+- Plain reading: the direct map predicts the SAME deviations from the average answer state as the averaged map, in the same directions, at ~60% amplitude, plus extra noise. It is a uniformly attenuated version of the same signal, not a different read — and it is worse on 100% of 996 prefixes (mean per-prefix error ratio ≈2×).
+- For a cross-validated ridge predictor this is exactly the "same signal, lower fidelity" signature: when the input carries the target's signal with more noise, the optimal prediction hedges toward the mean in proportion to what it can explain — α ≈ 0.6 is itself a measurement of how much of the prefix information survives at the prefix-end state.
+
+### Result 4 — why averaging helps: it cancels the query component, which the direct prefix vector never had
 
 **Methodology**
 - Crossed ANOVA over the dense core (99 prefixes × 48 shared queries = 4,752 contexts): decompose the answer summary into prefix / query / prefix×query interaction.
@@ -101,49 +97,33 @@ Since 50 of the 149 "prefixes" are constructed battery conditions, the worry was
 - So each single context read is mostly "what question is this?", which is noise for persona readout. Averaging cancels it: the averaged behavior read climbs r 0.48 (N=1) → 0.70 (N=6) → 0.77 (N=48). The direct prefix vector never contained the query component, so it reads 0.76 from ONE state — for disposition monitoring, one pre-query forward pass replaces 48 queries of averaging.
 - But denoising is not the whole story: Result 1's ceiling gap (0.37 vs a ≈0.95 ceiling) means the query-averaged context states also carry prefix information — expressed through how the prefix transforms each query — that the prefix-end state does not linearly hold.
 
-### Result 4 — when the averaged map fails on real data: length, not spread
+### Result 5 — when the averaged map fails on real data: spread predicts it after all, once measured right (whitened), with a target-noise caveat in flight
 
 Theory prediction: the averaged prefix vector is a valid summary only where the prefix's context vectors cluster, so within-prefix spread should track the averaged map's per-prefix error.
 
 **Methodology**
-- Per-prefix held-out error of the averaged map vs within-prefix spread of its context vectors, on (a) the constructed substrate (50 conditions, whitened spread) and (b) the 996 natural prefixes (raw-L2 spread); on (b) also vs prefix length (conversation turns).
+- Per-prefix held-out error of the averaged map vs within-prefix spread of its context vectors, on (a) the constructed substrate (50 conditions, whitened spread) and (b) the 996 natural prefixes — first with raw-L2 spread, then the whitened replication (matching the constructed substrate's metric); on (b) also vs prefix length (conversation turns).
 
-Constructed substrate (supports the prediction):
+Constructed substrate (supports the prediction; whitened spread):
 
 ![spread vs residual, constructed](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/issue_658/fig_a35a_spread_vs_residual_loco_L14.png)
 
-Natural prefixes (does not transfer):
+Natural prefixes, first pass (raw-L2 spread — turns out to be the wrong metric):
 
-![spread vs error, natural](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/summaries/prefix_vs_context_map/perprefix_error_vs_spread.png)
+![raw-L2 spread vs error, natural](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/summaries/prefix_vs_context_map/perprefix_error_vs_spread.png)
 
 ![error vs length, natural](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/summaries/prefix_vs_context_map/perprefix_error_vs_length.png)
 
 **Takeaways**
-- Constructed conditions: spread strongly predicts held-out residual (median layerwise Spearman +0.89, 28/28 layers positive). This is where the "theory confirmed" read came from.
-- Natural prefixes: the correlation is null on instruct (ρ = −0.03, n.s.) and INVERTED on base (ρ ≈ −0.8). Prefix length dominates instead: turns → error ρ = +0.83 (instruct) / +0.80 (base); controlling for length, spread stays negative (partial ρ −0.33 / −0.52).
-- One reading: on long real prefixes, appending different queries moves the state less, so exactly the hard, long prefixes have LOW spread and the naive "more spread ⇒ harder" prediction fails on natural data. The coherence condition may still be right as a validity bound, but spread is not its observable there; length is the practical difficulty axis.
-
-**Theory-sharp delta test (follow-up)**
-
-The panels above correlate each map's error with spread separately; the coherence condition specifically predicts an AVERAGING-specific penalty. The sharp test: does spread predict (a) the averaged map's error over and above the direct map's (the gap between the two), and (b) the Jensen gap — the error of a map fit on the averaged prefix vector (map-the-centroid) minus the error of averaging the per-row context map's predictions?
-
-![spread vs averaging-specific error gaps](https://raw.githubusercontent.com/superkaiba/explore-persona-space/61be8fa96a/figures/summaries/prefix_vs_context_map/perprefix_avgctx_delta_vs_spread.png)
-
-- All arms fit on the identical folds and targets as Result 1 (996 natural prefixes, battery-excluded; parity gates against the banked arms matched exactly, diff 0).
-- Spread does not predict the averaging-specific penalty. Spread → (averaged-map error − direct-map error): ρ = +0.02, n.s. (instruct) and −0.19 (base). Spread → Jensen gap: ρ = −0.10 (instruct) / −0.19 (base), and −0.22 / −0.19 with length controlled. Higher-spread prefixes pay a relatively SMALLER averaging penalty, the opposite sign from the naive prediction.
-- Scope caveat: raw-L2 spread here (matching the natural-prefix panels above); the constructed substrate used whitened spread. A whitened natural-side replication is the remaining loose end.
+- Constructed conditions: whitened spread strongly predicts held-out residual (median layerwise Spearman +0.89, 28/28 layers positive).
+- First natural-prefix pass used raw-L2 spread and read null-to-inverted (instruct ρ = −0.03 n.s.; base ρ ≈ −0.8), with prefix length dominating (turns → error ρ = +0.83 / +0.80) — the basis of the earlier "length, not spread" reading. The raw-spread delta test agreed: no averaging-specific penalty (gap ρ +0.02 n.s.; Jensen gap ρ −0.10 to −0.19).
+- **Whitened replication (2026-07-22): raw-L2 was the wrong observable.** Whitened within-prefix spread — the same metric the constructed substrate used — predicts the averaged map's per-prefix error on natural prefixes at ρ = **+0.93** (instruct) / **+0.89** (base), and survives length control (partial ρ +0.78 / +0.69). The constructed-substrate result transfers after all; length is no longer the only (or the strongest) difficulty axis.
+- The averaging-specific penalty also reappears under whitened spread: whitened spread → Jensen gap ρ = +0.66 (instruct; +0.50 length-controlled), +0.21 (base). A nonlinear check agrees the Jensen gap is real: an MLP context map (held-out row $R^2$ 0.91 instruct / 0.84 base) has an out-of-fold Jensen gap of mean 4.0 / 6.2 (same scale as the map errors); raw spread predicts it on base (+0.78) but weakly on instruct (+0.13) — the whitened cross-join is the pending decisive read.
+- **Open caveat (in flight):** whitened spread predicts EVERY arm's error nearly equally (+0.81 to +0.93, including the context map's own), so part of the correlation is plausibly target-side rather than map failure: for a dispersed prefix, the ~17-query averaged target is itself a noisier estimate of the prefix's typical answer state. The answer-side-spread cross-join that separates "map-region difficulty" from "target noise" is running; the claim's strength is pending that read. Artifacts: `eval_results/issue_1092/inline_spread_whitened_strata/spread_whitened_strata.json`, `inline_mlp_jensen_natural/mlp_jensen_natural.json`.
 
 ## Conclusion and next steps
 
 - On the two fair tasks: the direct prefix vector is a strictly weaker (≈0.6-shrunk) summary for **average answer-state prediction**, but an equally good input for **average behavior expression** — and the only one where the raw persona-vector projection works.
 - Practical monitoring implication: one pre-query forward pass reads a prefix's disposition as well as 48 queries of averaging (instruct model only; a disposition read that ranks contexts, not single answers).
-- On real data the averaged map's validity condition is not observable as context-vector spread (null/inverted, and no averaging-specific penalty either); length is the practical difficulty axis.
-- Next: does the direct-prefix disposition read survive fine-tuning; a whitened-spread natural-side replication of the coherence test; the operator-level coincidence check (is the averaged map the same linear operator as the context map, not just equally accurate — in flight); how the averaged map relates to the context map lives in the sibling write-up.
-
-## Sources
-
-- Fair comparison + deep-dive: `eval_results/issue_1092/inline_fair_comparison/fair_comparison.json`, `eval_results/issue_1092/inline_fair_comparison_deepdive/deepdive.json`
-- Behavior monitoring + divergence: `eval_results/issue_1092/inline_prefixend_monitoring/{results,readout_constructions,divergence_analysis}.json`
-- Spread delta test: `eval_results/issue_1092/inline_avgctx_spread_delta/avgctx_spread_delta.json` (commit `61be8fa96a`)
-- Constructed-substrate coherence: `eval_results/issue_658/` (A3.5a)
-- Task bodies: #1092 (HIGH), #658; terminology: `docs/glossary_context_answer_map.md`; siblings: [2026-07-17-how-prefix-map-relates-to-context-map.md](2026-07-17-how-prefix-map-relates-to-context-map.md), [2026-07-22-prefix-query-context-answer-map-consolidated.md](2026-07-22-prefix-query-context-answer-map-consolidated.md)
+- The averaged map's validity condition IS observable on real data as whitened context-vector spread (ρ ≈ +0.9, length-robust) — the earlier "length, not spread" reading was an artifact of the raw-L2 metric — pending the target-noise disentangling.
+- Next: the answer-side-spread cross-join (target noise vs map difficulty — in flight); the whitened-spread × MLP-Jensen read (in flight); does the direct-prefix disposition read survive fine-tuning; the operator-level coincidence check; how the averaged map relates to the context map lives in the sibling write-up.
