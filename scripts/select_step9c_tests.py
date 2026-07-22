@@ -279,6 +279,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
+    # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
+    "tests/test_issue_skill_stopped_volume_persist_pin.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
     "tests/test_issue_skill_trigger_dense_tag_adoption.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
