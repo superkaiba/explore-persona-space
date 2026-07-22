@@ -4720,8 +4720,8 @@
     "1605": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1605",
-      "status": "proposed",
+      "path": "tasks/planning/1605",
+      "status": "planning",
       "title": "workflow-fix: GCP crash-persist also sweeps /workspace/logs (per-phase driver logs)"
     },
     "1606": {
