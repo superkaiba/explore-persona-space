@@ -4608,8 +4608,8 @@
     "1591": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1591",
-      "status": "running",
+      "path": "tasks/reviewing/1591",
+      "status": "reviewing",
       "title": "daily-fix: widen piped-git guard to hook-running git commit"
     },
     "1592": {
