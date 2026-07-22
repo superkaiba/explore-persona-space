@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1604,
+  "highest_id": 1605,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4716,6 +4716,13 @@
       "path": "tasks/completed/1604",
       "status": "completed",
       "title": "workflow-fix: wire identity+bias baseline + kNN retrieval mandate into planner/critic lenses"
+    },
+    "1605": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1605",
+      "status": "proposed",
+      "title": "workflow-fix: GCP crash-persist also sweeps /workspace/logs (per-phase driver logs)"
     },
     "161": {
       "has_clean_result": false,
