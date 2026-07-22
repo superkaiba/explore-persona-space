@@ -165,7 +165,7 @@ def test_pinned_invariant_list_matches_live_tree():
     # the stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff runs the pin ONLY via this tuple).
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 44
+    assert len(sel.WORKFLOW_INVARIANT) == 45
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
