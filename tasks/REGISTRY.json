@@ -4699,8 +4699,8 @@
     "1602": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1602",
-      "status": "reviewing",
+      "path": "tasks/completed/1602",
+      "status": "completed",
       "title": "workflow-fix: gcp startup-script repo-reuse else-branch is not branch-switch-safe"
     },
     "1603": {
