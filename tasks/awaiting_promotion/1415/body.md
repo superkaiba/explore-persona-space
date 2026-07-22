@@ -5,6 +5,7 @@ title: Single-token steering with the context-vector difference shifts the answe
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-16T08:08:10Z'
 has_clean_result: true
 origin_prompt: Do these vectors V_c and V_a have meaning? Like are they causal in
