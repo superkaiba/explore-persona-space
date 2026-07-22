@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1605,
+  "highest_id": 1606,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4723,6 +4723,13 @@
       "path": "tasks/proposed/1605",
       "status": "proposed",
       "title": "workflow-fix: GCP crash-persist also sweeps /workspace/logs (per-phase driver logs)"
+    },
+    "1606": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1606",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 companion-stat drop-class semantics (zero split-half noise floors)"
     },
     "161": {
       "has_clean_result": false,
