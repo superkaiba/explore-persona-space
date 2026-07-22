@@ -4615,8 +4615,8 @@
     "1592": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1592",
-      "status": "reviewing",
+      "path": "tasks/completed/1592",
+      "status": "completed",
       "title": "daily-fix: planner self-counts grep-c acceptance criteria"
     },
     "1593": {
