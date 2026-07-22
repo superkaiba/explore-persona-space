@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) guard: block `git push` / `git merge` / `gh pr merge|create`
-# piped into an exit-code-masking consumer (task #1048).
+# PreToolUse(Bash) guard: block `git push` / `git merge` / `git commit` /
+# `gh pr merge|create` piped into an exit-code-masking consumer (task #1048;
+# commit verb added by #1591).
 #
 # CLAUDE.md § Concurrent repo-root committers: "Never pipe a `git push` (or
-# merge/PR command) through `tail`/`grep`/`head` — the pipe masks the non-zero
-# exit code and the session proceeds believing the push landed (4 sessions hit
-# exactly this on 2026-07-02); run it bare and check the exit code, or use
-# `set -o pipefail` when a pipe is unavoidable." The prose rule failed open at
+# merge/PR/`git commit` command) through `tail`/`grep`/`head` — the pipe masks
+# the non-zero exit code and the session proceeds believing the push landed
+# (4 sessions hit exactly this on 2026-07-02); run it bare and check the exit
+# code, or use `set -o pipefail` when a pipe is unavoidable; a hook-running
+# `git commit` piped this way is additionally SIGPIPE-killed
+# mid-pre-commit-hook (#1584, #1591)." The prose rule failed open at
 # least 5 times in 3 days (#957's Step 10d push was masked 2026-07-04); this
 # hook mechanizes it for live sessions — the same dual-engine split as the
 # pipe-python guard (#753): hook = ad-hoc inline Bash calls,
 # `workflow_lint.py --check-piped-git-push` = committed scripts/*.sh recipes.
+#
+# For `git commit` the pipe carries a SECOND harm beyond the masked exit code
+# (a gitleaks-blocked or nothing-to-commit failure reads as success): when the
+# pipe's reader exits early (`| head -N`), the producer is SIGPIPE-terminated
+# MID-pre-commit-hook — #1584 killed gitleaks mid-scan that way. Blocking the
+# piped shape addresses both.
 #
 # WHY any pipe consumer (not just tail/grep/head): bash makes a pipeline's
 # exit status the LAST stage's regardless of what that stage is, so the
@@ -30,9 +39,17 @@
 #     message DESCRIBING this very incident would otherwise false-block.
 #     KNOWN MISS, accepted + test-pinned: `<<EOF ... && git push 2>&1 | tail`
 #     inside ONE command slips through — the lint + prose rule remain defense
-#     in depth; plan #1048 §4.1 step 4);
+#     in depth; plan #1048 §4.1 step 4. The same residual covers the commit
+#     verb (#1591): a heredoc-MESSAGE commit whose own output is piped
+#     (`git commit -m "$(cat <<EOF...)" 2>&1 | tail`) is NOT blocked — the
+#     blanket-allow fires before any verb regex, and the lint's line-local
+#     span cannot cross the heredoc's newlines either, so BOTH engines accept
+#     it; pinned as A23);
 #   - `--dry-run` pushes may pipe (a dry run lands nothing, so masking its
-#     exit code cannot cause the proceeded-on-a-rejected-push incident);
+#     exit code cannot cause the proceeded-on-a-rejected-push incident); the
+#     carve-out is verb-independent, so `git commit --dry-run | head` is
+#     allowed too (a dry-run commit lands nothing and runs no pre-commit
+#     hook);
 #   - producer-as-CONSUMER (`echo foo | git push` — final stage) is allowed:
 #     the final stage's exit code IS the pipeline's, nothing is masked;
 #   - pipes on a DIFFERENT `&&`/`||`/`;`/`&`/newline segment than the
@@ -63,18 +80,19 @@
 set -u
 
 # Flag-tolerant producer anchor (the #897 detector shape from
-# guard_repo_root_branch.sh, verb set swapped): `git [flags] push|merge` or
-# `gh pr merge|create`. `([[:space:]]|$)` — NOT `\b` — after the verb, so
+# guard_repo_root_branch.sh, verb set swapped): `git [flags] push|merge|commit`
+# or `gh pr merge|create`. `([[:space:]]|$)` — NOT `\b` — after the verb, so
 # `git merge-base --all main HEAD | head -1` (a canonical
-# .claude/rules/diff-size-budget.md probe) never matches: `-` fails the
-# terminator. Applied per NON-FINAL pipeline stage only.
-PRODUCER_ERE='\bgit +(-[^ ]+( +[^ ]+)?( +|$))*(push|merge)([[:space:]]|$)|\bgh +pr +(merge|create)([[:space:]]|$)'
+# .claude/rules/diff-size-budget.md probe) and `git commit-tree ... | head`
+# never match: `-` fails the terminator. Applied per NON-FINAL pipeline stage
+# only.
+PRODUCER_ERE='\bgit +(-[^ ]+( +[^ ]+)?( +|$))*(push|merge|commit)([[:space:]]|$)|\bgh +pr +(merge|create)([[:space:]]|$)'
 
 # Cheap pre-filter (this hook runs on EVERY Bash call): a producer token AND
 # a `|` must co-occur before the unit parse runs. The verb terminator
 # additionally admits `|` so the space-free `git push| tail` shape still
 # reaches the full parse (a pre-filter miss would fail-open).
-PREFILTER_ERE='\bgit\b[^|;&]*\b(push|merge)([[:space:]]|\||$)|\bgh[[:space:]]+pr[[:space:]]+(merge|create)\b'
+PREFILTER_ERE='\bgit\b[^|;&]*\b(push|merge|commit)([[:space:]]|\||$)|\bgh[[:space:]]+pr[[:space:]]+(merge|create)\b'
 
 # Classify one command string. Returns 0 = allow, 1 = block.
 check_cmd() {
@@ -185,6 +203,14 @@ run_self_test() {
   run_case "B10 raw-newline multi-line" 2 'echo pre
 git push origin main | tail -5'
   run_case "B11 non-& redirection" 2 'git push 2>err.log | tail'
+  run_case "B12 piped commit (#1584 incident shape)" 2 'git commit -m "wip" 2>&1 | head -20'
+  run_case "B13 flag-tolerant piped commit" 2 \
+    'git -C .claude/worktrees/issue-1591 commit -m "x" 2>&1 | tail -5'
+  run_case "B14 amend piped" 2 'git commit --amend --no-edit 2>&1 | grep -i error'
+  run_case "B15 argless piped commit (#1584 verbatim form)" 2 'git commit 2>&1 | head -20'
+  run_case "B16 pipe on the commit's own && segment" 2 \
+    'git add -A && git commit -m x 2>&1 | head'
+  run_case "B17 |& shorthand commit" 2 'git commit -m "wip" |& head -3'
   run_case "S7r1 pinned FP: -m text mentions the pattern (no heredoc)" 2 \
     'git commit -m "never git push | tail in a recipe" && git push'
 
@@ -217,6 +243,15 @@ git push origin main'
 msg
 EOF
 )" && git push 2>&1 | tail -3'
+  run_case "A19 bare commit" 0 'git commit -m "wip"'
+  run_case "A20 commit dry-run carve-out" 0 'git commit --dry-run 2>&1 | head -5'
+  run_case "A21 message piped INTO commit (final stage)" 0 'cat /tmp/msg.txt | git commit -F -'
+  run_case "A22 commit-tree is not commit" 0 'git commit-tree HEAD^{tree} -m x | head -1'
+  run_case "A23 heredoc-compound commit KNOWN MISS" 0 'git commit -m "$(cat <<EOF
+msg
+EOF
+)" 2>&1 | tail -3'
+  run_case "A24 commit as argument word" 0 'git cat-file commit HEAD | head -3'
 
   # A15b: malformed stdin JSON -> fail-soft allow.
   local rc=0
@@ -252,14 +287,17 @@ cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 
 if ! check_cmd "$cmd"; then
   cat >&2 <<'BLOCK_MSG'
-BLOCKED: piping `git push` / `git merge` / `gh pr merge|create` through a
-filter masks the non-zero exit code — the session proceeds believing the
-push/merge landed when it was rejected (4 sessions hit this 2026-07-02;
-#957's Step 10d push was masked 2026-07-04). CLAUDE.md § Concurrent
-repo-root committers: run it BARE and check the exit code, or use
-`set -o pipefail` when a pipe is unavoidable (any `pipefail` in the command
-is honored). `git push --dry-run` pipes are allowed. For marker-note /
-commit-message text that merely MENTIONS the pattern, use
+BLOCKED: piping `git push` / `git merge` / `git commit` / `gh pr merge|create`
+through a filter masks the non-zero exit code — the session proceeds
+believing the push/merge/commit landed when it was rejected (4 sessions hit
+this 2026-07-02; #957's Step 10d push was masked 2026-07-04), and a
+hook-running `git commit` piped this way is additionally SIGPIPE-killed
+mid-pre-commit-hook (#1584). CLAUDE.md § Concurrent repo-root committers:
+run it BARE and check the exit code (capture with `> /tmp/out 2>&1` if you
+need the text), or use `set -o pipefail` when a pipe is unavoidable (any
+`pipefail` in the command is honored). `git push --dry-run` /
+`git commit --dry-run` pipes are allowed. For marker-note / commit-message
+text that merely MENTIONS the pattern, use
 `task.py post-marker --file <path.md>` / `git commit -F <file>` (or a
 heredoc). Deliberate override: prefix with EPM_ALLOW_PIPED_PUSH=1.
 BLOCK_MSG

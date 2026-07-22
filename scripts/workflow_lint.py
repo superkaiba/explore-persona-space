@@ -103,12 +103,15 @@ Behaviours:
   commands that never reach a committed script.
 * ``--check-piped-git-push`` (also bundled into the no-flags default run):
   walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
-  ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+  ``git merge`` / ``git commit`` / ``gh pr merge|create`` piped into a
+  filter on its own
   pipeline segment (``git push origin main 2>&1 | tail -20``). Bash makes
   the compound's exit status the FILTER's, so the pipe masks the
   producer's non-zero exit code: a rejected push reads as success and the
   session proceeds believing the merge landed (#957's Step 10d push was
-  masked 2026-07-04; 4 sessions hit the class 2026-07-02). Prose rule:
+  masked 2026-07-04; 4 sessions hit the class 2026-07-02); a hook-running
+  ``git commit`` piped this way is additionally SIGPIPE-killed
+  mid-pre-commit-hook (#1584, #1591). Prose rule:
   CLAUDE.md § Concurrent repo-root committers ("run it bare and check the
   exit code, or use ``set -o pipefail`` when a pipe is unavoidable") — so
   a file-level non-comment ``pipefail`` line disables flagging for the
@@ -1088,13 +1091,17 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 # `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 
-# `--check-piped-git-push` (#1048): a `git push` / `git merge` /
+# `--check-piped-git-push` (#1048; commit verb added by #1591): a
+# `git push` / `git merge` / `git commit` /
 # `gh pr merge|create` PRODUCER piped into a filter on its own pipeline
 # segment (`git push origin main 2>&1 | tail -20`). Bash makes the
 # compound's exit status the LAST stage's, so the pipe masks the
 # producer's non-zero exit code: a rejected push reads as success and the
 # session proceeds believing the merge landed (#957's Step 10d push was
-# masked 2026-07-04; 4 sessions hit the class on 2026-07-02). The prose
+# masked 2026-07-04; 4 sessions hit the class on 2026-07-02). For
+# `git commit` the pipe carries a SECOND harm: an early-exiting reader
+# (`| head -N`) SIGPIPE-kills the commit MID-pre-commit-hook (#1584 killed
+# gitleaks mid-scan). The prose
 # rule (CLAUDE.md § Concurrent repo-root committers: "run it bare and
 # check the exit code, or use `set -o pipefail` when a pipe is
 # unavoidable") failed open >=5 times in 3 days; this check makes it
@@ -1108,8 +1115,15 @@ PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 #   * `git push | tail -5`, `git push origin main 2>&1 | grep -v x`;
 #   * `gh pr merge 123 --squash | head`, `gh pr create ... | grep -o ...`;
 #   * `git -C <dir> push ... 2>&1 | tail -20` (flag-tolerant `git` anchor);
-#   * `git merge issue-x 2>&1 | tail -5`, `git push 2>err.log | tail`.
+#   * `git merge issue-x 2>&1 | tail -5`, `git push 2>err.log | tail`;
+#   * `git commit -m "wip" 2>&1 | head -20` (the #1584 incident shape).
 # NOT flagged (precision):
+#   * `cat msg.txt | git commit -F -` — producer as CONSUMER/final stage
+#     (a message piped INTO commit), same channel as `echo foo | git push`
+#     below; `git commit --dry-run | head` is skipped by the
+#     verb-independent `--dry-run` span skip (a dry-run commit lands
+#     nothing and runs no pre-commit hook); `git commit-tree ... | head`
+#     never matches (the verb must be followed by whitespace-or-pipe);
 #   * `git push origin main || echo failed` — `(?!\|)` rejects `||` (the
 #     one real tree shape, issue931_dispatch.sh);
 #   * `git merge-base --all main HEAD | head -1` — the verb must be
@@ -1147,7 +1161,7 @@ PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 # (document the bad pattern in a `#`-comment, not an echo/quoted string).
 _PIPED_PUSH_SPAN = r"(?:[^|;&\n]|&(?=[>0-9]))*"
 _PIPED_PUSH_GIT = (
-    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*(?:push|merge)"
+    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*(?:push|merge|commit)"
     r"(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
 )
 _PIPED_PUSH_GH = r"\bgh\s+pr\s+(?:merge|create)(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
@@ -3494,14 +3508,17 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
 
 def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
     """Walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
-    ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+    ``git merge`` / ``git commit`` / ``gh pr merge|create`` piped into a
+    filter on its own
     pipeline segment (``git push origin main 2>&1 | tail -20``).
 
     Rationale: bash makes a pipeline's exit status the LAST stage's, so the
     pipe masks the producer's non-zero exit code — a rejected push reads as
     success and the session proceeds believing the merge landed (#957's
     Step 10d push was masked 2026-07-04; 4 sessions hit the class on
-    2026-07-02). The prose rule (CLAUDE.md § Concurrent repo-root
+    2026-07-02); a piped ``git commit`` is additionally SIGPIPE-killed
+    mid-pre-commit-hook when the reader exits early (#1584, #1591). The
+    prose rule (CLAUDE.md § Concurrent repo-root
     committers) says run it bare and check the exit code, or use
     ``set -o pipefail`` when a pipe is unavoidable — so once a non-comment
     line contains ``pipefail``, flagging is disabled for the REST of the
@@ -3549,12 +3566,14 @@ def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
             if "--dry-run" in match.group(0):
                 continue
             errors.append(
-                f"{sh}:{first + 1}: `git push`/merge-class command piped "
-                f"into a filter — the pipe masks the non-zero exit code, "
-                f"so a rejected push reads as success (#957, 4 sessions "
-                f"2026-07-02). Run it bare and check the exit code, or add "
-                f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
-                f"committers (#1048)."
+                f"{sh}:{first + 1}: `git push`/merge/commit-class command "
+                f"piped into a filter — the pipe masks the non-zero exit "
+                f"code, so a rejected push reads as success (#957, 4 "
+                f"sessions 2026-07-02), and a piped `git commit` is "
+                f"SIGPIPE-killed mid-pre-commit-hook (#1584). Run it bare "
+                f"and check the exit code, or add `set -o pipefail`. See "
+                f"CLAUDE.md § Concurrent repo-root committers (#1048, "
+                f"#1591)."
             )
     return errors
 
@@ -11924,15 +11943,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "--check-piped-git-push",
         action="store_true",
         help="Verify no shell script under scripts/ pipes a `git push` / "
-        "`git merge` / `gh pr merge|create` into a filter on its own "
+        "`git merge` / `git commit` / `gh pr merge|create` into a filter "
+        "on its own "
         "pipeline segment (`git push origin main 2>&1 | tail -20`). The "
         "pipe masks the non-zero exit code, so a rejected push reads as "
-        "success (#957; 4 sessions hit this 2026-07-02) — run it bare and "
+        "success (#957; 4 sessions hit this 2026-07-02), and a piped "
+        "`git commit` is SIGPIPE-killed mid-pre-commit-hook (#1584) — run "
+        "it bare and "
         "check the exit code, or add `set -o pipefail` (a non-comment "
         "pipefail line disables flagging for the rest of the file). "
         "Comment lines and `--dry-run` pipes are skipped. See CLAUDE.md "
-        "§ Concurrent repo-root committers (#1048). Bundled into the "
-        "no-flags default run.",
+        "§ Concurrent repo-root committers (#1048, #1591). Bundled into "
+        "the no-flags default run.",
     )
     parser.add_argument(
         "--check-push-failure-swallow",
