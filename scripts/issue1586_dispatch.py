@@ -411,6 +411,35 @@ def source_context_id(beh_key: str) -> str:
     return c1481.context_id_for(G.BEHAVIOR_BY_KEY[beh_key], "pers")
 
 
+def _read_organism(behavior: str, context_id: str, seed: int) -> ModelOrganism:
+    """Read-side organism (identity carrier into ``make_source_rate_fn`` — the
+    panel field is semantically unused by a rate READ, which consumes only
+    ``behavior_spec`` + ``context``).
+
+    Threads the source-filtered panel via ``fu3w.panel_name_for`` (the #1090
+    fu5 / #1481 reread / #1315 parity precedent) so a read at a panel-member
+    or content-identical context — bare ``default``, the held-out ``neg_sp_*``
+    members of the six-context p6 panel — does not trip the TRAINING-time
+    #527/#538 disjointness invariant at ModelOrganism construction
+    (epm:failure v3: both pods' p6 smoke died at ``cid='default'``). At
+    genuine source contexts ``panel_name_for`` returns the default panel name
+    unchanged, so p3/p5 source reads construct byte-identically.
+    ``negatives.py``'s guard stays byte-untouched — it is correct for
+    training-time construction (datagen/mix builds keep the strict panel).
+    """
+    import issue1090_fu3_worker as fu3w  # local import mirrors panel_context_ids
+
+    # Held-out panel-member read contexts (neg_sp_*) must resolve in ANY unit
+    # subprocess regardless of whether panel_context_ids ran first (#1315 r6 /
+    # #1090 fu6 registry classes: point-of-use, idempotent).
+    for member in default_panel():
+        _register_ctx(member.to_context())
+    ctx = fu3w.ensure_context(context_id, behavior)
+    return ModelOrganism(
+        behavior=behavior, context_id=context_id, negatives=fu3w.panel_name_for(ctx), seed=seed
+    )
+
+
 def _eval_questions(cfg: Cfg, beh_key: str) -> list[str]:
     """Held-out eval questions per behavior (content: the BEHAVIORS registry
     bank; marker: the sha-pinned 20-q bank)."""
@@ -670,9 +699,7 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
         else:
             cid = source_context_id(arm.beh_key)
             panel_context_ids(cfg, arm.beh_key)  # registers cid idempotently
-            organism = ModelOrganism(
-                behavior=G.BEHAVIOR_BY_KEY[arm.beh_key], context_id=cid, seed=arm.seed
-            )
+            organism = _read_organism(G.BEHAVIOR_BY_KEY[arm.beh_key], cid, arm.seed)
             rate_fn = make_source_rate_fn(
                 organism,
                 out_dir=cfg.out_root / cell / "parity_rate",
@@ -1077,11 +1104,7 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict:
         panel_context_ids(cfg, beh)  # idempotent point-of-use registration
         pendings = [s for s in sorted(_enumerate_rungs(train_dir)) if s not in done]
         if pendings:
-            organism = ModelOrganism(
-                behavior=G.BEHAVIOR_BY_KEY[beh],
-                context_id=cid,
-                seed=G.parse_ft_cell(cell)[2],
-            )
+            organism = _read_organism(G.BEHAVIOR_BY_KEY[beh], cid, G.parse_ft_cell(cell)[2])
             rate_fn = make_source_rate_fn(
                 organism,
                 out_dir=cell_root / "rate",
@@ -1169,10 +1192,8 @@ def _retrain_to_step(cfg: Cfg, cell: str, step: int) -> dict:
     rec: dict = {"step": step, "adapter_root": str(out_dir)}
     if not _is_marker(cell):
         beh = G.parse_ft_cell(cell)[0]
-        organism = ModelOrganism(
-            behavior=G.BEHAVIOR_BY_KEY[beh],
-            context_id=source_context_id(beh),
-            seed=G.parse_ft_cell(cell)[2],
+        organism = _read_organism(
+            G.BEHAVIOR_BY_KEY[beh], source_context_id(beh), G.parse_ft_cell(cell)[2]
         )
         rate_fn = make_source_rate_fn(
             organism,
@@ -1458,7 +1479,7 @@ def _content_rate(
     draws: int,
     questions: list[str],
 ) -> float:
-    organism = ModelOrganism(behavior=behavior, context_id=context_id, seed=seed)
+    organism = _read_organism(behavior, context_id, seed)
     rate_fn = make_source_rate_fn(
         organism,
         out_dir=out_dir,
