@@ -8090,27 +8090,33 @@ def test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons():
     marker trail tells a server-side queue drop apart from every sibling.
     #1596 amendment (deliberate, 6 -> 7): the queue-vanish ON-DEMAND-RETRY
     reason joins the pairwise-distinct set — the RunPod-refused->GCP leg must
-    be tellable apart from the GCP->RunPod vanish leg it follows."""
+    be tellable apart from the GCP->RunPod vanish leg it follows.
+    #1601 amendment (deliberate, 7 -> 8): the queue-TIMEOUT ON-DEMAND-RETRY
+    reason joins too — the marker trail must tell a timed-out queue's retry
+    apart from a vanished queue's retry AND from every failover leg."""
     from explore_persona_space.backends.router import (
         ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
         ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
     reasons = {
         ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
         ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
         ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
         ROUTE_REASON_RUNPOD_FALLBACK,
     }
-    assert len(reasons) == 7  # all seven are distinct strings
+    assert len(reasons) == 8  # all eight are distinct strings
     assert ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD == "gcp_queue_vanish_failover_runpod"
     assert ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY == "queue_vanish_gcp_ondemand_retry"
+    assert ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY == "queue_timeout_gcp_ondemand_retry"
 
 
 # ---------------------------------------------------------------------------
@@ -8268,6 +8274,42 @@ def test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts(
     backend_selected = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"]
     last_body = json.loads(backend_selected[-1]["note"])
     assert last_body["reason"] == ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY
+
+
+def test_retry_gcp_ondemand_reason_param_threads_to_result_and_final_marker(
+    lease_store, marker_poster, captured_markers
+):
+    """#1601: the keyword-only ``reason`` param generalizes the #1596 walk to
+    the queue-timeout trigger — calling the router function with
+    reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY stamps that reason on
+    BOTH RouteResult.reason and the FINAL epm:backend-selected marker (the
+    default-reason vanish behavior is pinned by the untouched
+    test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
+        retry_gcp_ondemand_after_queue_vanish,
+    )
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-timedout-0"}
+    gcp = _GcpBackendDouble()
+    result = retry_gcp_ondemand_after_queue_vanish(
+        spec=_spec(backend="gcp"),
+        gcp_backend=gcp,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(),
+        gcp_failover_of_identity=identity,
+        reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
+    )
+    assert result is not None
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY
+    finals = _by_reason(captured_markers, ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY)
+    assert finals
+    backend_selected = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"]
+    last_body = json.loads(backend_selected[-1]["note"])
+    assert last_body["reason"] == ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY
 
 
 def test_retry_gcp_ondemand_respects_daily_cap(lease_store, marker_poster):

@@ -700,9 +700,9 @@ Part A (crash diagnostics) covers BOTH crash modes regardless of how the
 workload died — the EXIT trap fires on any non-zero exit. So "a GCP
 workload failure of ANY class fails over to RunPod" now holds for both the
 synchronous-`route()` and the async-poller crash paths — with ONE named
-exception (#1596): a workload-class failure on the queue-vanish ON-DEMAND
-RETRY create (RunPod just refused for capacity, so cascading back would
-ping-pong) mints the non-re-drivable terminal
+exception (#1596/#1601): a workload-class failure on the queue-vanish /
+queue-timeout ON-DEMAND RETRY create (RunPod just refused for capacity, so
+cascading back would ping-pong) mints the non-re-drivable terminal
 `gcp_workload_failed_on_ondemand_retry` instead — see § FLEX_START
 queue-vanish, "On-demand retry after a clean-residue RunPod refusal".
 
@@ -749,11 +749,34 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
   idempotency (durable lease + `.claude/cache` sentinel) + sidecar-repoint
   + terminal-JSON contract (the shared `_failover_gcp_to_runpod` core).
 - **An ADDITIONAL advance trigger, NOT a lane-precedence change** — RunPod
-  stays the terminal rung. A queue-timeout cancel is a CLEAN advance: it
-  does NOT touch `MAX_GCP_ATTEMPTS_PER_DAY` (the counter bumps only on a
-  create, inside `_attempt_one_gcp_rung`, which the poller never re-enters
-  on this path — the queue-VANISH caller's #1596 on-demand retry leg is the
-  one poller path that does, and it burns attempts by design).
+  stays the terminal rung. A queue-timeout cancel is a CLEAN advance: the
+  timeout→RunPod FAILOVER leg does NOT touch `MAX_GCP_ATTEMPTS_PER_DAY`
+  (the counter bumps only on a create, inside `_attempt_one_gcp_rung`);
+  since #1601 the queue-timeout caller's own on-demand RETRY leg (below)
+  DOES re-enter the rung and burns attempts by design — the same two-leg
+  split as the queue-vanish sibling (#1596).
+- **On-demand retry after a clean-residue RunPod refusal (#1601/#779):**
+  the queue-timeout caller arms the SAME #1596 on-demand retry the
+  queue-vanish caller does (`gcp_ondemand_retry_reason=
+  ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY`) — a capacity-class RunPod
+  refusal with CLEAN provision residue retries the GCP ladder's STANDARD
+  rungs before minting the re-drivable `no_compute_available` terminal,
+  labeled `reason: queue_timeout_gcp_ondemand_retry`; mechanics (gate,
+  exactly-once lease, sidecar re-point, workload-error terminal, exhaustion
+  fall-through) are the #1596 machinery verbatim — see § FLEX_START
+  queue-vanish, "On-demand retry after a clean-residue RunPod refusal".
+  The `teardown_first` DELETE runs at core entry, BEFORE the RunPod rung
+  and hence before any retry create, so the timed-out queued instance is
+  already released. Documented pre-existing residual (bounded, NOT a bug):
+  a FAILED best-effort teardown can leave the timed-out PENDING instance
+  alive under the same `eps-issue-<N>` name, so the retry create may
+  reconnect to it — the exactly-once `gcp_failover_of` lease still bounds
+  paid launches, the re-pointed sidecar re-matures the timeout predicate
+  after another `EPS_GCP_QUEUE_WAIT_SECONDS`, and the stale-GCP janitor
+  reaps the orphan. (Motivating incident #779, 2026-07-22: three
+  consecutive queue-timeouts each hit a capacity-class RunPod refusal with
+  clean residue and minted `no_compute_available` without probing STANDARD
+  — ~6h lost to the #1112 manual recovery.)
 - **CPU-intent scope (#677/#747):** a `cpu-bigmem` PENDING instance is
   EXCLUDED (no cheap RunPod CPU lane → the ordinary dead path);
   `cpu-small` / `cpu-mid` (in `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) are
@@ -808,7 +831,7 @@ problem).
   NEVER `leaked`, whose non-re-drivable terminal is untouched), the poller
   retries the GCP ladder's STANDARD (on-demand) rungs itself — the #1112
   manual `--provisioning-model STANDARD` recovery, automated. Mechanics:
-  `backend_poll._retry_gcp_ondemand_after_vanish_refusal` →
+  `backend_poll._retry_gcp_ondemand_after_capacity_refusal` →
   `router.retry_gcp_ondemand_after_queue_vanish`, which pins
   `provisioning_model="STANDARD"` on `_gcp_ladder_specs` (base machine, then
   A100-40 when the intent fits 40 GB, pinned wide rungs when width is
@@ -844,9 +867,11 @@ problem).
   `no_compute_available` terminal (log_tail keeps the original RunPod
   refusal evidence — a recurring account-level cost-cap stays visible — plus
   a `GCP on-demand retry also exhausted (#1596)` note), keeping the watcher
-  capacity-retry backstop reachable. The #659 workload-crash, #783
-  queue-timeout, and #1029 boot-loop callers keep the retry flag OFF —
-  their no-cascade bound is byte-identical.
+  capacity-retry backstop reachable. Since #1601 the #783 queue-timeout
+  caller arms the SAME retry (labeled
+  `reason: queue_timeout_gcp_ondemand_retry` — see § FLEX_START
+  queue-timeout above); the #659 workload-crash and #1029 boot-loop callers
+  keep the retry OFF — their no-cascade bound is byte-identical.
 - **CPU-intent scope (#677/#747):** a `cpu-bigmem` vanish never
   rewrites/fails over (no cheap RunPod lane) — the guard gates the REWRITE
   itself, so its ordinary dead path INCLUDING today's #1029 boot-death
@@ -1462,21 +1487,29 @@ short-circuits at the once-more case via `_terminal_code_json`.
   `test_gcp_queue_vanish_does_not_record_boot_death`, + the negative
   controls: workload-clock / no-clock-record / terminated-phase /
   cpu-bigmem-excluded)
-- `tests/test_router.py` (queue-vanish on-demand retry, #1596:
+- `tests/test_router.py` (queue-loss on-demand retry, #1596/#1601:
   `test_attempt_one_gcp_rung_failover_identity_none_is_byte_identical`,
   `test_attempt_one_gcp_rung_matching_failover_identity_returns_already_launched`,
   `test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts`,
+  `test_retry_gcp_ondemand_reason_param_threads_to_result_and_final_marker`
+  — the #1601 reason generalization —
   `test_retry_gcp_ondemand_respects_daily_cap`,
   `test_retry_gcp_ondemand_h100_intent_unservable`,
   `test_retry_gcp_ondemand_reraise_workload_error_cause`,
   `test_runpod_terminal_rung_short_circuits_on_gcp_stamped_lease`)
-- `tests/test_backend_poll.py` (queue-vanish on-demand retry end-to-end, #1596:
+- `tests/test_backend_poll.py` (queue-loss on-demand retry end-to-end,
+  #1596/#1601:
   `test_gcp_queue_vanish_runpod_refusal_clean_residue_retries_gcp_ondemand`,
   `test_gcp_queue_vanish_ondemand_retry_exhausted_falls_through_no_compute`,
   `test_gcp_queue_vanish_ondemand_retry_skipped_on_leaked_residue`,
   `test_gcp_queue_vanish_ondemand_retry_crash_window_short_circuits`,
-  `test_crash_boot_loop_and_queue_timeout_failovers_do_not_retry_gcp_ondemand`
-  — the three unchanged callers, parametrized —
+  `test_gcp_queue_timeout_runpod_refusal_clean_residue_retries_gcp_ondemand`,
+  `test_gcp_queue_timeout_ondemand_retry_exhausted_falls_through_no_compute`,
+  `test_gcp_queue_timeout_ondemand_retry_skipped_on_leaked_residue`
+  — the #1601 queue-timeout arm —
+  `test_crash_and_boot_loop_failovers_do_not_retry_gcp_ondemand`
+  — the two remaining non-retry callers, parametrized (#1601 deliberately
+  flipped the #783 queue-timeout leg out of this negative-control set) —
   `test_gcp_workload_error_on_ondemand_retry_parks_non_redrivable`,
   `test_gcp_queue_vanish_ondemand_retry_sidecar_write_failure_mints_persistence_terminal`;
   `test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue`'s

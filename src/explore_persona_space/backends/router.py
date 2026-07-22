@@ -524,11 +524,12 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: this is a create that SUCCEEDED but the instance never dequeued). Same
 #: RunPod target + terminal rung, distinct detection cause so the
 #: ``epm:backend-selected`` marker trail tells a queue timeout apart from a
-#: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: it
-#: does NOT touch the per-day GCP attempt counter (that bumps only on a
-#: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters
-#: on this path — the queue-vanish #1596 on-demand retry is the one poller
-#: path that does, and it burns attempts by design).
+#: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: the
+#: timeout->RunPod FAILOVER leg never touches the per-day GCP attempt counter
+#: (that bumps only on a create, inside ``_attempt_one_gcp_rung``); the #1601
+#: on-demand RETRY leg (:data:`ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY`
+#: below) DOES re-enter the rung and burns attempts normally — the same
+#: two-leg split the queue-vanish sibling carries (#1596).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
 
 #: The ASYNC poller detected a GCP PRE-WORKLOAD BOOT LOOP (#1029): N (default
@@ -546,8 +547,8 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 #: loop apart from a crash, a queue timeout, and a capacity miss. The trigger
 #: never touches the per-day GCP attempt counter (that bumps only on a create,
 #: inside ``_attempt_one_gcp_rung``, which the poller never re-enters on this
-#: path — the queue-vanish #1596 on-demand retry is the one poller path that
-#: does, and it burns attempts by design).
+#: path — the #1596/#1601 on-demand retry legs are the poller paths that do,
+#: and they burn attempts by design).
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
 
 #: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
@@ -588,6 +589,19 @@ ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_
 #: labels a LAUNCH, never a terminal (retry exhaustion falls through to the
 #: re-drivable ``no_compute_available`` terminal unchanged).
 ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY: str = "queue_vanish_gcp_ondemand_retry"
+
+#: The poller RETRIED the GCP ladder's STANDARD (on-demand) rungs after a
+#: #783 queue-TIMEOUT failover's RunPod terminal rung REFUSED for
+#: capacity/cap reasons with CLEAN provision residue (#1601/#779). The
+#: queue-timeout sibling of :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`
+#: (#1596) — same mechanism (:func:`retry_gcp_ondemand_after_queue_vanish`,
+#: which re-enters :func:`_attempt_one_gcp_rung` and therefore DOES burn
+#: ``gcp_attempts_today``), distinct trigger label so the marker trail tells
+#: a timed-out queue apart from a vanished one. Additive value per the
+#: documented-drift precedent — no ``workflow.yaml`` schema change. NOT in
+#: the watcher's ``TRANSIENT_CAPACITY_REASONS``: it labels a LAUNCH, never a
+#: terminal (retry exhaustion falls through to ``no_compute_available``).
+ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY: str = "queue_timeout_gcp_ondemand_retry"
 
 #: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
 #: same-rung pre-workload boot death fails over to RunPod, and a rung whose
@@ -3474,13 +3488,15 @@ def retry_gcp_ondemand_after_queue_vanish(
     now_fn: Callable[[], float] | None = None,
     config: RouterConfig | None = None,
     gcp_failover_of_identity: dict[str, Any] | None = None,
+    reason: str = ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
 ) -> RouteResult | None:
     """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-vanish
-    RunPod refusal (#1596/#1112).
+    (#1596/#1112) or queue-timeout (#1601/#779) RunPod refusal.
 
     The GCP-target sibling of
     :func:`failover_to_runpod_after_async_workload_crash` (same seam-defaulting
-    shape): when a #1116 queue-vanish failover's RunPod terminal rung raised
+    shape): when a #1116 queue-vanish or #783 queue-timeout failover's RunPod
+    terminal rung raised
     :class:`NoComputeAvailableError` with CLEAN provision residue, the poller
     (``scripts/backend_poll.py``) calls this to walk EXACTLY the on-demand
     rungs a caller ``provisioning_model="STANDARD"`` pin enumerates
@@ -3493,7 +3509,10 @@ def retry_gcp_ondemand_after_queue_vanish(
     posts, and the in-flock lease writes for free.
 
     Returns the launched :class:`RouteResult` (final ``epm:backend-selected``
-    marker labeled :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`;
+    marker labeled ``reason`` — default
+    :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`; the #1601
+    queue-timeout caller passes
+    :data:`ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY` — while
     intermediate per-rung markers wear the generic ``auto_fallback_gcp``
     reason, accepted trail noise), or ``None`` when a CONCURRENT triggerer
     already launched the retry (the rung's #1596 in-flock
@@ -3564,7 +3583,7 @@ def retry_gcp_ondemand_after_queue_vanish(
                 marker_poster=marker_poster,
                 on_launched=on_launched,
                 terminal=True,
-                reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+                reason=reason,
                 count_attempt_cap=True,
                 failover_of_identity=gcp_failover_of_identity,
             )
@@ -5926,6 +5945,7 @@ __all__ = [
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
+    "ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY",
     "ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
