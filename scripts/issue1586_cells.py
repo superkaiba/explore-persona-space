@@ -267,7 +267,12 @@ MIXES: dict[str, dict[str, tuple[str, int]]] = {
     },
     "mk": {
         "con": ("issue1481_conpos_grid/marker/mixes/marker_pers_con.jsonl", 1000),
-        "po": ("issue1481_conpos_grid/marker/mixes/marker_pers_po.jsonl", 1000),
+        # po = the con mix's 200 positives BY CONSTRUCTION (a positive-only
+        # mix carries no negatives; plan §4.2 deliberately lists mk po with
+        # no row count). HF ground truth 2026-07-22: 200 rows, 200 marker
+        # rows. r4 crash fix — the prior 1000 was a copy-fill from the con
+        # row (epm:failure v4: 'mix mk_po.jsonl: 200 rows != expected 1000').
+        "po": ("issue1481_conpos_grid/marker/mixes/marker_pers_po.jsonl", 200),
     },
 }
 

@@ -201,3 +201,90 @@ def test_mu_norm_draws_matches_serial_reference():
     batched = gg._mu_norm_draws(X, idx)
     serial = np.array([np.linalg.norm(X[draw].mean(axis=0)) for draw in idx])
     np.testing.assert_allclose(batched, serial, rtol=1e-12, atol=1e-12)
+
+
+# ── mix registry + regime-aware composition asserts (r4 crash fix) ──────────
+# epm:failure v4: MIXES['mk']['po'] copy-filled the con row's 1000 (the real
+# po mix = the con positives, 200 rows), and the marker sub-check's
+# 0 < n_marker < n was structurally unsatisfiable for a po mix (200/200
+# marker rows is correct-by-construction there, not degenerate).
+
+
+def _write_mix(tmp_path, name: str, completions: list[str]) -> Path:
+    import json
+
+    p = Path(tmp_path) / name
+    p.write_text(
+        "".join(json.dumps({"completion": c}) + "\n" for c in completions),
+        encoding="utf-8",
+    )
+    return p
+
+
+def test_mix_registry_mk_po_expected_rows():
+    # fails pre-fix (registry said 1000): po = con's positives BY CONSTRUCTION.
+    assert G.MIXES["mk"]["con"][1] == 1000
+    assert G.MIXES["mk"]["po"][1] == 200
+    # content mixes untouched (pod A's p0 PASSED these on the real files).
+    for beh, con_n, po_n in (("syc", 80, 60), ("imp", 80, 60), ("cas", 80, 60)):
+        assert G.MIXES[beh]["con"][1] == con_n
+        assert G.MIXES[beh]["po"][1] == po_n
+
+
+def test_mix_composition_con_mixed_passes(tmp_path):
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    p = _write_mix(tmp_path, "mk_con.jsonl", [mk, "plain", mk, "plain"])
+    rec = d._assert_mix_composition(p, "mk", "con", 4)
+    assert rec["rows"] == 4 and rec["rows_with_marker"] == 2
+
+
+def test_mix_composition_po_all_marker_passes(tmp_path):
+    # fails pre-fix: the regime-blind 0 < n_marker < n check raised
+    # 'degenerate marker rows 4/4' on a correct positives-only mix.
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    p = _write_mix(tmp_path, "mk_po.jsonl", [mk, mk, mk, mk])
+    rec = d._assert_mix_composition(p, "mk", "po", 4)
+    assert rec["rows"] == 4 and rec["rows_with_marker"] == 4
+
+
+def test_mix_composition_wrong_count_raises(tmp_path):
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    p = _write_mix(tmp_path, "mk_po.jsonl", [mk, mk])
+    with pytest.raises(RuntimeError, match=r"2 rows != expected 4"):
+        d._assert_mix_composition(p, "mk", "po", 4)
+
+
+def test_mix_composition_con_degenerate_raises(tmp_path):
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    all_marker = _write_mix(tmp_path, "mk_con_all.jsonl", [mk, mk, mk, mk])
+    with pytest.raises(RuntimeError, match="degenerate marker rows 4/4"):
+        d._assert_mix_composition(all_marker, "mk", "con", 4)
+    no_marker = _write_mix(tmp_path, "mk_con_none.jsonl", ["a", "b", "c", "d"])
+    with pytest.raises(RuntimeError, match="degenerate marker rows 0/4"):
+        d._assert_mix_composition(no_marker, "mk", "con", 4)
+
+
+def test_mix_composition_po_partial_marker_raises(tmp_path):
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    p = _write_mix(tmp_path, "mk_po_partial.jsonl", [mk, "plain", mk, mk])
+    with pytest.raises(RuntimeError, match="positive-only mix must carry the marker"):
+        d._assert_mix_composition(p, "mk", "po", 4)
+
+
+def test_mix_composition_unknown_regime_raises(tmp_path):
+    import issue1586_dispatch as d
+
+    mk = "answer" + d.MARKER_TEXT
+    p = _write_mix(tmp_path, "mk_zz.jsonl", [mk, "plain"])
+    with pytest.raises(RuntimeError, match="unknown regime"):
+        d._assert_mix_composition(p, "mk", "zz", 2)
