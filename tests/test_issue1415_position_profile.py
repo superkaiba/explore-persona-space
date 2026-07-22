@@ -175,6 +175,28 @@ def test_parity_verdict_halt_fires_on_degenerate_cosines():
     assert v["fired"] is False and v["demoted_to_warn"] is True
 
 
+def test_capture_all_empty_completions_fails_loud():
+    """The all-empty gate (parent convention) fires on degenerate input —
+    never a silent skip. Signature-conformant stub boundary: only the model
+    forward is unreachable (the assert fires before any forward)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.issue1415.steering import (
+        capture_binned_answer_profiles,
+    )
+
+    tok = AutoTokenizer.from_pretrained(drv.MODEL_ID)
+
+    class _NeverForward(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.p = torch.nn.Parameter(torch.zeros(1))
+
+    ctx = {"system": "You are terse.", "user": "Say nothing."}
+    with pytest.raises(AssertionError, match="completions empty"):
+        capture_binned_answer_profiles(_NeverForward(), tok, ctx, ["", ""], [0])
+
+
 # ── FULL --tiny e2e (phase chain p0 -> p4, real schema, real tokenizer) ──
 
 
@@ -257,6 +279,28 @@ def test_tiny_e2e_resume_skips_completed_cells(tiny_run):
     drv.main(["--tiny", "--work-root", str(tiny_run), "--phase", "p2"])
     after = json.loads(manifest_path.read_text())
     assert set(after["cells"]) == set(before["cells"])
+
+
+def test_p0_verification_fails_loud_on_context_mismatch(tiny_run, tmp_path):
+    """The p0 meta.context == draws.context cross-assert names the offending
+    cell_id (degenerate-input probe of the p0 gate on a COPY of the tiny run —
+    the module fixture stays untouched)."""
+    import shutil
+
+    work = tmp_path / "tampered"
+    shutil.copytree(tiny_run, work)
+    args = drv.parse_args(["--tiny", "--work-root", str(work)])
+    cfg = drv.build_config(args)
+    cells = drv.enumerate_cells(cfg)
+    victim = cells[0]
+    staged = work / "stage" / f"{victim.cell_id}.json"
+    blob = json.loads(staged.read_text())
+    blob["context"] = {"system": "TAMPERED", "user": "TAMPERED"}
+    staged.write_text(json.dumps(blob))
+    import re
+
+    with pytest.raises(RuntimeError, match=re.escape(victim.cell_id)):
+        drv.phase_p0(cfg, cells)
 
 
 def test_tiny_e2e_figures_render_from_jsons(tiny_run, tmp_path):
