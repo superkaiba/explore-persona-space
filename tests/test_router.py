@@ -8430,3 +8430,206 @@ def test_runpod_terminal_rung_short_circuits_on_gcp_stamped_lease(lease_store, m
     )
     assert result2.extra.get("failover_already_launched") is None
     assert len(rp2.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# #1603 — exit-75 still-waiting at the RunPod terminal rung (incident #1586).
+#
+# pod_lifecycle's bounded wait-for-capacity loop exits 75 (EX_TEMPFAIL) with
+# NOTHING provisioned and NOTHING billing — the contract is "re-run the same
+# command to continue waiting". Pre-#1603 the rung's catch-all collapsed that
+# into NoComputeAvailableError + the no_compute_available terminal, mis-parking
+# the task at blocked (#1586, 12:46:02Z). The rung now re-raises the exit-75
+# CalledProcessError VERBATIM (sync path: dispatch_issue's existing exit-75
+# still-waiting arm covers it); the ASYNC wrapper converts it back to
+# NoComputeAvailableError so the poller's terminal contract is byte-unchanged.
+# ---------------------------------------------------------------------------
+
+
+class _StillWaitingRunpod(_BaseBackend):
+    """RunPod double whose ``launch`` raises pod_lifecycle's exit-75
+    still-waiting error through the #1465 stderr-tail relay subclass.
+
+    Fixture-hygiene note (#1603 plan): the SHORT cmd ``["pod_lifecycle",
+    "provision"]`` is rung-only — the rung's predicate is rc-only, but this
+    cmd does NOT satisfy ``dispatch_issue._provision_still_waiting``'s
+    cmd-shape conjunct (``"pod_lifecycle.py"`` is not a substring of
+    ``"pod_lifecycle"``); any assertion crossing into that CLI helper uses
+    the real-shaped cmd (see tests/test_dispatch_issue_cli.py).
+    """
+
+    def __init__(self, *, returncode: int = 75) -> None:
+        self.launches: list[RunSpec] = []
+        self._returncode = returncode
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+        self.launches.append(spec)
+        raise PodLifecycleProcessError(
+            self._returncode,
+            ["pod_lifecycle", "provision"],
+            output=None,
+            stderr="[wait-for-capacity] STILL-WAITING: per-process budget reached",
+        )
+
+
+def test_runpod_terminal_rung_still_waiting_exit75_reraises_not_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC1 (durability pin): an exit-75 still-waiting provision at the
+    terminal rung re-raises the CalledProcessError VERBATIM — no
+    NoComputeAvailableError collapse, NO terminal failure marker, NO lease
+    write (nothing launched; the wait is state-free) — and records the
+    DISTINCT runpod_still_waiting RouteAttempt."""
+    import subprocess
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StillWaitingRunpod()
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(subprocess.CalledProcessError) as ei:
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    assert ei.value.returncode == 75
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1
+    # NO terminal failure marker on the still-waiting path (the orchestrator
+    # would otherwise post epm:failure + set-status blocked — the #1586 park).
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert attempts[-1].outcome == "runpod_still_waiting"
+    assert "re-run the same launch command" in attempts[-1].detail
+
+
+def test_runpod_terminal_rung_non75_process_error_keeps_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC3 (fail-loud backing test): a PodLifecycleProcessError with ANY
+    OTHER returncode keeps the pre-#1603 blanket branch byte-for-byte —
+    NoComputeAvailableError raised AND the no_compute_available terminal
+    marker posted BEFORE the raise."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StillWaitingRunpod(returncode=1)
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(NoComputeAvailableError):
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["reason"] == ROUTE_REASON_NO_COMPUTE
+    assert attempts[-1].outcome == "runpod_fallback_failed"
+
+
+def test_route_auto_chain_exit75_at_terminal_rung_propagates_still_waiting(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC2 (the #1586 sync-park replay): a full route() exhaustion walk
+    (every GCP rung capacity-misses, the free lane never starts) whose RunPod
+    terminal rung exits 75 propagates the CalledProcessError out of route()
+    — no intermediate handler swallows it — so dispatch_issue's existing
+    exit-75 still-waiting arm (exit 75 + still_waiting: true + rerun: true)
+    covers the terminal rung end-to-end."""
+    import subprocess
+
+    rp = _StillWaitingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    with pytest.raises(subprocess.CalledProcessError) as ei:
+        route(
+            _short_lora_spec(),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(
+                free_wait_seconds=1,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                max_gcp_attempts_per_day=99,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert ei.value.returncode == 75
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1  # the rung WAS reached (last resort), once
+    # State-free at the RUNPOD rung: no runpod lease was written (nothing
+    # provisioned), so a re-run of the same command re-walks the ladder. (The
+    # nibi PARK attempt writes its own free-lane lease — pre-existing route()
+    # behavior, deliberately not asserted away here.)
+    lease = lease_store.read(137)
+    assert lease is None or lease.backend != "runpod"
+
+
+def test_async_failover_exit75_converts_to_no_compute_available(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC4 (async parity): the async failover wrapper converts an
+    exit-75 still-waiting rung raise to NoComputeAvailableError (terminal
+    marker posted BEFORE the raise, per the test_router L2011-family
+    invariant), preserving the __cause__ chain backend_poll's residue
+    diagnostics read — every backend_poll consumer sees the same type as
+    today."""
+    import subprocess
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _StillWaitingRunpod()
+    with pytest.raises(NoComputeAvailableError) as ei:
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert "still WAITING" in str(ei.value)
+    cause = ei.value.__cause__
+    assert isinstance(cause, subprocess.CalledProcessError)
+    assert cause.returncode == 75
+    # Terminal marker posted before the raise, carrying the rung's
+    # runpod_still_waiting attempt row.
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["attempts"][-1]["outcome"] == "runpod_still_waiting"

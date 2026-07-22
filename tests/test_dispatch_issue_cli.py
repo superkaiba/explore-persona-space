@@ -895,11 +895,38 @@ def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_
 def test_exit_still_waiting_matches_pod_lifecycle() -> None:
     """The CLI mirrors ``pod_lifecycle.EXIT_STILL_WAITING`` rather than
     importing it (import-light contract) — pin the two equal so a future
-    renumbering on either side fails loudly here."""
+    renumbering on either side fails loudly here. #1603 adds a THIRD mirror
+    (``backends/runpod.py``, the router terminal rung's consumer) to the
+    same parity pin."""
+    from explore_persona_space.backends.runpod import EXIT_STILL_WAITING as runpod_code
     from scripts.dispatch_issue import EXIT_STILL_WAITING as cli_code
     from scripts.pod_lifecycle import EXIT_STILL_WAITING as pl_code
 
-    assert cli_code == pl_code == 75
+    assert cli_code == pl_code == runpod_code == 75
+
+
+def test_provision_still_waiting_accepts_pod_lifecycle_process_error_subclass() -> None:
+    """#1603 test 6: ``PodLifecycleProcessError`` (the #1465 stderr-tail relay
+    subclass — returncode + cmd ride verbatim) satisfies
+    ``_provision_still_waiting``'s TWO conjuncts end-to-end: returncode 75
+    AND a cmd naming ``pod_lifecycle.py`` + the exact part ``provision`` (the
+    real provision cmd shape). Each conjunct is also pinned individually:
+    the same real-shaped cmd at rc=1 is rejected, and rc=75 with a
+    non-provision cmd shape is rejected (an unrelated rc-75 subprocess from
+    another lane stays out of the still-waiting branch)."""
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+    from scripts.dispatch_issue import _provision_still_waiting
+
+    real_cmd = [
+        "/usr/bin/python3",
+        "/repo/scripts/pod_lifecycle.py",
+        "provision",
+        "--issue",
+        "1603",
+    ]
+    assert _provision_still_waiting(PodLifecycleProcessError(75, real_cmd)) is True
+    assert _provision_still_waiting(PodLifecycleProcessError(1, real_cmd)) is False
+    assert _provision_still_waiting(PodLifecycleProcessError(75, ["x"])) is False
 
 
 def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
