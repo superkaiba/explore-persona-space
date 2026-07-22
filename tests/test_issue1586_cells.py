@@ -157,14 +157,16 @@ def test_regime_key_stable_across_free_space_drift(monkeypatch, tmp_path):
     import issue1586_dispatch as d
 
     cfg = _mk_cfg(tmp_path)
-    monkeypatch.setattr(d, "probe_disk_mode", lambda p: "keep-cell")
+    monkeypatch.setattr(d, "probe_disk_mode", lambda p, **kw: "keep-cell")
     k1 = cfg.regime_key()
     assert k1["ladder_disk_mode"] == "keep-cell"
     assert (Path(tmp_path) / "disk_mode.json").exists()
     # free space "drifts" below the threshold: a re-probe would now flip —
     # the persisted value must win (no re-probe at all).
     monkeypatch.setattr(
-        d, "probe_disk_mode", lambda p: pytest.fail("re-probed after persist (Major 2 regression)")
+        d,
+        "probe_disk_mode",
+        lambda p, **kw: pytest.fail("re-probed after persist (Major 2 regression)"),
     )
     assert cfg.regime_key() == k1
     # a FRESH Cfg on the same out_root (resume / unit subprocess) reads the
@@ -177,7 +179,7 @@ def test_unit_args_thread_resolved_literal_never_auto(monkeypatch, tmp_path):
     import issue1586_dispatch as d
 
     cfg = _mk_cfg(tmp_path)
-    monkeypatch.setattr(d, "probe_disk_mode", lambda p: "stream-reap")
+    monkeypatch.setattr(d, "probe_disk_mode", lambda p, **kw: "stream-reap")
     args = d._unit_args(cfg, "ladder", G.SMOKE_CELL)
     mode = args[args.index("--ladder-disk-mode") + 1]
     assert mode == "stream-reap"  # the resolved LITERAL, never "auto"

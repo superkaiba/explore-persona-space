@@ -137,11 +137,32 @@ PHASE_HEADROOM_GB = {
 # against its OWN §9 row (review r1 Minor 5 — a combined p2+p3 wall was
 # structurally looser than either row, and a ladder-side blowup escaped it).
 PILOT_PLAN_P2_WALL_H = 2.2  # §9 p2 row (content FT fan-out)
-PILOT_PLAN_P3_WALL_H = 2.3  # §9 p3 (1.5h content ladders) + p3b (0.8h marker reads)
+# §9 p3/p3b PER-CELL GPU-h bases (p3 row: 10 GPU-h / 10 content cells; p3b
+# row: 5 GPU-h / 4 marker cells). Crash-fix r5: the wave flow ladders W cells
+# at a time (strict train->ladder->persist->reap alternation, see run_waves),
+# so the p3 gate's plan wall is re-based to sum(per-cell basis)/W — SAME
+# per-unit sensitivity as the frozen §9 rows, honest at the realized
+# (disk-bounded) ladder width. The wall-clock consequence vs the §9 8-way
+# fan-out rows is posted as epm:compute-deviation, not absorbed by the gate.
+PILOT_PLAN_P3_GPU_H_CONTENT = 1.0
+PILOT_PLAN_P3_GPU_H_MARKER = 1.25
 PILOT_PARALLELISM = 2.0  # 2 concurrent ZeRO-3 quads (p2)
 PILOT_GATE_RC = 7  # designed halt (never bare rc=1 — gotchas #1415)
 
-# keep-cell needs the GCE 750 GB boot-disk class (plan §9 disk split).
+# Disk arithmetic (crash-fix r5, epm:failure v5 — phase-ordering ENOSPC).
+RUNG_GB = 15.2  # weights-only bf16 7B rung checkpoint (measured, #1112/pod A)
+WAVE_MARGIN_GB = 25.0  # per-wave working margin (logs / rollouts / tmp)
+# keep-cell fixed overhead at probe time on a FRESH instance: staged reused
+# arms (~35 GB) + base model into the HF cache (~16 GB) + slack.
+KEEPCELL_FIXED_OVERHEAD_GB = 60.0
+# FLOOR for the keep-cell disk-mode probe = the smallest real keep-cell
+# demand under the wave flow (a 1-content-cell wave): 15 rungs x 15.2 GB
+# + 1 selected ckpt (15.2) + fixed overhead (60) ~= 303 GB. The probe uses
+# max(this floor, keepcell_demand_gb(cells, n_gpus)) — the GRID-AWARE peak:
+# largest single-wave rung accumulation (2 concurrent content ladders x 15
+# rungs ~= 456 GB on 8 GPUs — the plan §9 high-water) + one selected ckpt
+# per trainable cell (kept locally for p5-p8) + fixed overhead (pod A
+# 12-cell grid: ~683 GB -> the GCE 750 GB boot-disk class).
 KEEPCELL_MIN_FREE_GB = 300.0
 
 MARKER_TEXT = " ※"
@@ -214,7 +235,16 @@ class Cfg:
         p = self.out_root / "disk_mode.json"
         if p.exists():
             return str(_read_json(p)["resolved"])
-        mode = probe_disk_mode(self.out_root)
+        try:
+            n_gpus = _n_gpus()
+        except RuntimeError:
+            n_gpus = 8  # GPU-less resolve (VM-side): worst-case width -> conservative demand
+        need = (
+            keepcell_demand_gb(self.cells, n_gpus, smoke=True)
+            if self.smoke
+            else max(KEEPCELL_MIN_FREE_GB, keepcell_demand_gb(self.cells, n_gpus))
+        )
+        mode = probe_disk_mode(self.out_root, need_gb=need)
         self.out_root.mkdir(parents=True, exist_ok=True)
         _atomic_json(
             p,
@@ -249,12 +279,13 @@ def _runpod_workspace_quota_lane() -> bool:
     return False
 
 
-def probe_disk_mode(out_root: Path) -> str:
+def probe_disk_mode(out_root: Path, need_gb: float = KEEPCELL_MIN_FREE_GB) -> str:
     """One-shot disk-mode probe (called exactly once per out_root, then
     persisted — see Cfg.resolved_disk_mode). RunPod lane -> stream-reap
     UNCONDITIONALLY (statvfs reads the MooseFS SHARE free space, TBs, and is
     blind to the ~130 GB per-pod quota — review r1 Major 1); else statvfs on
-    the out-root filesystem (GCE 750 GB boot disk / VM)."""
+    the out-root filesystem vs ``need_gb`` — the GRID-AWARE keep-cell peak
+    under the wave flow (crash-fix r5; see keepcell_demand_gb)."""
     if _runpod_workspace_quota_lane():
         return "stream-reap"
     try:
@@ -262,7 +293,7 @@ def probe_disk_mode(out_root: Path) -> str:
         free_gb = st.f_bavail * st.f_frsize / 1e9
     except OSError:
         return "stream-reap"  # unknown filesystem -> conservative
-    return "keep-cell" if free_gb >= KEEPCELL_MIN_FREE_GB else "stream-reap"
+    return "keep-cell" if free_gb >= need_gb else "stream-reap"
 
 
 _PHASE_ALIASES = {
@@ -325,6 +356,39 @@ def _is_marker(cell: str) -> bool:
 
 def _behavior(cell: str) -> str:
     return G.BEHAVIOR_BY_KEY[G.parse_ft_cell(cell)[0]]
+
+
+def _cell_rung_demand_gb(cell: str, *, smoke: bool = False) -> float:
+    """Peak rung-checkpoint bytes ONE cell's training writes (weights-only
+    rungs at every ckpt step; the trainer writes them regardless of disk
+    mode — stream-reap only bounds ladder-time retention)."""
+    if smoke:
+        return RUNG_GB  # smoke trains a single rung (ckpts=(2,))
+    n_rungs = len(G.MARKER_FT_GRID) if _is_marker(cell) else len(P1112.FT_CKPT_STEPS)
+    return n_rungs * RUNG_GB
+
+
+def wave_width(n_gpus: int) -> int:
+    """Wave width W = the p2 concurrent-quad count from realized GPU width
+    (2 ZeRO-3 quads on 8 GPUs, 1 on 4) — the same lane logic as phase_train,
+    so a wave IS one training batch (crash-fix r5)."""
+    return 2 if n_gpus >= 8 else 1
+
+
+def keepcell_demand_gb(cells: Sequence[str], n_gpus: int, *, smoke: bool = False) -> float:
+    """GRID-AWARE keep-cell peak disk demand under the bounded-wave flow
+    (crash-fix r5, epm:failure v5): the largest single wave's rung
+    accumulation + one selected ckpt per trainable cell (retained locally
+    for p5-p8 after the wave reap) + the fresh-instance fixed overhead.
+    Pod A (11 trainable content cells, 8 GPUs): 2x15x15.2 + 11x15.2 + 60
+    ~= 683 GB; pod B (4 marker cells): 2x6x15.2 + 4x15.2 + 60 ~= 303 GB."""
+    trainable = [c for c in cells if c != G.REUSED_FT_CELL]
+    if not trainable:
+        return KEEPCELL_FIXED_OVERHEAD_GB
+    w = wave_width(n_gpus)
+    waves = [trainable[i : i + w] for i in range(0, len(trainable), w)]
+    wave_peak = max(sum(_cell_rung_demand_gb(c, smoke=smoke) for c in wv) for wv in waves)
+    return wave_peak + len(trainable) * RUNG_GB + KEEPCELL_FIXED_OVERHEAD_GB
 
 
 def _mirror_deliverable(cfg: Cfg, unit: str, payload: dict) -> None:
@@ -944,17 +1008,20 @@ def _await_train(cfg: Cfg, cell: str, proc: subprocess.Popen) -> None:
     )
 
 
-def phase_train(cfg: Cfg) -> dict:
+def phase_train(cfg: Cfg, cells: Sequence[str] | None = None) -> dict:
+    """p2 training over ``cells`` (default: every cfg cell). Wave-scoped by
+    run_waves (crash-fix r5) so rung checkpoints never accumulate past one
+    W-cell wave; per-cell resume via build_result.json is unchanged. The p2
+    pilot gate fires ONCE per run (idempotent on its report file) on the
+    first freshly-trained batch."""
     _phase("p2_train")
     _headroom(cfg, "p2_train")
-    pending = [
-        c
-        for c in cfg.cells
-        if not (cfg.out_root / c / "build_result.json").exists() and c != G.REUSED_FT_CELL
-    ]
-    n_lanes = 2 if len(_physical_gpu_ids()) >= 8 else 1
+    scope = [c for c in (cells if cells is not None else cfg.cells) if c != G.REUSED_FT_CELL]
+    pending = [c for c in scope if not (cfg.out_root / c / "build_result.json").exists()]
+    n_lanes = wave_width(len(_physical_gpu_ids()))
+    gate_rep = cfg.out_root / "pilot_gate_report_p2_train.json"
     t0 = time.time()
-    first_cell_wall: float | None = None
+    first_batch_seen = False
     while pending:
         batch = pending[:n_lanes]
         pending = pending[n_lanes:]
@@ -965,19 +1032,20 @@ def phase_train(cfg: Cfg) -> dict:
                 procs[cell] = p
         for cell, p in procs.items():
             _await_train(cfg, cell, p)
-        if first_cell_wall is None:
-            first_cell_wall = time.time() - t0
-            _pilot_gate(
-                cfg,
-                label="p2_train",
-                unit_wall_s=first_cell_wall,
-                n_units=len([c for c in cfg.cells if c != G.REUSED_FT_CELL]),
-                parallelism=PILOT_PARALLELISM,
-                plan_wall_h=PILOT_PLAN_P2_WALL_H,
-            )
+        if not first_batch_seen:
+            first_batch_seen = True
+            if procs and not gate_rep.exists():
+                _pilot_gate(
+                    cfg,
+                    label="p2_train",
+                    unit_wall_s=time.time() - t0,
+                    n_units=len([c for c in cfg.cells if c != G.REUSED_FT_CELL]),
+                    parallelism=PILOT_PARALLELISM,
+                    plan_wall_h=PILOT_PLAN_P2_WALL_H,
+                )
     return {
         c: _read_json(cfg.out_root / c / "build_result.json")
-        for c in cfg.cells
+        for c in scope
         if (cfg.out_root / c / "build_result.json").exists()
     }
 
@@ -1249,10 +1317,15 @@ def _retrain_to_step(cfg: Cfg, cell: str, step: int) -> dict:
     return rec
 
 
-def phase_ladder(cfg: Cfg) -> dict:
+def phase_ladder(cfg: Cfg, cells: Sequence[str] | None = None) -> dict:
+    """p3 ladders + selection over ``cells`` (default: every cfg cell).
+    Wave-scoped by run_waves (crash-fix r5); the reused #1112 cell's
+    synthesized selection is written by run_waves' terminal pass
+    (_reused_selection), never here."""
     _phase("p3_ladder")
     _headroom(cfg, "p3_ladder")
-    trainable = [c for c in cfg.cells if c != G.REUSED_FT_CELL]
+    scope = list(cells) if cells is not None else list(cfg.cells)
+    trainable = [c for c in scope if c != G.REUSED_FT_CELL]
     units = [
         _unit_args(cfg, "ladder", c)
         for c in trainable
@@ -1260,19 +1333,34 @@ def phase_ladder(cfg: Cfg) -> dict:
     ]
     if units:
         # p3 pilot (review r1 Minor 5): the FIRST ladder unit runs inline,
-        # timed, gated against the §9 p3+p3b rows — a full-FT-rung engine
-        # churn blowup HALTs here instead of escaping the p2-only gate.
+        # timed, gated against the §9 p3+p3b PER-CELL bases at the realized
+        # wave width (crash-fix r5 re-basis — see PILOT_PLAN_P3_GPU_H_*) —
+        # a full-FT-rung engine churn blowup HALTs here instead of escaping
+        # the p2-only gate. Fires once per run (report-file keyed).
         gate_rep = cfg.out_root / "pilot_gate_report_p3_ladder.json"
         if not cfg.smoke and not gate_rep.exists():
+            pending_cells = [
+                c
+                for c in cfg.cells
+                if c != G.REUSED_FT_CELL and not (cfg.out_root / c / "ladder_done.json").exists()
+            ]
+            w = float(wave_width(_n_gpus()))
+            plan_wall_h = (
+                sum(
+                    PILOT_PLAN_P3_GPU_H_MARKER if _is_marker(c) else PILOT_PLAN_P3_GPU_H_CONTENT
+                    for c in pending_cells
+                )
+                / w
+            )
             t0 = time.time()
             run_ladder_unit(cfg, units[0][2])
             _pilot_gate(
                 cfg,
                 label="p3_ladder",
                 unit_wall_s=time.time() - t0,
-                n_units=len(units),
-                parallelism=float(min(_n_gpus(), 8)),
-                plan_wall_h=PILOT_PLAN_P3_WALL_H,
+                n_units=len(pending_cells),
+                parallelism=w,
+                plan_wall_h=plan_wall_h,
             )
             units = units[1:]
     if units:
@@ -1291,20 +1379,23 @@ def phase_ladder(cfg: Cfg) -> dict:
     selections: dict[str, dict] = {}
     for c in trainable:
         selections[c] = _select_cell(cfg, c)
-    if G.REUSED_FT_CELL in cfg.cells:
-        selections[G.REUSED_FT_CELL] = {
-            "cell": G.REUSED_FT_CELL,
-            "step": 8,
-            "reused": True,
-            "subfolder": G.REUSED_FT_SUBFOLDER,
-            "in_band": True,
-            "fallback": None,
-        }
-        _atomic_json(
-            cfg.out_root / G.REUSED_FT_CELL / "selection.json", selections[G.REUSED_FT_CELL]
-        )
-        _mirror_deliverable(cfg, G.REUSED_FT_CELL, selections[G.REUSED_FT_CELL])
     return selections
+
+
+def _reused_selection(cfg: Cfg) -> dict:
+    """Synthesized selection record for the reused #1112 FT cell (never
+    trains or ladders — run_waves' terminal pass writes it)."""
+    sel = {
+        "cell": G.REUSED_FT_CELL,
+        "step": 8,
+        "reused": True,
+        "subfolder": G.REUSED_FT_SUBFOLDER,
+        "in_band": True,
+        "fallback": None,
+    }
+    _atomic_json(cfg.out_root / G.REUSED_FT_CELL / "selection.json", sel)
+    _mirror_deliverable(cfg, G.REUSED_FT_CELL, sel)
+    return sel
 
 
 def _maybe_extend(cfg: Cfg, cell: str) -> None:
@@ -1419,6 +1510,127 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                 raise RuntimeError(f"fanout unit {extra} failed rc={rc} (see {logs})")
 
 
+# ── p2-p4 bounded-wave pipelining (crash-fix r5: rung-accumulation ENOSPC) ───
+
+
+def _wave_partition(cfg: Cfg) -> list[list[str]]:
+    """Deterministic wave partition of the trainable cells (the reused #1112
+    cell never trains -> excluded; run_waves' terminal pass owns its
+    selection record). Width = the realized concurrent-quad count."""
+    trainable = [c for c in cfg.cells if c != G.REUSED_FT_CELL]
+    w = wave_width(len(_physical_gpu_ids()))
+    return [trainable[i : i + w] for i in range(0, len(trainable), w)]
+
+
+def _wave_headroom(cfg: Cfg, k: int, wave: Sequence[str]) -> None:
+    """Per-wave demand assert (crash-fix r5): the phase-start canary
+    (PHASE_HEADROOM_GB floor 60 GB) is blind to per-wave rung demand — a
+    wave's TRAINING writes every rung regardless of disk mode (stream-reap
+    only bounds ladder-time retention), so demand = the wave's full rung
+    accumulation + a working margin."""
+    need = sum(_cell_rung_demand_gb(c, smoke=cfg.smoke) for c in wave) + WAVE_MARGIN_GB
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    assert_out_root_headroom(cfg.out_root, need_gb=need, phase=f"p2_train_wave{k}")
+
+
+def _rungs_or_empty(d: Path) -> dict[int, Path]:
+    """_enumerate_rungs, tolerating a rung-less/absent dir (idempotent wave
+    reap re-runs; the retrained-reselect case empties the original train
+    dir)."""
+    try:
+        return _enumerate_rungs(d)
+    except ValueError:
+        return {}
+
+
+def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
+    """Post-persist wave reap: drop every non-SELECTED rung of the wave's
+    cells — including the 'latest' rung _select_cell keeps — so only ~one
+    selected ckpt/cell (~15.2 GB, consumed locally by p5-p8) accumulates
+    across waves (plan §10 declared discard; per-rung rates persist in
+    ladder.json; non-selected rungs re-derive by deterministic retrain).
+    ASSERTS the reap took — a silent no-op here re-creates the epm:failure
+    v5 ENOSPC class — and logs the freed bytes."""
+    free0 = shutil.disk_usage(cfg.out_root).free
+    for cell in cells:
+        cell_root = cfg.out_root / cell
+        sel_path = cell_root / "selection.json"
+        build_path = cell_root / "build_result.json"
+        if not sel_path.exists() or not build_path.exists():
+            logger.warning("[wave] reap skip %s: no selection/build record yet", cell)
+            continue
+        sel_step = int(_read_json(sel_path)["step"])
+        adapter_root = Path(_read_json(build_path)["adapter_root"])
+        for d in {adapter_root, cell_root / "train"}:
+            if _rungs_or_empty(d):
+                _reap_rungs(d, {sel_step})
+        left = set(_rungs_or_empty(adapter_root))
+        if left != {sel_step}:
+            raise RuntimeError(
+                f"wave reap failed for {cell}: rungs {sorted(left)} != "
+                f"selected {{{sel_step}}} under {adapter_root}"
+            )
+    free1 = shutil.disk_usage(cfg.out_root).free
+    logger.info(
+        "[wave] reap cells=%s freed %.1f GB (free %.1f -> %.1f GB)",
+        ",".join(cells),
+        max(0.0, free1 - free0) / 1e9,
+        free0 / 1e9,
+        free1 / 1e9,
+    )
+
+
+def run_waves(cfg: Cfg, *, do_train: bool, do_ladder: bool, do_persist: bool) -> dict:
+    """Bounded-wave pipelining over p2/p3/p4 (crash-fix r5, epm:failure v5).
+
+    Trains, ladders, persists, and reaps W cells at a time (W = the realized
+    concurrent-quad count) in STRICT alternation — wave k's ladder never
+    overlaps wave k+1's training: overlap would double peak rung
+    accumulation, and both stages already use the GPUs (the named
+    disk-capacity constraint licensing the stage barrier; code-style
+    work-conserving rule). Peak keep-cell disk drops from
+    n_cells x n_rungs x 15.2 GB (~2.5 TB on pod A — the linear p2->p3
+    ordering that ENOSPC'd a 750 GB volume at ~2.5 cells) to
+    W x n_rungs x 15.2 GB + ~15.2 GB per completed cell.
+
+    ``--phases`` semantics: any subset naming train/ladder/persist runs THIS
+    wave loop with the un-named stages skipped per wave; every stage is
+    per-cell idempotent (build_result.json / ladder_done.json+selection.json
+    / <cell>/persist.json), so a crashed wave resumes correctly and e.g.
+    ``--phases ladder,persist`` on a trained out_root ladders+persists
+    wave-by-wave. ``--phases train`` ALONE re-creates linear accumulation by
+    construction — the per-wave headroom assert fail-louds before ENOSPC.
+    The wave partition is deterministic given (cells, realized GPU width);
+    the reap runs whenever selection records exist (skipping cells without
+    them)."""
+    waves = _wave_partition(cfg)
+    selections: dict[str, dict] = {}
+    for k, wave in enumerate(waves, start=1):
+        logger.info(
+            "[wave] k=%d/%d cells=%s train->ladder->persist->reap",
+            k,
+            len(waves),
+            ",".join(wave),
+        )
+        if do_train:
+            _wave_headroom(cfg, k, wave)
+            phase_train(cfg, cells=wave)
+        if do_ladder:
+            selections.update(phase_ladder(cfg, cells=wave))
+        if do_persist:
+            phase_persist(cfg, selections, cells=wave)
+        if do_ladder or do_persist:
+            _wave_reap(cfg, wave)
+    # Terminal residual pass: the reused cell's synthesized selection record,
+    # then a full-grid persist sweep (any missed ckpt + ONE batched records
+    # commit incl. the reused/parity records) that writes persist_done.json.
+    if do_ladder and G.REUSED_FT_CELL in cfg.cells:
+        selections[G.REUSED_FT_CELL] = _reused_selection(cfg)
+    if do_persist:
+        phase_persist(cfg, selections, cells=None)
+    return selections
+
+
 # ── p4: persist selected FT rungs + selection records (incremental) ─────────
 
 
@@ -1461,31 +1673,62 @@ def _stage_has_files(stage: Path) -> bool:
     return stage.exists() and any(p.is_file() for p in stage.rglob("*"))
 
 
-def phase_persist(cfg: Cfg, selections: dict) -> dict:
+def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None) -> dict:
+    """p4 persist — wave-scoped (``cells=<wave>``) or terminal-residual
+    (``cells=None``; run_waves' last pass). Crash-fix r5: per-cell resume via
+    ``<cell>/persist.json`` (the old phase-global persist_done.json
+    short-circuit could not resume mid-wave); selections fall back to the
+    cell's on-disk selection.json so phase subsets work. Records go out as
+    ONE batched upload_folder commit per pass (~n_waves+1 commits total —
+    review r1 Major 3, #664/#1547). The terminal pass re-sweeps every cell
+    (incl. the reused cell's records) and writes persist_done.json — kept as
+    the legacy all-done marker."""
     _phase("p4_persist")
-    rec_path = cfg.out_root / "persist_done.json"
-    if rec_path.exists():
-        return _read_json(rec_path)
+    done_path = cfg.out_root / "persist_done.json"
+    if done_path.exists():
+        return _read_json(done_path)
+    scope = list(cells) if cells is not None else list(cfg.cells)
     uploaded: dict[str, str] = {}
     if cfg.upload:
-        for cell in cfg.cells:
-            if cell == G.REUSED_FT_CELL or cell not in selections:
+        for cell in scope:
+            if cell == G.REUSED_FT_CELL:
                 continue
-            step = int(selections[cell]["step"])
+            rec_path = cfg.out_root / cell / "persist.json"
+            if rec_path.exists():
+                uploaded[cell] = str(_read_json(rec_path).get("url", ""))
+                continue
+            sel = selections.get(cell)
+            if sel is None:
+                sel_path = cfg.out_root / cell / "selection.json"
+                if not sel_path.exists():
+                    continue
+                sel = _read_json(sel_path)
+            step = int(sel["step"])
             ckpt = _selected_ft_ckpt(cfg, cell)
             url = hub._upload(ckpt, G.OVERFLOW_REPO, "model", f"issue1586/{cell}/checkpoint-{step}")
             if not url:
                 raise RuntimeError(f"selected-rung upload returned no path for {cell}")
             uploaded[cell] = str(url)
-        # Selection records: ONE batched upload_folder commit for ALL cells
+            _atomic_json(rec_path, {"cell": cell, "step": step, "url": str(url)})
+        # Selection records: ONE batched upload_folder commit per pass
         # (was 3 file commits x 16 cells — review r1 Major 3 bug-class sweep).
-        stage = cfg.out_root / "_upload_stage" / "p4_records"
-        for cell in cfg.cells:
+        stage = (
+            cfg.out_root
+            / "_upload_stage"
+            / ("p4_records" if cells is None else "p4_records_" + "_".join(scope))
+        )
+        for cell in scope:
             for name in ("selection.json", "ladder.json", "parity.json"):
                 _stage_for_upload(stage, cfg.out_root / cell / name, f"selection/{cell}/{name}")
         if _stage_has_files(stage):
             uploaded["__records__"] = _upload_with_transport_retry(stage, G.DATA_PREFIX)
-    _atomic_json(rec_path, {"uploaded": uploaded})
+    if cells is None:
+        # Terminal pass: collect per-cell records into the legacy marker.
+        for cell in cfg.cells:
+            rec_path = cfg.out_root / cell / "persist.json"
+            if cell not in uploaded and rec_path.exists():
+                uploaded[cell] = str(_read_json(rec_path).get("url", ""))
+        _atomic_json(done_path, {"uploaded": uploaded})
     return {"uploaded": uploaded}
 
 
@@ -2615,20 +2858,26 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
             for k, v in phase_parity(cfg).items()
             if isinstance(v, dict)
         }
-    if want("train"):
-        phase_train(cfg)
+    # p2/p3/p4 run as ONE bounded-wave loop (crash-fix r5): any --phases
+    # subset naming train/ladder/persist routes here; see run_waves.
     selections: dict = {}
-    if want("ladder"):
-        selections = phase_ladder(cfg)
-        summary["selections"] = {
-            k: {
-                kk: v.get(kk)
-                for kk in ("step", "metric", "in_band", "fallback", "anchor_gap", "reused")
+    if want("train") or want("ladder") or want("persist"):
+        selections = run_waves(
+            cfg, do_train=want("train"), do_ladder=want("ladder"), do_persist=want("persist")
+        )
+        if want("ladder"):
+            summary["selections"] = {
+                k: {
+                    kk: v.get(kk)
+                    for kk in ("step", "metric", "in_band", "fallback", "anchor_gap", "reused")
+                }
+                for k, v in selections.items()
             }
-            for k, v in selections.items()
-        }
-    if want("persist"):
-        summary["persist"] = {"n": len(phase_persist(cfg, selections).get("uploaded", {}))}
+        if want("persist"):
+            done_path = cfg.out_root / "persist_done.json"
+            summary["persist"] = {
+                "n": len(_read_json(done_path).get("uploaded", {})) if done_path.exists() else 0
+            }
     if want("tier2"):
         t2 = phase_tier2(cfg, selections)
         summary["tier2"] = {
