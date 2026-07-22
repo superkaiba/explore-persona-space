@@ -582,7 +582,9 @@ is the canonical, tested implementation (`tests/test_workflow_fix_dedup.py`).
 A closed (`completed`/`archived`) workflow-fix task does NOT block a
 re-raise of the same bug. (The /daily Step C parked-candidate sweep applies
 this temporally: a swept PARKED candidate that PREdates a closed matching fix
-task's creation is treated as subsumed by it — suppressed, pure churn to
+task's merge/close time — the latest of its `epm:merged` / terminal
+`epm:status-changed` / `epm:done` markers, creation-time fallback (#1599) —
+is treated as subsumed by it — suppressed, pure churn to
 re-route — while a candidate parked AFTER the fix closed is a genuine
 re-raise and stays enumerated; see
 `scripts/sweep_parked_wf_candidates.py`.)
