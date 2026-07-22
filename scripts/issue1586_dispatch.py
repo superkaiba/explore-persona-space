@@ -270,6 +270,12 @@ def _behavior(cell: str) -> str:
     return G.BEHAVIOR_BY_KEY[G.parse_ft_cell(cell)[0]]
 
 
+def _mirror_deliverable(cfg: Cfg, unit: str, payload: dict) -> None:
+    """Mirror a selection/parity record to the plan §6.5 deliverable glob
+    (data/issue_1586/out/selection/<unit>/selection.json)."""
+    _atomic_json(cfg.out_root / "selection" / unit / "selection.json", payload)
+
+
 def _headroom(cfg: Cfg, phase: str) -> None:
     need = PHASE_HEADROOM_GB.get(phase)
     if need is None:
@@ -603,6 +609,7 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
     rec["severity"] = "PASS" if rec["rate_window_pass"] else "WARN-analyzer-adjudication"
     rec["adapter_config"] = _grounding_from_adapter_config(staged, arm.recipe_class)
     _atomic_json(out_path, rec)
+    _mirror_deliverable(cfg, f"parity_{cell}", rec)
     return rec
 
 
@@ -1032,6 +1039,7 @@ def _select_cell(cfg: Cfg, cell: str) -> dict:
     if int(sel["step"]) not in _enumerate_rungs(train_dir):
         sel["retrained_to_step"] = _retrain_to_step(cfg, cell, int(sel["step"]))
     _atomic_json(sel_path, sel)
+    _mirror_deliverable(cfg, cell, sel)
     return sel
 
 
@@ -1121,6 +1129,7 @@ def phase_ladder(cfg: Cfg) -> dict:
         _atomic_json(
             cfg.out_root / G.REUSED_FT_CELL / "selection.json", selections[G.REUSED_FT_CELL]
         )
+        _mirror_deliverable(cfg, G.REUSED_FT_CELL, selections[G.REUSED_FT_CELL])
     return selections
 
 
@@ -1626,7 +1635,7 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
     margin_fn = None
     try:
         for arm_id, kind in arms:
-            rec_path = out_dir / f"{arm_id}.json"
+            rec_path = out_dir / arm_id / "margin.json"
             if rec_path.exists():
                 out[arm_id] = _read_json(rec_path)
                 continue
@@ -1799,6 +1808,17 @@ def run_capture_unit(cfg: Cfg, arg: str) -> None:
         tmp = out_dir / "pooled.pt.tmp"
         torch.save(store, tmp)
         os.replace(tmp, out_dir / "pooled.pt")
+        _atomic_json(
+            out_dir / "manifest.json",
+            {
+                "cell": arm_id,
+                "kind": kind,
+                "dose": store["dose"],
+                "n_rows": len(store["row_meta"]),
+                "pooled_sha256": _sha256_file(out_dir / "pooled.pt"),
+                **store["metadata"],
+            },
+        )
     finally:
         if cleanup is not None:
             shutil.rmtree(cleanup, ignore_errors=True)
@@ -1856,6 +1876,17 @@ def run_capture_tf_unit(cfg: Cfg, arg: str) -> None:
         tmp = out_dir / "pooled.pt.tmp"
         torch.save(store, tmp)
         os.replace(tmp, out_dir / "pooled.pt")
+        _atomic_json(
+            out_dir / "manifest.json",
+            {
+                "cell": arm_id,
+                "kind": store["kind"],
+                "dose": store["dose"],
+                "n_rows": len(store["row_meta"]),
+                "pooled_sha256": _sha256_file(out_dir / "pooled.pt"),
+                **store["metadata"],
+            },
+        )
     finally:
         if cleanup is not None:
             shutil.rmtree(cleanup, ignore_errors=True)
