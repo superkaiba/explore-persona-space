@@ -374,9 +374,18 @@ def _write_metadata_file(
 _MANAGED_PREFIXES: tuple[str, ...] = ("pod-", "epm-issue-")
 
 
+def _is_managed_pod_name(name: str) -> bool:
+    """True if a pod NAME (as reported by the RunPod API) belongs to this
+    project — ``pod-*`` (canonical, incl. ``pod-<N>-<slug>`` follow-up pods,
+    #1334) or ``epm-issue-*`` (legacy). String-level twin of
+    :func:`_is_managed_pod` for callers holding only a name (the $/hr-cap
+    guard's burn-breakdown rows, #1600)."""
+    return any(name.startswith(p) for p in _MANAGED_PREFIXES)
+
+
 def _is_managed_pod(pod: PodInfo) -> bool:
     """True if this pod is one our project manages."""
-    return any(pod.name.startswith(p) for p in _MANAGED_PREFIXES)
+    return _is_managed_pod_name(pod.name)
 
 
 # Back-compat alias: external callers historically imported this name.
@@ -1597,6 +1606,13 @@ def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
 # pre-flight with the projected total instead of mid-run (incidents #503,
 # #505 on 2026-06-05). Default 80.0 USD/hr; override via env to match
 # whatever the console cap is set to.
+#
+# The original single-tenant premise drifted (#1600): the team account is now
+# shared with the Anthropic-fellows cluster fleet, whose unmanaged pods alone
+# exceed any sane local cap, so the guard's burn sum is scoped to MANAGED
+# pods by default (see ``_burn_scope`` below). The guard's purpose is bounding
+# OUR spend (#503/#505/#506), not gating on pods we neither created nor can
+# stop.
 _DEFAULT_ACCOUNT_HOURLY_CAP_USD = 80.0
 
 
@@ -1617,6 +1633,41 @@ def _account_hourly_cap_usd() -> float:
             file=sys.stderr,
         )
         return _DEFAULT_ACCOUNT_HOURLY_CAP_USD
+
+
+# Scope of the pre-flight $/hr guard (#1600). The RunPod team account is
+# shared with the Anthropic-fellows cluster fleet (July 2026): ~80+ unmanaged
+# pods (~$2.7k/hr) that we neither created nor can stop, so an account-wide
+# burn sum permanently exceeds any sane local cap — 13/13 wait-for-capacity
+# refusals on #779 (2026-07-22). The guard exists to bound OUR spend
+# (#503/#505/#506); default scope is therefore 'managed'. Set
+# EPM_RUNPOD_BURN_SCOPE=all to restore the account-wide sum (correct for a
+# single-tenant account).
+_BURN_SCOPE_VALUES = ("managed", "all")
+
+
+def _burn_scope() -> str:
+    """Read EPM_RUNPOD_BURN_SCOPE (default ``managed``). Bad values fall
+    back to the default with a stderr WARN rather than crash the lifecycle
+    (mirrors :func:`_account_hourly_cap_usd`)."""
+    raw = os.environ.get("EPM_RUNPOD_BURN_SCOPE", "").strip().lower()
+    if not raw:
+        return "managed"
+    if raw in _BURN_SCOPE_VALUES:
+        return raw
+    print(
+        f"[pod_lifecycle] WARN: EPM_RUNPOD_BURN_SCOPE={raw!r} is not one of "
+        f"{_BURN_SCOPE_VALUES}; using 'managed'.",
+        file=sys.stderr,
+    )
+    return "managed"
+
+
+# Once-per-process latch for the unmanaged-burn WARN in
+# ``_assert_under_account_hourly_cap``: the wait loop re-runs the guard every
+# backoff tick (13 ticks on #779), and 13 identical WARNs is noise. Tests
+# reset via monkeypatch.
+_unmanaged_burn_warned = False
 
 
 def _assert_under_account_hourly_cap(
@@ -1661,19 +1712,55 @@ def _assert_under_account_hourly_cap(
         the API-side fix from #506 could even fire). Default OFF preserves
         the byte-identical SystemExit behavior for every pre-existing caller.
 
+    Scope (#1600): the burn sum this guard gates on is controlled by
+    ``EPM_RUNPOD_BURN_SCOPE`` (default ``managed`` — only the ``pod-*`` /
+    ``epm-issue-*`` pods our project manages; ``all`` restores the
+    account-wide sum). The team account is shared with the fellows cluster
+    fleet, whose burn must not gate our provisions. Under managed scope a
+    once-per-process stderr WARN fires when the excluded unmanaged burn
+    alone exceeds the cap, and every over-cap SystemExit message carries an
+    excluded-unmanaged summary line (count, $/hr, account-wide total) so
+    the full account picture stays visible.
+
     Per the "Fail fast — never hide failures" rule: if
     :func:`current_account_hourly_burn` raises (API unreachable), the
     exception propagates. We CANNOT make the decision without the live state,
     so we refuse the operation rather than silently letting RunPod surface it
     mid-run.
     """
+    global _unmanaged_burn_warned
     cap = _account_hourly_cap_usd()
     intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
-    current_total, breakdown = current_account_hourly_burn()
+    account_total, account_breakdown = current_account_hourly_burn()
+    # Read the scope AFTER the API call: list_team_pods() lazily loads .env
+    # (runpod_api._load_dotenv, non-overriding), so an .env-only
+    # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
+    scope = _burn_scope()
+    if scope == "managed":
+        breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
+        unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
+        unmanaged_total = sum(r for _, r in unmanaged)
+        current_total = sum(r for _, r in breakdown)
+        if unmanaged_total > cap and not _unmanaged_burn_warned:
+            _unmanaged_burn_warned = True
+            print(
+                f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
+                f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
+                f"excluded from the $/hr-cap guard — EPM_RUNPOD_BURN_SCOPE=all to "
+                f"include). Managed burn: ${current_total:.2f}/hr.",
+                file=sys.stderr,
+            )
+    else:
+        breakdown = account_breakdown
+        unmanaged = []
+        unmanaged_total = 0.0
+        current_total = account_total
     if skip_for_same_pod:
         # Subtract any RUNNING pod sharing the resumed pod's name (defensive
         # vs duplicate-provision races; in the normal resume path the stopped
-        # pod isn't in `breakdown` at all because it's EXITED).
+        # pod isn't in `breakdown` at all because it's EXITED). Resumed pods
+        # are managed-named by construction, so they survive the managed-
+        # scope filter above and the subtraction works under both scopes.
         for name, rate in breakdown:
             if name == skip_for_same_pod:
                 current_total -= rate
@@ -1689,20 +1776,26 @@ def _assert_under_account_hourly_cap(
         # terminal, and the loop heartbeat already prints attempt/elapsed.
         raise RunPodInsufficientBalanceError(
             f"local pre-flight: projected ${projected:.2f}/hr (current "
-            f"${current_total:.2f} + this pod ${intended_rate:.2f}) "
-            f"exceeds cap ${cap:.2f}/hr"
+            f"${current_total:.2f} [{scope} scope] + this pod "
+            f"${intended_rate:.2f}) exceeds cap ${cap:.2f}/hr"
         )
     breakdown_lines = (
         "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
-        or "    (no other RUNNING pods)"
+        or "    (no other RUNNING pods in scope)"
     )
     omitted = max(0, len(breakdown) - 10)
     if omitted:
         breakdown_lines += f"\n    ... and {omitted} more"
+    if unmanaged:
+        breakdown_lines += (
+            f"\n    (excluded: {len(unmanaged)} unmanaged team pod(s), "
+            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr; "
+            f"EPM_RUNPOD_BURN_SCOPE=all to include)"
+        )
     raise SystemExit(
         f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
         f"hourly spending cap.\n"
-        f"  Current burn   : ${current_total:6.2f}/hr (sum of RUNNING pods)\n"
+        f"  Current burn   : ${current_total:6.2f}/hr (RUNNING pods, {scope} scope)\n"
         f"  This pod adds  : ${intended_rate:6.2f}/hr "
         f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)})\n"
         f"  Projected total: ${projected:6.2f}/hr\n"
