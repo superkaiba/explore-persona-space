@@ -11,9 +11,9 @@
 
 ## TLDR
 
-- The two maps are very different objects. The direct prefix map is much worse at predicting the answer summary: held-out $R^2$ 0.37 vs 0.82 on matched query-averaged targets (instruct; base 0.26 vs 0.76), reaching only 0.35–0.58 of its own ceiling. Its predictions are approximately a uniform shrinkage ($\alpha \approx 0.6$) of the averaged map's, and worse on 100% of 996 prefixes.
+- The two maps are very different objects. The direct prefix map is much worse at predicting the answer summary: held-out $R^2$ 0.37 vs 0.82 on matched query-averaged targets (instruct; base 0.26 vs 0.76), and only 0.35–0.58 of its own ceiling (the between-prefix variance share) at the per-context grain. Its predictions are approximately a uniform shrinkage ($\alpha \approx 0.6$) of the averaged map's, and worse on 100% of 996 prefixes.
 - But the part it loses is not the behaviorally relevant part. With fitted probes, the direct prefix vector predicts per-prefix sycophancy/hallucination judge scores as well as the averaged one (r 0.76/0.89 vs 0.77/0.89, paired diff n.s.): the disposition the answers will express is already readable at the end of the prefix. As a raw persona-vector projection it is far BETTER (r 0.665 vs 0.037). Instruct model only, and a between-prefix disposition read — the prefix main effect is only ~3.5% of per-row behavioral variance (Result 2's scope caveat).
-- Why averaging was needed at all: a single answer state is ~79% "what question is this?" and only ~11% "who is answering?", so averaging over queries cancels the query part (r 0.48 at N=1 → 0.77 at N=48). The direct prefix vector never contained query variance, so one state reads 0.76.
+- Why the averaged read needs 48 queries while the direct vector needs one (Result 3): a single answer state is ~79% "what question is this?" and only ~11% "who is answering?", so a single-query behavior read is dominated by query noise, and averaging cancels it — the averaged behavior read climbs r 0.48 at N=1 → 0.77 at N=48. The direct prefix vector never contained query variance, so it reads 0.76 from one state.
 - Is the averaged vector's advantage just denoising, then? No — even on query-averaged targets, where query effects are averaged out on both sides, the direct vector reaches only 0.35–0.58 of its own ceiling. The query-averaged context states contain prefix information, expressed through how the prefix transforms each query, that the prefix-end state does not linearly carry.
 - What makes a prefix hard for the averaged map on real data is its length, not its context-vector spread (spread ρ = −0.03 n.s.; conversation turns ρ = +0.83; the spread-predicts-error result holds only on the constructed substrate). The averaging-specific penalty the coherence condition predicts does not appear either: the Jensen gap never grows with spread (ρ −0.06 to −0.19; −0.12 to −0.22 length-controlled).
 
@@ -25,6 +25,16 @@
     - **direct prefix vector**: the prefix-end state, from one forward pass over the prefix alone (figures label it "prefix-end")
     - **averaged prefix vector**: mean of the prefix's context-end states over its queries
 - Fits: ridge, grouped 6-fold CV by prefix id (a held-out fold never shares a prefix with training; convenience choice carried from #1092, FOLD_SEED=0). Every cross-arm comparison is scored against the SAME pooled answer targets at the same grain.
+## The four target quantities
+
+Everything in this write-up predicts one of four quantities — {mean answer activation, behavioral expression} × {single (prefix, query) combo, prefix averaged over queries} — and the results are kept separate per cell:
+
+| what we predict | single (prefix, query) combo | prefix, averaged over queries |
+|---|---|---|
+| **mean answer activation** | **(3)** context map $R^2$ 0.81/0.91; direct prefix 0.07/0.10, capped at 0.15–0.20 by construction → Result 1, target (a) | **(4)** averaged read 0.82/0.94 (centroid map 0.65/0.87); direct prefix 0.37/0.53 → Result 1, target (b) — the PRIMARY activation cell for this comparison |
+| **behavioral expression** | **(1)** the least predictable cell: probe on the single context-end state reads r 0.21 (syc) / 0.42 (hall); any prefix-grain input is blind to it by construction → Result 2 scope caveat | **(2)** direct prefix 0.76/0.89 ≈ averaged read 0.77/0.89; raw $r_B$ projection works ONLY on the direct vector (0.665 vs 0.037) → Result 2 — the monitoring-relevant cell |
+
+For THIS doc's question (is the direct prefix vector as good a prefix summary as the averaged one?) the averaged cells (4) and (2) are primary: the direct prefix vector is constant within a prefix, so the single-combo cells are decided mostly by construction, and their rows are reported as structural context. Cell (3) is the primary object of the broader map line (the sibling write-up); cell (1) is the ultimate per-answer read but is mostly query + residual variance (Result 2's decomposition).
 
 ## Experiments in this write-up
 
@@ -48,16 +58,19 @@
 
 | held-out $R^2$ (instruct, own answers, L14) | direct prefix | context / averaged prefix |
 |---|---|---|
-| per-context targets (ambient / pca48) | 0.07 / 0.10 | **0.81 / 0.91** |
-| query-averaged targets (ambient / pca48) | 0.37 / 0.53 | **0.82 / 0.94** |
-| fraction of own ceiling | 0.35–0.58 | 0.99–1.06 |
+| (a) single answer targets (ambient / pca48) | 0.07 / 0.10 | **0.81 / 0.91** |
+| (b) averaged answer targets (ambient / pca48) | 0.37 / 0.53 | **0.82 / 0.94** |
+| fraction of own ceiling (single-answer grain) | 0.35–0.58 | 0.99–1.06 |
 
 (Context-arm values above 1 mean the fitted map slightly exceeds the additive ceiling, which the deep-dive showed is a conservative bound. In the averaged-grain row the context arm is the per-row context map's predictions averaged over queries; a map fit directly on the averaged prefix vector itself reaches $R^2$ 0.65/0.87 instruct and 0.60/0.80 base — Result 4's delta test — still far above the direct prefix map.)
 
-**Takeaways**
-- Per-context, the direct prefix vector predicts almost nothing ($R^2$ 0.07 vs 0.81). Expected: ~80% of answer-state variance is query-borne (Result 3), and the direct prefix vector can't vary within a prefix.
-- Less expected: even on query-averaged targets, where the query is averaged out, it reaches only 0.37 vs 0.82 (base: 0.26 vs 0.76), i.e. 0.35–0.58 of its own reliability ceiling. The direct prefix vector is a strictly weaker summary of the prefix than the averaged one, not the same object.
-- How the two relate: their predictions agree at only $R^2$ 0.26–0.54. The direct map's predictions are approximately a global shrinkage of the averaged map's ($\alpha \approx 0.60$–$0.66$; 100% of per-dimension coefficients < 1), and worse on 100% of 996 prefixes (mean per-prefix error ratio ≈2× ambient, ≈3× pca48).
+**Takeaways — target (a), single answer vectors (structural context):**
+- The direct prefix vector predicts almost nothing ($R^2$ 0.07 vs the context map's 0.81). Largely by construction: ~80% of single-answer variance is query-borne (Result 3), and a prefix-constant input cannot see it — its ceiling here is the between-prefix variance share, 0.15–0.20.
+- Even against that ceiling it under-delivers: 0.35–0.58 of the variance reachable by any function of a prefix-constant input.
+
+**Takeaways — target (b), averaged answer vectors (the primary grain for this comparison):**
+- Here almost nothing is structurally out of reach (ceiling ≈0.95; only ~5% of averaged-target variance is residual within-prefix noise at ~17 queries per prefix), yet the direct map reaches only 0.37 vs 0.82 (base: 0.26 vs 0.76). The direct prefix vector is a strictly weaker summary of the prefix than the averaged one, not the same object.
+- How the two relate at this grain: their predictions agree at only $R^2$ 0.26–0.54. The direct map's predictions are approximately a global shrinkage of the averaged map's ($\alpha \approx 0.60$–$0.66$; 100% of per-dimension coefficients < 1), and worse on 100% of 996 prefixes (mean per-prefix error ratio ≈2× ambient, ≈3× pca48).
 
 ### Result 2: But the direct prefix vector predicts behavioral expression just as well as the averaged prefix vector (instruct model)
 
@@ -65,7 +78,7 @@ Result 1 says the direct prefix vector loses a lot of answer-state prediction. I
 
 **Methodology**
 - 149 prefixes (99 real WildChat/LMSYS + 50 constructed battery conditions) × 48 queries = 7,152 rows.
-- Target: each prefix's mean graded judge score over its 48 answers (sycophancy and hallucination; graded Sonnet judge, on-policy answers).
+- Target: each prefix's mean graded judge score over its 48 answers (sycophancy and hallucination; graded Sonnet judge, on-policy answers) — the averaged / per-prefix grain, the behavioral analogue of target (b).
 - Inputs: direct prefix vector vs averaged prefix vector; ridge probe, held out by prefix.
 
 ![prefix-end monitoring vs averaged read](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7dbde267f149b24a226085cecbc30e1c3de3fdde/figures/issue_1092/prefixend_monitoring.png)
@@ -75,7 +88,7 @@ Result 1 says the direct prefix vector loses a lot of answer-state prediction. I
 - So the part of the answer the direct prefix map is worse at predicting is NOT the behaviorally relevant part: the disposition to be sycophantic / hallucination-prone is already readable at the end of the prefix, before the query is seen.
 - The raw persona-vector projection inverts the parity: $\langle \text{state}, r_B \rangle$ reads the trait on the direct prefix vector (r 0.665) but not on the averaged one (r 0.037). The trait signal is aligned with $r_B$ before the query and rotated into other directions once the query is read; the fitted probe recovers it there.
 - Instruct-only: base-model direct-prefix reads collapse (r 0.01–0.05; averaged read 0.13 sycophancy / 0.62 hallucination).
-- Scope caveat: this is a between-prefix DISPOSITION read. In a crossed decomposition of per-row judge scores, the prefix main effect is only 3.5% (sycophancy) / 3.3% (hallucination) of behavioral variance (query 53%/67%, residual 43%/30%). Per-query expression is invisible to the direct prefix vector by construction (median per-query r 0.16/0.20).
+- Scope caveat — this is quantity (2), not quantity (1): a between-prefix DISPOSITION read. In a crossed decomposition of per-row judge scores, the prefix main effect is only 3.5% (sycophancy) / 3.3% (hallucination) of behavioral variance (query 53%/67%, residual 43%/30%), so single-combo behavior (quantity 1) is invisible to any prefix-grain input by construction (median per-query r 0.16/0.20). The best quantity-(1) read here is a probe on the single context-end state: r 0.21 (sycophancy) / 0.42 (hallucination).
 
 **Robustness and divergence (follow-up analysis)**
 
