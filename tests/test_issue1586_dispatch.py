@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import inspect
 import json
+import re
 import sys
+import typing
 from pathlib import Path
 from unittest.mock import create_autospec
 
@@ -519,3 +521,172 @@ def test_phase_persist_terminal_pass_is_coverage_aware(monkeypatch, tmp_path):
     assert set(out2["uploaded"]) >= {"cA", "cB"}
     done = json.loads((tmp_path / "persist_done.json").read_text())
     assert set(done["uploaded"]) >= {"cA", "cB"}
+
+
+# ── crash-fix r6: the _generate_responses_vllm reuse seam (token-id rows) ────
+#
+# The reused helper emits TOKEN-ID rows with NO "response" text key; both
+# marker read sites consumed r["response"] -> KeyError at p1_parity (live
+# crash) + the p5-8 marker H2-lattice twin. These tests pin the seam
+# statically (schema extracted from the helper SOURCE) and execute the
+# real consumption bodies on that exact schema.
+
+_SEAM_SCHEMA = {
+    "persona",
+    "question_idx",
+    "prompt_token_ids",
+    "response_token_ids",
+    "finish_reason",
+}
+
+
+class _FakeTok:
+    """Signature-conformant decode-only tokenizer fake (external model
+    boundary). Vocab pins the marker token id 83399 -> " ※"."""
+
+    VOCAB: typing.ClassVar[dict[int, str]] = {
+        11: "<|im_start|>user\nQ0<|im_end|>\n<|im_start|>assistant\n",
+        12: "<|im_start|>user\nQ1<|im_end|>\n<|im_start|>assistant\n",
+        21: "The answer is 42.",
+        22: " Thanks.",
+        23: "No marker in this one.",
+        31: "好的",
+        83399: " ※",
+    }
+
+    def decode(self, ids):
+        return "".join(self.VOCAB[i] for i in ids)
+
+
+def _seam_rows():
+    """Two rows in EXACTLY the helper's emitted schema (pinned below);
+    row 0 emits the marker (id 83399 in response_token_ids), row 1 not."""
+    return [
+        {
+            "persona": "persona_software_engineer",
+            "question_idx": 0,
+            "prompt_token_ids": [11],
+            "response_token_ids": [21, 83399, 22],
+            "finish_reason": "stop",
+        },
+        {
+            "persona": "persona_software_engineer",
+            "question_idx": 1,
+            "prompt_token_ids": [12],
+            "response_token_ids": [23],
+            "finish_reason": "length",
+        },
+    ]
+
+
+def test_generate_responses_vllm_row_schema_pin():
+    """Extract the REAL emitted row schema from the reused helper's source:
+    the rows.append block carries exactly the five token-id keys and no
+    "response" text key. Helper schema drift fails HERE, loudly, instead of
+    as a pod-side KeyError."""
+    from explore_persona_space.analysis import representation_shift as rs
+
+    src = inspect.getsource(rs._generate_responses_vllm)
+    start = src.index("rows.append(")
+    block = src[start : src.index("}", start)]
+    keys = set(re.findall(r'"([a-z_]+)":', block))
+    assert keys == _SEAM_SCHEMA, keys
+
+
+def test_marker_source_read_decodes_token_id_rows(monkeypatch, tmp_path):
+    """Crash-fix r6 body pin (p1_parity crash): _marker_source_read consumes
+    the REAL token-id row schema — pre-fix this body raised KeyError:
+    'response' at the strip loop. Executes the real body; fakes only the
+    vLLM / HF-model / tokenizer-load boundaries."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis import representation_shift as rs
+
+    rows = _seam_rows()
+    fake_gen = create_autospec(rs._generate_responses_vllm, return_value=rows)
+    monkeypatch.setattr(rs, "_generate_responses_vllm", fake_gen)
+    fake_tok = _FakeTok()
+    monkeypatch.setattr(AutoTokenizer, "from_pretrained", lambda *a, **k: fake_tok)
+
+    slot_calls: list[tuple[str, list[str]]] = []
+
+    def fake_slot_read(model_path, contexts, device="cuda:0"):
+        # def mirrors d1112._marker_slot_read's signature (boundary fake)
+        slot_calls.append((model_path, list(contexts)))
+        return [
+            {"logp": -2.0, "z_marker": 1.0, "z_eos": 3.0, "argmax_id": 151645} for _ in contexts
+        ]
+
+    monkeypatch.setattr(d, "_marker_slot_read", fake_slot_read)
+
+    cfg = _cfg(tmp_path, cells=("mk-pers-ft-con-s42",))
+    out_dir = tmp_path / "slotread"
+    rec = d._marker_source_read(cfg, "trained/model", out_dir)
+
+    # contexts = decode(prompt_token_ids) + strip-at-marker(decode(response))
+    # — the d1333 TEXT-concat recipe, trained AND base reads alike.
+    exp = [
+        _FakeTok.VOCAB[11] + "The answer is 42.",
+        _FakeTok.VOCAB[12] + "No marker in this one.",
+    ]
+    assert [mp for mp, _ in slot_calls] == ["trained/model", d.DEFAULT_BASE_MODEL]
+    assert all(ctx == exp for _, ctx in slot_calls)
+    assert rec["gen_emission_rate"] == 0.5  # row 0 emitted, row 1 not
+    assert rec["n"] == 2
+
+    # rollouts.json persists rollout TEXT (#779) alongside the token ids
+    saved = json.loads((out_dir / "rollouts.json").read_text())
+    assert [r["response_text"] for r in saved["rows"]] == [
+        "The answer is 42. ※ Thanks.",
+        "No marker in this one.",
+    ]
+    assert set(saved["rows"][0]) == _SEAM_SCHEMA | {"response_text"}
+
+
+def test_decode_marker_rows_body():
+    """Direct body test of the shared consumption helper (the ONE function
+    both marker read sites route rows through): contexts, emission flags,
+    response_text write-back."""
+    rows = _seam_rows()
+    contexts, emitted = d._decode_marker_rows(_FakeTok(), rows)
+    assert contexts == [
+        _FakeTok.VOCAB[11] + "The answer is 42.",
+        _FakeTok.VOCAB[12] + "No marker in this one.",
+    ]
+    assert emitted == [True, False]
+    assert [r["response_text"] for r in rows] == [
+        "The answer is 42. ※ Thanks.",
+        "No marker in this one.",
+    ]
+
+
+def test_marker_read_sites_share_decode_helper():
+    """Both marker read sites (p1_parity source read + p5-8 H2-lattice panel
+    read) consume rows through the shared helper; neither retains the
+    crash-class r["response"] read."""
+    for fn in (d._marker_source_read, d._marker_panel_read):
+        src = inspect.getsource(fn)
+        assert "_decode_marker_rows(" in src, fn.__name__
+        assert 'r["response"]' not in src, fn.__name__
+
+
+def test_cjk_scan_reads_response_text_and_decodes_token_ids(monkeypatch, tmp_path):
+    """Latent-consumer fix (same seam class): _cjk_scan read
+    r.get("response", "") from token-id rows — "" for EVERY row, so the
+    audit silently counted 0 intruded. It now prefers response_text and
+    lazily decodes token-id-only rows (capture raw_rows.json)."""
+    from transformers import AutoTokenizer
+
+    monkeypatch.setattr(AutoTokenizer, "from_pretrained", lambda *a, **k: _FakeTok())
+    cfg = _cfg(tmp_path, cells=())
+    _write_json(
+        tmp_path / "marker_panel" / "armX" / "rollouts.json",
+        {"rows": [{"response_text": "clean text"}, {"response_text": "好的 intruded"}]},
+    )
+    _write_json(
+        tmp_path / "capture" / "armY" / "raw_rows.json",
+        {"rows": [dict(_seam_rows()[0], response_token_ids=[31])]},
+    )
+    pools = d._cjk_scan(cfg)["pools"]
+    assert pools["marker_panel/armX/rollouts.json"] == {"n": 2, "intruded": 1}
+    assert pools["capture/armY/raw_rows.json"] == {"n": 1, "intruded": 1}

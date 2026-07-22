@@ -1098,11 +1098,35 @@ def _reap_rungs(train_dir: Path, keep_steps: set[int]) -> int:
     return n
 
 
+def _decode_marker_rows(tok, rows: list[dict]) -> tuple[list[str], list[bool]]:
+    """Decode ``_generate_responses_vllm`` rows for the marker slot reads.
+
+    The reused helper emits TOKEN-ID rows — ``{persona, question_idx,
+    prompt_token_ids, response_token_ids, finish_reason}`` — with NO
+    ``response`` text key (crash-fix r6: ``KeyError: 'response'`` at
+    p1_parity). Decode each response, strip at the first marker emission
+    (``d1333._strip_at_marker`` — the #532 slot rule), and build each slot
+    context as decoded-prompt + stripped text, byte-consistent with the
+    parent d1333 recipe (``p + _strip_at_marker(r)[0]`` on TEXT — never a
+    token-level splice). Writes the decoded text back onto every row as
+    ``response_text`` so the caller's rollouts.json persists rollout TEXT
+    (#779). Returns ``(contexts, emitted)``."""
+    contexts: list[str] = []
+    emitted: list[bool] = []
+    for r in rows:
+        resp_text = tok.decode(r["response_token_ids"])
+        r["response_text"] = resp_text
+        stripped, emit = d1333._strip_at_marker(resp_text)
+        contexts.append(tok.decode(r["prompt_token_ids"]) + stripped)
+        emitted.append(bool(emit))
+    return contexts, emitted
+
+
 def _marker_source_read(cfg: Cfg, model_path: str, out_dir: Path) -> dict:
     """Marker source slot read at the pers context: greedy 20-q gens (vLLM,
     max_new 2048) -> strip-at-marker -> four-float slot reads trained AND base
     (compute_marker_slot_stats via d1112._marker_slot_read). Persists rollout
-    text BEFORE reducing (#779)."""
+    text (``response_text`` per row) BEFORE reducing (#779)."""
     from transformers import AutoTokenizer
 
     from explore_persona_space.analysis.representation_shift import _generate_responses_vllm
@@ -1120,11 +1144,7 @@ def _marker_source_read(cfg: Cfg, model_path: str, out_dir: Path) -> dict:
         user_wraps={src.context_id: src.user_wrap},
     )
     tok = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
-    contexts, emitted = [], []
-    for r in rows:
-        stripped, emit = d1333._strip_at_marker(r["response"])
-        contexts.append(tok.decode(r["prompt_token_ids"]) + stripped)
-        emitted.append(bool(emit))
+    contexts, emitted = _decode_marker_rows(tok, rows)
     (out_dir / "rollouts.json").write_text(
         json.dumps({"model": model_path, "rows": rows}, ensure_ascii=False)
     )
@@ -2058,15 +2078,17 @@ def _marker_panel_read(cfg: Cfg, arm_id: str, model_path: str, out_dir: Path) ->
         user_wraps=user_wraps,
         prior_turns=prior_turns,
     )
+    # tok BEFORE the rollouts write: _decode_marker_rows adds response_text
+    # per row so rollout TEXT persists ahead of the slot-read reduce (#779).
+    tok = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    contexts, emitted = _decode_marker_rows(tok, rows)
     (out_dir / "rollouts.json").write_text(
         json.dumps({"model": model_path, "rows": rows}, ensure_ascii=False)
     )
-    tok = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
-    contexts, meta = [], []
-    for r in rows:
-        stripped, emit = d1333._strip_at_marker(r["response"])
-        contexts.append(tok.decode(r["prompt_token_ids"]) + stripped)
-        meta.append({"context_id": r["persona"], "q": r["question_idx"], "emitted": bool(emit)})
+    meta = [
+        {"context_id": r["persona"], "q": r["question_idx"], "emitted": e}
+        for r, e in zip(rows, emitted, strict=True)
+    ]
     trained = _marker_slot_read(model_path, contexts, device="cuda:0")
     base = _marker_slot_read(DEFAULT_BASE_MODEL, contexts, device="cuda:0")
     src = source_context_id("mk")
@@ -2682,8 +2704,29 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
 
 def _cjk_scan(cfg: Cfg) -> dict:
     """Count CJK-intruded completions per persisted generation pool (the
-    #1481 scan regex reused verbatim; issue1481_cjk_audit.CJK_RE)."""
+    #1481 scan regex reused verbatim; issue1481_cjk_audit.CJK_RE).
+
+    Crash-fix r6 sibling: pooled rows from ``_generate_responses_vllm`` are
+    TOKEN-ID rows — ``response_text`` (added by ``_decode_marker_rows``) is
+    the text key; the legacy ``r.get("response", "")`` read silently scanned
+    ``""`` for every such row (0 intruded, always). Token-id-only rows
+    (capture ``raw_rows.json``) decode lazily here."""
     from issue1481_cjk_audit import CJK_RE
+
+    tok = None  # lazy: only token-id-only rows (capture raw_rows.json) need it
+
+    def _row_text(r) -> str:
+        nonlocal tok
+        if not isinstance(r, dict):
+            return str(r)
+        t = r.get("response_text") or r.get("response")
+        if t is None and "response_token_ids" in r:
+            if tok is None:
+                from transformers import AutoTokenizer
+
+                tok = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+            t = tok.decode(r["response_token_ids"])
+        return t or ""
 
     out: dict[str, dict] = {}
     roots = ["capture", "panel", "marker_panel", *[c for c in cfg.cells]]
@@ -2699,7 +2742,7 @@ def _cjk_scan(cfg: Cfg) -> dict:
             except (json.JSONDecodeError, OSError):
                 out[str(f.relative_to(cfg.out_root))] = {"error": "unreadable"}
                 continue
-            texts = [r.get("response", "") if isinstance(r, dict) else str(r) for r in rows]
+            texts = [_row_text(r) for r in rows]
             out[str(f.relative_to(cfg.out_root))] = {
                 "n": len(texts),
                 "intruded": sum(bool(CJK_RE.search(t)) for t in texts),
