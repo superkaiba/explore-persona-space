@@ -43,8 +43,15 @@ _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
+
+import numpy as np  # noqa: E402
+
 import issue1586_cells as G  # noqa: E402
 
+from explore_persona_space.experiments.issue_653.spectral import (  # noqa: E402
+    bootstrap_index_matrix,
+)
+from explore_persona_space.experiments.issue_1112 import CAPTURE_ARMS  # noqa: E402
 from explore_persona_space.experiments.issue_1112 import geometry as geo  # noqa: E402
 
 REPO_ROOT = _SCRIPTS_DIR.parent
@@ -131,6 +138,84 @@ def run_behavior(
     return payload
 
 
+def _mu_norm_draws(cloud: np.ndarray, idx: np.ndarray) -> np.ndarray:
+    """Per-draw ||mean shift|| over bootstrap index draws, BATCHED.
+
+    One (n_boot, n_rows) normalized counts matrix x the (n_rows, d) cloud —
+    the subset-sum GEMM identity (vectorize-many-cell-fits; no per-draw
+    loop). Returns (n_boot,) float64. Pinned against a serial reference in
+    tests/test_issue1586_cells.py (vectorize rule item 6)."""
+    X = np.asarray(cloud, dtype=np.float64)
+    idx = np.asarray(idx)
+    assert X.ndim == 2 and idx.ndim == 2, (X.shape, idx.shape)
+    n_boot, m = idx.shape
+    counts = np.zeros((n_boot, X.shape[0]), dtype=np.float64)
+    np.add.at(counts, (np.repeat(np.arange(n_boot), m), idx.ravel()), 1.0)
+    counts /= m
+    return np.linalg.norm(counts @ X, axis=1)
+
+
+def norm_diff_pass(
+    beh_key: str,
+    arms: list[str],
+    *,
+    capture_root: Path,
+    base_store: Path,
+    out_dir: Path,
+    n_boot_norm: int,
+    arms_filter: tuple[str, ...] | None,
+    tag: str,
+) -> dict:
+    """Plan §6 registered stat: the H1 mean-shift-norm DIFFERENCE CIs at
+    n_boot = G.N_BOOT_NORM (2000) — review r1 Major 5 (the parent
+    run_geometry pass keeps every other DV at --n-boot 1000; its single
+    n_boot surface cannot thread a per-DV draw count, so this dedicated pass
+    supplies ONLY the diff_mu_norm records, spliced into cross_cell_diffs).
+    Same stores, same paired question-cluster index convention (seed 653),
+    batched draws (no serial per-draw loop)."""
+    done = out_dir / f"_beh_{beh_key}_{tag}_norm{n_boot_norm}.json"
+    if done.exists():
+        print(f"[geometry-1586] resume: norm pass {beh_key}/{tag} from {done}", flush=True)
+        return json.loads(done.read_text())
+    base = geo.load_store(base_store)
+    cluster_ids = [f"{c}__{q}" for c, q in geo._row_keys(base)]
+    idx = bootstrap_index_matrix(cluster_ids, n_boot=n_boot_norm, seed=geo.BOOT_SEED)
+    arms_list = tuple(arms_filter) if arms_filter is not None else CAPTURE_ARMS
+    layers = sorted(next(iter(base["arms"].values())).keys())
+    out: dict[str, dict] = {}
+    for name, ft_cell, lora_cell in diff_pairs_for(beh_key, arms):
+        store_ft = geo.load_store(capture_root / ft_cell / "selected" / "pooled.pt")
+        store_lora = geo.load_store(capture_root / lora_cell / "selected" / "pooled.pt")
+        reads: dict[str, dict] = {}
+        for arm in arms_list:
+            for layer in layers:
+                cloud_a = geo.delta_cloud(store_ft, base, arm, layer)
+                cloud_b = geo.delta_cloud(store_lora, base, arm, layer)
+                reads[f"{arm}/L{layer}"] = geo.paired_diff_record(
+                    _mu_norm_draws(cloud_a, idx),
+                    _mu_norm_draws(cloud_b, idx),
+                    float(np.linalg.norm(cloud_a.mean(axis=0))),
+                    float(np.linalg.norm(cloud_b.mean(axis=0))),
+                )
+        out[name] = {"cell_a": ft_cell, "cell_b": lora_cell, "reads": reads}
+    done.parent.mkdir(parents=True, exist_ok=True)
+    done.write_text(json.dumps({"n_boot_norm": n_boot_norm, "diffs": out}, default=str))
+    return {"n_boot_norm": n_boot_norm, "diffs": out}
+
+
+def splice_norm_diffs(merged: dict, norm_payload: dict) -> None:
+    """Splice the 2000-draw diff_mu_norm records into the merged
+    cross_cell_diffs (each paired_diff_record carries its own n_boot=2000,
+    so the mixed-draw regime — norm at 2000, spectral DVs at 1000 — is
+    self-describing per record)."""
+    for name, entry in norm_payload["diffs"].items():
+        target = merged["cross_cell_diffs"].setdefault(
+            name, {"cell_a": entry["cell_a"], "cell_b": entry["cell_b"], "reads": {}}
+        )
+        for read_key, rec in entry["reads"].items():
+            target.setdefault("reads", {}).setdefault(read_key, {})["diff_mu_norm"] = rec
+
+
 def _flat_store_tree(capture_root: Path, work: Path) -> Path:
     """run_geometry expects <cell>/<dose>/pooled.pt; the #1586 dispatcher
     writes <arm>/pooled.pt. Mirror via symlinks into <arm>/selected/."""
@@ -157,6 +242,13 @@ def main(argv: list[str] | None = None) -> int:
         "--out-dir", type=Path, default=REPO_ROOT / "eval_results" / "issue_1586" / "geometry"
     )
     p.add_argument("--n-boot", type=int, default=G.N_BOOT)
+    p.add_argument(
+        "--n-boot-norm",
+        type=int,
+        default=G.N_BOOT_NORM,
+        help="draws for the mean-shift-norm DIFFERENCE CIs (plan §6: 2000; "
+        "other DVs stay at --n-boot)",
+    )
     args = p.parse_args(argv)
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -184,6 +276,21 @@ def main(argv: list[str] | None = None) -> int:
             "rb_absent": payload.get("rb_absent"),
             "diff_pairs": [list(t) for t in diff_pairs_for(beh_key, arms)],
         }
+        # H1 Δnorm CIs at n_boot_norm=2000 (plan §6; review r1 Major 5).
+        splice_norm_diffs(
+            merged,
+            norm_diff_pass(
+                beh_key,
+                arms,
+                capture_root=own_tree,
+                base_store=own_tree / f"base_{beh_key}" / "selected" / "pooled.pt",
+                out_dir=args.out_dir,
+                n_boot_norm=args.n_boot_norm,
+                arms_filter=None,
+                tag="own",
+            ),
+        )
+    merged["n_boot_norm"] = args.n_boot_norm
     (args.out_dir / "geometry_per_cell.json").write_text(json.dumps(merged, indent=1, default=str))
 
     if args.tf_root is not None and Path(args.tf_root).exists():
@@ -207,6 +314,20 @@ def main(argv: list[str] | None = None) -> int:
             tf_merged["records"].update(payload.get("records", {}))
             tf_merged["cross_cell_diffs"].update(payload.get("cross_cell_diffs", {}))
             tf_merged["by_behavior"][beh_key] = {"arms": arms}
+            splice_norm_diffs(
+                tf_merged,
+                norm_diff_pass(
+                    beh_key,
+                    arms,
+                    capture_root=tf_tree,
+                    base_store=own_tree / f"base_{beh_key}" / "selected" / "pooled.pt",
+                    out_dir=args.out_dir / "tf_shared",
+                    n_boot_norm=args.n_boot_norm,
+                    arms_filter=("response",),
+                    tag="tf",
+                ),
+            )
+        tf_merged["n_boot_norm"] = args.n_boot_norm
         (args.out_dir / "tf_shared").mkdir(parents=True, exist_ok=True)
         (args.out_dir / "tf_shared" / "geometry_per_cell.json").write_text(
             json.dumps(tf_merged, indent=1, default=str)
