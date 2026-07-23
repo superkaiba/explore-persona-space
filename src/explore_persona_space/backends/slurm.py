@@ -174,6 +174,34 @@ class ClusterConfig:
     * ``available`` — whether the cluster is wired for v1. Fir = False
       in v1 (queued for v1.1); flipping this to True is a config-only
       change once the rsync path + robot key are validated on Fir.
+
+    Fields added for the ``fellows`` (charmander) lane (#1609) — every
+    default preserves the pre-#1609 render byte-for-byte (pinned by the
+    snapshot test in ``tests/test_slurm_backend_render.py``):
+
+    * ``qos`` — optional ``--qos`` value (fellows: ``high-eur``). ``None``
+      omits the ``#SBATCH --qos=`` line entirely.
+    * ``mem_gb_per_gpu`` / ``mem_gb_cap`` — the ``--mem`` formula knobs
+      (``min(mem_gb_per_gpu * gpus, mem_gb_cap)``). Defaults 64/480
+      reproduce the legacy hard-coded formula; fellows uses 128/1800
+      per the cluster handbook (~128 G/GPU, node ceiling ~1965 G).
+    * ``extra_exports`` — ``(key, value)`` pairs rendered in the CUDA
+      setup block as ``export K="${K:-<value>}"`` (override-able: a
+      dispatch-process value forwarded via secrets.env supersedes,
+      mirroring the ``HF_XET_HIGH_PERFORMANCE`` pattern). Fellows uses
+      this for ``NCCL_NVLS_ENABLE=0`` / ``HF_HOME`` / ``UV_PYTHON``.
+    * ``defines_scratch_env`` — ``True`` (DRAC/Mila) when the cluster
+      prolog provides ``$SCRATCH`` + ``$SLURM_TMPDIR``. ``False``
+      (fellows: no prolog-provided env) makes the renderer derive both:
+      ``SCRATCH`` falls back to :attr:`scratch_path` and
+      ``SLURM_TMPDIR`` to a job-scoped ``/tmp/eps-<jobid>`` dir that the
+      cleanup traps reap (``/tmp`` is a persistent node overlay there).
+    * ``term_kill_process_group`` — ``True`` renders a TERM/INT/QUIT
+      trap that forwards TERM to the whole job process group (fellows
+      rule 7: orphaned vLLM/torchrun workers brick nodes there). DRAC
+      cgroups already reap children, so the default stays ``False``.
+    * ``job_name_suffix`` — appended to :func:`job_name` (fellows rule 8:
+      job names include the user, ``-superkaiba``).
     """
 
     name: str
@@ -187,8 +215,11 @@ class ClusterConfig:
     access_mode: Literal["robot", "interactive"] = "robot"
     # DRAC requires a GPU TYPE in ``--gpus-per-node`` (e.g. ``h100:1``); a
     # bare count is read as a GPU-type name and sbatch rejects it ("There is
-    # no 1 GPU-type"). Nibi + Fir are both H100. Override for a non-H100 system.
-    gpu_type: str = "h100"
+    # no 1 GPU-type"). Nibi + Fir are both H100. Override for a non-H100
+    # system. ``None`` (#1609) = the cluster's GRES is UNTYPED (fellows:
+    # ``Gres=gpu:8``) and the renderer emits a bare ``--gpus-per-node=<N>``
+    # — a typed request against untyped GRES is rejected by sbatch.
+    gpu_type: str | None = "h100"
     # IANA tz of the cluster scheduler's reported timestamps. DRAC robot
     # login nodes report in cluster-local time (Eastern); Mila is the same.
     # The router's est-start parser localizes ``--test-only`` output via
@@ -209,6 +240,14 @@ class ClusterConfig:
         "fi"
     )
     available: bool = True
+    # --- #1609 fellows-lane knobs (defaults preserve pre-#1609 renders) ---
+    qos: str | None = None
+    mem_gb_per_gpu: int = 64
+    mem_gb_cap: int = 480
+    extra_exports: tuple[tuple[str, str], ...] = ()
+    defines_scratch_env: bool = True
+    term_kill_process_group: bool = False
+    job_name_suffix: str | None = None
 
     @property
     def ssh_host(self) -> str:
@@ -228,7 +267,10 @@ class ClusterConfig:
 
 # Canonical per-cluster table. v1 ships Nibi; Fir is in the table but
 # flagged ``available=False`` until v1.1. Adding a new cluster is one
-# row + bumping the selector's alias set in selector.py.
+# row + adding the lane name to the router / issue_dispatch membership
+# sets (frontmatter parsing lives in ``issue_dispatch.py``'s
+# ``_parse_backend_frontmatter`` — the legacy ``selector.py`` surface is
+# deliberately NOT extended for new lanes; the mila precedent, #1609).
 CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
     "nibi": ClusterConfig(
         name="nibi",
@@ -292,6 +334,71 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         # SLICE-8-VERIFY: same CUDA_HOME bridge as DRAC works on most
         # EasyBuild stacks. Confirm in acceptance.
         available=True,
+    ),
+    "fellows": ClusterConfig(
+        name="fellows",
+        # Single 'research' account on the assoc (live sacctmgr 2026-07-22);
+        # the default account applies — no --account line.
+        account=None,
+        # Plain persistent ed25519 key over a RunPod-mapped port
+        # (~/.ssh/clusters.config Host `charmander`,
+        # superkaiba@213.181.104.162:16869). access_mode='robot' here means
+        # "no interactive-socket gate" ONLY — the key is a NORMAL
+        # unrestricted key (no forced-command allowlist); nothing in code
+        # gates on access_mode (the mila gate keys on the literal lane name
+        # in router._auto_route). Endpoint remap recovery (the RunPod host
+        # can remap the mapped port on pod restart): query RunPod GraphQL
+        # (regular RUNPOD_API_KEY + the EPS X-Team-Id) for pod
+        # `cluster-EUR-IS-pod-2` -> the port mapping with privatePort 22 ->
+        # update ~/.ssh/clusters.config (v1: manual, fail-loud — a dead
+        # endpoint fails prepare -> BackendPrepareError -> the auto chain
+        # advances to GCP). N consecutive fellows `prepare_failed` attempts
+        # on epm:backend-selected markers = run this recovery.
+        robot_alias="charmander",
+        max_gpus_per_node=8,  # probe: Gres=gpu:8, 192 CPU, 2013000 MB/node
+        gpu_type=None,  # UNTYPED gres on this cluster (probe: 'Gres=gpu:8')
+        # MooseFS shared mount (probe 2026-07-22; NOT /workspace-vast — that
+        # is the OTHER fellows cluster's path).
+        scratch_path="/workspace/superkaiba",
+        timezone="UTC",  # probe: date +%Z = UTC (EUR-IS / Iceland)
+        partition="general",  # sinfo: general* (default), 14 nodes
+        qos="high-eur",  # non-preemptible; gres/gpu=16/user; 7d MaxWall
+        mem_gb_per_gpu=128,  # cluster rule 2; node ceiling ~251 G/GPU
+        # Headroom only (inert at <=8 GPUs: max request 1024G); kept under
+        # the node RealMemory 2013000 MB ~= 1965 G.
+        mem_gb_cap=1800,
+        # The cluster's own demo_nccl225.sh pins ens1; NO vxlan0 iface on
+        # EUR-IS (probe: ls /sys/class/net -> ens1, ens2, eth0, lo).
+        nccl_socket_ifname="ens1",
+        module_load_cuda="",  # NO module system (NGC image) — renderer skips falsy
+        cuda_home_bridge=(
+            'if [ -z "${CUDA_HOME:-}" ] && [ -d /usr/local/cuda ]; then\n'
+            "  export CUDA_HOME=/usr/local/cuda\n"
+            "fi"
+        ),
+        defines_scratch_env=False,  # no prolog-provided SCRATCH/SLURM_TMPDIR
+        term_kill_process_group=True,  # rule 7 (orphaned workers brick nodes)
+        job_name_suffix="-superkaiba",  # rule 8 (job names include the user)
+        extra_exports=(
+            # Rule 5: NVLS off on the H200 nodes per the cluster handbook.
+            ("NCCL_NVLS_ENABLE", "0"),
+            # Rule 6: shared HF cache on the MooseFS mount (probe-verified
+            # the dir exists; HF_TOKEN rides secrets.env — env supersedes
+            # any token file, so no HF_TOKEN_PATH plumbing).
+            ("HF_HOME", "/workspace/pretrained_ckpts"),
+            # /home is per-node LOCAL on charmander, so uv's default
+            # managed-CPython download (~/.local/share/uv) would seed the
+            # SHARED venv with a node-local interpreter path -> node-B jobs
+            # die at the first python call. Pin the node-invariant IMAGE
+            # python (probe: /usr/bin/python3.11 = 3.11.15 on the NGC
+            # image); the INSTALL_DIR export is the safety net so any
+            # residual managed download lands on the shared mount.
+            ("UV_PYTHON", "/usr/bin/python3.11"),
+            ("UV_PYTHON_INSTALL_DIR", "/workspace/superkaiba/uv-python"),
+        ),
+        # Dark-launched pending the live acceptance job (#1609 §7 gate);
+        # flipped True only after the end-to-end probe passes.
+        available=False,
     ),
 }
 
@@ -434,17 +541,25 @@ def default_gpus_for_intent(spec: RunSpec) -> int:
 # ---------------------------------------------------------------------------
 
 
-def job_name(spec: RunSpec, plan_hash: str | None = None) -> str:
+def job_name(
+    spec: RunSpec, plan_hash: str | None = None, cluster: ClusterConfig | None = None
+) -> str:
     """Canonical SLURM job name keyed by issue (+ optional plan hash).
 
     Used by the monitor's idempotent reconnect — when the local launch
     marker is present but ``squeue -j <id>`` shows nothing, the monitor
     falls back to ``squeue --name <job_name>`` to disambiguate
     "ageout" from "really gone".
+
+    ``cluster`` (#1609) appends :attr:`ClusterConfig.job_name_suffix`
+    (fellows rule 8: job names include the user). EVERY call site that
+    renders/submits/reconnects-by-name MUST thread the resolved cluster,
+    or by-name reconnect breaks on a suffixed lane.
     """
+    suffix = cluster.job_name_suffix if cluster is not None and cluster.job_name_suffix else ""
     if plan_hash:
-        return f"eps-issue-{spec.issue}-{plan_hash[:8]}"
-    return f"eps-issue-{spec.issue}"
+        return f"eps-issue-{spec.issue}-{plan_hash[:8]}{suffix}"
+    return f"eps-issue-{spec.issue}{suffix}"
 
 
 def compute_plan_hash(plan_body: str | bytes) -> str:
@@ -1236,7 +1351,7 @@ def render_sbatch(
         )
     time_h = time_budget_hours(spec)
     time_str = _format_sbatch_time(time_h)
-    name = job_name(spec, plan_hash)
+    name = job_name(spec, plan_hash, cluster=cluster)
     # The sbatch reads $SCRATCH at runtime; we hard-pin it for the
     # --output header (SLURM resolves the path BEFORE the script runs).
     output_path = f"{scratch_dir}/job.out"
@@ -1255,15 +1370,24 @@ def render_sbatch(
             f"#SBATCH --job-name={name}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks-per-node=1",
-            f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}",
+            # gpu_type=None (#1609) = untyped GRES cluster (fellows): a
+            # typed ``h200:N`` request against untyped ``Gres=gpu:N`` is
+            # rejected by sbatch, so emit the bare count there.
+            (
+                f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}"
+                if cluster.gpu_type
+                else f"#SBATCH --gpus-per-node={gpus}"
+            ),
             f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
-            f"#SBATCH --mem={min(64 * gpus, 480)}G",
+            f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
             f"#SBATCH --time={time_str}",
             f"#SBATCH --output={output_path}",
         ]
     )
     if cluster.partition:
         sbatch_headers.append(f"#SBATCH --partition={cluster.partition}")
+    if cluster.qos:
+        sbatch_headers.append(f"#SBATCH --qos={cluster.qos}")
     if cluster.constraint:
         sbatch_headers.append(f"#SBATCH --constraint={cluster.constraint}")
 
@@ -1332,6 +1456,28 @@ def render_sbatch(
         "trap 'kill $HEARTBEAT_PID 2>/dev/null || true' EXIT TERM INT",
         "",
     ]
+    if not cluster.defines_scratch_env:
+        # #1609 (fellows): no DRAC/Mila prolog on this cluster, so neither
+        # $SCRATCH nor $SLURM_TMPDIR is provided and the venv block /
+        # Triton cache / preflight ``:?`` check would die under ``set -u``.
+        # Derive both here: SCRATCH from the config's scratch_path (the
+        # shared mount), SLURM_TMPDIR from a job-scoped /tmp dir. The
+        # ``:-`` forms mean a prolog-provided value still wins if one ever
+        # appears. /tmp is a persistent node overlay on fellows, so the
+        # cleanup traps reap the fallback dir — but ONLY when WE created it
+        # (_EPS_REAP_TMPDIR is set only on the fallback branch).
+        prelude.extend(
+            [
+                "# === No prolog-provided SCRATCH/SLURM_TMPDIR on this cluster (#1609) ===",
+                f'export SCRATCH="${{SCRATCH:-{cluster.scratch_path}}}"',
+                'if [ -z "${SLURM_TMPDIR:-}" ]; then',
+                '  export SLURM_TMPDIR="/tmp/eps-${SLURM_JOB_ID}"',
+                '  _EPS_REAP_TMPDIR="$SLURM_TMPDIR"',
+                "fi",
+                'mkdir -p "$SLURM_TMPDIR"',
+                "",
+            ]
+        )
 
     # CUDA + Triton cache setup (P0(c) finding: module load on its own
     # line; CUDA_HOME bridge as fallback).
@@ -1339,7 +1485,13 @@ def render_sbatch(
         "# === CUDA + Triton + NCCL setup (P0(c)) ===",
         "# module load MUST be on its own line. A piped variant runs in",
         "# a subshell and the env is lost (P0(c) initial failure).",
-        cluster.module_load_cuda,
+    ]
+    if cluster.module_load_cuda:
+        # Falsy (#1609, fellows) = the cluster has NO module system (NGC
+        # image); an unconditional ``module load cuda`` would exit 127
+        # under ``set -e``.
+        cuda_setup.append(cluster.module_load_cuda)
+    cuda_setup += [
         "",
         cluster.cuda_home_bridge,
         "",
@@ -1358,10 +1510,27 @@ def render_sbatch(
     ]
     if cluster.nccl_socket_ifname:
         cuda_setup.append(f"export NCCL_SOCKET_IFNAME={shlex.quote(cluster.nccl_socket_ifname)}")
+    for key, val in cluster.extra_exports:
+        # #1609: cluster-specific env defaults (fellows: NCCL_NVLS_ENABLE /
+        # HF_HOME / UV_PYTHON*). Rendered BEFORE the secrets stanza in the
+        # override-able ``:-`` form, mirroring HF_XET_HIGH_PERFORMANCE
+        # above: a dispatch-process override forwarded via secrets.env
+        # (sourced later under ``set -a``) supersedes these defaults.
+        cuda_setup.append(f'export {key}="${{{key}:-{shlex.quote(val)}}}"')
     cuda_setup.append("")
 
     # Secrets stanza. set +x around the source so a `bash -x` rerun
     # doesn't leak tokens. trap shreds the file on EXIT/TERM/INT.
+    # #1609: on a no-prolog cluster (defines_scratch_env=False) the EXIT
+    # trap additionally reaps the /tmp SLURM_TMPDIR fallback dir the
+    # prelude created (guarded — only when _EPS_REAP_TMPDIR was set, i.e.
+    # WE created the dir; /tmp is a persistent node overlay on fellows).
+    # Byte-identical on prolog clusters (empty clause).
+    _reap_clause = (
+        '; if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi'
+        if not cluster.defines_scratch_env
+        else ""
+    )
     secrets_setup = [
         "# === Secrets ===",
         f'SECRETS_FILE="$SCRATCH_JOB_DIR/{secrets_filename}"',
@@ -1370,7 +1539,7 @@ def render_sbatch(
         "# heartbeat kill (the loop started at startup, before this stanza).",
         "trap 'kill $HEARTBEAT_PID 2>/dev/null || true; "
         'shred -u "$SECRETS_FILE" 2>/dev/null '
-        '|| rm -f "$SECRETS_FILE"\' EXIT TERM INT',
+        '|| rm -f "$SECRETS_FILE"' + _reap_clause + "' EXIT TERM INT",
         "# Make sure file perms are tight before we source.",
         'if [ ! -f "$SECRETS_FILE" ]; then',
         '  echo "[FAIL] secrets file $SECRETS_FILE not found"',
@@ -1389,6 +1558,31 @@ def render_sbatch(
         "set -x",
         "",
     ]
+    if cluster.term_kill_process_group:
+        # #1609 rule 7 (fellows): on preemption/cancel, forward TERM to the
+        # whole job process group so vLLM/accelerate/torchrun workers never
+        # orphan (they brick nodes on this cluster). Rendered AFTER the
+        # secrets stanza so it composes with — not clobbers — the EXIT
+        # shred trap: per-signal trap replacement (TERM INT QUIT only)
+        # keeps the EXIT trap intact.
+        secrets_setup.extend(
+            [
+                "# === Rule 7: process-group cleanup on TERM/INT/QUIT (#1609) ===",
+                "_eps_group_cleanup() {",
+                "  trap - TERM INT QUIT",
+                '  kill "$HEARTBEAT_PID" 2>/dev/null || true',
+                '  shred -u "$SECRETS_FILE" 2>/dev/null || rm -f "$SECRETS_FILE"',
+                '  if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi',
+                "  # NOTE: -$$ also TERMs this shell after `trap - TERM` — deliberate:",
+                "  # children already signaled, secrets already shredded; the `wait`",
+                "  # may not return. Not a bug.",
+                "  kill -TERM -- -$$ 2>/dev/null || true",
+                "  wait",
+                "}",
+                "trap '_eps_group_cleanup' TERM INT QUIT",
+                "",
+            ]
+        )
 
     # uv venv cache: keyed by uv.lock hash AND the --extra gpu flag (so
     # the LoRA-eval-only intent doesn't share a venv with full-FT). The
@@ -2269,7 +2463,7 @@ class SlurmBackend(ComputeBackend):
             log_path=log_path,
         )
         self._jobs[job_id] = state
-        name = job_name(spec, plan_hash)
+        name = job_name(spec, plan_hash, cluster=cluster)
         time_h = time_budget_hours(spec)
         gpus = default_gpus_for_intent(spec)
 

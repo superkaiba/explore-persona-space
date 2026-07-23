@@ -286,11 +286,11 @@ def normalize_backend_value(raw: Any) -> BackendKind:
         return _LEGACY_TO_ROUTER_BACKEND[val]
     # ``route()`` validates the value at call time; we forward verbatim.
     # The narrow router-side set is the source of truth.
-    if val in {"runpod", "nibi", "fir", "gcp", "mila", "auto"}:
+    if val in {"runpod", "nibi", "fir", "gcp", "mila", "fellows", "auto"}:
         return val  # type: ignore[return-value]
     raise ValueError(
         f"unknown backend frontmatter value: {raw!r}. Expected one of: "
-        "runpod, cluster, nibi, fir, gcp, mila, auto, or empty (auto)."
+        "runpod, cluster, nibi, fir, gcp, mila, fellows, auto, or empty (auto)."
     )
 
 
@@ -301,8 +301,11 @@ def normalize_backend_value(raw: Any) -> BackendKind:
 
 #: SLURM lane names (per-cluster backend values that all share one renderer /
 #: one export contract). The legacy ``cluster`` alias normalizes to ``nibi``
-#: (see :data:`_LEGACY_TO_ROUTER_BACKEND`), i.e. into this set.
-_SLURM_LANES: tuple[str, ...] = ("nibi", "fir", "mila")
+#: (see :data:`_LEGACY_TO_ROUTER_BACKEND`), i.e. into this set. ``fellows``
+#: (#1609) shares the same renderer, hence the same export contract (its
+#: extra_exports — HF_HOME / NCCL_NVLS_ENABLE / UV_PYTHON* / SCRATCH — are
+#: outside the lint universe by the same noise-var rule as HF_XET_*).
+_SLURM_LANES: tuple[str, ...] = ("nibi", "fir", "mila", "fellows")
 
 #: Env vars each lane EXPORTS into the shell that executes a user-supplied
 #: ``--workload-cmd`` string, verified against the renderers (line anchors as

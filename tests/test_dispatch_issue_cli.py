@@ -4561,3 +4561,49 @@ def test_min_gpu_mem_gb_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None
         )
     assert rc == 0
     assert "min_gpu_mem_gb" not in gcp.launches[0].extra
+
+
+# ---------------------------------------------------------------------------
+# issue #1609 — fellows reconnect threads the suffixed job name
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_fellows_threads_job_name_suffix(monkeypatch) -> None:
+    """#1609 rule 8: the dispatch ``_reconnect`` closure passes the
+    SUFFIXED job name to ``query_by_name`` for the fellows lane — the
+    SAME name the launch path stamped onto the sbatch. A missed
+    threading site would probe ``eps-issue-<N>`` while the live job is
+    named ``eps-issue-<N>-superkaiba`` (by-name reconnect broken; the
+    park/cancel chain would then double-submit)."""
+    import dataclasses
+
+    from explore_persona_space.backends import gcp as gcp_module
+    from explore_persona_space.backends import slurm as slurm_module
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from scripts import dispatch_issue as di
+
+    captured: dict[str, Any] = {}
+
+    def _fake_query_by_name(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        captured["robot_alias"] = robot_alias
+        captured["job_name"] = job_name
+        return None  # "no live job"
+
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", _fake_query_by_name)
+    monkeypatch.setattr(gcp_module, "reconnect_or_none", lambda **_kw: None)
+    monkeypatch.setattr(slurm_module, "mila_socket_alive", lambda: False)
+    # The fellows row ships dark-launched (available=False) until the live
+    # acceptance passes (#1609 §7); force it available at call time so
+    # ``_resolve_cluster_cfg`` resolves — flip-insensitive.
+    monkeypatch.setitem(
+        slurm_module.CLUSTER_CONFIGS,
+        "fellows",
+        dataclasses.replace(slurm_module.CLUSTER_CONFIGS["fellows"], available=True),
+    )
+
+    deps = di._build_production_backends()
+    spec = RunSpec(issue=1609, intent="debug", backend="fellows", cluster="fellows", extra={})
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "fellows", spec)
+    assert out is None, "patched query_by_name returns None (no live job)"
+    assert captured["job_name"] == "eps-issue-1609-superkaiba"
+    assert captured["robot_alias"] == "charmander"

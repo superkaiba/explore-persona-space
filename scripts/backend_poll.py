@@ -374,7 +374,7 @@ def _resolve_backend(name: str):
         from explore_persona_space.backends.runpod import RunPodBackend
 
         return RunPodBackend()
-    if name in {"cluster", "nibi", "fir", "mila"}:
+    if name in {"cluster", "nibi", "fir", "mila", "fellows"}:
         from explore_persona_space.backends.slurm import SlurmBackend
 
         return SlurmBackend()

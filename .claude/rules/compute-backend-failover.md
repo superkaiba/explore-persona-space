@@ -460,6 +460,18 @@ code` → `status:blocked`.
 
 ### Ladder order (length-aware, #680)
 
+NOTE (#1609): under the standing auto default the free `fellows` (charmander
+H200) SLURM lane sits BEFORE this GCP ladder — `DEFAULT_AUTO_LANE_ORDER =
+("fellows", "gcp", "nibi", "fir", "mila")` — so a fellows capacity miss /
+dead endpoint / PENDING-at-cap park advances INTO the ladder below; RunPod
+stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
+`available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
+instant, no code revert). Sentinel hazard: charmander HAS a `/workspace`, so
+a sentinel-writing dispatcher auto-routed onto fellows writes sentinels
+nobody drains (silent marker loss, vs #608's fail-loud on DRAC/Mila) —
+sentinel-dependent workloads still pin a /workspace-contract lane
+(gcp/runpod) at plan time.
+
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
 (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
 OR `spec.extra["spot_tolerant"]`):

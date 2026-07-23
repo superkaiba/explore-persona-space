@@ -2589,3 +2589,186 @@ def test_render_and_launch_sentinel_paths_agree(tmp_path) -> None:
     decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
     declared_rel = str(_P(decl["sentinel_path"]).relative_to(tmp_path))
     assert render_rel == declared_rel
+
+
+# ---------------------------------------------------------------------------
+# issue #1609 — fellows (charmander) lane: render shape + default-preserving
+# byte-identity + job-name suffix threading
+# ---------------------------------------------------------------------------
+
+
+def _fellows() -> ClusterConfig:
+    """The fellows row, forced available for render tests.
+
+    The row ships dark-launched (``available=False``) until the live
+    acceptance job passes (#1609 §7 gate) and ``render_sbatch`` raises on
+    an unavailable cluster, so tests force the flag via
+    ``dataclasses.replace`` — insensitive to the eventual flip.
+    """
+    import dataclasses
+
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    return dataclasses.replace(CLUSTER_CONFIGS["fellows"], available=True)
+
+
+def _fellows_spec(intent: str = "debug", gpus: int | None = None) -> RunSpec:
+    return RunSpec(
+        issue=1609,
+        intent=intent,
+        gpus=gpus,
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="nvidia-smi -L && echo ok",
+    )
+
+
+def test_render_sbatch_fellows_acceptance_lines() -> None:
+    """#1609 acceptance criterion 2 — every fellows-specific render shape
+    (presence checks, not exact counts)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    # sbatch headers
+    assert "#SBATCH --qos=high-eur" in script
+    assert "#SBATCH --partition=general" in script
+    assert "#SBATCH --gpus-per-node=1\n" in script  # UNTYPED gres
+    assert "h200:" not in script and "h100:" not in script
+    assert "#SBATCH --mem=128G" in script  # 128 G/GPU at 1 GPU
+    assert "#SBATCH --job-name=eps-issue-1609-superkaiba" in script  # rule 8 suffix
+    assert "#SBATCH --account=" not in script  # default account applies
+    # NO module system; NO --export; NO CUDA_VISIBLE_DEVICES assignment
+    exec_module_lines = [ln for ln in script.split("\n") if ln.strip().startswith("module load")]
+    assert exec_module_lines == []
+    assert "--export" not in script
+    assert "CUDA_VISIBLE_DEVICES=" not in script
+    # NCCL iface + NVLS off (rule 5)
+    assert "export NCCL_SOCKET_IFNAME=ens1" in script
+    assert 'export NCCL_NVLS_ENABLE="${NCCL_NVLS_ENABLE:-0}"' in script
+    # Shared HF cache (rule 6) + node-invariant python pin
+    assert 'export HF_HOME="${HF_HOME:-/workspace/pretrained_ckpts}"' in script
+    assert 'export UV_PYTHON="${UV_PYTHON:-/usr/bin/python3.11}"' in script
+    assert (
+        'export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-/workspace/superkaiba/uv-python}"'
+        in script
+    )
+    # SCRATCH / SLURM_TMPDIR fallbacks (no prolog on this cluster)
+    assert 'export SCRATCH="${SCRATCH:-/workspace/superkaiba}"' in script
+    assert 'export SLURM_TMPDIR="/tmp/eps-${SLURM_JOB_ID}"' in script
+    assert 'if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi' in script
+    # Rule 7: TERM/INT/QUIT process-group cleanup trap, EXIT trap intact
+    assert "trap '_eps_group_cleanup' TERM INT QUIT" in script
+    assert "kill -TERM -- -$$" in script
+    # fellows CUDA_HOME bridge (NGC image, /usr/local/cuda)
+    assert "[ -d /usr/local/cuda ]" in script
+    # Script must still be valid bash
+    proc = subprocess.run(
+        ["bash", "-n", "/dev/stdin"], input=script, text=True, capture_output=True
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_render_sbatch_fellows_mem_capped_at_8_gpus() -> None:
+    """8 GPUs → min(128*8, 1800) = 1024G; untyped count rides through."""
+    fellows = _fellows()
+    spec = _fellows_spec(gpus=8)
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --mem=1024G" in script
+    assert "#SBATCH --gpus-per-node=8\n" in script
+
+
+def test_render_sbatch_fellows_gpu_cap_still_enforced() -> None:
+    """>8 GPUs raises (single-node only; the fellows cap is 8)."""
+    fellows = _fellows()
+    spec = _fellows_spec(gpus=9)
+    with pytest.raises(ValueError, match="max_gpus_per_node"):
+        render_sbatch(
+            spec=spec,
+            cluster=fellows,
+            plan=stages_for_spec(spec),
+            scratch_dir="/workspace/superkaiba/eps/issue-1609",
+        )
+
+
+def test_render_sbatch_nibi_mila_byte_identical_to_pre_1609_snapshot() -> None:
+    """#1609 default-preserving contract: nibi + mila renders (hydra AND
+    custom-cmd variants) are byte-identical to snapshots generated from
+    the PRE-change tree (``git show`` render at 14ecbd80f7 — provenance
+    note inside the fixture; the test_gcp_backend.py snapshot-pin
+    precedent). nibi + mila deliberately span the config space: DRAC
+    account + typed h100 GRES vs account-None + a100l GRES + partition
+    conventions. fir cannot be snapshot — ``render_sbatch`` raises on
+    ``available=False`` — and fir shares nibi's DRAC shape.
+    """
+    fixture = json.loads(
+        (_P(__file__).parent / "fixtures" / "issue1609_prechange_slurm_renders.json").read_text()
+    )
+    for cluster_name in ("nibi", "mila"):
+        cluster = get_cluster_config(cluster_name)
+        for variant, kwargs in (
+            ("hydra", {"hydra_args": ("condition=c1_evil_wrong_em", "seed=42")}),
+            ("custom", {"workload_cmd": "bash scripts/issue1609_smoke.sh --flag 'v 1'"}),
+        ):
+            spec = RunSpec(
+                issue=1609,
+                intent="lora-7b",
+                backend="cluster",
+                cluster=cluster_name,
+                **kwargs,
+            )
+            rendered = render_sbatch(
+                spec=spec,
+                cluster=cluster,
+                plan=stages_for_spec(spec),
+                scratch_dir=f"{cluster.scratch_path}/eps/issue-1609",
+                plan_hash="abcdef0123456789" if variant == "hydra" else None,
+            )
+            key = f"{cluster_name}_{variant}"
+            assert rendered == fixture["renders"][key], (
+                f"{key} render drifted from the pre-#1609 snapshot — a new "
+                "ClusterConfig field default failed to preserve behavior"
+            )
+
+
+def test_job_name_suffix_threading() -> None:
+    """#1609 rule 8: ``job_name`` appends the cluster suffix; suffix-less
+    clusters are byte-identical to the pre-#1609 form (positional call
+    included, for the legacy call shape)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    assert job_name(spec, None, cluster=fellows) == "eps-issue-1609-superkaiba"
+    assert (
+        job_name(spec, "abcdef0123456789", cluster=fellows) == "eps-issue-1609-abcdef01-superkaiba"
+    )
+    # Suffix-less clusters: unchanged, cluster arg optional (legacy shape).
+    assert job_name(spec, None) == "eps-issue-1609"
+    assert job_name(spec, None, cluster=_nibi()) == "eps-issue-1609"
+    assert job_name(spec, "abcdef0123456789") == "eps-issue-1609-abcdef01"
+
+
+def test_render_sbatch_fellows_job_name_matches_job_name_fn() -> None:
+    """Launch/reconnect parity by construction: the rendered ``--job-name``
+    header equals ``job_name(spec, plan_hash, cluster)`` — the SAME call
+    the launch marker and the by-name reconnect must use (a missed
+    threading site breaks squeue-by-name disambiguation)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+        plan_hash="abcdef0123456789",
+    )
+    expected = job_name(spec, "abcdef0123456789", cluster=fellows)
+    assert f"#SBATCH --job-name={expected}" in script

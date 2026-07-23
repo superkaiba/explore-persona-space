@@ -2507,8 +2507,8 @@ markers:
       with `attempts` populated).
 
       Body shape (JSON in the event `note` field):
-        `requested_kind: <runpod|cluster|nibi|fir|gcp|mila|null>
-         chosen_kind:    <runpod|cluster|nibi|fir|gcp|mila>
+        `requested_kind: <runpod|cluster|nibi|fir|gcp|mila|fellows|null>
+         chosen_kind:    <runpod|cluster|nibi|fir|gcp|mila|fellows>
          reason:         <override|reconnect|auto_started|
                           auto_fallback_gcp|no_compute_available|
                           workload_failure|frontmatter_default|
@@ -2614,10 +2614,11 @@ markers:
         * `auto_started`          — auto chain picked a free lane and
                                     it reached RUNNING within the park.
         * `auto_fallback_gcp`     — the auto chain launched on GCP:
-                                    the PRIMARY lane under the GCP-first
-                                    standing default
-                                    (DEFAULT_AUTO_LANE_ORDER = gcp,
-                                    nibi, fir, mila; override via
+                                    the first GCP rung reached under
+                                    the fellows-first standing default
+                                    (DEFAULT_AUTO_LANE_ORDER = fellows,
+                                    gcp, nibi, fir, mila — #1609;
+                                    override via
                                     EPM_AUTO_LANE_ORDER), or the
                                     escalation after every free lane
                                     park-failed under a free-first

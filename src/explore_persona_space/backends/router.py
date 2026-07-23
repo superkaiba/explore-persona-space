@@ -6,7 +6,7 @@ selector dispatches on a single ``backend:`` frontmatter and falls back to
 RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
-   "fir" | "mila"`` runs that lane directly. RunPod is ALSO reachable on
+   "fir" | "mila" | "fellows"`` runs that lane directly. RunPod is ALSO reachable on
    the auto chain — as the COST-ORDERED TERMINAL FALLBACK, never first:
    when every cheaper GCP rung + free SLURM lane is exhausted on the
    CAPACITY path (item 8, ``reason: auto_fallback_runpod``, #656), when a
@@ -15,9 +15,11 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    intents (item 8a, ``cpu-small`` / ``cpu-mid``, #747). Full failover
    policy: ``.claude/rules/compute-backend-failover.md`` (canonical).
 2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
-   **GCP first** (:data:`DEFAULT_AUTO_LANE_ORDER` =
-   ``("gcp", "nibi", "fir", "mila")``): credits-backed GCP capacity is
-   consumed BEFORE the free SLURM lanes. The order is overridable via the
+   **fellows first, then GCP** (:data:`DEFAULT_AUTO_LANE_ORDER` =
+   ``("fellows", "gcp", "nibi", "fir", "mila")``): the free fellows
+   (charmander) H200 SLURM lane is tried BEFORE credits-backed GCP
+   capacity, which is consumed BEFORE the free DRAC/Mila SLURM lanes
+   (#1609). The order is overridable via the
    ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
    ``runpod`` and unknown names raise loudly) or per-call via
    :attr:`RouterConfig.lane_order`; there is deliberately NO date logic —
@@ -644,19 +646,24 @@ PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
 #: :func:`auto_lane_order`. RunPod is NEVER in either list — it's
-#: override-only by deliberate design.
+#: override-only by deliberate design. The ``fellows`` lane (#1609) is a
+#: free SLURM lane too but is deliberately NOT in this legacy tuple —
+#: it sits AHEAD of gcp in the auto order (see
+#: :data:`DEFAULT_AUTO_LANE_ORDER`), not in the post-GCP tail.
 DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 
-#: Standing default auto lane order: **GCP first** (credits-backed GCP
-#: capacity is consumed BEFORE the free SLURM lanes), then the SLURM
-#: lanes in legacy precedence. This is an unconditional default — NO
-#: date logic; flipping back to free-first later is a deliberate human
-#: action (set :data:`ENV_AUTO_LANE_ORDER` or edit this default), never
-#: a clock.
-DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("gcp", *DEFAULT_FREE_LANE_ORDER)
+#: Standing default auto lane order: **fellows first** (the free
+#: Anthropic-fellows charmander H200 SLURM lane, #1609), then **GCP**
+#: (credits-backed GCP capacity is consumed BEFORE the free DRAC/Mila
+#: SLURM lanes), then the legacy SLURM lanes in precedence order. This
+#: is an unconditional default — NO date logic; flipping the order back
+#: is a deliberate human action (set :data:`ENV_AUTO_LANE_ORDER` or edit
+#: this default), never a clock.
+DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("fellows", "gcp", *DEFAULT_FREE_LANE_ORDER)
 
 #: Env override for the auto lane order — comma-separated lane names,
-#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila,gcp`` to restore free-first.
+#: e.g. ``EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila`` to bypass fellows, or
+#: ``EPM_AUTO_LANE_ORDER=nibi,fir,mila,gcp`` to restore free-DRAC-first.
 #: Validated by :func:`auto_lane_order`: ``runpod`` raises loudly
 #: (real-money safety — never silently dropped), as do unknown names,
 #: ``auto``/``cluster`` literals, and duplicates.
@@ -696,18 +703,20 @@ ENV_SPOT_MAX_GPU_HOURS: str = "EPS_GCP_SPOT_MAX_GPU_HOURS"
 #: that wants a free-cluster lane must name it (``"nibi"`` / ``"fir"``)
 #: or leave ``backend`` unset to auto-route. Passing ``"cluster"`` here
 #: is treated as a stringly-typed miswire.
-_VALID_BACKEND_VALUES: frozenset[str] = frozenset({"runpod", "nibi", "fir", "gcp", "mila", "auto"})
+_VALID_BACKEND_VALUES: frozenset[str] = frozenset(
+    {"runpod", "nibi", "fir", "gcp", "mila", "fellows", "auto"}
+)
 
 #: Lanes the AUTO chain may contain — :data:`_VALID_BACKEND_VALUES`
 #: minus ``runpod`` (override-only; real money) and ``auto`` (the
 #: sentinel itself, not a lane).
-_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila"})
+_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila", "fellows"})
 
 #: Lanes whose kind IS a SLURM cluster name. The shared ``SlurmBackend``
 #: resolves its target cluster from ``spec.cluster`` per call, so every
 #: router site that touches one of these lanes MUST thread the lane kind
 #: into ``spec.cluster`` via :func:`_spec_for_lane` first.
-_PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila"})
+_PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila", "fellows"})
 
 
 # ---------------------------------------------------------------------------
@@ -1408,8 +1417,8 @@ def auto_lane_order() -> tuple[BackendKind, ...]:
     * :data:`ENV_AUTO_LANE_ORDER` set (non-empty) → parse the
       comma-separated lane list and validate it (``runpod`` / unknown
       names / duplicates raise loudly — never silently dropped).
-    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (GCP first,
-      unconditionally — no date gate of any kind).
+    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (fellows first, then
+      GCP, unconditionally — no date gate of any kind; #1609).
     """
     raw = os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
     if not raw:
@@ -1925,10 +1934,11 @@ def route(
     Optional injections:
 
     * ``free_backends`` — map of free-lane kind → backend instance
-      (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila}``). Auto
-      routing visits these at their position in the resolved lane order
-      (:attr:`RouterConfig.lane_order`, else :func:`auto_lane_order` —
-      env override, else the GCP-first standing default). A missing
+      (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila, "fellows":
+      slurm}``). Auto routing visits these at their position in the
+      resolved lane order (:attr:`RouterConfig.lane_order`, else
+      :func:`auto_lane_order` — env override, else the fellows-first,
+      GCP-second standing default, #1609). A missing
       kind is skipped (e.g. ``mila`` absent → router skips Mila even
       when the socket is alive).
     * ``gcp_backend`` — the GCP fallback-ladder target. When ``None`` and
@@ -2027,7 +2037,7 @@ def route(
             on_launched=on_launched,
         )
 
-    if spec.backend in {"nibi", "fir", "mila"}:
+    if spec.backend in {"nibi", "fir", "mila", "fellows"}:
         free = (free_backends or {}).get(spec.backend)
         if free is None:
             raise RouteError(

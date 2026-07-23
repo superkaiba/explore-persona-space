@@ -179,11 +179,12 @@ def test_gcp_backend_flags_runpod_failover_risk_not_certain() -> None:
     assert r.reachable_lanes == ("gcp", "runpod")
 
 
-@pytest.mark.parametrize("backend", ["nibi", "fir", "mila", "cluster"])
+@pytest.mark.parametrize("backend", ["nibi", "fir", "mila", "fellows", "cluster"])
 def test_explicit_slurm_lane_is_certain(backend: str) -> None:
     """Plan test 8: the SLURM custom stage executes the cmd via the literal
     ``bash -eu -o pipefail -c`` append (slurm.py:1577) → certain. The legacy
-    ``cluster`` alias normalizes to nibi."""
+    ``cluster`` alias normalizes to nibi; ``fellows`` (#1609) shares the
+    same renderer, hence the same slurm export family."""
     r = lint_workload_cmd_lane_env("echo $WORKLOAD_ROOT", backend_value=backend)
     assert r.certain == ("WORKLOAD_ROOT",)
     assert r.reachable_lanes == ("slurm",)

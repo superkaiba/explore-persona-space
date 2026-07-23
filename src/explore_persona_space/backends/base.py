@@ -88,8 +88,9 @@ def validate_lane_suffix(suffix: str) -> str:
 # ``BackendKind`` is the value of the task's ``backend:`` frontmatter. The
 # selector resolves this to a concrete :class:`ComputeBackend` instance.
 # ``cluster`` is the generic SLURM dispatch (per-cluster routing is done
-# inside the SLURM backend); ``nibi`` / ``fir`` / ``mila`` are per-cluster
-# aliases the selector accepts and maps onto ``cluster``. ``gcp``
+# inside the SLURM backend); ``nibi`` / ``fir`` / ``mila`` / ``fellows``
+# are per-cluster aliases the selector accepts and maps onto ``cluster``
+# (``fellows`` = the charmander H200 fellows cluster, #1609). ``gcp``
 # provisions an ephemeral GCE VM (intent → machine-type map inside
 # :class:`~backends.gcp.GcpBackend`) and is the auto-fallback target when
 # every free academic cluster fails the 10-minute park (router slice 5).
@@ -103,7 +104,7 @@ def validate_lane_suffix(suffix: str) -> str:
 # :func:`backends.selector._parse_backend_kind`; a caller that wants the
 # legacy RunPod default from a direct ``RunSpec()`` must set
 # ``backend="runpod"`` explicitly.
-BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "auto"]
+BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "fellows", "auto"]
 
 
 # ---------------------------------------------------------------------------
