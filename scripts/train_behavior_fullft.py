@@ -641,6 +641,13 @@ def main() -> int:  # noqa: C901 - one linear training pipeline
     os.environ.setdefault("WANDB_PROJECT", args.wandb_project)
     training_kwargs = dict(
         output_dir=str(args.output_dir),
+        # 3h process-group timeout (default 30 min): the M5 overflow offload
+        # uploads each ~15 GB ZeRO-3 checkpoint SYNCHRONOUSLY on rank 0 inside
+        # on_save, and a throttled upload past 30 min leaves ranks 1..3 in the
+        # next step's all-gather until the NCCL watchdog kills the run
+        # (#1112 Arm B, 2026-07-23: checkpoint-40's upload crawled past 1800 s
+        # after three ~3.5 min uploads; WorkNCCL _ALLGATHER_BASE timeout).
+        ddp_timeout=10800,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.per_device_batch,
         gradient_accumulation_steps=args.grad_accum,
