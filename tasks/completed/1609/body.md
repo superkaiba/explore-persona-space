@@ -1,7 +1,8 @@
 ---
 title: Add fellows Slurm cluster (charmander) as backend lane preferred over GCP/RunPod
 kind: infra
-tags: []
+tags:
+- followup-manual
 created_at: '2026-07-23T02:09:15Z'
 has_clean_result: false
 origin_prompt: add it to our workflow as another option over runpod an GCP
