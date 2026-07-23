@@ -78,7 +78,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
   `codex_task.py`,
-  `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
+  `plan_patch.py`, `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
   `recent_clean_results.py`, `task_state.py`,
