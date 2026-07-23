@@ -12,9 +12,12 @@ Write $v_C(P,q)$ for the context-end state of prefix $P$ with query $q$, and $\b
 
 $$\text{mean}_q\,[\,M\,v_C(P,q)\,] = M\,\bar{v}_C(P)$$
 
-A linear map commutes with averaging. So the single-context map **induces** an averaged prefix map for free: average its per-row predictions over a prefix's queries — equivalently, apply it to $\bar{v}_C$. No new fit. The single-context map exists at the fine grain (banked: R² 0.74–0.80 #722; 0.60–0.68 #779; 0.814 / 0.738 instruct / base on this corpus, #1092), and its induced averaged read scores 0.82 / 0.76 — right where the historical averaged map's ~0.8 lives.
+A linear map commutes with averaging. Two consequences frame everything below:
 
-Linearity leaves exactly one loophole for a "second mechanism": an averaged map fit **independently** on $(\bar{v}_C, \bar{v}_A)$ pairs optimizes purely for between-prefix structure, which the per-row fit under-weights (most of its objective is query-driven variance — Result 1). If the operator that best explains prefix differences differed from the per-row compromise, the independent fit would **beat** the induced read at the averaged grain. Result 3 tests this.
+1. **Fine-grain skill transfers to the averaged grain for free.** If a per-row map $M$ predicts single answer states, then averaging its predictions over a prefix's queries — equivalently, applying $M$ to $\bar{v}_C$ — yields an averaged-grain predictor with no new fit: the **induced** map. So if the single-context map is real, an averaged prefix map exists automatically.
+2. **The loophole.** The identity says the induced map is *an* averaged-grain predictor — not necessarily the *best* one. The two candidate fits are graded on different things. The per-row fit is trained to predict every single answer; since most single-answer variance is query-driven (Result 1), most of its training pressure goes to getting query effects right, and prefix differences contribute only ~a tenth of its objective. An averaged map fit **independently** on $(\bar{v}_C, \bar{v}_A)$ pairs is trained only on per-prefix averages, where the query variation has been averaged out of both sides — so *all* of its training pressure goes to prefix differences. If one operator were optimal for both jobs, the two fits would find the same map, and the independent fit — with 17× less data — would simply be a noisier copy. If instead query effects and prefix differences were best explained by *different* operators, the per-row map would be a query-weighted compromise, and the prefix specialist would beat it at predicting per-prefix averages.
+
+Results 1–2 establish what the answer state is made of and that the map over it is additive; Result 3 closes the loophole.
 
 ## Methodology (shared)
 
@@ -51,7 +54,7 @@ Linearity leaves exactly one loophole for a "second mechanism": an averaged map 
 
 ### Result 3 — therefore one operator: the independently-fit averaged map adds nothing (novel, 2026-07-22)
 
-Results 1–2 make the grain question sharp: if the answer state is (small prefix part) + (dominant query part) + (small interaction), then averaging over queries mostly isolates the prefix part — and the theory identity says the per-row operator, averaged, is already an averaged prefix map. The one thing left to test: does an averaged map fit *independently* on $(\bar{v}_C, \bar{v}_A)$ pairs — a specialist trained 100% on between-prefix structure — know anything the per-row operator doesn't?
+Results 1–2 make the grain question sharp: if the answer state is (small prefix part) + (dominant query part) + (small interaction), then averaging over queries mostly isolates the prefix part — and the theory identity says the per-row operator, averaged, is already an averaged prefix map. The empirical setup is banked: the single-context map is real on this corpus (held-out R² 0.814 / 0.738 instruct / base; #1092 — earlier substrates: 0.74–0.80 #722, 0.60–0.68 #779), and its **induced** averaged read scores 0.82 / 0.76 — landing exactly where the historical averaged prefix map's ~0.8 lives. The one thing left to test: does an averaged map fit *independently* on $(\bar{v}_C, \bar{v}_A)$ pairs — a specialist trained 100% on between-prefix structure — know anything the per-row operator doesn't?
 
 **Methodology**
 - **induced:** average the single-context map's held-out predictions over each prefix's queries (no new fit; the per-row map is the banked #1092 fit, n = 17,308 battery-excluded rows).
