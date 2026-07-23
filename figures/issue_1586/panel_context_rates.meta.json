@@ -1,0 +1,1051 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:36Z",
+  "figsize": [
+    14.0,
+    9.8
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "judged rate": 0.62,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "judged rate": 0.5555555555555556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "judged rate": 0.67,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "judged rate": 0.38144329896907214,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "judged rate": 0.46,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "judged rate": 0.7777777777777778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "judged rate": 0.61,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "judged rate": 0.51,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "judged rate": 0.75,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "judged rate": 0.3877551020408163,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "judged rate": 0.37,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "judged rate": 0.8,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.7,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 0.5,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.69,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "y": 0.4897959183673469,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.82,
+      "y": 0.45,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.82,
+      "y": 0.7878787878787878,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.55,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 0.11,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.63,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.18,
+      "y": 0.21212121212121213,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.18,
+      "y": 0.13,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.18,
+      "y": 0.54,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "y": 0.53,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.82,
+      "y": 0.38,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "y": 0.57,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.82,
+      "y": 0.35,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.82,
+      "y": 0.29,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.82,
+      "y": 0.8,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "y": 0.84,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "y": 0.75,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "y": 0.83,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.18,
+      "y": 0.7272727272727273,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.18,
+      "y": 0.65,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.18,
+      "y": 0.8787878787878788,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.18,
+      "y": 0.74,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.82,
+      "y": 0.66,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.82,
+      "y": 0.77,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.82,
+      "y": 0.5612244897959183,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.82,
+      "y": 0.6,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 4.82,
+      "y": 0.83,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.18,
+      "y": 0.79,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.18,
+      "y": 0.64,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.18,
+      "y": 0.78,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.18,
+      "y": 0.72,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 4.18,
+      "y": 0.57,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 5.18,
+      "y": 0.845360824742268,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.18,
+      "judged rate": 0.75,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.82,
+      "judged rate": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.82,
+      "judged rate": 0.34,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.82,
+      "judged rate": 0.23,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.82,
+      "judged rate": 0.16,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.82,
+      "judged rate": 0.01,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "judged rate": 0.64,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.18,
+      "judged rate": 0.01,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.18,
+      "judged rate": 0.51,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.18,
+      "judged rate": 0.64,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.18,
+      "judged rate": 0.47,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.18,
+      "judged rate": 0.15,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.18,
+      "y": 0.72,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.82,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.82,
+      "y": 0.5,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.82,
+      "y": 0.26,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.82,
+      "y": 0.18,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 4.82,
+      "y": 0.01,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.18,
+      "y": 0.63,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.18,
+      "y": 0.04,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.18,
+      "y": 0.61,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.18,
+      "y": 0.5773195876288659,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 4.18,
+      "y": 0.6122448979591837,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 5.18,
+      "y": 0.2222222222222222,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.18,
+      "y": 0.54,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.82,
+      "y": 0.02,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.82,
+      "y": 0.63,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.82,
+      "y": 0.47959183673469385,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 3.82,
+      "y": 0.76,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 4.82,
+      "y": 0.15151515151515152,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.18,
+      "y": 0.68,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.18,
+      "y": 0.08,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.18,
+      "y": 0.79,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 3.18,
+      "y": 0.6020408163265306,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 4.18,
+      "y": 0.79,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 5.18,
+      "y": 0.30303030303030304,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": -0.18,
+      "y": 0.55,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.82,
+      "y": 0.01,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.82,
+      "y": 0.64,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.82,
+      "y": 0.6458333333333334,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.82,
+      "y": 0.71,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 4.82,
+      "y": 0.1836734693877551,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.18,
+      "y": 0.74,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.18,
+      "y": 0.11,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.18,
+      "y": 0.8,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 3.18,
+      "y": 0.6185567010309279,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.18,
+      "y": 0.7474747474747475,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 5.18,
+      "y": 0.26,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.18,
+      "judged rate": 0.55,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.82,
+      "judged rate": 0.18,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.82,
+      "judged rate": 0.93,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.82,
+      "judged rate": 0.36082474226804123,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 3.82,
+      "judged rate": 0.26262626262626265,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 4.82,
+      "judged rate": 0.48,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.18,
+      "judged rate": 0.7,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.18,
+      "judged rate": 0.25252525252525254,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.18,
+      "judged rate": 0.93,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.18,
+      "judged rate": 0.375,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 4.18,
+      "judged rate": 0.2604166666666667,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 5.18,
+      "judged rate": 0.79,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": -0.18,
+      "y": 0.81,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.82,
+      "y": 0.13131313131313133,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.82,
+      "y": 0.91,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 2.82,
+      "y": 0.29473684210526313,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.82,
+      "y": 0.21212121212121213,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 4.82,
+      "y": 0.5757575757575758,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.18,
+      "y": 0.81,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.18,
+      "y": 0.21,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.18,
+      "y": 0.94,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.18,
+      "y": 0.41379310344827586,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 4.18,
+      "y": 0.3163265306122449,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 5.18,
+      "y": 0.87,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.18,
+      "y": 0.75,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.82,
+      "y": 0.34,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 1.82,
+      "y": 0.99,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.82,
+      "y": 0.6938775510204082,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 3.82,
+      "y": 0.77,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 4.82,
+      "y": 0.67,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.18,
+      "y": 0.74,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 1.18,
+      "y": 0.57,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.18,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 3.18,
+      "y": 0.5876288659793815,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 4.18,
+      "y": 0.71,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 5.18,
+      "y": 0.92,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": -0.18,
+      "y": 0.74,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.82,
+      "y": 0.43,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 1.82,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 2.82,
+      "y": 0.6161616161616161,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 3.82,
+      "y": 0.74,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 4.82,
+      "y": 0.73,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.18,
+      "y": 0.62,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.18,
+      "y": 0.5,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 2.18,
+      "y": 0.98,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 3.18,
+      "y": 0.5051546391752577,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 4.18,
+      "y": 0.54,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 5.18,
+      "y": 0.88,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Six-context behavior rates per pair (first bar group = source context)"
+    ],
+    "axes": [
+      {
+        "title_left": "sycophancy con s42",
+        "ylabel": "judged rate",
+        "legend_labels": [
+          "LoRA",
+          "full FT"
+        ],
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy con s137  [dose-mismatched]",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "sycophancy po s42  [dose-mismatched]",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "sycophancy po s137",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "impolite con s42  [dose-mismatched]",
+        "ylabel": "judged rate",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "impolite con s137",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "impolite po s42",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "impolite po s137",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "casual style con s42",
+        "ylabel": "judged rate",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "casual style con s137",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "casual style po s42  [dose-mismatched]",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "casual style po s137  [dose-mismatched]",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA",
+      "full FT"
+    ]
+  }
+}

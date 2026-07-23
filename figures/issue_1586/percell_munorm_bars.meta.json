@@ -1,0 +1,347 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:02:56Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "lora-con-42",
+      "Mean activation-shift norm vs base": 5.396365642547607,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ft-con-42",
+      "Mean activation-shift norm vs base": 8.075959205627441,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lora-con-137",
+      "Mean activation-shift norm vs base": 5.401299476623535,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ft-con-137",
+      "Mean activation-shift norm vs base": 10.038771629333496,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lora-po-42",
+      "Mean activation-shift norm vs base": 3.352728843688965,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ft-po-42",
+      "Mean activation-shift norm vs base": 7.727036476135254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lora-po-137",
+      "Mean activation-shift norm vs base": 5.31564474105835,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ft-po-137",
+      "Mean activation-shift norm vs base": 7.036664962768555,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lora-con-42",
+      "y": 12.469846725463867,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ft-con-42",
+      "y": 11.369293212890625,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lora-con-137",
+      "y": 13.836989402770996,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ft-con-137",
+      "y": 11.149091720581055,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lora-po-42",
+      "y": 9.828191757202148,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ft-po-42",
+      "y": 11.672921180725098,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lora-po-137",
+      "y": 10.021190643310547,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ft-po-137",
+      "y": 11.872932434082031,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lora-con-42",
+      "y": 6.217955112457275,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "ft-con-42",
+      "y": 7.636781215667725,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lora-con-137",
+      "y": 7.056003093719482,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "ft-con-137",
+      "y": 8.48780632019043,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lora-po-42",
+      "y": 6.7196044921875,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "ft-po-42",
+      "y": 8.189078330993652,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lora-po-137",
+      "y": 6.365665435791016,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "ft-po-137",
+      "y": 7.975345611572266,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lora-con-42",
+      "y": 5.388525009155273,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ft-con-42",
+      "y": 4.5584397315979,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lora-con-137",
+      "y": 5.429238796234131,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ft-con-137",
+      "y": 4.404909133911133,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lora-po-42",
+      "y": 5.894123077392578,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ft-po-42",
+      "y": 4.405557632446289,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lora-po-137",
+      "y": 6.091050148010254,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ft-po-137",
+      "y": 4.334156036376953,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-cell mean-shift norms behind the paired differences (grey = LoRA, color = full FT)"
+    ],
+    "axes": [
+      {
+        "title_left": "sycophancy (L14)",
+        "ylabel": "Mean activation-shift norm vs base",
+        "annotations": [
+          "5.4",
+          "8.1",
+          "5.4",
+          "10.0",
+          "3.4",
+          "7.7",
+          "5.3",
+          "7.0"
+        ],
+        "xticklabels": [
+          "lora-con-42",
+          "ft-con-42",
+          "lora-con-137",
+          "ft-con-137",
+          "lora-po-42",
+          "ft-po-42",
+          "lora-po-137",
+          "ft-po-137"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "impolite (L14)",
+        "annotations": [
+          "12.5",
+          "11.4",
+          "13.8",
+          "11.1",
+          "9.8",
+          "11.7",
+          "10.0",
+          "11.9"
+        ],
+        "xticklabels": [
+          "lora-con-42",
+          "ft-con-42",
+          "lora-con-137",
+          "ft-con-137",
+          "lora-po-42",
+          "ft-po-42",
+          "lora-po-137",
+          "ft-po-137"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ]
+      },
+      {
+        "title_left": "casual style (L14)",
+        "annotations": [
+          "6.2",
+          "7.6",
+          "7.1",
+          "8.5",
+          "6.7",
+          "8.2",
+          "6.4",
+          "8.0"
+        ],
+        "xticklabels": [
+          "lora-con-42",
+          "ft-con-42",
+          "lora-con-137",
+          "ft-con-137",
+          "lora-po-42",
+          "ft-po-42",
+          "lora-po-137",
+          "ft-po-137"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "title_left": "marker (L25)",
+        "annotations": [
+          "5.4",
+          "4.6",
+          "5.4",
+          "4.4",
+          "5.9",
+          "4.4",
+          "6.1",
+          "4.3"
+        ],
+        "xticklabels": [
+          "lora-con-42",
+          "ft-con-42",
+          "lora-con-137",
+          "ft-con-137",
+          "lora-po-42",
+          "ft-po-42",
+          "lora-po-137",
+          "ft-po-137"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    ]
+  }
+}

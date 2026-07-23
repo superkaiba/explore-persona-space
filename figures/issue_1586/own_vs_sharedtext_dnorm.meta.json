@@ -1,0 +1,187 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:16Z",
+  "figsize": [
+    6.8,
+    6.2
+  ],
+  "points": [
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 2.679593563079834,
+      "Shared-text (teacher-forced) \u0394norm": 0.6187090873718262,
+      "label": "con-s42",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 4.637472152709961,
+      "Shared-text (teacher-forced) \u0394norm": 2.0551364421844482,
+      "label": "con-s137",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 4.374307632446289,
+      "Shared-text (teacher-forced) \u0394norm": 0.9337813854217529,
+      "label": "po-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.721020221710205,
+      "Shared-text (teacher-forced) \u0394norm": 0.29781079292297363,
+      "label": "po-s137",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -1.1005535125732422,
+      "Shared-text (teacher-forced) \u0394norm": -2.166914701461792,
+      "label": "con-s42",
+      "series": "impolite",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -2.6878976821899414,
+      "Shared-text (teacher-forced) \u0394norm": -3.055352210998535,
+      "label": "con-s137",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.8447294235229492,
+      "Shared-text (teacher-forced) \u0394norm": 0.5266435146331787,
+      "label": "po-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.8517417907714844,
+      "Shared-text (teacher-forced) \u0394norm": 0.4019019603729248,
+      "label": "po-s137",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.4188261032104492,
+      "Shared-text (teacher-forced) \u0394norm": 0.2574477195739746,
+      "label": "con-s42",
+      "series": "casual style",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.4318032264709473,
+      "Shared-text (teacher-forced) \u0394norm": 0.5397274494171143,
+      "label": "con-s137",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.4694738388061523,
+      "Shared-text (teacher-forced) \u0394norm": 0.30721402168273926,
+      "label": "con-s42",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": 1.60968017578125,
+      "Shared-text (teacher-forced) \u0394norm": 0.2762258052825928,
+      "label": "po-s137",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -0.830085277557373,
+      "Shared-text (teacher-forced) \u0394norm": -0.9510030746459961,
+      "label": "con-s42",
+      "series": "marker",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -1.024329662322998,
+      "Shared-text (teacher-forced) \u0394norm": -1.0469012260437012,
+      "label": "con-s137",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -1.488565444946289,
+      "Shared-text (teacher-forced) \u0394norm": -1.3153076171875,
+      "label": "po-s42",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Own-generation \u0394norm (full FT \u2212 LoRA)": -1.7568941116333008,
+      "Shared-text (teacher-forced) \u0394norm": -1.5926587581634521,
+      "label": "po-s137",
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The method contrast survives the shared-text control:\nsame sign in every pair",
+        "xlabel": "Own-generation \u0394norm (full FT \u2212 LoRA)",
+        "ylabel": "Shared-text (teacher-forced) \u0394norm",
+        "legend_labels": [
+          "sycophancy",
+          "impolite",
+          "casual style",
+          "marker"
+        ],
+        "annotations": [
+          "con-s42",
+          "con-s137",
+          "po-s42",
+          "po-s137",
+          "con-s42",
+          "con-s137",
+          "po-s42",
+          "po-s137",
+          "con-s42",
+          "con-s137",
+          "po-s42",
+          "po-s137",
+          "con-s42",
+          "con-s137",
+          "po-s42",
+          "po-s137"
+        ],
+        "xticklabels": [
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6"
+        ],
+        "yticklabels": [
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6"
+        ]
+      }
+    ],
+    "series": [
+      "sycophancy",
+      "impolite",
+      "casual style",
+      "marker"
+    ]
+  }
+}

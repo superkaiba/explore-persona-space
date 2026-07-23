@@ -1,0 +1,94 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:28Z",
+  "figsize": [
+    7.5,
+    4.6
+  ],
+  "points": [
+    {
+      "category": "lora-con-s42",
+      "Non-source / source EOS-margin shift": 0.7481372679138795,
+      "_kind": "bar"
+    },
+    {
+      "category": "lora-con-s137",
+      "Non-source / source EOS-margin shift": 0.7674305950403603,
+      "_kind": "bar"
+    },
+    {
+      "category": "ft-con-s42",
+      "Non-source / source EOS-margin shift": 0.6048846212236223,
+      "_kind": "bar"
+    },
+    {
+      "category": "ft-con-s137",
+      "Non-source / source EOS-margin shift": 0.6229271496577592,
+      "_kind": "bar"
+    },
+    {
+      "category": "lora-po-s42",
+      "Non-source / source EOS-margin shift": 0.7259338735002785,
+      "_kind": "bar"
+    },
+    {
+      "category": "lora-po-s137",
+      "Non-source / source EOS-margin shift": 0.788724451033077,
+      "_kind": "bar"
+    },
+    {
+      "category": "ft-po-s42",
+      "Non-source / source EOS-margin shift": 0.8128711063907468,
+      "_kind": "bar"
+    },
+    {
+      "category": "ft-po-s137",
+      "Non-source / source EOS-margin shift": 0.7680129794755447,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Install-normalized marker transfer fraction (EOS-margin space;\nfull-FT arms are dose-mismatched \u2014 descriptive only)",
+        "ylabel": "Non-source / source EOS-margin shift",
+        "annotations": [
+          "0.75",
+          "0.77",
+          "0.60",
+          "0.62",
+          "0.73",
+          "0.79",
+          "0.81",
+          "0.77"
+        ],
+        "xticklabels": [
+          "lora-con-s42",
+          "lora-con-s137",
+          "ft-con-s42",
+          "ft-con-s137",
+          "lora-po-s42",
+          "lora-po-s137",
+          "ft-po-s42",
+          "ft-po-s137"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,293 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:24Z",
+  "figsize": [
+    12.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Source judged rate (panel read)": 0.61,
+      "Teacher-forced fixed-pool margin shift": 0.07162336910341596,
+      "label": "ft-con-42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.62,
+      "Teacher-forced fixed-pool margin shift": 0.06849285595882029,
+      "label": "lora-con-42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.55,
+      "Teacher-forced fixed-pool margin shift": 0.03700698856210447,
+      "label": "ft-con-137",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.7,
+      "Teacher-forced fixed-pool margin shift": 0.07225523748840024,
+      "label": "lora-con-137",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.84,
+      "Teacher-forced fixed-pool margin shift": 0.2501077691840104,
+      "label": "ft-po-42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.53,
+      "Teacher-forced fixed-pool margin shift": 0.14469607879603438,
+      "label": "lora-po-42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.79,
+      "Teacher-forced fixed-pool margin shift": 0.25085771593926914,
+      "label": "ft-po-137",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.74,
+      "Teacher-forced fixed-pool margin shift": 0.21559067962295722,
+      "label": "lora-po-137",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source judged rate (panel read)": 0.64,
+      "y": 1.024733547435622,
+      "label": "ft-con-42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.75,
+      "y": 0.9861060521059599,
+      "label": "lora-con-42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.63,
+      "y": 1.0247463796843754,
+      "label": "ft-con-137",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.72,
+      "y": 0.9973031077043408,
+      "label": "lora-con-137",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.68,
+      "y": 1.5298708748644587,
+      "label": "ft-po-42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.54,
+      "y": 1.2685665176185932,
+      "label": "lora-po-42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.74,
+      "y": 1.5007631829974148,
+      "label": "ft-po-137",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.55,
+      "y": 1.2661725431111324,
+      "label": "lora-po-137",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source judged rate (panel read)": 0.7,
+      "y": -0.23120271079860966,
+      "label": "ft-con-42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.55,
+      "y": -0.14306408244667512,
+      "label": "lora-con-42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.81,
+      "y": -0.3053047501513907,
+      "label": "ft-con-137",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.81,
+      "y": -0.16340356173685094,
+      "label": "lora-con-137",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.74,
+      "y": 0.0879423425295389,
+      "label": "ft-po-42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.75,
+      "y": 0.09282404129988774,
+      "label": "lora-po-42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.62,
+      "y": 0.07963459509282576,
+      "label": "ft-po-137",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source judged rate (panel read)": 0.74,
+      "y": 0.08704954662623035,
+      "label": "lora-po-137",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Continuous-companion validation: the margin tracks the rate for sycophancy only"
+    ],
+    "axes": [
+      {
+        "title_left": "sycophancy: rho = +0.71 (p = 0.05, n = 8)",
+        "xlabel": "Source judged rate (panel read)",
+        "ylabel": "Teacher-forced fixed-pool margin shift",
+        "annotations": [
+          "ft-con-42",
+          "lora-con-42",
+          "ft-con-137",
+          "lora-con-137",
+          "ft-po-42",
+          "lora-po-42",
+          "ft-po-137",
+          "lora-po-137"
+        ],
+        "xticklabels": [
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "impolite: rho = -0.31 (p = 0.46, n = 8)",
+        "xlabel": "Source judged rate (panel read)",
+        "annotations": [
+          "ft-con-42",
+          "lora-con-42",
+          "ft-con-137",
+          "lora-con-137",
+          "ft-po-42",
+          "lora-po-42",
+          "ft-po-137",
+          "lora-po-137"
+        ],
+        "xticklabels": [
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ],
+        "yticklabels": [
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "1.5",
+          "1.6"
+        ]
+      },
+      {
+        "title_left": "casual style: rho = -0.13 (p = 0.75, n = 8)",
+        "xlabel": "Source judged rate (panel read)",
+        "annotations": [
+          "ft-con-42",
+          "lora-con-42",
+          "ft-con-137",
+          "lora-con-137",
+          "ft-po-42",
+          "lora-po-42",
+          "ft-po-137",
+          "lora-po-137"
+        ],
+        "xticklabels": [
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ],
+        "yticklabels": [
+          "\u22120.35",
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,781 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:17Z",
+  "figsize": [
+    12.5,
+    5.0
+  ],
+  "points": [
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.1477094650268556,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.4166744232177733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 3.148651885986328,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.923549461364746,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Marker install (log-prob shift vs base, nats)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Marker install (log-prob shift vs base, nats)": 0.3884148597717285,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Marker install (log-prob shift vs base, nats)": 0.9995848655700683,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Marker install (log-prob shift vs base, nats)": 1.678233528137207,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Marker install (log-prob shift vs base, nats)": 2.1112579345703124,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.1477094650268556,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Marker install (log-prob shift vs base, nats)": 8.693617057800292,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Marker install (log-prob shift vs base, nats)": 10.236332035064697,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Marker install (log-prob shift vs base, nats)": 10.630368614196778,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Marker install (log-prob shift vs base, nats)": 10.710336112976075,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Marker install (log-prob shift vs base, nats)": 11.26723575592041,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Marker install (log-prob shift vs base, nats)": 10.452736759185791,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Marker install (log-prob shift vs base, nats)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Marker install (log-prob shift vs base, nats)": 0.37440128326416017,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Marker install (log-prob shift vs base, nats)": 1.1204530715942382,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Marker install (log-prob shift vs base, nats)": 1.6856517791748047,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Marker install (log-prob shift vs base, nats)": 2.0898469924926757,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.4166744232177733,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Marker install (log-prob shift vs base, nats)": 10.996259212493896,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Marker install (log-prob shift vs base, nats)": 11.0619327545166,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Marker install (log-prob shift vs base, nats)": 11.539764785766602,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Marker install (log-prob shift vs base, nats)": 11.909946823120118,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Marker install (log-prob shift vs base, nats)": 12.29542932510376,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Marker install (log-prob shift vs base, nats)": 12.490006351470948,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Marker install (log-prob shift vs base, nats)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Marker install (log-prob shift vs base, nats)": 0.6014263153076171,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Marker install (log-prob shift vs base, nats)": 1.4853813171386718,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Marker install (log-prob shift vs base, nats)": 2.4073229789733888,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Marker install (log-prob shift vs base, nats)": 2.8786999702453615,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 3.148651885986328,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Marker install (log-prob shift vs base, nats)": 11.418616008758544,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Marker install (log-prob shift vs base, nats)": 12.25946683883667,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Marker install (log-prob shift vs base, nats)": 12.650257682800293,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Marker install (log-prob shift vs base, nats)": 13.715733528137207,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Marker install (log-prob shift vs base, nats)": 13.720404434204102,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Marker install (log-prob shift vs base, nats)": 12.935785293579102,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Marker install (log-prob shift vs base, nats)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Marker install (log-prob shift vs base, nats)": 0.516652774810791,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Marker install (log-prob shift vs base, nats)": 1.7134493827819823,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Marker install (log-prob shift vs base, nats)": 2.215304470062256,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Marker install (log-prob shift vs base, nats)": 2.835902786254883,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Marker install (log-prob shift vs base, nats)": 2.923549461364746,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Marker install (log-prob shift vs base, nats)": 11.661476421356202,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Marker install (log-prob shift vs base, nats)": 12.958403968811036,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Marker install (log-prob shift vs base, nats)": 13.115582466125488,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Marker install (log-prob shift vs base, nats)": 14.765116500854493,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Marker install (log-prob shift vs base, nats)": 14.491043090820312,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Marker install (log-prob shift vs base, nats)": 14.207090950012207,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Greedy source emission rate (gate: must be 0)": 0.15,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Greedy source emission rate (gate: must be 0)": 0.25,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Greedy source emission rate (gate: must be 0)": 0.35,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Greedy source emission rate (gate: must be 0)": 0.45,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Greedy source emission rate (gate: must be 0)": 0.55,
+      "series": "con s42",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Greedy source emission rate (gate: must be 0)": 0.45,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Greedy source emission rate (gate: must be 0)": 0.55,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Greedy source emission rate (gate: must be 0)": 0.5,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Greedy source emission rate (gate: must be 0)": 0.6,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Greedy source emission rate (gate: must be 0)": 0.5,
+      "series": "con s137",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Greedy source emission rate (gate: must be 0)": 0.15,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Greedy source emission rate (gate: must be 0)": 0.15,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Greedy source emission rate (gate: must be 0)": 0.2,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Greedy source emission rate (gate: must be 0)": 0.2,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Greedy source emission rate (gate: must be 0)": 0.2,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Greedy source emission rate (gate: must be 0)": 0.35,
+      "series": "po s42",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Full fine-tune training step": 1.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 2.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 3.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 4.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 5.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 6.0,
+      "Greedy source emission rate (gate: must be 0)": 0.0,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 7.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 8.0,
+      "Greedy source emission rate (gate: must be 0)": 0.15,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 9.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 10.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 11.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Full fine-tune training step": 12.0,
+      "Greedy source emission rate (gate: must be 0)": 0.1,
+      "series": "po s137",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Marker full fine-tuning cannot be dose-matched: a one-step install cliff"
+    ],
+    "axes": [
+      {
+        "title_left": "Install jumps 2\u21929+ nats in one step;\nstars = selected rung, dotted = LoRA anchor",
+        "xlabel": "Full fine-tune training step",
+        "ylabel": "Marker install (log-prob shift vs base, nats)",
+        "legend_labels": [
+          "con s42",
+          "con s137",
+          "po s42",
+          "po s137"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ]
+      },
+      {
+        "title_left": "The same step turns on greedy emission \u2014\nno rung is both in-window and gate-clean",
+        "xlabel": "Full fine-tune training step",
+        "ylabel": "Greedy source emission rate (gate: must be 0)",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "con s42",
+      "con s137",
+      "po s42",
+      "po s137"
+    ]
+  }
+}
