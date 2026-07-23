@@ -153,6 +153,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | persona-vectors-recipe | LESSONS.md | v2-owner: methodology-baselines-critic |
 | plan-compute-sizing | LESSONS.md | v2-owner: efficiency-critic |
 | planner-section-reference | LESSONS.md | v2-owner: planner |
+| pm-audit-reference | LESSONS.md | v2-owner: research-pm agent (PM runtime persona; workflow-version-independent) |
 | pod-config | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) |
 | pod-side-reporting | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
