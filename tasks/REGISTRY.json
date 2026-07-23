@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1632,
+  "highest_id": 1633,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4934,6 +4934,13 @@
       "path": "tasks/proposed/1632",
       "status": "proposed",
       "title": "daily-fix: exclude /tmp scratch from ruff format hook"
+    },
+    "1633": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1633",
+      "status": "proposed",
+      "title": "daily-fix: down-width probe for stalled multi-arm dispatch"
     },
     "164": {
       "has_clean_result": false,
