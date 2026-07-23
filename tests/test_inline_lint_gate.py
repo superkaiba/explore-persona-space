@@ -534,6 +534,46 @@ def test_write_cert_trims_to_last_500_lines_atomically(tmp_path: Path) -> None:
     assert strays == [], strays
 
 
+def test_write_cert_relocks_after_concurrent_trim_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1620 fix (d): a concurrent trim's os.replace swaps the cert path to a
+    NEW inode while a second writer waits on the OLD inode's flock; without
+    the inode re-check the append lands on the orphaned inode and never
+    appears at the path. Monkeypatched so ONLY THE FIRST flock call simulates
+    the winning trim (later calls delegate untouched — otherwise the test
+    exercises the retry-exhaustion path instead of the re-check)."""
+    import fcntl as _fcntl
+    import tempfile as _tempfile
+
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    cert = tmp_path / "cert.txt"
+    cert.write_text("v1 1 " + "0" * 40 + " scripts/old.py\n", encoding="utf-8")
+
+    real_flock = _fcntl.flock
+    calls = {"n": 0}
+
+    def fake_flock(fd: object, op: int) -> None:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            # Concurrent trim wins the race: replace the path with a NEW
+            # inode BEFORE the first lock is granted.
+            tfd, tmp = _tempfile.mkstemp(dir=str(cert.parent), prefix=cert.name + ".")
+            with os.fdopen(tfd, "w", encoding="utf-8") as tf:
+                tf.write("v1 2 " + "1" * 40 + " scripts/other.py\n")
+            os.replace(tmp, cert)
+        real_flock(fd, op)
+
+    monkeypatch.setattr(ilg.fcntl, "flock", fake_flock)
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert certified == ["scripts/mod.py"] and toctou == []
+    # The appended line must be visible AT THE PATH (not on the orphaned inode).
+    content = cert.read_text(encoding="utf-8")
+    assert content.rstrip("\n").endswith(" scripts/mod.py"), content
+    assert calls["n"] >= 2, calls  # the re-check re-locked at least once
+
+
 def test_read_payload_missing_path_inconclusive(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path)
     with pytest.raises(ilg.Inconclusive):
