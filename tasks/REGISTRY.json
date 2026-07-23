@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1609,
+  "highest_id": 1610,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4759,6 +4759,13 @@
       "path": "tasks/on_hold/161",
       "status": "on_hold",
       "title": "Think about how Spanish + English results connect"
+    },
+    "1610": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1610",
+      "status": "proposed",
+      "title": "seam-pin _generate_responses_vllm row schema (contract test + consumer audit)"
     },
     "162": {
       "has_clean_result": false,
