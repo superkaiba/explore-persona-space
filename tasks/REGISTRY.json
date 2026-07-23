@@ -4727,8 +4727,8 @@
     "1606": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1606",
-      "status": "running",
+      "path": "tasks/reviewing/1606",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md \u2014 companion-stat drop-class semantics (zero split-half noise floors)"
     },
     "161": {
