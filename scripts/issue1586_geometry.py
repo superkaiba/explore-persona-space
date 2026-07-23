@@ -110,6 +110,7 @@ def run_behavior(
     n_boot: int,
     arms_filter: tuple[str, ...] | None,
     tag: str,
+    pair_fn=diff_pairs_for,
 ) -> dict:
     behavior = G.BEHAVIOR_BY_KEY[beh_key]
     assert base_store.exists(), f"missing base store for {beh_key}: {base_store}"
@@ -129,7 +130,7 @@ def run_behavior(
         rb_by_behavior={behavior: rb},
         n_boot=n_boot,
         tensors_out=out_dir / "bootstrap_matrices",
-        diff_pairs=diff_pairs_for(beh_key, arms),
+        diff_pairs=pair_fn(beh_key, arms),
     )
     if arms_filter is not None:
         kwargs["arms"] = arms_filter
@@ -165,6 +166,7 @@ def norm_diff_pass(
     n_boot_norm: int,
     arms_filter: tuple[str, ...] | None,
     tag: str,
+    pair_fn=diff_pairs_for,
 ) -> dict:
     """Plan §6 registered stat: the H1 mean-shift-norm DIFFERENCE CIs at
     n_boot = G.N_BOOT_NORM (2000) — review r1 Major 5 (the parent
@@ -183,7 +185,7 @@ def norm_diff_pass(
     arms_list = tuple(arms_filter) if arms_filter is not None else CAPTURE_ARMS
     layers = sorted(next(iter(base["arms"].values())).keys())
     out: dict[str, dict] = {}
-    for name, ft_cell, lora_cell in diff_pairs_for(beh_key, arms):
+    for name, ft_cell, lora_cell in pair_fn(beh_key, arms):
         store_ft = geo.load_store(capture_root / ft_cell / "selected" / "pooled.pt")
         store_lora = geo.load_store(capture_root / lora_cell / "selected" / "pooled.pt")
         reads: dict[str, dict] = {}
@@ -239,7 +241,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--tf-root", type=Path, default=None)
     p.add_argument("--rb-dir", type=Path, default=None)
     p.add_argument(
-        "--out-dir", type=Path, default=REPO_ROOT / "eval_results" / "issue_1586" / "geometry"
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="default: eval_results/issue_1586/geometry "
+        "(executed run) or eval_results/issue_1586/<FU_LABEL>/geometry under --fu",
+    )
+    p.add_argument(
+        "--fu",
+        choices=["caveatfix"],
+        default=None,
+        help="FU round (plan v7): swaps the pair enumeration to the FU registry "
+        "(4 marker ft2e6-vs-reused-LoRA pairs + 2 impolite reused-FT-vs-lora5e6 "
+        "pairs) and defaults --out-dir under the FU results dir",
     )
     p.add_argument("--n-boot", type=int, default=G.N_BOOT)
     p.add_argument(
@@ -250,6 +264,14 @@ def main(argv: list[str] | None = None) -> int:
         "other DVs stay at --n-boot)",
     )
     args = p.parse_args(argv)
+    fu = args.fu == "caveatfix"
+    pair_fn = G.fu_diff_pairs_for if fu else diff_pairs_for
+    if args.out_dir is None:
+        args.out_dir = (
+            REPO_ROOT / G.FU_RESULTS_DIR / "geometry"
+            if fu
+            else REPO_ROOT / "eval_results" / "issue_1586" / "geometry"
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     work = args.out_dir / "_work"
@@ -268,13 +290,14 @@ def main(argv: list[str] | None = None) -> int:
             n_boot=args.n_boot,
             arms_filter=None,
             tag="own",
+            pair_fn=pair_fn,
         )
         merged["records"].update(payload.get("records", {}))
         merged["cross_cell_diffs"].update(payload.get("cross_cell_diffs", {}))
         merged["by_behavior"][beh_key] = {
             "arms": arms,
             "rb_absent": payload.get("rb_absent"),
-            "diff_pairs": [list(t) for t in diff_pairs_for(beh_key, arms)],
+            "diff_pairs": [list(t) for t in pair_fn(beh_key, arms)],
         }
         # H1 Δnorm CIs at n_boot_norm=2000 (plan §6; review r1 Major 5).
         splice_norm_diffs(
@@ -288,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
                 n_boot_norm=args.n_boot_norm,
                 arms_filter=None,
                 tag="own",
+                pair_fn=pair_fn,
             ),
         )
     merged["n_boot_norm"] = args.n_boot_norm
@@ -310,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
                 n_boot=args.n_boot,
                 arms_filter=("response",),  # shared-text = response arm only
                 tag="tf",
+                pair_fn=pair_fn,
             )
             tf_merged["records"].update(payload.get("records", {}))
             tf_merged["cross_cell_diffs"].update(payload.get("cross_cell_diffs", {}))
@@ -325,6 +350,7 @@ def main(argv: list[str] | None = None) -> int:
                     n_boot_norm=args.n_boot_norm,
                     arms_filter=("response",),
                     tag="tf",
+                    pair_fn=pair_fn,
                 ),
             )
         tf_merged["n_boot_norm"] = args.n_boot_norm

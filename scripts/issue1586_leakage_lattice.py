@@ -17,25 +17,55 @@ Output: eval_results/issue_1586/panel/leakage_lattice.json
 
 from __future__ import annotations
 
-import json
-import math
-import re
-from collections import defaultdict
-from pathlib import Path
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
+import argparse  # noqa: E402
+import json  # noqa: E402
+import math  # noqa: E402
+import re  # noqa: E402
+import sys  # noqa: E402
+from collections import defaultdict  # noqa: E402
+from pathlib import Path  # noqa: E402
+
 import numpy as np  # noqa: E402
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+import issue1586_cells as G  # noqa: E402
 
 ROOT = Path("data/issue_1586/hf_dl/p11_json/issue1586_methodgen")
 OUT = Path("eval_results/issue_1586/panel")
+# FU round defaults (plan v7 §4.C: the off-pod phases read the fu prefixes).
+FU_ROOT = Path("data/issue_1586/hf_dl/p11_json_fu/issue1586_methodgen/fu_caveatfix")
+FU_OUT = Path(G.FU_RESULTS_DIR) / "panel"
+FU = False  # set by main(--fu); swaps pair naming to the FU registry
 SOURCE_CTX = "persona_software_engineer"
 N_BOOT = 2000
 BOOT_SEED = 653
 THRESHOLD = 50
 N_Q = 20
+
+
+def _content_arms(beh: str, regime: str, seed: str) -> tuple[str, str]:
+    """(ft_arm, lora_arm) panel dirs for one content pair. FU Round B: the
+    re-paneled reused FT partner vs the fresh lora5e6 cell (imp/con only)."""
+    if FU:
+        assert (beh, regime) == ("imp", "con"), (beh, regime)
+        return f"imp-pers-ft-con-{seed}", f"imp-pers-lora5e6-con-{seed}"
+    return f"{beh}-pers-ft-{regime}-{seed}", f"{beh}-pers-lora-{regime}-{seed}"
+
+
+def _marker_arm(method: str, regime: str, seed: str) -> str:
+    """Marker panel dir for one arm. FU Round A: fresh ft2e6 cells vs the
+    re-paneled reused #1481 LoRA verdict arms."""
+    if FU and method == "ft":
+        return f"mk-pers-ft2e6-{regime}-{seed}"
+    return f"mk-pers-{method}-{regime}-{seed}"
+
 
 _ID_RE = re.compile(r"^(?P<ctx>.+)-trained-q(?P<q>\d{3})-c(?P<c>\d+)__\d+__(?P<draw>\d+)$")
 
@@ -104,12 +134,11 @@ def newcombe(p1: float, n1: int, p2: float, n2: int) -> tuple[float, float]:
 
 
 def content_pair(beh: str, regime: str, seed: str, idx: np.ndarray) -> dict:
-    summ = json.loads(
-        (ROOT / "panel" / f"{beh}-pers-ft-{regime}-{seed}" / "panel_summary.json").read_text()
-    )
+    ft_arm, lora_arm = _content_arms(beh, regime, seed)
+    summ = json.loads((ROOT / "panel" / ft_arm / "panel_summary.json").read_text())
     contexts = [c for c in summ["rates_by_context"] if c != SOURCE_CTX]
-    ft_pos, ft_n = pooled_rate_matrix(f"{beh}-pers-ft-{regime}-{seed}", contexts)
-    lo_pos, lo_n = pooled_rate_matrix(f"{beh}-pers-lora-{regime}-{seed}", contexts)
+    ft_pos, ft_n = pooled_rate_matrix(ft_arm, contexts)
+    lo_pos, lo_n = pooled_rate_matrix(lora_arm, contexts)
     d_draws = rate_draws(ft_pos, ft_n, idx) - rate_draws(lo_pos, lo_n, idx)
     p_ft, p_lo = ft_pos.sum() / ft_n.sum(), lo_pos.sum() / lo_n.sum()
     nc = newcombe(p_ft, int(ft_n.sum()), p_lo, int(lo_n.sum()))
@@ -143,7 +172,7 @@ def marker_pair(regime: str, seed: str, idx: np.ndarray) -> dict:
     for dv_i, dv in ((1, "margin"), (2, "logp")):
         vals = {}
         for method in ("ft", "lora"):
-            qs, dm, dg = marker_rows(f"mk-pers-{method}-{regime}-{seed}")
+            qs, dm, dg = marker_rows(_marker_arm(method, regime, seed))
             v = (dm, dg)[dv_i - 1]
             per_q = np.array([v[qs == q].mean() for q in range(N_Q)])
             vals[method] = per_q
@@ -155,36 +184,78 @@ def marker_pair(regime: str, seed: str, idx: np.ndarray) -> dict:
     return out
 
 
+def marker_pair_available(regime: str, seed: str) -> bool:
+    """FU Round A registered conditional (plan v7 §4.A): a not-dose-matchable
+    marker cell contributes NO fresh panel arms — its lattice slot folds from
+    the selection records instead. Executed mode never skips (fail-loud)."""
+    if not FU:
+        return True
+    return all(
+        (ROOT / "marker_panel" / _marker_arm(m, regime, seed) / "slot_reads.json").exists()
+        for m in ("ft", "lora")
+    )
+
+
 def ci(draws: np.ndarray) -> tuple[float, float]:
     return float(np.quantile(draws, 0.025)), float(np.quantile(draws, 0.975))
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    global ROOT, OUT, FU
+    ap = argparse.ArgumentParser(description="#1586 H2 leakage lattice (p11 analyzer)")
+    ap.add_argument("--root", type=Path, default=None, help="staged p11 JSON tree root")
+    ap.add_argument("--out", type=Path, default=None, help="lattice output dir")
+    ap.add_argument(
+        "--fu",
+        choices=["caveatfix"],
+        default=None,
+        help="FU round (plan v7): 2 impolite-con pairs (reused-FT vs lora5e6) "
+        "+ up to 4 marker pairs (ft2e6 vs reused LoRA; not-dose-matchable "
+        "pairs fold from selection records and are skipped here)",
+    )
+    args = ap.parse_args(argv)
+    FU = args.fu == "caveatfix"
+    ROOT = Path(args.root) if args.root is not None else (FU_ROOT if FU else ROOT)
+    OUT = Path(args.out) if args.out is not None else (FU_OUT if FU else OUT)
     rng = np.random.default_rng(BOOT_SEED)
     idx = boot_idx(rng, N_BOOT)
-    out: dict = {"n_boot": N_BOOT, "boot_seed": BOOT_SEED, "content": {}, "marker": {}}
-    for beh in ("syc", "imp", "cas"):
-        for regime in ("con", "po"):
-            per_seed = {}
-            for seed in ("s42", "s137"):
-                per_seed[seed] = content_pair(beh, regime, seed, idx)
-            pooled = np.mean([per_seed[s]["draws"] for s in per_seed], axis=0)
-            rec = {s: {k: v for k, v in per_seed[s].items() if k != "draws"} for s in per_seed}
-            for s in per_seed:
-                rec[s]["ci_low"], rec[s]["ci_high"] = ci(per_seed[s]["draws"])
-            rec["pooled"] = {
-                "delta": float(np.mean([per_seed[s]["delta"] for s in per_seed])),
-                "ci_low": ci(pooled)[0],
-                "ci_high": ci(pooled)[1],
-            }
-            out["content"][f"{beh}/{regime}"] = rec
-            print(
-                f"[H2] {beh} {regime}: pooled ΔM={rec['pooled']['delta']:+.3f} "
-                f"[{rec['pooled']['ci_low']:+.3f},{rec['pooled']['ci_high']:+.3f}]",
-                flush=True,
-            )
+    out: dict = {
+        "n_boot": N_BOOT,
+        "boot_seed": BOOT_SEED,
+        "fu": args.fu,
+        "content": {},
+        "marker": {},
+    }
+    content_grid = (
+        [("imp", "con")] if FU else [(b, r) for b in ("syc", "imp", "cas") for r in ("con", "po")]
+    )
+    for beh, regime in content_grid:
+        per_seed = {}
+        for seed in ("s42", "s137"):
+            per_seed[seed] = content_pair(beh, regime, seed, idx)
+        pooled = np.mean([per_seed[s]["draws"] for s in per_seed], axis=0)
+        rec = {s: {k: v for k, v in per_seed[s].items() if k != "draws"} for s in per_seed}
+        for s in per_seed:
+            rec[s]["ci_low"], rec[s]["ci_high"] = ci(per_seed[s]["draws"])
+        rec["pooled"] = {
+            "delta": float(np.mean([per_seed[s]["delta"] for s in per_seed])),
+            "ci_low": ci(pooled)[0],
+            "ci_high": ci(pooled)[1],
+        }
+        out["content"][f"{beh}/{regime}"] = rec
+        print(
+            f"[H2] {beh} {regime}: pooled ΔM={rec['pooled']['delta']:+.3f} "
+            f"[{rec['pooled']['ci_low']:+.3f},{rec['pooled']['ci_high']:+.3f}]",
+            flush=True,
+        )
     for regime in ("con", "po"):
-        per_seed = {s: marker_pair(regime, s, idx) for s in ("s42", "s137")}
+        seeds_avail = [s for s in ("s42", "s137") if marker_pair_available(regime, s)]
+        if not seeds_avail:
+            # plan v7 §4.A: verdict folds from the selection records alone.
+            out["marker"][regime] = {"skipped": "no dose-matched marker pair paneled"}
+            print(f"[H2] mk {regime}: SKIPPED (no dose-matched pair paneled)", flush=True)
+            continue
+        per_seed = {s: marker_pair(regime, s, idx) for s in seeds_avail}
         rec = {}
         for dv in ("margin", "logp"):
             pooled = np.mean([per_seed[s][dv]["draws"] for s in per_seed], axis=0)
@@ -194,6 +265,7 @@ def main() -> int:
                 "pooled_delta": float(np.mean([per_seed[s][dv]["delta"] for s in per_seed])),
                 "pooled_ci": ci(pooled),
             }
+        rec["seeds_pooled"] = seeds_avail
         out["marker"][regime] = rec
         print(
             f"[H2] mk {regime}: pooled Δ(EOS-margin)={rec['margin']['pooled_delta']:+.3f} "
