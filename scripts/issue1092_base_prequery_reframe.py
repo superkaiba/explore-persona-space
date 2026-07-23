@@ -122,6 +122,61 @@ def _err(ci, center):
     return max(abs(center - ci[0]), abs(ci[1] - center))
 
 
+LABELS = ["instruct\nsyco", "instruct\nhallu", "base\nsyco", "base\nhallu"]
+ORDER = [f"{m}/{tr}" for m in ("instruct", "base") for tr in TRAITS]
+_PE = "#4C72B0"  # prefix-end (pre-query)
+_AC = "#DD8452"  # averaged context
+
+
+def _draw_supervised(ax, t):
+    """Supervised probe r (prefix-end vs averaged) with per-cell reliability ceiling."""
+    x = np.arange(len(ORDER))
+    w = 0.38
+    pe = [t[k]["supervised_prefix_end_r"] for k in ORDER]
+    ac = [t[k]["supervised_averaged_context_r"] for k in ORDER]
+    pe_e = [
+        _err(t[k]["supervised_prefix_end_ci95"], t[k]["supervised_prefix_end_r"]) for k in ORDER
+    ]
+    ac_e = [
+        _err(t[k]["supervised_averaged_context_ci95"], t[k]["supervised_averaged_context_r"])
+        for k in ORDER
+    ]
+    ceil = [t[k]["ceiling"] for k in ORDER]
+    ax.bar(x - w / 2, pe, w, yerr=pe_e, capsize=3, label="prefix-end (pre-query)", color=_PE)
+    ax.bar(x + w / 2, ac, w, yerr=ac_e, capsize=3, label="averaged context", color=_AC)
+    for xi, c in zip(x, ceil):
+        ax.hlines(c, xi - w, xi + w, color="#555555", linestyle="--", linewidth=1.3)
+    ax.plot([], [], color="#555555", linestyle="--", label="reliability ceiling")
+    ax.set_xticks(x)
+    ax.set_xticklabels(LABELS)
+    ax.set_ylabel("supervised probe  r  (state → per-prefix judge mean)")
+    ax.set_title("Supervised read of average behavioral disposition vs its reliability ceiling")
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_ylim(-0.05, 1.0)
+    ax.legend(fontsize=8, loc="upper right")
+
+
+def _draw_rb(ax, t):
+    """Raw persona-vector (r_B) projection (signed), prefix-end vs averaged."""
+    x = np.arange(len(ORDER))
+    w = 0.38
+    rpe = [t[k]["raw_rb_prefix_end_r"] for k in ORDER]
+    rac = [t[k]["raw_rb_averaged_context_r"] for k in ORDER]
+    rpe_e = [_err(t[k]["raw_rb_prefix_end_ci95"], t[k]["raw_rb_prefix_end_r"]) for k in ORDER]
+    rac_e = [
+        _err(t[k]["raw_rb_averaged_context_ci95"], t[k]["raw_rb_averaged_context_r"]) for k in ORDER
+    ]
+    ax.bar(x - w / 2, rpe, w, yerr=rpe_e, capsize=3, label="prefix-end (pre-query)", color=_PE)
+    ax.bar(x + w / 2, rac, w, yerr=rac_e, capsize=3, label="averaged context", color=_AC)
+    ax.set_xticks(x)
+    ax.set_xticklabels(LABELS)
+    ax.set_ylabel("raw persona-vector (r_B) projection  r")
+    ax.set_title("Unsupervised r_B projection (no fitted map)")
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_ylim(-0.6, 0.85)
+    ax.legend(fontsize=8, loc="upper right")
+
+
 def plot(reframe):
     import matplotlib.pyplot as plt
 
@@ -129,79 +184,60 @@ def plot(reframe):
 
     set_paper_style()
     t = reframe["table"]
-    order = [f"{m}/{tr}" for m in ("instruct", "base") for tr in TRAITS]
-    labels = ["instruct\nsyco", "instruct\nhallu", "base\nsyco", "base\nhallu"]
-    x = np.arange(len(order))
-    w = 0.38
+    FIGDIR.mkdir(parents=True, exist_ok=True)
 
-    fig, (axL, axR) = plt.subplots(1, 2, figsize=(12, 4.6))
+    # Two standalone single-panel figures — one per result in the writeup.
+    fig1, ax1 = plt.subplots(figsize=(7, 4.6))
+    _draw_supervised(ax1, t)
+    fig1.tight_layout()
+    for ext in ("png", "pdf"):
+        fig1.savefig(FIGDIR / f"base_prequery_supervised.{ext}", dpi=150, bbox_inches="tight")
+    plt.close(fig1)
 
-    # Panel A: supervised probe r, prefix-end vs averaged, with ceiling markers.
-    pe = [t[k]["supervised_prefix_end_r"] for k in order]
-    ac = [t[k]["supervised_averaged_context_r"] for k in order]
-    pe_e = [
-        _err(t[k]["supervised_prefix_end_ci95"], t[k]["supervised_prefix_end_r"]) for k in order
-    ]
-    ac_e = [
-        _err(t[k]["supervised_averaged_context_ci95"], t[k]["supervised_averaged_context_r"])
-        for k in order
-    ]
-    ceil = [t[k]["ceiling"] for k in order]
-    axL.bar(x - w / 2, pe, w, yerr=pe_e, capsize=3, label="prefix-end (pre-query)", color="#4C72B0")
-    axL.bar(x + w / 2, ac, w, yerr=ac_e, capsize=3, label="averaged context", color="#DD8452")
-    for xi, c in zip(x, ceil):
-        axL.hlines(c, xi - w, xi + w, color="#555555", linestyle="--", linewidth=1.3)
-    axL.plot([], [], color="#555555", linestyle="--", label="reliability ceiling")
-    axL.set_xticks(x)
-    axL.set_xticklabels(labels)
-    axL.set_ylabel("supervised probe  r  (state → per-prefix judge mean)")
-    axL.set_title("Supervised read vs its reliability ceiling")
-    axL.axhline(0, color="black", linewidth=0.8)
-    axL.set_ylim(-0.05, 1.0)
-    axL.legend(fontsize=8, loc="upper right")
+    fig2, ax2 = plt.subplots(figsize=(7, 4.6))
+    _draw_rb(ax2, t)
+    fig2.tight_layout()
+    for ext in ("png", "pdf"):
+        fig2.savefig(FIGDIR / f"base_prequery_rb.{ext}", dpi=150, bbox_inches="tight")
+    plt.close(fig2)
 
-    # Panel B: raw r_B projection (signed), prefix-end vs averaged.
-    rpe = [t[k]["raw_rb_prefix_end_r"] for k in order]
-    rac = [t[k]["raw_rb_averaged_context_r"] for k in order]
-    rpe_e = [_err(t[k]["raw_rb_prefix_end_ci95"], t[k]["raw_rb_prefix_end_r"]) for k in order]
-    rac_e = [
-        _err(t[k]["raw_rb_averaged_context_ci95"], t[k]["raw_rb_averaged_context_r"]) for k in order
-    ]
-    axR.bar(
-        x - w / 2, rpe, w, yerr=rpe_e, capsize=3, label="prefix-end (pre-query)", color="#4C72B0"
-    )
-    axR.bar(x + w / 2, rac, w, yerr=rac_e, capsize=3, label="averaged context", color="#DD8452")
-    axR.set_xticks(x)
-    axR.set_xticklabels(labels)
-    axR.set_ylabel("raw persona-vector (r_B) projection  r")
-    axR.set_title("Unsupervised r_B projection (no fitted map)")
-    axR.axhline(0, color="black", linewidth=0.8)
-    axR.set_ylim(-0.6, 0.85)
-    axR.legend(fontsize=8, loc="upper right")
-
-    fig.suptitle(
+    # Combined figure retained (referenced by the two direct-vs-averaged summary docs).
+    figc, (axL, axR) = plt.subplots(1, 2, figsize=(12, 4.6))
+    _draw_supervised(axL, t)
+    _draw_rb(axR, t)
+    figc.suptitle(
         "#1092: instruction tuning installs a pre-query disposition the base model lacks (layer 14)",
         fontsize=11,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    FIGDIR.mkdir(parents=True, exist_ok=True)
+    figc.tight_layout(rect=(0, 0, 1, 0.96))
     for ext in ("png", "pdf"):
-        fig.savefig(FIGDIR / f"base_prequery_reframe.{ext}", dpi=150, bbox_inches="tight")
+        figc.savefig(FIGDIR / f"base_prequery_reframe.{ext}", dpi=150, bbox_inches="tight")
+    plt.close(figc)
+
     (FIGDIR / "base_prequery_reframe.meta.json").write_text(
         json.dumps(
             {
                 "script": "scripts/issue1092_base_prequery_reframe.py",
                 "sources": reframe["source_artifacts"],
                 "layer": 14,
+                "figures": [
+                    "base_prequery_supervised.png",
+                    "base_prequery_rb.png",
+                    "base_prequery_reframe.png",
+                ],
             },
             indent=2,
         )
     )
-    plt.close(fig)
 
 
 if __name__ == "__main__":
     rf = build()
     plot(rf)
     print("wrote", OUT / "base_prequery_reframe.json")
-    print("wrote", FIGDIR / "base_prequery_reframe.png")
+    for name in (
+        "base_prequery_supervised.png",
+        "base_prequery_rb.png",
+        "base_prequery_reframe.png",
+    ):
+        print("wrote", FIGDIR / name)

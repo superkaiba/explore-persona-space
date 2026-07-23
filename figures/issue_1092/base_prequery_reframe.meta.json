@@ -4,5 +4,10 @@
     "eval_results/issue_1092/inline_prefixend_monitoring/results.json",
     "eval_results/issue_1092/inline_prefixend_monitoring/readout_constructions.json"
   ],
-  "layer": 14
+  "layer": 14,
+  "figures": [
+    "base_prequery_supervised.png",
+    "base_prequery_rb.png",
+    "base_prequery_reframe.png"
+  ]
 }
