@@ -4,6 +4,7 @@
 # tests/test_select_step9c_tests.py::test_workflow_invariant_matches_manifest.
 # Register a new pin test by adding one line at its sorted position (plus the
 # tuple entry) — never edit an existing line.
+tests/test_adhoc_summary_disclosure_pins.py
 tests/test_autonomous_plan_gate.py
 tests/test_autonomous_session_watch.py
 tests/test_check_mcp_json_no_secrets.py

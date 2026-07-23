@@ -274,6 +274,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 5 — gate / dispatch / contract
     "tests/test_failure_classifier.py",
     "tests/test_sparse_worktree.py",
+    # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
+    "tests/test_adhoc_summary_disclosure_pins.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin

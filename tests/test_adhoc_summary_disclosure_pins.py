@@ -20,6 +20,9 @@ CLAUDE.md (a bare-id pin would be vacuous).
 
 Task #1539 added a third pinned clause: the live-compute scan for never-run
 claims (test_live_compute_scan_clause_pinned).
+
+Task #1623 added a fourth pinned clause: similarity-statistic semantics for
+operator/map comparisons (test_similarity_statistic_semantics_clause_pinned).
 """
 
 from __future__ import annotations
@@ -54,3 +57,12 @@ def test_live_compute_scan_clause_pinned() -> None:
     assert "additionally scans LIVE compute before asserting" in text
     assert "the same follow-up signal set the watcher's pod-safety pass reads" in text
     assert "nothing live is generating that cell" in text
+
+
+def test_similarity_statistic_semantics_clause_pinned() -> None:
+    text = _normalized()
+    assert "**Similarity-statistic semantics:**" in text
+    assert "direction-aware" in text
+    assert "spectrum/rotation-invariant-only" in text
+    assert "issue1345_operator_comparison.py" in text
+    assert "(#1310:" in text
