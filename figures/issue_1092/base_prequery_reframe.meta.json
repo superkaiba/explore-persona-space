@@ -1,0 +1,8 @@
+{
+  "script": "scripts/issue1092_base_prequery_reframe.py",
+  "sources": [
+    "eval_results/issue_1092/inline_prefixend_monitoring/results.json",
+    "eval_results/issue_1092/inline_prefixend_monitoring/readout_constructions.json"
+  ],
+  "layer": 14
+}
