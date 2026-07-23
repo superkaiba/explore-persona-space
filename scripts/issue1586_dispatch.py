@@ -623,6 +623,43 @@ def _staged_ft_dir(cfg: Cfg, name: str) -> Path:
     return cfg.out_root / "inputs" / "ft_ckpts" / name
 
 
+def _tree_bytes(root: Path) -> int:
+    """Physical bytes under ``root`` (lstat; symlinks never followed — hub-cache
+    snapshots/ symlink into blobs/, following would double-count)."""
+    return sum(p.lstat().st_size for p in root.rglob("*") if p.is_file() and not p.is_symlink())
+
+
+def _overflow_hub_cache_entry() -> Path:
+    """Resolved hub-cache entry dir for the PRIVATE overflow repo. Resolution
+    rides huggingface_hub's own constant (HF_HUB_CACHE follows HF_HOME —
+    /workspace/.cache/huggingface on pods), never a hardcoded path."""
+    from huggingface_hub.constants import HF_HUB_CACHE
+
+    return Path(HF_HUB_CACHE) / f"models--{G.OVERFLOW_REPO.replace('/', '--')}"
+
+
+def _evict_overflow_hub_cache() -> int:
+    """Post-staging hub-cache eviction of the overflow repo's entry (crash-fix
+    r4, epm:failure v10): ``_stage_overflow_prefix`` double-materializes every
+    staged checkpoint byte — ``hf_hub_download`` blobs under the hub cache PLUS
+    the consumer copies at ``out_root/inputs/ft_ckpts`` (the #1092 P6
+    staging-duplication class; 29 GB duplicated on pod-1586's ~200 GB
+    /workspace). Called only AFTER the staged-set guards verified the consumer
+    copies; ONLY this repo's entry is evicted (the Qwen base + main model repo
+    entries are live consumers). Idempotent (absent entry -> one no-op line);
+    rmtree errors propagate (fail-loud — a half-evicted cache lies to the wave
+    headroom arithmetic). Emits exactly one ``[hub-evict]`` line either way
+    (the fix-engaged observable); returns reclaimed bytes."""
+    entry = _overflow_hub_cache_entry()
+    if not entry.exists():
+        logger.info("[hub-evict] overflow hub-cache entry absent — nothing to evict (%s)", entry)
+        return 0
+    n_bytes = _tree_bytes(entry)
+    shutil.rmtree(entry)  # fail-loud: no ignore_errors
+    logger.info("[hub-evict] evicted %s (%.1f GB reclaimed)", entry, n_bytes / 1e9)
+    return n_bytes
+
+
 def _mix_local(cfg: Cfg, beh_key: str, regime: str) -> Path:
     return cfg.out_root / "inputs" / "mixes" / f"{beh_key}_{regime}.jsonl"
 
@@ -741,7 +778,14 @@ def phase_stage(cfg: Cfg) -> dict:
     _headroom(cfg, "p0_stage")
     done_path = cfg.out_root / "stage_done.json"
     if done_path.exists():
-        return _read_json(done_path)
+        rec = _read_json(done_path)
+        # crash-fix r4 resume correctness: a stage_done written BEFORE the
+        # eviction fix landed (or after a re-stage) can leave the duplicated
+        # overflow blobs in the hub cache — evict on the resume path too
+        # (idempotent no-op when absent; overflow-staging configs only).
+        if "reused_ft" in rec or "fu_ft_partners" in rec:
+            _evict_overflow_hub_cache()
+        return rec
     _assert_marker_token()
     rec: dict = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     data_rev = _resolve_revision(G.HF_DATA_REPO, "dataset")
@@ -875,6 +919,11 @@ def phase_stage(cfg: Cfg) -> dict:
                 "consumer_open": "AutoConfig OK (probe-first)",
             }
         rec["fu_ft_partners"] = fu_partners
+    # crash-fix r4 (epm:failure v10): drop the overflow repo's hub-cache blobs
+    # the moment every staged-set guard above has verified the consumer copies
+    # — the duplication held 29 GB of the p2_train_wave2 shortfall.
+    if overflow_rev is not None:
+        rec["hub_evict_bytes"] = _evict_overflow_hub_cache()
     _atomic_json(done_path, rec)
     return rec
 
@@ -2153,6 +2202,22 @@ def _wave_headroom(cfg: Cfg, k: int, wave: Sequence[str]) -> None:
         need,
     )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
+    # Wave-boundary drain (crash-fix r4, epm:failure v10): when the assert
+    # would fail, reclaim prior SELECTION-COMPLETE cells' dead trainer bytes
+    # (orphaned train dirs + schedule-end root saves) FIRST, then assert.
+    # Work-conservation preserved: an already-passing boundary skips the
+    # sweep entirely (_wave_reap owns the steady-state reclaim); the need
+    # arithmetic above is untouched.
+    free_gb = shutil.disk_usage(cfg.out_root).free / 1e9
+    if free_gb < need:
+        drained = _reclaim_completed_cell_residue(cfg, cfg.cells)
+        logger.info(
+            "[wave] drain wave %d boundary: free %.1f GB < need %.1f GB — reclaimed %.1f GB",
+            k,
+            free_gb,
+            need,
+            drained / 1e9,
+        )
     assert_out_root_headroom(cfg.out_root, need_gb=need, phase=f"p2_train_wave{k}")
 
 
@@ -2164,6 +2229,76 @@ def _rungs_or_empty(d: Path) -> dict[int, Path]:
         return _enumerate_rungs(d)
     except ValueError:
         return {}
+
+
+def _reclaim_completed_cell_residue(cfg: Cfg, cells: Sequence[str]) -> int:
+    """Wave-boundary drain of a SELECTION-COMPLETE FT cell's dead trainer bytes
+    (crash-fix r4, epm:failure v10). Every chunk / retrain-reselect training
+    pass ALSO writes a schedule-end ROOT-level full save (~15 GB of model
+    shards beside the checkpoint-<k>/ rungs); no rung reap ever touches it
+    (_reap_rungs deletes checkpoint-* dirs only), and in the retrained-reselect
+    shape the ORIGINAL train dir is left fully orphaned once
+    build_result.adapter_root re-points at train_reselect. Net on pod-1586:
+    ~28.8 GB of dead bytes per completed marker cell (train/ root save 15 GB +
+    train_reselect/ root save 13.8 GB), so wave k>=3 could never pass its
+    85.8 GB headroom assert on the ~200 GB /workspace — keepcell_demand_gb
+    budgets ONE selected ckpt (~15.2 GB) per completed cell.
+
+    Reclaims, per cell, ONLY when selection.json exists AND the selected rung
+    is present under the CURRENT adapter_root (every downstream consumer —
+    _selected_ft_ckpt, p4 persist / p9 deferred replay — reads the
+    self-contained checkpoint dir, never the root save):
+      (a) the orphaned original train dir (adapter_root != <cell>/train);
+      (b) root-level ``model*.safetensors`` shards + index at adapter_root
+          (rung checkpoint-* dirs are never touched).
+    FU imp LoRA ladders (persisted WHOLE at p4, root adapter included) and the
+    reused cell are never touched. Idempotent; one ``[wave] drain <cell>``
+    line per reclaimed residue class (the fix-engaged observable); returns
+    reclaimed bytes. Need arithmetic (_cell_rung_demand_gb / WAVE_MARGIN_GB)
+    is untouched — this frees bytes, it never re-sizes demand."""
+    freed = 0
+    for cell in cells:
+        if G.is_fu_lora_cell(cell) or cell == G.REUSED_FT_CELL:
+            continue
+        cell_root = cfg.out_root / cell
+        sel_path = cell_root / "selection.json"
+        build_path = cell_root / "build_result.json"
+        if not sel_path.exists() or not build_path.exists():
+            continue
+        sel_step = int(_read_json(sel_path)["step"])
+        adapter_root = Path(_read_json(build_path)["adapter_root"])
+        if sel_step not in _rungs_or_empty(adapter_root):
+            continue  # selected rung not where the build record points — keep everything
+        train_dir = cell_root / "train"
+        if train_dir.exists() and adapter_root.resolve() != train_dir.resolve():
+            n = _tree_bytes(train_dir)
+            shutil.rmtree(train_dir)  # fail-loud: no ignore_errors
+            freed += n
+            logger.info(
+                "[wave] drain %s: removed orphaned train dir %s (%.1f GB)",
+                cell,
+                train_dir,
+                n / 1e9,
+            )
+        shards = sorted(
+            p
+            for pat in ("model-*.safetensors", "model.safetensors", "model.safetensors.index.json")
+            for p in adapter_root.glob(pat)
+            if p.is_file()
+        )
+        if shards:
+            n = sum(p.lstat().st_size for p in shards)
+            for p in shards:
+                p.unlink()
+            freed += n
+            logger.info(
+                "[wave] drain %s: removed schedule-end root save under %s (%d files, %.1f GB)",
+                cell,
+                adapter_root,
+                len(shards),
+                n / 1e9,
+            )
+    return freed
 
 
 def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
@@ -2205,6 +2340,12 @@ def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
                 f"wave reap failed for {cell}: rungs {sorted(left)} != "
                 f"selected {{{sel_step}}} under {adapter_root}"
             )
+    # crash-fix r4 (epm:failure v10): also drop the wave's dead trainer saves
+    # (root-level schedule-end saves + retrain-reselect orphaned train dirs)
+    # so the NEXT wave's headroom assert sees the keepcell_demand_gb-budgeted
+    # ~15.2 GB per completed cell, not ~44 GB. Runs before free1 so the reap
+    # log line's freed figure includes it.
+    _reclaim_completed_cell_residue(cfg, cells)
     free1 = shutil.disk_usage(cfg.out_root).free
     logger.info(
         "[wave] reap cells=%s freed %.1f GB (free %.1f -> %.1f GB)",
