@@ -4882,8 +4882,8 @@
     "1626": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1626",
-      "status": "running",
+      "path": "tasks/reviewing/1626",
+      "status": "reviewing",
       "title": "daily-fix: workflow_lint root-guard rc=-1 retry-then-WARN"
     },
     "1627": {
