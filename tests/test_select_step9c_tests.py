@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import os
 import subprocess
 from pathlib import Path
@@ -1162,14 +1163,27 @@ def test_import_map_relative_import_skipped(tmp_path: Path):
 
 # --- Case 48: aggregate parse-failure WARN (systemic-breakage signal) -----------
 def test_import_map_aggregate_parse_failure_warn(tmp_path: Path, capsys):
-    """>5% of scanned test files failing to parse emits ONE extra summary WARN."""
-    files = {f"test_broken_{i}.py": "import widgetlib\ndef broken(:\n" for i in range(3)}
-    files["test_ok.py"] = "import widgetlib\n"
-    repo = _make_import_tree(tmp_path, files)  # 3 broken / ~43 scanned ≈ 7% > 5%
+    """>5% of scanned test files failing to parse emits ONE extra summary WARN.
+
+    The broken-stub count is sized PROPORTIONALLY to the seeded fixture tree:
+    ``_make_tree`` seeds one stub per live ``WORKFLOW_INVARIANT`` /
+    ``GLOB_SCAN_TESTS`` member, so a hardcoded count is a registry-growth
+    knife-edge — at 60 members a fixed 3 broken files read 3/60 = 5.00%,
+    which the strict ``> 5%`` gate does NOT fire (#1632: both aggregate-WARN
+    tests went red on trunk when the registry grew).
+    """
+    repo = _make_import_tree(tmp_path, {"test_ok.py": "import widgetlib\n"})
+    # Count exactly what the scanner enumerates (recursive test_*.py), then add
+    # enough broken files to clear the strict >5% threshold at ANY registry size.
+    n_pre = len(list((repo / "tests").rglob("test_*.py")))
+    n_broken = math.ceil(0.05 * n_pre) + 1
+    assert n_broken / (n_pre + n_broken) > 0.05  # self-check: aggregate WARN must fire
+    for i in range(n_broken):
+        (repo / "tests" / f"test_broken_{i}.py").write_text("import widgetlib\ndef broken(:\n")
     tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
     assert "tests/test_ok.py" in tests
     err = capsys.readouterr().err
-    assert err.count("import-map cannot parse") == 3  # one per-file WARN each
+    assert err.count("import-map cannot parse") == n_broken  # one per-file WARN each
     assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
 
 
@@ -1344,15 +1358,23 @@ def test_rules_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
 # --- Case 59: aggregate read-failure WARN (systemic-breakage signal) ---------------
 def test_rules_pin_aggregate_read_failure_warn(tmp_path: Path, capsys):
     """>5% of scanned test files unreadable emits ONE extra summary WARN
-    (mirrors the import-map arm's #1299 aggregate signal, case 48)."""
+    (mirrors the import-map arm's #1299 aggregate signal, case 48).
+
+    Broken-stub count sized proportionally to the seeded tree — the same
+    #1632 registry-growth knife-edge as case 48 (a fixed 3 broken files read
+    3/60 = 5.00% at 60 seeded members, failing the strict ``> 5%`` gate).
+    """
     repo = _make_tree(tmp_path, [])
-    for i in range(3):
-        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
     (repo / "tests" / "test_ok_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    n_pre = len(list((repo / "tests").rglob("test_*.py")))
+    n_broken = math.ceil(0.05 * n_pre) + 1
+    assert n_broken / (n_pre + n_broken) > 0.05  # self-check: aggregate WARN must fire
+    for i in range(n_broken):
+        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
     tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
     assert "tests/test_ok_pin.py" in tests
     err = capsys.readouterr().err
-    assert err.count("rules-pin scan cannot read") == 3  # one per-file WARN each
+    assert err.count("rules-pin scan cannot read") == n_broken  # one per-file WARN each
     assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
 
 
