@@ -4854,8 +4854,8 @@
     "1622": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1622",
-      "status": "planning",
+      "path": "tasks/approved/1622",
+      "status": "approved",
       "title": "daily-fix: artifact turns end with bare URL (project rule)"
     },
     "1623": {
