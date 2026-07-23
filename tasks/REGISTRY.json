@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1628,
+  "highest_id": 1629,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4899,6 +4899,13 @@
       "path": "tasks/proposed/1628",
       "status": "proposed",
       "title": "daily-fix: GCP DWS-PENDING delete needs longer timeout"
+    },
+    "1629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1629",
+      "status": "proposed",
+      "title": "daily-fix: issue-tick no-op in interactive sessions"
     },
     "163": {
       "has_clean_result": false,
