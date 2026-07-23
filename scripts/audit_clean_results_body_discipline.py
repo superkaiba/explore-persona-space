@@ -152,6 +152,41 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # AND no incident string), and 'estimate' is a far more common
         # object of verb-register 'registered' than 'estimator', so both
         # stay out until an incident or attested hit mandates them.
+        # #1638 (2026-07-23) adds `layers?`/`rungs?`/`windows?` for the
+        # #1586 round-1 escape: 'the registered layer' (x5) and 'reported
+        # at the registered layer' in #1586's clean-result draft could not
+        # match — 'layer' was absent from the alternation — and were
+        # caught only by the LM critic's Lens 7 read. #1586's CURRENT body
+        # carries 0 hits (the analyzer revised them out post-critique), so
+        # `layers?` rides the incident mandate per the #1475
+        # cut/lever/smoke rule PLUS 4 attested corpus hits; `rungs?` and
+        # `windows?` are critic-sketched siblings included on attested
+        # genuine hits. The critic's other sketched siblings
+        # (lattice/band/read/margin/verdict) were already listed by #1419
+        # — nothing to add. Measured 2026-07-23 over all 1,571
+        # tasks/*/*/body.md (full-pattern old-vs-new match-start diff,
+        # re.IGNORECASE): 13 new hits — layer(s) 10 (4 genuine: #1112
+        # 'registered layer 14', #1333 'the registered layer 25', #542
+        # 'the registered layer', #509 'previously-registered single
+        # layer-20'; + 6 in #1638's own body quoting the incident, the
+        # #1553 self-quote class), rung(s) 1 (#1005 'the parent's
+        # registered retry rung'), window(s) 2 (#1332 'the plan's
+        # registered window', 'the registered apply-gate window') — every
+        # one manually classified genuine pre-registration jargon (the
+        # deciding question: does 'registered' here mean PRE-REGISTERED?),
+        # 0 benign verb-use false positives. OLD-minus-NEW match starts: 0
+        # — measured empirically this round (an implementation-time
+        # re-check, not an inference from the leftmost 'pre-?registered'
+        # alternative ordering). Accepted residuals (each 0/1,571
+        # attested; the same trade #1419 accepted): determiner-first verb
+        # objects on the new nouns ('the run registered a window of
+        # instability') would flag; and the mid-window-preposition /
+        # hook-register form ('registered a hook at layer 20' — the
+        # determiner + noun tokens consume window positions 1-3, so
+        # 'layer' heads the match and the FIRST-token preposition
+        # lookahead does not guard positions 2-3) would flag — a
+        # pre-existing property of the #1419 intervening-token window,
+        # not new to these nouns.
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
@@ -159,7 +194,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
         r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
         r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
-        r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?)\b",
+        r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
+        r"|layers?|rungs?|windows?)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),

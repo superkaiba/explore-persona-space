@@ -4931,8 +4931,8 @@
     "1632": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1632",
-      "status": "reviewing",
+      "path": "tasks/completed/1632",
+      "status": "completed",
       "title": "daily-fix: exclude /tmp scratch from ruff format hook"
     },
     "1633": {
