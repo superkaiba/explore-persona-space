@@ -1,6 +1,6 @@
 {
-  "commit": "3f10522719",
-  "created": "2026-07-23T08:03:36Z",
+  "commit": "f0ed562faa",
+  "created": "2026-07-23T08:15:28Z",
   "figsize": [
     14.0,
     9.8
@@ -887,12 +887,12 @@
           "full FT"
         ],
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ],
         "yticklabels": [
           "0.0",
@@ -906,46 +906,46 @@
       {
         "title_left": "sycophancy con s137  [dose-mismatched]",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "sycophancy po s42  [dose-mismatched]",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "sycophancy po s137",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "impolite con s42  [dose-mismatched]",
         "ylabel": "judged rate",
         "xticklabels": [
-          "source perso",
-          "default assi",
-          "icl_prefix_i",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "source persona",
+          "default assist",
+          "ICL prefix",
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ],
         "yticklabels": [
           "0.0",
@@ -959,46 +959,46 @@
       {
         "title_left": "impolite con s137",
         "xticklabels": [
-          "source perso",
-          "default assi",
-          "icl_prefix_i",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "source persona",
+          "default assist",
+          "ICL prefix",
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "impolite po s42",
         "xticklabels": [
-          "source perso",
-          "default assi",
-          "icl_prefix_i",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "source persona",
+          "default assist",
+          "ICL prefix",
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "impolite po s137",
         "xticklabels": [
-          "source perso",
-          "default assi",
-          "icl_prefix_i",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "source persona",
+          "default assist",
+          "ICL prefix",
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "casual style con s42",
         "ylabel": "judged rate",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ],
         "yticklabels": [
           "0.0",
@@ -1012,34 +1012,34 @@
       {
         "title_left": "casual style con s137",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "casual style po s42  [dose-mismatched]",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "casual style po s137  [dose-mismatched]",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       }
     ],

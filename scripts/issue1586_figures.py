@@ -31,6 +31,13 @@ FIGDIR = Path("figures/issue_1586")
 BEH_LAYER = {"syc": 14, "imp": 14, "cas": 14, "mk": 25}
 BEH_NAME = {"syc": "sycophancy", "imp": "impolite", "cas": "casual style", "mk": "marker"}
 SOURCE_CTX = "persona_software_engineer"
+def ctx_short(c: str) -> str:
+    """Plain-English read-context label (slugs stay out of rendered figures)."""
+    if c.startswith("icl_prefix"):
+        return "ICL prefix"
+    return CTX_SHORT.get(c, c.replace("_", " "))
+
+
 CTX_SHORT = {
     "persona_software_engineer": "source persona",
     "default": "default assistant",
@@ -356,7 +363,7 @@ def fig_perctx_dumbbells() -> None:
                     ax.text(x, v + 0.12, f"{v:.1f}", ha="center", fontsize=6)
             ax.set_xticks(np.arange(len(ctxs)))
             ax.set_xticklabels(
-                [CTX_SHORT.get(c, c)[:12] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
+                [ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
             )
             if bi == 0:
                 ax.set_ylabel(f"seed {s[1:]}\nper-context shift norm")
@@ -527,7 +534,7 @@ def fig_panel_rates(doses: dict) -> None:
         )
         ax.set_xticks(xs)
         ax.set_xticklabels(
-            [CTX_SHORT.get(c, c)[:12] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
+            [ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
         )
         lab = doses[f"{b}-{reg}-{s}"]
         tag = "" if lab["matched"] else "  [dose-mismatched]"
@@ -618,7 +625,7 @@ def fig_mk_threespace() -> None:
             )
         ax.set_xticks(np.arange(len(ctxs)))
         ax.set_xticklabels(
-            [CTX_SHORT.get(c, c)[:12] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
+            [ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
         )
         ax.set_title(mlabel, fontsize=10)
     axes[0].legend(fontsize=6.5)
