@@ -1,6 +1,6 @@
 {
-  "commit": "3f10522719",
-  "created": "2026-07-23T08:03:26Z",
+  "commit": "f0ed562faa",
+  "created": "2026-07-23T08:15:18Z",
   "figsize": [
     13.5,
     4.6
@@ -941,12 +941,12 @@
           "ft-po-s137"
         ],
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ],
         "yticklabels": [
           "\u22121",
@@ -964,23 +964,23 @@
       {
         "title_left": "EOS-margin shift (nats)",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       },
       {
         "title_left": "greedy emission rate",
         "xticklabels": [
-          "source perso",
-          "default assi",
+          "source persona",
+          "default assist",
           "ICL prefix",
-          "maritime-med",
-          "police perso",
-          "WildChat pre"
+          "maritime-medic",
+          "police persona",
+          "WildChat prefi"
         ]
       }
     ],
