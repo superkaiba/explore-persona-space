@@ -4982,7 +4982,7 @@
       "kind": "analysis",
       "path": "tasks/proposed/1639",
       "status": "proposed",
-      "title": "Assistant and fiction-character context-to-answer maps share one dominant linear operator; identity is nearly free while fiction framing distorts its coordinates"
+      "title": "The four fiction-character context\u2192dialogue maps are one dominantly shared linear operator: a pooled map recovers 81\u201398% of each character's ceiling, with small per-character slope residuals (MODERATE confidence)"
     },
     "164": {
       "has_clean_result": false,

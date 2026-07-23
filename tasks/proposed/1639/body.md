@@ -1,6 +1,7 @@
 ---
-title: Assistant and fiction-character context-to-answer maps share one dominant linear
-  operator; identity is nearly free while fiction framing distorts its coordinates
+title: 'The four fiction-character context→dialogue maps are one dominantly shared
+  linear operator: a pooled map recovers 81–98% of each character''s ceiling, with
+  small per-character slope residuals (MODERATE confidence)'
 kind: analysis
 tags: []
 created_at: '2026-07-23T16:28:37Z'
