@@ -4945,8 +4945,8 @@
     "1634": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1634",
-      "status": "approved",
+      "path": "tasks/running/1634",
+      "status": "running",
       "title": "daily-fix: pid file from launch chain child, never pgrep"
     },
     "1635": {
