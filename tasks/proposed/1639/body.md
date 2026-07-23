@@ -5,7 +5,7 @@ title: 'The four fiction-character context→dialogue maps are one dominantly sh
 kind: analysis
 tags: []
 created_at: '2026-07-23T16:28:37Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1310
 origin_prompt: 'write this up into a clean result (consolidating the #1310 cross-persona
   similarity rounds 1-3: cross-character battery, principled re-analysis, and the
