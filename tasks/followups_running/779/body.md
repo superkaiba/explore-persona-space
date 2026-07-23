@@ -346,17 +346,17 @@ Interpretation: At 40 questions per group the best 963k arm reads 0.63 (evil, ML
 
 ### The layer-26 kernel gate clears at 32768 landmarks under an equivalent Cholesky solver; the flagged hallucination many-shot kernel win does not survive
 
-What is plotted (exactly): the layer-26 Nyström-vs-exact held-out R² gap on the n = 50,000 gate slice, at the committed 16384-landmark fit and this round's 32768-landmark Cholesky refit, against the 0.01 tolerance; then the un-flagged re-read delta vs raw (dot read-out, 95% CI) for every arm in the four layer-26 kernel cells.
+What is plotted (exactly): the layer-26 Nyström-vs-exact held-out R² gap on the 50,000-row gate slice at 16384 and 32768 landmarks, vs the 0.01 tolerance; then the un-flagged re-read delta vs raw (dot read-out, 95% CI) for every arm in the four layer-26 kernel cells.
 
-![Layer-26 kernel gate gap at 16384 and 32768 landmarks](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e5b0c1bb7fe00c55a25875c5374e750199f91060/figures/issue_779/l26_recovery_gap_vs_m.png)
+![Kernel gate gap vs landmarks](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e5b0c1bb7fe00c55a25875c5374e750199f91060/figures/issue_779/l26_recovery_gap_vs_m.png)
 
-> **Figure.** *Doubling the landmarks clears the gate.* The layer-26 approximation gap falls from 0.0151 at 16384 landmarks (over the 0.01 tolerance) to 0.0042 at 32768; the exact-kernel reference reproduced the committed 0.732 exactly on the re-streamed data.
+> **Figure.** *Doubling the landmarks clears the gate.* The layer-26 approximation gap falls from 0.0151 at 16384 landmarks (over the 0.01 tolerance) to 0.0042 at 32768; the exact-kernel reference reproduced the committed 0.732 exactly on the re-streamed data, and all 52 non-kernel comparator values reproduced exactly.
 
-![Re-read deltas vs raw at layer 26 with the gate-passing kernel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e5b0c1bb7fe00c55a25875c5374e750199f91060/figures/issue_779/l26_recovery_delta_forest.png)
+![Layer-26 re-read delta forest](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e5b0c1bb7fe00c55a25875c5374e750199f91060/figures/issue_779/l26_recovery_delta_forest.png)
 
-> **Figure.** *The un-flagged layer-26 re-read.* Delta within-condition r vs raw, 95% CI, dashed +0.05 bar. Evil many-shot: every arm still clears, kernel at +0.25. Sycophancy: system null, many-shot CI spans zero. Hallucination many-shot: the kernel drops to +0.04, positive but below the bar. Solver-equivalence and persona-level sweep figures committed at the same SHA.
+> **Figure.** *The un-flagged layer-26 re-read.* Delta within-condition r vs raw, 95% CI, dashed +0.05 bar. Evil many-shot: every arm still clears, kernel at +0.25. Sycophancy kernel: system null, many-shot CI spans zero; the 5k linear many-shot win stands. Hallucination many-shot: the kernel drops to +0.04, positive but below the bar. Solver-equivalence and persona-level sweep figures at the same SHA.
 
-Interpretation: The gate failure was an approximation artifact, not a property of the layer-26 map: with the eigendecomposition replaced by a jittered-Cholesky solver, the gap drops under the tolerance and held-out test R² rises 0.748 to 0.766. The exact reference and all 52 non-kernel comparator values reproduced exactly. One verdict changes: the flagged hallucination many-shot kernel delta falls from +0.067 to +0.042 (CI +0.018 to +0.069 — positive but under the +0.05 bar), leaving hallucination only its borderline system-cell kernel win at layer 19. The evil many-shot kernel win stands (+0.25); both sycophancy cells stay null; the persona-level sycophancy kernel read is unchanged to 0.001.
+Interpretation: The gate failure was an approximation artifact, not a property of the layer-26 map: under the jittered-Cholesky solver the gap drops below tolerance and held-out test R² rises 0.748 to 0.766. All four kernel deltas re-read at 32768 landmarks shift down a near-uniform 0.02 — the failed-gate fit inflated every kernel-vs-raw delta. One verdict changes: the flagged hallucination many-shot kernel delta falls from +0.067 to +0.042 (CI +0.018 to +0.069), under the +0.05 bar — a marginal shift (the CIs overlap), not a sign flip — leaving hallucination only its borderline layer-19 system-cell kernel win. The evil many-shot kernel win stands (+0.25); the kernel stays null in both sycophancy cells (the 5k linear many-shot win is untouched); the persona-level sycophancy read is unchanged to 0.001.
 
 ---
 
