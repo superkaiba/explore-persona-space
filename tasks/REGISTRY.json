@@ -4924,8 +4924,8 @@
     "1631": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1631",
-      "status": "approved",
+      "path": "tasks/running/1631",
+      "status": "running",
       "title": "daily-fix: committed plan-patch helper for anchor edits"
     },
     "1632": {
