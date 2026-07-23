@@ -1222,6 +1222,55 @@ def test_pre_reg_registered_estimator_in_v4_results_prose_is_flagged():
     assert any("estimator" in s.lower() for s in findings["pre_reg"]), findings["pre_reg"]
 
 
+def test_pre_reg_bare_registered_noun_1586_escape_strings_are_flagged():
+    """The #1586 round-1 escape class trips `pre_reg` in v4 Results prose
+    now that #1638 added `layers?`/`rungs?`/`windows?` to the head-noun
+    alternation: the two #1586 incident forms, the #1333 corpus form
+    (numeral AFTER the head noun), the #1005 rung form (two intervening
+    modifier tokens), and the two #1332 window forms."""
+    phrases = [
+        "reported at the registered layer",
+        "the registered layer",
+        "shift DVs at the registered layer 25",
+        "the parent's registered retry rung",
+        "the plan's registered window",
+        "the registered apply-gate window",
+    ]
+    for phrase in phrases:
+        body = V4_BODY_CLEAN.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"{phrase}.",
+        )
+        assert body != V4_BODY_CLEAN
+        findings = audit.audit_body(body)
+        assert "pre_reg" in findings, (phrase, findings)
+        assert any("registered" in s.lower() for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_1638_new_nouns_benign_verb_usages_not_flagged():
+    """Benign verb-register shapes for the #1638 nouns stay clean: the
+    first-token preposition guard covers 'registered at layer 20' /
+    'registered on layer hooks' / 'registered in the dashboard config' /
+    'registered under the sweep', including noun-BEFORE-verb subjects
+    ('three windows registered in ...', 'the ladder rungs registered
+    under ...'). NOTE (measured 2026-07-23, #1638): the mid-window-
+    preposition / hook-register form 'registered a hook at layer 20'
+    WOULD flag (the determiner + noun tokens consume window positions
+    1-3, so 'layer' heads the match; the lookahead guards only the FIRST
+    token) — a documented accepted residual with 0/1,571-body corpus
+    attestation, a pre-existing #1419-window property, deliberately NOT
+    pinned here as a passing negative."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the forward hook registered at layer 20 fired; activations "
+        "registered on layer hooks; three windows registered in the "
+        "dashboard config; the ladder rungs registered under the sweep.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
