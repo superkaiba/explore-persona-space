@@ -1,0 +1,234 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:45Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 15.864001178741455,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 10.86783250172933,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 5.644934852917989,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 2.862788140773773,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 1.759212170044581,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 1.5879352966944376,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 1.556872429450353,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 1.7685161491235097,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 1.4183770736058554,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 1.22654494146506,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 1.2187815527121226,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 1.3995086928208669,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 2.933101709683736,
+      "series": "matched pairs (n=15)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 10.61880060342642,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 6.251192386333759,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 3.6689899426240187,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 1.8001053837629466,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 1.3884448638329139,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 1.1795510489207048,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 1.125038314324159,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 1.0252410861162038,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 1.001378018122453,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.9051408882324512,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 1.0314349669676561,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 1.0253214492247655,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 2.939041486153236,
+      "series": "cross pairs (n=13)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "matched vs cross \u2014 steered/context/L14 (read L17)",
+        "legend_labels": [
+          "matched pairs (n=15)",
+          "cross pairs (n=13)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "matched pairs (n=15)",
+      "cross pairs (n=13)"
+    ]
+  }
+}

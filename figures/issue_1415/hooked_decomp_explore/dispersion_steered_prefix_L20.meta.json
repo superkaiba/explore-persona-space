@@ -1,0 +1,131 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:38Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 15.198023615564619,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "y": 7.570022256885256,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 2.0,
+      "y": 4.143139252705233,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 3.0,
+      "y": 1.7673099812120199,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 4.0,
+      "y": 1.35547428080546,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 5.0,
+      "y": 1.2455995870221939,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 6.0,
+      "y": 1.1850752909534743,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 7.0,
+      "y": 1.1715022486501507,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 8.0,
+      "y": 1.2052998152960623,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 9.0,
+      "y": 1.165213842929474,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 10.0,
+      "y": 1.123450496021126,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 11.0,
+      "y": 1.3915679254968252,
+      "series": "per-draw mean",
+      "_kind": "line"
+    },
+    {
+      "x": 12.0,
+      "y": 3.6056795250092235,
+      "series": "per-draw mean",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 13,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-draw dispersion \u2014 steered/prefix/L20 (read L21)",
+        "legend_labels": [
+          "per-draw min-max across pairs",
+          "per-draw mean"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "per-draw mean",
+      "per-draw min-max across pairs"
+    ]
+  }
+}
