@@ -86,7 +86,31 @@ def main() -> int:
         workload_cmd=WORKLOAD_CMD,
         extra={"repo_branch": BRANCH},
     )
-    backend = SlurmBackend()
+    # rsync source = the MAIN checkout, NOT the (sparse) issue worktree the
+    # driver runs from: the sparse worktree lacks ``external/open-instruct``
+    # + other RSYNC_INCLUDE_PATHS cones (run-1 died rsync rc=23 on exactly
+    # that), and pointing at main routes ``prepare`` through the REAL #793
+    # ``materialize_branch_src`` branch path (detached scratch tree at the
+    # pushed issue-1609 commit + the open-instruct overlay) — the same
+    # mechanism a production ``--repo-branch`` dispatch uses. Derive main
+    # via git-common-dir (worktree-safe; never ``rev-parse --show-toplevel``,
+    # which returns the WORKTREE root from a worktree cwd).
+    common_dir = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(Path(__file__).resolve().parents[1]),
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-common-dir",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    ).stdout.strip()
+    main_root = Path(common_dir).parent
+    backend = SlurmBackend(src_root=main_root)
 
     record: dict = {
         "issue": ISSUE,
@@ -113,9 +137,16 @@ def main() -> int:
         time.sleep(5)
 
     print(f"[acceptance] prepare: rsync branch tree + secrets -> {cluster.ssh_host}")
-    backend.prepare(spec)
-    print("[acceptance] launch: sbatch submit")
-    handle = backend.launch(spec)
+    try:
+        backend.prepare(spec)
+        print("[acceptance] launch: sbatch submit")
+        handle = backend.launch(spec)
+    except Exception as exc:  # noqa: BLE001 - a pre-submit crash still writes the record
+        record["verdict"] = "FAIL"
+        record["pre_submit_error"] = f"{type(exc).__name__}: {exc}"
+        record["finished_utc"] = datetime.now(UTC).isoformat()
+        _write_record(record)
+        raise
     record["job_id"] = handle.job_id
     record["job_name"] = name
     record["scratch_dir"] = handle.scratch_dir

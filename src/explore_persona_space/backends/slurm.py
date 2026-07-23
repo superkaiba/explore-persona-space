@@ -2382,11 +2382,17 @@ class SlurmBackend(ComputeBackend):
         now BELT-AND-SUSPENDERS on ``materialize_branch_src``'s own correctness: the
         resolved source is ALWAYS either ``self._src_root`` (main/absent/already-on-
         branch, where this guard is a no-op or trivially passes) or the materialized
-        branch tree (which IS on the requested branch, so the guard passes). It would
-        raise only if the ``git_cloner`` returned a tree whose HEAD is NOT the
-        requested branch — a materialize regression — NEVER to refuse a legitimately-
-        requested feature branch (that refusal moved to ``materialize_branch_src``'s
-        fail-loud ``RuntimeError`` on an unresolvable branch, §793/#653).
+        branch tree. The materialized tree is a DETACHED worktree at the branch
+        commit (``worktree add --detach`` — deliberate: the branch itself is checked
+        out in ``.claude/worktrees/issue-<N>``), so the NAMED-branch resolver reads
+        ``None`` there and the guard accepts it via the commit-equality fallback
+        instead (#1609 fix: pre-fix the guard refused EVERY materialized tree with
+        the default resolver — the #793 tests stubbed the resolver, hiding it). It
+        raises only if the source is NEITHER on the requested branch NOR at the
+        requested branch's commit — a materialize regression — NEVER to refuse a
+        legitimately-requested feature branch (that refusal moved to
+        ``materialize_branch_src``'s fail-loud ``RuntimeError`` on an unresolvable
+        branch, §793/#653).
 
         ``src_root`` defaults to ``self._src_root`` (backward-compatible: any direct
         call or the reconnect/estimate paths are unchanged). The internal semantics
@@ -2410,6 +2416,15 @@ class SlurmBackend(ComputeBackend):
             return
         actual = self._git_branch_resolver(src_root)
         if actual == requested:
+            return
+        # Detached materialized tree (#1609): ``materialize_branch_src``
+        # produces a DETACHED worktree at the branch commit, where the
+        # named-branch resolver reads None. Accept the source iff its HEAD
+        # commit EQUALS the requested branch's commit (local ref, then
+        # origin/<branch> — the same resolution order the materializer
+        # itself used); a probe failure stays a refusal (we cannot prove
+        # the source carries the branch, #653).
+        if head_commit_matches_branch(src_root, requested):
             return
         raise ValueError(
             f"SLURM lane cannot honor repo_branch={requested!r}: the rsync "
@@ -2984,6 +2999,43 @@ def materialize_branch_src(
     return scratch
 
 
+def head_commit_matches_branch(src_root: Path, branch: str, timeout: int = 15) -> bool:
+    """True iff ``src_root``'s HEAD commit equals ``branch``'s commit.
+
+    The detached-tree acceptance probe for
+    :meth:`SlurmBackend._assert_repo_branch_synced` (#1609):
+    :func:`materialize_branch_src` deliberately builds a DETACHED worktree
+    at the branch commit (the branch itself is checked out in the issue
+    worktree), so a named-branch read cannot vouch for it — commit
+    equality can. Resolves ``branch`` locally first, then
+    ``origin/<branch>`` (the materializer's own resolution order), inside
+    ``src_root`` (a linked worktree shares its parent's refs). Fails SOFT
+    to ``False`` on any git failure — the caller then refuses rather than
+    risking a stale-source submit (#653).
+    """
+
+    def _rev(ref: str) -> str | None:
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(src_root), "rev-parse", "--verify", f"{ref}^{{commit}}"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=True,
+                timeout=timeout,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return None
+        return proc.stdout.strip() or None
+
+    head = _rev("HEAD")
+    if head is None:
+        return False
+    branch_commit = _rev(branch) or _rev(f"origin/{branch}")
+    return branch_commit is not None and head == branch_commit
+
+
 def git_branch_at(src_root: Path) -> str | None:
     """Return the current branch name at ``src_root`` (``None`` if unknown).
 
@@ -3049,6 +3101,7 @@ __all__ = [
     "expected_artifacts_declaration",
     "get_cluster_config",
     "git_branch_at",
+    "head_commit_matches_branch",
     "job_name",
     "materialize_branch_src",
     "mila_socket_alive",

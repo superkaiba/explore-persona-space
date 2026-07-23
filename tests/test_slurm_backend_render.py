@@ -2772,3 +2772,61 @@ def test_render_sbatch_fellows_job_name_matches_job_name_fn() -> None:
     )
     expected = job_name(spec, "abcdef0123456789", cluster=fellows)
     assert f"#SBATCH --job-name={expected}" in script
+
+
+def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) -> None:
+    """#1609 regression (fails pre-fix): ``materialize_branch_src`` builds a
+    DETACHED worktree at the branch commit, where the named-branch resolver
+    reads ``None`` — pre-fix the guard refused EVERY materialized tree with
+    the default resolver (the #793 tests stubbed the resolver, hiding it;
+    the first live ``--repo-branch`` fellows probe crashed at ``prepare``
+    on exactly this). Post-fix: a detached HEAD AT the requested branch's
+    commit passes via commit equality; a detached HEAD at a DIFFERENT
+    commit still refuses."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"],
+           "PRE_COMMIT_ALLOW_NO_CONFIG": "1"}
+
+    def _git(*args: str, cwd=repo) -> None:
+        subprocess.run(["git", *args], cwd=cwd, env=env, check=True, capture_output=True)
+
+    _git("init", "-q", "-b", "main")
+    (repo / "pyproject.toml").write_text("")
+    _git("add", "pyproject.toml")
+    _git("commit", "-q", "-m", "base", "--no-verify")
+    _git("checkout", "-q", "-b", "issue-X")
+    (repo / "feature.txt").write_text("x")
+    _git("add", "feature.txt")
+    _git("commit", "-q", "-m", "feature", "--no-verify")
+    _git("checkout", "-q", "main")
+
+    branch_commit = subprocess.run(
+        ["git", "rev-parse", "issue-X"], cwd=repo, env=env, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    # The materializer's own shape: a DETACHED worktree at the branch commit.
+    detached = tmp_path / "detached"
+    _git("worktree", "add", "--detach", str(detached), branch_commit)
+    # And a detached tree at the WRONG (main) commit — must still refuse.
+    wrong = tmp_path / "wrong"
+    _git("worktree", "add", "--detach", str(wrong), "main")
+
+    backend = SlurmBackend(
+        src_root=repo,
+        rsyncer=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        # DEFAULT resolver semantics: a detached tree reads None. (The real
+        # default is git_branch_at; a stub reproducing its detached-HEAD
+        # contract keeps the test hermetic on the resolver seam while the
+        # commit-equality fallback runs the REAL git probes.)
+        git_branch_resolver=lambda _root: None,
+    )
+    spec = _branch_spec("issue-X")
+    # Detached AT the branch commit → passes (raised pre-fix).
+    backend._assert_repo_branch_synced(spec, src_root=detached)
+    # Detached at the WRONG commit → still refuses.
+    with pytest.raises(ValueError, match="cannot honor repo_branch='issue-X'"):
+        backend._assert_repo_branch_synced(spec, src_root=wrong)
