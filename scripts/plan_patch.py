@@ -60,6 +60,7 @@ Exit codes
 from __future__ import annotations
 
 import argparse
+import contextlib
 import difflib
 import os
 import sys
@@ -383,10 +384,8 @@ def _atomic_write(path: str, text: str) -> None:
             fh.write(text)
         os.replace(tmp, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
