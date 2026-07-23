@@ -11,8 +11,19 @@ Revision-round figure fixes (interp-critique round 1, task #779, follow-up
 2. NEW `n1m_readout_l19_forest`: the persisted-but-previously-unplotted
    `.l19_continuity` read — delta vs raw (dot, 95% CI) for all five map arms in
    all six trait-mode cells, every arm read at capture layer 19.
+3. (clean-result-critique round 1, Lens 3) `n1m_readout_percond_scatter_*`:
+   the three per-condition scatters, regenerated with the same plain-English
+   arm labels + row labels "system"/"many-shot" + a dagger on every axes whose
+   cell reads the FLAGGED layer-26 kernel fit. The per-point (x, y) values are
+   read back from the committed run-time sidecars (`.meta.json`, exact plotted
+   float64 values); the per-point condition indices — which the sidecars do
+   not carry — are rebuilt from the pass-A cell JSONs alone (no tensors),
+   replicating `issue779_stage1.load_eval_cells` + `build_eval_matrix`'s row
+   iteration for the metadata columns, and VALIDATED by asserting the sidecar
+   y values equal the rebuilt y[mode] elementwise per series (atol 1e-9).
 
-Reads the committed round JSONs only; no recomputation. Fail loud.
+Reads the committed round JSONs + figure sidecars (+ pass-A cell JSONs for the
+scatter regen) only; no recomputation. Fail loud.
 """
 
 from __future__ import annotations
@@ -53,6 +64,120 @@ def _label(arm: str, layer: int) -> str:
     if arm == "n1m_krr_nystrom" and layer == FLAGGED_LAYER:
         return base + " †"
     return base
+
+
+SCATTER_ARM_ORDER = ("pv_raw", "h_n5k_linear", *MAP_ARMS[1:], "oracle")
+MODE_LABELS = {"system": "system", "many_shot": "many-shot"}
+
+
+def rebuild_eval_rows(pass_a_dir: Path, trait: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(y, cond, mode) row arrays in ``build_eval_matrix`` order, from JSON only.
+
+    Replicates ``issue779_stage1.load_eval_cells`` (cells sorted by filename)
+    + ``build_eval_matrix``'s row loop (questions in first-seen rollout order,
+    rollouts with a resolvable judge score, questions with zero valid scores
+    dropped) for the metadata columns — no ``_cx.pt`` tensor loads.
+    """
+    y: list[float] = []
+    cond: list[int] = []
+    mode: list[str] = []
+    cond_map: dict[str, int] = {}
+    cell_paths = sorted(pass_a_dir.glob(f"{trait}__*.json"))
+    if not cell_paths:
+        raise FileNotFoundError(f"no pass-A cell JSONs for {trait} under {pass_a_dir}")
+    for cp in cell_paths:
+        cell = json.loads(cp.read_text())
+        cid = cell["cond_id"]
+        cond_map.setdefault(cid, len(cond_map))
+        by_q: dict[int, list[dict]] = {}
+        for rec in cell["rollouts"]:
+            if rec.get("empty"):
+                continue
+            by_q.setdefault(rec["qi"], []).append(rec)
+        smap: dict[tuple[int, int], float] = {}
+        for cid_key, s in cell["judge_scores"].items():
+            parts = cid_key.split("__")
+            if len(parts) < 3 or s is None:
+                continue
+            try:
+                smap[(int(parts[-2]), int(parts[-1]))] = float(s)
+            except ValueError:
+                continue
+        for qi, recs in by_q.items():
+            q_scores = [smap[(qi, r["ri"])] for r in recs if (qi, r["ri"]) in smap]
+            if not q_scores:
+                continue
+            y.append(float(np.mean(q_scores)))
+            cond.append(cond_map[cid])
+            mode.append(cell["mode"])
+    return np.array(y), np.array(cond), np.array(mode, dtype=object)
+
+
+def make_percond_scatters(
+    res: dict, fits: dict, pass_a_dir: Path, sidecar_dir: Path, fig_dir: str
+) -> dict[str, str]:
+    """Regenerate the three per-condition scatters (plain labels + daggers)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+    set_paper_style("blog")
+    gate26 = fits["per_layer"]["26"]["nystrom_validation"]
+    assert gate26["gap"] > gate26["tol"], "L26 Nystrom gate no longer failed — dagger is stale"
+    figs: dict[str, str] = {}
+    n_arms = len(SCATTER_ARM_ORDER)
+    for trait in TRAITS:
+        # Old sidecar: exact plotted per-point values, series `_group` = row*7+col.
+        meta = json.loads(
+            (sidecar_dir / f"n1m_readout_percond_scatter_{trait}.meta.json").read_text()
+        )
+        by_group: dict[int, list[dict]] = {}
+        for p in meta["points"]:
+            by_group.setdefault(int(p["_group"]), []).append(p)
+        y_all, cond_all, mode_all = rebuild_eval_rows(pass_a_dir, trait)
+
+        fig, axes = plt.subplots(
+            2, n_arms, figsize=(2.6 * n_arms, 6.0), squeeze=False, layout="tight"
+        )
+        for row, mode in enumerate(MODES):
+            msel = np.asarray([m == mode for m in mode_all])
+            y_row, cond_row = y_all[msel], cond_all[msel]
+            layer = int(res["headline"][trait][mode]["layer"])
+            for coli, arm in enumerate(SCATTER_ARM_ORDER):
+                ax = axes[row][coli]
+                pts = by_group[row * n_arms + coli]
+                ykey = next(k for k in pts[0] if k not in ("x", "_kind", "_group"))
+                x = np.array([p["x"] for p in pts])
+                y_sc = np.array([p[ykey] for p in pts])
+                # Validation: sidecar order == rebuilt mat[msel] order, exactly.
+                assert len(y_sc) == len(y_row) and np.allclose(y_sc, y_row, atol=1e-9), (
+                    f"{trait}/{mode}/{arm}: sidecar y does not match rebuilt rows"
+                )
+                ax.scatter(x, y_row, c=cond_row, cmap="tab20", s=6, alpha=0.7)
+                if row == 0:
+                    ax.set_title(ARM_LABELS[arm], fontsize=7)
+                if coli == 0:
+                    ax.set_ylabel(f"{MODE_LABELS[mode]}\njudge score", fontsize=7)
+                if arm == "n1m_krr_nystrom" and layer == FLAGGED_LAYER:
+                    ax.text(
+                        0.95,
+                        0.95,
+                        "†",
+                        transform=ax.transAxes,
+                        ha="right",
+                        va="top",
+                        fontsize=11,
+                        color="black",
+                    )
+                ax.tick_params(labelsize=6)
+        fig.suptitle(f"{trait}: per-condition monitor-vs-score scatter (dot readout)")
+        out = savefig_paper(fig, f"n1m_readout_percond_scatter_{trait}", dir=fig_dir)
+        plt.close(fig)
+        figs[f"percond_scatter_{trait}"] = str(out.get("png", ""))
+    return figs
 
 
 def make_figures(res: dict, fits: dict, fig_dir: str) -> dict[str, str]:
@@ -277,12 +402,31 @@ def main() -> int:
         "--results-dir", required=True, help="round eval_results dir with the two JSONs"
     )
     ap.add_argument("--fig-dir", required=True, help="output figures dir (figures/issue_779)")
+    ap.add_argument(
+        "--percond-pass-a-dir",
+        type=Path,
+        default=None,
+        help="pass-A cell-JSON dir; when given, regenerate the per-condition scatters",
+    )
+    ap.add_argument(
+        "--skip-main-figs",
+        action="store_true",
+        help="skip the hero/forest/grouped/r2 regeneration (scatters only)",
+    )
     args = ap.parse_args()
 
     rd = Path(args.results_dir)
     res = json.loads((rd / "n1m_readout.json").read_text())
     fits = json.loads((rd / "n1m_multilayer_fits.json").read_text())
-    figs = make_figures(res, fits, args.fig_dir)
+    figs: dict[str, str] = {}
+    if not args.skip_main_figs:
+        figs.update(make_figures(res, fits, args.fig_dir))
+    if args.percond_pass_a_dir is not None:
+        figs.update(
+            make_percond_scatters(
+                res, fits, args.percond_pass_a_dir, Path(args.fig_dir), args.fig_dir
+            )
+        )
     for k, v in figs.items():
         print(f"{k}: {v}")
     return 0

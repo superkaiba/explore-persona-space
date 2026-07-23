@@ -1,6 +1,6 @@
 {
-  "commit": "7f19f6747",
-  "created": "2026-07-22T23:15:37Z",
+  "commit": "c5022ad415",
+  "created": "2026-07-23T01:16:17Z",
   "figsize": [
     18.2,
     6.0
@@ -4815,6 +4815,7 @@
     {
       "x": 743.398642063552,
       "y": 23.6,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4839,6 +4840,7 @@
     {
       "x": -789.1540548121102,
       "y": 11.040000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4851,6 +4853,7 @@
     {
       "x": -28.96620708577325,
       "y": 14.76,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4917,6 +4920,7 @@
     {
       "x": 383.15774159960915,
       "y": 7.12,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4935,6 +4939,7 @@
     {
       "x": -379.57979731936075,
       "y": 5.1,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4953,30 +4958,35 @@
     {
       "x": 568.5919973212453,
       "y": 31.920000000000005,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1492.8132006432238,
       "y": 9.28,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -341.1967565266111,
       "y": 14.48,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -950.2437318495035,
       "y": 11.64,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 11.259440366923627,
       "y": 14.859999999999996,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -4989,18 +4999,21 @@
     {
       "x": -8.783865945471462,
       "y": 15.819999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 80.0908273269265,
       "y": 23.26,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -374.72845033321687,
       "y": 10.0,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5019,6 +5032,7 @@
     {
       "x": 150.2169790387627,
       "y": 14.559999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5037,12 +5051,14 @@
     {
       "x": -575.5673944349269,
       "y": 12.479999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 349.57460615414516,
       "y": 13.559999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5055,6 +5071,7 @@
     {
       "x": -472.5469264301439,
       "y": 11.320000000000002,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5073,30 +5090,35 @@
     {
       "x": 528.5385469782898,
       "y": 11.739999999999998,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1964.1383915479903,
       "y": 2.94,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -924.6654249788917,
       "y": 6.18,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1336.9371495452929,
       "y": 9.44,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -434.9216258585857,
       "y": 4.42,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5109,18 +5131,21 @@
     {
       "x": -361.47949543884215,
       "y": 14.16,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -469.6897698305379,
       "y": 9.92,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -654.7473572319798,
       "y": 14.319999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5139,42 +5164,49 @@
     {
       "x": 44.60793419319316,
       "y": 9.959999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -51.25518143725208,
       "y": 25.96,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -409.6307201416512,
       "y": 20.82,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -786.998439343675,
       "y": 7.859999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 191.44091771840544,
       "y": 3.5400000000000005,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -959.2719699782306,
       "y": 15.120000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1801.2463868231125,
       "y": 2.4000000000000004,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5193,6 +5225,7 @@
     {
       "x": -692.2947210913221,
       "y": 6.640000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5217,6 +5250,7 @@
     {
       "x": -1445.1152577300618,
       "y": 0.3,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5229,18 +5263,21 @@
     {
       "x": -1586.3099416213643,
       "y": 6.24,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1696.0695901167076,
       "y": 7.9,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1873.2118601871377,
       "y": 3.2600000000000002,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5259,36 +5296,42 @@
     {
       "x": -1307.8119628485933,
       "y": 5.26,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1176.1011653555333,
       "y": 12.14,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1458.4372419252063,
       "y": 10.62,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1982.4998279307354,
       "y": 0.9800000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1227.8151327938335,
       "y": 4.48,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1557.7674798687462,
       "y": 6.919999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5307,12 +5350,14 @@
     {
       "x": -1508.211287340507,
       "y": 11.200000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1338.1904120102113,
       "y": 6.0200000000000005,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5337,12 +5382,14 @@
     {
       "x": -1975.1370422153643,
       "y": 0.04,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1137.4500299050726,
       "y": 26.440000000000005,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5373,6 +5420,7 @@
     {
       "x": -1577.113278461415,
       "y": 22.020000000000003,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5385,12 +5433,14 @@
     {
       "x": -1697.1874932190756,
       "y": 5.72,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1876.425873370316,
       "y": 9.4,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5403,12 +5453,14 @@
     {
       "x": -1949.4671624077873,
       "y": 0.0,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1307.588565569214,
       "y": 6.0,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5427,12 +5479,14 @@
     {
       "x": -1350.2964239202133,
       "y": 14.38,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1114.2467054327587,
       "y": 7.0200000000000005,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5457,18 +5511,21 @@
     {
       "x": -1786.001414974599,
       "y": 0.3,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1004.8342627496152,
       "y": 26.72,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1884.524452904314,
       "y": 7.220000000000001,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5493,24 +5550,28 @@
     {
       "x": -1376.545843423876,
       "y": 25.160000000000004,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1878.515311640115,
       "y": 3.12,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1489.2591803566224,
       "y": 5.279999999999999,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1750.8017696531092,
       "y": 11.94,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5523,12 +5584,14 @@
     {
       "x": -1762.1128391253492,
       "y": 0.0,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1722.6813940120044,
       "y": 3.4599999999999995,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5547,12 +5610,14 @@
     {
       "x": -1738.7944334779581,
       "y": 4.18,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1554.7898242126253,
       "y": 4.6,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5583,6 +5648,7 @@
     {
       "x": -1281.7099297062623,
       "y": 10.2,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5613,6 +5679,7 @@
     {
       "x": -1731.7359691670872,
       "y": 10.02,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5625,6 +5692,7 @@
     {
       "x": -1842.0372542751447,
       "y": 4.76,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5649,6 +5717,7 @@
     {
       "x": -1764.6846905192942,
       "y": 3.2199999999999998,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5667,12 +5736,14 @@
     {
       "x": -1890.0512151599273,
       "y": 5.44,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -1838.752831215126,
       "y": 0.0,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -5703,6 +5774,7 @@
     {
       "x": -1392.0126036585216,
       "y": 9.52,
+      "label": "\u2020",
       "_kind": "scatter",
       "_group": 5
     },
@@ -6728,601 +6800,601 @@
     },
     {
       "x": 1188.4932861328125,
-      "many_shot\njudge score": 2.3,
+      "many-shot\njudge score": 2.3,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -500.8245849609375,
-      "many_shot\njudge score": 0.86,
+      "many-shot\njudge score": 0.86,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1688.646484375,
-      "many_shot\njudge score": 3.900000000000001,
+      "many-shot\njudge score": 3.900000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 470.0107421875,
-      "many_shot\njudge score": 3.5,
+      "many-shot\njudge score": 3.5,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -391.062744140625,
-      "many_shot\njudge score": 2.1799999999999997,
+      "many-shot\njudge score": 2.1799999999999997,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -2108.087890625,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1257.236572265625,
-      "many_shot\njudge score": 0.33999999999999997,
+      "many-shot\njudge score": 0.33999999999999997,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1036.49755859375,
-      "many_shot\njudge score": 0.48,
+      "many-shot\njudge score": 0.48,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -729.7789306640625,
-      "many_shot\njudge score": 0.08,
+      "many-shot\njudge score": 0.08,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 500.1380615234375,
-      "many_shot\njudge score": 10.1,
+      "many-shot\njudge score": 10.1,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -352.6644287109375,
-      "many_shot\njudge score": 1.3399999999999999,
+      "many-shot\njudge score": 1.3399999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1339.0770263671875,
-      "many_shot\njudge score": 2.4,
+      "many-shot\njudge score": 2.4,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -11.219970703125,
-      "many_shot\njudge score": 2.7,
+      "many-shot\njudge score": 2.7,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -447.8231201171875,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 40.6810302734375,
-      "many_shot\njudge score": 4.04,
+      "many-shot\njudge score": 4.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1383.7247314453125,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1237.36962890625,
-      "many_shot\njudge score": 2.6799999999999997,
+      "many-shot\njudge score": 2.6799999999999997,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 518.53369140625,
-      "many_shot\njudge score": 9.16,
+      "many-shot\njudge score": 9.16,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1261.10888671875,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1228.01318359375,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 3102.84521484375,
-      "many_shot\njudge score": 6.840000000000001,
+      "many-shot\njudge score": 6.840000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 88.5714111328125,
-      "many_shot\njudge score": 0.6,
+      "many-shot\njudge score": 0.6,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -250.26513671875,
-      "many_shot\njudge score": 6.18,
+      "many-shot\njudge score": 6.18,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1767.4771728515625,
-      "many_shot\njudge score": 26.3,
+      "many-shot\njudge score": 26.3,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 587.73193359375,
-      "many_shot\njudge score": 17.18,
+      "many-shot\njudge score": 17.18,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -492.94873046875,
-      "many_shot\njudge score": 0.18,
+      "many-shot\njudge score": 0.18,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -483.4613037109375,
-      "many_shot\njudge score": 1.6199999999999999,
+      "many-shot\njudge score": 1.6199999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -572.7628173828125,
-      "many_shot\njudge score": 1.1400000000000001,
+      "many-shot\njudge score": 1.1400000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -137.106689453125,
-      "many_shot\njudge score": 0.1,
+      "many-shot\njudge score": 0.1,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 2025.564453125,
-      "many_shot\njudge score": 33.58,
+      "many-shot\njudge score": 33.58,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 813.76806640625,
-      "many_shot\njudge score": 2.8999999999999995,
+      "many-shot\njudge score": 2.8999999999999995,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -346.01611328125,
-      "many_shot\njudge score": 1.0,
+      "many-shot\njudge score": 1.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1172.9381103515625,
-      "many_shot\njudge score": 2.48,
+      "many-shot\njudge score": 2.48,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 292.324462890625,
-      "many_shot\njudge score": 2.18,
+      "many-shot\njudge score": 2.18,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 681.7652587890625,
-      "many_shot\njudge score": 15.540000000000001,
+      "many-shot\njudge score": 15.540000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -226.171875,
-      "many_shot\njudge score": 0.5599999999999999,
+      "many-shot\njudge score": 0.5599999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 79.866943359375,
-      "many_shot\njudge score": 22.119999999999997,
+      "many-shot\njudge score": 22.119999999999997,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1381.923095703125,
-      "many_shot\njudge score": 5.540000000000001,
+      "many-shot\njudge score": 5.540000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -672.785888671875,
-      "many_shot\njudge score": 0.04,
+      "many-shot\njudge score": 0.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -623.081298828125,
-      "many_shot\njudge score": 0.08,
+      "many-shot\njudge score": 0.08,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 2591.831298828125,
-      "many_shot\njudge score": 8.06,
+      "many-shot\njudge score": 8.06,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -237.4549560546875,
-      "many_shot\njudge score": 0.4600000000000001,
+      "many-shot\njudge score": 0.4600000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -417.864013671875,
-      "many_shot\njudge score": 8.28,
+      "many-shot\njudge score": 8.28,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1319.6541748046875,
-      "many_shot\njudge score": 11.920000000000002,
+      "many-shot\njudge score": 11.920000000000002,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 298.1141357421875,
-      "many_shot\njudge score": 31.1,
+      "many-shot\njudge score": 31.1,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -806.9423217773438,
-      "many_shot\njudge score": 0.08,
+      "many-shot\njudge score": 0.08,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -626.60595703125,
-      "many_shot\njudge score": 0.7,
+      "many-shot\njudge score": 0.7,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -859.3668823242188,
-      "many_shot\njudge score": 0.6,
+      "many-shot\njudge score": 0.6,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -368.754150390625,
-      "many_shot\njudge score": 0.08,
+      "many-shot\njudge score": 0.08,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1841.9273681640625,
-      "many_shot\njudge score": 50.019999999999996,
+      "many-shot\njudge score": 50.019999999999996,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 598.1693115234375,
-      "many_shot\njudge score": 3.1599999999999997,
+      "many-shot\njudge score": 3.1599999999999997,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -631.6588134765625,
-      "many_shot\njudge score": 1.2600000000000002,
+      "many-shot\njudge score": 1.2600000000000002,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 893.6463623046875,
-      "many_shot\njudge score": 3.2,
+      "many-shot\njudge score": 3.2,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -434.1636962890625,
-      "many_shot\njudge score": 1.0399999999999998,
+      "many-shot\njudge score": 1.0399999999999998,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 432.157470703125,
-      "many_shot\njudge score": 12.68,
+      "many-shot\njudge score": 12.68,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -510.62939453125,
-      "many_shot\njudge score": 0.66,
+      "many-shot\njudge score": 0.66,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 71.392333984375,
-      "many_shot\njudge score": 11.72,
+      "many-shot\njudge score": 11.72,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 910.8455810546875,
-      "many_shot\njudge score": 4.98,
+      "many-shot\njudge score": 4.98,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -919.420654296875,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -967.8506469726562,
-      "many_shot\njudge score": 0.04,
+      "many-shot\njudge score": 0.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1916.97216796875,
-      "many_shot\njudge score": 4.26,
+      "many-shot\njudge score": 4.26,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -528.18310546875,
-      "many_shot\njudge score": 1.06,
+      "many-shot\njudge score": 1.06,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -416.40478515625,
-      "many_shot\njudge score": 8.16,
+      "many-shot\njudge score": 8.16,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 880.6399536132812,
-      "many_shot\njudge score": 17.06,
+      "many-shot\njudge score": 17.06,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 50.5164794921875,
-      "many_shot\njudge score": 5.659999999999999,
+      "many-shot\njudge score": 5.659999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1045.1878662109375,
-      "many_shot\njudge score": 0.04,
+      "many-shot\njudge score": 0.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -809.107177734375,
-      "many_shot\njudge score": 1.1400000000000001,
+      "many-shot\njudge score": 1.1400000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -821.2183837890625,
-      "many_shot\njudge score": 0.5399999999999999,
+      "many-shot\njudge score": 0.5399999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -515.1024169921875,
-      "many_shot\njudge score": 0.76,
+      "many-shot\njudge score": 0.76,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1575.3221435546875,
-      "many_shot\njudge score": 43.04,
+      "many-shot\njudge score": 43.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 163.1044921875,
-      "many_shot\njudge score": 7.639999999999998,
+      "many-shot\njudge score": 7.639999999999998,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -867.369140625,
-      "many_shot\njudge score": 0.8,
+      "many-shot\njudge score": 0.8,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 365.98681640625,
-      "many_shot\njudge score": 1.86,
+      "many-shot\njudge score": 1.86,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -327.3837890625,
-      "many_shot\njudge score": 3.2399999999999998,
+      "many-shot\njudge score": 3.2399999999999998,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -42.588134765625,
-      "many_shot\njudge score": 9.68,
+      "many-shot\njudge score": 9.68,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -810.7598876953125,
-      "many_shot\njudge score": 2.3600000000000003,
+      "many-shot\njudge score": 2.3600000000000003,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -362.925537109375,
-      "many_shot\njudge score": 14.819999999999999,
+      "many-shot\njudge score": 14.819999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 461.3212890625,
-      "many_shot\njudge score": 2.0,
+      "many-shot\njudge score": 2.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1169.02783203125,
-      "many_shot\njudge score": 0.04,
+      "many-shot\njudge score": 0.04,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -934.769775390625,
-      "many_shot\njudge score": 1.44,
+      "many-shot\njudge score": 1.44,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 2419.307373046875,
-      "many_shot\njudge score": 3.4,
+      "many-shot\njudge score": 3.4,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -386.191650390625,
-      "many_shot\njudge score": 1.06,
+      "many-shot\njudge score": 1.06,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1217.1146240234375,
-      "many_shot\njudge score": 5.880000000000001,
+      "many-shot\njudge score": 5.880000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 830.919189453125,
-      "many_shot\njudge score": 5.480000000000001,
+      "many-shot\njudge score": 5.480000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 54.85693359375,
-      "many_shot\njudge score": 10.84,
+      "many-shot\njudge score": 10.84,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1379.6767578125,
-      "many_shot\njudge score": 0.08,
+      "many-shot\njudge score": 0.08,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1112.301513671875,
-      "many_shot\njudge score": 0.72,
+      "many-shot\njudge score": 0.72,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1120.44287109375,
-      "many_shot\njudge score": 0.06,
+      "many-shot\njudge score": 0.06,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -555.147216796875,
-      "many_shot\njudge score": 0.18,
+      "many-shot\njudge score": 0.18,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1274.224609375,
-      "many_shot\njudge score": 28.580000000000002,
+      "many-shot\njudge score": 28.580000000000002,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 402.8623046875,
-      "many_shot\njudge score": 1.7,
+      "many-shot\njudge score": 1.7,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1355.52001953125,
-      "many_shot\njudge score": 0.5199999999999999,
+      "many-shot\njudge score": 0.5199999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 533.697021484375,
-      "many_shot\njudge score": 3.2,
+      "many-shot\njudge score": 3.2,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -751.5986328125,
-      "many_shot\njudge score": 1.2,
+      "many-shot\njudge score": 1.2,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -112.8924560546875,
-      "many_shot\njudge score": 10.360000000000001,
+      "many-shot\njudge score": 10.360000000000001,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -953.1253051757812,
-      "many_shot\njudge score": 0.13999999999999999,
+      "many-shot\njudge score": 0.13999999999999999,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -807.31689453125,
-      "many_shot\njudge score": 6.74,
+      "many-shot\njudge score": 6.74,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 678.034423828125,
-      "many_shot\njudge score": 3.56,
+      "many-shot\njudge score": 3.56,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1394.842041015625,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": -1380.8240966796875,
-      "many_shot\njudge score": 0.0,
+      "many-shot\njudge score": 0.0,
       "_kind": "scatter",
       "_group": 7
     },
@@ -10934,7 +11006,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "pv raw",
+        "title_left": "raw projection",
         "ylabel": "system\njudge score",
         "xticklabels": [
           "\u22124000",
@@ -10956,7 +11028,7 @@
         ]
       },
       {
-        "title_left": "h n5k linear",
+        "title_left": "5k linear map",
         "xticklabels": [
           "\u22123500",
           "\u22123000",
@@ -10980,7 +11052,7 @@
         ]
       },
       {
-        "title_left": "n1m ridge",
+        "title_left": "963k ridge",
         "xticklabels": [
           "\u22124000",
           "\u22123000",
@@ -11001,7 +11073,7 @@
         ]
       },
       {
-        "title_left": "n1m mlp w8192",
+        "title_left": "963k MLP (w=8192)",
         "xticklabels": [
           "\u22124000",
           "\u22123000",
@@ -11023,7 +11095,7 @@
         ]
       },
       {
-        "title_left": "n1m mlp w32768",
+        "title_left": "963k MLP (w=32768)",
         "xticklabels": [
           "\u22124000",
           "\u22123000",
@@ -11045,7 +11117,10 @@
         ]
       },
       {
-        "title_left": "n1m krr nystrom",
+        "title_left": "963k kernel (Nystr\u00f6m)",
+        "annotations": [
+          "\u2020"
+        ],
         "xticklabels": [
           "\u22124000",
           "\u22123000",
@@ -11067,7 +11142,7 @@
         ]
       },
       {
-        "title_left": "oracle",
+        "title_left": "oracle (true answer proj.)",
         "xticklabels": [
           "\u22125000",
           "\u22124000",
@@ -11090,7 +11165,7 @@
         ]
       },
       {
-        "ylabel": "many_shot\njudge score",
+        "ylabel": "many-shot\njudge score",
         "xticklabels": [
           "\u22123000",
           "\u22122000",
@@ -11201,6 +11276,9 @@
         ]
       },
       {
+        "annotations": [
+          "\u2020"
+        ],
         "xticklabels": [
           "\u22124000",
           "\u22123500",
