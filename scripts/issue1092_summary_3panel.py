@@ -345,8 +345,10 @@ def main() -> int:
         "Top: within-condition/within-corpus Pearson r (map+projection SPLIT per map, colored by "
         f"training setup; L{PERSONA_LAYER[1:]}). Bottom: pooled/LODO held-out transfer r — does "
         "probing answer-space h(v_C) transfer better than context-space v_C? Direct-map within-"
-        "corpus is DPI-capped by the v_C probe for the linear map. N/A = partial pooled / "
-        "direct-map run (regenerate when complete).",
+        "corpus is DPI-capped by the v_C probe for the linear map. Direct-map arm is L14-ONLY by "
+        "scope (traits hallucination+sycophancy; L19 dropped — not cheap under contention). "
+        "N/A = out-of-scope trait/substrate (evil; LMSYS in-distribution maps), NOT a pending "
+        "re-run.",
         ha="center",
         fontsize=6.0,
         color="#555",
@@ -376,9 +378,12 @@ def main() -> int:
             "2_direct_map_probe": "supervised probe on h(v_C): within-corpus bars (top, "
             "DPI-capped by v_C for the linear map) + LODO held-out transfer (bottom row)",
         },
-        "pending_note": (
-            "pooled_probe_transfer.json and direct_map_probe_reads.json may be PARTIAL; "
-            "absent cells drawn N/A. Regenerate when both complete."
+        "scope_note": (
+            "direct-map probe is L14-ONLY by deliberate scope (traits hallucination + "
+            "sycophancy; the L19 half was dropped — ~14min/cell under load-17 contention, "
+            "not cheap). N/A cells are out-of-scope trait/substrate (evil is not in the "
+            "direct-map/pooled trait set; LMSYS map bars are in-distribution and omitted), "
+            "NOT a pending re-run. My figure reads L14 only, so pooled-L19 does not affect it."
         ),
         "cell_values": meta_cells,
         "outputs": {k: str(v) for k, v in out.items()},

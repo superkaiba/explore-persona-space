@@ -1,6 +1,6 @@
 {
-  "commit": "f0aa7e702b",
-  "created": "2026-07-23T20:52:22Z",
+  "commit": "72897a7990",
+  "created": "2026-07-23T21:02:40Z",
   "figsize": [
     18.0,
     13.2
@@ -1935,7 +1935,7 @@
   "text": {
     "suptitle": "Behavior monitoring: raw vs split map+projection vs v_C probe vs direct-map probe (top) + LODO transfer (bottom)",
     "fig_texts": [
-      "Top: within-condition/within-corpus Pearson r (map+projection SPLIT per map, colored by training setup; L14). Bottom: pooled/LODO held-out transfer r \u2014 does probing answer-space h(v_C) transfer better than context-space v_C? Direct-map within-corpus is DPI-capped by the v_C probe for the linear map. N/A = partial pooled / direct-map run (regenerate when complete)."
+      "Top: within-condition/within-corpus Pearson r (map+projection SPLIT per map, colored by training setup; L14). Bottom: pooled/LODO held-out transfer r \u2014 does probing answer-space h(v_C) transfer better than context-space v_C? Direct-map within-corpus is DPI-capped by the v_C probe for the linear map. Direct-map arm is L14-ONLY by scope (traits hallucination+sycophancy; L19 dropped \u2014 not cheap under contention). N/A = out-of-scope trait/substrate (evil; LMSYS in-distribution maps), NOT a pending re-run."
     ],
     "axes": [
       {

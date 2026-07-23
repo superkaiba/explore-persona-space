@@ -35,7 +35,7 @@
     "1_split_map_bars": "the former single map+projection bar is split into 5k-linear / 1M ridge / 1M mlp / 1M krr, colored by training setup",
     "2_direct_map_probe": "supervised probe on h(v_C): within-corpus bars (top, DPI-capped by v_C for the linear map) + LODO held-out transfer (bottom row)"
   },
-  "pending_note": "pooled_probe_transfer.json and direct_map_probe_reads.json may be PARTIAL; absent cells drawn N/A. Regenerate when both complete.",
+  "scope_note": "direct-map probe is L14-ONLY by deliberate scope (traits hallucination + sycophancy; the L19 half was dropped \u2014 ~14min/cell under load-17 contention, not cheap). N/A cells are out-of-scope trait/substrate (evil is not in the direct-map/pooled trait set; LMSYS map bars are in-distribution and omitted), NOT a pending re-run. My figure reads L14 only, so pooled-L19 does not affect it.",
   "cell_values": {
     "hallucination": {
       "pv_rig": {
