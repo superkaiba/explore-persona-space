@@ -199,8 +199,11 @@ class _Runner:
         ssh_results: list[GcloudRunResult] | None = None,
         scp_results: list[GcloudRunResult] | None = None,
         region_describe_results: list[GcloudRunResult] | None = None,
+        operations_results: list[GcloudRunResult] | None = None,
         create_raises: BaseException | None = None,
         list_raises: BaseException | None = None,
+        delete_raises: BaseException | None = None,
+        describe_raises: BaseException | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
@@ -217,6 +220,10 @@ class _Runner:
         self.ssh_results = list(ssh_results or [])
         self.scp_results = list(scp_results or [])
         self.region_describe_results = list(region_describe_results or [])
+        # #1628: `gcloud compute operations list` issuance-probe route. The
+        # unscripted default (rc=0, stdout "[]") is inert for every pre-#1628
+        # test — they never reach the probe.
+        self.operations_results = list(operations_results or [])
         # When set, RAISE the given exception off the matching gcloud
         # subcommand. ``create_raises`` fires the FIRST time a create argv is
         # seen. ``list_raises`` fires the first list argv seen AFTER the
@@ -226,12 +233,16 @@ class _Runner:
         # ``[]``. Lets the #736 create-timeout tests drive
         # ``subprocess.TimeoutExpired`` off the create call (and, for the
         # probe-timeout test, off the post-timeout list) — the base
-        # ``_Runner`` only returns, never raises.
+        # ``_Runner`` only returns, never raises. ``delete_raises`` /
+        # ``describe_raises`` (#1628) fire ONCE on the FIRST matching argv,
+        # then route subsequent calls to the scripted result lists.
         self._create_raises = create_raises
         self._list_raises = list_raises
+        self._delete_raises = delete_raises
+        self._describe_raises = describe_raises
         self._create_raised = False
 
-    def __call__(self, argv):
+    def __call__(self, argv):  # noqa: C901 — the argv dispatch table IS the fake's routing
         argv = list(argv)
         self.calls.append(argv)
         # gcloud compute instances <subcommand> ...
@@ -249,6 +260,9 @@ class _Runner:
         if "describe" in argv and "disks" in argv:
             return self._pop(self.disks_describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "instances" in argv:
+            if self._describe_raises is not None:
+                exc, self._describe_raises = self._describe_raises, None
+                raise exc
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "regions" in argv:
             return self._pop(self.region_describe_results, default_ok=True, default_stdout="{}")
@@ -260,7 +274,16 @@ class _Runner:
                 return self._pop(self.guest_attr_results, default_ok=False)
             return GcloudRunResult(1, "", "guest attribute eps/phase not found")
         if "delete" in argv and "instances" in argv:
+            if self._delete_raises is not None:
+                exc, self._delete_raises = self._delete_raises, None
+                raise exc
             return self._pop(self.delete_results, default_ok=True)
+        # #1628: zone-scoped `gcloud compute operations list` issuance probe.
+        # Checked as bare argv ELEMENTS ("operations"/"list"), so the
+        # `--filter=...instances...` flag string can never cross-match the
+        # instances routes above.
+        if "operations" in argv and "list" in argv:
+            return self._pop(self.operations_results, default_ok=True, default_stdout="[]")
         if "get-serial-port-output" in argv:
             return self._pop(self.serial_results, default_ok=True)
         # gcloud compute ssh / scp (fetch_results sentinel pull + best-
@@ -3205,7 +3228,16 @@ def _kind(argv: list[str]) -> str:
         return "delete"
     if "describe" in argv and "instances" in argv:
         return "describe"
+    if "operations" in argv and "list" in argv:
+        return "operations"
     return "other"
+
+
+#: The pre-delete PENDING-probe answer for a NON-queued instance (#1628): the
+#: teardown's leading describe reads a non-PENDING status and takes the
+#: synchronous path, byte-preserving the pre-#1628 semantics.
+def _pre_delete_running() -> GcloudRunResult:
+    return GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")
 
 
 def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
@@ -3213,21 +3245,25 @@ def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
         describe_results=[
-            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+            _pre_delete_running(),
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found"),
         ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
     # The confirm probe ran after the delete; no re-delete on a confirmed-gone VM.
-    assert seq == ["delete", "describe"], runner.calls
+    assert seq == ["describe", "delete", "describe"], runner.calls
 
 
 def test_teardown_redeletes_running_zombie_once() -> None:
     """rc==0 delete but describe shows status=RUNNING (the #683 zombie) → re-delete ONCE."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", ""), GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
@@ -3235,7 +3271,7 @@ def test_teardown_redeletes_running_zombie_once() -> None:
     # Positional: probe-then-re-delete, in order. A back-to-back double-delete
     # with no probe between (a hypothetical buggy refactor) would FAIL here,
     # where a bare ``len(delete_calls) == 2`` would pass it.
-    assert seq == ["delete", "describe", "delete"], runner.calls
+    assert seq == ["describe", "delete", "describe", "delete"], runner.calls
 
 
 def test_teardown_does_not_redelete_on_non_running_describe() -> None:
@@ -3243,24 +3279,32 @@ def test_teardown_does_not_redelete_on_non_running_describe() -> None:
     for status in ("STOPPING", "TERMINATED", ""):
         runner = _Runner(
             delete_results=[GcloudRunResult(0, "", "")],
-            describe_results=[GcloudRunResult(0, json.dumps({"status": status}), "")],
+            describe_results=[
+                _pre_delete_running(),
+                GcloudRunResult(0, json.dumps({"status": status}), ""),
+            ],
         )
         backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
         backend.teardown(_teardown_handle())
         seq = [_kind(c) for c in runner.calls]
-        assert seq == ["delete", "describe"], (status, runner.calls)  # no spurious re-delete
+        # no spurious re-delete
+        assert seq == ["describe", "delete", "describe"], (status, runner.calls)
 
 
 def test_teardown_does_not_redelete_on_describe_probe_failure() -> None:
     """A non-404 describe failure does NOT re-delete (the rc==0 delete already landed)."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(1, "", "Reauthentication failed"),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
-    assert seq == ["delete", "describe"], runner.calls  # probe failure ≠ evidence the VM survived
+    # probe failure ≠ evidence the VM survived
+    assert seq == ["describe", "delete", "describe"], runner.calls
 
 
 def test_teardown_redelete_404_is_silent_success() -> None:
@@ -3270,20 +3314,26 @@ def test_teardown_redelete_404_is_silent_success() -> None:
             GcloudRunResult(0, "", ""),
             GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.delete) was not found"),
         ],
-        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     # No raise: the redelete-404 idempotency branch swallows the "was not found".
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
-    assert seq == ["delete", "describe", "delete"], runner.calls
+    assert seq == ["describe", "delete", "describe", "delete"], runner.calls
 
 
 def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
     """rc==0 describe with EMPTY stdout → ``... else {}`` → status None → no re-delete (#683 v2)."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(0, "", "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, "", ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
@@ -3291,7 +3341,310 @@ def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
     # The ``if probe.stdout.strip() else {}`` guard: empty STDOUT STRING (rc==0)
     # parses to {} → status None → not RUNNING → no re-delete. Distinct from the
     # empty *status field* ({"status": ""}) case in the non-running test above.
-    assert seq == ["delete", "describe"], runner.calls
+    assert seq == ["describe", "delete", "describe"], runner.calls
+
+
+# ---------------------------------------------------------------------------
+# teardown — DWS-PENDING-aware fast path + slow-delete escalation (#1628)
+# ---------------------------------------------------------------------------
+
+
+class _SpawnRecorder:
+    """Fake ``delete_spawner`` seam (#1628): records argvs; optionally raises once."""
+
+    def __init__(self, raises: BaseException | None = None) -> None:
+        self.spawned: list[list[str]] = []
+        self._raises = raises
+
+    def __call__(self, argv) -> None:
+        self.spawned.append(list(argv))
+        if self._raises is not None:
+            exc, self._raises = self._raises, None
+            raise exc
+
+
+def _fresh_delete_op(target_id: str | None = None, age_sec: float = 0.0) -> dict:
+    """An operations-list row shaped like the live 2026-07-23 probe (#1628 plan §2)."""
+    insert = datetime.now(UTC) - timedelta(seconds=age_sec)
+    op = {
+        "name": f"operation-test-{age_sec:.0f}",
+        "operationType": "delete",
+        "status": "RUNNING",
+        "targetLink": "https://.../zones/us-central1-a/instances/eps-issue-683",
+        "insertTime": insert.isoformat(),
+    }
+    if target_id is not None:
+        op["targetId"] = target_id
+    return op
+
+
+def _ops_result(*ops: dict) -> GcloudRunResult:
+    return GcloudRunResult(0, json.dumps(list(ops)), "")
+
+
+def _pending(instance_id: str | None = None) -> GcloudRunResult:
+    payload: dict = {"status": "PENDING"}
+    if instance_id is not None:
+        payload["id"] = instance_id
+    return GcloudRunResult(0, json.dumps(payload), "")
+
+
+def _describe_not_found() -> GcloudRunResult:
+    return GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+
+
+@pytest.fixture
+def _zero_delete_budgets(monkeypatch):
+    """The #1628 plan §5 poll-loop convention: budgets 0 (one probe, then the
+    deadline check fires) + polls 0 (no-op sleeps) — the env readers honor 0."""
+    monkeypatch.setenv("EPS_GCP_DELETE_VERIFY_BUDGET_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_VERIFY_POLL_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_ISSUANCE_POLL_SEC", "0")
+
+
+def _pending_backend(runner: _Runner, spawner: _SpawnRecorder) -> GcpBackend:
+    return GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+        delete_spawner=spawner,
+    )
+
+
+def test_teardown_pending_detached_delete_fast_returns_on_issuance(_zero_delete_budgets) -> None:
+    """PENDING → detached spawn + issuance observed → PENDING verify → fast return.
+
+    The synchronous delete is NEVER run (no "delete" in the runner seq — the
+    spawner carries the delete argv), and the spawned argv is byte-identical
+    to ``render_delete_argv``'s output.
+    """
+    runner = _Runner(
+        describe_results=[_pending(), _pending()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+    assert spawner.spawned == [
+        render_delete_argv(config=_test_config(), name="eps-issue-683", zone="us-central1-a")
+    ]
+
+
+def test_teardown_pending_issuance_confirmed_then_404(_zero_delete_budgets) -> None:
+    """PENDING → issuance confirmed → the verify's describe reads 404 → success."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+
+
+def test_teardown_pending_no_issuance_falls_back_to_sync_delete(_zero_delete_budgets) -> None:
+    """PENDING but the op-list stays empty → the synchronous delete still runs (never skip)."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        # operations unscripted → default rc=0 "[]" → no op observed
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+    assert len(spawner.spawned) == 1  # the detached spawn still fired
+
+
+def test_teardown_pending_stale_delete_op_is_not_issuance(_zero_delete_budgets) -> None:
+    """A delete op older than the recency window (a prior incarnation, #1029 name
+    reuse) must NOT count as issuance → sync fallback."""
+    from explore_persona_space.backends.gcp import GCLOUD_DELETE_OP_RECENCY_SEC
+
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[
+            _ops_result(_fresh_delete_op(age_sec=GCLOUD_DELETE_OP_RECENCY_SEC + 3600))
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_op_with_unparseable_insert_time_is_skipped(
+    _zero_delete_budgets,
+) -> None:
+    """Op rows with an unparseable or MISSING insertTime are ignored (conservative)."""
+    bad_ts = dict(_fresh_delete_op(), insertTime="not-a-timestamp")
+    no_ts = {k: v for k, v in _fresh_delete_op().items() if k != "insertTime"}
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[_ops_result(bad_ts, no_ts)],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_issuance_prefers_target_id_match(_zero_delete_budgets) -> None:
+    """With the instance id known, a fresh op matching ``targetId`` confirms issuance."""
+    runner = _Runner(
+        describe_results=[_pending(instance_id="1234567890"), _pending()],
+        operations_results=[_ops_result(_fresh_delete_op(target_id="1234567890"))],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+
+
+def test_teardown_pending_target_id_mismatch_is_not_issuance(_zero_delete_budgets) -> None:
+    """With the instance id known, a RECENT same-name op targeting a DIFFERENT
+    incarnation (targetId mismatch) must NOT confirm issuance → sync fallback."""
+    runner = _Runner(
+        describe_results=[_pending(instance_id="1234567890"), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op(target_id="9999999999"))],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_spawner_oserror_falls_back_to_sync_delete(
+    _zero_delete_budgets,
+) -> None:
+    """An OSError from the detached spawner falls through to the sync delete."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder(raises=OSError("spawn failed"))
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # No "operations" probe: the spawn failed, so the fast path aborted early.
+    assert seq == ["describe", "delete", "describe"], runner.calls
+    assert len(spawner.spawned) == 1
+
+
+def test_teardown_pre_delete_describe_raises_falls_back_to_sync_path(
+    _zero_delete_budgets,
+) -> None:
+    """A pre-delete describe that RAISES (e.g. TimeoutExpired) → (None, None) → sync path."""
+    runner = _Runner(
+        describe_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+        describe_results=[_describe_not_found()],  # the #683 confirm probe
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "describe"], runner.calls
+    assert spawner.spawned == []  # never took the PENDING fast path
+
+
+def test_teardown_sync_delete_timeout_escalates_to_issuance_verify(
+    _zero_delete_budgets,
+) -> None:
+    """A TimeoutExpired sync delete no longer escapes teardown: it escalates to
+    the issuance probe + bounded verify, and a 404 confirms success (no raise)."""
+    runner = _Runner(
+        describe_results=[_pre_delete_running(), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "operations", "describe"], runner.calls
+
+
+def test_teardown_sync_delete_timeout_verify_exhausted_raises(_zero_delete_budgets) -> None:
+    """Verify exhaustion raises loudly, naming the budget + last status + issuance flag."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
+        operations_results=[_ops_result(_fresh_delete_op())],
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    with pytest.raises(GcpBackendError, match="did not confirm within") as excinfo:
+        backend.teardown(_teardown_handle())
+    msg = str(excinfo.value)
+    assert "last_status='RUNNING'" in msg
+    assert "issuance_confirmed=True" in msg
+
+
+def test_teardown_pending_unconfirmed_issuance_never_fast_returns(
+    _zero_delete_budgets,
+) -> None:
+    """PENDING with NO positive issuance evidence polls to the deadline and
+    raises — the fast return requires BOTH PENDING and confirmed issuance."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        describe_results=[_pending(), _pending()],
+        # operations unscripted → default "[]" on BOTH probes (PENDING path +
+        # escalation) → issuance never confirmed
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    with pytest.raises(GcpBackendError, match="did not confirm within") as excinfo:
+        backend.teardown(_teardown_handle())
+    assert "issuance_confirmed=False" in str(excinfo.value)
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "operations", "describe"], runner.calls
+
+
+def test_teardown_in_flight_stderr_class_verifies_instead_of_raising(
+    _zero_delete_budgets,
+) -> None:
+    """A sync-delete failure whose stderr marks an in-flight delete/operation
+    (the GCE "not ready" class) probes issuance + verifies instead of raising."""
+    runner = _Runner(
+        describe_results=[_pre_delete_running(), _describe_not_found()],
+        delete_results=[GcloudRunResult(1, "", "ERROR: the resource eps-issue-683 is not ready")],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())  # no raise
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "operations", "describe"], runner.calls
+
+
+def test_render_delete_operations_list_argv_shape() -> None:
+    """The issuance-probe argv: base flags + zone scope + anchored filter + projection."""
+    from explore_persona_space.backends.gcp import render_delete_operations_list_argv
+
+    argv = render_delete_operations_list_argv(
+        config=_test_config(), name="eps-issue-683", zone="us-central1-a"
+    )
+    assert argv[:4] == ["gcloud", "compute", "operations", "list"]
+    assert any(a.startswith("--configuration=") for a in argv)
+    assert any(a.startswith("--project=") for a in argv)
+    assert "--zones=us-central1-a" in argv
+    assert "--filter=operationType=delete AND targetLink~/instances/eps-issue-683$" in argv
+    assert "--format=json(name,operationType,status,targetLink,insertTime,targetId)" in argv
+    assert "--limit=10" in argv
 
 
 # ---------------------------------------------------------------------------
