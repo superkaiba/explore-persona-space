@@ -1,0 +1,369 @@
+{
+  "commit": "4bb9a4d3df",
+  "created": "2026-07-23T20:17:37Z",
+  "figsize": [
+    12.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.34348172744936556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.28939953339121083,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.23072004647028221,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r1\nqa\noneline",
+      "held-out R\u00b2 (fold-test-mean)": 0.35055084817046656,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "r2\nop",
+      "held-out R\u00b2 (fold-test-mean)": 0.29576295930609875,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "r4\nfictionframe",
+      "held-out R\u00b2 (fold-test-mean)": 0.23435367131908702,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.3972849659147536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.33270610951155266,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.2773887694130909,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.03887997336786051,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.03887997336786051,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "category": "r1\n~r2_op",
+      "aligned operator cosine": 0.5401693417134877,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "r1\n~r4",
+      "aligned operator cosine": 0.41949614499057386,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "r2_op\n~r4",
+      "aligned operator cosine": 0.43176128739461844,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "aligned operator cosine": 0.002668488667491167,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned operator cosine": 0.007748284521764222,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "aligned operator cosine": 0.007772403394842035,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "aligned operator cosine": 0.516,
+      "series": "round2 #1310 0.516/0.593",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "aligned operator cosine": 0.516,
+      "series": "round2 #1310 0.516/0.593",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "aligned operator cosine": 0.455,
+      "series": "#1345 story\u2194chat 0.455",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "aligned operator cosine": 0.455,
+      "series": "#1345 story\u2194chat 0.455",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "aligned operator cosine": 0.6864,
+      "series": "#825 base\u2194instruct 0.686",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "aligned operator cosine": 0.6864,
+      "series": "#825 base\u2194instruct 0.686",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.4051153063211188,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.3769093181795108,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.74,
+      "held-out R\u00b2 (fold-test-mean)": 0.294002144689276,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "r1\nqa\noneline",
+      "held-out R\u00b2 (fold-test-mean)": 0.3952812339987356,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "r2\nop",
+      "held-out R\u00b2 (fold-test-mean)": 0.36716852420119495,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "r4\nfictionframe",
+      "held-out R\u00b2 (fold-test-mean)": 0.2955200062071648,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.49891139167802057,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.45793971787230403,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.26,
+      "held-out R\u00b2 (fold-test-mean)": 0.3425628968156992,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.04076934006538511,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.364,
+      "held-out R\u00b2 (fold-test-mean)": -0.04076934006538511,
+      "series": "M1 shuffle null",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "category": "r1\n~r2_op",
+      "aligned operator cosine": 0.7402318873663767,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r1\n~r4",
+      "aligned operator cosine": 0.48493488180136113,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r2_op\n~r4",
+      "aligned operator cosine": 0.4883759262097461,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "aligned operator cosine": 0.004756151385506382,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "aligned operator cosine": 0.006874650954577734,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "aligned operator cosine": 0.00578373308229764,
+      "series": "shuffle-fit null p97.5",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 40,
+  "text": {
+    "suptitle": "Assistant direct test: is the assistant in the shared context\u2192answer operator?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "base: shared-vs-specific (L19)",
+        "ylabel": "held-out R\u00b2 (fold-test-mean)",
+        "legend_labels": [
+          "M1 shuffle null",
+          "M0 one map, global offset",
+          "M1 shared map, per-cell offset",
+          "M2 per-cell maps (within)"
+        ],
+        "xticklabels": [
+          "r1\nqa\noneline",
+          "r2\nop",
+          "r4\nfictionframe"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title": "base: cross-cell operator similarity (L19)",
+        "ylabel": "aligned operator cosine",
+        "legend_labels": [
+          "shuffle-fit null p97.5",
+          "round2 #1310 0.516/0.593",
+          "#1345 story\u2194chat 0.455",
+          "#825 base\u2194instruct 0.686",
+          "data-paired Procrustes aligned cosine"
+        ],
+        "xticklabels": [
+          "r1\n~r2_op",
+          "r1\n~r4",
+          "r2_op\n~r4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "instruct: shared-vs-specific (L19)",
+        "ylabel": "held-out R\u00b2 (fold-test-mean)",
+        "xticklabels": [
+          "r1\nqa\noneline",
+          "r2\nop",
+          "r4\nfictionframe"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title": "instruct: cross-cell operator similarity (L19)",
+        "ylabel": "aligned operator cosine",
+        "xticklabels": [
+          "r1\n~r2_op",
+          "r1\n~r4",
+          "r2_op\n~r4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "M1 shuffle null",
+      "M0 one map, global offset",
+      "M1 shared map, per-cell offset",
+      "M2 per-cell maps (within)",
+      "shuffle-fit null p97.5",
+      "round2 #1310 0.516/0.593",
+      "#1345 story\u2194chat 0.455",
+      "#825 base\u2194instruct 0.686",
+      "data-paired Procrustes aligned cosine"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "git_commit": "c5391bcd94052023278824bf06e5fc7072d66f1a",
+    "timestamp": "2026-07-23T08:30:12Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_assistant_test.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "headline_layer": 19,
+  "ordered_pairs": {
+    "r1_qa_oneline->r2_op": {
+      "cosine_mean": 0.7122822741691152,
+      "r2_source_vs_target": 0.3877956690348825,
+      "null_cosine_mean": 0.0015055694966345037,
+      "null_cosine_p975": 0.021758064123287953,
+      "null_r2_mean": -0.08874211452627598,
+      "null_r2_p975": -0.07870170638417033,
+      "cosine_over_null": 0.7107767046724807,
+      "n": 4045
+    },
+    "r1_qa_oneline->r4_fictionframe": {
+      "cosine_mean": 0.26853593054581537,
+      "r2_source_vs_target": -0.310851405703817,
+      "null_cosine_mean": 0.008322710607862844,
+      "null_cosine_p975": 0.026710983029043463,
+      "null_r2_mean": -0.07852364973543455,
+      "null_r2_p975": -0.06619337205832017,
+      "cosine_over_null": 0.26021321993795254,
+      "n": 4045
+    },
+    "r2_op->r1_qa_oneline": {
+      "cosine_mean": 0.7177563654189383,
+      "r2_source_vs_target": 0.46286618920956135,
+      "null_cosine_mean": 0.007570814594485909,
+      "null_cosine_p975": 0.018945174538322233,
+      "null_r2_mean": -0.07686602206367046,
+      "null_r2_p975": -0.07209780418080373,
+      "cosine_over_null": 0.7101855508244523,
+      "n": 4045
+    },
+    "r2_op->r4_fictionframe": {
+      "cosine_mean": 0.27566045257488214,
+      "r2_source_vs_target": -0.3734452797535204,
+      "null_cosine_mean": -0.01024550462987207,
+      "null_cosine_p975": 0.015315421589690821,
+      "null_r2_mean": -0.10555332251735514,
+      "null_r2_p975": -0.08806153684300981,
+      "cosine_over_null": 0.2859059572047542,
+      "n": 4045
+    },
+    "r4_fictionframe->r1_qa_oneline": {
+      "cosine_mean": 0.4731156358401994,
+      "r2_source_vs_target": -6.782692305948915,
+      "null_cosine_mean": -0.008262195219322388,
+      "null_cosine_p975": 0.022910837324381723,
+      "null_r2_mean": -0.6956156048525617,
+      "null_r2_p975": -0.5597090672116679,
+      "cosine_over_null": 0.48137783105952175,
+      "n": 4045
+    },
+    "r4_fictionframe->r2_op": {
+      "cosine_mean": 0.5383847289985182,
+      "r2_source_vs_target": -6.550594664171386,
+      "null_cosine_mean": -0.0018172575093097839,
+      "null_cosine_p975": 0.012206971329147075,
+      "null_r2_mean": -0.6536270236109601,
+      "null_r2_p975": -0.5893043430447151,
+      "cosine_over_null": 0.540201986507828,
+      "n": 4045
+    }
+  }
+}

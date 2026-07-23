@@ -1,0 +1,261 @@
+{
+  "metadata": {
+    "git_commit": "4bb9a4d3df325699ff2e9acda84cec277d2cc29f",
+    "timestamp": "2026-07-23T20:17:35Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_assistant_test.py",
+    "issue": 931
+  },
+  "question": "Is the assistant's context->answer operator the same shared operator the #1310 characters share, up to linear coordinates?",
+  "cells": [
+    "r1_qa_oneline",
+    "r2_op",
+    "r4_fictionframe"
+  ],
+  "cell_desc": {
+    "r1_qa_oneline": "assistant bare Q&A",
+    "r2_op": "Wren bare Q&A (on-policy)",
+    "r4_fictionframe": "Wren in scene"
+  },
+  "key_contrasts": {
+    "r1_qa_oneline~r2_op": "identity-only (Assistant vs Wren, fixed bare-QA format)",
+    "r2_op~r4_fictionframe": "framing-only (Wren bare-QA vs Wren-in-scene, fixed identity)",
+    "r1_qa_oneline~r4_fictionframe": "HEADLINE: is the assistant in the shared operator"
+  },
+  "models": [
+    "base",
+    "instruct"
+  ],
+  "headline_layer": 19,
+  "gcv_dof_cap": 0.9,
+  "procrustes_calibration_anchors": {
+    "round2_1310_xpersona_base": 0.516,
+    "round2_1310_xpersona_instruct": 0.593,
+    "issue1345_paired_story_vs_chat": 0.455,
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_chat_vs_plain_instruct": 0.855
+  },
+  "hf_revision": "a02089179f142e8d78ab6725f589f796fa03f4e9",
+  "per_model": {
+    "base": {
+      "integrity_band_check": {
+        "kind": "band_check_vs_issue1335_rung_values_matched_ctx",
+        "note": "sanity band (my full-n GCV scenario-fold vs #1335 matched-n inner-group-CV); NOT bit-exact",
+        "wildly_off_threshold": 0.2,
+        "per_cell": {
+          "r1_qa_oneline": {
+            "mine_L19_r2_foldmean": 0.3972849659147536,
+            "committed_matched_ctx": 0.3446031334813492,
+            "abs_delta": 0.05268183243340441
+          },
+          "r2_op": {
+            "mine_L19_r2_foldmean": 0.33270610951155266,
+            "committed_matched_ctx": 0.30055634096316536,
+            "abs_delta": 0.0321497685483873
+          },
+          "r4_fictionframe": {
+            "mine_L19_r2_foldmean": 0.2773887694130909,
+            "committed_matched_ctx": 0.22470895779110006,
+            "abs_delta": 0.05267981162199081
+          }
+        },
+        "worst_abs_delta": 0.05268183243340441,
+        "wildly_off": false
+      },
+      "transfer_l19_foldmean": {
+        "r1_qa_oneline->r1_qa_oneline": 0.3972849659147536,
+        "r1_qa_oneline->r2_op": 0.032201143237856056,
+        "r1_qa_oneline->r4_fictionframe": -0.24839358769559716,
+        "r2_op->r1_qa_oneline": 0.08906212453116935,
+        "r2_op->r2_op": 0.33270610951155266,
+        "r2_op->r4_fictionframe": -0.07444736486245218,
+        "r4_fictionframe->r1_qa_oneline": -2.240172955932385,
+        "r4_fictionframe->r2_op": -2.2458232413733055,
+        "r4_fictionframe->r4_fictionframe": 0.2773887694130909
+      },
+      "pooled_lattice": {
+        "r2_M0": 0.333130861195582,
+        "r2_M1": 0.3385736878913512,
+        "r2_M2": 0.3783601733809947
+      },
+      "per_cell_lattice": {
+        "r1_qa_oneline": {
+          "M0": 0.34348172744936556,
+          "M1": 0.35055084817046656,
+          "M2": 0.3972849659147536,
+          "frac_M0_over_M2": 0.8645726793574848,
+          "frac_M1_over_M2": 0.8823662565818942,
+          "M2_minus_M1": 0.046686994468725374,
+          "M2_minus_M1_ci": [
+            0.04378419557090808,
+            0.04932612397776228
+          ],
+          "M1_shuffle_null": -0.03887997336786051
+        },
+        "r2_op": {
+          "M0": 0.28939953339121083,
+          "M1": 0.29576295930609875,
+          "M2": 0.33270610951155266,
+          "frac_M0_over_M2": 0.8698353445209636,
+          "frac_M1_over_M2": 0.8889616116166598,
+          "M2_minus_M1": 0.036897765462989285,
+          "M2_minus_M1_ci": [
+            0.0328291555958307,
+            0.04075783121582911
+          ],
+          "M1_shuffle_null": -0.03870309719706224
+        },
+        "r4_fictionframe": {
+          "M0": 0.23072004647028221,
+          "M1": 0.23435367131908702,
+          "M2": 0.2773887694130909,
+          "frac_M0_over_M2": 0.8317569848211518,
+          "frac_M1_over_M2": 0.8448563790630058,
+          "M2_minus_M1": 0.042985730453816595,
+          "M2_minus_M1_ci": [
+            0.03910940178791479,
+            0.046960372216998066
+          ],
+          "M1_shuffle_null": -0.0137880288621953
+        }
+      },
+      "procrustes_aligned_by_pair": {
+        "r1_qa_oneline~r2_op": {
+          "observed_aligned_cosine": 0.5401693417134877,
+          "raw_vec_cosine": 0.40576077147791945,
+          "rotation_null_p975": 0.0003441175393980885,
+          "shuffle_fit_null_mean": -0.0009237495959750061,
+          "contrast": "identity-only (Assistant vs Wren, fixed bare-QA format)"
+        },
+        "r1_qa_oneline~r4_fictionframe": {
+          "observed_aligned_cosine": 0.41949614499057386,
+          "raw_vec_cosine": 0.29052871347741077,
+          "rotation_null_p975": -0.00019066093395962835,
+          "shuffle_fit_null_mean": 0.0012562017594241084,
+          "contrast": "HEADLINE: is the assistant in the shared operator"
+        },
+        "r2_op~r4_fictionframe": {
+          "observed_aligned_cosine": 0.43176128739461844,
+          "raw_vec_cosine": 0.31295557074619523,
+          "rotation_null_p975": 0.00024782559227988184,
+          "shuffle_fit_null_mean": 0.0027395877583867023,
+          "contrast": "framing-only (Wren bare-QA vs Wren-in-scene, fixed identity)"
+        }
+      },
+      "pred_similarity_mean_cosine": 0.4976225645912448,
+      "pred_similarity_null_cosine_mean": -0.00048764377658683087,
+      "reparam_recovery_mean": 0.3053037178315267
+    },
+    "instruct": {
+      "integrity_band_check": {
+        "kind": "band_check_vs_issue1335_rung_values_matched_ctx",
+        "note": "sanity band (my full-n GCV scenario-fold vs #1335 matched-n inner-group-CV); NOT bit-exact",
+        "wildly_off_threshold": 0.2,
+        "per_cell": {
+          "r1_qa_oneline": {
+            "mine_L19_r2_foldmean": 0.49891139167802057,
+            "committed_matched_ctx": 0.4454148173738874,
+            "abs_delta": 0.05349657430413318
+          },
+          "r2_op": {
+            "mine_L19_r2_foldmean": 0.45793971787230403,
+            "committed_matched_ctx": 0.4214447916433281,
+            "abs_delta": 0.03649492622897593
+          },
+          "r4_fictionframe": {
+            "mine_L19_r2_foldmean": 0.3425628968156992,
+            "committed_matched_ctx": 0.31626858799102814,
+            "abs_delta": 0.026294308824671042
+          }
+        },
+        "worst_abs_delta": 0.05349657430413318,
+        "wildly_off": false
+      },
+      "transfer_l19_foldmean": {
+        "r1_qa_oneline->r1_qa_oneline": 0.49891139167802057,
+        "r1_qa_oneline->r2_op": 0.3811212319741931,
+        "r1_qa_oneline->r4_fictionframe": -0.2228068256944482,
+        "r2_op->r1_qa_oneline": 0.41565183353855006,
+        "r2_op->r2_op": 0.45793971787230403,
+        "r2_op->r4_fictionframe": -0.08654602488733043,
+        "r4_fictionframe->r1_qa_oneline": -2.952104330854908,
+        "r4_fictionframe->r2_op": -2.2539460070368005,
+        "r4_fictionframe->r4_fictionframe": 0.3425628968156992
+      },
+      "pooled_lattice": {
+        "r2_M0": 0.39530185756433966,
+        "r2_M1": 0.3891534145697685,
+        "r2_M2": 0.4675169530690306
+      },
+      "per_cell_lattice": {
+        "r1_qa_oneline": {
+          "M0": 0.4051153063211188,
+          "M1": 0.3952812339987356,
+          "M2": 0.49891139167802057,
+          "frac_M0_over_M2": 0.8119985093115806,
+          "frac_M1_over_M2": 0.7922874494191463,
+          "M2_minus_M1": 0.10354178723678542,
+          "M2_minus_M1_ci": [
+            0.0998977340953961,
+            0.1069386430820033
+          ],
+          "M1_shuffle_null": -0.04076934006538511
+        },
+        "r2_op": {
+          "M0": 0.3769093181795108,
+          "M1": 0.36716852420119495,
+          "M2": 0.45793971787230403,
+          "frac_M0_over_M2": 0.8230544402890415,
+          "frac_M1_over_M2": 0.8017835314812756,
+          "M2_minus_M1": 0.09068410795942716,
+          "M2_minus_M1_ci": [
+            0.08681383067057706,
+            0.09455011554422427
+          ],
+          "M1_shuffle_null": -0.03688775187906237
+        },
+        "r4_fictionframe": {
+          "M0": 0.294002144689276,
+          "M1": 0.2955200062071648,
+          "M2": 0.3425628968156992,
+          "frac_M0_over_M2": 0.8582428144500741,
+          "frac_M1_over_M2": 0.8626737132193165,
+          "M2_minus_M1": 0.046994923606193506,
+          "M2_minus_M1_ci": [
+            0.04435613620438607,
+            0.04972163401538055
+          ],
+          "M1_shuffle_null": -0.01381289895277411
+        }
+      },
+      "procrustes_aligned_by_pair": {
+        "r1_qa_oneline~r2_op": {
+          "observed_aligned_cosine": 0.7402318873663767,
+          "raw_vec_cosine": 0.6602388744342358,
+          "rotation_null_p975": 0.00042516329056394475,
+          "shuffle_fit_null_mean": 0.0012501752829849053,
+          "contrast": "identity-only (Assistant vs Wren, fixed bare-QA format)"
+        },
+        "r1_qa_oneline~r4_fictionframe": {
+          "observed_aligned_cosine": 0.48493488180136113,
+          "raw_vec_cosine": 0.3576262175623226,
+          "rotation_null_p975": 0.0004120948692868956,
+          "shuffle_fit_null_mean": 0.0017782978214647635,
+          "contrast": "HEADLINE: is the assistant in the shared operator"
+        },
+        "r2_op~r4_fictionframe": {
+          "observed_aligned_cosine": 0.4883759262097461,
+          "raw_vec_cosine": 0.3694739480356281,
+          "rotation_null_p975": -6.269392938784089e-05,
+          "shuffle_fit_null_mean": -0.0005667098129303581,
+          "contrast": "framing-only (Wren bare-QA vs Wren-in-scene, fixed identity)"
+        }
+      },
+      "pred_similarity_mean_cosine": 0.5694782036913532,
+      "pred_similarity_null_cosine_mean": -0.00011215497460299345,
+      "reparam_recovery_mean": 0.3918429317313767
+    }
+  }
+}
