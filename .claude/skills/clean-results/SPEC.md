@@ -943,7 +943,9 @@ Otherwise identical to v3:
 - **Never write `byte identical` or `byte-identical`** — nor the `bit`/`bitwise`
   forms or the `-equal`/`-exact` synonyms (`bit-identical`, `byte-equal`,
   `bit exact`, `bitwise identical`), nor the reduplicated
-  `bit-for-bit`/`byte-for-byte` — anywhere.
+  `bit-for-bit`/`byte-for-byte` — anywhere. (Allowlisted: `bit-deterministic` /
+  `bit-determinism` — determinism-of-computation vocabulary, not this
+  family; #1614.)
 - **Statistical-framing discipline** carries over (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic): no
   pre-registration mentions, no effect-size names in prose, no named
@@ -1684,7 +1686,7 @@ generations; the snake_case-slug category is v4-only):
   + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical` (incl. `bit`/`bitwise`, `-equal`/`-exact`, and `bit-for-bit`/`byte-for-byte` variants)** — banned phrasing.
+- **`byte identical` / `byte-identical` (incl. `bit`/`bitwise`, `-equal`/`-exact`, and `bit-for-bit`/`byte-for-byte` variants)** — banned phrasing. Allowlisted: `bit-deterministic`/`bit-determinism` (#1614).
 
 Exemption: blockquoted lines inside the `## Reproducibility`
 `**Context:**` row are NOT scanned (the verbatim originating-prompt /

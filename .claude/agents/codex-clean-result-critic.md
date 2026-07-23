@@ -686,7 +686,8 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   cited missing slot
 - `**This experiment in context:**` is the ONLY issue-link / bare-`#K` slot;
   `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no `#K`,
-  no byte/bit/bitwise × identical/equal/exact or X-for-X phrase, no
+  no byte/bit/bitwise × identical/equal/exact or X-for-X phrase
+  (`bit-deterministic`/`bit-determinism` allowlisted — #1614), no
   cross-issue framing, no
   prior-run methodology-correction framing): PASS|FAIL with cited section
 - `## Results` has ≥1 `### <result>`; each names a story-beat /
@@ -841,7 +842,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   "Standing caveats" section: PASS|FAIL with cited phrase
 - any byte/bit/bitwise/bytewise × identical/equal/exact phrase, spaced or
   hyphenated, or bit-for-bit/byte-for-byte, in body
-  prose (#454; #642; -equal #1423; -exact/bitwise/X-for-X #1447):
+  prose (#454; #642; -equal #1423; -exact/bitwise/X-for-X #1447;
+  allowlisted, do NOT flag: `bit-deterministic` / `bit-determinism` —
+  determinism vocabulary, #1614):
   PASS|FAIL with cited phrase
 - <other findings or PASS>
 

@@ -348,7 +348,25 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # lookbehind blocks the numeric-bit-width false-positive class
         # ('8-bit exact-width', '64-bit equal-width'); the reduplication
         # branch carries no such guard (accepted exposure — zero corpus
-        # hits for hyphen-preceded 'X-for-X' forms today). Use plain
+        # hits for hyphen-preceded 'X-for-X' forms today).
+        # ALLOWLIST DECISION (2026-W30, task #1614): the determinism
+        # vocabulary 'bit-deterministic' / 'bit-determinism' is
+        # deliberately NOT in this family. It names a substantive
+        # technical property — exact re-forward reproducibility of a
+        # computation (#1415 used it as jitter-floor evidence:
+        # hooked-minus-unhooked magnitude 0 at a causally-zero layer;
+        # docs/methodology/issue_1415.md mirrors that same #1415
+        # sentence, so a hit there is not a missed corpus use) — not
+        # the artifact-equality claim-shape this VOICE ban targets;
+        # the family's plain-English substitutes ("the two files
+        # matched exactly") cannot express it. Do not add
+        # 'deterministic|determinism' to the alternation without
+        # superseding this record AND the #1614 pin test
+        # (test_bit_deterministic_determinism_vocabulary_not_flagged),
+        # the way #1447 superseded #1423's 'bitwise' boundary pin. A
+        # slop-REGISTER use of the term (artifact-equality flourish)
+        # remains flaggable by clean-result-critic Lens 6 judgment.
+        # Use plain
         # English: "the two files matched exactly", "every byte agreed",
         # "no diff between the runs".
         r"(?<!-)\b(?:byte|bit)(?:wise)?[\s-](?:identical|equal|exact)\b"
