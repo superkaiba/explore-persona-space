@@ -4,7 +4,7 @@ title: Full fine-tuning's extra activation shift at matched install is behavior-
 kind: experiment
 tags: []
 created_at: '2026-07-22T05:55:44Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1333
 origin_prompt: 'Run: persona context only, matched-install LoRA<->full-FT pair, both
   regimes, 2 seeds, for sycophancy/impolite/casual (LoRA halves largely exist -> ~12
