@@ -137,9 +137,12 @@
 # heredoc BODIES destined for NON-SHELL consumers are stripped before parsing
 # by the strip_heredoc_bodies() pre-pass below when provably inert — every
 # opener validated, no shell-consumer / command-runner word on the opener
-# line, no shell-out spelling in the body, and (for an UNQUOTED tag, whose
+# line, no shell-out spelling in the body (argv-LIST-form call opens with
+# non-shell heads carved out of that scan as of #1621; shell-headed lists
+# and `shell=True` residuals still refuse), and (for an UNQUOTED tag, whose
 # body bash expands at feed time) no expansion syntax beyond plain `${NAME}`
-# references (#1501) —
+# references (#1501) — and as of #1621 the checkout-detach clause no longer
+# matches the verb token inside a `--no-checkout` / `--checkout` FLAG —
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
 # limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
@@ -276,7 +279,12 @@
 #       body — explicitly PRE-EXISTING: the raw scan never saw the argv form
 #       before this change either (no `git <verb>` bigram), and
 #       python-subprocess git is out of the threat model by design (see the
-#       THREAT MODEL paragraph above).
+#       THREAT MODEL paragraph above). (#1621) Check (f) is now CONSISTENT
+#       with this declaration: argv-list-form call TEXT with non-shell heads
+#       no longer refuses the strip (delete-from-copy carve). Deliberate-
+#       construction residuals of the carve, accepted per this class:
+#       variable / f-string argv heads, splat-of-split heads, and truthy
+#       non-True shell kwargs (`shell=1`) — none has an ACCIDENTAL path.
 # (xii) (#1058) A variable-consumer opener (`RUNNER=bash; $RUNNER <<EOF ...`)
 #       and a while-read-loop executor (`while read x; do $x; done <<EOF ...`)
 #       hide the shell-consumer word behind a variable / loop body, so the
@@ -302,7 +310,14 @@
 #       fail-closed — remediation: quote the heredoc tag; a bare-dot jq
 #       filter (`jq . <<J`) matching the standalone-dot source form (quoted
 #       `jq '.'` unaffected); and prose like "the system (Linux) ..."
-#       matching the `system *\(` body refusal. Value-borne vectors that
+#       matching the `system *\(` body refusal. (#1621) Check-(f) FPs that
+#       remain fail-closed after the argv-list carve: a BARE shell-out-word
+#       prose mention (`subprocess` outside a call open — the M4b two-line
+#       value-indirection block requires it), a prose `shell=True` mention,
+#       non-subprocess paren-bracket-shell text matching the pre-deletion
+#       shell-head arm, and a MULTI-LINE argv call (`run(` at line end, list
+#       on the next line) — remediation for all: the Write tool.
+#       Value-borne vectors that
 #       need attacker-controlled variable VALUES (`${var@P}` prompt
 #       expansion under default promptvars; arithmetic-subscript injection)
 #       remain refused via the non-plain `${` arm and the `$(`-substring
@@ -715,7 +730,14 @@ cmd=$(printf '%s' "$cmd" | sed -zE 's/\\\r?\n/ /g')
 #     standalone `.` source command),
 # (e) the opener LINE does not redirect into a *.sh path, (f) NO body line
 # names a shell-out spelling (os.system / subprocess / Popen / check_call /
-# check_output / getoutput / bare `system(` / `from os import`), and (g) for
+# check_output / getoutput / bare `system(` / `from os import` /
+# `shell=True`) — EXCEPT that argv-LIST-form call opens with non-shell first
+# elements (`subprocess.run(["git", ...`) are deleted from a per-line scan
+# COPY before the refusal scan (#1621: class-(xi) argv-form python-subprocess
+# git is out of the threat model, so its TEXT must not refuse the strip),
+# with two fail-closed arms kept: an argv list whose first element names a
+# shell (bare / path-qualified / env head) refuses PRE-deletion, and a
+# `shell=True` residual refuses post-deletion — and (g) for
 # an UNQUOTED, unescaped tag (<<EOF — bash EXPANDS the body at feed time) NO
 # body line carries expansion syntax beyond plain ${NAME} parameter
 # references: $( / backtick / every non-plain ${...} form refuse; plain
@@ -781,8 +803,33 @@ strip_heredoc_bodies() {
             # (f) A body that itself SHELLS OUT (os.system / subprocess /
             # Popen / bare system( / from-import form) may execute git
             # despite a non-shell consumer -> refuse to strip (fail-closed;
-            # harmless unless a gated form also appears).
-            if (buf[j] ~ /(os\.system|subprocess|Popen|check_call|check_output|getoutput|system *\(|from +os +import)/) { ok = 0; break }
+            # harmless unless a gated form also appears). (#1621) argv-LIST
+            # call opens with non-shell heads are carved out first — see the
+            # deletion below.
+            fcopy = buf[j]
+            # (#1621) NEW arm 1: an argv LIST whose first element names a
+            # shell refuses BEFORE the deletion below (closes
+            # Popen(["bash","-c",...]) under the carve). Covers bare,
+            # path-qualified ("/bin/bash") and "env" heads, plus the literal
+            # backslash-n bracket-gap spelling — the gap tolerance mirrors
+            # the deletion regex so no shape the carve strips can dodge this
+            # arm (r2, methodology MF-1).
+            if (fcopy ~ /\(((\\n)|[ \t])*\[((\\n)|[ \t])*\\?[\x22\x27]([^\x22\x27]*\/)?(bash|sh|zsh|ksh|dash|env)\\?[\x22\x27]/) { ok = 0; break }
+            # (#1621) argv-list-form call opens are deleted from the scan
+            # COPY only (the #1501 delete-from-copy pattern): class-(xi)
+            # argv-form python-subprocess git is out of the threat model and
+            # never classifies (no `git <verb>` bigram — comma-separated
+            # list tokens never satisfy the clause regexes), so its TEXT
+            # must not refuse the strip. Tolerates literal backslash-n +
+            # blanks between paren and bracket (plan-embedded snippet
+            # spelling, #1621). Pass-1 refusal still emits buf[] byte-
+            # identical; deletion can never MASK a refusal (the deleted span
+            # carries no other refusal token, and shell-headed lists were
+            # already refused by the arm above).
+            gsub(/(subprocess\.[A-Za-z_]+|Popen|check_call|check_output)\(((\\n)|[ \t])*\[/, "", fcopy)
+            # (#1621) NEW arm 2: shell=True joins the refusal list (closes
+            # run(["<single-string>"], shell=True) under the carve).
+            if (fcopy ~ /(os\.system|subprocess|Popen|check_call|check_output|getoutput|system *\(|from +os +import|shell[ \t]*=[ \t]*True)/) { ok = 0; break }
             # (g) UNQUOTED-tag body: bash performs command/parameter
             # substitution at feed time, so $(...) / `...` in the body
             # EXECUTE regardless of consumer -> refuse to strip. Non-plain
@@ -1361,7 +1408,15 @@ classify_clause() {
   # below would miss it. The switch pattern also catches `git switch -d main`
   # (a detach AT main), which the branch-only switch detector above lets through
   # on the `main` allow-arm.
-  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-{1,2})detach\b'; then
+  # (#1621) The `[^-]` class before the verb token excludes HYPHEN-preceded
+  # spellings — the verb inside a `--no-checkout` / `--checkout` FLAG (ERE \b
+  # matches between `-` and a word char), so the documented scratch-worktree
+  # recipe `git worktree add --no-checkout --detach <path> origin/main` no
+  # longer false-blocks (incident 552fa84d). Every real spelling keeps a
+  # space/tab before the verb and still blocks; a quote-wrapped verb never
+  # matched this clause anyway (the ` +` after the verb breaks on the quote —
+  # pre-existing parity, unchanged).
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*[^-]\bcheckout\b +(-{1,2})detach\b'; then
     blocked="git checkout --detach"
   fi
   if echo "$c" | grep -qE '\bgit\b[^;&|]*\bswitch\b +(--detach\b|-d\b)'; then
@@ -1974,7 +2029,7 @@ This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <w
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> fetch origin +refs/heads/main:refs/remotes/origin/main, then git -C <worktree> merge --ff-only origin/main (NEVER local main — its unpushed root commits contaminate the branch, #1530).
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>. As of #1566 the canonical SINGLE-QUOTED task.py argument shape is masked (allowed): a clause-initial uv run python .../task.py invocation whose quoted note/title/prompt text sits in an otherwise plain clause no longer false-blocks — so a residual block on task.py argument text means a non-canonical shape (double quotes, dollar or backslash or backquote forms, redirects, a quoted or latch-vocabulary prefix); use the --file route for those.
-For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals).
+For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals). As of #1621 argv-LIST-form call opens with a non-shell first element (subprocess.run([\"git\", ...) no longer refuse the strip; bare word mentions, string-form calls, shell=True residuals, and shell-name argv heads still do — the Write tool remains the remediation for those.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
 For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a grep/rg PATTERN clause naming git verbs: the unpiped clause is waived, and piping into plain read-only text filters (head/tail/wc/cat/cut/tr/nl/sort/uniq/grep) is waived too (#1538) — so a residual block on a piped grep means the consumer chain was NOT verifiable (an off-allowlist / path-spelled / quoted consumer word, a redirect or write/exec flag, or any $ / # in a consumer clause); drop the pipe, remove the $/#/flag, or bound output with grep -m N instead.
