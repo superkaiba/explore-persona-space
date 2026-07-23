@@ -1171,6 +1171,59 @@ def _current_branch(work_root: Path) -> str:
     return out.stdout.strip() or "unknown"
 
 
+def _zero_resolution_guard(
+    map_files_arg: str,
+    files: list[str],
+    all_pairs: list[tuple[str, str]],
+    work_root: Path,
+) -> int | None:
+    """#1613 zero-resolution guard for ``--map-files`` (returns exit code 2 or None).
+
+    A FILE argument whose content lines resolve to ZERO existing repo paths
+    AND produce ZERO pairs across all arms is the silent operator-error shape
+    (a source file handed instead of a path-LIST file — #1610's
+    vacuously-passing verify command). A deletion-only payload
+    (``git diff --name-only`` includes status-D paths absent from the
+    worktree) legitimately looks like this, so a list-file argument stays
+    exit 0 (this helper prints the hedged WARN and returns None); only an
+    argument that is ITSELF a ``.py``/``.sh`` source file errors — returns 2,
+    the argparse usage-error code (consumers treat rc!=0 as crash-class
+    fail-closed, the intended outcome for a malformed invocation). Pairs
+    suppress the guard: glob/scan arms can map nonexistent (deleted) payload
+    paths, and that output is valid. Absolute content lines are SKIPPED in
+    the existence scan: for an absolute f, ``work_root / f`` returns f
+    itself, so one existing absolute line inside a source file would silence
+    the guard. Both stderr lines are single-line, tab-free, and carry no
+    ``recommended-timeout-s=`` substring (consumer grammar constraints).
+    """
+    if not files or all_pairs:
+        return None
+    if any((work_root / f).exists() for f in files if not f.startswith("/")):
+        return None
+    if Path(map_files_arg).suffix in (".py", ".sh"):
+        print(
+            f"select_step9c_tests: ERROR — --map-files argument "
+            f"{map_files_arg} looks like a source file, not a "
+            f"path-LIST file: none of its {len(files)} content lines "
+            f"resolve to an existing repo path under {work_root}, and "
+            "no mapping arm produced pairs (#1613); pass a "
+            "newline-delimited path-list file (e.g. "
+            "git diff --name-only > /tmp/files.txt)",
+            file=sys.stderr,
+        )
+        return 2
+    print(
+        f"select_step9c_tests: WARN — --map-files input "
+        f"{map_files_arg} resolved to ZERO existing repo paths under "
+        f"{work_root} ({len(files)} content lines, 0 pairs; #1613): "
+        "benign for a deletion-only or sparse-excluded payload; "
+        "otherwise verify the argument is a path-LIST file, not a "
+        "source file",
+        file=sys.stderr,
+    )
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
@@ -1296,47 +1349,12 @@ def main(argv: list[str] | None = None) -> int:
                 *transitive_consumer_pairs(files, work_root),
             }
         )
-        # #1613 zero-resolution guard: a FILE argument whose content lines
-        # resolve to ZERO existing repo paths AND produce ZERO pairs across
-        # all arms is the silent operator-error shape (a source file handed
-        # instead of a path-LIST file — #1610's vacuously-passing verify
-        # command). A deletion-only payload (git diff --name-only includes
-        # status-D paths absent from the worktree) legitimately looks like
-        # this, so a list-file argument stays exit 0 (hedged WARN only);
-        # only an argument that is ITSELF a .py/.sh source file errors —
-        # exit 2, the argparse usage-error code (consumers treat rc!=0 as
-        # crash-class fail-closed, the intended outcome for a malformed
-        # invocation). Pairs suppress the guard: glob/scan arms can map
-        # nonexistent (deleted) payload paths, and that output is valid.
-        # Absolute content lines are SKIPPED in the existence scan: for an
-        # absolute f, `work_root / f` returns f itself, so one existing
-        # absolute line inside a source file would silence the guard.
-        if (
-            files
-            and not all_pairs
-            and not any((work_root / f).exists() for f in files if not f.startswith("/"))
-        ):
-            if Path(args.map_files).suffix in (".py", ".sh"):
-                print(
-                    f"select_step9c_tests: ERROR — --map-files argument "
-                    f"{args.map_files} looks like a source file, not a "
-                    f"path-LIST file: none of its {len(files)} content lines "
-                    f"resolve to an existing repo path under {work_root}, and "
-                    "no mapping arm produced pairs (#1613); pass a "
-                    "newline-delimited path-list file (e.g. "
-                    "git diff --name-only > /tmp/files.txt)",
-                    file=sys.stderr,
-                )
-                return 2
-            print(
-                f"select_step9c_tests: WARN — --map-files input "
-                f"{args.map_files} resolved to ZERO existing repo paths under "
-                f"{work_root} ({len(files)} content lines, 0 pairs; #1613): "
-                "benign for a deletion-only or sparse-excluded payload; "
-                "otherwise verify the argument is a path-LIST file, not a "
-                "source file",
-                file=sys.stderr,
-            )
+        # #1613 zero-resolution guard (see _zero_resolution_guard): the
+        # source-file-argument shape returns 2 here; the deletion-only
+        # list-file shape prints its hedged WARN and falls through.
+        guard_rc = _zero_resolution_guard(args.map_files, files, all_pairs, work_root)
+        if guard_rc is not None:
+            return guard_rc
         # The #1573 fail-loud floor: an eligible src/scripts code file with
         # ZERO pairs across ALL arms is loudly visible (stderr, tab-free; rc
         # stays 0 — consumers treat helper rc!=0 as crash-class fail-closed).
