@@ -3017,6 +3017,20 @@ def _base_gcloud_argv(config: GcpConfig, *cmd: str) -> list[str]:
     ]
 
 
+def effective_boot_disk_gb(*, spec: RunSpec, config: GcpConfig) -> int:
+    """The ``--boot-disk-size`` value the create argv carries (image-min clamped, #1336).
+
+    Shared by :func:`render_create_argv` (which renders it into the argv)
+    and the #1617 post-create boot-disk probe (:func:`_probe_boot_disk`'s
+    ``requested_gb``), so the size-mismatch comparison can never drift
+    from the value the create actually requested.
+    """
+    return max(
+        _GCP_IMAGE_MIN_BOOT_DISK_GB,
+        int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb),
+    )
+
+
 def render_create_argv(
     *,
     spec: RunSpec,
@@ -3099,7 +3113,7 @@ def render_create_argv(
     max_run = spec.extra.get("max_run_duration") or config.default_max_run_duration
     _assert_max_run_within_flex_cap(max_run=max_run, provisioning=provisioning)
     requested_boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
-    boot_disk_gb = max(_GCP_IMAGE_MIN_BOOT_DISK_GB, requested_boot_disk_gb)
+    boot_disk_gb = effective_boot_disk_gb(spec=spec, config=config)
     if boot_disk_gb != requested_boot_disk_gb:
         logger.warning(
             "boot-disk clamped UP to the DLVM image minimum: requested %d GB < %d GB "
@@ -3756,6 +3770,103 @@ def default_gcloud_runner(
         stdout=proc.stdout or "",
         stderr=proc.stderr or "",
     )
+
+
+# ---------------------------------------------------------------------------
+# Post-create boot-disk observability probe (#1617; incident #779)
+# ---------------------------------------------------------------------------
+
+#: Age threshold (seconds) above which a just-attached boot disk is classified
+#: REUSED. Fresh boot disks are seconds old at probe time (the probe runs right
+#: after the create call returns, itself capped at
+#: ``GCLOUD_DEFAULT_TIMEOUT_SEC`` = 300s); a surviving prior-attempt disk is at
+#: minimum hours old (#779: 20 days). 600s admits no false positives; a
+#: < 10-min relaunch-reuse is the documented false-negative window, where the
+#: size-mismatch arm still fires when sizes differ.
+_BOOT_DISK_REUSE_SLACK_SEC = 600
+
+#: The additive observability keys ``router._attempt_one_gcp_rung`` /
+#: the explicit-override gcp launch site lift onto the final
+#: ``epm:backend-selected`` marker ``extra`` (#1617). Exactly the union of
+#: keys :func:`_probe_boot_disk` can emit; reconnect handles never carry
+#: them (the probe runs on fresh creates only).
+BOOT_DISK_MARKER_EXTRA_KEYS: tuple[str, ...] = (
+    "boot_disk_reused",
+    "boot_disk_age_days",
+    "boot_disk_size_gb",
+    "boot_disk_requested_gb",
+    "boot_disk_size_mismatch",
+    "boot_disk_probe_error",
+)
+
+
+def render_disk_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """``gcloud compute disks describe`` argv for the instance's same-name boot disk.
+
+    GCE boot disks share the instance's name (live-verified 2026-07-23:
+    all project disks, incl. lane-suffixed ``eps-issue-1481-impolite``,
+    match their instance names), so ``name`` is the instance name.
+    """
+    argv = _base_gcloud_argv(config, "compute", "disks", "describe", name)
+    argv += [f"--zone={zone}", "--format=json"]
+    return argv
+
+
+def _probe_boot_disk(
+    *,
+    config: GcpConfig,
+    name: str,
+    zone: str,
+    requested_gb: int,
+    runner: GcloudRunner,
+    now_fn: Callable[[], float] = time.time,
+) -> dict[str, Any]:
+    """Post-create boot-disk observability probe (#1617; incident #779).
+
+    Runs ONE fail-soft ``gcloud compute disks describe`` right after a
+    successful create and derives the realized boot-disk facts: gcloud
+    silently ATTACHES an existing same-name disk (ignoring
+    ``--boot-disk-size``) instead of creating a fresh one, so the disk's
+    ``creationTimestamp`` age is the reuse detector and its ``sizeGb`` the
+    realized size (#779: a 20-day-old 300 GB disk vs ``--boot-disk-gb 200``).
+
+    Returns the additive marker/handle fields (a subset of
+    :data:`BOOT_DISK_MARKER_EXTRA_KEYS`): on success
+    ``boot_disk_size_gb`` / ``boot_disk_age_days`` /
+    ``boot_disk_requested_gb`` / ``boot_disk_reused`` (+
+    ``boot_disk_size_mismatch: True`` only when realized != requested —
+    the #1010 omit-when-false pattern); on ANY failure a single
+    ``boot_disk_probe_error`` field. NEVER raises — observability must
+    never fail a live, billing VM launch (the ``_post_marker_nonfatal``
+    contract). A describe 404 on a FLEX_START create still PENDING in the
+    DWS queue (fresh disk not yet created) is an EXPECTED
+    ``boot_disk_probe_error``, not a health signal.
+    """
+    try:
+        result = runner(render_disk_describe_argv(config=config, name=name, zone=zone))
+        if result.returncode != 0:
+            return {
+                "boot_disk_probe_error": (
+                    f"disks describe rc={result.returncode}: {(result.stderr or '')[:200]}"
+                )
+            }
+        disk = json.loads(result.stdout)
+        size_gb = int(disk["sizeGb"])  # the API returns a numeric STRING, e.g. "300"
+        # RFC3339 with numeric UTC offset (e.g. 2026-07-17T13:27:21.488-07:00);
+        # py3.11 fromisoformat parses the offset form directly.
+        created = datetime.fromisoformat(disk["creationTimestamp"])
+        age_sec = max(0.0, now_fn() - created.timestamp())
+        fields: dict[str, Any] = {
+            "boot_disk_size_gb": size_gb,
+            "boot_disk_age_days": round(age_sec / 86400.0, 2),
+            "boot_disk_requested_gb": int(requested_gb),
+            "boot_disk_reused": age_sec > _BOOT_DISK_REUSE_SLACK_SEC,
+        }
+        if size_gb != int(requested_gb):
+            fields["boot_disk_size_mismatch"] = True  # omit-when-false (#1010 pattern)
+        return fields
+    except Exception as exc:  # observability must never fail a live launch
+        return {"boot_disk_probe_error": f"{type(exc).__name__}: {exc}"[:300]}
 
 
 #: Guest ``eps/phase`` values that mean the workload has FINISHED (terminal).
@@ -5267,6 +5378,37 @@ class GcpBackend(ComputeBackend):
         instance_name = instance_name_for(spec.issue, lane_suffix_for(spec))
         # gcloud returns the instance object as a list with one entry.
         instance_id = _parse_instance_id(result.stdout, instance_name)
+        # #1617 (incident #779): fail-soft post-create boot-disk probe —
+        # gcloud silently attaches an existing same-name disk and IGNORES
+        # --boot-disk-size, so record the realized disk facts loudly. The
+        # probe never raises; fresh creates only (the reconnect early-return
+        # above never reaches here — nothing was created there to detect).
+        boot_disk_fields = _probe_boot_disk(
+            config=config,
+            name=instance_name,
+            zone=zone,
+            requested_gb=effective_boot_disk_gb(spec=spec, config=config),
+            runner=self._run,
+        )
+        if boot_disk_fields.get("boot_disk_reused"):
+            logger.warning(
+                "GCP create for issue=%d ATTACHED the pre-existing boot disk %s "
+                "(age %.1f d, %s GB): gcloud reuses a same-name disk and IGNORES "
+                "--boot-disk-size (#1617; incident #779).",
+                spec.issue,
+                instance_name,
+                boot_disk_fields.get("boot_disk_age_days", -1.0),
+                boot_disk_fields.get("boot_disk_size_gb"),
+            )
+        if boot_disk_fields.get("boot_disk_size_mismatch"):
+            logger.warning(
+                "GCP boot-disk SIZE MISMATCH for issue=%d: requested %s GB on the "
+                "create argv, realized %s GB — the attached disk's size wins; §9 "
+                "disk sizing does not apply to this instance (#1617).",
+                spec.issue,
+                boot_disk_fields.get("boot_disk_requested_gb"),
+                boot_disk_fields.get("boot_disk_size_gb"),
+            )
         handle = RunHandle(
             backend="gcp",
             cluster=None,
@@ -5340,6 +5482,11 @@ class GcpBackend(ComputeBackend):
                     }.items()
                     if v
                 },
+                # #1617: realized-boot-disk observability (additive keys —
+                # every existing reader uses .get(...)). `boot_disk_size_gb`
+                # is the REALIZED size, distinct from the spec-requested
+                # `boot_disk_gb` above.
+                **boot_disk_fields,
             },
         )
         handle = self._with_artifacts_declaration(
@@ -5385,6 +5532,10 @@ class GcpBackend(ComputeBackend):
                 # occupying the canonical name before create — so the
                 # name-reclaim is visible on the timeline.
                 "pre_launch_deleted_stale_instance": pre_launch_deleted_stale_instance,
+                # Additive fields (#1617): realized-boot-disk observability
+                # from the post-create probe (reuse age + realized size, or a
+                # fail-soft boot_disk_probe_error). sort_keys handles ordering.
+                **boot_disk_fields,
             },
             sort_keys=True,
         )

@@ -2536,7 +2536,10 @@ markers:
                           override_conflicts_frontmatter?,
                           frontmatter_backend_unrecognized?,
                           frontmatter_backend?,
-                          boot_disk_default_with_ft_intent?, ...}`
+                          boot_disk_default_with_ft_intent?,
+                          boot_disk_reused?, boot_disk_age_days?,
+                          boot_disk_size_gb?, boot_disk_requested_gb?,
+                          boot_disk_size_mismatch?, boot_disk_probe_error?, ...}`
 
       `provisioning_model: <STANDARD|SPOT|FLEX_START>` (optional, #631) is
       stamped on the FINAL GCP `epm:backend-selected` marker (the resolved
@@ -2559,6 +2562,21 @@ markers:
       regional quota has no headroom but the PREEMPTIBLE pool does — the
       attempts trail carries a `spot_fallback` outcome row naming both
       readings. Absent from non-GCP markers.
+
+      `boot_disk_reused` / `boot_disk_age_days` / `boot_disk_size_gb` /
+      `boot_disk_requested_gb` (optional, #1617; incident #779) are
+      stamped on the FINAL gcp marker after a FRESH create, from the
+      post-create `disks describe` probe: gcloud silently ATTACHES an
+      existing same-name boot disk and IGNORES `--boot-disk-size`, so
+      `reused: true` means the disk was older than ~10 min
+      (`gcp._BOOT_DISK_REUSE_SLACK_SEC`) at probe time — a pre-existing
+      leftover, not a fresh disk. `boot_disk_size_mismatch: true` rides
+      along only when the realized size differs from the clamped
+      requested `--boot-disk-size`. On any probe failure the set is
+      replaced by `boot_disk_probe_error: <reason>` — EXPECTED on a
+      flex-queued fresh create (the disk 404s while the instance is
+      still PENDING in the DWS queue), so it is NOT a health signal.
+      All absent on reconnect paths and non-GCP markers.
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster

@@ -4735,6 +4735,73 @@ def test_width_degradation_on_capacity_miss_lands_4g(lease_store, marker_poster,
     assert result.extra["requested_gpus"] == 8
 
 
+def test_backend_selected_marker_carries_boot_disk_extras_from_gcp_handle(
+    lease_store, marker_poster, captured_markers
+):
+    """#1617: the post-create boot-disk probe fields on a fresh gcp handle are
+    lifted onto RouteResult.extra AND the final epm:backend-selected marker
+    body; a handle without the keys (reconnect / fake backends) lifts
+    nothing (negative control). The fake handle carries ALL SIX keys and is
+    set-equality-pinned to gcp.BOOT_DISK_MARKER_EXTRA_KEYS so a tuple typo
+    cannot ship green."""
+    from explore_persona_space.backends.gcp import BOOT_DISK_MARKER_EXTRA_KEYS
+
+    boot_disk_fields = {
+        "boot_disk_reused": True,
+        "boot_disk_age_days": 20.0,
+        "boot_disk_size_gb": 300,
+        "boot_disk_requested_gb": 200,
+        "boot_disk_size_mismatch": True,
+        # Never co-occurs with the success fields in production; present here
+        # so the lift is exercised over the FULL key tuple.
+        "boot_disk_probe_error": "probe raced a PENDING create",
+    }
+    assert set(boot_disk_fields) == set(BOOT_DISK_MARKER_EXTRA_KEYS)
+
+    class _BootDiskGcpDouble(_GcpBackendDouble):
+        def launch(self, spec: RunSpec) -> RunHandle:
+            handle = super().launch(spec)
+            handle.extra.update(boot_disk_fields)
+            return handle
+
+    result = route(
+        _spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=_BootDiskGcpDouble(),
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    for key, value in boot_disk_fields.items():
+        assert result.extra[key] == value, key
+    final = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"][-1]
+    body = json.loads(final["note"])
+    for key, value in boot_disk_fields.items():
+        assert body["extra"][key] == value, key
+
+    # Negative control: a fresh route whose gcp handle lacks the keys lifts
+    # NONE of them onto the marker surface.
+    captured_markers.clear()
+    plain = route(
+        _spec(issue=138),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert plain.chosen_kind == "gcp"
+    assert not set(BOOT_DISK_MARKER_EXTRA_KEYS) & set(plain.extra)
+    final_plain = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"][-1]
+    body_plain = json.loads(final_plain["note"])
+    assert not set(BOOT_DISK_MARKER_EXTRA_KEYS) & set(body_plain["extra"])
+
+
 @pytest.mark.parametrize("gpus", [None, 1])
 @pytest.mark.parametrize("length", ["short", "long"])
 def test_width1_ladder_byte_identical_explicit_gpus_none_and_matching(length, gpus):
