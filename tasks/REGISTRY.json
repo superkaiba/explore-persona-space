@@ -4980,8 +4980,8 @@
     "1639": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/proposed/1639",
-      "status": "proposed",
+      "path": "tasks/awaiting_promotion/1639",
+      "status": "awaiting_promotion",
       "title": "The four fiction-character context\u2192dialogue maps are one dominantly shared linear operator: a pooled map recovers 81\u201398% of each character's ceiling, with small per-character slope residuals (MODERATE confidence)"
     },
     "164": {
