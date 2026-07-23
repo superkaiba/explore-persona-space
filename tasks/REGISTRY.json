@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1634,
+  "highest_id": 1635,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4948,6 +4948,13 @@
       "path": "tasks/proposed/1634",
       "status": "proposed",
       "title": "daily-fix: pid file from launch chain child, never pgrep"
+    },
+    "1635": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1635",
+      "status": "proposed",
+      "title": "daily-held: inline-round scientific discipline gaps"
     },
     "164": {
       "has_clean_result": false,
