@@ -17,6 +17,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "eval_results" / "issue_779" / "pinv_topk_contexts" / "pinv_topk_contexts.json"
+FLAGGED = REPO / "eval_results" / "issue_779" / "pinv_topk_contexts" / "flagged_rows_text.json"
 OUT = REPO / "experiments" / "dashboards" / "issue779_pinv_topbottom_contexts.html"
 
 TRAITS = ["evil", "sycophancy", "hallucination"]
@@ -71,6 +72,8 @@ h1.title{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(30
 .ptext{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.5;
   background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:9px 11px}
 .ptext.ph{font-style:italic;color:var(--ink-soft)}
+.flagnote{font-family:"Spline Sans Mono",monospace;font-size:10.5px;color:#9a3b2e;
+  margin-top:5px;line-height:1.4}
 footer.foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);
   font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--ink-soft);line-height:1.85}
 footer.foot b{color:var(--ink)}
@@ -83,15 +86,32 @@ def esc(s: str) -> str:
     return html.escape(s, quote=False)
 
 
-def card(rec: dict, rank: int, hi: bool) -> str:
+def card(rec: dict, rank: int, hi: bool, flagged_text: dict | None = None) -> str:
     txt = rec.get("text")
-    if txt:
+    flag = rec.get("flagged")
+    if flag:
+        # Placeholdered in the parent JSON; render the actual prompt from the
+        # flagged-rows sidecar (250-char truncation, jailbreak/roleplay framing;
+        # the sexual-explicit classifier flag matched content past this cut).
+        frow = (flagged_text or {}).get(rec["idx"])
+        theme = f'<span class="theme flag">{esc(flag)}</span>'
+        if frow:
+            note = ""
+            if flag == "sexual-explicit":
+                note = (
+                    '<div class="flagnote">Shown truncated at the jailbreak framing; '
+                    "classifier flagged sexual-explicit content later in the "
+                    f"{frow['orig_char_len']}-char prompt.</div>"
+                )
+            body = f'<div class="ptext">{esc(frow["text_trunc"])}</div>{note}'
+        else:
+            body = f'<div class="ptext ph">[{esc(flag)} row — text unavailable]</div>'
+    elif txt:
         body = f'<div class="ptext">{esc(" ".join(txt.split()))}</div>'
         theme = f'<span class="theme">{esc(rec.get("theme", "other"))}</span>'
     else:
-        flag = rec.get("flagged") or "flagged"
-        body = f'<div class="ptext ph">[{esc(flag)} roleplay row — categorized, not quoted]</div>'
-        theme = f'<span class="theme flag">{esc(flag)}</span>'
+        body = '<div class="ptext ph">[text unavailable]</div>'
+        theme = '<span class="theme">other</span>'
     cls = "hi" if hi else "lo"
     return (
         '<div class="rcard">'
@@ -105,13 +125,13 @@ def card(rec: dict, rank: int, hi: bool) -> str:
     )
 
 
-def trait_section(trait: str, data: dict) -> str:
+def trait_section(trait: str, data: dict, flagged_text: dict) -> str:
     meta = TRAIT_META[trait]
     tb = data["traits"][trait]["lmsys_topbottom"]["w_pinv_kstar"]
     eg = data["traits"][trait]["eval_grid"]
     rho = eg["w_pinv_kstar"]["spearman_proj_vs_judgescore"]
-    top = "".join(card(r, i + 1, True) for i, r in enumerate(tb["top"][:N]))
-    bot = "".join(card(r, i + 1, False) for i, r in enumerate(tb["bottom"][:N]))
+    top = "".join(card(r, i + 1, True, flagged_text) for i, r in enumerate(tb["top"][:N]))
+    bot = "".join(card(r, i + 1, False, flagged_text) for i, r in enumerate(tb["bottom"][:N]))
     return (
         f'<section class="famsec" style="--c:{meta["color"]}">'
         '<div class="famhead">'
@@ -130,7 +150,8 @@ def trait_section(trait: str, data: dict) -> str:
 def main() -> int:
     data = json.loads(SRC.read_text())
     meta = data["metadata"]
-    body = "".join(trait_section(t, data) for t in TRAITS)
+    flagged_text = {r["idx"]: r for r in json.loads(FLAGGED.read_text())["rows"]}
+    body = "".join(trait_section(t, data, flagged_text) for t in TRAITS)
     parent = esc(str(meta.get("parent_run", "")))
     model = esc(str(meta.get("model_id", "")))
     lmsys = esc(str(meta.get("lmsys_revision", ""))[:12])
