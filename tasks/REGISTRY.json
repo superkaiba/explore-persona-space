@@ -4938,8 +4938,8 @@
     "1633": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1633",
-      "status": "planning",
+      "path": "tasks/approved/1633",
+      "status": "approved",
       "title": "daily-fix: down-width probe for stalled multi-arm dispatch"
     },
     "1634": {
