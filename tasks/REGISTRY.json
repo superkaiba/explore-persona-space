@@ -4812,8 +4812,8 @@
     "1617": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1617",
-      "status": "reviewing",
+      "path": "tasks/completed/1617",
+      "status": "completed",
       "title": "daily-fix: gcp.py loud marker on boot-disk reuse + size mism"
     },
     "1618": {
