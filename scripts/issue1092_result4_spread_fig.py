@@ -15,8 +15,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STRATA = PROJECT_ROOT / "eval_results/issue_1092/inline_spread_whitened_strata"
