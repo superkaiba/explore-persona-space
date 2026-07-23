@@ -4994,8 +4994,8 @@
     "1640": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1640",
-      "status": "running",
+      "path": "tasks/reviewing/1640",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas \u2014 chained smoke-then-full per-leg out-root residue trap"
     },
     "165": {
