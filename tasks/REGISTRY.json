@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1627,
+  "highest_id": 1628,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4892,6 +4892,13 @@
       "path": "tasks/proposed/1627",
       "status": "proposed",
       "title": "daily-fix: Step 9c/10d gate single-flight guard"
+    },
+    "1628": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1628",
+      "status": "proposed",
+      "title": "daily-fix: GCP DWS-PENDING delete needs longer timeout"
     },
     "163": {
       "has_clean_result": false,
