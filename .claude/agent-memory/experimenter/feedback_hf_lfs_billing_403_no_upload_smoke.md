@@ -24,3 +24,11 @@ stranded behind a non-code block.
 credit-recharge failure, don't treat it as retryable transport and don't
 bounce it as a code bug — apply the smoke `--no-upload` + full-run-proceeds
 shape and let the orchestrator own the user-facing billing surfacing.
+
+**Probe caveat (added same day):** a SMALL LFS probe upload passing does NOT
+prove the block is lifted — the 403 enforcement admitted a 2 MB random-byte
+`.safetensors` probe at 22:50Z and then blocked a GB-scale checkpoint upload
+at 00:12Z (~80 min later, no billing change in between). Never declare
+"billing resolved" off a small-payload probe; the only trustworthy signals
+are a production-scale upload succeeding or the user confirming the billing
+change.
