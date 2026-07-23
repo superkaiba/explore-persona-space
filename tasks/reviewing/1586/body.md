@@ -23,6 +23,8 @@ relates_to:
 # Full fine-tuning's extra activation shift at matched install is behavior- and pooling-arm-dependent, not a universal method signature (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1586.md](https://github.com/superkaiba/explore-persona-space/blob/a05e1ec1d4c5680f14aa548f1a815be42f49ef37/docs/methodology/issue_1586.md) · [gist mirror](https://gist.github.com/superkaiba/c0e8db84a618a531b883be92e2e5a57f)
+
 ## Takeaways
 
 - At matched install on the persona context, full fine-tuning shifts response-arm activations farther than LoRA for sycophancy (pooled +3.7) and casual style (+1.4), but less far for contrastive impolite (−1.9); seeds agree on every response-arm verdict.
