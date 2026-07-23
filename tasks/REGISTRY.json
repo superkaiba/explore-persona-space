@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1633,
+  "highest_id": 1634,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4941,6 +4941,13 @@
       "path": "tasks/proposed/1633",
       "status": "proposed",
       "title": "daily-fix: down-width probe for stalled multi-arm dispatch"
+    },
+    "1634": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1634",
+      "status": "proposed",
+      "title": "daily-fix: pid file from launch chain child, never pgrep"
     },
     "164": {
       "has_clean_result": false,
