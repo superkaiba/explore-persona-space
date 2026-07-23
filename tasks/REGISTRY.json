@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1607,
+  "highest_id": 1608,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4737,6 +4737,14 @@
       "path": "tasks/running/1607",
       "status": "running",
       "title": "workflow-fix: verify_task_body check-31 per-unit pattern set gains pair"
+    },
+    "1608": {
+      "goal": "[parent Goal verbatim \u2014 identical to proposal 1's Goal field; same-question round]",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/on_hold/1608",
+      "status": "on_hold",
+      "title": "First-token identity accounting for the #1415 steering shift (parked: duplicates the 9a-ter cap-parked item)"
     },
     "161": {
       "has_clean_result": false,
