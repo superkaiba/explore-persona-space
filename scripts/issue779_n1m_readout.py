@@ -141,6 +141,7 @@ def stage_inputs(collect_dir: Path, corpus_dir: Path, traits: tuple[str, ...]) -
     pa_names = hub.retry_transient(
         lambda: sorted(
             f.path
+            # HUB_VERIFY_RETRY_EXEMPT: whole listing wrapped in hub.retry_transient above
             for f in HfApi().list_repo_tree(
                 C.HF_DATA_REPO,
                 path_in_repo=f"{HF_ANALYSIS_PREFIX}/pass_a",

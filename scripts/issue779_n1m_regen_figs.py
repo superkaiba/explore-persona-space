@@ -32,7 +32,12 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps land BEFORE numpy import on the shared VM.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 MODES = ("system", "many_shot")
 TRAITS = ("evil", "sycophancy", "hallucination")
