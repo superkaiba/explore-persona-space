@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1623,
+  "highest_id": 1624,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4864,6 +4864,13 @@
       "path": "tasks/proposed/1623",
       "status": "proposed",
       "title": "daily-fix: similarity stats declare direction-aware or not"
+    },
+    "1624": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1624",
+      "status": "proposed",
+      "title": "daily-fix: lint bare list_repo_files on the data repo"
     },
     "163": {
       "has_clean_result": false,
