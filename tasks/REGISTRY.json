@@ -4784,8 +4784,8 @@
     "1613": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1613",
-      "status": "proposed",
+      "path": "tasks/planning/1613",
+      "status": "planning",
       "title": "workflow-fix: WARN on zero-resolving --map-files input in select_step9c_tests"
     },
     "162": {
