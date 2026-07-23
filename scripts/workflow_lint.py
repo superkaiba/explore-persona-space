@@ -9375,7 +9375,7 @@ def _root_guard_target_files(root: Path) -> list[Path]:
     return targets
 
 
-def check_git_recipes_root_guard(
+def check_git_recipes_root_guard(  # noqa: C901 -- flat fail-loud ladder + per-fence probe/verdict dispositions (#1176; retry-once-then-WARN #1610); extracting a branch would just relocate it
     *,
     repo_root: Path | None = None,
     hook_path: Path | None = None,
