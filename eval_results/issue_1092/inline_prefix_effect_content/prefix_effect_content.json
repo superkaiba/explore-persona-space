@@ -1,0 +1,73 @@
+{
+ "meta": {
+  "script": "scripts/issue1092_prefix_effect_content.py",
+  "git_commit": "0ba6ba651e6b3e38a198decc51d3d6ff30bea9ec",
+  "layer": 14,
+  "basis": "ambient, t1 block only (the r_B live in this 3584-dim space)",
+  "seed": 20260723,
+  "n_perm": 1000,
+  "rb_revision": "037fcbb (issue779_monitoring/r_b)"
+ },
+ "cells": {
+  "cell_inst_own": {
+   "n_prefixes": 99,
+   "n_queries": 48,
+   "prefix_effect_variance_share_of_A_p": 1.0,
+   "topic": {
+    "share": 0.12984600563685597,
+    "null_mean": 0.11364070494309068,
+    "null_p95": 0.1717831202400364,
+    "excess_over_null_mean": 0.016205300693765287,
+    "n_topics": 12
+   },
+   "rb_directions": {
+    "share": 0.06335200382727087,
+    "k": 2,
+    "chance": 0.0005580357142857143
+   },
+   "judge_predictive": {
+    "share": 0.7966633019176936,
+    "k": 2,
+    "chance": 0.0005580357142857143,
+    "crossfit_pred_r": {
+     "sycophancy": 0.8208437828701654,
+     "hallucination": 0.8801408180925613
+    },
+    "n_prefixes_with_scores": 99
+   },
+   "joint_topic_plus_trait_share": {
+    "share": 0.9232009564016525,
+    "k": 16,
+    "chance": 0.004464285714285714
+   },
+   "wall_s": 23.6
+  },
+  "cell_pre_own": {
+   "n_prefixes": 99,
+   "n_queries": 48,
+   "prefix_effect_variance_share_of_A_p": 1.0,
+   "topic": {
+    "share": 0.13247639928854277,
+    "null_mean": 0.11343119770762333,
+    "null_p95": 0.16946374115335722,
+    "excess_over_null_mean": 0.019045201580919435,
+    "n_topics": 12
+   },
+   "rb_directions": {
+    "share": 0.01732023231259859,
+    "k": 2,
+    "chance": 0.0005580357142857143
+   },
+   "judge_predictive": {
+    "skipped": "no (or <20) dense-core prefixes with judge scores in this cell \u2014 the monitoring round scored battery prefixes only for the base model",
+    "n_prefixes_with_scores": 0
+   },
+   "joint_topic_plus_trait_share": {
+    "share": 0.8956777336041793,
+    "k": 14,
+    "chance": 0.00390625
+   },
+   "wall_s": 2.4
+  }
+ }
+}
