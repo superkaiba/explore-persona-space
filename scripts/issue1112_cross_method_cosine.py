@@ -596,7 +596,15 @@ def make_figure(payload: dict, fig_path: Path) -> None:
         "H1x_ftneg_vs_loraneg": ("primary", "full-FT+neg vs LoRA+neg"),
         "H1x_pos_ftpos_vs_lorapos": ("baseline", "full-FT+pos vs LoRA+pos"),
         "H1x_lrm_ftneg_vs_lora_lr5e6": ("control", "full-FT+neg vs LoRA+neg (lr-matched 5e-6)"),
+        "rankem_a1_ftneg_vs_lora_r1": ("baseline", "full-FT+neg vs LoRA r=1 (non-rs)"),
+        "rankem_a2_ftneg_vs_lora_r4": ("primary", "full-FT+neg vs LoRA r=4 (non-rs)"),
+        "rankem_b_misalignment_ft_vs_lora": ("control", "misalignment full-FT vs LoRA r32"),
     }
+    # Render whatever pairs the payload actually carries (a --pairs run writes a
+    # subset; hardcoded-only labels rendered an EMPTY figure for rankem runs).
+    role = {k: v for k, v in role.items() if k in payload["pairs"]}
+    for k in payload["pairs"]:
+        role.setdefault(k, ("primary", k))
     panels = [
         ("response_own", "Response arm (own-text)"),
         ("context_own", "Context arm (own-text)"),
