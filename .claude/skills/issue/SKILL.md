@@ -3915,15 +3915,28 @@ field shapes can reject 100% of real rows while every synthetic
 smoke stays green). Recipe + verified field shapes:
 `.claude/rules/gotchas.md` "Real-corpus streaming filters" +
 `.claude/agent-memory/experiment-implementer/feedback_real_corpus_streaming_filters_tiny_real_probe.md`.
-When the driver spans MULTIPLE ARM CLASSES (distinct source-context
-classes / recipe branches — e.g. persona-context vs bare-context
-arms), "once at tiny N" means once PER ARM CLASS: per-arm seams
+When the driver spans MULTIPLE ARM CLASSES — distinct source-context
+classes / recipe branches (e.g. persona-context vs bare-context arms)
+AND every other class-defining axis the grid crosses: behavior class
+(marker vs content), training regime (contrastive `con` vs
+positive-only `po`), method (LoRA vs full-FT) — "once at tiny N" means
+once PER ARM CLASS: ≥1 tiny cell per realized (class × regime)
+combination, reaching class-gated read-side / aggregation paths
+(panel-disjointness reads, per-class mix asserts, reuse-seam loaders)
+too, not only the train phase. Per-arm seams
 (source-context construction, negative-panel assembly, `ModelOrganism`
 wiring) are invisible to a single-arm smoke however tiny-real its
 seams (#1090 fu5: a formatting-arm-only smoke passed; all 3
 bare-context arms then died on the #527/#538 panel-disjointness assert
-after a full 4×A100 GCE cycle). Recipe: `.claude/rules/gotchas.md`
-"A single-arm smoke is blind to per-arm seams".
+after a full 4×A100 GCE cycle; #1586 r3/r4/r6: every recorded smoke
+ran one content-class full-FT cell — `syc-pers-ft-con-s137` — of a
+marker×content × `con`×`po` × LoRA×full-FT grid; a read-side
+panel-disjointness check killed the smoke leg itself at its first
+full-panel read, and the marker-`po` mix row-count assert and a
+reuse-seam loader then failed live post-smoke, one per phase).
+Recipe: `.claude/rules/gotchas.md`
+"A single-arm smoke is blind to per-arm seams" +
+"Smoke/production parity includes REGIME/CLASS COVERAGE".
 Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
