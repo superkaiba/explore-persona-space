@@ -4973,8 +4973,8 @@
     "1638": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1638",
-      "status": "planning",
+      "path": "tasks/approved/1638",
+      "status": "approved",
       "title": "workflow-fix: extend pre_reg head-noun list for the #1586 'registered layer' escape"
     },
     "1639": {
