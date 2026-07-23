@@ -4770,8 +4770,8 @@
     "1611": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1611",
-      "status": "reviewing",
+      "path": "tasks/completed/1611",
+      "status": "completed",
       "title": "workflow-fix: smoke must cover every behavior-class x regime (smoke/parity family)"
     },
     "1612": {
