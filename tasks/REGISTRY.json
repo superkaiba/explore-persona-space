@@ -4734,8 +4734,8 @@
     "1607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1607",
-      "status": "reviewing",
+      "path": "tasks/completed/1607",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body check-31 per-unit pattern set gains pair"
     },
     "1608": {
