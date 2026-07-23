@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1638,
+  "highest_id": 1639,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4976,6 +4976,13 @@
       "path": "tasks/proposed/1638",
       "status": "proposed",
       "title": "workflow-fix: extend pre_reg head-noun list for the #1586 'registered layer' escape"
+    },
+    "1639": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/1639",
+      "status": "proposed",
+      "title": "Assistant and fiction-character context-to-answer maps share one dominant linear operator; identity is nearly free while fiction framing distorts its coordinates"
     },
     "164": {
       "has_clean_result": false,
