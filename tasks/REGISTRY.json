@@ -4566,8 +4566,8 @@
       "goal": "Test whether the matched-install LoRA-vs-full-fine-tune method signature (full FT shifts activations farther and leaks differently at equal install) generalizes from the marker to sycophancy, impolite, and casual writing style and replicates across two seeds, at the canonical persona context.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1586",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/1586",
+      "status": "awaiting_promotion",
       "title": "Full fine-tuning's extra activation shift at matched install is behavior- and pooling-arm-dependent, not a universal method signature (MODERATE confidence)"
     },
     "1587": {
