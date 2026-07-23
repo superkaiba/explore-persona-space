@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1612,
+  "highest_id": 1613,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4780,6 +4780,13 @@
       "path": "tasks/running/1612",
       "status": "running",
       "title": "workflow-fix: FT ckpt disk high-water must match implemented phase ordering (reap every accumulating phase)"
+    },
+    "1613": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1613",
+      "status": "proposed",
+      "title": "workflow-fix: WARN on zero-resolving --map-files input in select_step9c_tests"
     },
     "162": {
       "has_clean_result": false,
