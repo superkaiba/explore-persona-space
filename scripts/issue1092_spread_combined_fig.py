@@ -23,17 +23,17 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-import scipy.linalg as sla
-import torch
-from scipy.stats import spearmanr
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
+import scipy.linalg as sla  # noqa: E402
+import torch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 from issue923_fit_decomposition import press_fit_predict  # noqa: E402
 
@@ -173,34 +173,25 @@ def main() -> int:
 
     pp.set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), layout="constrained")
-    c_nat = pp.paper_palette_role("primary")
-    c_gen = pp.paper_palette_role("accent")
+    c_all = pp.paper_palette_role("primary")
     for ax, cell in zip(axes, CELLS, strict=True):
         d = cells[cell]
-        rho_n, p_n = spearmanr(d["spread_nat"], d["err_nat"])
-        rho_b, p_b = spearmanr(d["spread_bat"], d["err_bat"])
-        ax.scatter(
-            d["spread_nat"],
-            d["err_nat"],
-            s=9,
-            alpha=0.3,
-            color=c_nat,
-            linewidths=0,
-            label=f"natural (996), ρ = +{rho_n:.2f}",
+        spread = np.concatenate([np.asarray(d["spread_nat"]), np.asarray(d["spread_bat"])])
+        err = np.concatenate([np.asarray(d["err_nat"]), np.asarray(d["err_bat"])])
+        rho, p = spearmanr(spread, err)
+        ax.scatter(spread, err, s=10, alpha=0.32, color=c_all, linewidths=0)
+        ptxt = "p < 1e-200" if p < 1e-200 else f"p = {p:.1e}"
+        ax.text(
+            0.03,
+            0.95,
+            f"Spearman ρ = +{rho:.2f}, {ptxt}  (n = {spread.size})",
+            transform=ax.transAxes,
+            va="top",
+            fontsize=10,
         )
-        ax.scatter(
-            d["spread_bat"],
-            d["err_bat"],
-            s=34,
-            alpha=0.9,
-            color=c_gen,
-            linewidths=0,
-            label=f"generated (50), ρ = +{rho_b:.2f}",
-        )
-        ax.set_xlabel("within-prefix context-vector spread (whitened, natural-corpus transform)")
+        ax.set_xlabel("within-prefix context-vector spread (whitened)")
         ax.set_ylabel("averaged-prefix-map per-prefix error")
-        ax.set_title(CELL_LABELS[cell], loc="left")
-        ax.legend(loc="upper left", frameon=False, fontsize=9)
+        ax.set_title(f"{CELL_LABELS[cell]} (1,046 prefixes)", loc="left")
     pp.savefig_paper(
         fig,
         "summaries/prefix_vs_context_map/spread_vs_error_combined_one_rig",
