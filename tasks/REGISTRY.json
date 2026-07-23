@@ -4777,8 +4777,8 @@
     "1612": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1612",
-      "status": "proposed",
+      "path": "tasks/planning/1612",
+      "status": "planning",
       "title": "workflow-fix: FT ckpt disk high-water must match implemented phase ordering (reap every accumulating phase)"
     },
     "162": {
