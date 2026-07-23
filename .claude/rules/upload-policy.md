@@ -566,7 +566,16 @@ staging dir
 governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
 (4) Retry the canonical HF model-repo upload only after quota is freed.
 Freeing quota means deleting existing HF artifacts — that is USER-ONLY:
-surface the situation to the user, never auto-delete from HF.
+surface the situation to the user, never auto-delete from HF. Two corollaries
+of the LFS-only gate above (both bit on 2026-07-22, #1586): (a) an
+"unblocked?" probe MUST exercise an LFS-SCALE upload (>10 MB, LFS-matched
+extension) — a passing small-file/text upload is NOT evidence the block
+lifted (small files ride the always-open non-LFS path; a small-file probe
+minted a premature billing-resolved marker and cost an extra crash round);
+(b) a user-action escalation (enable auto-recharge, free quota) names the
+EXACT click path AND what the configured end-state looks like on the page —
+"fix billing at settings/billing" alone drew two user follow-ups on a page
+that was already correct.
 Diagnosis probes: sum account usage via
 `/api/{models,datasets}/<id>?expand[]=usedStorage` over
 `list_models(author=...)` / `list_datasets(author=...)`; a tiny non-LFS `.txt`
