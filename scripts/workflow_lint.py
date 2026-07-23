@@ -9380,6 +9380,7 @@ def check_git_recipes_root_guard(
     repo_root: Path | None = None,
     hook_path: Path | None = None,
     max_workers: int = 8,
+    warn_sink: list[str] | None = None,
 ) -> list[str]:
     """FAIL if any documented executable git recipe — a ``bash``/``sh``/
     ``shell``-tagged fenced block in ``.claude/agents/*.md``,
@@ -9423,9 +9424,10 @@ def check_git_recipes_root_guard(
       command MUST rc 2) plus a negative probe (a benign command MUST rc 0)
       run before any scan; a missing hook, a self-test crash, a fail-OPEN
       hook, or a fail-CLOSED hook is ONE loud lint error — never a silent
-      pass. Only rc 0/2 are interpreted; any other rc on a fence probe is a
-      loud infrastructure error (rc=1 is NON-BLOCKING under the PreToolUse
-      contract, never a pass).
+      pass. Only rc 0/2 are interpreted; any other rc on a fence probe is
+      retried once, then WARNed (never a FAIL) — a transient kill/timeout on
+      a gate scratch tree must not flip a clean gate to block (#1610; rc=1
+      is NON-BLOCKING under the PreToolUse contract, never a pass).
 
     UNDER-COVERAGE RESIDUALS (the guarantee is scoped to the whole-bash-fence
     paste surface — all four NAMED, per the #1176 round-1 Alternatives
@@ -9476,7 +9478,10 @@ def check_git_recipes_root_guard(
     siblings, because only fenced bash is scanned and the hook strips
     comments/heredocs). ``scripts/**`` is never scanned. ``repo_root`` /
     ``hook_path`` / ``max_workers`` are unit-test override hooks; production
-    callers pass defaults. Bundled into the no-flags default run.
+    callers pass defaults. ``warn_sink`` mirrors ``check_lens_coverage``'s
+    hook: WARNs append there when provided, else go to stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list. Bundled
+    into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     hook = hook_path if hook_path is not None else _ROOT_GUARD_HOOK
@@ -9534,13 +9539,25 @@ def check_git_recipes_root_guard(
         # are concurrent-safe).
         def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
             p, lineno, block = item
-            try:
-                rc, stderr = _run_root_guard(hook, block, fixture)
-            except (subprocess.TimeoutExpired, OSError) as exc:
-                return (p, lineno, -1, f"hook invocation failed: {exc}")
+            rc, stderr = -1, ""
+            for _attempt in (0, 1):
+                try:
+                    rc, stderr = _run_root_guard(hook, block, fixture)
+                except (subprocess.TimeoutExpired, OSError) as exc:
+                    rc, stderr = -1, f"hook invocation failed: {exc}"
+                if rc in (0, 2):
+                    break
+                # unexpected rc: transient infra class (#1610) — retry once
             return (p, lineno, rc, stderr)
 
         errors: list[str] = []
+
+        def _warn(msg: str) -> None:
+            if warn_sink is not None:
+                warn_sink.append(msg)
+            else:
+                sys.stderr.write(f"WARN: {msg}\n")
+
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
             results = list(ex.map(_probe, work))
         for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
@@ -9562,11 +9579,12 @@ def check_git_recipes_root_guard(
                     f"line directly above the fence opener."
                 )
             else:
-                errors.append(
-                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
-                    f"a NON-BLOCKING code under the PreToolUse contract (only rc "
-                    f"0/2 are interpreted; rc=1/127/timeout signals a hook "
-                    f"invocation or infrastructure error, not a pass) ({first!r})."
+                _warn(
+                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} "
+                    f"after one retry — a NON-BLOCKING code under the PreToolUse "
+                    f"contract (only rc 0/2 are interpreted; rc=1/127/timeout "
+                    f"signals a transient hook-invocation or infrastructure "
+                    f"error, not a verdict — #1610) ({first!r})."
                 )
         return errors
 

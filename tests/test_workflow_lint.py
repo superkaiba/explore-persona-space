@@ -7874,6 +7874,87 @@ def test_check_git_recipes_root_guard_fixture_build_failure_fails_loud(tmp_path,
     assert len(errors) == 1 and "fixture build failed" in errors[0], errors
 
 
+def _write_rg_selftest_aware_hook(hook: Path, fence_branch: str) -> None:
+    """Write a fake hook that passes BOTH self-test probes (blocked-probe
+    token -> exit 2, benign-probe token -> exit 0; the stdin-distinguishable
+    tokens of ``_ROOT_GUARD_SELFTEST_BLOCKED`` / ``_ROOT_GUARD_SELFTEST_BENIGN``)
+    and runs ``fence_branch`` (one-line bash) for every other stdin — i.e.
+    for fence probes. Hooks run as ``["bash", path]``; no exec bit needed."""
+    hook.write_text(
+        "#!/usr/bin/env bash\n"
+        "input=$(cat)\n"
+        'case "$input" in\n'
+        "  *__workflow_lint_root_guard_selftest__*) exit 2;;\n"
+        '  *"root-guard selftest"*) exit 0;;\n'
+        f"  *) {fence_branch};;\n"
+        "esac\n",
+        encoding="utf-8",
+    )
+
+
+def test_check_git_recipes_root_guard_unexpected_rc_warns_not_fails(tmp_path):
+    """A hook returning a persistent unexpected rc (3) on fence probes —
+    while passing both self-test probes — yields NO FAIL and ONE WARN
+    naming the fence + rc, after exactly one retry (the fence branch runs
+    exactly twice; #1610: a transient rc must not flip a clean gate)."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    counter = tmp_path / "fence_invocations.txt"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(hook, f'echo x >> "{counter}"; exit 3')
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert errors == [], errors
+    assert len(warns) == 1, warns
+    assert "rc=3" in warns[0] and "SKILL.md:1" in warns[0], warns
+    # retried exactly once: the fence branch was invoked EXACTLY 2 times
+    assert len(counter.read_text(encoding="utf-8").splitlines()) == 2
+
+
+def test_check_git_recipes_root_guard_unexpected_rc_stderr_fallback(tmp_path, capsys):
+    """The production path (no ``warn_sink``) routes the persistent
+    unexpected-rc WARN to stderr with the ``WARN: `` prefix — never into
+    the returned FAIL list."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(hook, "exit 3")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook)
+    assert errors == [], errors
+    err = capsys.readouterr().err
+    assert "WARN: " in err and "rc=3" in err, err
+
+
+def test_check_git_recipes_root_guard_transient_rc_retry_recovers(tmp_path):
+    """A hook flaky on the FIRST fence invocation (rc 3) and clean (rc 0)
+    on the retry: the verdict follows the retry — no FAIL, no WARN.
+    Single fence per fixture => no cross-thread marker race."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    marker = tmp_path / "first_fence_probe_done"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(
+        hook, f'if [ ! -e "{marker}" ]; then touch "{marker}"; exit 3; fi; exit 0'
+    )
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert errors == [], errors
+    assert warns == [], warns
+
+
+def test_check_git_recipes_root_guard_transient_rc_retry_blocked(tmp_path):
+    """Same flaky shape but the retry returns rc 2: the retry verdict is a
+    normal BLOCKED FAIL (the retry never launders a real block), no WARN."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    marker = tmp_path / "first_fence_probe_done"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(
+        hook, f'if [ ! -e "{marker}" ]; then touch "{marker}"; exit 3; fi; exit 2'
+    )
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert len(errors) == 1, errors
+    assert "BLOCKED" in errors[0], errors
+    assert warns == [], warns
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_skill_bang_backtick`` (incident class #1243/#1266:
 # a bang directly against a backtick in preprocessor-loaded skill markdown
