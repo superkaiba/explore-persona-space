@@ -4826,8 +4826,8 @@
     "1619": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1619",
-      "status": "running",
+      "path": "tasks/reviewing/1619",
+      "status": "reviewing",
       "title": "daily-fix: issue1092 fig scripts import heavy modules before"
     },
     "162": {
