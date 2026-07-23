@@ -1,6 +1,6 @@
 {
-  "commit": "7f19f6747",
-  "created": "2026-07-22T23:15:26Z",
+  "commit": "9b60558da7",
+  "created": "2026-07-23T00:16:31Z",
   "figsize": [
     15.0,
     4.6
@@ -10,7 +10,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.31808022798459434,
       "error": 0.07530674548751859,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -18,7 +18,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.44808174190901073,
       "error": 0.039594965362664325,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -26,7 +26,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.5472235873536263,
       "error": 0.023473039673654272,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -34,7 +34,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.612058336443077,
       "error": 0.011301824872779531,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -42,7 +42,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.6388119350980997,
       "error": 0.012144690783345347,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -50,7 +50,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.658921574667774,
       "error": 0.0,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -58,7 +58,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.39327570683070306,
       "error": 0.07530674548751859,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -66,7 +66,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.4624134527628967,
       "error": 0.039594965362664325,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -74,7 +74,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.47379911280286285,
       "error": 0.023473039673654272,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -82,7 +82,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.509612827629855,
       "error": 0.011301824872779531,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -90,7 +90,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.507620435194369,
       "error": 0.012144690783345347,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -98,7 +98,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5161832749282479,
       "error": 0.0,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -106,7 +106,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.472711672461399,
       "error": 0.07530674548751859,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -114,7 +114,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.5292812734139948,
       "error": 0.039594965362664325,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -122,7 +122,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.5549677490308916,
       "error": 0.023473039673654272,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -130,7 +130,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.5933961481880139,
       "error": 0.011301824872779531,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -138,7 +138,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.5890898469517365,
       "error": 0.012144690783345347,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -146,7 +146,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.6019421627532228,
       "error": 0.0,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -154,7 +154,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.4453486120396466,
       "error": 0.07530674548751859,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -162,7 +162,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.5317956515964433,
       "error": 0.039594965362664325,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -170,7 +170,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.5774132827146521,
       "error": 0.023473039673654272,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -178,7 +178,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.6179309018029522,
       "error": 0.011301824872779531,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -186,7 +186,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.6138022707524973,
       "error": 0.012144690783345347,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -194,7 +194,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.6254083959665219,
       "error": 0.0,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 3
     },
@@ -202,7 +202,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.4514183184143666,
       "error": 0.07530674548751859,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -210,7 +210,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.5360723938042362,
       "error": 0.039594965362664325,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -218,7 +218,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.5832115288268115,
       "error": 0.023473039673654272,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -226,7 +226,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.6184707546836696,
       "error": 0.011301824872779531,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -234,7 +234,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.6159932236095014,
       "error": 0.012144690783345347,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -242,7 +242,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.6283995712072322,
       "error": 0.0,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 4
     },
@@ -250,7 +250,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.436147475272117,
       "error": 0.07530674548751859,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -258,7 +258,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.5133043199428341,
       "error": 0.039594965362664325,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -266,7 +266,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.5446906765562665,
       "error": 0.023473039673654272,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -274,7 +274,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.5748824258996807,
       "error": 0.011301824872779531,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -282,7 +282,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.5747976961461926,
       "error": 0.012144690783345347,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -290,7 +290,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5855259392388815,
       "error": 0.0,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 5
     },
@@ -298,7 +298,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.4588678331513122,
       "error": 0.07530674548751859,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -306,7 +306,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.4714993354471259,
       "error": 0.039594965362664325,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -314,7 +314,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.49666750097281537,
       "error": 0.023473039673654272,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -322,7 +322,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.5344061591116172,
       "error": 0.011301824872779531,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -330,7 +330,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.5333630731315452,
       "error": 0.012144690783345347,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -338,7 +338,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5373122091870874,
       "error": 0.0,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 6
     },
@@ -1102,7 +1102,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5825005699692172,
       "error": 0.03732582649969729,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1110,7 +1110,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7947753258554148,
       "error": 0.028693643879187936,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1118,7 +1118,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.822486991601391,
       "error": 0.038920118942284976,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1126,7 +1126,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8643877744304502,
       "error": 0.015390876759341587,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1134,7 +1134,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8624340659595585,
       "error": 0.018369974295952773,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1142,7 +1142,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.8929955169999743,
       "error": 0.0,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 28
     },
@@ -1150,7 +1150,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5256521795979872,
       "error": 0.03732582649969729,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1158,7 +1158,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7276309981459831,
       "error": 0.028693643879187936,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1166,7 +1166,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.7918032812366137,
       "error": 0.038920118942284976,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1174,7 +1174,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8276150734215815,
       "error": 0.015390876759341587,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1182,7 +1182,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8311263917534243,
       "error": 0.018369974295952773,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1190,7 +1190,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.853427867421073,
       "error": 0.0,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 29
     },
@@ -1198,7 +1198,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5801716799782429,
       "error": 0.03732582649969729,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1206,7 +1206,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7606775020370478,
       "error": 0.028693643879187936,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1214,7 +1214,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.8192222043091301,
       "error": 0.038920118942284976,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1222,7 +1222,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8486726357062457,
       "error": 0.015390876759341587,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1230,7 +1230,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8495860163497874,
       "error": 0.018369974295952773,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1238,7 +1238,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.8702270121960101,
       "error": 0.0,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 30
     },
@@ -1246,7 +1246,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5876905731442448,
       "error": 0.03732582649969729,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1254,7 +1254,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7832316208760783,
       "error": 0.028693643879187936,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1262,7 +1262,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.8268112864300251,
       "error": 0.038920118942284976,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1270,7 +1270,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8658261660403797,
       "error": 0.015390876759341587,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1278,7 +1278,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8699666889631793,
       "error": 0.018369974295952773,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1286,7 +1286,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.8905093929917954,
       "error": 0.0,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 31
     },
@@ -1294,7 +1294,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5941946653853712,
       "error": 0.03732582649969729,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1302,7 +1302,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7851675585480336,
       "error": 0.028693643879187936,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1310,7 +1310,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.8268399190710987,
       "error": 0.038920118942284976,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1318,7 +1318,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8661003083167913,
       "error": 0.015390876759341587,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1326,7 +1326,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8669804914426157,
       "error": 0.018369974295952773,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1334,7 +1334,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.8882942890941101,
       "error": 0.0,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 32
     },
@@ -1342,7 +1342,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5786015128449911,
       "error": 0.03732582649969729,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1350,7 +1350,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.7587978579253003,
       "error": 0.028693643879187936,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1358,7 +1358,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.805713657304824,
       "error": 0.038920118942284976,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1366,7 +1366,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.8377808451428725,
       "error": 0.015390876759341587,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1374,7 +1374,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.8380806184141576,
       "error": 0.018369974295952773,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1382,7 +1382,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.858589242655206,
       "error": 0.0,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m) \u2020",
       "_kind": "errorbar",
       "_group": 33
     },
@@ -1390,7 +1390,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.5632579309355321,
       "error": 0.03732582649969729,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -1398,7 +1398,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.6680502584085513,
       "error": 0.028693643879187936,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -1406,7 +1406,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.7470069387043449,
       "error": 0.038920118942284976,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -1414,7 +1414,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.7611915208543578,
       "error": 0.015390876759341587,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -1422,7 +1422,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.7560179551469054,
       "error": 0.018369974295952773,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -1430,7 +1430,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.7736124708455366,
       "error": 0.0,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 34
     },
@@ -2194,7 +2194,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.01902224468730831,
       "error": 0.08043720416672573,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2202,7 +2202,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.1517670096218397,
       "error": 0.0733867462127756,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2210,7 +2210,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.19872813898840497,
       "error": 0.0444863647043916,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2218,7 +2218,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.26493986665348446,
       "error": 0.05952139009898613,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2226,7 +2226,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.3908548140223591,
       "error": 0.0776530811560473,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2234,7 +2234,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5874120495920184,
       "error": 0.0,
-      "series": "h n5k logo",
+      "series": "5k map (LOGO refit)",
       "_kind": "errorbar",
       "_group": 56
     },
@@ -2242,7 +2242,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.098538765870509,
       "error": 0.08043720416672573,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2250,7 +2250,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.14648018670182825,
       "error": 0.0733867462127756,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2258,7 +2258,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.2580962767848689,
       "error": 0.0444863647043916,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2266,7 +2266,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.2574962096257022,
       "error": 0.05952139009898613,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2274,7 +2274,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.40669082757236535,
       "error": 0.0776530811560473,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2282,7 +2282,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5503722777131161,
       "error": 0.0,
-      "series": "h n5k linear",
+      "series": "5k linear map",
       "_kind": "errorbar",
       "_group": 57
     },
@@ -2290,7 +2290,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.013834935843880392,
       "error": 0.08043720416672573,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2298,7 +2298,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.07245283925548535,
       "error": 0.0733867462127756,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2306,7 +2306,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.20013720225469883,
       "error": 0.0444863647043916,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2314,7 +2314,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.21733024280093255,
       "error": 0.05952139009898613,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2322,7 +2322,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.3814801262914382,
       "error": 0.0776530811560473,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2330,7 +2330,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5479433403522254,
       "error": 0.0,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "errorbar",
       "_group": 58
     },
@@ -2338,7 +2338,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.015474082539103762,
       "error": 0.08043720416672573,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2346,7 +2346,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.1205853020399202,
       "error": 0.0733867462127756,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2354,7 +2354,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.2049182628530312,
       "error": 0.0444863647043916,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2362,7 +2362,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.22644628709764328,
       "error": 0.05952139009898613,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2370,7 +2370,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.36428752270805226,
       "error": 0.0776530811560473,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2378,7 +2378,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5251072984198184,
       "error": 0.0,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "errorbar",
       "_group": 59
     },
@@ -2386,7 +2386,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.04818521103562212,
       "error": 0.08043720416672573,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2394,7 +2394,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.15332681935058412,
       "error": 0.0733867462127756,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2402,7 +2402,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.24777874779019093,
       "error": 0.0444863647043916,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2410,7 +2410,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.26101494826462696,
       "error": 0.05952139009898613,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2418,7 +2418,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.3815020045816383,
       "error": 0.0776530811560473,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2426,7 +2426,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.5351815590025328,
       "error": 0.0,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "errorbar",
       "_group": 60
     },
@@ -2434,7 +2434,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": 0.013653044087256077,
       "error": 0.08043720416672573,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2442,7 +2442,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.11786862536065816,
       "error": 0.0733867462127756,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2450,7 +2450,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.22687337328641394,
       "error": 0.0444863647043916,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2458,7 +2458,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.23527074490170197,
       "error": 0.05952139009898613,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2466,7 +2466,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.37139606825034843,
       "error": 0.0776530811560473,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2474,7 +2474,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.53515349795663,
       "error": 0.0,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "errorbar",
       "_group": 61
     },
@@ -2482,7 +2482,7 @@
       "questions averaged per persona group": 1.0,
       "Pearson r vs mean judge score (dot)": -0.07381566563791982,
       "error": 0.08043720416672573,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -2490,7 +2490,7 @@
       "questions averaged per persona group": 2.0,
       "Pearson r vs mean judge score (dot)": 0.030846250744404634,
       "error": 0.0733867462127756,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -2498,7 +2498,7 @@
       "questions averaged per persona group": 5.0,
       "Pearson r vs mean judge score (dot)": 0.18855339004064303,
       "error": 0.0444863647043916,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -2506,7 +2506,7 @@
       "questions averaged per persona group": 10.0,
       "Pearson r vs mean judge score (dot)": 0.1742615416881706,
       "error": 0.05952139009898613,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -2514,7 +2514,7 @@
       "questions averaged per persona group": 20.0,
       "Pearson r vs mean judge score (dot)": 0.37088849962483217,
       "error": 0.0776530811560473,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -2522,7 +2522,7 @@
       "questions averaged per persona group": 40.0,
       "Pearson r vs mean judge score (dot)": 0.51923896061047,
       "error": 0.0,
-      "series": "pv raw group",
+      "series": "raw projection",
       "_kind": "errorbar",
       "_group": 62
     },
@@ -3294,13 +3294,13 @@
         "xlabel": "questions averaged per persona group",
         "ylabel": "Pearson r vs mean judge score (dot)",
         "legend_labels": [
-          "h n5k logo",
-          "h n5k linear",
-          "n1m ridge",
-          "n1m mlp w8192",
-          "n1m mlp w32768",
-          "n1m krr nystrom",
-          "pv raw group"
+          "5k map (LOGO refit)",
+          "5k linear map",
+          "963k ridge",
+          "963k MLP (w=8192)",
+          "963k MLP (w=32768)",
+          "963k kernel (Nystr\u00f6m)",
+          "raw projection"
         ],
         "xticklabels": [
           "1",
@@ -3325,13 +3325,13 @@
         "xlabel": "questions averaged per persona group",
         "ylabel": "Pearson r vs mean judge score (dot)",
         "legend_labels": [
-          "h n5k logo",
-          "h n5k linear",
-          "n1m ridge",
-          "n1m mlp w8192",
-          "n1m mlp w32768",
-          "n1m krr nystrom",
-          "pv raw group"
+          "5k map (LOGO refit)",
+          "5k linear map",
+          "963k ridge",
+          "963k MLP (w=8192)",
+          "963k MLP (w=32768)",
+          "963k kernel (Nystr\u00f6m) \u2020",
+          "raw projection"
         ],
         "xticklabels": [
           "1",
@@ -3356,13 +3356,13 @@
         "xlabel": "questions averaged per persona group",
         "ylabel": "Pearson r vs mean judge score (dot)",
         "legend_labels": [
-          "h n5k logo",
-          "h n5k linear",
-          "n1m ridge",
-          "n1m mlp w8192",
-          "n1m mlp w32768",
-          "n1m krr nystrom",
-          "pv raw group"
+          "5k map (LOGO refit)",
+          "5k linear map",
+          "963k ridge",
+          "963k MLP (w=8192)",
+          "963k MLP (w=32768)",
+          "963k kernel (Nystr\u00f6m)",
+          "raw projection"
         ],
         "xticklabels": [
           "1",
@@ -3387,13 +3387,14 @@
       }
     ],
     "series": [
-      "h n5k logo",
-      "h n5k linear",
-      "n1m ridge",
-      "n1m mlp w8192",
-      "n1m mlp w32768",
-      "n1m krr nystrom",
-      "pv raw group"
+      "5k map (LOGO refit)",
+      "5k linear map",
+      "963k ridge",
+      "963k MLP (w=8192)",
+      "963k MLP (w=32768)",
+      "963k kernel (Nystr\u00f6m)",
+      "raw projection",
+      "963k kernel (Nystr\u00f6m) \u2020"
     ]
   }
 }

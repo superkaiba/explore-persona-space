@@ -1,6 +1,6 @@
 {
-  "commit": "7f19f6747",
-  "created": "2026-07-22T23:15:27Z",
+  "commit": "9b60558da7",
+  "created": "2026-07-23T00:16:32Z",
   "figsize": [
     6.4,
     4.4
@@ -9,84 +9,84 @@
     {
       "layer": 14.0,
       "held-out whole-map R2 (pinned test)": 0.6708212397689644,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "line",
       "_group": 0
     },
     {
       "layer": 19.0,
       "held-out whole-map R2 (pinned test)": 0.7541708417500046,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "line",
       "_group": 0
     },
     {
       "layer": 26.0,
       "held-out whole-map R2 (pinned test)": 0.683922951725668,
-      "series": "n1m ridge",
+      "series": "963k ridge",
       "_kind": "line",
       "_group": 0
     },
     {
       "layer": 14.0,
       "held-out whole-map R2 (pinned test)": 0.7593135255668365,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 19.0,
       "held-out whole-map R2 (pinned test)": 0.8103576072186821,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 26.0,
       "held-out whole-map R2 (pinned test)": 0.7580715905033035,
-      "series": "n1m mlp w8192",
+      "series": "963k MLP (w=8192)",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 14.0,
       "held-out whole-map R2 (pinned test)": 0.7579235711036836,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 19.0,
       "held-out whole-map R2 (pinned test)": 0.8134194594608872,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 26.0,
       "held-out whole-map R2 (pinned test)": 0.7722463827028128,
-      "series": "n1m mlp w32768",
+      "series": "963k MLP (w=32768)",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 14.0,
       "held-out whole-map R2 (pinned test)": 0.743291369721075,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "line",
       "_group": 3
     },
     {
       "layer": 19.0,
       "held-out whole-map R2 (pinned test)": 0.8066491770626179,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "line",
       "_group": 3
     },
     {
       "layer": 26.0,
       "held-out whole-map R2 (pinned test)": 0.7479334550888455,
-      "series": "n1m krr nystrom",
+      "series": "963k kernel (Nystr\u00f6m)",
       "_kind": "line",
       "_group": 3
     }
@@ -98,14 +98,13 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "n1m map fit quality across capture layers",
         "xlabel": "layer",
         "ylabel": "held-out whole-map R2 (pinned test)",
         "legend_labels": [
-          "n1m ridge",
-          "n1m mlp w8192",
-          "n1m mlp w32768",
-          "n1m krr nystrom"
+          "963k ridge",
+          "963k MLP (w=8192)",
+          "963k MLP (w=32768)",
+          "963k kernel (Nystr\u00f6m)"
         ],
         "xticklabels": [
           "14",
@@ -127,10 +126,10 @@
       }
     ],
     "series": [
-      "n1m ridge",
-      "n1m mlp w8192",
-      "n1m mlp w32768",
-      "n1m krr nystrom"
+      "963k ridge",
+      "963k MLP (w=8192)",
+      "963k MLP (w=32768)",
+      "963k kernel (Nystr\u00f6m)"
     ]
   }
 }
