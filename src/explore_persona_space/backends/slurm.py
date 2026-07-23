@@ -396,9 +396,12 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
             ("UV_PYTHON", "/usr/bin/python3.11"),
             ("UV_PYTHON_INSTALL_DIR", "/workspace/superkaiba/uv-python"),
         ),
-        # Dark-launched pending the live acceptance job (#1609 §7 gate);
-        # flipped True only after the end-to-end probe passes.
-        available=False,
+        # Flipped True after the #1609 §7 live acceptance PASS (job 11092,
+        # 2026-07-23: sbatch accepted under qos=high-eur/partition=general,
+        # RUNNING on node-2, workload printed the GPU + HF_HOME_WRITABLE +
+        # torch_cuda_device_count=1, [phase=done] + sentinel, fetch_results
+        # + scancel clean — record at eval_results/issue_1609/acceptance/).
+        available=True,
     ),
 }
 
@@ -1307,6 +1310,102 @@ HEARTBEAT_INTERVAL_SECONDS = 60
 PREFLIGHT_FAIL_MARKER = "[phase=preflight-failed]"
 
 
+def _module_load_lines(cluster: ClusterConfig) -> list[str]:
+    """The ``module load`` line, or nothing. Falsy ``module_load_cuda``
+    (#1609, fellows) = the cluster has NO module system (NGC image); an
+    unconditional ``module load cuda`` would exit 127 under ``set -e``."""
+    return [cluster.module_load_cuda] if cluster.module_load_cuda else []
+
+
+def _gres_line(cluster: ClusterConfig, gpus: int) -> str:
+    """The ``--gpus-per-node`` header. ``gpu_type=None`` (#1609) = untyped
+    GRES cluster (fellows): a typed ``h200:N`` request against untyped
+    ``Gres=gpu:N`` is rejected by sbatch, so emit the bare count there."""
+    if cluster.gpu_type:
+        return f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}"
+    return f"#SBATCH --gpus-per-node={gpus}"
+
+
+def _no_prolog_scratch_lines(cluster: ClusterConfig) -> list[str]:
+    """SCRATCH + SLURM_TMPDIR fallback prelude for no-prolog clusters (#1609).
+
+    Empty on prolog clusters (``defines_scratch_env=True`` — byte-identity
+    preserved). On fellows: no DRAC/Mila prolog provides ``$SCRATCH`` /
+    ``$SLURM_TMPDIR``, so the venv block / Triton cache / preflight ``:?``
+    check would die under ``set -u`` — derive SCRATCH from the config's
+    scratch_path (the shared mount) and SLURM_TMPDIR from a job-scoped
+    ``/tmp`` dir. The ``:-`` forms mean a prolog-provided value still wins
+    if one ever appears; ``/tmp`` is a persistent node overlay there, so
+    the cleanup traps reap the fallback dir — but ONLY when WE created it
+    (``_EPS_REAP_TMPDIR`` is set only on the fallback branch).
+    """
+    if cluster.defines_scratch_env:
+        return []
+    return [
+        "# === No prolog-provided SCRATCH/SLURM_TMPDIR on this cluster (#1609) ===",
+        f'export SCRATCH="${{SCRATCH:-{cluster.scratch_path}}}"',
+        'if [ -z "${SLURM_TMPDIR:-}" ]; then',
+        '  export SLURM_TMPDIR="/tmp/eps-${SLURM_JOB_ID}"',
+        '  _EPS_REAP_TMPDIR="$SLURM_TMPDIR"',
+        "fi",
+        'mkdir -p "$SLURM_TMPDIR"',
+        "",
+    ]
+
+
+def _extra_export_lines(cluster: ClusterConfig) -> list[str]:
+    """Cluster-specific env-default exports (#1609 — fellows:
+    NCCL_NVLS_ENABLE / HF_HOME / UV_PYTHON*). Rendered in the CUDA block,
+    BEFORE the secrets stanza, in the override-able ``:-`` form mirroring
+    HF_XET_HIGH_PERFORMANCE: a dispatch-process override forwarded via
+    secrets.env (sourced later under ``set -a``) supersedes these defaults.
+    Empty when the cluster declares no ``extra_exports``.
+    """
+    return [f'export {key}="${{{key}:-{shlex.quote(val)}}}"' for key, val in cluster.extra_exports]
+
+
+def _tmpdir_reap_clause(cluster: ClusterConfig) -> str:
+    """EXIT-trap suffix reaping the /tmp SLURM_TMPDIR fallback dir (#1609).
+
+    Empty on prolog clusters (``defines_scratch_env=True`` — the secrets
+    trap stays byte-identical there). Guarded — only when
+    ``_EPS_REAP_TMPDIR`` was set, i.e. the prelude created the dir.
+    """
+    if cluster.defines_scratch_env:
+        return ""
+    return '; if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi'
+
+
+def _group_cleanup_lines(cluster: ClusterConfig) -> list[str]:
+    """Rule-7 process-group cleanup trap (#1609, fellows).
+
+    Empty unless ``term_kill_process_group`` — on fellows, preemption /
+    cancel forwards TERM to the whole job process group so
+    vLLM/accelerate/torchrun workers never orphan (they brick nodes
+    there). Rendered AFTER the secrets stanza so it composes with — not
+    clobbers — the EXIT shred trap: per-signal trap replacement
+    (TERM INT QUIT only) keeps the EXIT trap intact.
+    """
+    if not cluster.term_kill_process_group:
+        return []
+    return [
+        "# === Rule 7: process-group cleanup on TERM/INT/QUIT (#1609) ===",
+        "_eps_group_cleanup() {",
+        "  trap - TERM INT QUIT",
+        '  kill "$HEARTBEAT_PID" 2>/dev/null || true',
+        '  shred -u "$SECRETS_FILE" 2>/dev/null || rm -f "$SECRETS_FILE"',
+        '  if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi',
+        "  # NOTE: -$$ also TERMs this shell after `trap - TERM` — deliberate:",
+        "  # children already signaled, secrets already shredded; the `wait`",
+        "  # may not return. Not a bug.",
+        "  kill -TERM -- -$$ 2>/dev/null || true",
+        "  wait",
+        "}",
+        "trap '_eps_group_cleanup' TERM INT QUIT",
+        "",
+    ]
+
+
 def render_sbatch(
     *,
     spec: RunSpec,
@@ -1370,14 +1469,7 @@ def render_sbatch(
             f"#SBATCH --job-name={name}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks-per-node=1",
-            # gpu_type=None (#1609) = untyped GRES cluster (fellows): a
-            # typed ``h200:N`` request against untyped ``Gres=gpu:N`` is
-            # rejected by sbatch, so emit the bare count there.
-            (
-                f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}"
-                if cluster.gpu_type
-                else f"#SBATCH --gpus-per-node={gpus}"
-            ),
+            _gres_line(cluster, gpus),
             f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
             f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
             f"#SBATCH --time={time_str}",
@@ -1456,28 +1548,7 @@ def render_sbatch(
         "trap 'kill $HEARTBEAT_PID 2>/dev/null || true' EXIT TERM INT",
         "",
     ]
-    if not cluster.defines_scratch_env:
-        # #1609 (fellows): no DRAC/Mila prolog on this cluster, so neither
-        # $SCRATCH nor $SLURM_TMPDIR is provided and the venv block /
-        # Triton cache / preflight ``:?`` check would die under ``set -u``.
-        # Derive both here: SCRATCH from the config's scratch_path (the
-        # shared mount), SLURM_TMPDIR from a job-scoped /tmp dir. The
-        # ``:-`` forms mean a prolog-provided value still wins if one ever
-        # appears. /tmp is a persistent node overlay on fellows, so the
-        # cleanup traps reap the fallback dir — but ONLY when WE created it
-        # (_EPS_REAP_TMPDIR is set only on the fallback branch).
-        prelude.extend(
-            [
-                "# === No prolog-provided SCRATCH/SLURM_TMPDIR on this cluster (#1609) ===",
-                f'export SCRATCH="${{SCRATCH:-{cluster.scratch_path}}}"',
-                'if [ -z "${SLURM_TMPDIR:-}" ]; then',
-                '  export SLURM_TMPDIR="/tmp/eps-${SLURM_JOB_ID}"',
-                '  _EPS_REAP_TMPDIR="$SLURM_TMPDIR"',
-                "fi",
-                'mkdir -p "$SLURM_TMPDIR"',
-                "",
-            ]
-        )
+    prelude.extend(_no_prolog_scratch_lines(cluster))
 
     # CUDA + Triton cache setup (P0(c) finding: module load on its own
     # line; CUDA_HOME bridge as fallback).
@@ -1486,11 +1557,7 @@ def render_sbatch(
         "# module load MUST be on its own line. A piped variant runs in",
         "# a subshell and the env is lost (P0(c) initial failure).",
     ]
-    if cluster.module_load_cuda:
-        # Falsy (#1609, fellows) = the cluster has NO module system (NGC
-        # image); an unconditional ``module load cuda`` would exit 127
-        # under ``set -e``.
-        cuda_setup.append(cluster.module_load_cuda)
+    cuda_setup.extend(_module_load_lines(cluster))
     cuda_setup += [
         "",
         cluster.cuda_home_bridge,
@@ -1510,27 +1577,12 @@ def render_sbatch(
     ]
     if cluster.nccl_socket_ifname:
         cuda_setup.append(f"export NCCL_SOCKET_IFNAME={shlex.quote(cluster.nccl_socket_ifname)}")
-    for key, val in cluster.extra_exports:
-        # #1609: cluster-specific env defaults (fellows: NCCL_NVLS_ENABLE /
-        # HF_HOME / UV_PYTHON*). Rendered BEFORE the secrets stanza in the
-        # override-able ``:-`` form, mirroring HF_XET_HIGH_PERFORMANCE
-        # above: a dispatch-process override forwarded via secrets.env
-        # (sourced later under ``set -a``) supersedes these defaults.
-        cuda_setup.append(f'export {key}="${{{key}:-{shlex.quote(val)}}}"')
+    cuda_setup.extend(_extra_export_lines(cluster))
     cuda_setup.append("")
 
     # Secrets stanza. set +x around the source so a `bash -x` rerun
     # doesn't leak tokens. trap shreds the file on EXIT/TERM/INT.
-    # #1609: on a no-prolog cluster (defines_scratch_env=False) the EXIT
-    # trap additionally reaps the /tmp SLURM_TMPDIR fallback dir the
-    # prelude created (guarded — only when _EPS_REAP_TMPDIR was set, i.e.
-    # WE created the dir; /tmp is a persistent node overlay on fellows).
-    # Byte-identical on prolog clusters (empty clause).
-    _reap_clause = (
-        '; if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi'
-        if not cluster.defines_scratch_env
-        else ""
-    )
+    _reap_clause = _tmpdir_reap_clause(cluster)
     secrets_setup = [
         "# === Secrets ===",
         f'SECRETS_FILE="$SCRATCH_JOB_DIR/{secrets_filename}"',
@@ -1558,31 +1610,7 @@ def render_sbatch(
         "set -x",
         "",
     ]
-    if cluster.term_kill_process_group:
-        # #1609 rule 7 (fellows): on preemption/cancel, forward TERM to the
-        # whole job process group so vLLM/accelerate/torchrun workers never
-        # orphan (they brick nodes on this cluster). Rendered AFTER the
-        # secrets stanza so it composes with — not clobbers — the EXIT
-        # shred trap: per-signal trap replacement (TERM INT QUIT only)
-        # keeps the EXIT trap intact.
-        secrets_setup.extend(
-            [
-                "# === Rule 7: process-group cleanup on TERM/INT/QUIT (#1609) ===",
-                "_eps_group_cleanup() {",
-                "  trap - TERM INT QUIT",
-                '  kill "$HEARTBEAT_PID" 2>/dev/null || true',
-                '  shred -u "$SECRETS_FILE" 2>/dev/null || rm -f "$SECRETS_FILE"',
-                '  if [ -n "${_EPS_REAP_TMPDIR:-}" ]; then rm -rf "$_EPS_REAP_TMPDIR"; fi',
-                "  # NOTE: -$$ also TERMs this shell after `trap - TERM` — deliberate:",
-                "  # children already signaled, secrets already shredded; the `wait`",
-                "  # may not return. Not a bug.",
-                "  kill -TERM -- -$$ 2>/dev/null || true",
-                "  wait",
-                "}",
-                "trap '_eps_group_cleanup' TERM INT QUIT",
-                "",
-            ]
-        )
+    secrets_setup.extend(_group_cleanup_lines(cluster))
 
     # uv venv cache: keyed by uv.lock hash AND the --extra gpu flag (so
     # the LoRA-eval-only intent doesn't share a venv with full-FT). The

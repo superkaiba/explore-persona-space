@@ -1,0 +1,109 @@
+{
+  "issue": 1609,
+  "branch": "issue-1609",
+  "cluster": "fellows",
+  "robot_alias": "charmander",
+  "intent": "debug",
+  "workload_cmd": "nvidia-smi -L && echo \"HF_HOME=$HF_HOME\" && test -w \"$HF_HOME\" && echo HF_HOME_WRITABLE && uv run python -c \"import torch; print('torch_cuda_device_count=' + str(torch.cuda.device_count()))\"",
+  "started_utc": "2026-07-23T03:46:50.956185+00:00",
+  "verdict": "PASS",
+  "polls": [
+    {
+      "ts": "2026-07-23T03:49:41.170930+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:50:03.929888+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:50:26.806624+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:50:49.520863+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:51:12.258896+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:51:35.137232+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:51:57.854541+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:52:20.756372+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:52:43.493566+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:53:06.234598+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:53:29.131680+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:53:51.868041+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:54:18.451233+00:00",
+      "status": "running",
+      "phase": "preflight"
+    },
+    {
+      "ts": "2026-07-23T03:54:45.017187+00:00",
+      "status": "running",
+      "phase": "startup"
+    },
+    {
+      "ts": "2026-07-23T03:55:15.478392+00:00",
+      "status": "done",
+      "phase": "done"
+    }
+  ],
+  "job_id": "11092",
+  "job_name": "eps-issue-1609-superkaiba",
+  "scratch_dir": "/workspace/superkaiba/eps/issue-1609",
+  "final_status": "done",
+  "final_phase": "done",
+  "saw_running": true,
+  "job_out_tail": " + openai==1.109.1\n + openai-harmony==0.0.8\n + opencv-python-headless==4.13.0.92\n + outlines-core==0.2.11\n + packaging==26.0\n + pandas==2.3.3\n + partial-json-parser==0.2.1.1.post7\n + pathvalidate==3.3.1\n + patsy==1.0.2\n + peft==0.18.1\n + pillow==12.2.0\n + platformdirs==4.9.4\n + pluggy==1.6.0\n + portalocker==3.2.0\n + prometheus-client==0.24.1\n + prometheus-fastapi-instrumentator==7.1.0\n + propcache==0.4.1\n + protobuf==3.20.3\n + psutil==7.2.2\n + psycopg==3.3.4\n + py-cpuinfo==9.0.0\n + pyarrow==23.0.1\n + pybase64==1.4.3\n + pycountry==26.2.16\n + pycparser==3.0\n + pydantic==2.12.5\n + pydantic-core==2.41.5\n + pydantic-extra-types==2.11.1\n + pydantic-settings==2.13.1\n + pygments==2.20.0\n + pyjwt==2.12.1\n + pyparsing==3.3.2\n + pytablewriter==1.2.1\n + pytest==9.0.2\n + python-dateutil==2.9.0.post0\n + python-dotenv==1.2.2\n + python-json-logger==4.1.0\n + python-multipart==0.0.22\n + pytz==2026.1.post1\n + pyyaml==6.0.3\n + pyzmq==27.1.0\n + ray==2.54.1\n + referencing==0.37.0\n + regex==2026.3.32\n + requests==2.33.1\n + rich==14.3.3\n + rich-toolkit==0.19.7\n + rignore==0.7.6\n + rouge-score==0.1.2\n + rpds-py==0.30.0\n + ruff==0.15.9\n + sacrebleu==2.6.0\n + safetensors==0.7.0\n + scikit-learn==1.8.0\n + scipy==1.17.1\n + seaborn==0.13.2\n + sentencepiece==0.2.1\n + sentry-sdk==2.57.0\n + setproctitle==1.3.7\n + setuptools==79.0.1\n + shellingham==1.5.4\n + six==1.17.0\n + smmap==5.0.3\n + sniffio==1.3.1\n + soundfile==0.13.1\n + soxr==1.0.0\n + sqlitedict==2.1.0\n + sse-starlette==3.4.2\n + starlette==0.52.1\n + statsmodels==0.14.6\n + sympy==1.14.0\n + tabledata==1.3.4\n + tabulate==0.10.0\n + tcolorpy==0.1.7\n + threadpoolctl==3.6.0\n + tiktoken==0.12.0\n + tokenizers==0.22.2\n + torch==2.8.0\n + torchaudio==2.8.0\n + torchvision==0.23.0\n + tqdm==4.67.3\n + transformers==4.57.6\n + triton==3.4.0\n + trl==0.29.1\n + typepy==1.3.4\n + typer==0.24.1\n + typing-extensions==4.15.0\n + typing-inspection==0.4.2\n + tzdata==2025.3\n + urllib3==2.6.3\n + uvicorn==0.42.0\n + uvloop==0.22.1\n + vllm==0.11.0\n + wandb==0.25.0\n + watchfiles==1.1.1\n + websockets==16.0\n + word2number==1.1\n + xformers==0.0.32.post1\n + xgrammar==0.1.25\n + xxhash==3.6.0\n + yarl==1.23.0\n + zstandard==0.25.0\n+ mv /workspace/superkaiba/eps/venv-9676e112bcbe32b5-base.tmp.2239420 /workspace/superkaiba/eps/venv-9676e112bcbe32b5-base\n+ touch /workspace/superkaiba/eps/venv-9676e112bcbe32b5-base/.complete\n+ export VIRTUAL_ENV=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base\n+ VIRTUAL_ENV=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base\n+ export PATH=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\n+ PATH=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\n+ CURRENT_PHASE=preflight\n+ _write_status preflight\n+ local phase=preflight exit_code=\n+ local heartbeat_ts\n++ date -u +%Y-%m-%dT%H:%M:%SZ\n+ heartbeat_ts=2026-07-23T03:53:58Z\n+ local gpu_busy=false\n+ command -v nvidia-smi\n+ nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits\n+ awk 'NR==1 && $1+0 > 5 {found=1} END {exit !found}'\n+ gpu_busy=true\n+ local tmp=/workspace/superkaiba/eps/issue-1609/status.json.tmp\n+ printf '{\"phase\":\"%s\",\"heartbeat_ts\":\"%s\",\"gpu_busy\":%s,\"exit_code\":\"%s\"}\\n' preflight 2026-07-23T03:53:58Z true ''\n+ mv /workspace/superkaiba/eps/issue-1609/status.json.tmp /workspace/superkaiba/eps/issue-1609/status.json\n+ set +x\n+ uv run python -m explore_persona_space.orchestrate.preflight --no-gpu --min-disk 1 --json\nwarning: `VIRTUAL_ENV=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n+ nvidia-smi\n+ : /tmp/eps-11092\n++ tr -d G\n++ df -BG /tmp/eps-11092\n++ awk 'NR==2 {print $4}'\n+ TMPDIR_FREE_GB=2545\n+ '[' -z 2545 ']'\n+ '[' 2545 -lt 50 ']'\n+ : 1\n+ '[' 1 -ne 1 ']'\n+ export PYTHONPATH=/workspace/superkaiba/eps/issue-1609\n+ PYTHONPATH=/workspace/superkaiba/eps/issue-1609\n+ CURRENT_PHASE=workload\n+ echo workload\n+ echo '[phase=workload]'\n[phase=workload]\n+ _write_status workload\n+ local phase=workload exit_code=\n+ local heartbeat_ts\n++ date -u +%Y-%m-%dT%H:%M:%SZ\n+ heartbeat_ts=2026-07-23T03:54:44Z\n+ local gpu_busy=false\n+ command -v nvidia-smi\n+ nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits\n+ awk 'NR==1 && $1+0 > 5 {found=1} END {exit !found}'\n+ gpu_busy=true\n+ local tmp=/workspace/superkaiba/eps/issue-1609/status.json.tmp\n+ printf '{\"phase\":\"%s\",\"heartbeat_ts\":\"%s\",\"gpu_busy\":%s,\"exit_code\":\"%s\"}\\n' workload 2026-07-23T03:54:44Z true ''\n+ mv /workspace/superkaiba/eps/issue-1609/status.json.tmp /workspace/superkaiba/eps/issue-1609/status.json\n+ export EPS_ISSUE=1609\n+ EPS_ISSUE=1609\n+ export EPS_ATTEMPT_ID=slurm-11092\n+ EPS_ATTEMPT_ID=slurm-11092\n+ export WANDB_PROJECT=issue1609\n+ WANDB_PROJECT=issue1609\n+ bash -eu -o pipefail -c 'nvidia-smi -L && echo \"HF_HOME=$HF_HOME\" && test -w \"$HF_HOME\" && echo HF_HOME_WRITABLE && uv run python -c \"import torch; print('\\''torch_cuda_device_count='\\'' + str(torch.cuda.device_count()))\"'\nGPU 0: NVIDIA H200 (UUID: GPU-9070e311-3f8d-6fbe-5493-f1a346a1690c)\nGPU 1: NVIDIA H200 (UUID: GPU-7940eacb-0a72-2195-5e5d-93acf5a18b04)\nGPU 2: NVIDIA H200 (UUID: GPU-403c380d-bedc-e1e8-82c6-559253a8e381)\nGPU 3: NVIDIA H200 (UUID: GPU-31c98518-5600-09ff-5ae1-dab3fc0d1597)\nGPU 4: NVIDIA H200 (UUID: GPU-bb11d002-1f0a-0166-cb48-7ef230cc4dfc)\nGPU 5: NVIDIA H200 (UUID: GPU-c6f4977a-dad3-f50d-e5c7-1be9ef3c0825)\nGPU 6: NVIDIA H200 (UUID: GPU-2276a516-eb79-59a0-6f14-ddfee14e781a)\nGPU 7: NVIDIA H200 (UUID: GPU-b188f07e-f39f-7c95-5e07-979f0ae7072d)\nHF_HOME=/workspace/pretrained_ckpts\nHF_HOME_WRITABLE\nwarning: `VIRTUAL_ENV=/workspace/superkaiba/eps/venv-9676e112bcbe32b5-base` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\ntorch_cuda_device_count=1\n+ CURRENT_PHASE=done\n+ kill 2239428\n+ SENTINEL_PATH=/workspace/superkaiba/eps/issue-1609/eval_results/issue_1609/slurm-11092/.completion-sentinel.json\n++ dirname /workspace/superkaiba/eps/issue-1609/eval_results/issue_1609/slurm-11092/.completion-sentinel.json\n+ mkdir -p /workspace/superkaiba/eps/issue-1609/eval_results/issue_1609/slurm-11092\n+ cat\n+ _write_status done 0\n+ local phase=done exit_code=0\n+ local heartbeat_ts\n++ date -u +%Y-%m-%dT%H:%M:%SZ\n+ heartbeat_ts=2026-07-23T03:54:52Z\n+ local gpu_busy=false\n+ command -v nvidia-smi\n+ nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits\n+ awk 'NR==1 && $1+0 > 5 {found=1} END {exit !found}'\n+ gpu_busy=true\n+ local tmp=/workspace/superkaiba/eps/issue-1609/status.json.tmp\n+ printf '{\"phase\":\"%s\",\"heartbeat_ts\":\"%s\",\"gpu_busy\":%s,\"exit_code\":\"%s\"}\\n' done 2026-07-23T03:54:52Z true 0\n+ mv /workspace/superkaiba/eps/issue-1609/status.json.tmp /workspace/superkaiba/eps/issue-1609/status.json\n+ echo '[phase=done]'\n[phase=done]\n+ kill 2239428\n+ true\n+ shred -u /workspace/superkaiba/eps/issue-1609/secrets.env\n+ '[' -n /tmp/eps-11092 ']'\n+ rm -rf /tmp/eps-11092\nslurmstepd-node-2: error: common_file_write_uints: write value '2239416' to '/sys/fs/cgroup/cgroup.procs' failed: Device or resource busy",
+  "fetch_results": "ok",
+  "teardown": "ok",
+  "workload_evidence": {
+    "hf_home_writable": true,
+    "torch_cuda_device_count_1": true,
+    "hf_home_resolved_shared": true,
+    "gpu_listed": true
+  },
+  "finished_utc": "2026-07-23T03:55:17.966245+00:00",
+  "known_misses": [
+    "multi-GPU sbatch shape at N=8 (only N=1 exercised)",
+    "NCCL ens1/NVLS exports under real multi-GPU load (exports rendered, not exercised)",
+    "16-GPU/user-cap park behavior (queue was empty)",
+    "low-eur preemption semantics (high-eur only)"
+  ]
+}
