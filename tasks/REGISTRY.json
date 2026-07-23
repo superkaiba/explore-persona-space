@@ -4847,8 +4847,8 @@
     "1621": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1621",
-      "status": "planning",
+      "path": "tasks/approved/1621",
+      "status": "approved",
       "title": "daily-fix: branch-guard false pos: no-checkout + heredoc"
     },
     "1622": {
