@@ -74,7 +74,19 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
-   canonical `workload.log`, BEFORE the partial dirs (small-first);
+   canonical `workload.log`, BEFORE the partial dirs (small-first). As of
+   #1605 the SAME sweep ALSO walks `/workspace/logs` (env-overridable
+   `EPS_PERSIST_WORKSPACE_LOGS_DIR`) — the GCE lane's own dispatcher
+   per-phase log / pid / sentinel convention dir — into the SAME
+   newest-first `LOG_MAX_FILES` budget, the SAME `LOG_FILE_CAP` tail, and
+   the SAME single `worker_logs` commit, staged under
+   `worker_logs/workspace_logs/<rel>`; `*.pid` (detach pid files),
+   `*.processed` (poller drained-sentinel renames), and the canonical
+   workload.log are excluded at walk time (ONE aggregate EXCLUDED line),
+   there is NO git-tracked exclude on that root (it is outside the repo
+   clone), and a missing dir SKIPs loudly (the #1415 loss class: the p3
+   traceback lived only in an unswept `/workspace/logs` per-phase log
+   while `$WORKLOAD_ROOT/logs` read empty-after-excludes);
 4. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
    workload wrote before crashing;
 5. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
@@ -171,14 +183,23 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
-`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885) —
+`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885)
+plus the `/workspace/logs` dispatcher convention dir (#1605) —
 still NOT universal artifact discovery (e.g. `figures/issue_*`,
 checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
-only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
+when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
-exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
-`<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
-under the workload-root `logs/` convention. Within the worker-log tree,
+exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641) AND, as of #1605, under
+`/workspace/logs` (env-overridable `EPS_PERSIST_WORKSPACE_LOGS_DIR`) —
+staged under `worker_logs/workspace_logs/<rel>` with `*.pid` /
+`*.processed` / the canonical workload.log excluded at walk time, NO
+git-tracked exclude (the dir is outside the repo clone), and a fail-soft
+loud SKIP on a missing dir. Rationale for widening rather than
+redirecting dispatchers: the crash persist sweeps where the logs actually
+ARE (the #1415 p3 traceback lived only in `/workspace/logs`); the
+workload-root `logs/` convention remains PREFERRED for dispatcher worker
+logs, and OTHER absolute `<vm_scratch_dir>` paths stay unswept. Within
+the worker-log tree,
 git-TRACKED files (per `git ls-files -z -- logs` against the cloned repo)
 are excluded at walk time (#1351) — a run-generated forensic log at a
 git-tracked path is NOT swept, so never append crash forensics to a

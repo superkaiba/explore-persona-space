@@ -4889,6 +4889,12 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # (production defaults are shared /tmp literals).
             "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
             "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
+            # #1605: isolate the dispatcher-logs sweep root per test — the
+            # production default is the real /workspace/logs, which a pod-side
+            # pytest run would leak into every persist test (absent by
+            # default -> the sweep SKIPs, following the #935 EPS_DONE_LOGS_DIR
+            # isolation precedent).
+            "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
         }
     )
     env.update(env_overrides or {})
@@ -5190,6 +5196,177 @@ def test_persist_heredoc_worker_logs_git_binary_missing_fails_open(tmp_path) -> 
     ]
     assert folder_calls[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
     assert "WARN worker_logs git-tracked exclude unavailable" in paths["transcript"].read_text()
+
+
+# ---------------------------------------------------------------------------
+# #1605 — crash-persist dispatcher-logs sweep (/workspace/logs)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_sweeps_workspace_logs_dispatch_dir() -> None:
+    """#1605 render pin (BOTH branches): the crash persist ALSO sweeps the
+    GCE lane's dispatcher log dir /workspace/logs (env-overridable
+    EPS_PERSIST_WORKSPACE_LOGS_DIR), staging under workspace_logs/<rel>,
+    with a fail-soft SKIP when the dir is absent (acceptance criterion 1)."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        assert "EPS_PERSIST_WORKSPACE_LOGS_DIR" in script
+        assert "/workspace/logs" in script
+        assert "workspace_logs/" in script
+        assert "SKIP workspace_logs: no such dir" in script
+
+
+def test_persist_heredoc_workspace_logs_rescues_dispatch_log(tmp_path) -> None:
+    """#1605 behavioral — the #1415 regression shape, FAILS pre-fix: with
+    $WORKLOAD_ROOT/logs ABSENT and a dispatcher per-phase log in the
+    dispatch dir (oversized, traceback at the END), the {dest}/worker_logs
+    commit lands carrying workspace_logs/issue-137-phase3.log tail-capped
+    (the traceback survives) and the TAILED line uses the
+    worker_logs/workspace_logs/... rel (acceptance criterion 2)."""
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    (ws / "issue-137-phase3.log").write_bytes(b"h" * 64 + b"P3-TRACEBACK-TAIL")  # 81 bytes
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,  # no $WORKLOAD_ROOT/logs at all — the #1415 shape
+        env_overrides={"EPS_PERSIST_LOG_FILE_CAP_BYTES": "17"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    assert folder_calls[0]["staged"] == {"workspace_logs/issue-137-phase3.log": "P3-TRACEBACK-TAIL"}
+    assert (
+        "[crash-persist] TAILED worker_logs/workspace_logs/issue-137-phase3.log:"
+        " kept last 17 of 81 bytes"
+    ) in proc.stdout
+    # One root missing + the other staged: never the empty-after-excludes SKIP.
+    assert "empty after cache/git-tracked excludes" not in proc.stdout
+
+
+def test_persist_heredoc_workspace_logs_excludes_pid_processed_canonical(tmp_path) -> None:
+    """#1605 walk-time excludes (acceptance criterion 3): *.pid (detach pid
+    files), *.processed (poller drained-sentinel renames), and the canonical
+    workload.log (EPS_LOG_PATH pointed INTO the dispatch dir) are NOT
+    staged — ONE aggregate EXCLUDED line prints — while an undrained
+    issue-137-*.json sentinel IS swept (small JSON; the #935 done-persist
+    stages exactly those)."""
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    (ws / "issue-137-phase3.log").write_text("phase3 traceback\n")
+    (ws / "issue-137.pid").write_text("12345\n")
+    (ws / "issue-137-gate.json.processed").write_text("{}\n")
+    canonical = ws / "issue-137.log"
+    canonical.write_text("canonical workload log\n")
+    (ws / "issue-137-results.json").write_text('{"status":"crashed"}\n')
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_LOG_PATH": str(canonical)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {
+        "workspace_logs/issue-137-phase3.log": "phase3 traceback\n",
+        "workspace_logs/issue-137-results.json": '{"status":"crashed"}\n',
+    }
+    assert (
+        "[crash-persist] EXCLUDED 3 pid/drained-sentinel/canonical file(s)"
+        " from workspace_logs sweep"
+    ) in proc.stdout
+    # Aggregate, never per-file: exactly ONE workspace_logs EXCLUDED line.
+    assert proc.stdout.count("from workspace_logs sweep") == 1
+
+
+def test_persist_heredoc_workspace_logs_missing_dir_skips_soft(tmp_path) -> None:
+    """#1605 fail-soft (acceptance criteria 4-6): dispatch dir absent ->
+    rc 0, a loud SKIP (the #610 missing-dir class), and the pre-existing
+    sweep is unchanged — the workload-root worker log still lands at its
+    byte-identical unprefixed repo path and the total upload_folder call
+    count stays 6 (one per surface, zero new commits)."""
+    proc, calls, _ = _run_persist_heredoc(tmp_path)  # default fixture; dispatch dir absent
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP workspace_logs: no such dir" in proc.stdout
+    seq = [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert len(seq) == 6, seq
+    assert calls[1]["path_in_repo"] == "issue137_partial/att-x/worker_logs"
+    assert calls[1]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+
+
+def test_persist_heredoc_workspace_logs_shares_budget_and_single_commit(tmp_path) -> None:
+    """#1605 shared budget + both-roots single commit (plan test 5; critic
+    concerns 1-2): two workload-root logs + two dispatch logs under
+    LOG_MAX_FILES=3 stage the newest THREE across BOTH roots in ONE
+    {dest}/worker_logs commit — workload-root files UNPREFIXED beside
+    workspace_logs/<rel> keys — the oldest of the four drops with the
+    existing dropped-count line, and the persist makes exactly 3
+    upload_folder commits total (first bundle + worker_logs + final
+    bundle; zero new commits when dispatch files stage)."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    w_old = logs / "w_oldest.log"  # oldest of the four -> dropped
+    w_new = logs / "w_new.log"
+    d_mid = ws / "issue-137-phase2.log"
+    d_new = ws / "issue-137-phase3.log"
+    for f, text in (
+        (w_old, "w-oldest\n"),
+        (w_new, "w-new\n"),
+        (d_mid, "d-mid\n"),
+        (d_new, "d-new\n"),
+    ):
+        f.write_text(text)
+    base = os.stat(d_new).st_mtime
+    os.utime(w_old, (base - 4000, base - 4000))
+    os.utime(d_mid, (base - 2000, base - 2000))
+    os.utime(w_new, (base - 1000, base - 1000))
+    os.utime(d_new, (base, base))
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "3"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    # Critic concern 1: the total upload_folder COUNT with dispatch files
+    # staged — first bundle + ONE worker_logs commit + final bundle.
+    assert len(folder_calls) == 3, [c["path_in_repo"] for c in folder_calls]
+    wl = [c for c in folder_calls if c["path_in_repo"].endswith("/worker_logs")]
+    assert [c["path_in_repo"] for c in wl] == ["issue137_partial/att-x/worker_logs"]
+    # Critic concern 2: unprefixed workload-root rels beside workspace_logs/
+    # rels in the SAME commit; the oldest of the four dropped.
+    assert wl[0]["staged"] == {
+        "issue_137/w_new.log": "w-new\n",
+        "workspace_logs/issue-137-phase2.log": "d-mid\n",
+        "workspace_logs/issue-137-phase3.log": "d-new\n",
+    }
+    assert (
+        "[crash-persist] SKIP 1 older worker log(s) beyond EPS_PERSIST_LOG_MAX_FILES=3"
+    ) in proc.stdout
+
+
+def test_persist_heredoc_workspace_logs_same_dir_skips(tmp_path) -> None:
+    """#1605 degenerate-root guard (critic concern 3): the dispatch root
+    pointed at $WORKLOAD_ROOT/logs itself SKIPs the second walk loudly
+    (never a double-count) and the workload-root sweep stages its file
+    once, unprefixed."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={"EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workload" / "logs")},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "SKIP workspace_logs: same dir as worker logs root" in proc.stdout
+    wl = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")]
+    assert wl[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
 
 
 # ---------------------------------------------------------------------------
