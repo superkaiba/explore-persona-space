@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1613,
+  "highest_id": 1614,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4787,6 +4787,13 @@
       "path": "tasks/planning/1613",
       "status": "planning",
       "title": "workflow-fix: WARN on zero-resolving --map-files input in select_step9c_tests"
+    },
+    "1614": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1614",
+      "status": "proposed",
+      "title": "workflow-fix: decide bit-deterministic vs bit_byte_identical ban family (allowlist or widen)"
     },
     "162": {
       "has_clean_result": false,
