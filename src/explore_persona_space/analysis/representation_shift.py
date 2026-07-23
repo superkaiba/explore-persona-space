@@ -391,6 +391,16 @@ def _build_generation_prompts(
     return prompts, keys
 
 
+# Row schema contract for _generate_responses_vllm — pinned by
+# tests/test_representation_shift_row_schema.py (#1610; origin #1586 crash r6:
+# KeyError: "response" across the reuse seam). Rows carry TOKEN IDS only — there is
+# NO "response" text key; consumers decode response_token_ids at their own seam.
+# Contract binds AT RETURN; consumers may enrich rows in place afterward.
+GENERATION_ROW_KEYS: frozenset[str] = frozenset(
+    {"persona", "question_idx", "prompt_token_ids", "response_token_ids", "finish_reason"}
+)
+
+
 def _generate_responses_vllm(
     model_path: str,
     personas: dict[str, str | None],
@@ -409,6 +419,9 @@ def _generate_responses_vllm(
     ``user_wraps`` / ``prior_turns`` thread per-context user-turn wraps and
     frozen multi-turn prefixes into the prompt build
     (see :func:`_build_generation_prompts`).
+
+    Row schema contract: keys == GENERATION_ROW_KEYS (token ids only — no
+    "response" text key).
     """
     from vllm import LLM, SamplingParams
 
@@ -454,6 +467,10 @@ def _generate_responses_vllm(
                 "finish_reason": completion.finish_reason,
             }
         )
+
+    assert all(set(r) == GENERATION_ROW_KEYS for r in rows), (
+        "row schema drift vs GENERATION_ROW_KEYS - update the contract test + audit consumers"
+    )
 
     # vLLM teardown so the next engine load / HF pass can allocate (see gotchas:
     # worker teardown). The bare ``del llm; gc; empty_cache`` triad is NOT enough
