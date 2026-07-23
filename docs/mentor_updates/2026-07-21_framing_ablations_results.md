@@ -1,5 +1,7 @@
 # Result: "User:/Assistant:" is the chat map in different coordinates; narrative framing is what collapses it
 
+> **Superseded (2026-07-23):** this framing-half writeup is folded into the combined doc [`2026-07-23_one_operator_framing_vs_identity.md`](2026-07-23_one_operator_framing_vs_identity.md), which adds the identity half (#1310, #1639, #1335) and the assistant direct test. Read that one.
+
 ## Motivation
 
 * The last update left a tension: the assistant context→answer map holds up in plain "User:/Assistant:" transcripts with no chat template, but collapses for generic stories ([#825](https://eps.superkaiba.com/tasks/825)) — even though plain transcripts look superficially story-like.
