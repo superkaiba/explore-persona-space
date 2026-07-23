@@ -227,6 +227,8 @@ relaunch, a watch-session correction — not just first launches:
    a fresh SSH call and check it equals the pid you post in the marker. A
    relaunch that leaves a predecessor's pid in the file is a
    launch-contract violation.
+   How the pid VALUE is obtained is governed by 1d below — from the
+   launch expression itself, never a post-hoc `pgrep`.
 1b. **Rotate the phase log at every relaunch BEFORE re-arming any pattern-matching poller.**
    A relaunch that appends to (or re-points at) the predecessor's log
    leaves the FIRST run's failure/completion lines in the very file a
@@ -263,6 +265,45 @@ relaunch, a watch-session correction — not just first launches:
    append-mode log that may contain a predecessor's lines is NEVER a
    valid crash-signature read — the grep-side sibling of the #779
    stale-existing-file false-DONE (CLAUDE.md § Monitoring).
+1d. **Pid ACQUISITION comes from the LAUNCH EXPRESSION itself — NEVER
+   from a post-hoc `pgrep`.** The two sanctioned sources are (i) the
+   launcher's pre-exec `echo $$` (item 1's preferred path;
+   `.claude/agents/experimenter.md` § During Execution steps 1/1b) and
+   (ii) `$!` of the detached child captured in the SAME command chain
+   as the launch — the launcher-less pod form
+   (`setsid nohup ... < /dev/null & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
+   experimenter.md § During Execution) and the VM-side analogue
+   (SKILL.md § Detached VM-side long compute phases, whose `bash -c`
+   wrapper is the load-bearing `$!`-capture shape under job control).
+   A derived read ANCHORED to a captured pid counts as
+   launch-expression-derived too: experimenter.md step 3's
+   parent-scoped child-walk (`pgrep -P "$WRAPPER_PID"` against the
+   `$!`-captured wrapper) can only see descendants of the captured
+   pid, never an arbitrary transient sibling, so it does not
+   contradict this clause. An UNANCHORED `pgrep` run after the launch
+   to "find" the new pid can capture a TRANSIENT sibling (a vanishing
+   wrapper, a resolver child, a dying predecessor): the #1112 relaunch
+   (2026-07-23) populated the pid file from exactly such a pgrep, and
+   the Monitor TWICE reported the healthy dispatcher "exited" — two
+   false alarms, each burning a diagnosis round mid-ZeRO-3-recovery.
+   `pgrep` otherwise keeps exactly two roles, neither of which
+   populates the pid FILE at launch time:
+   (a) the RECOVERY probe when the launch-expression pid was genuinely
+   lost — bracket one pattern character
+   (`pgrep -f 'issue<N>_dispatc[h]'`, the `.claude/rules/gotchas.md`
+   ownership-probe self-match convention) and identity-verify with
+   `ps -p "$PID" -o args=` BEFORE trusting or writing the result; the
+   verified pid MAY then be written via item 1's atomic tmp+rename
+   rewrite;
+   (b) an ad-hoc liveness monitor's pattern-probe FALLBACK — a harness
+   Monitor / until-loop watcher (the #1112 shape), NOT
+   `poll_pipeline.py`, whose verdict path item 2's contract still
+   governs — run ALONGSIDE the pid-file probe, the pattern bracketed
+   per (a) (an unbracketed pattern can self-match the monitor's own
+   command line and mint a false-ALIVE verdict masking a dead run), so
+   a stale or transient pid alone cannot mint a false "exited"
+   verdict; the pattern probe supplements, never replaces, the pid
+   file.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
