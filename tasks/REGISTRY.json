@@ -4903,8 +4903,8 @@
     "1629": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1629",
-      "status": "reviewing",
+      "path": "tasks/completed/1629",
+      "status": "completed",
       "title": "daily-fix: issue-tick no-op in interactive sessions"
     },
     "163": {
