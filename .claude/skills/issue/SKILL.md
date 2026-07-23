@@ -6731,6 +6731,35 @@ or the wider explicit value + one-line reason) + the earlyoom protection state
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
+**Inline measurement-design + figure-sanity duties (REQUIRED — statement/check
+duties, not a gate; auto-continue unchanged).** Same rationale as the
+compute-character statement above: this step and the CLAUDE.md § Routing
+"User-chat inline free analysis" carve-out are PLANNERLESS — they skip the
+planner+critic stack, where the both-arms mapping review (planner.md §4 /
+critic.md Methodology lens) and the interpretation-critic's figure-load check
+(Lens 6) live. Two duties, siblings of — not additions to — the five-element
+compute-character statement above:
+(1) **Both mapping arms.** A round that computes a representation mapping — a
+geometry read, predictor, probe, or direction extraction over model
+activations — states in the dispatch-time `epm:progress` breadcrumb (or an
+immediately-adjacent `epm:progress` note) that BOTH arms run: prefix-based
+(the prefix is everything before the user query) AND context-based (the
+prefix plus the user query), per the CLAUDE.md Critical Rules "Prefix mapping
+AND context mapping" bullet — or names the explicit stated deviation. A
+one-arm round with no stated deviation is the #958 class; #779's 2026-07-14
+inline pre-image round shipped context-only and the user had to catch the
+missing prefix arm (a full extra inline round).
+(2) **Figure sanity before presentation/commit.** Before PRESENTING (chat,
+report, body) or COMMITTING any figure the round rendered, Read the rendered
+PNG and confirm non-empty axes + plotted series and sane value ranges. An
+empty/blank render is a round bug — fix it before showing anything; never
+present or commit it. The interpretation-critic's Lens 6 PNG-load check does
+not run on inline rounds (#1112: an empty figure was presented 3× while the
+extraction bug was found).
+Non-mapping rounds with no figures state nothing — each duty fires only on
+its trigger; routing, auto-continue behavior, and the marker schema are
+unchanged.
+
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
@@ -6778,7 +6807,9 @@ explicit eval-data path):
    ```
    When the follow-up runs any fit/battery, this breadcrumb (or an
    immediately-following `epm:progress` note) carries the
-   § Compute-character pre-launch statement above. Every 9a-ter dispatch
+   § Compute-character pre-launch statement above. When it computes a
+   representation mapping, the same note ALSO carries the both-arms line
+   (§ Inline measurement-design + figure-sanity duties above). Every 9a-ter dispatch
    breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
    entry guard § Pre-dispatch external-marker triage) — the free-analysis
    run is a VM-side compute phase.
@@ -6805,7 +6836,10 @@ explicit eval-data path):
    a script in `scripts/issue<N>_*.py` or a helper under
    `src/explore_persona_space/analysis/` — over the existing eval
    JSONs. Regenerate any affected figures (the analyzer's
-   `figures/issue_<N>/` outputs); commit + push to `main` so the body
+   `figures/issue_<N>/` outputs); Read each regenerated PNG and confirm
+   non-empty axes + plotted series
+   (§ Inline measurement-design + figure-sanity duties above) BEFORE
+   presenting or committing it; then commit + push to `main` so the body
    can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
    `git push origin main || uv run python scripts/sync_repo_root.py` —
    never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
