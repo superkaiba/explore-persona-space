@@ -1,0 +1,14 @@
+{
+  "revisions": {
+    "parent": "79dacd5239869e8de65c89a04437a606af436ad0",
+    "shards": "9d8f789bf034d8f244e1d00e0dbbe6aba6d272c5"
+  },
+  "repro": {
+    "git_commit": "59f2d4df05a8d790afa7f54a7788b7323acc3566",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-23T03:45:06.437241+00:00"
+  }
+}
