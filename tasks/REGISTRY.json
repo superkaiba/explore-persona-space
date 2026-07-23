@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1621,
+  "highest_id": 1622,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4850,6 +4850,13 @@
       "path": "tasks/proposed/1621",
       "status": "proposed",
       "title": "daily-fix: branch-guard false pos: no-checkout + heredoc"
+    },
+    "1622": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1622",
+      "status": "proposed",
+      "title": "daily-fix: artifact turns end with bare URL (project rule)"
     },
     "163": {
       "has_clean_result": false,
