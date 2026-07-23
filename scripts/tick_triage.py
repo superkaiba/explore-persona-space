@@ -39,7 +39,9 @@ session, and re-driving the 44K-token /issue skill would hijack the
 human's thread. The transcript is resolved happy-log-only via a /proc
 ancestry walk (bash -> claude -> happy node wrapper -> the wrapper's
 log names the transcript); cron-injected ``<command-message>``-wrapped
-prompts, skill-load meta rows, and tool results never count as human.
+prompts, harness ``<task-notification>`` rows (Agent-tool spawn briefs /
+completion notifications), skill-load meta rows, and tool results never
+count as human.
 Fail toward ticking: ANY resolution, parse, or classification failure
 suppresses nothing (today's exact behavior). Teardown verdicts
 (TERMINAL / GATE-TRANSITION) are never suppressed — the teardown is
@@ -761,6 +763,11 @@ def is_human_transcript_row(row: object) -> bool:
     reads False. A human-typed slash command reads False too (wrapped
     identically to a cron-injected one) — acceptable: mistaking a human
     for automation only costs one tick turn, never a stranded task.
+    Harness-injected ``<task-notification>`` rows (Agent-tool spawn briefs
+    / completion notifications — plain-string user rows, the dominant
+    string-row class in autonomous transcripts: 149/149 measured across
+    two transcripts, r2 Must-Fix) classify automation via the prefix
+    exclusion below.
     """
     if not isinstance(row, dict) or row.get("type") != "user" or row.get("isMeta"):
         return False
@@ -772,7 +779,9 @@ def is_human_transcript_row(row: object) -> bool:
         s = content.lstrip()
         if not s:
             return False
-        if "<command-name>" in content or s.startswith(("<command-message>", "<local-command")):
+        if "<command-name>" in content or s.startswith(
+            ("<command-message>", "<local-command", "<task-notification")
+        ):
             return False
         return True
     if isinstance(content, list):  # the ONE list-shape human signal: the interrupt row
@@ -832,7 +841,14 @@ def human_activity_reason(now: float) -> str | None:
         if best_age is None:
             return None
         return f"human-active (last human msg {best_age / 60:.0f}m ago < {window / 60:.0f}m)"
-    except Exception:
+    except Exception as exc:
+        # Debug-only error rung (r2 Minor): exception TYPE only (content
+        # invariant #1000), itself guarded so the helper still can never
+        # raise into triage() (the #1629 hard constraint).
+        try:
+            _human_probe_debug(f"error={type(exc).__name__}")
+        except Exception:
+            return None
         return None
 
 

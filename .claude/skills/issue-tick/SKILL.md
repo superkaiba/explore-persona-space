@@ -93,8 +93,10 @@ class permanently unrecovered.
 STALE-REDRIVE to `HEALTHY` (reason prefix `human-active`) when this
 session's transcript tail shows a human (non-cron) user message within
 `EPM_TICK_HUMAN_ACTIVE_S` (default 2700 s ≈ one tick interval).
-Cron-injected `/issue-tick` / `/issue` prompts, skill-load meta rows, and
-tool results never count as human. Fail toward ticking: any
+Cron-injected `/issue-tick` / `/issue` prompts, harness
+`<task-notification>` rows (Agent-tool spawn briefs / completion
+notifications), skill-load meta rows, and tool results never count as
+human. Fail toward ticking: any
 transcript-resolution or classification failure suppresses nothing.
 Teardown verdicts (TERMINAL / GATE-TRANSITION) are deliberately NOT
 suppressed — the teardown is what stops future interruptions. For the

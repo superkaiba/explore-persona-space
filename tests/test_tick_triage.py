@@ -901,6 +901,17 @@ def _transcript_row(kind: str, age_s: float, text: str = "hello") -> dict:
             "role": "user",
             "content": [{"type": "text", "text": "[Request interrupted by user]"}],
         }
+    elif kind == "notification":
+        # Agent-tool completion notification / spawn brief (r2 Must-Fix):
+        # a plain-STRING user row starting with the literal
+        # <task-notification> — the dominant string-row class in autonomous
+        # transcripts (149/149 measured across two transcripts).
+        base["message"] = {
+            "role": "user",
+            "content": (
+                f"<task-notification>Background task bash_1 completed</task-notification>\n{text}"
+            ),
+        }
     else:
         raise ValueError(kind)
     return base
@@ -947,6 +958,34 @@ def test_cron_prompt_only_transcript_does_not_suppress(state_dir, monkeypatch, t
     _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
     verdict, _ = tick_triage.triage(1629, "issue")
     assert verdict == "STALE-REDRIVE"
+
+
+def test_agent_notification_row_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """r2 Must-Fix pin (fresh-ts fixture): a FRESH Agent-tool
+    `<task-notification>` plain-string user row — the near-continuous
+    row class during agent-heavy autonomous work — classifies automation
+    and never suppresses the STALE-REDRIVE."""
+    path = _write_transcript(tmp_path, [_transcript_row("notification", 60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(1629, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_debug_error_rung_on_raising_probe(state_dir, monkeypatch, capsys):
+    """r2 Minor: with debug ON, a raising probe emits an `error=<ExcType>`
+    rung (type name only — content invariant #1000) and still returns
+    None (fail toward ticking)."""
+    monkeypatch.setenv("EPM_TICK_HUMAN_PROBE_DEBUG", "1")
+
+    def boom():
+        raise RuntimeError("resolution blew up")
+
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", boom)
+    assert tick_triage.human_activity_reason(NOW) is None
+    err = capsys.readouterr().err
+    assert "[human-probe] error=RuntimeError" in err
+    assert "resolution blew up" not in err  # exception TYPE only, never the message
 
 
 def test_resolution_failure_fails_toward_ticking(state_dir, monkeypatch, capsys):
@@ -1060,6 +1099,17 @@ def test_terminal_and_gate_verdicts_unchanged_when_human_active(state_dir, monke
         ),
         (
             {"type": "user", "message": {"role": "user", "content": "<local-command-stdout>x"}},
+            False,
+        ),
+        (  # r2 Must-Fix pin: Agent-tool <task-notification> string rows are automation
+            _transcript_row("notification", 60),
+            False,
+        ),
+        (
+            {
+                "type": "user",
+                "message": {"role": "user", "content": "<task-notification>Agent brief…"},
+            },
             False,
         ),
         (
