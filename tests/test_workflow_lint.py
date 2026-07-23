@@ -8367,3 +8367,278 @@ def test_regen_flag_early_dispatch_and_not_in_no_flags_tuple():
     assert "--regen-hf-routing-snapshot" in src[fn_start:fn_end], (
         "the live-hf-retry-routing FAIL message must name --regen-hf-routing-snapshot"
     )
+
+
+# ---------------------------------------------------------------------------
+# --check-bare-list-repo-files (#1624): data-repo full-listing wedge
+# ---------------------------------------------------------------------------
+
+
+def test_check_bare_list_repo_files_flags_attribute_call(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def fetch():\n"
+        "    return HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "[bare-list-repo-files]" in errors[0]
+    assert "scripts/new_tool.py:3" in errors[0]
+    assert "list_hf_files_under_path" in errors[0]
+
+
+def test_check_bare_list_repo_files_flags_imported_name_alias(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import list_repo_files as lrf\n"
+        "def fetch():\n"
+        "    return lrf('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_flags_imported_name_unaliased(tmp_path):
+    """The plain (un-aliased) `from huggingface_hub import list_repo_files`
+    + bare `list_repo_files(...)` form — the asname-aware Name leg's
+    default branch."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import list_repo_files\n"
+        "def fetch():\n"
+        "    return list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_src_scope_covered(tmp_path):
+    """The scope delta vs --check-hub-verify-retry (#1202, scripts/ only):
+    src/explore_persona_space/ offenders ARE flagged."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "src" / "explore_persona_space" / "new_mod.py").write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "src/explore_persona_space/new_mod.py:2" in errors[0]
+
+
+def test_check_bare_list_repo_files_waiver_passes(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def fetch():\n"
+        "    # LIST_REPO_FILES_EXEMPT: small model repo, full listing is the point\n"
+        "    return HfApi().list_repo_files('org/small-repo')\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_waiver_on_hit_line_passes(tmp_path):
+    """Waiver placement on the HIT line itself (the plan tests only the
+    preceding-line placement; the helper honors both)."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "x = HfApi().list_repo_files('org/r')  # LIST_REPO_FILES_EXEMPT: tiny repo by design\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_short_waiver_reason_still_flags(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "# LIST_REPO_FILES_EXEMPT: ok\n"
+        "x = HfApi().list_repo_files('org/r')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_list_repo_files_frozen_snapshot_skipped(tmp_path):
+    from workflow_lint import LIST_REPO_FILES_FROZEN_SNAPSHOT, check_bare_list_repo_files
+
+    frozen_member = "scripts/dispatch_neg_geometry_504.py"
+    assert frozen_member in LIST_REPO_FILES_FROZEN_SNAPSHOT
+    root = _hf_routing_root(tmp_path)
+    (root / frozen_member).write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_prose_mentions_never_flag(tmp_path):
+    """The AST-invisibility guarantee: docstring / comment / f-string
+    mentions are ast.Constant nodes and can never match — no
+    pattern-string exclusion constants exist for this check by design."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "prose_only.py").write_text(
+        '"""Docstring naming list_repo_files( for reference."""\n'
+        "# comment naming list_repo_files( too\n"
+        "def msg(repo):\n"
+        "    return f'HF list_repo_files({repo}) timed out'\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_monkeypatch_targets_exempt_load_save_flagged(tmp_path):
+    """Inherited #1482/#1561 semantics: Store/Del patch/restore targets are
+    exempt; the Load-ctx bare-reference SAVE still flags (a saved alias
+    later called still wedges) and takes the waiver."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "patcher.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def patch(fake):\n"
+        "    orig = HfApi.list_repo_files\n"
+        "    HfApi.list_repo_files = fake\n"
+        "    return orig\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/patcher.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_scoped_helpers_invisible(tmp_path):
+    """The scoped recipes are structurally invisible (different attr/name
+    strings): list_repo_files_complete / list_hf_files_under_path /
+    api.list_repo_tree never match the narrowed target set."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "scoped.py").write_text(
+        "from explore_persona_space.orchestrate.hub import (\n"
+        "    list_hf_files_under_path,\n"
+        "    list_repo_files_complete,\n"
+        ")\n"
+        "def fetch(api):\n"
+        "    a = list_repo_files_complete(api, 'org/repo', path_in_repo='x')\n"
+        "    b = list_hf_files_under_path(api, 'org/repo', 'prefix')\n"
+        "    c = api.list_repo_tree('org/repo', path_in_repo='p', recursive=True)\n"
+        "    d = api.file_exists('org/repo', 'p/file.json')\n"
+        "    return a, b, c, d\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_live_tree_passes():
+    """Acceptance criterion 1 (#1624): the committed tree carries ZERO bare
+    list_repo_files sites outside the frozen snapshot (the
+    test_live_trees_pass idiom). A NEW bare call in scripts/ or src/ fails
+    this test."""
+    from workflow_lint import check_bare_list_repo_files
+
+    assert check_bare_list_repo_files() == []
+
+
+def test_check_bare_list_repo_files_registered_in_no_flags_default_run():
+    """The check is bundled into the no-flags default run (#1624): the flag
+    is in the no_flags detection tuple AND dispatched on the no-flags
+    branch."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_bare_list_repo_files or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_bare_list_repo_files\(\)\)",
+        src,
+    ), "check_bare_list_repo_files is not dispatched on the no-flags branch"
+    assert "or args.check_bare_list_repo_files" in src, (
+        "--check-bare-list-repo-files is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_bare_list_repo_files_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-bare-list-repo-files")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-bare-list-repo-files failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_regen_list_repo_files_snapshot_lists_offenders_and_diff(tmp_path, capsys):
+    """The regen walker applies the same bare/waived predicate as the check
+    (snapshot-blind), prints the paste-ready literal on stdout, and the +/-
+    diff summary vs the compiled-in constant on stderr (#1568 idiom)."""
+    from workflow_lint import LIST_REPO_FILES_FROZEN_SNAPSHOT, regen_list_repo_files_snapshot
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "bare.py").write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "waived.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "# LIST_REPO_FILES_EXEMPT: small repo, full listing deliberate\n"
+        "x = HfApi().list_repo_files('org/small')\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "scoped.py").write_text(
+        "def fetch(api):\n    return api.list_repo_tree('org/repo', path_in_repo='p')\n",
+        encoding="utf-8",
+    )
+    assert regen_list_repo_files_snapshot(repo_root=root) == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert lines[0] == "LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset("
+    assert lines[1] == "    {"
+    assert lines[-2] == "    }"
+    assert lines[-1] == ")"
+    entries = re.findall(r'^        "([^"]+)",$', captured.out, flags=re.MULTILINE)
+    assert entries == ["scripts/bare.py"], entries
+    assert f"+1 added, -{len(LIST_REPO_FILES_FROZEN_SNAPSHOT)} removed" in captured.err
+    assert "# + scripts/bare.py" in captured.err
+
+
+def test_hub_verify_bare_hits_default_targets_unchanged():
+    """Parametrization regression (#1624 plan §4e test 14): with no
+    `targets` kwarg the walker still matches the full
+    HUB_VERIFY_BARE_TARGETS set (protects check_hub_verify_retry), and the
+    narrowed call matches list_repo_files only."""
+    import ast
+
+    from workflow_lint import _hub_verify_bare_hits
+
+    tree = ast.parse(
+        "from huggingface_hub import file_exists\n"
+        "def f(api):\n"
+        "    a = api.list_repo_tree('org/r', path_in_repo='p')\n"
+        "    b = file_exists('org/r', 'x')\n"
+        "    c = api.list_repo_files('org/r')\n"
+    )
+    default_patterns = sorted(p for _, p in _hub_verify_bare_hits(tree))
+    assert default_patterns == [".list_repo_files(", ".list_repo_tree(", "file_exists("]
+    narrowed = _hub_verify_bare_hits(tree, targets=frozenset({"list_repo_files"}))
+    assert narrowed == [(5, ".list_repo_files(")]

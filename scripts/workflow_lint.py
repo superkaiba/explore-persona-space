@@ -507,6 +507,36 @@ Behaviours:
   by design (#1547). Regenerate the snapshot with
   ``--regen-hf-routing-snapshot`` (maintenance flag) — see the constant's
   comment for the staleness-race recipe (#1568).
+* ``--check-bare-list-repo-files`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on any bare ``list_repo_files``
+  call/reference — a Load-ctx ``.list_repo_files(`` Attribute under ANY
+  receiver, or a Load-ctx Name bound by ``from huggingface_hub import
+  list_repo_files [as alias]`` (:func:`_hub_verify_bare_hits` narrowed to
+  :data:`LIST_REPO_FILES_TARGETS`). hub 0.36.2's ``HfApi.list_repo_files``
+  has NO scoping parameter — its body is an unscoped
+  ``list_repo_tree(recursive=True)`` full-tree walk — so every call is a
+  full listing, which WEDGES on the ~1M-file data repo (>90 s #833, >600 s
+  #920; two kills 2026-07-22 → #1624) and retry cannot save it (the walk
+  grinds, it does not raise) — orthogonal to ``--check-hub-verify-retry``
+  (transient-retry property) and deliberately OUT of
+  ``--check-live-hf-retry-routing``'s predicate. Fix: the scoped recipes —
+  ``hub.list_hf_files_under_path`` / ``hub.verify_repo_paths_uploaded`` /
+  ``api.list_repo_tree(path_in_repo=...)`` / ``api.file_exists``
+  (single-path probe). A genuinely-correct SMALL-repo full listing waives
+  with ``# LIST_REPO_FILES_EXEMPT: <reason>`` (reason ≥
+  :data:`LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS` chars) on the call's line
+  or the previous non-blank line. Historical files frozen at #1624
+  implement time are snapshot-exempt
+  (:data:`LIST_REPO_FILES_FROZEN_SNAPSHOT`; regenerate with
+  ``--regen-list-repo-files-snapshot``, the #1568 idiom). Named residuals
+  NOT covered: never-committed ad-hoc probes (inline ``python -c``
+  one-liners — the shape of one of the 2026-07-22 kills) are structurally
+  outside ANY file lint (this check covers the committed-code subclass);
+  unscoped ``list_repo_files_complete`` / ``list_repo_tree(recursive=True)``
+  calls without ``path_in_repo`` (kwarg-presence analysis = high-FP);
+  ``snapshot_download``; ``getattr`` evasion; ``.sh`` heredocs;
+  ``HfFileSystem.ls()``.
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -666,7 +696,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -7329,23 +7359,32 @@ def check_batch_judge_client(
     return errors
 
 
-def _hub_verify_waiver_present(lines: list[str], call_lineno: int) -> bool:
+def _hub_verify_waiver_present(
+    lines: list[str],
+    call_lineno: int,
+    *,
+    waiver_re: re.Pattern[str] = HUB_VERIFY_WAIVER_RE,
+    min_reason_chars: int = HUB_VERIFY_WAIVER_MIN_REASON_CHARS,
+) -> bool:
     """Return True iff a ``# HUB_VERIFY_RETRY_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) is on the
     call's first physical line (``call_lineno``, 1-based) or the immediately
     preceding non-blank line. Same convention as
-    :func:`_batch_judge_client_waiver_present`."""
+    :func:`_batch_judge_client_waiver_present`. The defaulted keywords keep
+    the ``check_hub_verify_retry`` behavior byte-identical;
+    ``_list_repo_files_waiver_present`` (#1624) delegates here with its own
+    ``waiver_re`` / ``min_reason_chars`` pair."""
     idx = call_lineno - 1  # to 0-based
     if 0 <= idx < len(lines):
-        m = HUB_VERIFY_WAIVER_RE.search(lines[idx])
-        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+        m = waiver_re.search(lines[idx])
+        if m and len(m.group(1).strip()) >= min_reason_chars:
             return True
     back = idx - 1
     while back >= 0 and lines[back].strip() == "":
         back -= 1
     if back >= 0:
-        m = HUB_VERIFY_WAIVER_RE.search(lines[back])
-        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+        m = waiver_re.search(lines[back])
+        if m and len(m.group(1).strip()) >= min_reason_chars:
             return True
     return False
 
@@ -7353,13 +7392,21 @@ def _hub_verify_waiver_present(lines: list[str], call_lineno: int) -> bool:
 HUB_VERIFY_BARE_TARGETS: tuple[str, ...] = ("list_repo_files", "list_repo_tree", "file_exists")
 
 
-def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
+def _hub_verify_bare_hits(
+    tree: ast.Module, targets: Collection[str] = HUB_VERIFY_BARE_TARGETS
+) -> list[tuple[int, str]]:
     """Return ``(lineno, pattern)`` pairs for bare Hub verify nodes in ``tree``.
+
+    ``targets`` narrows the matched symbol set (default: the full
+    :data:`HUB_VERIFY_BARE_TARGETS` tuple — the ``check_hub_verify_retry``
+    behavior, unchanged); ``check_bare_list_repo_files`` (#1624) reuses the
+    walker with ``targets=LIST_REPO_FILES_TARGETS``. Membership (``in``)
+    semantics are identical across the tuple/frozenset argument types.
 
     Two legs:
 
     * any **Load-ctx** ``ast.Attribute`` whose ``attr`` is in
-      :data:`HUB_VERIFY_BARE_TARGETS` — covers ``api.list_repo_files(...)``,
+      ``targets`` — covers ``api.list_repo_files(...)``,
       ``HfApi().list_repo_tree(...)``, ``hh.file_exists(...)`` under a module
       alias, AND the bare-reference form passed to a retry wrapper /
       ``asyncio.to_thread`` (mirrors :func:`_is_batches_create_attr`, plus
@@ -7388,11 +7435,11 @@ def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
             for a in node.names:
-                if a.name in HUB_VERIFY_BARE_TARGETS:
+                if a.name in targets:
                     hf_bound[a.asname or a.name] = a.name
     hits: list[tuple[int, str]] = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.Attribute) and node.attr in HUB_VERIFY_BARE_TARGETS:
+        if isinstance(node, ast.Attribute) and node.attr in targets:
             if isinstance(node.ctx, (ast.Store, ast.Del)):
                 # Assignment/deletion TARGETS — the monkeypatch patch/RESTORE
                 # assignments in self-test code (`HfApi.list_repo_tree = fake`,
@@ -8276,6 +8323,294 @@ def regen_hf_routing_snapshot(*, repo_root: Path | None = None) -> int:
         sys.stderr.write(f"# + {rel}  (NEW offender — route it if this round created it)\n")
     for rel in removed:
         sys.stderr.write(f"# - {rel}  (no longer flags: deleted, routed, or waived)\n")
+    return 0
+
+
+# --- `--check-bare-list-repo-files` (#1624): data-repo full-listing wedge ---
+# hub 0.36.2's HfApi.list_repo_files has NO scoping parameter — its body IS
+# an unscoped list_repo_tree(recursive=True) full-tree walk — so EVERY call
+# is a full listing; against the ~1M-file data repo it wedges (>90 s #833,
+# >600 s #920; two listing-probe kills 2026-07-22 -> #1624). Retry does NOT
+# fix this class (the walk grinds, it does not raise) — ORTHOGONAL to
+# --check-hub-verify-retry (#1202: transient-retry property, scripts/ only)
+# and to --check-live-hf-retry-routing (#1547: excludes list_repo_files by
+# stated scope boundary). Scoped recipes: hub.list_hf_files_under_path /
+# hub.verify_repo_paths_uploaded / api.list_repo_tree(path_in_repo=...) /
+# api.file_exists (single-path probe) / list_repo_files_complete(
+# path_in_repo=...). Detection: AST via _hub_verify_bare_hits(targets=...)
+# — comments/docstrings/f-strings can never match; Store/Del monkeypatch
+# targets exempt; asname-aware imported-Name leg. Named residual:
+# never-committed ad-hoc probes (inline `python -c` one-liners — the shape
+# of one of the 2026-07-22 kills) are structurally outside ANY file lint;
+# this check covers the committed-code subclass only.
+LIST_REPO_FILES_TARGETS: frozenset[str] = frozenset({"list_repo_files"})
+LIST_REPO_FILES_WAIVER_RE = re.compile(r"#\s*LIST_REPO_FILES_EXEMPT\s*:\s*(.+?)\s*$")
+LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS = 10
+# SNAPSHOT allowlist of files with >=1 AST hit at #1624 implement time
+# (2026-07-23; regen: --regen-list-repo-files-snapshot). File-grain
+# membership exempts the WHOLE file (the #1547/#1202 accepted trade-off;
+# the scoping requirement re-attaches at REUSE time via artifact-reuse
+# check (i)); migrating a file onto the hub helpers -> DROP its entry.
+#
+# STALENESS RACE (#1568, incident #1547 -> 74bf37250b): this constant is a
+# source-frozen artifact, so it can go stale between its generation and the
+# round's Step 10d merge gate whenever main churn lands a new offender for
+# the CURRENT predicate. Steady state is safe (the check exists on main:
+# both gate legs carry it and new bare-call files block at their own
+# gates); the race re-opens when a round TIGHTENS this check (predicate /
+# scope) or introduces a sibling snapshot-based check. Recipe: regenerate
+# via `workflow_lint.py --regen-list-repo-files-snapshot` on a main-synced
+# tree as the LAST pre-gate step, and again on any gate re-run after main
+# churn; review the stderr `+` lines — a file YOUR round created must be
+# SCOPED through the hub helpers (or LIST_REPO_FILES_EXEMPT-waived), never
+# grandfathered. NOTE: a whole-literal regen paste can 3-way-CONFLICT with
+# a concurrent main-side one-line append at the gate's merge of a
+# payload-touched workflow_lint.py — resolve by re-running regen on the
+# freshly synced tree, never by hand-merging the hunks. Do NOT add
+# dead-entry hygiene (a deleted member's entry is inert; enforcing removal
+# would CREATE gate friction on unrelated deletions). Keep the FAIL-message
+# text stable while an offender exists on main: the merge gate's
+# baseline-vs-gated subtraction compares normalized message LINES, so a
+# message rewrite that lands while an offender exists on main would
+# false-block as NEW (companion note at the message construction in
+# _bare_list_repo_files_file_errors).
+LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
+    {
+        "scripts/dispatch_factor_screen_365.py",
+        "scripts/dispatch_neg_geometry_504.py",
+        "scripts/i474_check_adapter_hf_presence.py",
+        "scripts/i474_phase0_preflight.py",
+        "scripts/i477_reval_confirm.py",
+        "scripts/i488_phase3_train_sweep.py",
+        "scripts/i504_reval_confirm.py",
+        "scripts/i528_phase23_train.py",
+        "scripts/i556_pull_qbank.py",
+        "scripts/i601_run_cell.py",
+        "scripts/i650_write_results_sentinel.py",
+        "scripts/issue530_logit_reval.py",
+        "scripts/issue540_jsrb_predictor.py",
+        "scripts/issue541_geometry_extract.py",
+        "scripts/issue545_sweep.py",
+        "scripts/issue545_train_cell.py",
+        "scripts/issue594_analyze_context_geometry.py",
+        "scripts/issue594_extract_context_vectors.py",
+        "scripts/issue604_adapter_svd.py",
+        "scripts/issue604_extract_context_vectors.py",
+        "scripts/issue617_upload_corpus.py",
+        "scripts/issue621_checkpoint_ladder.py",
+        "scripts/issue634_extract_behavior_vectors.py",
+        "scripts/issue634_joint_geometry.py",
+        "scripts/issue651_dispatch.py",
+        "scripts/issue651_drain_extracts.py",
+        "scripts/issue654_fetch_pinned_battery.py",
+        "scripts/issue658_extract_base_store.py",
+        "scripts/issue658_fit_predictors.py",
+        "scripts/issue661_analysis.py",
+        "scripts/issue661_extract_directions.py",
+        "scripts/issue661_generate_arm_a.py",
+        "scripts/issue664_dispatch.py",
+        "scripts/issue666_load_store.py",
+        "scripts/issue666_predictor.py",
+        "scripts/issue667_alllayer_dispatch.py",
+        "scripts/issue667_dispatch.py",
+        "scripts/issue667_pertoken_context_dispatch.py",
+        "scripts/issue667_pertoken_dispatch.py",
+        "scripts/issue685_matched_position_u.py",
+        "scripts/issue722_extract_fact_rb.py",
+        "scripts/issue722_fit_M.py",
+        "scripts/issue722_per_position_vC_skill.py",
+        "scripts/issue734_dispatch.py",
+        "scripts/issue744_dump_and_stream.py",
+        "scripts/issue763_build_probe_pools.py",
+        "scripts/issue763_disclosure_flag_audit.py",
+        "scripts/issue763_judge_e0.py",
+        "scripts/issue763_upload.py",
+        "scripts/issue779_capture_answer_summaries.py",
+        "scripts/issue779_capture_answer_summaries_pass2.py",
+        "scripts/issue779_collect.py",
+        "scripts/issue779_extract_rb.py",
+        "scripts/issue779_gen_behavior_corpus.py",
+        "scripts/issue779_pertoken_vs_mean_variance.py",
+        "scripts/issue810_extract_positions.py",
+        "scripts/issue811_upload_store.py",
+        "scripts/issue833_extract_onpolicy.py",
+        "scripts/issue841_common.py",
+        "scripts/issue841_scaling_common.py",
+        "scripts/issue920_extract_summaries.py",
+        "scripts/issue920_gen_completions_b.py",
+        "scripts/issue920_nulls_figures.py",
+        "scripts/issue923_capture.py",
+        "scripts/issue_552_prep_good_corpus.py",
+        "scripts/issue_597/dispatch_leakage_dynamics_597.py",
+        "scripts/issue_597/titration_svd_597.py",
+        "scripts/issue_642/i642_dispatch.py",
+        "scripts/issue_653/i653_postpod_bootstrap.py",
+        "scripts/measure_cot_entropy.py",
+        "scripts/run_issue506_install.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_472/train_cell.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/build_pv_centroids.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/dispatch_logit_rescoring.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/panel_select.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/prefetch_inputs.py",
+    }
+)
+
+
+def _list_repo_files_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """``# LIST_REPO_FILES_EXEMPT: <reason>`` waiver (reason >=
+    :data:`LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS` chars) on the hit line
+    or the immediately preceding non-blank line — the HUB_VERIFY convention
+    (delegates to the parametrized :func:`_hub_verify_waiver_present`)."""
+    return _hub_verify_waiver_present(
+        lines,
+        call_lineno,
+        waiver_re=LIST_REPO_FILES_WAIVER_RE,
+        min_reason_chars=LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS,
+    )
+
+
+def _list_repo_files_scan_files(root: Path) -> Iterator[tuple[Path, str]]:
+    """Yield ``(path, rel)`` for every scanned candidate under
+    :data:`HF_ROUTING_SCOPE_ROOTS`. Unlike :func:`_hf_routing_scan_files`
+    there are NO pattern-string / generated-code exclusion constants: the
+    AST predicate makes string/comment/docstring mentions structurally
+    unmatchable, so the lint file itself scans clean (#1624 plan §4c). The
+    frozen snapshot is applied by the CHECK caller only — the regen flag
+    deliberately re-derives it (#1568)."""
+    for scope in HF_ROUTING_SCOPE_ROOTS:
+        base = root / scope
+        if not base.exists():
+            continue
+        for py in sorted(base.rglob("*.py")):
+            if not py.is_file() or "__pycache__" in py.parts:
+                continue
+            yield py, py.relative_to(root).as_posix()
+
+
+def _bare_list_repo_files_file_errors(py: Path, rel: str) -> list[str]:
+    """Snapshot-BLIND per-file scan body shared by
+    :func:`check_bare_list_repo_files` (verdict) and
+    :func:`regen_list_repo_files_snapshot` (offender enumeration) — the
+    #1568 idiom. Returns one error line per bare (un-waived)
+    ``list_repo_files`` Load-ctx call/reference, deduped by line."""
+    text = py.read_text(encoding="utf-8")
+    tree = _cached_parse(py, text)
+    if tree is None:
+        # A non-parsing file is its own separate problem; stay silent.
+        return []
+    lines = text.splitlines()
+    errors: list[str] = []
+    seen: set[int] = set()
+    for lineno, pattern in _hub_verify_bare_hits(tree, targets=LIST_REPO_FILES_TARGETS):
+        if lineno in seen:
+            continue
+        seen.add(lineno)
+        if _list_repo_files_waiver_present(lines, lineno):
+            continue
+        # Message-edit hazard: the Step 10d merge gate compares normalized
+        # message LINES (baseline vs gated legs), so rewording this error
+        # while ANY offender exists on main would false-register as NEW and
+        # block an unrelated merge — see the STALENESS RACE comment on
+        # LIST_REPO_FILES_FROZEN_SNAPSHOT before editing this string (#1568).
+        errors.append(
+            f"[bare-list-repo-files] {rel}:{lineno}: bare list_repo_files call "
+            f"('{pattern}') — hub 0.36.2 has NO scoping parameter here: every "
+            f"call is an unscoped full-tree walk, which WEDGES on the ~1M-file "
+            f"data repo (>90 s #833, >600 s #920; two kills 2026-07-22, #1624) "
+            f"and retry cannot save it (the walk grinds, it does not raise). "
+            f"Use the scoped recipes: hub.list_hf_files_under_path(api, repo, "
+            f"prefix) / hub.verify_repo_paths_uploaded(...) (exact-set "
+            f"post-upload verify) / api.list_repo_tree(repo, "
+            f"path_in_repo=<prefix>, recursive=True) / api.file_exists(repo, "
+            f"path) (single-path probe). A genuinely-correct full listing of a "
+            f"SMALL repo takes the waiver '# LIST_REPO_FILES_EXEMPT: <reason>' "
+            f"(reason >= {LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS} chars) on "
+            f"the call's line or the previous non-blank line. Pre-existing "
+            f"file this round never touched? Snapshot staleness — regen on a "
+            f"main-synced tree: `workflow_lint.py "
+            f"--regen-list-repo-files-snapshot` (#1624)."
+        )
+    return errors
+
+
+def check_bare_list_repo_files(*, repo_root: Path | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    (:data:`HF_ROUTING_SCOPE_ROOTS`) and FAIL on any bare
+    ``list_repo_files`` call/reference outside
+    :data:`LIST_REPO_FILES_FROZEN_SNAPSHOT` and un-waived (#1624).
+
+    Detection is :func:`_hub_verify_bare_hits` narrowed to
+    :data:`LIST_REPO_FILES_TARGETS`: a Load-ctx ``.list_repo_files(``
+    Attribute under ANY receiver, or a Load-ctx Name bound by
+    ``from huggingface_hub import list_repo_files [as alias]``; Store/Del
+    monkeypatch targets are exempt; comments / docstrings / f-string
+    mentions are structurally unmatchable (no pattern-string exclusion
+    constants needed — the lint file itself scans clean). Deliberately
+    inherited semantics: a ``retry_transient(lambda: api.list_repo_files(``
+    wrap STILL flags (retry != scoping — the wedge grinds, it does not
+    raise), and a Load-ctx monkeypatch SAVE (``orig = HfApi.list_repo_files``)
+    flags while the Store/Del patch/restore targets do not (#1482/#1561).
+
+    ``tests/`` is out of scope (mocks legitimately spell the name). Named
+    residuals NOT covered (documented, not detector legs): never-committed
+    ad-hoc probes (inline ``python -c`` one-liners) are structurally outside
+    ANY file lint — this check covers the committed-code subclass; unscoped
+    ``list_repo_files_complete(...)`` / ``list_repo_tree(recursive=True)``
+    calls without ``path_in_repo`` (kwarg-presence analysis on the helpers =
+    high-FP; their own docstrings + the #833 gotcha govern);
+    ``snapshot_download``; ``getattr(api, "list_repo_files")`` evasion;
+    ``.sh`` heredocs; ``HfFileSystem.ls()``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run. Snapshot staleness (the
+    check fires on a pre-existing file the round never touched): regenerate
+    on a main-synced tree via ``--regen-list-repo-files-snapshot`` (#1568
+    recipe).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for py, rel in _list_repo_files_scan_files(root):
+        if rel in LIST_REPO_FILES_FROZEN_SNAPSHOT:
+            continue
+        errors.extend(_bare_list_repo_files_file_errors(py, rel))
+    return errors
+
+
+def regen_list_repo_files_snapshot(*, repo_root: Path | None = None) -> int:
+    """MAINTENANCE (#1624): print the ready-to-paste
+    ``LIST_REPO_FILES_FROZEN_SNAPSHOT`` literal for the CURRENT tree — every
+    scanned file carrying >=1 bare (un-waived) ``list_repo_files`` AST hit,
+    re-derived snapshot-blind — plus a +/- diff summary vs the compiled-in
+    constant on stderr (the :func:`regen_hf_routing_snapshot` idiom, #1568).
+    Run on a MAIN-SYNCED tree. REVIEW the stderr ``+`` lines before pasting:
+    a file YOUR round created must be SCOPED through the hub helpers (or
+    waived), never grandfathered. Not part of the no-flags bundle;
+    early-dispatched in ``main()``. Returns 0 (the paste-ready literal is
+    the product, not a verdict).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    offenders = sorted(
+        rel
+        for py, rel in _list_repo_files_scan_files(root)
+        if _bare_list_repo_files_file_errors(py, rel)
+    )
+    sys.stdout.write("LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset(\n    {\n")
+    for rel in offenders:
+        sys.stdout.write(f'        "{rel}",\n')
+    sys.stdout.write("    }\n)\n")
+    added = sorted(set(offenders) - LIST_REPO_FILES_FROZEN_SNAPSHOT)
+    removed = sorted(LIST_REPO_FILES_FROZEN_SNAPSHOT - set(offenders))
+    sys.stderr.write(
+        f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
+    )
+    for rel in added:
+        sys.stderr.write(f"# + {rel}  (NEW offender — scope/waive it if this round created it)\n")
+    for rel in removed:
+        sys.stderr.write(f"# - {rel}  (no longer flags: deleted, scoped, or waived)\n")
     return 0
 
 
@@ -12384,6 +12719,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-bare-list-repo-files",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL on any bare list_repo_files call/reference (Load-ctx Attribute "
+        "under any receiver, or the huggingface_hub imported Name incl. "
+        "aliases). hub 0.36.2's HfApi.list_repo_files has NO scoping "
+        "parameter — every call is an unscoped full-tree walk, which WEDGES "
+        "on the ~1M-file data repo (>90 s #833, >600 s #920; two kills "
+        "2026-07-22 -> #1624) and retry cannot save it — orthogonal to "
+        "--check-hub-verify-retry. Fix with the scoped recipes "
+        "(hub.list_hf_files_under_path / hub.verify_repo_paths_uploaded / "
+        "api.list_repo_tree(path_in_repo=...) / api.file_exists); a "
+        "genuinely-correct SMALL-repo full listing waives with "
+        "'# LIST_REPO_FILES_EXEMPT: <reason>'. Historical files are "
+        "snapshot-exempt (LIST_REPO_FILES_FROZEN_SNAPSHOT; stale snapshot? "
+        "see --regen-list-repo-files-snapshot); NEW files are scanned. "
+        "Bundled into the no-flags default run (#1624).",
+    )
+    parser.add_argument(
+        "--regen-list-repo-files-snapshot",
+        action="store_true",
+        help="MAINTENANCE (#1624, not a check; runs alone and early-returns — "
+        "combining it with check flags is unsupported, regen wins): print the "
+        "ready-to-paste LIST_REPO_FILES_FROZEN_SNAPSHOT literal for the "
+        "current tree (stdout) + a +/- diff summary vs the compiled-in "
+        "constant (stderr). Run on a main-synced tree when the "
+        "bare-list-repo-files check fires on a file your round never touched "
+        "(implementer-time snapshot went stale before the merge gate — the "
+        "#1547/#1568 race). Review added entries before pasting; never "
+        "bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-no-literal-round-marker-versions",
         action="store_true",
         help="FAIL on a literal 'v1' posting instruction for a round-versioned "
@@ -12559,6 +12926,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # keeps stdout EXACTLY the paste-ready literal.
         return regen_hf_routing_snapshot()
 
+    if args.regen_list_repo_files_snapshot:
+        # Maintenance flag (#1624, the #1568 idiom): print-and-exit; never
+        # runs checks, never loads workflow.yaml, never enters the no-flags
+        # bundle (combining with check flags is unsupported — regen wins).
+        return regen_list_repo_files_snapshot()
+
     path = Path(args.file) if args.file else None
     try:
         workflow = load_workflow_yaml(path)
@@ -12618,6 +12991,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_recipe_snippets
         or args.check_judge_model_pins
         or args.check_live_hf_retry_routing
+        or args.check_bare_list_repo_files
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_api_dispatch_routing
@@ -12753,6 +13127,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_judge_model_pins())
     if args.check_live_hf_retry_routing or no_flags:
         errors.extend(check_live_hf_retry_routing())
+    if args.check_bare_list_repo_files or no_flags:
+        errors.extend(check_bare_list_repo_files())
     if args.check_no_literal_round_marker_versions or no_flags:
         errors.extend(check_no_literal_round_marker_versions())
     if args.check_api_dispatch_routing or no_flags:
