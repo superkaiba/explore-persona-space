@@ -4796,7 +4796,7 @@
       "title": "workflow-fix: decide bit-deterministic vs bit_byte_identical ban family (allowlist or widen)"
     },
     "1615": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/proposed/1615",
       "status": "proposed",

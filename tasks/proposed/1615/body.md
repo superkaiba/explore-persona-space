@@ -5,7 +5,7 @@ title: 'The persona vector''s pre-image under the context→answer map makes sen
 kind: analysis
 tags: []
 created_at: '2026-07-23T05:39:48Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'Save this as a clean result: ''# Result: The persona vector''s pre-image
   under the context→answer map makes sense...'' (user-authored writeup pasted verbatim
