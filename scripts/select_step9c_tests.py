@@ -322,6 +322,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff re-runs this pin ONLY via this tuple.
     "tests/test_guard_trigger_dense_read.py",
+    # NEW (#1632) — PostToolUse ruff-hook ephemeral-root (/tmp) exclusion pin:
+    # the selector's arms are .py-only, so a settings.json diff re-runs this
+    # pin ONLY via this tuple.
+    "tests/test_ruff_format_hook_tmp_exclusion.py",
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
