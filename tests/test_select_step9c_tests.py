@@ -701,6 +701,89 @@ def test_cli_map_files_missing_test_warns(tmp_path: Path, capsys):
     assert "pair dropped" in captured.err
 
 
+# --- #1613: zero-resolution guard (source-file argument / deletion-only list) ---
+@pytest.mark.parametrize("suffix", [".py", ".sh"])
+def test_cli_map_files_source_file_argument_exit2(tmp_path: Path, capsys, suffix: str):
+    """A .py/.sh FILE argument whose content lines resolve to zero repo paths
+    with zero pairs is a usage error: exit 2, empty stdout, one tab-free
+    stderr ERROR line (#1613 — the #1610 malformed-verify shape). An existing
+    ABSOLUTE-path content line must not silence the guard (for absolute f,
+    ``work_root / f`` yields f itself; the existence scan skips such lines)."""
+    repo = _make_tree(tmp_path, [])
+    abs_line = tmp_path / "abs_exists.txt"
+    abs_line.write_text("present\n")
+    if suffix == ".py":
+        content = f"import os\n\nX = 1\n{abs_line}\n\ndef f():\n    return 1\n"
+    else:
+        content = f"#!/usr/bin/env bash\nset -euo pipefail\necho hi\n{abs_line}\n"
+    src = tmp_path / f"some_module{suffix}"
+    src.write_text(content)
+    rc = sel.main(["--map-files", str(src), "--repo-root", str(repo)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "looks like a source file" in captured.err
+    assert "\t" not in captured.err
+    assert "recommended-timeout-s=" not in captured.err
+
+
+def test_cli_map_files_valid_list_zero_pairs_no_guard_exit0(tmp_path: Path, capsys):
+    """A valid path-list whose paths EXIST but map to no pairs stays silent-clean
+    (rc 0, empty stdout, no #1613 guard line): zero-PAIR alone never fires it."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "docs").mkdir()
+    (repo / "docs" / "foo.md").write_text("# doc\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("docs/foo.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "ERROR" not in captured.err
+
+
+def test_cli_map_files_zero_resolution_list_warns_exit0(tmp_path: Path, capsys):
+    """A path-list resolving to ZERO existing repo paths with zero pairs (the
+    deletion-only ``git diff --name-only`` shape — status-D paths absent from
+    the worktree) draws one hedged tab-free stderr WARN, rc 0 — never exit 2.
+    An empty / whitespace-only FILE never fires the guard at all (rc 0)."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("docs/nope.md\nexternal/gone.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "WARN — --map-files input" in captured.err
+    assert "deletion-only" in captured.err
+    assert "\t" not in captured.err
+    assert "recommended-timeout-s=" not in captured.err
+    # Empty / whitespace-only FILE: `files` is empty, so the guard must NOT fire.
+    listing.write_text("\n   \n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+def test_cli_map_files_pairs_suppress_zero_resolution_guard(tmp_path: Path, capsys):
+    """A nonexistent (deleted) eligible .py payload that still glob-scan-maps to
+    pairs suppresses the guard entirely (the ``not all_pairs`` conjunct):
+    mapped stdout, no #1613 line from either arm."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out != ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "looks like a source file" not in captured.err
+
+
 # --- #1289: diff-base resolution (fetched origin/main default) -----------------
 def _git_out(cwd: Path, *args: str) -> str:
     """Hermetic git runner that RETURNS stdout (rev-parse probes for cases 30-32)."""

@@ -119,7 +119,9 @@ still yields an empty ``--map-files`` output with NO #1573 WARN (the floor
 iterates :func:`literal_path_targets`-eligible files only), while diff mode
 stem-maps/WARNs it; byte-symmetric with ``.py``'s ``external/x.py`` today,
 named so a future filing does not rediscover it as "the #1579 fix didn't
-work".
+work". (Orthogonal: the #1613 zero-resolution guard fires only on WHOLE-INPUT
+zero resolution + zero pairs — a list where SOME lines resolve leaves this
+out-of-prefix in-list gap open and distinct.)
 
 Root resolution: with no ``--repo-root``, everything (the ``git diff`` cwd,
 touched-test existence checks, stem-glob mapping, invariant presence) resolves
@@ -180,7 +182,14 @@ rc stays 0). A non-empty map additionally prints a tab-free machine-greppable
 (``recommended_timeout_s(tests, floor=MAP_TIMEOUT_FLOOR_S)``, floor 300 s —
 the Step-10d TG legs size their pytest bound from it). Empty stdout on
 no match is a SUCCESS (exit 0 — the gate's skip signal); exit 1 only when FILE
-is unreadable (the gate fails CLOSED on an unclassifiable payload).
+is unreadable (the gate fails CLOSED on an unclassifiable payload). A FILE
+with >=1 content line, ZERO lines resolving to existing paths under the work
+root (absolute lines are skipped in that scan), and ZERO pairs draws the
+#1613 zero-resolution guard: exit 2 (the argparse usage-error code) when the
+argument's own suffix is ``.py``/``.sh`` — a source file handed instead of a
+path-LIST file, the #1610 vacuously-passing-verify shape — else one hedged
+tab-free stderr WARN + exit 0 (a deletion-only ``git diff --name-only``
+payload is a legitimate zero-resolution list).
 
 Default output: the exact gate invocation
 ``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
@@ -1162,6 +1171,59 @@ def _current_branch(work_root: Path) -> str:
     return out.stdout.strip() or "unknown"
 
 
+def _zero_resolution_guard(
+    map_files_arg: str,
+    files: list[str],
+    all_pairs: list[tuple[str, str]],
+    work_root: Path,
+) -> int | None:
+    """#1613 zero-resolution guard for ``--map-files`` (returns exit code 2 or None).
+
+    A FILE argument whose content lines resolve to ZERO existing repo paths
+    AND produce ZERO pairs across all arms is the silent operator-error shape
+    (a source file handed instead of a path-LIST file — #1610's
+    vacuously-passing verify command). A deletion-only payload
+    (``git diff --name-only`` includes status-D paths absent from the
+    worktree) legitimately looks like this, so a list-file argument stays
+    exit 0 (this helper prints the hedged WARN and returns None); only an
+    argument that is ITSELF a ``.py``/``.sh`` source file errors — returns 2,
+    the argparse usage-error code (consumers treat rc!=0 as crash-class
+    fail-closed, the intended outcome for a malformed invocation). Pairs
+    suppress the guard: glob/scan arms can map nonexistent (deleted) payload
+    paths, and that output is valid. Absolute content lines are SKIPPED in
+    the existence scan: for an absolute f, ``work_root / f`` returns f
+    itself, so one existing absolute line inside a source file would silence
+    the guard. Both stderr lines are single-line, tab-free, and carry no
+    ``recommended-timeout-s=`` substring (consumer grammar constraints).
+    """
+    if not files or all_pairs:
+        return None
+    if any((work_root / f).exists() for f in files if not f.startswith("/")):
+        return None
+    if Path(map_files_arg).suffix in (".py", ".sh"):
+        print(
+            f"select_step9c_tests: ERROR — --map-files argument "
+            f"{map_files_arg} looks like a source file, not a "
+            f"path-LIST file: none of its {len(files)} content lines "
+            f"resolve to an existing repo path under {work_root}, and "
+            "no mapping arm produced pairs (#1613); pass a "
+            "newline-delimited path-list file (e.g. "
+            "git diff --name-only > /tmp/files.txt)",
+            file=sys.stderr,
+        )
+        return 2
+    print(
+        f"select_step9c_tests: WARN — --map-files input "
+        f"{map_files_arg} resolved to ZERO existing repo paths under "
+        f"{work_root} ({len(files)} content lines, 0 pairs; #1613): "
+        "benign for a deletion-only or sparse-excluded payload; "
+        "otherwise verify the argument is a path-LIST file, not a "
+        "source file",
+        file=sys.stderr,
+    )
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
@@ -1206,7 +1268,11 @@ def main(argv: list[str] | None = None) -> int:
             "diff-based selection entirely; empty stdout on no match is a "
             "SUCCESS, the gate's skip signal; a zero-mapped eligible code file "
             "draws a stderr WARN, and a non-empty map prints a "
-            "recommended-timeout-s=<T> stderr sizing line, floor 300s)"
+            "recommended-timeout-s=<T> stderr sizing line, floor 300s; a "
+            ".py/.sh FILE argument whose lines resolve to zero repo paths "
+            "with zero pairs is a usage error — exit 2, #1613; a path-list "
+            "resolving to zero existing paths with zero pairs draws a hedged "
+            "WARN, deletion-only payloads are benign)"
         ),
     )
     args = parser.parse_args(argv)
@@ -1242,8 +1308,10 @@ def main(argv: list[str] | None = None) -> int:
         # recommended-timeout-s sizing line (floor 300). The
         # Step 10d merge gate consumes the tab-separated stdout; empty output
         # + exit 0 means "no scan-covered payload" (the gate skips its test
-        # leg). Only an unreadable input file is an error (exit 1) — the gate
-        # must fail CLOSED when it cannot classify the payload.
+        # leg). An unreadable input file (exit 1) or a source-file-shaped
+        # argument — zero path resolution + zero pairs + .py/.sh suffix —
+        # (exit 2, #1613) are errors; the gate must fail CLOSED when it
+        # cannot classify the payload.
         try:
             raw = Path(args.map_files).read_text()
         except OSError as exc:
@@ -1281,6 +1349,12 @@ def main(argv: list[str] | None = None) -> int:
                 *transitive_consumer_pairs(files, work_root),
             }
         )
+        # #1613 zero-resolution guard (see _zero_resolution_guard): the
+        # source-file-argument shape returns 2 here; the deletion-only
+        # list-file shape prints its hedged WARN and falls through.
+        guard_rc = _zero_resolution_guard(args.map_files, files, all_pairs, work_root)
+        if guard_rc is not None:
+            return guard_rc
         # The #1573 fail-loud floor: an eligible src/scripts code file with
         # ZERO pairs across ALL arms is loudly visible (stderr, tab-free; rc
         # stays 0 — consumers treat helper rc!=0 as crash-class fail-closed).
