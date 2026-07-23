@@ -78,10 +78,23 @@ export MALLOC_MMAP_THRESHOLD_=131072
 # this round (the parent ARIA run is the committed anchor, never rerun).
 # EXPLICIT membership (mirrors c.PAIRED_STORIES_VARIANTS — never a prefix
 # match): the v8 ARIA scope + the v9 Assistant scope (plan v9 header).
-CPS=""
+# CPS_MODEL = the MEASURED model carrying the r4/r4op story arm. The two instruct
+# scopes measure instruct; the *_base scope measures the pretrained (base) model
+# (instruct still WRITES the wrappers inside gen_stories_paired — CPS_MODEL only
+# selects the pool-tag + the teacher-forced CAPTURE model). Mirrors
+# c.R4_MODELS[0] on the python side.
+CPS=""; CPS_MODEL="instruct"
 case "$VARIANT" in
   conversation_paired_stories|conversation_paired_stories_assistant) CPS=1 ;;
+  conversation_paired_stories_assistant_base) CPS=1; CPS_MODEL="pretrained" ;;
 esac
+# Base-measured round is a SINGLE-model round (the instruct arm is the landed
+# anchor, never re-run here): restrict every per-model phase (fits / transfer /
+# opcomp via run_per_model) to the measured model. The two instruct scopes leave
+# RUN_MODELS unset (run_per_model defaults to both), byte-identical to before.
+if [[ "$CPS_MODEL" == "pretrained" ]]; then
+  export RUN_MODELS="pretrained"
+fi
 
 # on-policy-assistant-story variant (followup_label=onpolicy-assistant-story):
 # the on-policy paired story arm (r4op) is PROMOTED to the primary regime at
@@ -392,7 +405,7 @@ if should_run gen_stories_paired; then
     RC_PAIRED=0
     # RC_CAPTURE_EXEMPT: run_cmd body has a single failure-prone step (the wrapped "$@", its last command), so the function rc IS the wrapped command rc; the capture routes gen_stories rc=21 yield-floor halts via gen_rc_route
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
-      --model instruct --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_PAIRED=$?
+      --model "$CPS_MODEL" --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_PAIRED=$?
     if [[ -z "$DRY_RUN" ]]; then
       if [[ "$RC_PAIRED" -eq 21 ]]; then
         echo "[gen_stories_paired] YIELD FLOOR FAILED (rc=21) — r4 leg halted (plan v8 §7, N/A — not tested)"
@@ -448,7 +461,7 @@ if should_run extract_r4_tf; then
   else
     echo "[phase=extract_r4_tf]"
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
-      --regime r4 --model instruct --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+      --regime r4 --model "$CPS_MODEL" --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
     # Upload-before-long-fit (plan v8 §9): the regeneration-costly TF stems
     # persist BEFORE the ~6 h fits phase; idempotent per-shard verify.
     run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
@@ -472,7 +485,7 @@ if should_run extract_r4_op_companion; then
     RC_OP=0
     # RC_CAPTURE_EXEMPT: run_cmd body has a single failure-prone step (the wrapped "$@", its last command), so the function rc IS the wrapped command rc; the capture routes gen_stories rc=21 yield-floor halts via gen_rc_route
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
-      --model instruct --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
+      --model "$CPS_MODEL" --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
       --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_OP=$?
     if [[ -z "$DRY_RUN" && "$RC_OP" -eq 23 ]]; then
       echo "[extract_r4_op_companion] companion unusable (rc=23) — TF headline proceeds, calibration N/A"
@@ -487,7 +500,7 @@ if should_run extract_r4_op_companion; then
     fi
     if [[ ! -f "$R4OP_HALT_FILE" ]]; then
       run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
-        --regime r4op --model instruct --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+        --regime r4op --model "$CPS_MODEL" --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
       run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
         --legs turnstore --turnstore-glob "*stories_paired_op_s_shard*" \
         --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
@@ -862,6 +875,38 @@ payload = {
          "rationale": "the map_alignment data-paired Procrustes is undefined for unpaired corpora (no shared conv_ids); raw-cosine rotation band + spectrum optimum reported instead"},
     ],
 }
+if variant == "conversation_paired_stories_assistant_base":
+    # Base-measured round: the ONE manipulated variable vs the landed instruct
+    # round is the measured/capture model. Record the answer-provenance +
+    # off-model-text caveat in the run's own results metadata (verbatim-precise).
+    payload["plan_deviations"].extend(
+        [
+            {
+                "deviation": (
+                    "answer text is the shared instruct-generated track_s corpus — "
+                    "identical to the landed instruct round AND to the base chat/no-template "
+                    "comparator stores; only the measured/capture model changes to base"
+                ),
+                "rationale": (
+                    "gen_stories_paired's wrapper writer stays instruct "
+                    "(_build_llm(MODEL_INSTRUCT)); load_paired_pool sources the shared "
+                    "track_s.jsonl @ 7159e5804d (instruct-generated); the single manipulated "
+                    "variable is the measured/capture model instruct->pretrained"
+                ),
+            },
+            {
+                "deviation": (
+                    "base cells are teacher-forced over instruct-generated answer text in ALL "
+                    "THREE framings (chat / no-template / story) — matched across framings"
+                ),
+                "rationale": (
+                    "the framing contrast is clean (answer held constant across r1/r2/r4); "
+                    "absolute base R2 levels carry an off-model-text caveat — base is measured "
+                    "over instruct-written answers in every framing"
+                ),
+            },
+        ]
+    )
 sentinel = {
     "sentinel_schema_version": 1,
     "kind": kind,

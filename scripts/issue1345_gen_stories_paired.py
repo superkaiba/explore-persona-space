@@ -1206,7 +1206,11 @@ def _write_yield_report(
 # ---------------------------------------------------------------------------
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--model", choices=("instruct",), default="instruct")
+    # "pretrained" is legal ONLY under the base-measured variant (R4_MODELS gates
+    # it via the assert below); the wrapper-writer engine stays instruct
+    # (_build_llm(MODEL_INSTRUCT)) regardless — --model tags the MEASURED model +
+    # the output cell/stem/kept-file, never the wrapper writer.
+    ap.add_argument("--model", choices=("instruct", "pretrained"), default="instruct")
     ap.add_argument("--out-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
     ap.add_argument("--matched-dir", type=Path, default=c.MATCHED_DIR)
