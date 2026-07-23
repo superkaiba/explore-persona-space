@@ -222,7 +222,7 @@ At matched install the two methods move the representation along the same direct
 
 ### Below rank 32 the shift direction rotates away from full fine-tuning, and rank 1 fails to install
 
-Cross-method mean-shift direction cosine (full fine-tune + negatives vs rank-4 non-rank-stabilized LoRA + negatives, matched install 0.61 vs 0.615) at every decoder layer, attenuation-corrected (solid) and raw (dotted); panels: response arm on own text, context arm on own text, response arm on shared teacher-forced base text; registered layer 14 dashed.
+Cross-method direction cosine (full fine-tune + negatives vs rank-4 non-rank-stabilized LoRA + negatives, matched install 0.61 vs 0.615) per decoder layer, corrected (solid) and raw (dotted); panels: response own-text, context own-text, response shared-text (teacher-forced base generations); layer 14 dashed.
 
 ![Rank-4 cross-method direction cosine by layer in three panels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8cc19e6aa0454be89b0b0b42618dead8c94c947d/figures/issue_1112/hero_cross_method_cosine_rankem.png)
 
