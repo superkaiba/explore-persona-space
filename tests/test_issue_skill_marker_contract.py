@@ -233,3 +233,32 @@ def test_item3_data_gate_exercise_clause_present():
     assert "data gates exercised:" in text
     assert "production-only — <one-line" in text
     assert "COMPOSES with the item-5 resize-up duty" in text
+
+
+# --- #1611: Step 6d.0-bis arm-class clause names the class-defining axes ---
+#
+# Incident #1586 r3/r4/r6: every recorded smoke ran ONE content-class cell
+# (`syc-pers-ft-con-s137`) of a marker/content x con/po x LoRA/full-FT grid;
+# three class-gated bug classes then surfaced live, one per phase (a
+# read-side panel-disjointness check, a marker-po mix row-count assert, a
+# reuse-seam loader). The Step 6d.0-bis arm-class clause must keep naming
+# the class-defining axes so a multi-class dispatcher's smoke set is
+# composed per realized (class x regime) combination.
+
+
+def test_step6d0bis_smoke_covers_class_regime_axes():
+    """#1611: Step 6d.0-bis arm-class clause names the class-defining axes (#1586)."""
+    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    heading = "##### Step 6d.0-bis"
+    assert text.count(heading) == 1, "Step 6d.0-bis H5 heading literal must stay unique"
+    i = text.index(heading)
+    # Whitespace-normalize so hard-wrapped SKILL.md prose cannot split a needle.
+    span = " ".join(text[i : i + 6000].split())
+    for needle in (
+        "PER ARM CLASS",
+        "behavior class",
+        "training regime",
+        "#1586",
+        "Smoke/production parity includes REGIME/CLASS COVERAGE",
+    ):
+        assert needle in span, needle

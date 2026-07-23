@@ -144,3 +144,4 @@
 - [stage_hub_prefix verbatim mirror needs consumer rebind](feedback_stage_hub_prefix_verbatim_mirror_consumer_rebind.md) — mirror lands dest/<repo path>; rebind consumer root to dest/<prefix>; smoke must use the production staging helper (#1481)
 - [Off-pod phase file-reads vs upload manifest](feedback_offpod_phase_upload_manifest_seam.md) — off-pod phase reads must be in the upload set; one-filesystem smokes are blind to the seam (#1482)
 - [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions are a named non-fatal exclusion, never an integrity-guard trip (#1415)
+- [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × regime (#1586)
