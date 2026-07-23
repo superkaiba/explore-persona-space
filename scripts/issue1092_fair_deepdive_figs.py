@@ -240,6 +240,96 @@ def fig_fair_grid_averaged_only() -> None:
     plt.close(fig)
 
 
+def fig_grain_skill() -> None:
+    """Single-context map held-out R2 at both grains (ambient, L14), both models.
+
+    The writeup's Result 1 plot: the same fitted operator scored on per-row
+    targets and on per-prefix averaged targets (the induced read).
+    """
+    fc = json.loads(
+        (
+            PROJECT_ROOT / "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json"
+        ).read_text()
+    )
+    cells = [("cell_inst_own", "Instruct model"), ("cell_pre_own", "Base model")]
+    single = [
+        float(
+            fc["cells"][c]["bases"]["ambient"]["single_grain"]["r2_context_battery_excluded_full"]
+        )
+        for c, _ in cells
+    ]
+    avg = [
+        float(fc["cells"][c]["bases"]["ambient"]["averaged_grain"]["r2_context_averaged"])
+        for c, _ in cells
+    ]
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    x = np.arange(2)
+    w = 0.36
+    ax.bar(x - w / 2, [single[0], avg[0]], w, label=cells[0][1], color=colors[0])
+    ax.bar(x + w / 2, [single[1], avg[1]], w, label=cells[1][1], color=colors[2])
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [
+            "Single-context targets\n(one answer state per row)",
+            "Averaged targets\n(per-prefix mean over queries)",
+        ]
+    )
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("held-out $R^2$")
+    ax.set_title("Single-context map scored at both grains — layer 14, ambient")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    fig.tight_layout()
+    savefig_paper(fig, "grain_skill", dir=FIGDIR)
+    plt.close(fig)
+
+
+def fig_induced_vs_refit() -> None:
+    """Averaged-grain held-out R2: induced read vs independently-fit averaged map.
+
+    The writeup's Result 2 plot, from the operator-coincidence artifact
+    (ambient, L14, aligned novel-prefix folds).
+    """
+    oc = json.loads(
+        (
+            PROJECT_ROOT
+            / "eval_results/issue_1092/inline_operator_coincidence/operator_coincidence.json"
+        ).read_text()
+    )
+    cells = [("cell_inst_own", "Instruct model"), ("cell_pre_own", "Base model")]
+    induced = [float(oc["cells"][c]["bases"]["ambient"]["r2_induced_avg"]) for c, _ in cells]
+    refit = [float(oc["cells"][c]["bases"]["ambient"]["r2_refit_avg"]) for c, _ in cells]
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    x = np.arange(2)
+    w = 0.36
+    ax.bar(
+        x - w / 2,
+        induced,
+        w,
+        label="Induced (single-context map, predictions averaged)",
+        color=colors[0],
+    )
+    ax.bar(
+        x + w / 2,
+        refit,
+        w,
+        label="Refit (fit directly on averaged vectors)",
+        color=colors[2],
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels([label for _, label in cells])
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("held-out $R^2$, averaged targets")
+    ax.set_title("Two constructions of the averaged prefix map — layer 14, ambient")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    fig.tight_layout()
+    savefig_paper(fig, "induced_vs_refit", dir=FIGDIR)
+    plt.close(fig)
+
+
 def fig_shrinkage() -> None:
     dd = json.loads((DD / "deepdive.json").read_text())
     labels, glob_res, diag_res = [], [], []
