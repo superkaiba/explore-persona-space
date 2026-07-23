@@ -778,3 +778,70 @@ def test_lattice_fu_arm_naming(monkeypatch):
         "syc-pers-lora-po-s42",
     )
     assert lat._marker_arm("ft", "con", "s42") == "mk-pers-ft-con-s42"
+
+
+# ── wave partition + p2l overlap (plan v7 §9 f2 — r2 opportunistic minor) ────
+
+
+def test_wave_partition_groups_imp_cells_one_wave(monkeypatch, tmp_path):
+    """Plan §9 f2: the two impolite LoRA cells train as ONE wave of 2x 1-GPU
+    fanout units (overlapped on distinct GPUs), never two width-1 waves
+    (serial at 3/4 GPUs idle); marker FT waves keep width w=1 on 4 GPUs and
+    the executed grid (no fu cells) keeps plain width-w chunks."""
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: ["0", "1", "2", "3"])
+    cfg = _cfg(tmp_path)
+    mk = [c for c in G.FU_ALL_CELLS if not G.is_fu_lora_cell(c)]
+    imp = [c for c in G.FU_ALL_CELLS if G.is_fu_lora_cell(c)]
+    assert d._wave_partition(cfg) == [[c] for c in mk] + [imp]
+    # executed-grid behavior byte-identical: plain width-w chunking
+    assert d.partition_waves(["c1", "c2", "c3"], 2) == [["c1", "c2"], ["c3"]]
+    # keep-cell demand model uses the SAME partition (imp wave = 2 ladders)
+    assert d.keepcell_demand_gb(imp, 4) == pytest.approx(
+        2 * G.FU_IMP_LADDER_GB + 2 * d.RUNG_GB + d.KEEPCELL_FIXED_OVERHEAD_GB
+    )
+
+
+def test_fu_phase_train_fans_out_both_imp_cells(monkeypatch, tmp_path):
+    """Both pending imp cells in one wave on a multi-GPU pod route through
+    _fanout_units (2x 1-GPU concurrent, distinct CVD-pinned devices), not the
+    serial single-unit branch; per-cell resume/persist (build_result.json)
+    semantics are untouched."""
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: ["0", "1", "2", "3"])
+    cfg = _cfg(tmp_path)
+    imp = [c for c in G.FU_ALL_CELLS if G.is_fu_lora_cell(c)]
+    fanned: list[list[list[str]]] = []
+
+    def fake_fanout(cfg_, units):
+        fanned.append(units)
+        for u in units:
+            cell = u[2]  # _unit_args shape: ["--unit", "p2l", <cell>, ...]
+            bp = cfg_.out_root / cell / "build_result.json"
+            bp.parent.mkdir(parents=True, exist_ok=True)
+            bp.write_text(json.dumps({"cell": cell, "status": "trained"}))
+
+    monkeypatch.setattr(d, "_fanout_units", fake_fanout)
+    serial = create_autospec(d._run_unit_subprocess)
+    monkeypatch.setattr(d, "_run_unit_subprocess", serial)
+    out = d._fu_phase_train(cfg, imp)
+    assert not serial.called
+    assert len(fanned) == 1 and [u[2] for u in fanned[0]] == imp
+    assert set(out) == set(imp)
+
+
+# ── figures runtime guards (r2 opportunistic minor: fu/clobber guards) ───────
+
+
+def test_figures_fu_flag_refuses_executed_grid_set():
+    import issue1586_figures as figs
+
+    with pytest.raises(SystemExit) as ei:
+        figs.main(["--fu", "caveatfix", "--fig-dir", "figures/issue_1586/fu_caveatfix"])
+    assert ei.value.code == 2
+
+
+def test_figures_nondefault_roots_require_nondefault_figdir(tmp_path):
+    import issue1586_figures as figs
+
+    with pytest.raises(SystemExit) as ei:
+        figs.main(["--geo-root", str(tmp_path / "fu_geo")])
+    assert ei.value.code == 2

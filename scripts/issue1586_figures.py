@@ -738,11 +738,15 @@ def fig_shape_forest() -> None:
 def main(argv: list[str] | None = None) -> int:
     """Input/output-root plumb (plan v7 §4.C item 3): ``--geo-root`` /
     ``--hf-root`` / ``--fig-dir`` / ``--lattice`` override the module roots so
-    the analyzer can render against the FU trees. A FU invocation MUST pass a
-    non-default ``--fig-dir`` (e.g. figures/issue_1586/fu_caveatfix) — the
-    default dir holds the EXECUTED run's committed figures + dose_labels.json,
-    which this script rewrites (smoke/committed-artifact clobber rule).
-    Defaults are byte-identical to the executed run's behavior."""
+    the analyzer can render against the FU trees. Two RUNTIME guards (r2 —
+    the round-1 docstring-only guard mechanized): ``--fu`` fails loud (every
+    figure fn here iterates the EXECUTED grid; no fu-scoped figure set is
+    wired, so a --fu render would mislabel executed-grid figures as
+    fu-scoped), and non-default input roots REQUIRE a non-default
+    ``--fig-dir`` — the default dir holds the EXECUTED run's committed
+    figures + dose_labels.json, which this script rewrites
+    (smoke/committed-artifact clobber rule). Defaults are byte-identical to
+    the executed run's behavior."""
     global GEO, HF, FIGDIR
     import argparse
 
@@ -755,7 +759,26 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path("eval_results/issue_1586/panel/leakage_lattice.json"),
     )
+    ap.add_argument(
+        "--fu",
+        default=None,
+        help="FU round label (e.g. caveatfix). REFUSED at runtime: this script "
+        "renders the executed-grid figure set only (no fu-scoped figure fns).",
+    )
     args = ap.parse_args(argv)
+    if args.fu:
+        ap.error(
+            f"--fu {args.fu}: every figure fn in this script iterates the EXECUTED "
+            "grid (dose_labels/GEO/HF keyed on the executed cells); rendering under "
+            "--fu would write executed-grid figures mislabeled as fu-scoped. "
+            "FU-round figures are analyzer-owned until fu-scoped figure fns land."
+        )
+    if (Path(args.geo_root) != GEO or Path(args.hf_root) != HF) and Path(args.fig_dir) == FIGDIR:
+        ap.error(
+            "non-default --geo-root/--hf-root require a non-default --fig-dir: the "
+            "default figures/issue_1586 holds the EXECUTED run's committed figures "
+            "(clobber guard)"
+        )
     GEO, HF, FIGDIR = Path(args.geo_root), Path(args.hf_root), Path(args.fig_dir)
     FIGDIR.mkdir(parents=True, exist_ok=True)
     doses = dose_labels()
