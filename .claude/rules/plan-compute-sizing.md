@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,7 +7,7 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These twelve recipes are the planner-specific §9 sizing blocks — five relocated
+These thirteen recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
 store-heavy / IO-heavy phase recipe (#910, from incident #813), the
 CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
@@ -15,8 +15,9 @@ per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823), the
 external-stream floor presumption (#1092 — present since #1092, first counted
 here), the dose-ladder checkpoint-retention default (#1133, from incident
 #1112), the out-root mount-binding contract (#1414, from incident
-#1333), and the fan-out end-of-run accumulation rule (#1541, from
-incident #1481). The planner
+#1333), the fan-out end-of-run accumulation rule (#1541, from incident
+#1481), and the phase-ordering checkpoint high-water requirement (#1612,
+from incident #1586 r5). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -76,6 +77,9 @@ the planned quota is no longer sufficient on its own. And an N-cell fan-out
 that RETAINS each cell's outputs after the cell completes additionally
 carries the fan-out end-of-run accumulation block below — a transient
 high-water bound alone misses monotone retained accumulation (#1481).
+Ladders and fan-outs alike additionally carry the phase-ordering
+high-water block below — the reap's PLACEMENT in the implemented phase
+sequence, not just its existence, is what bounds the high-water (#1586).
 
 
 **Dose-ladder / multi-rung checkpoint retention — keep the dose-selected +
@@ -177,6 +181,48 @@ persisted-plan corpus re-scan per its calibration contract — the
 mount-binding block's v1 posture is the precedent).
 
 
+**Phase-ordering checkpoint high-water — compute the stated high-water
+against the IMPLEMENTED phase ordering; every phase that accumulates
+checkpoints without an intervening reap is itself reap-bounded.** The
+merge-disk / ladder-retention / fan-out blocks above size WHAT
+accumulates; none binds WHEN the reap runs relative to the phases the
+dispatcher actually implements, and a stated high-water is valid ONLY
+under the phase interleaving it assumes. Two duties: (1) the §9
+high-water row for any per-rung / per-cell checkpoint design STATES the
+phase ordering it assumes (per-cell train→select→reap; W-wide bounded
+waves of train→ladder→persist→reap; a between-rung online reap), and
+the plan's own phase sequence / pipeline DAG (§4/§9) implements THAT
+ordering — a mismatch is a REVISE: plan-time when the ordering is
+unstated or contradicts the plan's own phase list, impl-time
+(plan-adherence / code-review) when the dispatcher's realized phasing
+diverges from the stated one. (2) ENUMERATE every phase that
+accumulates checkpoints without an intervening reap and bound EACH — a
+reap living only inside a DOWNSTREAM consumer phase/unit (the
+ladder/selection read's stream-reap, a per-unit delete) CANNOT bound an
+upstream train-all accumulation: if a train phase completes all N cells
+before any consumer phase runs, that phase's high-water is N ×
+per-cell retained rungs regardless of any downstream reap. Canonical
+bounded shape: bounded-wave pipelining (train → ladder/select →
+persist → reap, W cells per wave ⇒ high-water ≈ W × per-cell footprint
++ in-flight transients) — the #1586 r5 fix. Phase-START headroom
+canaries do not substitute (the mount-binding preamble assert fires
+once per phase and cannot see per-wave demand — #1586's 60 GB floor
+passed at p2 start). Incident #1586 r5 (2026-07-22): plan §9 modeled
+"2 concurrent content ladders × 15 rungs ≈ 456 GB" + between-cell reap
+— implicitly wave-pipelined — but the dispatcher's linear
+p2_train(all 11 cells)→p3_ladder phasing left 15 rungs × 15.2 GB ≈
+228 GB per completed cell (~2.5 TB projected on a 750 GB volume);
+stream-reap lived only inside `run_ladder_unit`, and the run died
+ENOSPC (errno 28) mid-safetensors at ~2.5 cells. Critic enforcement:
+Methodology lens item 16 PHASE-ORDERING EXTENSION
+(`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop
+in v1 of this block (the mismatch is stated-ordering-vs-implemented
+semantics no text heuristic reads — c33's disclosed miss (a) is exactly
+this class — and a c33 trigger-regex change mandates the full
+persisted-plan corpus re-scan per its calibration contract; the
+fan-out + mount-binding blocks' v1 posture is the precedent).
+
+
 **Out-root mount binding — every §9 disk estimate for an out-root NAMES the
 target filesystem/mount, and the workload preamble asserts headroom against
 the mount the out-root ACTUALLY resolves to.** A GB estimate alone does not
@@ -223,8 +269,9 @@ out-root under `/workspace` + per-phase headroom asserts, commit
    that gap is exactly #1333.
 
 Siblings: the merge-disk budget + ladder-retention + fan-out accumulation
-blocks above size WHAT accumulates; this block binds WHERE it lands and
-adds the per-phase runtime
+blocks above size WHAT accumulates; the phase-ordering block binds WHEN
+each accumulating phase gets reaped against the implemented phase
+sequence; this block binds WHERE it lands and adds the per-phase runtime
 assert. The ≥5 GB inline-staging clause (CLAUDE.md compute-character
 pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.

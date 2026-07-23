@@ -94,6 +94,7 @@ bars (Chua/Hughes rule; see `.claude/skills/clean-results/SPEC.md` §14).
 | Style target | `set_paper_style("blog")` → 6.5 × 4.0 in, Anthropic-blog register | `"neurips"` (5.5 × 3.4) for paper figures; `"generic"` (6.0 × 4.0) is rarely the right pick |
 | Palette | `paper_palette_role("primary"\|"baseline"\|"control"\|...)` for semantic colors | Use `paper_palette(n)` (Wong) when targeting neurips; only set a custom `cycler` when palette ordering itself carries meaning |
 | DPI | 300 (savefig) | Never lower for paper/mentor use |
+| Color↔meaning consistency | Within one writeup / result line, pin ONE color↔meaning assignment (e.g. blue=instruct, green=base) across EVERY figure | Never reuse the same palette pair for a DIFFERENT factor in a sibling figure (2026-07-22: two #1092 figures used the same two colors for model identity vs arm — user had to ask "green is base and blue is instruct ???") |
 | Formats | PNG + PDF (default) | PDF required for LaTeX; PNG required for GitHub inline |
 
 ### 3. Generate code
