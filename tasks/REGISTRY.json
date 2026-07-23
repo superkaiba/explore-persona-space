@@ -4749,8 +4749,8 @@
     "1609": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1609",
-      "status": "planning",
+      "path": "tasks/approved/1609",
+      "status": "approved",
       "title": "Add fellows Slurm cluster (charmander) as backend lane preferred over GCP/RunPod"
     },
     "161": {
