@@ -25,8 +25,6 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
@@ -34,6 +32,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+import numpy as np  # noqa: E402
 import issue1092_fair_deepdive as dd  # noqa: E402  (loaders + _prep_cell + _shrinkage)
 from issue1092_fit_grid import _fit_cv, _folds_from_manifest, _r2  # noqa: E402
 from issue1092_fit_grid import _basis_targets_with_info  # noqa: E402
