@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:a9711279ae19
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-23T06:59:51Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-22 problem sweep (route 2): guard_root_code_commit.sh
