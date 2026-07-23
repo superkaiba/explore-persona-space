@@ -59,6 +59,7 @@ load_dotenv()
 import issue779_arm_headline as A  # noqa: E402
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n1m_fits as N1M  # noqa: E402
+import issue779_n1m_regen_figs as RF  # noqa: E402  (plain-English ARM_LABELS)
 import issue779_stage1 as S1  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
@@ -87,6 +88,7 @@ SUBSTITUTED_CELLS = {
 # layer (run_section4 convention), hallucination substituted 17->19.
 GROUPED_LAYERS = {"evil": 14, "sycophancy": 26, "hallucination": 19}
 L19_CONTINUITY_LAYER = 19
+RECOVERY_LAYER = 26  # --l26-kernel-recovery scope: cells/grouped reads consuming the L26 kernel
 MODES = ("system", "many_shot")
 
 # Arm slug -> persisted fitter file stem (issue779_ffc_n1m_fits weights dir).
@@ -172,12 +174,24 @@ def stage_inputs(collect_dir: Path, corpus_dir: Path, traits: tuple[str, ...]) -
 
 
 class Maps:
-    """Lazy cache of persisted n1m maps and the per-layer 5k GramRidge arm."""
+    """Lazy cache of persisted n1m maps and the per-layer 5k GramRidge arm.
 
-    def __init__(self, weights_dir: Path, ctx: A.Ctx, dev: torch.device) -> None:
+    ``krr_l26_override`` (#779 l26-kernel-gate-recovery): load the L26
+    ``krr_nystrom`` payload from this explicit path (the m=32768 Cholesky
+    refit) instead of ``weights_dir/L26/krr_nystrom.pt`` — the realized v10
+    payloads in ``weights_dir`` are read-only and never clobbered."""
+
+    def __init__(
+        self,
+        weights_dir: Path,
+        ctx: A.Ctx,
+        dev: torch.device,
+        krr_l26_override: Path | None = None,
+    ) -> None:
         self.weights_dir = weights_dir
         self.ctx = ctx
         self.dev = dev
+        self.krr_l26_override = krr_l26_override
         self._payloads: dict[tuple[int, str], dict] = {}
         self._gram5k: dict[int, tuple[A.GramRidge, np.ndarray]] = {}
 
@@ -185,6 +199,13 @@ class Maps:
         key = (int(layer), fitter)
         if key not in self._payloads:
             path = self.weights_dir / f"L{int(layer)}" / f"{fitter}.pt"
+            if (
+                fitter == "krr_nystrom"
+                and int(layer) == RECOVERY_LAYER
+                and self.krr_l26_override is not None
+            ):
+                path = self.krr_l26_override
+                logger.info("[maps] L26 krr_nystrom OVERRIDE -> %s", path)
             if not path.exists():
                 raise FileNotFoundError(
                     f"persisted weights missing: {path} — run issue779_ffc_n1m_fits.py "
@@ -352,6 +373,83 @@ def validity_gate(res: dict, args) -> dict:
             logger.warning(msg)
     if overall:
         logger.info("[gate] SS7 validity gate PASS (%d checks, tol %.2f)", len(rows), GATE_TOL)
+    return gate
+
+
+def nonkrr_match_gate(res: dict, committed_path: Path) -> dict:
+    """Recovery validity gate 3 (plan v11 §7): every recomputed NON-KRR arm value
+    must match the committed ``n1m_readout.json`` (binding ±0.02; exact match
+    expected — same machinery, same seed; realized v10 reproduced 12/12
+    exactly). Only the ``n1m_krr_nystrom_*`` arm — the recovery's manipulated
+    variable — is excluded. A miss WARNS LOUDLY + ``pass: false`` rows (blocks
+    interpretation, never a silent pass), mirroring the SS7 validity gate."""
+    committed = json.loads(committed_path.read_text())
+    rows: list[dict] = []
+    for trait, tmodes in res.get("headline", {}).items():
+        for mode, ours in tmodes.items():
+            cm = committed["headline"][trait][mode]
+            assert int(cm["layer"]) == int(ours["layer"]), (
+                f"non-KRR gate layer mismatch {trait}/{mode}: committed L{cm['layer']} vs "
+                f"recomputed L{ours['layer']}"
+            )
+            for name, mm in ours["monitors"].items():
+                if name.startswith("n1m_krr_nystrom"):
+                    continue
+                c_pt = float(cm["monitors"][name]["point"])
+                o_pt = float(mm["point"])
+                rows.append(
+                    {
+                        "surface": f"headline/{trait}/{mode}",
+                        "monitor": name,
+                        "committed": c_pt,
+                        "recomputed": o_pt,
+                        "abs_diff": round(abs(o_pt - c_pt), 6),
+                        "tol": GATE_TOL,
+                        "pass": bool(abs(o_pt - c_pt) <= GATE_TOL),
+                    }
+                )
+    for trait, g in res.get("grouped", {}).items():
+        cg = committed["grouped"][trait]["group_level"]
+        for arm, entry in g["group_level"].items():
+            if arm.startswith("n1m_krr_nystrom") or not isinstance(entry, dict):
+                continue
+            for readout in ("dot", "cos"):
+                sub = entry.get(readout)
+                if not isinstance(sub, dict) or "point" not in sub:
+                    continue
+                c_pt = float(cg[arm][readout]["point"])
+                o_pt = float(sub["point"])
+                rows.append(
+                    {
+                        "surface": f"grouped/{trait}/group_level",
+                        "monitor": f"{arm}_{readout}",
+                        "committed": c_pt,
+                        "recomputed": o_pt,
+                        "abs_diff": round(abs(o_pt - c_pt), 6),
+                        "tol": GATE_TOL,
+                        "pass": bool(abs(o_pt - c_pt) <= GATE_TOL),
+                    }
+                )
+    overall = all(r["pass"] for r in rows) and bool(rows)
+    gate = {
+        "tol": GATE_TOL,
+        "n_checks": len(rows),
+        "rows": rows,
+        "overall_pass": overall,
+        "committed_readout": str(committed_path),
+        "excluded": "n1m_krr_nystrom_* (the recovery round's manipulated variable)",
+    }
+    for r in rows:
+        if not r["pass"]:
+            msg = (
+                f"NON-KRR MATCH GATE MISS: {r['surface']} {r['monitor']} recomputed "
+                f"{r['recomputed']:.4f} vs committed {r['committed']:.4f} (|diff| "
+                f"{r['abs_diff']:.4f} > {GATE_TOL}) — rig drift; blocks interpretation."
+            )
+            print(f"WARNING: {msg}", file=sys.stderr, flush=True)
+            logger.warning(msg)
+    if overall:
+        logger.info("[gate] non-KRR match gate PASS (%d checks, tol %.2f)", len(rows), GATE_TOL)
     return gate
 
 
@@ -720,6 +818,168 @@ def make_figures(res: dict, fits: dict | None, args) -> dict:
     return figs
 
 
+def make_recovery_figures(res: dict, args) -> dict:
+    """Figures for the l26-kernel-gate-recovery round (plan v11 §6): the re-read
+    delta-vs-raw forest (daggers removed or RETAINED per the m=32768 gate
+    verdict), the sycophancy grouped group-size sweep, and the exploratory
+    gap-vs-m point pair + solver-equivalence residuals. Plain-English arm
+    labels from ``issue779_n1m_regen_figs.ARM_LABELS``."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    figs: dict = {}
+    rec = res["l26_recovery"]
+    gate = rec["gate"]
+    dagger = not bool(gate.get("gate_passed"))
+    colors = paper_palette(3)
+
+    def _label(arm: str) -> str:
+        base = RF.ARM_LABELS.get(arm, arm.replace("_", " "))
+        if arm == "n1m_krr_nystrom" and dagger:
+            return base + " †"
+        return base
+
+    # 1. Delta-vs-raw forest over the re-read L26 cells (dot readout, +0.05 bar).
+    traits = [t for t in C.TRAITS if t in res.get("headline", {})]
+    fig, axes = plt.subplots(
+        1,
+        max(1, len(traits)),
+        figsize=(4.8 * max(1, len(traits)), 5.2),
+        squeeze=False,
+        layout="tight",
+    )
+    arm_list = [f"{a}_dot" for a in MAP_ARMS]
+    for col, trait in enumerate(traits):
+        ax = axes[0][col]
+        ypos, ylab = 0, []
+        for mode in MODES:
+            entry = res["headline"][trait].get(mode)
+            if entry is None:
+                continue
+            for name in arm_list:
+                d = entry["deltas_vs_pv_raw"].get(name)
+                if d is None or not np.isfinite(d.get("delta", float("nan"))):
+                    ypos += 1
+                    ylab.append(f"{MODE_LBL[mode]}: {_label(name[: -len('_dot')])}")
+                    continue
+                ax.errorbar(
+                    d["delta"],
+                    ypos,
+                    xerr=[[max(0.0, d["delta"] - d["lo"])], [max(0.0, d["hi"] - d["delta"])]],
+                    fmt="o",
+                    capsize=2,
+                    color=colors[0] if mode == "system" else colors[1],
+                )
+                ylab.append(f"{MODE_LBL[mode]}: {_label(name[: -len('_dot')])}")
+                ypos += 1
+            ypos += 1
+            ylab.append("")
+        ax.axvline(0.0, color="gray", lw=0.8)
+        ax.axvline(0.05, color=colors[2], lw=1.0, ls="--", label="+0.05 pre-registered bar")
+        ax.set_yticks(range(len(ylab)))
+        ax.set_yticklabels(ylab, fontsize=6)
+        ax.invert_yaxis()
+        ax.set_xlabel("delta within-condition r vs raw")
+        ax.set_title(f"{trait} (L26 re-read)")
+        if col == 0:
+            ax.legend(fontsize=7, loc="lower right")
+    out = savefig_paper(fig, "l26_recovery_delta_forest", dir=args.fig_dir)
+    plt.close(fig)
+    figs["delta_forest"] = str(out.get("png", ""))
+
+    # 2. Sycophancy grouped group-size sweep (only GROUPED_LAYERS == 26 traits).
+    gtraits = [t for t in C.TRAITS if t in res.get("grouped", {})]
+    if gtraits:
+        fig, axes = plt.subplots(
+            1, len(gtraits), figsize=(5.0 * len(gtraits), 4.6), squeeze=False, layout="tight"
+        )
+        sweep_arms = ["h_n5k_logo", "h_n5k_linear", *N1M_FITTERS, "pv_raw_group"]
+        pal = paper_palette(max(3, len(sweep_arms)))
+        for col, trait in enumerate(gtraits):
+            ax = axes[0][col]
+            d = res["grouped"][trait]["group_size_sweep"]
+            sizes = sorted(int(s) for s in d)
+            for ai, arm in enumerate(sweep_arms):
+                means = [d[str(s)][arm]["dot_r_mean"] for s in sizes]
+                sds = [d[str(s)][arm]["dot_r_sd"] for s in sizes]
+                ax.errorbar(
+                    sizes,
+                    means,
+                    yerr=sds,
+                    marker="o",
+                    ms=3,
+                    capsize=2,
+                    color=pal[ai % len(pal)],
+                    label=_label(arm),
+                )
+            ax.set_xscale("log")
+            ax.set_xticks(sizes)
+            ax.set_xticklabels([str(s) for s in sizes])
+            ax.set_xlabel("questions averaged per persona group")
+            ax.set_ylabel("Pearson r vs mean judge score (dot)")
+            ax.set_title(f"{trait} (L{res['grouped'][trait]['layer']} re-read)")
+            ax.legend(fontsize=6, loc="lower right")
+        out = savefig_paper(fig, "l26_recovery_grouped_sweep", dir=args.fig_dir)
+        plt.close(fig)
+        figs["grouped_sweep"] = str(out.get("png", ""))
+
+    # 3. Exploratory: Nystrom-vs-exact gap vs m at L26 (committed 16384 vs new 32768).
+    prior = rec.get("committed_m16384_gate") or {}
+    pts = [(g.get("m_centers"), g.get("gap")) for g in (prior, gate)]
+    pts = [(m, g) for m, g in pts if m is not None and g is not None]
+    if pts:
+        # gate["tol"] can be None when the recovery gate was skipped (smoke /
+        # --no-validate-krr) and the fallback dict carries None-valued keys.
+        tol_line = float(gate.get("tol") or prior.get("tol") or 0.01)
+        fig, ax = plt.subplots(figsize=(4.6, 4.0), layout="tight")
+        ax.plot([p[0] for p in pts], [p[1] for p in pts], marker="o", color=colors[0])
+        ax.axhline(tol_line, color=colors[2], lw=1.0, ls="--", label="gate tol 0.01")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([p[0] for p in pts])
+        ax.set_xticklabels([str(p[0]) for p in pts])
+        ax.set_xlabel("Nystrom landmarks m")
+        ax.set_ylabel("|R2 Nystrom - R2 exact| (n=50k gate slice)")
+        ax.set_title("L26 kernel gate gap vs m")
+        ax.legend(fontsize=7)
+        out = savefig_paper(fig, "l26_recovery_gap_vs_m", dir=args.fig_dir)
+        plt.close(fig)
+        figs["gap_vs_m"] = str(out.get("png", ""))
+
+    # 4. Exploratory: solver-equivalence residuals (real-data leg).
+    eq = rec.get("solver_equivalence")
+    if isinstance(eq, dict):
+        fig, axes = plt.subplots(1, 2, figsize=(6.4, 3.6), layout="tight")
+        axes[0].bar([0], [eq["abs_dr2"]], color=colors[0])
+        axes[0].axhline(eq["tol"], color=colors[2], lw=1.0, ls="--", label=f"tol {eq['tol']:g}")
+        axes[0].set_xticks([0])
+        axes[0].set_xticklabels([f"m={eq['m']}"])
+        axes[0].set_ylabel("|R2 cholesky - R2 eigh|")
+        axes[0].set_yscale("log")
+        axes[0].legend(fontsize=7)
+        axes[1].bar([0], [max(eq["max_abs_dpred"], 1e-300)], color=colors[1])
+        axes[1].set_xticks([0])
+        axes[1].set_xticklabels([f"m={eq['m']}"])
+        axes[1].set_ylabel("max |pred cholesky - pred eigh|")
+        axes[1].set_yscale("log")
+        fig.suptitle("solver-equivalence residuals (real-data leg)")
+        out = savefig_paper(fig, "l26_recovery_solver_equiv", dir=args.fig_dir)
+        plt.close(fig)
+        figs["solver_equiv"] = str(out.get("png", ""))
+    return figs
+
+
+MODE_LBL = {"system": "system", "many_shot": "many-shot"}
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
@@ -767,6 +1027,37 @@ def main() -> int:
         default=PROJECT_ROOT / "eval_results" / "issue_779" / "arm_headline_pod.json",
     )
     p.add_argument("--fresh", action="store_true", help="ignore an existing output JSON")
+    p.add_argument(
+        "--l26-kernel-recovery",
+        action="store_true",
+        help="plan v11 scoped re-run: ONLY the cells consuming the L26 kernel arm (the 4 "
+        "READ_LAYERS==26 headline cells, all arms recomputed for the non-KRR byte-match "
+        "assert, + the GROUPED_LAYERS==26 grouped read + the fit-quality L26 row); no "
+        "L19 continuity read; figures emitted as l26_recovery_*",
+    )
+    p.add_argument(
+        "--krr-weights-override",
+        type=Path,
+        default=None,
+        help="explicit path to the recovery L26 krr_nystrom payload (m=32768 Cholesky "
+        "refit); the v10 payloads under --weights-dir stay read-only",
+    )
+    p.add_argument(
+        "--recovery-fits-json",
+        type=Path,
+        default=None,
+        help="l26_recovery_fits.json from the recovery fits run (gate verdict + fit row)",
+    )
+    p.add_argument(
+        "--committed-readout",
+        type=Path,
+        default=PROJECT_ROOT
+        / "eval_results"
+        / "issue_779"
+        / "n1m-nonlinear-map-behavior-readout"
+        / "n1m_readout.json",
+        help="committed parent readout JSON for the non-KRR byte-match gate",
+    )
     args = p.parse_args()
     torch.set_num_threads(int(args.n_threads))
     dev = torch.device(args.device)
@@ -774,6 +1065,31 @@ def main() -> int:
         raise SystemExit("--device cuda requested but torch.cuda.is_available() is False")
     traits = tuple(t.strip() for t in args.traits.split(",") if t.strip())
     assert traits and all(t in C.TRAITS for t in traits), traits
+
+    recovery = bool(args.l26_kernel_recovery)
+    if recovery:
+        if args.krr_weights_override is None or not args.krr_weights_override.exists():
+            raise SystemExit(
+                f"--l26-kernel-recovery requires --krr-weights-override pointing at the "
+                f"recovery L26 krr payload (got {args.krr_weights_override})"
+            )
+        if args.recovery_fits_json is None or not args.recovery_fits_json.exists():
+            raise SystemExit(
+                f"--l26-kernel-recovery requires --recovery-fits-json (got "
+                f"{args.recovery_fits_json})"
+            )
+        committed_default = (
+            PROJECT_ROOT
+            / "eval_results"
+            / "issue_779"
+            / "n1m-nonlinear-map-behavior-readout"
+            / "n1m_readout.json"
+        )
+        if args.out_json.resolve() == committed_default.resolve():
+            raise SystemExit(
+                "--l26-kernel-recovery must write to the follow-up artifact dir, not the "
+                "committed n1m_readout.json — pass --out-json (no-clobber guard)"
+            )
 
     if args.collect_dir:
         A.COLLECT_DIR = Path(args.collect_dir)
@@ -791,6 +1107,9 @@ def main() -> int:
         "k_draws": args.k_draws,
         "weights_dir": str(args.weights_dir),
     }
+    if recovery:  # keyed into the resume-params check ONLY for recovery JSONs
+        params["l26_kernel_recovery"] = True
+        params["krr_weights_override"] = str(args.krr_weights_override)
     res: dict = {}
     if args.out_json.exists() and not args.fresh:
         res = json.loads(args.out_json.read_text())
@@ -819,14 +1138,22 @@ def main() -> int:
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     C.write_json_atomic(args.out_json, res)
 
-    maps = Maps(args.weights_dir, ctx, dev)
+    maps = Maps(
+        args.weights_dir,
+        ctx,
+        dev,
+        krr_l26_override=args.krr_weights_override if recovery else None,
+    )
     cache: dict = {}
 
-    # Headline cells at frozen/substitute layers (checkpoint per cell).
+    # Headline cells at frozen/substitute layers (checkpoint per cell). In
+    # recovery mode ONLY the READ_LAYERS==26 cells (the L26 kernel consumers).
     headline = res.setdefault("headline", {})
     for trait in traits:
         tr = headline.setdefault(trait, {})
         for mode in MODES:
+            if recovery and READ_LAYERS[trait][mode] != RECOVERY_LAYER:
+                continue
             if mode in tr:
                 logger.info("[headline %s %s] checkpointed; skip", trait, mode)
                 continue
@@ -853,20 +1180,26 @@ def main() -> int:
     C.write_json_atomic(args.out_json, res)
 
     # L19 continuity read (all requested traits x modes, all arms, at L19).
-    l19 = res.setdefault("l19_continuity", {})
-    for trait in traits:
-        tr = l19.setdefault(trait, {})
-        for mode in MODES:
-            if mode in tr:
-                continue
-            tr[mode] = cell_entry(ctx, maps, trait, mode, L19_CONTINUITY_LAYER, args, cache)
-            C.write_json_atomic(args.out_json, res)
-    logger.info("[l19] continuity read complete (%d traits)", len(traits))
+    # Recovery mode: NOT re-run — the L19 kernel is unchanged, gate passed.
+    if not recovery:
+        l19 = res.setdefault("l19_continuity", {})
+        for trait in traits:
+            tr = l19.setdefault(trait, {})
+            for mode in MODES:
+                if mode in tr:
+                    continue
+                tr[mode] = cell_entry(ctx, maps, trait, mode, L19_CONTINUITY_LAYER, args, cache)
+                C.write_json_atomic(args.out_json, res)
+        logger.info("[l19] continuity read complete (%d traits)", len(traits))
+    else:
+        logger.info("[l19] SKIPPED (--l26-kernel-recovery: L19 kernel unchanged)")
 
-    # Grouped persona-level read.
+    # Grouped persona-level read (recovery: ONLY the GROUPED_LAYERS==26 traits).
     if not args.skip_grouped:
         grouped = res.setdefault("grouped", {})
         for trait in traits:
+            if recovery and GROUPED_LAYERS[trait] != RECOVERY_LAYER:
+                continue
             if trait in grouped:
                 logger.info("[grouped %s] checkpointed; skip", trait)
                 continue
@@ -875,10 +1208,57 @@ def main() -> int:
     else:
         logger.info("[grouped] SKIPPED (--skip-grouped)")
 
+    # Recovery bookkeeping: merge the recovery fits (L26 kernel entry + gate)
+    # over the committed fits view; record the gate verdict + equivalence leg.
+    if recovery:
+        rec_fits = json.loads(args.recovery_fits_json.read_text())
+        rec_l26 = rec_fits["per_layer"][str(RECOVERY_LAYER)]
+        rec_krr = rec_l26["per_point"]["mixed_1m"]["predictors"]["krr_nystrom"]
+        gate32 = rec_l26.get("nystrom_validation") or {
+            "gate_passed": False,
+            "note": "gate absent from recovery fits (smoke / --no-validate-krr) — "
+            "dagger RETAINED (conservative)",
+        }
+        res["l26_recovery"] = {
+            "recovery_fits_json": str(args.recovery_fits_json),
+            "krr_weights_override": str(args.krr_weights_override),
+            "gate": {
+                k: gate32.get(k)
+                for k in (
+                    "n",
+                    "m_centers",
+                    "solver",
+                    "exact_r2",
+                    "nystrom_r2",
+                    "gap",
+                    "tol",
+                    "gate_passed",
+                    "note",
+                )
+            },
+            "solver_equivalence": rec_l26.get("solver_equivalence"),
+            "krr_fit": {
+                "whole_map_r2": rec_krr.get("whole_map_r2"),
+                "mean_cosine": rec_krr.get("mean_cosine"),
+                "fit_meta": rec_krr.get("fit_meta"),
+            },
+        }
+        C.write_json_atomic(args.out_json, res)
+
     # Fit-quality summary from the multilayer fits JSON (exploratory transfer).
     fits = None
     if args.fits_json.exists():
         fits = json.loads(args.fits_json.read_text())
+        if recovery:
+            # merged view: committed fits with the L26 kernel row + gate REPLACED
+            # by the recovery refit (the m=16384 gate is kept for the gap-vs-m fig).
+            l26 = fits["per_layer"].setdefault(str(RECOVERY_LAYER), {"per_point": {}})
+            res["l26_recovery"]["committed_m16384_gate"] = l26.get("nystrom_validation")
+            l26["nystrom_validation"] = res["l26_recovery"]["gate"]
+            l26.setdefault("per_point", {}).setdefault("mixed_1m", {}).setdefault("predictors", {})[
+                "krr_nystrom"
+            ] = res["l26_recovery"]["krr_fit"]
+            C.write_json_atomic(args.out_json, res)
         res["fit_quality"] = {
             "fits_json": str(args.fits_json),
             "per_layer_test_r2": {
@@ -897,6 +1277,20 @@ def main() -> int:
         logger.warning(
             "[fit-quality] fits json absent at %s; skipping transfer summary", args.fits_json
         )
+
+    if recovery:
+        # Recovery validity gate 3 (non-KRR byte-match) + scoped l26_recovery figures.
+        res["nonkrr_match_gate"] = nonkrr_match_gate(res, args.committed_readout)
+        C.write_json_atomic(args.out_json, res)
+        res["figures"] = make_recovery_figures(res, args)
+        C.write_json_atomic(args.out_json, res)
+        logger.info(
+            "Done (l26-kernel-recovery). gate_passed=%s nonkrr_match=%s. Wrote %s",
+            res["l26_recovery"]["gate"].get("gate_passed"),
+            res["nonkrr_match_gate"]["overall_pass"],
+            args.out_json,
+        )
+        return 0
 
     # Figures (scatter cache holds per-cell raw arrays; not persisted to JSON).
     res["_scatter_cache"] = {

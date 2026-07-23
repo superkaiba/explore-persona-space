@@ -120,7 +120,11 @@ MLP_W_CAPACITY = 32768
 RIDGE_BLOCK = 50_000  # train-row block for streaming X^TX / Phi^TPhi accumulation
 MLP_BATCH = 4096
 NYSTROM_VALIDATE_N = 50_000  # train slice for the Nystrom-vs-exact gate
-NYSTROM_MAX_CENTERS_WARN = 20_000  # K_mm eigh at m > this may OOM on an 80GB GPU
+NYSTROM_MAX_CENTERS_WARN = 20_000  # m x m dense factorizations above this are heavy; the default
+# eigh solver is UNCOMPUTABLE at m=32768 (cusolver syevd INVALID_VALUE at bufferSize; CPU LAPACK
+# dsyevd 2*m^2 int32 workspace overflow) — use --krr-solver cholesky (#779 l26-kernel-gate-recovery)
+SOLVER_EQUIV_M = 4096  # solver-equivalence gate m: both solvers comfortably computable (CPU + GPU)
+SOLVER_EQUIV_TOL = 1e-4  # |dR2| bar: ~100x fp64 margin, 100x below the 0.01 science gate (plan v11)
 
 # Stream-checkpoint + per-chunk download retry (#779 n1m fits crash fix). The HF
 # per-chunk stream accumulates the assembled per-layer arrays in memory; a single
@@ -1418,19 +1422,103 @@ def fit_residual_skip(X, Y, tr, val, te, lambdas, width, lr, max_epochs, batch, 
 # ── chunked Nystrom RBF KRR (streaming Phi^TPhi over train blocks) ───────────────
 
 
-def _nystrom_inv_sqrt(landmarks, gamma, dev, eig_floor=1e-10):
-    """K_mm^{-1/2} whitener (m, m) fp64 on dev."""
+def _cholesky_whitener(K_mm, jitter_ladder=(1e-10, 1e-8, 1e-6), diag_out=None):
+    """Jittered-Cholesky whitener L^{-T} with (K_mm + eps*I) = L L^T (#779 l26 recovery).
+
+    SAME return contract as the eigh K_mm^{-1/2}: an (m, m) fp64 matrix
+    right-multiplying K_bm (Phi = K_bm @ L^{-T}, so Phi Phi^T = K_bm
+    (K_mm+eps I)^{-1} K_mb — predictions identical to the eigh path up to the
+    orthogonal rotation O = K_mm^{1/2} L^{-T}; ridge is rotation-invariant).
+    The eps ladder is ABSOLUTE (RBF diag(K_mm)=1, matching the incumbent
+    eig_floor=1e-10 scale); FAIL LOUD past 1e-6 (plan v11 §4.1). GPU
+    potrf/trsm failure falls back to CPU dpotrf (blocked in-place — no
+    dsyevd-class 2*m^2 int32 workspace wall at m=32768)."""
+    m = int(K_mm.shape[0])
+    dev0 = K_mm.device
+    devices = [dev0] if dev0.type == "cpu" else [dev0, torch.device("cpu")]
+    last_err: Exception | None = None
+    for dev_try in devices:
+        K = K_mm if dev_try == dev0 else K_mm.cpu()
+        eye = torch.eye(m, dtype=torch.float64, device=dev_try)
+        for eps in jitter_ladder:
+            try:
+                L = torch.linalg.cholesky(K + eps * eye)
+                inv_sqrt = torch.linalg.solve_triangular(L, eye, upper=False).T.contiguous()
+            except RuntimeError as e:  # LinAlgError (not PD at this eps) or backend failure
+                last_err = e
+                logger.warning(
+                    "[cholesky-whitener] potrf/trsm failed on %s at eps=%g: %s",
+                    dev_try.type,
+                    eps,
+                    str(e).splitlines()[0],
+                )
+                continue
+            if diag_out is not None:
+                diag_out.update(
+                    {"solver": "cholesky", "jitter_eps": float(eps), "device": dev_try.type}
+                )
+            return inv_sqrt.to(dev0)
+    raise RuntimeError(
+        f"jittered-Cholesky whitener failed past the eps ladder {jitter_ladder} on "
+        f"{[d.type for d in devices]} at m={m} — fail loud (plan v11 §4.1): {last_err}"
+    )
+
+
+def _cholesky_solve_psd(G, B, lam):
+    """W = (G + lam*I)^{-1} B via per-lambda Cholesky (#779 l26 recovery G-solve).
+
+    G is PSD (a streamed Phi^T Phi Gram) and lam >= 0.1 dominates the
+    clamped-at-0 numerical negativity the incumbent eigh path clamps, so no
+    jitter ladder is needed here. GPU potrf failure falls back to CPU dpotrf
+    (blocked in-place — no dsyevd-class workspace wall); fail loud past both."""
+    m = int(G.shape[0])
+    dev0 = G.device
+    devices = [dev0] if dev0.type == "cpu" else [dev0, torch.device("cpu")]
+    last_err: Exception | None = None
+    for dev_try in devices:
+        try:
+            A = G.to(dev_try) + float(lam) * torch.eye(m, dtype=G.dtype, device=dev_try)
+            L = torch.linalg.cholesky(A)
+            del A
+            return torch.cholesky_solve(B.to(dev_try), L).to(dev0)
+        except RuntimeError as e:
+            last_err = e
+            logger.warning(
+                "[cholesky-G-solve] potrf/solve failed on %s at lam=%g: %s",
+                dev_try.type,
+                lam,
+                str(e).splitlines()[0],
+            )
+    raise RuntimeError(
+        f"Cholesky G-solve failed on {[d.type for d in devices]} at m={m} lam={lam} "
+        f"— fail loud (plan v11 §4.1): {last_err}"
+    )
+
+
+def _nystrom_inv_sqrt(landmarks, gamma, dev, eig_floor=1e-10, solver="eigh", diag_out=None):
+    """K_mm whitener (m, m) fp64 on dev.
+
+    ``solver="eigh"`` (default, existing behavior byte-preserved): symmetric
+    K_mm^{-1/2} via eigendecomposition. ``solver="cholesky"``: the jittered-
+    Cholesky L^{-T} (#779 l26-kernel-gate-recovery — identical predictions, no
+    syevd walls at m=32768; see ``_cholesky_whitener``)."""
     Z = torch.as_tensor(np.asarray(landmarks), dtype=torch.float64, device=dev)
     K_mm = torch.exp(-gamma * torch.cdist(Z, Z) ** 2)
+    if solver == "cholesky":
+        return _cholesky_whitener(K_mm, diag_out=diag_out)
     try:
         w, V = torch.linalg.eigh(K_mm)
     except torch.linalg.LinAlgError:
         # cusolver syevd rejects very large fp64 matrices (observed: m=32768,
         # CUSOLVER_STATUS_INVALID_VALUE at the bufferSize query; m=16384 fine).
         # Same quantity on CPU LAPACK, then back to dev (att-20260722-165214 r2).
+        # NOTE: CPU dsyevd itself int32-overflows at m=32768 (2*m^2 = 2^31) —
+        # at that scale use solver="cholesky" instead.
         w, V = torch.linalg.eigh(K_mm.cpu())
         w, V = w.to(K_mm.device), V.to(K_mm.device)
     w = torch.clamp(w, min=eig_floor)
+    if diag_out is not None:
+        diag_out.update({"solver": "eigh", "jitter_eps": None, "device": dev.type})
     return V @ torch.diag(w.rsqrt()) @ V.T  # (m, m)
 
 
@@ -1442,33 +1530,54 @@ def _nystrom_features_block(Xblock, landmarks_t, gamma, inv_sqrt):
 
 
 def fit_krr_nystrom(
-    X, Y, tr, val, te, *, m_centers, gamma_mult, lambdas, seed, dev, block, capture_out=None
+    X,
+    Y,
+    tr,
+    val,
+    te,
+    *,
+    m_centers,
+    gamma_mult,
+    lambdas,
+    seed,
+    dev,
+    block,
+    capture_out=None,
+    solver="eigh",
 ):
     """Nystrom RBF KRR, (gamma, lambda) val-selected. Phi^TPhi accumulated STREAMING
     over train blocks so the (ntr, m) feature matrix is never materialized whole.
     Raw X + median-heuristic gamma (matches N50.fit_krr_exact for the validation).
     ``capture_out`` (#779 n1m-readout, optional dict): receives the SELECTED
-    (gamma, lambda)'s fp32 landmarks + K_mm^{-1/2} + dual weights + ymu for
+    (gamma, lambda)'s fp32 landmarks + whitener + dual weights + ymu for
     ``apply_map`` persistence (updated on each new val best — copies only, no
-    rng use). Default ``None`` — behavior unchanged."""
+    rng use). Default ``None`` — behavior unchanged.
+    ``solver`` (#779 l26-kernel-gate-recovery): ``"eigh"`` (default, existing
+    behavior byte-preserved) or ``"cholesky"`` — jittered-Cholesky whitener +
+    per-lambda Cholesky G-solve at BOTH m x m dense sites (mathematically
+    identical predictions; no syevd walls at m=32768)."""
     tr = np.asarray(tr, dtype=np.int64)
     Xtr_sub = np.asarray(X[tr[: min(len(tr), 4000)]], dtype=np.float64)  # gamma est subsample
     base_gamma = F.median_heuristic_gamma(Xtr_sub, np.random.default_rng(seed + 1))
     m = int(min(m_centers, len(tr)))
     if m > NYSTROM_MAX_CENTERS_WARN:
         logger.warning(
-            "[krr] m_centers=%d > %d — K_mm eigh (m,m) may OOM on an 80GB GPU",
+            "[krr] m_centers=%d > %d — the (m,m) whitener/G factorizations are heavy; the "
+            "default eigh solver is UNCOMPUTABLE at m=32768 (syevd walls) — solver=%s",
             m,
             NYSTROM_MAX_CENTERS_WARN,
+            solver,
         )
     lm_rows = tr[np.random.default_rng(seed).choice(len(tr), size=m, replace=False)]
     landmarks = np.asarray(X[lm_rows], dtype=np.float64)
     # center Y on train mean (streamed)
     _, _, ymu = _train_standardizer(X, Y, tr, dev, block)
-    grid, best = [], None
+    grid, best, whitener_diags = [], None, []
     for gm in gamma_mult:
         gamma = base_gamma * gm
-        inv_sqrt = _nystrom_inv_sqrt(landmarks, gamma, dev)
+        wdiag: dict = {}
+        inv_sqrt = _nystrom_inv_sqrt(landmarks, gamma, dev, solver=solver, diag_out=wdiag)
+        whitener_diags.append({"gamma": float(gamma), **wdiag})
         landmarks_t = torch.as_tensor(landmarks, dtype=torch.float64, device=dev)
         G = torch.zeros((m, m), dtype=torch.float64, device=dev)
         PhiY = torch.zeros((m, Y.shape[1]), dtype=torch.float64, device=dev)
@@ -1478,13 +1587,24 @@ def fit_krr_nystrom(
             yb = torch.as_tensor(Y[idx], dtype=torch.float64, device=dev) - ymu
             G += phi.T @ phi
             PhiY += phi.T @ yb
-        a, Q = torch.linalg.eigh(G)
-        a = torch.clamp(a, min=0.0)
-        QtPhiY = Q.T @ PhiY
+        if solver == "cholesky":
+            # per-lambda Cholesky G-solve — the SECOND m x m dense-eig site the
+            # l26 recovery replaces (eigh(G) hits the same syevd wall at m=32768).
+
+            def _solve_lam(lam, _G=G, _B=PhiY):
+                return _cholesky_solve_psd(_G, _B, lam)
+        else:
+            a, Q = torch.linalg.eigh(G)
+            a = torch.clamp(a, min=0.0)
+            QtPhiY = Q.T @ PhiY
+
+            def _solve_lam(lam, _Q=Q, _a=a, _QB=QtPhiY):
+                return _Q @ (_QB / (_a + float(lam))[:, None])
+
         phi_val = _nystrom_features_block(X[val], landmarks_t, gamma, inv_sqrt)
         phi_te = _nystrom_features_block(X[te], landmarks_t, gamma, inv_sqrt)
         for lam in lambdas:
-            W = Q @ (QtPhiY / (a + float(lam))[:, None])  # (m, D)
+            W = _solve_lam(lam)  # (m, D)
             pred_val = (phi_val @ W + ymu).cpu().numpy()
             pred_te = (phi_te @ W + ymu).cpu().numpy()
             val_r2 = PR._pooled_r2(pred_val, Y[val])
@@ -1514,9 +1634,13 @@ def fit_krr_nystrom(
                             "landmarks": torch.as_tensor(landmarks, dtype=torch.float32),
                             "inv_sqrt": inv_sqrt.detach().cpu().to(torch.float32),
                             "W_dual": W.detach().cpu().to(torch.float32),
+                            # #779 l26 recovery provenance: whitener solver + realized
+                            # jitter (apply_map consumes inv_sqrt unchanged either way).
+                            "solver": solver,
+                            "jitter_eps": wdiag.get("jitter_eps"),
                         }
                     )
-        del G, PhiY, inv_sqrt, landmarks_t, phi_val, phi_te
+        del G, PhiY, inv_sqrt, landmarks_t, phi_val, phi_te, _solve_lam
         if dev.type == "cuda":
             torch.cuda.empty_cache()
     assert best is not None
@@ -1524,6 +1648,8 @@ def fit_krr_nystrom(
         "n_train": len(tr),
         "kernel": "RBF Nystrom (streaming Phi^TPhi)",
         "m_centers": m,
+        "solver": solver,
+        "whitener": whitener_diags,  # per-gamma {gamma, solver, jitter_eps, device}
         "base_gamma": float(base_gamma),
         "selected": {k: best[k] for k in ("gamma_mult", "gamma", "lambda", "val_r2")},
         "val_grid": grid,
@@ -1531,7 +1657,7 @@ def fit_krr_nystrom(
 
 
 def _validate_nystrom_vs_exact(
-    X, Y, pools, val, te, *, m_centers, gamma_mult, krr_lambdas, seed, dev, tol
+    X, Y, pools, val, te, *, m_centers, gamma_mult, krr_lambdas, seed, dev, tol, solver="eigh"
 ):
     """Run Nystrom AND exact KRR on the SAME 50k train slice; compare test R2.
 
@@ -1572,6 +1698,7 @@ def _validate_nystrom_vs_exact(
         seed=seed,
         dev=dev,
         block=RIDGE_BLOCK,
+        solver=solver,
     )
     r2_ny = PR._pooled_r2(pred_ny, Y[te])
     gap = abs(r2_ny - r2_ex)
@@ -1605,6 +1732,8 @@ def _validate_nystrom_vs_exact(
     return {
         "n": int(n),
         "m_centers": int(m_centers),
+        "solver": solver,
+        "nystrom_whitener": meta_ny.get("whitener"),
         "exact_r2": float(r2_ex),
         "nystrom_r2": float(r2_ny),
         "gap": float(gap),
@@ -1615,6 +1744,167 @@ def _validate_nystrom_vs_exact(
         "exact_selected": meta_ex.get("selected"),
         "nystrom_selected": meta_ny.get("selected"),
     }
+
+
+def _assert_integrity(name, got, expected, tol, relative=False):
+    """Registered integrity assert (plan v11 validity gate 2): a miss means the
+    re-streamed memmap content drifted from the committed stream — fail loud,
+    never paper over."""
+    diff = abs(float(got) - float(expected)) / (abs(float(expected)) if relative else 1.0)
+    if not (np.isfinite(diff) and diff <= tol):
+        raise SystemExit(
+            f"INTEGRITY ASSERT FAILED ({name}): got {got!r} vs committed {expected!r} "
+            f"({'rel ' if relative else ''}diff {diff:.3e} > tol {tol:g}) — re-streamed "
+            "content drift; investigate, never paper over (plan v11 validity gate 2)"
+        )
+    logger.info(
+        "[integrity] %s reproduces the committed value (%sdiff %.3e <= %g)",
+        name,
+        "rel " if relative else "",
+        diff,
+        tol,
+    )
+
+
+def _solver_equivalence_check(
+    X, Y, tr, val, te, *, m, gamma_mult, lambdas, seed, dev, block, tol=SOLVER_EQUIV_TOL
+):
+    """Fit the SAME Nystrom KRR with BOTH solvers; assert |R2_chol - R2_eigh| <= tol.
+
+    Predictions are mathematically identical (Phi_chol = Phi_eigh @ O with O
+    orthogonal; ridge is rotation-invariant), so a miss is a CODE BUG — fail
+    fast (SystemExit), never a science branch (plan v11 validity gate 1). Also
+    logs + returns max|dpred| over the test predictions (plan-critique ask)."""
+    out: dict[str, dict] = {}
+    for sv in ("eigh", "cholesky"):
+        pred, meta = fit_krr_nystrom(
+            X,
+            Y,
+            tr,
+            val,
+            te,
+            m_centers=m,
+            gamma_mult=gamma_mult,
+            lambdas=lambdas,
+            seed=seed,
+            dev=dev,
+            block=block,
+            solver=sv,
+        )
+        out[sv] = {"pred": pred, "r2": float(PR._pooled_r2(pred, Y[te])), "meta": meta}
+    dr2 = abs(out["cholesky"]["r2"] - out["eigh"]["r2"])
+    max_dpred = float(np.max(np.abs(out["cholesky"]["pred"] - out["eigh"]["pred"])))
+    result = {
+        "m": int(min(m, len(tr))),
+        "n_train": int(len(tr)),
+        "r2_eigh": out["eigh"]["r2"],
+        "r2_cholesky": out["cholesky"]["r2"],
+        "abs_dr2": float(dr2),
+        "max_abs_dpred": max_dpred,
+        "tol": float(tol),
+        "selected_eigh": out["eigh"]["meta"]["selected"],
+        "selected_cholesky": out["cholesky"]["meta"]["selected"],
+        "cholesky_whitener": out["cholesky"]["meta"].get("whitener"),
+        "pass": bool(np.isfinite(dr2) and dr2 <= tol),
+    }
+    logger.info(
+        "[solver-equiv] m=%d n=%d: R2 eigh=%.6f chol=%.6f |dR2|=%.2e max|dpred|=%.2e (tol %g)",
+        result["m"],
+        result["n_train"],
+        result["r2_eigh"],
+        result["r2_cholesky"],
+        dr2,
+        max_dpred,
+        tol,
+    )
+    if not result["pass"]:
+        raise SystemExit(
+            f"SOLVER-EQUIVALENCE GATE FAILED at m={result['m']}: |dR2|={dr2:.3e} > tol {tol:g} "
+            f"(eigh {result['r2_eigh']:.6f} vs cholesky {result['r2_cholesky']:.6f}, "
+            f"max|dpred|={max_dpred:.3e}) — code bug in the solver path; fix and relaunch "
+            "(plan v11 validity gate 1 — never a science branch)"
+        )
+    return result
+
+
+def _solver_equivalence_selftest(m_ladder=(256, 1024, 4096)) -> int:
+    """Pre-launch CPU synthetic leg of the solver-equivalence gate (plan v11 §4.2a).
+
+    Fixed-seed synthetic data (n=20k, small d); fits BOTH solvers at each
+    ladder m (all computable on CPU), asserting |dR2| <= 1e-4 and logging
+    max|dpred|. Exit 0 == the Cholesky path is prediction-identical to eigh —
+    catches code bugs before any provisioning. Also fires each new
+    data-dependent guard once on a degenerate input (probe leg)."""
+    dev = torch.device("cpu")
+    rng = np.random.default_rng(779)
+    n, H, D = 20_000, 32, 8
+    Wt = rng.standard_normal((H, D)) * 0.3
+    Xs = rng.standard_normal((n, H)).astype(np.float32)
+    Ys = (np.tanh(Xs @ Wt.astype(np.float32)) + 0.05 * rng.standard_normal((n, D))).astype(
+        np.float32
+    )
+    tr = np.arange(0, n - 4000)
+    vl = np.arange(n - 4000, n - 2000)
+    ts = np.arange(n - 2000, n)
+    rows = []
+    for m in m_ladder:
+        rows.append(
+            _solver_equivalence_check(
+                Xs,
+                Ys,
+                tr,
+                vl,
+                ts,
+                m=int(m),
+                gamma_mult=KRR_GAMMA_MULT,
+                lambdas=KRR_LAMBDAS,
+                seed=0,
+                dev=dev,
+                block=RIDGE_BLOCK,
+            )
+        )
+
+    # Degenerate gate probes: demonstrate each new guard branch executes once.
+    fired = False
+    try:
+        _cholesky_whitener(-torch.eye(8, dtype=torch.float64))
+    except RuntimeError as e:
+        fired = "eps ladder" in str(e)
+    assert fired, "cholesky jitter-ladder exhaustion guard did not fire on a non-PD K_mm"
+    fired = False
+    try:
+        _assert_integrity("probe", 1.0, 2.0, 1e-4)
+    except SystemExit as e:
+        fired = "INTEGRITY ASSERT FAILED" in str(e)
+    assert fired, "integrity assert did not fire on a mismatched value"
+    fired = False
+    try:
+        _solver_equivalence_check(
+            Xs,
+            Ys,
+            tr[:500],
+            vl,
+            ts,
+            m=64,
+            gamma_mult=KRR_GAMMA_MULT,
+            lambdas=KRR_LAMBDAS,
+            seed=0,
+            dev=dev,
+            block=RIDGE_BLOCK,
+            tol=-1.0,
+        )
+    except SystemExit as e:
+        fired = "SOLVER-EQUIVALENCE GATE FAILED" in str(e)
+    assert fired, "solver-equivalence failure branch did not fire at tol=-1"
+
+    logger.info(
+        "[solver-equiv-selftest] PASS at m ladder %s (max |dR2| %.2e, max max|dpred| %.2e); "
+        "degenerate guard probes fired (jitter-ladder, integrity, equivalence-fail)",
+        [r["m"] for r in rows],
+        max(r["abs_dr2"] for r in rows),
+        max(r["max_abs_dpred"] for r in rows),
+    )
+    return 0
 
 
 def _curve(pred_te, Y_te, n_boot, seed) -> dict:
@@ -1682,6 +1972,7 @@ def _fit_one_predictor(name, X, Y, tr, val, test, lambdas, gamma_mult, krr_lambd
         seed=args.seed,
         dev=dev,
         block=args.ridge_block,
+        solver=args.krr_solver,
     )
 
 
@@ -1729,6 +2020,7 @@ def _fit_one_predictor_ml(
             dev=dev,
             block=args.ridge_block,
             capture_out=cap,
+            solver=args.krr_solver,
         )
         return pred, meta, cap
     if want_weights:
@@ -1781,6 +2073,7 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                 "gamma_mult": list(gamma_mult),
                 "lambdas": list(krr_lambdas),
                 "nystrom_centers": int(args.krr_nystrom_centers),
+                "solver": args.krr_solver,
             },
             "predictor_labels": PREDICTOR_LABEL,
             "fit_points": {p[0]: {"n_train_target": p[1], "corpus_mode": p[2]} for p in FIT_POINTS},
@@ -1808,6 +2101,39 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
         lres = results["per_layer"].setdefault(str(li), {"per_point": {}})
         if (
             "krr_nystrom" in want_pred
+            and args.krr_solver_equivalence_check
+            and lres.get("solver_equivalence") is None
+        ):
+            # Real-data solver-equivalence leg (plan v11 §4.2b): BOTH solvers on
+            # the Nystrom gate slice (same construction as the gate) BEFORE the
+            # production fit; |dR2| > 1e-4 fails fast (code bug, never a branch).
+            pool_eq = pools["lmsys"]
+            n_eq = min(NYSTROM_VALIDATE_N, len(pool_eq))
+            tr_eq = np.sort(
+                pool_eq[
+                    np.random.default_rng(args.seed + 7).choice(
+                        len(pool_eq), size=n_eq, replace=False
+                    )
+                ]
+            )
+            m_eq = int(min(args.solver_equiv_m, len(tr_eq)))
+            logger.info("[solver-equiv] L%d real-data leg: n=%d m=%d ...", li, n_eq, m_eq)
+            lres["solver_equivalence"] = _solver_equivalence_check(
+                X,
+                Y,
+                tr_eq,
+                val,
+                test,
+                m=m_eq,
+                gamma_mult=gamma_mult,
+                lambdas=krr_lambdas,
+                seed=args.seed,
+                dev=dev,
+                block=args.ridge_block,
+            )
+            C.write_json_atomic(args.out_json, results)
+        if (
+            "krr_nystrom" in want_pred
             and not args.no_validate_krr
             and lres.get("nystrom_validation") is None
         ):
@@ -1823,6 +2149,7 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                 seed=args.seed,
                 dev=dev,
                 tol=args.krr_validate_tol,
+                solver=args.krr_solver,
             )
             if lres["nystrom_validation"].get("gate_passed", True) is False:
                 logger.warning(
@@ -1831,6 +2158,13 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                     li,
                 )
             C.write_json_atomic(args.out_json, results)
+        if args.expect_exact_r2 is not None and isinstance(lres.get("nystrom_validation"), dict):
+            _assert_integrity(
+                f"L{li} gate exact-side R2",
+                lres["nystrom_validation"]["exact_r2"],
+                args.expect_exact_r2,
+                args.expect_exact_r2_tol,
+            )
         for pn in want_points:
             _, n_target, mode = point_by_name[pn]
             tr, sel_diag = select_train(pools, pn, n_target, mode, args.seed)
@@ -1887,6 +2221,20 @@ def _run_multilayer(args, layers, want_points, want_pred, point_by_name, dev):
                     curve["whole_map_r2"],
                     curve["mean_cosine"],
                     curve["wall_time_s"],
+                )
+            if (
+                args.expect_base_gamma is not None
+                and "krr_nystrom" in pres["predictors"]
+                and isinstance(pres["predictors"]["krr_nystrom"].get("fit_meta"), dict)
+            ):
+                # plan v11 validity gate 2 (covers fresh AND resume-skipped fits):
+                # same seed => same 4k-row gamma subsample of the re-streamed memmap.
+                _assert_integrity(
+                    f"L{li}/{pn} krr base_gamma",
+                    pres["predictors"]["krr_nystrom"]["fit_meta"]["base_gamma"],
+                    args.expect_base_gamma,
+                    1e-9,
+                    relative=True,
                 )
     logger.info("[ml] wrote %s (%.0fs total)", args.out_json, time.time() - t0)
     return 0
@@ -2468,6 +2816,46 @@ def main() -> int:
     ap.add_argument("--krr-lambdas", default=",".join(str(x) for x in KRR_LAMBDAS))
     ap.add_argument("--krr-validate-tol", type=float, default=0.01)
     ap.add_argument("--no-validate-krr", action="store_true", help="skip the Nystrom-vs-exact gate")
+    ap.add_argument(
+        "--krr-solver",
+        choices=["eigh", "cholesky"],
+        default="eigh",
+        help="Nystrom m x m solver: eigh whitener + spectral G-solve (default, existing "
+        "behavior) or jittered-Cholesky whitener + per-lambda Cholesky G-solve (#779 "
+        "l26-kernel-gate-recovery; identical predictions, no syevd walls at m=32768)",
+    )
+    ap.add_argument(
+        "--krr-solver-equivalence-check",
+        action="store_true",
+        help="real-data solver-equivalence leg (plan v11 §4.2b): fit BOTH solvers at "
+        "--solver-equiv-m on the Nystrom gate slice before the production fit; "
+        "|dR2| > 1e-4 fails fast (code bug, never a science branch)",
+    )
+    ap.add_argument("--solver-equiv-m", type=int, default=SOLVER_EQUIV_M)
+    ap.add_argument(
+        "--solver-equivalence-selftest",
+        nargs="?",
+        const="256,1024,4096",
+        default=None,
+        metavar="M_LADDER",
+        help="pre-launch CPU synthetic solver-equivalence leg (plan v11 §4.2a) at the "
+        "given comma-separated m ladder, then exit",
+    )
+    ap.add_argument(
+        "--expect-exact-r2",
+        type=float,
+        default=None,
+        help="integrity assert (plan v11 gate 2): the Nystrom gate's exact-side R2 must "
+        "reproduce this committed value within --expect-exact-r2-tol",
+    )
+    ap.add_argument("--expect-exact-r2-tol", type=float, default=1e-4)
+    ap.add_argument(
+        "--expect-base-gamma",
+        type=float,
+        default=None,
+        help="integrity assert (plan v11 gate 2): the KRR fit's base_gamma must reproduce "
+        "this committed value within 1e-9 relative",
+    )
     ap.add_argument("--pass-b", type=Path, default=N1G.PASS_B_LOCAL)
     ap.add_argument("--orig-dir", type=Path, default=DEFAULT_ORIG_DIR)
     ap.add_argument("--manifest-from-hf", action="store_true")
@@ -2495,6 +2883,16 @@ def main() -> int:
     if args.smoke:
         return _smoke()
     torch.set_num_threads(int(args.n_threads))
+    if args.solver_equivalence_selftest is not None:
+        # CPU-by-definition pre-launch leg (plan v11 §4.2a) — runs before the
+        # cuda-availability check so it works on the GPU-less VM.
+        ladder = tuple(
+            int(x) for x in str(args.solver_equivalence_selftest).split(",") if x.strip()
+        )
+        assert ladder, (
+            f"--solver-equivalence-selftest parsed empty from {args.solver_equivalence_selftest!r}"
+        )
+        return _solver_equivalence_selftest(ladder)
     dev = torch.device(args.device)
     if args.device == "cuda" and not torch.cuda.is_available():
         raise SystemExit("--device cuda requested but torch.cuda.is_available() is False")
@@ -2565,6 +2963,7 @@ def main() -> int:
             seed=args.seed,
             dev=dev,
             tol=args.krr_validate_tol,
+            solver=args.krr_solver,
         )
 
     results.setdefault("per_point", {})
@@ -2578,6 +2977,7 @@ def main() -> int:
                 "gamma_mult": list(gamma_mult),
                 "lambdas": list(krr_lambdas),
                 "nystrom_centers": int(args.krr_nystrom_centers),
+                "solver": args.krr_solver,
             },
             "nystrom_validation": validation,
             "predictor_labels": PREDICTOR_LABEL,
