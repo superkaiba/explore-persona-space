@@ -737,6 +737,7 @@ def _fu_imp_anchor(cfg: Cfg, cell: str) -> float:
 
 def phase_stage(cfg: Cfg) -> dict:
     _phase("p0_stage")
+    reap_sibling_smoke_root(cfg)  # full-mode: clear the chained smoke leg's residue (fu r3)
     _headroom(cfg, "p0_stage")
     done_path = cfg.out_root / "stage_done.json"
     if done_path.exists():
@@ -3755,24 +3756,61 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     return args
 
 
+def default_smoke_root(fu: str | None) -> Path:
+    """Default ``--out-root`` for ``--mode smoke``, factored out of build_cfg so
+    the full-mode sibling-smoke reap (reap_sibling_smoke_root) targets the SAME
+    derived path — no drift between the writer and the reaper.
+
+    Prefers /workspace (GCE boot disk / RunPod volume) over /tmp: the RunPod
+    container disk is ~50 GB, below the p2_train 60 GB headroom floor + a
+    ~15 GB full-FT smoke ckpt (review r1 Minor 2). FU roots are DISTINCT from
+    the executed run's (plan v7 §4.C — never clobber the executed trees)."""
+    fu_tag = "-fu" if fu else ""
+    base = "/workspace" if Path("/workspace").is_dir() else "/tmp"
+    return Path(f"{base}/issue-{G.ISSUE}{fu_tag}-smoke")
+
+
+def reap_sibling_smoke_root(cfg: Cfg, smoke_root: Path | None = None) -> None:
+    """FULL-mode-only reap of the chained SMOKE leg's out-root at p0_stage
+    entry (the ``--mode smoke && --mode full`` dispatch shape).
+
+    fu crash r3 (epm:failure v9, 2026-07-23): the smoke leg ran keep-cell and
+    left ~44 GB of full-FT smoke rungs at /workspace/issue-1586-fu-smoke
+    inside the shared ~130 GB /workspace quota; neither leg reaped it, and
+    the full run died at p2_train_wave1's headroom assert (68.7 < 85.8 GB).
+
+    Guards: NEVER under smoke mode (a smoke must not delete its own live
+    out-root); touches ONLY the derived smoke out-root; skips when the full
+    run's own out_root IS that path. rmtree errors propagate (fail-loud).
+    Always emits exactly one ``[smoke-reap]`` line — the observable that the
+    reap branch ran (reaped / absent / skip)."""
+    if cfg.smoke:
+        return
+    root = smoke_root if smoke_root is not None else default_smoke_root(cfg.fu)
+    if cfg.out_root.resolve() == root.resolve():
+        logger.warning("[smoke-reap] out_root IS the smoke out-root (%s) — not reaping", root)
+        return
+    if not root.exists():
+        logger.info("[smoke-reap] smoke out-root absent — nothing to reap (%s)", root)
+        return
+    free0 = shutil.disk_usage(root).free
+    shutil.rmtree(root)  # fail-loud: no ignore_errors — a failed reap must crash here
+    free1 = shutil.disk_usage(root.parent).free
+    logger.info(
+        "[smoke-reap] reaped sibling smoke out-root %s (~%.1f GB reclaimed)",
+        root,
+        max(0.0, free1 - free0) / 1e9,
+    )
+
+
 def build_cfg(args: argparse.Namespace) -> Cfg:
     smoke = bool(args.smoke)
     fu = getattr(args, "fu", None)
-    # Smoke default out_root prefers /workspace (GCE boot disk / RunPod
-    # volume) over /tmp: the RunPod container disk is ~50 GB, below the
-    # p2_train 60 GB headroom floor + a ~15 GB full-FT smoke ckpt (review r1
-    # Minor 2; the sentinel_dir logic below already keys on /workspace).
-    # FU roots are DISTINCT from the executed run's (plan v7 §4.C — never
-    # clobber the executed out/ or smoke trees).
-    fu_tag = "-fu" if fu else ""
-    smoke_root = (
-        f"/workspace/issue-{G.ISSUE}{fu_tag}-smoke"
-        if Path("/workspace").is_dir()
-        else f"/tmp/issue-{G.ISSUE}{fu_tag}-smoke"
-    )
     full_root = f"data/issue_{G.ISSUE}/out_fu" if fu else f"data/issue_{G.ISSUE}/out"
-    out_root = Path(
-        args.out_root if args.out_root is not None else (smoke_root if smoke else full_root)
+    out_root = (
+        Path(args.out_root)
+        if args.out_root is not None
+        else (default_smoke_root(fu) if smoke else Path(full_root))
     )
     return Cfg(
         smoke=smoke,
