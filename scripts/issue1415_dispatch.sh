@@ -45,12 +45,14 @@ export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 SMOKE=0
 REPLICATE=0
 POSITION_PROFILE=0
+HOOKED_DECOMP=0
 EXTRA_ARGS=()
 for a in "$@"; do
   case "$a" in
     --smoke) SMOKE=1 ;;
     --replicate) REPLICATE=1 ;;
     --position-profile) POSITION_PROFILE=1 ;;
+    --hooked-decomp) HOOKED_DECOMP=1 ;;
     *) EXTRA_ARGS+=("$a") ;;
   esac
 done
@@ -104,6 +106,131 @@ if [ "$SMOKE" -eq 1 ]; then
   TINY_FLAG=(--tiny)
   KIND="epm:smoke-result"
   OUT_ROOT="data/issue_1415/tiny_smoke/out"
+fi
+
+# ── hooked-unhooked decomposition branch (--hooked-decomp) ──────────
+# Same-issue follow-up (plan v11): re-forward the round's PERSISTED
+# completions with the parent DeltaHook ARMED at the last-context token and
+# subtract the round's STORED unhooked profiles (single-GPU intent —
+# sequential batched forwards saturate the one card; nothing to shard).
+# Driver phases h0_stage -> h1_fidelity -> h2_capture -> h3_stats ->
+# h4_upload run in ONE invocation; the §3.5 fidelity gates (G0/G1/G2) are a
+# DESIGNED artifact-routed HALT (rc=9 + fidelity_gate_report.json — never a
+# bare rc=1).
+if [ "$HOOKED_DECOMP" -eq 1 ]; then
+  HD_OUT_ROOT="eval_results/issue_1415/hooked_unhooked_decomposition"
+  if [ "$SMOKE" -eq 1 ]; then
+    HD_OUT_ROOT="data/issue_1415/tiny_smoke/hooked_decomp/out"
+  fi
+  echo "[phase=hooked_decomp] hooked-unhooked decomposition run (smoke=${SMOKE})"
+  set +e
+  uv run python scripts/issue1415_hooked_decomp.py \
+    ${TINY_FLAG[@]+"${TINY_FLAG[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
+    > "$LOG_DIR/issue-${ISSUE}-hooked-decomp.log" 2>&1
+  HD_RC=$?
+  set -e
+  HD_HALT=""
+  if [ "$HD_RC" -ne 0 ]; then
+    if [ "$HD_RC" -eq 9 ] && grep -q '"fired": true' "$HD_OUT_ROOT/fidelity_gate_report.json" 2>/dev/null; then
+      HD_HALT="fidelity_gate"
+      echo "[phase=kill_halt] §3.5 fidelity gate (G0/G1/G2) HALTed the sweep — reporting (see $HD_OUT_ROOT/fidelity_gate_report.json)"
+    else
+      if [ "$HD_RC" -eq 9 ]; then
+        echo "[phase=hooked_decomp_failed] rc=9 (fidelity-HALT code) but no FIRED fidelity report at $HD_OUT_ROOT/fidelity_gate_report.json — treating as a crash" >&2
+      else
+        echo "[phase=hooked_decomp_failed] driver crashed rc=${HD_RC} (NOT a fidelity HALT; a present fidelity_gate_report.json is unrelated) — driver-log tail follows" >&2
+      fi
+      tail -n 60 "$LOG_DIR/issue-${ISSUE}-hooked-decomp.log" >&2 || true
+      exit "$HD_RC"
+    fi
+  fi
+
+  if [ "$SMOKE" -eq 0 ]; then
+    echo "[phase=commit_results] committing hooked-decomposition JSONs to ${GIT_BRANCH}"
+    commit_push_verify \
+      "issue-1415 hooked-unhooked-decomposition pod run: per-pair direct profiles, summary, jitter reference, null bands, fidelity report" \
+      "$HD_OUT_ROOT"
+  fi
+
+  echo "[phase=sentinel] writing results sentinel"
+  HD_KIND="epm:results"
+  if [ "$SMOKE" -eq 1 ]; then HD_KIND="epm:smoke-result"; fi
+  uv run python - "$HD_KIND" "$ISSUE" "$GIT_SHA" "$HD_OUT_ROOT" "$SMOKE" "$HD_HALT" "$LOG_DIR" <<'PY'
+import json
+import sys
+import time
+from pathlib import Path
+
+kind, issue, git_sha, out_root, smoke, halt, log_dir = sys.argv[1:8]
+logs_dir = Path(log_dir)
+logs_dir.mkdir(parents=True, exist_ok=True)
+kind_slug = kind.replace(":", "_")
+path = logs_dir / f"issue-{issue}-{kind_slug}-{int(time.time())}.json"
+
+eval_paths = sorted(
+    str(p)
+    for pat in (
+        "per_pair_direct_profiles.json",
+        "summary.json",
+        "jitter_reference.json",
+        "null_bands_direct.json",
+        "fidelity_gate_report.json",
+        "revisions.json",
+    )
+    for p in Path(out_root).glob(pat)
+)
+summary_line = (
+    "issue-1415 hooked-unhooked-decomposition GPU run complete: 168 hooked cells "
+    "re-forwarded with the parent DeltaHook armed at the last-context token; per-bin "
+    "hooked-unhooked direct component vs the same-text jitter reference (R lattice in "
+    "summary.json; read layers pre-registered above-steer, 14->17 / 20->21)"
+)
+if halt:
+    summary_line = (
+        f"issue-1415 hooked-unhooked-decomposition HALTED by the pre-registered §3.5 "
+        f"fidelity gate ({halt}); see {out_root}/fidelity_gate_report.json"
+    )
+note = {
+    "summary": summary_line,
+    "followup_label": "hooked-unhooked-decomposition",
+    "kill_halt": halt or None,
+    "eval_paths": eval_paths,
+    "reproducibility_card": {
+        "adapter_paths": "n/a (no training in this follow-up)",
+        "wandb_url": "n/a (no training metrics)",
+        "hf_artifact_prefixes": [
+            "analysis_tensors/issue_1415/hooked_decomposition/ (168 per-cell hooked fp16 stores + fp32 ctx_vec + manifest.json)",
+            "analysis_tensors/issue_1415/position_profile/ (REUSED round-1 unhooked shards at the pinned revision, not re-run)",
+            "analysis_tensors/issue_1415/activations/ (REUSED parent 1a Delta stores at the pinned revision)",
+            "raw_completions/issue_1415/ (REUSED parent draws at the pinned revisions, not re-generated)",
+        ],
+        "eval_json_paths": eval_paths,
+        "seeds": {
+            "pair_bootstrap": 14153,
+            "null_pool": 14154,
+            "half_split": "even/odd draw indices (deterministic, parent recount convention)",
+        },
+        "git_commit": git_sha,
+    },
+    "smoke": bool(int(smoke)),
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": kind,
+    "version": 1,
+    "note": json.dumps(note, indent=2),
+    "task_id": int(issue),
+    "by": "issue1415_dispatch",
+    "smoke": bool(int(smoke)),
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+}
+with open(path, "w") as f:
+    json.dump(payload, f, indent=2)
+print(f"wrote sentinel {path}")
+PY
+
+  echo "[phase=done]"
+  exit 0
 fi
 
 # ── answer-position-shift-profile branch (--position-profile) ───────
