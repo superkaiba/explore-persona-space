@@ -1694,6 +1694,62 @@ def test_reduplication_branch_hyphen_exposure_pinned():
     assert "bit_byte_identical" in findings, findings
 
 
+def test_bit_deterministic_determinism_vocabulary_not_flagged():
+    """Allowlist pin (task #1614): 'bit-deterministic' / 'bit-determinism'
+    are deliberately NOT in the bit_byte_identical family — they name
+    exact re-forward reproducibility (a determinism property of a
+    computation; #1415's jitter-floor evidence), not the banned
+    artifact-equality claim-shape. The first two phrases are the verbatim
+    #1415 body line-90 usages. A future widening that adds
+    'deterministic|determinism' to the alternation must supersede this
+    pin AND the decision record (audit-script category comment;
+    clean-result-critic-lens-reference.md Lens 6), the way #1447
+    superseded #1423's 'bitwise' boundary pin. The trailing positive
+    control proves the scanner ran on the same body shape."""
+    for phrase in (
+        "the re-forwards were bit-deterministic there",
+        "the bit-determinism rules a genuinely larger true band out",
+        "bit deterministic replay of the capture path",
+        "bitwise-deterministic kernels were enabled",
+    ):
+        body = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"Note that {phrase} here.",
+        )
+        findings = audit.audit_body(body)
+        assert "bit_byte_identical" not in findings, (phrase, findings)
+    control = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The outputs were bit-identical across the rerun.",
+    )
+    assert "bit_byte_identical" in audit.audit_body(control), "positive control regressed"
+
+
+def test_bit_deterministic_allowlist_decision_record_present():
+    """Durability pin (task #1614): the allowlist decision record survives
+    in BOTH places future re-litigators read — the audit script's
+    bit_byte_identical category comment, and the Lens 6 prose in
+    .claude/rules/clean-result-critic-lens-reference.md (the surface the
+    clean-result-critic reads and the Codex twin's prompt is composed
+    from). Dropping either re-opens the ambiguity #1415's critique v7
+    raised. Substring-loose on purpose: rewording survives; deleting the
+    record does not."""
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "bit-deterministic" in src and "#1614" in src, (
+        "audit-script allowlist decision record missing"
+    )
+    lens_path = (
+        SCRIPT.resolve().parents[1]
+        / ".claude"
+        / "rules"
+        / ("clean-result-critic-lens-reference.md")
+    )
+    lens_text = lens_path.read_text(encoding="utf-8")
+    assert "bit-deterministic" in lens_text and "#1614" in lens_text, (
+        "lens-reference Lens 6 allowlist clause missing"
+    )
+
+
 # ─── Inline verbatim originating-prompt exemption (incident #651) ────────
 #
 # The `## Reproducibility` `**Context:**` `Originating prompt` sub-bullet

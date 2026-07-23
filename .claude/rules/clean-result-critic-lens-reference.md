@@ -138,7 +138,12 @@ clean, so this passes."
   plain English: "the two files matched exactly", "every byte agreed",
   "no diff between the runs". Flagged by
   `audit_clean_results_body_discipline.py`; FAIL on any occurrence
-  outside fenced code blocks.
+  outside fenced code blocks. Allowlisted — NOT in this family, do not
+  flag: the determinism vocabulary `bit-deterministic` /
+  `bit-determinism` (exact re-forward reproducibility of a computation,
+  e.g. #1415's jitter-floor evidence; decision record + pin test:
+  #1614). A slop-register artifact-equality flourish wearing that
+  vocabulary is still flaggable under this lens's judgment.
 
 **Procedure.** Before writing any "Lens N: PASS" line for Lenses 2, 3,
 6, 7, 8, 9, 10, 12, work through the bullets above first. If a bullet's
@@ -655,6 +660,12 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   `audit_clean_results_body_discipline.py`). FAIL on any occurrence
   outside fenced code blocks. Use plain English: "the two files
   matched exactly", "every byte agreed", "no diff between the runs".
+  Allowlisted — NOT in this family, do not flag: the determinism
+  vocabulary `bit-deterministic` / `bit-determinism` (exact re-forward
+  reproducibility of a computation, e.g. #1415's jitter-floor evidence;
+  decision record + pin test: #1614). A slop-register artifact-equality
+  flourish wearing that vocabulary is still flaggable under this lens's
+  judgment.
 
 ### Lens 7 — Statistical-framing rule (absorbed from the retired reviewer)
 
