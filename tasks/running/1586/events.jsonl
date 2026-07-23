@@ -177,3 +177,4 @@
 {"ts": "2026-07-23T01:56:34Z", "kind": "epm:progress", "version": 77, "by": "poll_pipeline", "note": "phase transition: p2_train -> p3_ladder", "phase": "p3_ladder", "pod": "pod-1586-b"}
 {"ts": "2026-07-23T02:03:27Z", "kind": "epm:progress", "version": 78, "by": "poll_pipeline", "note": "phase transition: p3_ladder -> p2_train", "phase": "p2_train", "pod": "pod-1586"}
 {"ts": "2026-07-23T02:13:00Z", "kind": "epm:progress", "version": 79, "by": "poll_pipeline", "note": "phase transition: p2_train -> p3_ladder", "phase": "p3_ladder", "pod": "pod-1586"}
+{"ts": "2026-07-23T02:16:00Z", "kind": "epm:progress", "version": 80, "by": "poll_pipeline", "note": "phase transition: p3_ladder -> p2_train", "phase": "p2_train", "pod": "pod-1586-b"}
