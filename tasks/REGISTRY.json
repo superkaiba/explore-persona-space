@@ -4805,8 +4805,8 @@
     "1616": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1616",
-      "status": "reviewing",
+      "path": "tasks/completed/1616",
+      "status": "completed",
       "title": "daily-fix: register width-reeval pointer test in WORKFLOW_IN"
     },
     "1617": {
