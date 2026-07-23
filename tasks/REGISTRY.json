@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1637,
+  "highest_id": 1638,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4969,6 +4969,13 @@
       "path": "tasks/proposed/1637",
       "status": "proposed",
       "title": "daily-held: corpus-capture redaction default (LMSYS rows)"
+    },
+    "1638": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1638",
+      "status": "proposed",
+      "title": "workflow-fix: extend pre_reg head-noun list for the #1586 'registered layer' escape"
     },
     "164": {
       "has_clean_result": false,
