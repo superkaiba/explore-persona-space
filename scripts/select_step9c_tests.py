@@ -278,6 +278,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_adhoc_summary_disclosure_pins.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
+    # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
+    "tests/test_daily_skill_commit_pathspec_pin.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
