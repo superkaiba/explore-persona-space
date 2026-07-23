@@ -4917,8 +4917,8 @@
     "1630": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1630",
-      "status": "planning",
+      "path": "tasks/approved/1630",
+      "status": "approved",
       "title": "daily-fix: daily brief commits stage only its own paths"
     },
     "1631": {
