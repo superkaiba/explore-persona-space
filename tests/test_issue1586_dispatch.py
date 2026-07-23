@@ -690,3 +690,261 @@ def test_cjk_scan_reads_response_text_and_decodes_token_ids(monkeypatch, tmp_pat
     pools = d._cjk_scan(cfg)["pools"]
     assert pools["marker_panel/armX/rollouts.json"] == {"n": 2, "intruded": 1}
     assert pools["capture/armY/raw_rows.json"] == {"n": 1, "intruded": 1}
+
+
+# ── billing-403 deferral (crash-fix r7, pod-1586 crash #6) ───────────────────
+
+BILLING_MSG = (
+    "403 Forbidden: You need to setup automatic credit recharge in order to upload more data"
+)
+
+
+class _Resp:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
+def _billing_err(code=403, msg=BILLING_MSG):
+    e = RuntimeError(msg)
+    if code is not None:
+        e.response = _Resp(code)
+    return e
+
+
+def test_is_billing_403_predicate():
+    """(a) ONLY 403 + 'credit recharge' matches; 403-other-text and 5xx (even
+    phrase-bearing) never do — those keep the fail-loud path."""
+    assert d._is_billing_403(_billing_err())
+    # response-less xet-boundary shape: message carries BOTH markers
+    assert d._is_billing_403(_billing_err(code=None))
+    # 403 with other text (e.g. the storage-quota 403) -> NOT billing
+    assert not d._is_billing_403(
+        _billing_err(msg="403 Forbidden: You have exceeded your public storage space")
+    )
+    # 5xx carrying the phrase -> response code wins -> NOT billing
+    assert not d._is_billing_403(_billing_err(code=500))
+    # response-less phrase WITHOUT the 403 marker -> NOT billing
+    assert not d._is_billing_403(RuntimeError("please setup credit recharge"))
+
+
+def _persist_fixture(monkeypatch, tmp_path, cells=(("cA", 4), ("cB", 6))):
+    for c, step in cells:
+        _write_json(tmp_path / c / "selection.json", {"cell": c, "step": step})
+        _write_json(
+            tmp_path / c / "build_result.json", {"adapter_root": str(tmp_path / c / "train")}
+        )
+        _mk_rungs(tmp_path / c / "train", [step])
+    monkeypatch.setattr(
+        d, "_ensure_dir_tokenizer", create_autospec(d._ensure_dir_tokenizer, return_value=True)
+    )
+    fake_records = create_autospec(d._upload_with_transport_retry, return_value="https://hf.co/r")
+    monkeypatch.setattr(d, "_upload_with_transport_retry", fake_records)
+    return fake_records
+
+
+def test_phase_persist_defers_billing_403_and_continues_wave(monkeypatch, tmp_path):
+    """(b) FAILS-PRE-FIX: pre-r7 hub._upload swallowed the billing-403
+    (logged 'Keeping local path.', returned '') and phase_persist raised
+    'selected-rung upload returned no path' at the FIRST cell — no durable
+    record, wave dead (pod-1586 crash #6, wave-1 p4_persist)."""
+    cfg = _cfg(tmp_path, cells=("cA", "cB"))
+    _persist_fixture(monkeypatch, tmp_path)
+    fake_upload = create_autospec(d.hub._upload, side_effect=_billing_err())
+    monkeypatch.setattr(d.hub, "_upload", fake_upload)
+
+    out = d.phase_persist(cfg, {"cA": {"step": 4}, "cB": {"step": 6}}, cells=["cA", "cB"])
+    # wave CONTINUED past cA's deferral: BOTH cells attempted, no raise
+    assert fake_upload.call_count == 2
+    assert "cA" not in out["uploaded"] and "cB" not in out["uploaded"]
+    for c, step in (("cA", 4), ("cB", 6)):
+        rec = json.loads((tmp_path / c / "persist_deferred.json").read_text())
+        assert rec["cell"] == c and rec["step"] == step
+        assert rec["repo_id"] == d.G.OVERFLOW_REPO
+        assert rec["path_in_repo"] == f"issue1586/{c}/checkpoint-{step}"
+        assert "credit recharge" in rec["error"]
+        assert Path(rec["local_path"]).exists()  # checkpoint RETAINED
+        assert not (tmp_path / c / "persist.json").exists()  # no success record
+
+
+@pytest.mark.parametrize(
+    "effect",
+    [
+        _billing_err(msg="403 Forbidden: some other reason"),  # 403, other text
+        _billing_err(code=500),  # 5xx (even phrase-bearing)
+    ],
+)
+def test_phase_persist_non_billing_exceptions_still_raise(monkeypatch, tmp_path, effect):
+    cfg = _cfg(tmp_path, cells=("cA",))
+    _persist_fixture(monkeypatch, tmp_path, cells=(("cA", 4),))
+    monkeypatch.setattr(d.hub, "_upload", create_autospec(d.hub._upload, side_effect=effect))
+    with pytest.raises(RuntimeError):
+        d.phase_persist(cfg, {"cA": {"step": 4}}, cells=["cA"])
+    assert not (tmp_path / "cA" / "persist_deferred.json").exists()
+
+
+def test_phase_persist_no_path_return_still_fail_loud(monkeypatch, tmp_path):
+    """The legacy '' no-path return (missing token / 0-files verify) keeps
+    the L1770-class RuntimeError — deferral is exception-classified only."""
+    cfg = _cfg(tmp_path, cells=("cA",))
+    _persist_fixture(monkeypatch, tmp_path, cells=(("cA", 4),))
+    monkeypatch.setattr(d.hub, "_upload", create_autospec(d.hub._upload, return_value=""))
+    with pytest.raises(RuntimeError, match="selected-rung upload returned no path"):
+        d.phase_persist(cfg, {"cA": {"step": 4}}, cells=["cA"])
+
+
+def test_phase_persist_resume_retries_deferred_and_clears(monkeypatch, tmp_path):
+    """(e) p4-resume on a deferred cell RETRIES (no persist.json to skip on);
+    on success it writes persist.json and clears the deferral record."""
+    cfg = _cfg(tmp_path, cells=("cA",))
+    _persist_fixture(monkeypatch, tmp_path, cells=(("cA", 4),))
+    _write_json(
+        tmp_path / "cA" / "persist_deferred.json",
+        {"cell": "cA", "step": 4, "local_path": str(tmp_path / "cA" / "train" / "checkpoint-4")},
+    )
+    fake_upload = create_autospec(d.hub._upload, return_value="ovf/issue1586/cA/checkpoint-4")
+    monkeypatch.setattr(d.hub, "_upload", fake_upload)
+    out = d.phase_persist(cfg, {"cA": {"step": 4}}, cells=["cA"])
+    assert out["uploaded"]["cA"] == "ovf/issue1586/cA/checkpoint-4"
+    assert not (tmp_path / "cA" / "persist_deferred.json").exists()
+    rec = json.loads((tmp_path / "cA" / "persist.json").read_text())
+    assert rec["url"].endswith("checkpoint-4")
+
+
+def test_wave_reap_retains_deferred_selected_rung_both_modes(tmp_path):
+    """(c) The reap keep-set is {sel_step} from selection.json — persist-
+    independent — so a deferred-unuploaded selected rung survives in BOTH
+    shapes: keep-cell (rungs in train/) and stream-reap's retrained-reselect
+    (adapter_root re-pointed at train_reselect). Absence would trip the
+    post-reap left == {sel_step} assert."""
+    cfg = _cfg(tmp_path, cells=("cA", "cD"))
+    # keep-cell shape
+    train = tmp_path / "cA" / "train"
+    _mk_rungs(train, [2, 4, 6])
+    _write_json(tmp_path / "cA" / "selection.json", {"step": 4})
+    _write_json(tmp_path / "cA" / "build_result.json", {"adapter_root": str(train)})
+    _write_json(tmp_path / "cA" / "persist_deferred.json", {"cell": "cA", "step": 4})
+    # stream-reap retrained-reselect shape
+    resel = tmp_path / "cD" / "train_reselect"
+    _mk_rungs(tmp_path / "cD" / "train", [30])
+    _mk_rungs(resel, [8])
+    _write_json(tmp_path / "cD" / "selection.json", {"step": 8})
+    _write_json(tmp_path / "cD" / "build_result.json", {"adapter_root": str(resel)})
+    _write_json(tmp_path / "cD" / "persist_deferred.json", {"cell": "cD", "step": 8})
+    d._wave_reap(cfg, ["cA", "cD"])
+    assert (train / "checkpoint-4" / "model.safetensors").exists()
+    assert (resel / "checkpoint-8" / "model.safetensors").exists()
+    assert sorted(p.name for p in train.glob("checkpoint-*")) == ["checkpoint-4"]
+    assert sorted(p.name for p in resel.glob("checkpoint-*")) == ["checkpoint-8"]
+
+
+def _p9_fixture(monkeypatch, tmp_path):
+    monkeypatch.setattr(d, "_headroom", create_autospec(d._headroom, return_value=None))
+    fake_records = create_autospec(d._upload_with_transport_retry, return_value="https://hf.co/r")
+    monkeypatch.setattr(d, "_upload_with_transport_retry", fake_records)
+    _write_json(
+        tmp_path / "cA" / "persist_deferred.json",
+        {
+            "cell": "cA",
+            "step": 4,
+            "local_path": str(tmp_path / "cA" / "train" / "checkpoint-4"),
+            "repo_id": d.G.OVERFLOW_REPO,
+            "repo_type": "model",
+            "path_in_repo": "issue1586/cA/checkpoint-4",
+        },
+    )
+    _mk_rungs(tmp_path / "cA" / "train", [4])
+    return fake_records
+
+
+def test_phase_upload_replays_deferred_success_clears_record(monkeypatch, tmp_path):
+    """(d) p9 replay success path: deferral record replayed FIRST, cleared,
+    normal persist.json written; phase completes without raising."""
+    cfg = _cfg(tmp_path, cells=())
+    _p9_fixture(monkeypatch, tmp_path)
+    fake_upload = create_autospec(d.hub._upload, return_value="ovf/issue1586/cA/checkpoint-4")
+    monkeypatch.setattr(d.hub, "_upload", fake_upload)
+    d.phase_upload(cfg, {})
+    assert fake_upload.call_count == 1
+    assert not (tmp_path / "cA" / "persist_deferred.json").exists()
+    rec = json.loads((tmp_path / "cA" / "persist.json").read_text())
+    assert rec == {"cell": "cA", "step": 4, "url": "ovf/issue1586/cA/checkpoint-4"}
+
+
+def test_phase_upload_still_blocked_exits_fail_loud_naming_cells(monkeypatch, tmp_path):
+    """(d) p9 still-blocked path: residual (non-LFS) commits still land, then
+    the phase raises naming every deferred cell + retained local path; the
+    durable record + summary JSON survive for the next relaunch."""
+    cfg = _cfg(tmp_path, cells=())
+    fake_records = _p9_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        d.hub, "_upload", create_autospec(d.hub._upload, side_effect=_billing_err())
+    )
+    monkeypatch.setattr(d, "_cjk_scan", create_autospec(d._cjk_scan, return_value={"pools": {}}))
+    with pytest.raises(RuntimeError, match=r"billing-403.*cA \(retained at .*checkpoint-4\)"):
+        d.phase_upload(cfg, {})
+    assert (tmp_path / "cA" / "persist_deferred.json").exists()
+    summary = json.loads((tmp_path / "persist_deferred_summary.json").read_text())
+    assert [r["cell"] for r in summary["deferred"]] == ["cA"]
+    # residual staged commits ran BEFORE the terminal raise (misc stage:
+    # cjk_audit.json exists), so nothing small was held hostage
+    assert fake_records.call_count >= 1
+
+
+def test_phase_upload_replay_non_billing_failure_raises_immediately(monkeypatch, tmp_path):
+    cfg = _cfg(tmp_path, cells=())
+    _p9_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        d.hub,
+        "_upload",
+        create_autospec(d.hub._upload, side_effect=_billing_err(code=500)),
+    )
+    with pytest.raises(RuntimeError):
+        d.phase_upload(cfg, {})
+    assert (tmp_path / "cA" / "persist_deferred.json").exists()  # record survives
+
+
+def test_hub_upload_raise_on_error_real_body(monkeypatch, tmp_path):
+    """Production-body test for the r7-modified hub._upload (the other tests
+    in this section stub it): executes the REAL body — token check, dir
+    branch, filecount guard, create_repo, upload_folder via _retry_upload,
+    except chain — faking ONLY the HfApi network boundary with a
+    def-mirroring fake. The billing-403 re-raises under raise_on_error=True
+    (un-retried: 403 is non-transient) and keeps the legacy '' swallow under
+    the default, so every existing caller is behavior-identical."""
+    import huggingface_hub
+
+    from explore_persona_space.orchestrate import hub
+
+    src = tmp_path / "ckpt"
+    src.mkdir()
+    (src / "model.safetensors").write_text("x")
+    err = _billing_err()
+    calls = {"n": 0}
+
+    class _FakeApi:
+        def __init__(self, token=None):
+            pass
+
+        def create_repo(self, repo_id, repo_type=None, private=False, exist_ok=True):
+            return None
+
+        def upload_folder(
+            self,
+            folder_path=None,
+            repo_id=None,
+            path_in_repo=None,
+            repo_type=None,
+            ignore_patterns=None,
+        ):
+            calls["n"] += 1
+            raise err
+
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    # default: legacy log-and-return-"" swallow (every existing caller)
+    assert hub._upload(src, "org/ovf", "model", "issue1586/cA/checkpoint-4") == ""
+    assert calls["n"] == 1  # non-transient 403: _retry_upload did NOT retry
+    with pytest.raises(RuntimeError, match="credit recharge"):
+        hub._upload(src, "org/ovf", "model", "issue1586/cA/checkpoint-4", raise_on_error=True)
+    assert calls["n"] == 2
+    assert d._is_billing_403(err)
