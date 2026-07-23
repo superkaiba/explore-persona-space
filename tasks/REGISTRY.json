@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1614,
+  "highest_id": 1615,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4794,6 +4794,13 @@
       "path": "tasks/planning/1614",
       "status": "planning",
       "title": "workflow-fix: decide bit-deterministic vs bit_byte_identical ban family (allowlist or widen)"
+    },
+    "1615": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/1615",
+      "status": "proposed",
+      "title": "The persona vector's pre-image under the context\u2192answer map makes sense: its top activating contexts are related to the specific persona and correlate with behavioral elicitation as judged by an LLM judge"
     },
     "162": {
       "has_clean_result": false,
