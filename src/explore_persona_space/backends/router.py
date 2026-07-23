@@ -214,6 +214,7 @@ from explore_persona_space.backends.base import (
     validate_lane_suffix,
 )
 from explore_persona_space.backends.gcp import (
+    BOOT_DISK_MARKER_EXTRA_KEYS,
     EXPLICIT_WIDE_DEGRADE_INTENTS,
     INTENT_TO_MACHINE,
     WIDE_A100_80_BY_WIDTH,
@@ -3967,8 +3968,9 @@ def _override_free_or_gcp(
                 elapsed_seconds=now_fn() - started_at,
                 # Explicit `backend: gcp` fresh launch — only reached when
                 # kind == "gcp" (guarded above), so the gcp marker extras
-                # always apply (#631 round-3 marker-coverage fix).
-                extra=_gcp_marker_extras(spec),
+                # always apply (#631 round-3 marker-coverage fix). #1617:
+                # also lift the fresh handle's boot-disk probe fields.
+                extra={**_gcp_marker_extras(spec), **_boot_disk_extras_from_handle(handle)},
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -5517,6 +5519,10 @@ def _attempt_one_gcp_rung(
             # requested_gpus != realized_gpu_count.
             "requested_gpus": _declared_width(spec),
             "realized_gpu_count": int(machine.gpu_count),
+            # #1617: realized-boot-disk observability lifted off the fresh
+            # gcp handle (empty on a reconnect handle — same additive-extra
+            # class as realized_gpu_count, no marker SCHEMA change).
+            **_boot_disk_extras_from_handle(gcp_handle),
             **_gcp_marker_extras(spec),
         },
     )
@@ -5907,6 +5913,21 @@ def _post_marker_nonfatal(
             issue,
             note,
         )
+
+
+def _boot_disk_extras_from_handle(handle: RunHandle | None) -> dict[str, Any]:
+    """Lift the #1617 post-create boot-disk keys off a freshly-launched gcp handle.
+
+    ``GcpBackend.launch`` threads the post-create boot-disk probe fields
+    (reuse age + realized size, or a fail-soft ``boot_disk_probe_error``)
+    onto ``handle.extra`` on FRESH creates only; reconnect handles never
+    carry the keys by construction, so this lift is empty there — the
+    reconnect ``RouteResult`` sites deliberately do not call it. Mirrors
+    the ``realized_gpu_count`` lift pattern (#1121). Pure function, no IO.
+    """
+    if handle is None or not getattr(handle, "extra", None):
+        return {}
+    return {k: handle.extra[k] for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in handle.extra}
 
 
 def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:

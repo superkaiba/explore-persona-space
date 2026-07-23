@@ -52,9 +52,11 @@ from explore_persona_space.backends import (
     render_create_argv,
 )
 from explore_persona_space.backends.gcp import (
+    _BOOT_DISK_REUSE_SLACK_SEC,
     _JANITOR_FENCE_GRACE_SECONDS,
     _ZOMBIE_GUEST_PHASES,
     A100_40_USABLE_GIB,
+    BOOT_DISK_MARKER_EXTRA_KEYS,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -72,6 +74,7 @@ from explore_persona_space.backends.gcp import (
     _classify_janitor_instance,
     _gcp_status_to_poll_result,
     _instance_max_run_seconds,
+    _probe_boot_disk,
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
@@ -189,6 +192,7 @@ class _Runner:
         create_results: list[GcloudRunResult] | None = None,
         list_results: list[GcloudRunResult] | None = None,
         describe_results: list[GcloudRunResult] | None = None,
+        disks_describe_results: list[GcloudRunResult] | None = None,
         delete_results: list[GcloudRunResult] | None = None,
         serial_results: list[GcloudRunResult] | None = None,
         guest_attr_results: list[GcloudRunResult] | None = None,
@@ -202,6 +206,11 @@ class _Runner:
         self.create_results = list(create_results or [])
         self.list_results = list(list_results or [])
         self.describe_results = list(describe_results or [])
+        # #1617: every launch-success test now issues one post-create
+        # ``disks describe`` probe; the ``"{}"`` default routes unscripted
+        # legacy tests through the fail-soft boot_disk_probe_error path
+        # (additive keys — key-specific asserts hold).
+        self.disks_describe_results = list(disks_describe_results or [])
         self.delete_results = list(delete_results or [])
         self.serial_results = list(serial_results or [])
         self.guest_attr_results = list(guest_attr_results or [])
@@ -237,6 +246,8 @@ class _Runner:
                 exc, self._list_raises = self._list_raises, None
                 raise exc
             return self._pop(self.list_results, default_ok=True, default_stdout="[]")
+        if "describe" in argv and "disks" in argv:
+            return self._pop(self.disks_describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "instances" in argv:
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "regions" in argv:
@@ -2056,6 +2067,197 @@ def test_launch_marks_no_stale_delete_when_name_free(no_marker_posts) -> None:
     assert all("delete" not in c for c in runner.calls), runner.calls
     body = json.loads(posted[0]["note"])
     assert body["pre_launch_deleted_stale_instance"] is False
+
+
+# ---------------------------------------------------------------------------
+# Post-create boot-disk observability probe (#1617; incident #779)
+# ---------------------------------------------------------------------------
+
+
+def _disk_json(size_gb: int, age_days: float) -> str:
+    """``disks describe`` stdout for a disk of ``size_gb`` created ``age_days`` ago.
+
+    Mirrors the live field shapes (verified 2026-07-23): ``sizeGb`` is a
+    numeric STRING; ``creationTimestamp`` is RFC3339 with an offset.
+    """
+    created = datetime.now(UTC) - timedelta(days=age_days)
+    return json.dumps({"sizeGb": str(size_gb), "creationTimestamp": created.isoformat()})
+
+
+def _launch_with_disk_probe(
+    *,
+    spec_extra: dict[str, Any] | None = None,
+    disks_describe_results: list[GcloudRunResult] | None = None,
+) -> tuple[Any, _Runner, list[dict]]:
+    """Happy-path launch with a scripted ``disks describe`` probe result."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "998877"}])
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, "[]", ""),  # reconnect: no live instance
+            GcloudRunResult(0, "[]", ""),  # stale-name probe: name free
+        ],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+        disks_describe_results=disks_describe_results,
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec(extra=spec_extra or {}))
+    return handle, runner, posted
+
+
+def test_launch_boot_disk_reuse_records_extras_and_marker(no_marker_posts, caplog) -> None:
+    """#1617 pin (the #779 incident shape): a fresh create that ATTACHED a
+    20-day-old 300 GB disk against a requested 200 GB records reuse +
+    mismatch on handle.extra AND the epm:cluster-launched marker body, and
+    WARNs loudly for both."""
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        handle, runner, posted = _launch_with_disk_probe(
+            spec_extra={"boot_disk_gb": 200},
+            disks_describe_results=[GcloudRunResult(0, _disk_json(300, 20.0), "")],
+        )
+    assert handle.extra["boot_disk_reused"] is True
+    assert handle.extra["boot_disk_size_gb"] == 300
+    assert handle.extra["boot_disk_requested_gb"] == 200
+    assert 19.5 < handle.extra["boot_disk_age_days"] < 20.5
+    assert handle.extra["boot_disk_size_mismatch"] is True
+    body = json.loads(posted[0]["note"])
+    for key in (
+        "boot_disk_reused",
+        "boot_disk_size_gb",
+        "boot_disk_requested_gb",
+        "boot_disk_age_days",
+        "boot_disk_size_mismatch",
+    ):
+        assert body[key] == handle.extra[key], key
+    assert "ATTACHED the pre-existing boot disk" in caplog.text
+    assert "SIZE MISMATCH" in caplog.text
+    # Exactly one zone-scoped disks-describe probe fired, on the instance name.
+    disk_calls = [c for c in runner.calls if "disks" in c and "describe" in c]
+    assert len(disk_calls) == 1, runner.calls
+    assert "eps-issue-137" in disk_calls[0]
+    assert "--zone=us-central1-a" in disk_calls[0]
+
+
+def test_launch_boot_disk_fresh_disk_no_reuse_no_mismatch(no_marker_posts, caplog) -> None:
+    """A fresh seconds-old disk at the requested size: reused False, no
+    mismatch / probe-error keys, no boot-disk WARNINGs."""
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        handle, _runner, posted = _launch_with_disk_probe(
+            # No spec override -> config default 300; realized 300 matches.
+            disks_describe_results=[GcloudRunResult(0, _disk_json(300, 0.0), "")],
+        )
+    assert handle.extra["boot_disk_reused"] is False
+    assert handle.extra["boot_disk_size_gb"] == 300
+    assert handle.extra["boot_disk_requested_gb"] == 300
+    assert "boot_disk_size_mismatch" not in handle.extra
+    assert "boot_disk_probe_error" not in handle.extra
+    body = json.loads(posted[0]["note"])
+    assert body["boot_disk_reused"] is False
+    assert "boot_disk_size_mismatch" not in body
+    assert "ATTACHED the pre-existing boot disk" not in caplog.text
+    assert "SIZE MISMATCH" not in caplog.text
+
+
+def test_launch_boot_disk_probe_failure_fail_soft(no_marker_posts) -> None:
+    """#1617 pin: a probe failure (describe rc=1, e.g. a flex-queued fresh
+    create whose disk 404s while PENDING) NEVER fails the launch — healthy
+    handle, and of the six keys only boot_disk_probe_error is present in
+    handle.extra AND the marker body."""
+    handle, _runner, posted = _launch_with_disk_probe(
+        disks_describe_results=[GcloudRunResult(1, "", "was not found")],
+    )
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "998877"
+    present = [k for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in handle.extra]
+    assert present == ["boot_disk_probe_error"], handle.extra
+    assert "was not found" in handle.extra["boot_disk_probe_error"]
+    body = json.loads(posted[0]["note"])
+    present_body = [k for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in body]
+    assert present_body == ["boot_disk_probe_error"], body
+
+
+def test_probe_boot_disk_never_raises_on_runner_exception() -> None:
+    """The probe's fail-soft contract is non-negotiable: a runner exception
+    (incl. subprocess.TimeoutExpired) returns boot_disk_probe_error, never
+    raises."""
+
+    def raising_runner(argv):
+        raise subprocess.TimeoutExpired("gcloud", 300)
+
+    fields = _probe_boot_disk(
+        config=_test_config(),
+        name="eps-issue-137",
+        zone="us-central1-a",
+        requested_gb=200,
+        runner=raising_runner,
+    )
+    assert set(fields) == {"boot_disk_probe_error"}
+    assert "TimeoutExpired" in fields["boot_disk_probe_error"]
+
+
+def test_boot_disk_mismatch_compares_against_clamped_request(no_marker_posts) -> None:
+    """The mismatch compares against the CLAMPED effective request (#1336):
+    a 50 GB ask clamps UP to 100, so a realized 100 GB disk is NOT a
+    mismatch and boot_disk_requested_gb records the clamped value."""
+    handle, _runner, _posted = _launch_with_disk_probe(
+        spec_extra={"boot_disk_gb": 50},
+        disks_describe_results=[GcloudRunResult(0, _disk_json(100, 0.0), "")],
+    )
+    assert "boot_disk_size_mismatch" not in handle.extra
+    assert handle.extra["boot_disk_requested_gb"] == 100
+    assert handle.extra["boot_disk_size_gb"] == 100
+
+
+def test_boot_disk_marker_extra_keys_cover_probe_emissions() -> None:
+    """#1617: BOOT_DISK_MARKER_EXTRA_KEYS == the union of keys
+    _probe_boot_disk can emit, so a tuple typo can never silently drop a
+    field from the router's marker lift. Reuse-threshold cases key on
+    _BOOT_DISK_REUSE_SLACK_SEC (never a literal), so the §9-permitted
+    300-900s retune cannot break this test."""
+    now = datetime.now(UTC).timestamp()
+
+    def _runner_for(payload: str):
+        return lambda argv: GcloudRunResult(0, payload, "")
+
+    old_created = datetime.now(UTC) - timedelta(seconds=2 * _BOOT_DISK_REUSE_SLACK_SEC)
+    young_created = datetime.now(UTC) - timedelta(seconds=_BOOT_DISK_REUSE_SLACK_SEC / 2)
+    old_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=200,
+        runner=_runner_for(
+            json.dumps({"sizeGb": "300", "creationTimestamp": old_created.isoformat()})
+        ),
+        now_fn=lambda: now,
+    )
+    young_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=300,
+        runner=_runner_for(
+            json.dumps({"sizeGb": "300", "creationTimestamp": young_created.isoformat()})
+        ),
+        now_fn=lambda: now,
+    )
+    error_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=300,
+        runner=_runner_for("not json"),
+        now_fn=lambda: now,
+    )
+    assert old_fields["boot_disk_reused"] is True  # age 2x slack -> reused
+    assert young_fields["boot_disk_reused"] is False  # age slack/2 -> fresh
+    assert set(error_fields) == {"boot_disk_probe_error"}
+    emitted = set(old_fields) | set(young_fields) | set(error_fields)
+    assert emitted == set(BOOT_DISK_MARKER_EXTRA_KEYS)
 
 
 def test_launch_raises_when_stale_delete_fails_and_skips_create(no_marker_posts) -> None:
