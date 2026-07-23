@@ -607,7 +607,7 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   enumerate what the body's OWN cited figure SHAs contain under this
   task's `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir)
   pair; no network) and WARN on any committed PNG whose basename stem
-  matches `per[-_]?(context|unit|cell)` (case-insensitive, word-start
+  matches `per[-_]?(context|unit|cell|pair)` (case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
   REGIME in this project, not a per-unit view) that the body does not
   embed. Two WARN classes in ONE CheckResult (#1510): class A — never
@@ -2442,7 +2442,7 @@ _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 # stops mid-word matches ("supercontext"); `indiv` is deliberately
 # EXCLUDED — it names the per-question REGIME in this project (#928's
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
-_PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
+_PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell|pair)", re.IGNORECASE)
 
 # Check 31 (tightened, #1510 / incident #1426): the exemption phrase that
 # silences the companion-named-not-embedded WARN class when it appears in
@@ -2892,8 +2892,10 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
       no stated omission).
     - **never mentioned** → WARN class A (the original #928 class).
 
-    Deliberately NARROW pattern (`per{context,unit,cell}` with `-`/`_`
-    variants): `per_source` / `per_seed` / `per_question` / `indiv`
+    Deliberately NARROW pattern (`per{context,unit,cell,pair}` with `-`/`_`
+    variants; `pair` added #1607 — per-PAIR is the project's most common
+    per-unit grain and #1415's per-pair panels were invisible to this
+    check): `per_source` / `per_seed` / `per_question` / `indiv`
     names do NOT match, by design — `indiv` names the per-question
     REGIME in this project (#928's pooled hero `mlp_indiv_hero_4arm.png`),
     and the substantive per-unit-data judgment belongs to
