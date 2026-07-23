@@ -1113,6 +1113,16 @@ def main() -> int:
     res: dict = {}
     if args.out_json.exists() and not args.fresh:
         res = json.loads(args.out_json.read_text())
+        if not recovery and res.get("metadata", {}).get("l26_kernel_recovery"):
+            # symmetry guard: recovery keys enter `params` only in recovery mode, so
+            # without this a non-recovery invocation pointed at a recovery out-json
+            # with matching base params would resume it and extend with MIXED weights
+            # provenance (code-review v17 Minor).
+            raise SystemExit(
+                f"existing {args.out_json} is an --l26-kernel-recovery artifact; refusing "
+                "a non-recovery resume onto it (mixed weights provenance) — pass --fresh "
+                "to overwrite or re-run with --l26-kernel-recovery"
+            )
         prior = {k: res.get("metadata", {}).get(k) for k in params}
         if prior != params:
             raise SystemExit(

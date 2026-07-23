@@ -3,7 +3,10 @@
 # adapted from issue779_n1m_readout_dispatch.sh, same phase/sentinel/pid-file/
 # push-verify contract). Phases:
 #
-#   preflight (HF_TOKEN, disk, GPU, 32768^2 fp64 potrf+trsm probe) ->
+#   preflight (HF_TOKEN, disk, GPU, 32768^2 fp64 potrf+trsm probe — a GPU
+#   cusolver REJECTION DEGRADES to the plan v11 §8 CPU-dpotrf fallback with a
+#   loud WARNING + recorded flag in l26_recovery_potrf_probe.json; a genuine
+#   failure on BOTH backends still aborts) ->
 #   stream_fits (L26-only chunk re-stream -> solver-equivalence real-data leg
 #   -> Nystrom-vs-exact gate at m=32768 [exact-side integrity assert] -> KRR
 #   refit m=32768 cholesky [base_gamma integrity assert] + weight persist) ->
@@ -22,9 +25,10 @@
 # v10 payloads), scratch output dirs (committed eval_results/figures NEVER
 # touched), upload phase signature-smoked (no HF writes), commit phase
 # skipped, sentinel kind epm:smoke-result. The smoke ALSO runs a degenerate
-# integrity-assert probe (--expect-base-gamma 999 must fail loud) and a
-# 1-real-file v10-weights staging probe. Pod/GCE-side: NO VM thread-cap
-# prefix (dedicated CPUs).
+# integrity-assert probe (--expect-base-gamma 999 must fail loud), a forced
+# GPU-reject potrf degrade probe (EPM_L26REC_FORCE_GPU_PROBE_FAIL=1 must exit
+# 0 with cpu_fallback_engaged recorded), and a 1-real-file v10-weights staging
+# probe. Pod/GCE-side: NO VM thread-cap prefix (dedicated CPUs).
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -102,6 +106,7 @@ fi
 NEW_WEIGHTS_DIR="$OUT_DIR/weights_l26_m32768"
 FITS_JSON="$OUT_DIR/l26_recovery_fits.json"
 READOUT_JSON="$OUT_DIR/l26_recovery_readout.json"
+PROBE_JSON="$OUT_DIR/l26_recovery_potrf_probe.json"
 HF_WEIGHTS_PREFIX="issue779_monitoring/n1m_readout/weights_l26_m32768"
 GPU_HOURS_BUDGETED=3
 T_START=$(date +%s)
@@ -120,27 +125,124 @@ echo "branch=$BRANCH out_dir=$OUT_DIR device=$DEVICE smoke=$SMOKE"
 mkdir -p "$OUT_DIR" "$FIG_DIR"
 [ -f "$COMMITTED_FITS" ] || { echo "FATAL: committed comparator absent: $COMMITTED_FITS" >&2; exit 1; }
 [ -f "$COMMITTED_READOUT" ] || { echo "FATAL: committed comparator absent: $COMMITTED_READOUT" >&2; exit 1; }
-# potrf + trsm probe at the production m (plan v11 §12 rows 1+3): fail fast
-# BEFORE the 1-3.5 h stream if cusolver/cuBLAS can't factor 32768^2 fp64.
-EPM_PROBE_M="$PROBE_M" EPM_PROBE_DEV="$DEVICE" uv run python - <<'PY'
+# potrf + trsm probe at the production m (plan v11 §12 rows 1+3), run BEFORE
+# the 1-3.5 h stream. Plan v11 §8 row 2: a GPU (cusolver) REJECTION of the
+# 32768^2 fp64 potrf does NOT abort — it DEGRADES to the CPU-dpotrf fallback
+# path (the fit-level _cholesky_whitener/_cholesky_solve_psd CPU legs engage
+# in-fit) with a loud WARNING, a CPU-viability re-probe at the SAME m, and a
+# recorded flag in $PROBE_JSON (threaded into the sentinel + results commit).
+# A genuine failure on BOTH backends still fails fast (aborts the dispatch).
+# EPM_L26REC_FORCE_GPU_PROBE_FAIL=1 deterministically rejects the GPU leg
+# (the smoke degrade-path probe below).
+run_potrf_probe() {  # <m> <device> <out_json>
+  EPM_PROBE_M="$1" EPM_PROBE_DEV="$2" EPM_PROBE_OUT="$3" uv run python - <<'PY'
+import json
 import os
+import sys
 import time
+from pathlib import Path
 
 import torch
 
 m = int(os.environ["EPM_PROBE_M"])
-dev = torch.device(os.environ["EPM_PROBE_DEV"])
-t0 = time.time()
-eye = torch.eye(m, dtype=torch.float64, device=dev)
-L = torch.linalg.cholesky(eye)  # potrf at (m, m) fp64
-inv = torch.linalg.solve_triangular(L, eye, upper=False)  # trsm materializes (m, m)
-assert inv.shape == (m, m), inv.shape
-del eye, L, inv
-if dev.type == "cuda":
-    torch.cuda.synchronize()
-    torch.cuda.empty_cache()
-print(f"potrf+trsm probe OK at m={m} on {dev.type} ({time.time() - t0:.0f}s)")
+dev_req = os.environ["EPM_PROBE_DEV"]
+out_path = Path(os.environ["EPM_PROBE_OUT"])
+force_fail = os.environ.get("EPM_L26REC_FORCE_GPU_PROBE_FAIL") == "1"
+
+
+def _probe(dev_type: str) -> float:
+    if force_fail and dev_type == "cuda":
+        raise RuntimeError("forced GPU probe rejection (EPM_L26REC_FORCE_GPU_PROBE_FAIL=1)")
+    dev = torch.device(dev_type)
+    t0 = time.time()
+    eye = torch.eye(m, dtype=torch.float64, device=dev)
+    L = torch.linalg.cholesky(eye)  # potrf at (m, m) fp64
+    inv = torch.linalg.solve_triangular(L, eye, upper=False)  # trsm materializes (m, m)
+    assert inv.shape == (m, m), inv.shape
+    del eye, L, inv
+    if dev.type == "cuda":
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+    return time.time() - t0
+
+
+result = {
+    "m": m,
+    "device_requested": dev_req,
+    "gpu_probe_ok": None,
+    "cpu_probe_ok": None,
+    "cpu_fallback_engaged": False,
+    "gpu_error": None,
+    "cpu_error": None,
+    "probe_seconds": {},
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+}
+
+
+def _write() -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.parent / (out_path.name + ".tmp")
+    tmp.write_text(json.dumps(result, indent=1))
+    os.replace(tmp, out_path)
+
+
+try:
+    dt = _probe(dev_req)
+except Exception as e:  # degrade decision below; a both-backend failure re-raises (fail fast)
+    err = str(e).splitlines()[0]
+    if dev_req != "cuda":
+        result["cpu_probe_ok"] = False
+        result["cpu_error"] = err
+        _write()
+        raise
+    result["gpu_probe_ok"] = False
+    result["gpu_error"] = err
+    warn = (
+        f"WARNING: GPU potrf/trsm probe REJECTED m={m} ({err}); DEGRADING to the plan v11 "
+        "§8 CPU-dpotrf fallback (fit-level _cholesky_whitener/_cholesky_solve_psd CPU "
+        "legs engage in-fit) — verifying CPU-side viability at the same m"
+    )
+    print(warn, flush=True)
+    print(warn, file=sys.stderr, flush=True)
+    try:
+        dt = _probe("cpu")
+    except Exception as e2:
+        result["cpu_probe_ok"] = False
+        result["cpu_error"] = str(e2).splitlines()[0]
+        _write()
+        print(
+            f"FATAL: potrf probe failed on BOTH cuda and cpu at m={m} — genuine error, "
+            "failing fast (probe metadata at "
+            f"{out_path})",
+            file=sys.stderr,
+            flush=True,
+        )
+        raise
+    result["cpu_probe_ok"] = True
+    result["cpu_fallback_engaged"] = True
+    result["probe_seconds"]["cpu"] = round(dt, 1)
+    print(f"potrf+trsm probe OK at m={m} on cpu ({dt:.0f}s) — CPU fallback path viable")
+else:
+    result["gpu_probe_ok" if dev_req == "cuda" else "cpu_probe_ok"] = True
+    result["probe_seconds"][dev_req] = round(dt, 1)
+    print(f"potrf+trsm probe OK at m={m} on {dev_req} ({dt:.0f}s)")
+_write()
+print(f"potrf probe metadata written: {out_path}")
 PY
+}
+run_potrf_probe "$PROBE_M" "$DEVICE" "$PROBE_JSON"
+if [ "$SMOKE" -eq 1 ]; then
+  # Degrade-path probe (concern preflight-potrf-abort-forecloses-cpu-fallback):
+  # force the GPU leg to reject and assert the probe DEGRADES to CPU (exit 0 +
+  # recorded flag) instead of aborting the dispatch.
+  DEGRADE_JSON="$SCRATCH/potrf_probe_degrade.json"
+  EPM_L26REC_FORCE_GPU_PROBE_FAIL=1 run_potrf_probe 256 cuda "$DEGRADE_JSON"
+  grep -q '"cpu_fallback_engaged": true' "$DEGRADE_JSON" || {
+    echo "FATAL: degrade probe did not record cpu_fallback_engaged=true in $DEGRADE_JSON" >&2
+    exit 1
+  }
+  echo "  [smoke] potrf degrade-path probe OK (forced GPU reject -> CPU fallback, flag recorded)"
+fi
 
 echo "[phase=stream_fits]"
 fits_cmd=(uv run python scripts/issue779_ffc_n1m_fits.py
@@ -325,7 +427,8 @@ else
     exit 1
   fi
   declared=("eval_results/issue_779/l26-kernel-gate-recovery/l26_recovery_fits.json"
-            "eval_results/issue_779/l26-kernel-gate-recovery/l26_recovery_readout.json")
+            "eval_results/issue_779/l26-kernel-gate-recovery/l26_recovery_readout.json"
+            "eval_results/issue_779/l26-kernel-gate-recovery/l26_recovery_potrf_probe.json")
   while IFS= read -r f; do
     declared+=("${f#"$REPO_ROOT"/}")
   done < <(find "$FIG_DIR" -maxdepth 1 -name 'l26_recovery_*' \
@@ -356,6 +459,7 @@ echo "[phase=sentinel]"
 GPU_HOURS_USED=$(awk -v s="$T_START" -v e="$(date +%s)" 'BEGIN{printf "%.2f", (e-s)/3600.0}')
 EPM_SENTINEL_PATH="$SENTINEL_PATH" EPM_SENTINEL_KIND="$SENTINEL_KIND" \
 EPM_SMOKE="$SMOKE" EPM_READOUT_JSON="$READOUT_JSON" EPM_FITS_JSON="$FITS_JSON" \
+EPM_PROBE_JSON="$PROBE_JSON" \
 EPM_GPU_H_USED="$GPU_HOURS_USED" EPM_GPU_H_BUDGET="$GPU_HOURS_BUDGETED" \
 EPM_HF_WEIGHTS_PREFIX="$HF_WEIGHTS_PREFIX" EPM_BRANCH="$BRANCH" uv run python - <<'PY'
 import json
@@ -364,6 +468,8 @@ import time
 from pathlib import Path
 
 smoke = os.environ["EPM_SMOKE"] == "1"
+probe_path = Path(os.environ["EPM_PROBE_JSON"])
+potrf_probe = json.loads(probe_path.read_text()) if probe_path.exists() else None
 ro = json.loads(Path(os.environ["EPM_READOUT_JSON"]).read_text())
 rec = ro.get("l26_recovery", {})
 kernel_deltas = {
@@ -389,6 +495,9 @@ note = {
     ),
     "gate_m32768": rec.get("gate"),
     "solver_equivalence": rec.get("solver_equivalence"),
+    # preflight potrf probe record: gpu_probe_ok / cpu_fallback_engaged (plan v11 §8
+    # CPU-dpotrf degrade path; concern preflight-potrf-abort-forecloses-cpu-fallback)
+    "potrf_probe": potrf_probe,
     "validity_gate_pass": ro.get("validity_gate", {}).get("overall_pass"),
     "nonkrr_match_gate_pass": ro.get("nonkrr_match_gate", {}).get("overall_pass"),
     "kernel_deltas_vs_raw_dot": kernel_deltas,
