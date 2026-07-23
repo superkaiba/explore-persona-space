@@ -1,0 +1,66 @@
+{
+  "commit": "202387fe75",
+  "created": "2026-07-23T03:24:27Z",
+  "figsize": [
+    7.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out $R^2$": 0.3708897449163957,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out $R^2$": 0.2609328571729165,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out $R^2$": 0.8193260751733688,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out $R^2$": 0.7633080486910762,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predicting the per-prefix average answer state \u2014 averaged targets, layer 14",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "Direct prefix map (prefix-end vector)",
+          "Averaged prefix map (context-end, averaged over queries)"
+        ],
+        "xticklabels": [
+          "Instruct model (own answers)",
+          "Pretrained-base model (own answers)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Direct prefix map (prefix-end vector)",
+      "Averaged prefix map (context-end, averaged over queries)"
+    ]
+  }
+}

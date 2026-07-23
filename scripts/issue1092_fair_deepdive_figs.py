@@ -201,6 +201,45 @@ def fig_fair_grid() -> None:
     plt.close(fig)
 
 
+def fig_fair_grid_averaged_only() -> None:
+    """Averaged-targets-only fair comparison: one bar group per model
+    (instruct, pretrained-base), direct prefix map vs averaged prefix map,
+    ambient basis. The averaged grain is the only grain where the direct
+    prefix vector has a fair shot (no query access), so single-context
+    targets and the per-arm ceilings are omitted."""
+    fc = json.loads(
+        (
+            PROJECT_ROOT / "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json"
+        ).read_text()
+    )
+    basis = "ambient"
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    arms = [
+        ("r2_prefix_averaged", "Direct prefix map (prefix-end vector)", colors[1]),
+        (
+            "r2_context_averaged",
+            "Averaged prefix map (context-end, averaged over queries)",
+            colors[0],
+        ),
+    ]
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    x = np.arange(len(CELLS))
+    w = 0.36
+    for i, (key, label, color) in enumerate(arms):
+        vals = [float(fc["cells"][cell]["bases"][basis]["averaged_grain"][key]) for cell in CELLS]
+        ax.bar(x + (i - 0.5) * w, vals, w, label=label, color=color)
+    ax.set_xticks(x)
+    ax.set_xticklabels([CELL_LABEL[cell] for cell in CELLS])
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("held-out $R^2$")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    ax.set_title("Predicting the per-prefix average answer state — averaged targets, layer 14")
+    fig.tight_layout()
+    savefig_paper(fig, "fair_comparison_averaged_only", dir=FIGDIR)
+    plt.close(fig)
+
+
 def fig_shrinkage() -> None:
     dd = json.loads((DD / "deepdive.json").read_text())
     labels, glob_res, diag_res = [], [], []
