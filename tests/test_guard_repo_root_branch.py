@@ -303,6 +303,63 @@ def test_detach_to_real_tag_blocks(throwaway_tag):
 
 
 # ---------------------------------------------------------------------------
+# #1621 — hyphen-preceded verb tokens (a `--no-checkout` / `--checkout` FLAG)
+# no longer satisfy the checkout-detach clause (ERE \b matches between `-`
+# and a word char, so the flag spelling used to false-block the documented
+# scratch-worktree recipe — incident 552fa84d). Every real detach spelling
+# keeps a space/tab before the verb and still blocks (matrix above + the
+# flag-prefixed pin below). Red-before/green-after for each allow fixture
+# was confirmed at compose time against the origin/main guard (rc=2 -> 0).
+# ---------------------------------------------------------------------------
+_I1621_552F_SCRATCH_WORKTREE_RECIPE = (
+    "set -e\n"
+    "git fetch origin main\n"
+    "WT=/tmp/wt1092dash\n"
+    "git worktree remove --force $WT 2>/dev/null || true\n"
+    "git worktree add --no-checkout --detach $WT origin/main\n"
+    "git -C $WT sparse-checkout set --cone scripts tasks/awaiting_promotion/1092/artifacts\n"
+    "git -C $WT checkout --quiet\n"
+    "cp scripts/issue1092_divergence_dashboard.py $WT/scripts/\n"
+    "mkdir -p $WT/tasks/awaiting_promotion/1092/artifacts\n"
+    "cp tasks/awaiting_promotion/1092/artifacts/issue1092_divergence_dashboard.html"
+    " $WT/tasks/awaiting_promotion/1092/artifacts/\n"
+    "git -C $WT add scripts/issue1092_divergence_dashboard.py"
+    " tasks/awaiting_promotion/1092/artifacts/issue1092_divergence_dashboard.html\n"
+    "git -C $WT status --short | head -5"
+)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "git worktree add --no-checkout --detach $WT origin/main",
+            id="WA1-no_checkout_detach_line_solo",
+        ),
+        pytest.param(
+            _I1621_552F_SCRATCH_WORKTREE_RECIPE,
+            id="WA2-552f_incident_verbatim",
+        ),
+        pytest.param(
+            "git worktree add --checkout --detach /tmp/wt1092dash origin/main",
+            id="WA3-sibling_checkout_flag",
+        ),
+    ],
+)
+def test_worktree_add_no_checkout_detach_allowed(cmd):
+    """#1621: the checkout-detach clause requires a non-hyphen char before the
+    verb token, so `--no-checkout` / `--checkout` flag spellings never match
+    and the scratch-worktree recipe passes."""
+    assert _run(cmd) == 0
+
+
+def test_flag_prefixed_checkout_detach_still_blocks():
+    """A real detach with a config flag before the verb keeps a space directly
+    before `checkout`, so the #1621 `[^-]` class still matches (blocks)."""
+    assert _run("git -c advice.detachedHead=false checkout --detach abc1234") == 2
+
+
+# ---------------------------------------------------------------------------
 # MUST BLOCK — existing branch-switch regression fence
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("cmd", ["git checkout -b feature/x", "git switch fix/foo"])
@@ -1378,6 +1435,122 @@ def test_shell_consumer_heredoc_still_blocks(cmd):
 )
 def test_heredoc_shellout_body_blocks(cmd):
     """A body naming a shell-out spelling never strips; its gated text classifies."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# #1621 — check (f) argv-list carve: argv-LIST-form call opens with NON-SHELL
+# first elements (`subprocess.run(["git", ...`) are deleted from a per-line
+# scan COPY before the shell-out refusal scan, so plan/doc heredoc bodies
+# embedding argv-form subprocess git TEXT strip cleanly (guard class (xi):
+# the argv form never classifies — comma-separated list tokens carry no
+# `git <verb>` bigram; incident abee1289). Two fail-closed arms pin the
+# loopholes the carve would otherwise open: an argv head naming a shell
+# (bare / path-qualified / env, incl. the literal backslash-n bracket-gap
+# spelling) refuses PRE-deletion, and a `shell=True` residual refuses
+# post-deletion. Red-before/green-after for each allow fixture was confirmed
+# at compose time against the origin/main guard (rc=2 -> 0).
+#
+# NOTE on the doc-line fixtures: they quote a BARE branch-create recipe (no
+# `git -C` prefix) because the pre-existing PATH-BLIND `-C` per-clause
+# waiver (#1128/#1193) waives a `-C`-prefixed checkout clause under BOTH
+# guards — a `-C`-spelled doc line cannot satisfy the red-before protocol.
+# ---------------------------------------------------------------------------
+# The incident's refusing body line carried FOUR argv-call opens on ONE
+# physical line, one with a literal backslash-n between paren and bracket
+# (a plan-patch python script whose replacement text embeds a test snippet).
+_I1621_ABEE_LINE51 = (
+    'snippet = \'subprocess.run(["git", "-C", wt, "fetch"], check=True); '
+    'subprocess.run(["git", "-C", wt, "status"], check=True); '
+    'subprocess.check_call(["git", "log"]); '
+    'subprocess.run(\\n    ["git", "-C", wt, "push"], check=True)\''
+)
+_I1621_ABEE_TRIMMED = (
+    "uv run python - <<'PY'\n"
+    + _I1621_ABEE_LINE51
+    + "\n"
+    + 'doc = f"git -C wtpath fetch origin && git checkout -B {branch} origin/main"\n'
+    + "PY"
+)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "uv run python - <<'PY'\n"
+            'subprocess.run(["git", "-C", wt, "push"], check=True)\n'
+            'print("recipe: git checkout -B mybranch origin/main")\n'
+            "PY",
+            id="AV1-quoted_tag_argv_call_plus_doc_line",
+        ),
+        pytest.param(_I1621_ABEE_TRIMMED, id="AV2-abee_shaped_line51_multiplicity"),
+        pytest.param(
+            "uv run python - <<PY\n"
+            'subprocess.run(["git", "-C", "/tmp/w", "push"], check=True)\n'
+            'print("recipe: git checkout -B mybranch origin/main")\n'
+            "PY",
+            id="AV3-unquoted_tag_expansion_free",
+        ),
+    ],
+)
+def test_heredoc_argv_subprocess_body_strips(cmd):
+    """#1621: argv-list-form call text with non-shell heads no longer refuses
+    the strip; the stripped body's quoted recipe text never classifies."""
+    assert _run(cmd) == 0
+
+
+def test_heredoc_argv_shell_head_still_blocks():
+    """New arm 1: an argv LIST whose first element names a shell refuses the
+    strip PRE-deletion (no import line needed); the gated text classifies."""
+    cmd = 'uv run python - <<\'PY\'\nPopen(["bash", "-c", "git reset --hard"])\nPY'
+    assert _run(cmd) == 2
+
+
+def test_heredoc_argv_shell_true_still_blocks():
+    """New arm 2: a `shell=True` residual next to an argv call refuses the
+    strip post-deletion; the gated single-string argv classifies."""
+    cmd = "uv run python - <<'PY'\nrun([\"git checkout -b x\"], shell=True)\nPY"
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'uv run python - <<\'PY\'\nrun(["/bin/bash", "-c", "git checkout -b x"])\nPY',
+            id="SH1-path_qualified_head",
+        ),
+        pytest.param(
+            'uv run python - <<\'PY\'\nrun(["env", "bash", "-c", "git checkout -b x"])\nPY',
+            id="SH2-env_head",
+        ),
+    ],
+)
+def test_heredoc_argv_pathqualified_shell_head_still_blocks(cmd):
+    """Arm 1 r2 widening: path-qualified ("/bin/bash") and "env" argv heads
+    refuse the strip exactly like bare shell names."""
+    assert _run(cmd) == 2
+
+
+def test_heredoc_argv_newline_bracket_shell_head_still_blocks():
+    """Arm 1 r2 widening: a literal backslash-n between bracket and quoted
+    shell head cannot dodge the arm (its gap tolerance mirrors the deletion
+    regex, so no shape the carve strips escapes the shell-head refusal)."""
+    cmd = 'uv run python - <<\'PY\'\ns = \'Popen([\\n    "bash", "-c", "git reset --hard"])\'\nPY'
+    assert _run(cmd) == 2
+
+
+def test_heredoc_bare_shellout_mention_still_blocks():
+    """Fail-closed boundary: a BARE shell-out-word prose mention (no argv call
+    open to carve) still refuses the strip, so the co-occurring quoted recipe
+    classifies (the M4b two-line value-indirection block requires this)."""
+    cmd = (
+        "uv run python - <<'PY'\n"
+        'print("we call subprocess here")\n'
+        'print("recipe: git checkout -B mybranch origin/main")\n'
+        "PY"
+    )
     assert _run(cmd) == 2
 
 
