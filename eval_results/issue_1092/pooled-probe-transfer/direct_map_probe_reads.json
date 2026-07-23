@@ -1,0 +1,436 @@
+{
+  "metadata": {
+    "script": "issue1092_direct_map_probe.py",
+    "followup_label": "direct-map-probe",
+    "git_commit": "7149dce9481a1bdd0a5c4ee4d094b8a767ffd948",
+    "timestamp_utc": "2026-07-23T19:46:18Z",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "traits": [
+      "hallucination",
+      "sycophancy"
+    ],
+    "layers": [
+      14,
+      19
+    ],
+    "map_variants": {
+      "n1m_ridge": "ridge",
+      "n1m_mlp_w32768": "mlp_w32768"
+    },
+    "ctx_substrates": [
+      "P_persona_ctx",
+      "A_passa_ctx",
+      "L_lmsys_ctx"
+    ],
+    "n_boot": 2000,
+    "seed": 0,
+    "arm": "supervised ridge probe fit on the MAP OUTPUT h(v_C) instead of on v_C; within-corpus grouped-CV + pooled/LODO held-out (same harness as the v_C probe in pooled_probe_transfer.json)",
+    "dpi_cap_note": "in-corpus, the LINEAR map's probe is DPI-capped by the v_C probe ceiling (h linear in v_C \u21d2 features span \u2286 span(v_C)); the nonlinear map is a fixed nonlinear feature transform and is NOT strictly bounded by the linear v_C probe \u2014 the transfer (held-out) read is the scientific comparison.",
+    "reference_v_c_probe": "eval_results/issue_1092/pooled-probe-transfer/pooled_probe_transfer.json (within_ceiling.P_persona_ctx = the v_C probe DPI reference; pooled_lodo = the v_C transfer read this arm is compared against)",
+    "provenance": {
+      "persona/passa/lmsys substrates": "P.build_substrates (banked, read-only)",
+      "n1m_weights": "issue779_monitoring/n1m_readout/weights/L{14,19}/{ridge,mlp_w32768}.pt",
+      "same_rows_invariant": "h(X) is a per-row transform of the SAME rows the v_C probe uses; dedup_keep applied identically at eval"
+    }
+  },
+  "reads": {
+    "n1m_ridge": {
+      "hallucination": {
+        "L14": {
+          "within_corpus": {
+            "P_persona_ctx": {
+              "cv_r": 0.8527563584288258,
+              "cv_r2": 0.7269161251483949,
+              "ci_r": [
+                0.8373569544837678,
+                0.8674751961159562
+              ],
+              "n": 7646,
+              "lam_cv": 1000.0
+            },
+            "A_passa_ctx": {
+              "cv_r": 0.5808086251688956,
+              "cv_r2": 0.004564166435011563,
+              "ci_r": [
+                0.39989312060700943,
+                0.7682762898800329
+              ],
+              "n": 260,
+              "lam_cv": 1000.0
+            },
+            "L_lmsys_ctx": {
+              "cv_r": 0.022812539509493943,
+              "cv_r2": -0.07902006734127598,
+              "ci_r": [
+                -0.005661978774565387,
+                0.05142597496080988
+              ],
+              "n": 4593,
+              "lam_cv": 1000.0
+            }
+          },
+          "pooled_lodo": {
+            "P_persona_ctx": {
+              "held_out_read": {
+                "r": 0.1684977074880412,
+                "r2": -0.027441201063516774,
+                "ci_r": [
+                  0.14641108167437442,
+                  0.18956775526376674
+                ],
+                "n_eval": 7641,
+                "n_excluded_overlap": 5
+              },
+              "within_pool_cv_r": 0.18433331985183582,
+              "within_pool_cv_r2": -0.007331452137917305,
+              "lam_cv": 1000.0,
+              "n_train": 4853,
+              "pool_members": [
+                "A_passa_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "A_passa_ctx": {
+              "held_out_read": {
+                "r": -0.19062191468356707,
+                "r2": -0.967523881079134,
+                "ci_r": [
+                  -0.3337048830096291,
+                  -0.03474830032801432
+                ],
+                "n_eval": 260,
+                "n_excluded_overlap": 0
+              },
+              "within_pool_cv_r": 0.6617151209888731,
+              "within_pool_cv_r2": 0.43661020458252686,
+              "lam_cv": 1000.0,
+              "n_train": 12239,
+              "pool_members": [
+                "P_persona_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "L_lmsys_ctx": {
+              "held_out_read": {
+                "r": 0.005942123236348272,
+                "r2": -0.621975655134398,
+                "ci_r": [
+                  -0.023436542300993842,
+                  0.03462804642698286
+                ],
+                "n_eval": 4578,
+                "n_excluded_overlap": 15
+              },
+              "within_pool_cv_r": 0.8500783615555626,
+              "within_pool_cv_r2": 0.7222800607498718,
+              "lam_cv": 1000.0,
+              "n_train": 7906,
+              "pool_members": [
+                "P_persona_ctx",
+                "A_passa_ctx"
+              ]
+            }
+          }
+        }
+      },
+      "sycophancy": {
+        "L14": {
+          "within_corpus": {
+            "P_persona_ctx": {
+              "cv_r": 0.7411194706161353,
+              "cv_r2": 0.5477443224987488,
+              "ci_r": [
+                0.7232396727832441,
+                0.7584284962988902
+              ],
+              "n": 7652,
+              "lam_cv": 1000.0
+            },
+            "A_passa_ctx": {
+              "cv_r": 0.3746622876724945,
+              "cv_r2": -1.7992446206966686,
+              "ci_r": [
+                -0.035365410296143276,
+                0.7513198859383308
+              ],
+              "n": 260,
+              "lam_cv": 1000.0
+            },
+            "L_lmsys_ctx": {
+              "cv_r": -0.005053443959002253,
+              "cv_r2": -0.09010310375993313,
+              "ci_r": [
+                -0.03374146814325009,
+                0.02228221558199309
+              ],
+              "n": 4618,
+              "lam_cv": 1000.0
+            }
+          },
+          "pooled_lodo": {
+            "P_persona_ctx": {
+              "held_out_read": {
+                "r": -0.10812263562641271,
+                "r2": -0.1987185444635997,
+                "ci_r": [
+                  -0.12988350123287812,
+                  -0.0859328032754532
+                ],
+                "n_eval": 7646,
+                "n_excluded_overlap": 6
+              },
+              "within_pool_cv_r": 0.081198560215458,
+              "within_pool_cv_r2": -0.05195374808500253,
+              "lam_cv": 1000.0,
+              "n_train": 4878,
+              "pool_members": [
+                "A_passa_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "A_passa_ctx": {
+              "held_out_read": {
+                "r": 0.16515295641074973,
+                "r2": -0.47183128695114074,
+                "ci_r": [
+                  -0.040126977417539345,
+                  0.3657673815781369
+                ],
+                "n_eval": 260,
+                "n_excluded_overlap": 0
+              },
+              "within_pool_cv_r": 0.5634899622177569,
+              "within_pool_cv_r2": 0.3142464517039171,
+              "lam_cv": 1000.0,
+              "n_train": 12270,
+              "pool_members": [
+                "P_persona_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "L_lmsys_ctx": {
+              "held_out_read": {
+                "r": 0.00022466604686188036,
+                "r2": -0.5663653811418294,
+                "ci_r": [
+                  -0.026674866569791768,
+                  0.026417889993585207
+                ],
+                "n_eval": 4603,
+                "n_excluded_overlap": 15
+              },
+              "within_pool_cv_r": 0.7368803425193534,
+              "within_pool_cv_r2": 0.5413698940868432,
+              "lam_cv": 1000.0,
+              "n_train": 7912,
+              "pool_members": [
+                "P_persona_ctx",
+                "A_passa_ctx"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "n1m_mlp_w32768": {
+      "hallucination": {
+        "L14": {
+          "within_corpus": {
+            "P_persona_ctx": {
+              "cv_r": 0.8579240805025375,
+              "cv_r2": 0.735614571625024,
+              "ci_r": [
+                0.8433945013607304,
+                0.8714618629242461
+              ],
+              "n": 7646,
+              "lam_cv": 1000.0
+            },
+            "A_passa_ctx": {
+              "cv_r": 0.8330624467163791,
+              "cv_r2": 0.6871307039448358,
+              "ci_r": [
+                0.7741412817617354,
+                0.8820627892457156
+              ],
+              "n": 260,
+              "lam_cv": 1000.0
+            },
+            "L_lmsys_ctx": {
+              "cv_r": 0.014988765934838529,
+              "cv_r2": -0.12973629248149288,
+              "ci_r": [
+                -0.013545163130951113,
+                0.04427341115442814
+              ],
+              "n": 4593,
+              "lam_cv": 1000.0
+            }
+          },
+          "pooled_lodo": {
+            "P_persona_ctx": {
+              "held_out_read": {
+                "r": -0.006480306050694709,
+                "r2": -0.21994902197397415,
+                "ci_r": [
+                  -0.027261313293712217,
+                  0.015392396053782866
+                ],
+                "n_eval": 7641,
+                "n_excluded_overlap": 5
+              },
+              "within_pool_cv_r": 0.15726517663856093,
+              "within_pool_cv_r2": -0.04815391759990417,
+              "lam_cv": 1000.0,
+              "n_train": 4853,
+              "pool_members": [
+                "A_passa_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "A_passa_ctx": {
+              "held_out_read": {
+                "r": 0.2837808665858884,
+                "r2": -1.4650729359352104,
+                "ci_r": [
+                  0.16477954751320362,
+                  0.35433096630538535
+                ],
+                "n_eval": 260,
+                "n_excluded_overlap": 0
+              },
+              "within_pool_cv_r": 0.6519640449305638,
+              "within_pool_cv_r2": 0.42031476504172305,
+              "lam_cv": 1000.0,
+              "n_train": 12239,
+              "pool_members": [
+                "P_persona_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "L_lmsys_ctx": {
+              "held_out_read": {
+                "r": 0.004779752432753058,
+                "r2": -0.6372628775534088,
+                "ci_r": [
+                  -0.021928892233302924,
+                  0.03421620305600452
+                ],
+                "n_eval": 4578,
+                "n_excluded_overlap": 15
+              },
+              "within_pool_cv_r": 0.8562691975841413,
+              "within_pool_cv_r2": 0.7325129292572996,
+              "lam_cv": 1000.0,
+              "n_train": 7906,
+              "pool_members": [
+                "P_persona_ctx",
+                "A_passa_ctx"
+              ]
+            }
+          }
+        }
+      },
+      "sycophancy": {
+        "L14": {
+          "within_corpus": {
+            "P_persona_ctx": {
+              "cv_r": 0.7488145044430166,
+              "cv_r2": 0.5587572797882201,
+              "ci_r": [
+                0.7309091753722999,
+                0.7652605552593083
+              ],
+              "n": 7652,
+              "lam_cv": 1000.0
+            },
+            "A_passa_ctx": {
+              "cv_r": 0.5179777699936191,
+              "cv_r2": -0.010678557548266632,
+              "ci_r": [
+                0.20674161209835973,
+                0.8529608321370923
+              ],
+              "n": 260,
+              "lam_cv": 1000.0
+            },
+            "L_lmsys_ctx": {
+              "cv_r": -0.001495271119103227,
+              "cv_r2": -0.13050130905511503,
+              "ci_r": [
+                -0.028988164276552163,
+                0.02732799035042927
+              ],
+              "n": 4618,
+              "lam_cv": 1000.0
+            }
+          },
+          "pooled_lodo": {
+            "P_persona_ctx": {
+              "held_out_read": {
+                "r": -0.11860003358005249,
+                "r2": -0.2576407935475147,
+                "ci_r": [
+                  -0.1473417632859824,
+                  -0.09193364240900088
+                ],
+                "n_eval": 7646,
+                "n_excluded_overlap": 6
+              },
+              "within_pool_cv_r": 0.07733238419203343,
+              "within_pool_cv_r2": -0.08948058776756351,
+              "lam_cv": 1000.0,
+              "n_train": 4878,
+              "pool_members": [
+                "A_passa_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "A_passa_ctx": {
+              "held_out_read": {
+                "r": 0.04582047334490486,
+                "r2": -0.36714979265983416,
+                "ci_r": [
+                  -0.23283001977678816,
+                  0.37049948154216084
+                ],
+                "n_eval": 260,
+                "n_excluded_overlap": 0
+              },
+              "within_pool_cv_r": 0.5578726971676601,
+              "within_pool_cv_r2": 0.3031935985047399,
+              "lam_cv": 1000.0,
+              "n_train": 12270,
+              "pool_members": [
+                "P_persona_ctx",
+                "L_lmsys_ctx"
+              ]
+            },
+            "L_lmsys_ctx": {
+              "held_out_read": {
+                "r": 0.005360517702289029,
+                "r2": -0.715823791615416,
+                "ci_r": [
+                  -0.02150407788109176,
+                  0.03348157631242
+                ],
+                "n_eval": 4603,
+                "n_excluded_overlap": 15
+              },
+              "within_pool_cv_r": 0.7427901225547126,
+              "within_pool_cv_r2": 0.5493775311074235,
+              "lam_cv": 1000.0,
+              "n_train": 7912,
+              "pool_members": [
+                "P_persona_ctx",
+                "A_passa_ctx"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,86 +1,216 @@
 {
-  "commit": "5cbe74f897",
-  "created": "2026-07-23T19:00:25Z",
+  "commit": "f0aa7e702b",
+  "created": "2026-07-23T20:52:22Z",
   "figsize": [
-    12.299999999999999,
-    9.899999999999999
+    18.0,
+    13.2
   ],
   "points": [
     {
-      "category": "raw\nprojection",
-      "hallucination\nPearson r": 0.41424242948618545,
+      "category": "raw",
+      "hallucination\nwithin-corpus Pearson r": 0.41424242948618545,
       "error": 0.11059602226554993,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "map\n+\nprojection",
-      "hallucination\nPearson r": 0.45196457427649167,
+      "category": "5k-linear",
+      "hallucination\nwithin-corpus Pearson r": 0.3536575739063433,
+      "error": 0.08481408192632334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "1M ridge",
+      "hallucination\nwithin-corpus Pearson r": 0.3572281975913273,
+      "error": 0.07938383574931601,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "1M mlp",
+      "hallucination\nwithin-corpus Pearson r": 0.45196457427649167,
       "error": 0.07958551153802029,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "direct\nin-corpus\nprobe",
-      "hallucination\nPearson r": 0.6980471337167093,
+      "category": "1M krr",
+      "hallucination\nwithin-corpus Pearson r": 0.47686425246109476,
+      "error": 0.06862605491406049,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "v_C probe",
+      "hallucination\nwithin-corpus Pearson r": 0.6980471337167093,
       "error": 0.13751965194948534,
       "_kind": "bar",
       "_group": 0
     },
     {
+      "category": "dmp:ridge",
+      "hallucination\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "dmp:mlp",
+      "hallucination\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
       "x": 0.0,
-      "hallucination\nPearson r": 0.30065727963264566,
+      "hallucination\nwithin-corpus Pearson r": 0.30065727963264566,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "hallucination\nPearson r": 0.37126598878324424,
+      "hallucination\nwithin-corpus Pearson r": 0.26690217642208797,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "hallucination\nPearson r": 0.5721437039088489,
+      "hallucination\nwithin-corpus Pearson r": 0.2762635948569581,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "hallucination\nwithin-corpus Pearson r": 0.37126598878324424,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "hallucination\nwithin-corpus Pearson r": 0.4046437550175568,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "hallucination\nwithin-corpus Pearson r": 0.5721437039088489,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "hallucination\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "hallucination\nwithin-corpus Pearson r": 0.0,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "hallucination\nPearson r": 0.5218493241637455,
+      "hallucination\nwithin-corpus Pearson r": 0.5218493241637455,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "hallucination\nPearson r": 0.5304370118592848,
+      "hallucination\nwithin-corpus Pearson r": 0.43653034027473464,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "hallucination\nPearson r": 0.8471830078078196,
+      "hallucination\nwithin-corpus Pearson r": 0.43503126635559014,
       "_kind": "line",
       "_group": 2
     },
     {
-      "category": "raw\nprojection",
+      "x": 3.0,
+      "hallucination\nwithin-corpus Pearson r": 0.5304370118592848,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "hallucination\nwithin-corpus Pearson r": 0.5418958648456778,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "hallucination\nwithin-corpus Pearson r": 0.8471830078078196,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "hallucination\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "hallucination\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "raw",
       "y": -0.10278046577628802,
       "error": 0.022015295737805272,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
+      "y": 0.2325097764461291,
+      "error": 0.02128178288310663,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "1M ridge",
+      "y": 0.3051653801255238,
+      "error": 0.01926190349009385,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "1M mlp",
       "y": 0.3541728432954156,
       "error": 0.0163007731933065,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M krr",
+      "y": 0.29151278984027046,
+      "error": 0.01879142918820853,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "v_C probe",
       "y": 0.8641252395477983,
       "error": 0.013044361741892108,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "dmp:ridge",
+      "y": 0.8527563584288258,
+      "error": 0.01505912081609423,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "dmp:mlp",
+      "y": 0.8579240805025375,
+      "error": 0.014033680781757873,
       "_kind": "bar",
       "_group": 3
     },
@@ -92,13 +222,43 @@
     },
     {
       "x": 1.0,
-      "y": 0.3376837621430661,
+      "y": 0.21033252529907046,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.0,
+      "y": 0.2849669316092159,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.3376837621430661,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.27253166954610375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
       "y": 0.8507173221936027,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.8373569544837678,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.8433945013607304,
       "_kind": "line",
       "_group": 4
     },
@@ -110,38 +270,103 @@
     },
     {
       "x": 1.0,
-      "y": 0.3702853085296791,
+      "y": 0.2528960910652837,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.0,
+      "y": 0.3234907385894036,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.3702853085296791,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.3101145279225208,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
       "y": 0.876806045677387,
       "_kind": "line",
       "_group": 5
     },
     {
-      "category": "raw\nprojection",
+      "x": 6.0,
+      "y": 0.8674751961159562,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.8714618629242461,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "raw",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M ridge",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "1M mlp",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "1M krr",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "v_C probe",
       "y": 0.009062541043387327,
       "error": 0.028890637270393368,
       "_kind": "bar",
       "_group": 6
     },
     {
+      "category": "dmp:ridge",
+      "y": 0.022812539509493943,
+      "error": 0.028543976867687636,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "dmp:mlp",
+      "y": 0.014988765934838529,
+      "error": 0.02890928714268963,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
       "x": 0.0,
       "y": 0.0,
       "_kind": "line",
@@ -155,11 +380,41 @@
     },
     {
       "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
       "y": -0.019715565706183567,
       "_kind": "line",
       "_group": 7
     },
     {
+      "x": 6.0,
+      "y": -0.005661978774565386,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": -0.013545163130951115,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
       "x": 0.0,
       "y": 0.0,
       "_kind": "line",
@@ -173,99 +428,259 @@
     },
     {
       "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
       "y": 0.03806570883460317,
       "_kind": "line",
       "_group": 8
     },
     {
+      "x": 6.0,
+      "y": 0.05142597496080988,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": 0.04427341115442814,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
       "x": 0.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 1.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 9
     },
     {
-      "category": "raw\nprojection",
-      "sycophancy\nPearson r": 0.6023495002275518,
+      "category": "raw",
+      "sycophancy\nwithin-corpus Pearson r": 0.6023495002275518,
       "error": 0.05320801271547776,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "map\n+\nprojection",
-      "sycophancy\nPearson r": 0.6403132348742648,
+      "category": "5k-linear",
+      "sycophancy\nwithin-corpus Pearson r": 0.5413057833384319,
+      "error": 0.060726800112246765,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "1M ridge",
+      "sycophancy\nwithin-corpus Pearson r": 0.5962440517469703,
+      "error": 0.038832824257365284,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "1M mlp",
+      "sycophancy\nwithin-corpus Pearson r": 0.6403132348742648,
       "error": 0.029794959276125133,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "direct\nin-corpus\nprobe",
-      "sycophancy\nPearson r": 0.6316728451445534,
+      "category": "1M krr",
+      "sycophancy\nwithin-corpus Pearson r": 0.5813411426926937,
+      "error": 0.04812362565283862,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "v_C probe",
+      "sycophancy\nwithin-corpus Pearson r": 0.6316728451445534,
       "error": 0.1613148307593768,
       "_kind": "bar",
       "_group": 10
     },
     {
+      "category": "dmp:ridge",
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "dmp:mlp",
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
       "x": 0.0,
-      "sycophancy\nPearson r": 0.5486117711952504,
+      "sycophancy\nwithin-corpus Pearson r": 0.5486117711952504,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 1.0,
-      "sycophancy\nPearson r": 0.6094689089197862,
+      "sycophancy\nwithin-corpus Pearson r": 0.4797973974814084,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 2.0,
-      "sycophancy\nPearson r": 0.47814497241725973,
+      "sycophancy\nwithin-corpus Pearson r": 0.5546976587722294,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.6094689089197862,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.5284906953396482,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.47814497241725973,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 0.0,
-      "sycophancy\nPearson r": 0.6550277966262059,
+      "sycophancy\nwithin-corpus Pearson r": 0.6550277966262059,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 1.0,
-      "sycophancy\nPearson r": 0.6690588274720365,
+      "sycophancy\nwithin-corpus Pearson r": 0.601250997705902,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 2.0,
-      "sycophancy\nPearson r": 0.8007746339360133,
+      "sycophancy\nwithin-corpus Pearson r": 0.63236330728696,
       "_kind": "line",
       "_group": 12
     },
     {
-      "category": "raw\nprojection",
+      "x": 3.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.6690588274720365,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.6247379466453254,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.8007746339360133,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "sycophancy\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "category": "raw",
       "y": 0.04216345437932784,
       "error": 0.021465544045370613,
       "_kind": "bar",
       "_group": 13
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
+      "y": -0.0789018538632885,
+      "error": 0.015357674808060003,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "1M ridge",
+      "y": -0.042941539641143216,
+      "error": 0.016259702334427327,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "1M mlp",
       "y": -0.017935755557353505,
       "error": 0.01498150246268589,
       "_kind": "bar",
       "_group": 13
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M krr",
+      "y": -0.007820717431802727,
+      "error": 0.014175709883663729,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "v_C probe",
       "y": 0.7601310091531392,
       "error": 0.020768606493893227,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "dmp:ridge",
+      "y": 0.7411194706161353,
+      "error": 0.01759441175782306,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "dmp:mlp",
+      "y": 0.7488145044430166,
+      "error": 0.017175689943504158,
       "_kind": "bar",
       "_group": 13
     },
@@ -277,13 +692,43 @@
     },
     {
       "x": 1.0,
-      "y": -0.03282468187391166,
+      "y": -0.09407429680361123,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 2.0,
+      "y": -0.05906710989137994,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": -0.03282468187391166,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": -0.021270057824127574,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
       "y": 0.7376137239066924,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.7232396727832441,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "y": 0.7309091753722999,
       "_kind": "line",
       "_group": 14
     },
@@ -295,38 +740,103 @@
     },
     {
       "x": 1.0,
-      "y": -0.0028616769485398773,
+      "y": -0.06335894718749123,
       "_kind": "line",
       "_group": 15
     },
     {
       "x": 2.0,
+      "y": -0.026547705222525284,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": -0.0028616769485398773,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.007081361943199884,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
       "y": 0.7791509368944789,
       "_kind": "line",
       "_group": 15
     },
     {
-      "category": "raw\nprojection",
+      "x": 6.0,
+      "y": 0.7584284962988902,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 0.7652605552593083,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "category": "raw",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M ridge",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "1M mlp",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "1M krr",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "v_C probe",
       "y": -0.012250608802857634,
       "error": 0.0264763800903463,
       "_kind": "bar",
       "_group": 16
     },
     {
+      "category": "dmp:ridge",
+      "y": -0.005053443959002253,
+      "error": 0.028011841862621588,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "dmp:mlp",
+      "y": -0.001495271119103227,
+      "error": 0.028158077313490716,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
       "x": 0.0,
       "y": 0.0,
       "_kind": "line",
@@ -340,11 +850,41 @@
     },
     {
       "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
       "y": -0.03860430810811961,
       "_kind": "line",
       "_group": 17
     },
     {
+      "x": 6.0,
+      "y": -0.03374146814325009,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "y": -0.028988164276552163,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
       "x": 0.0,
       "y": 0.0,
       "_kind": "line",
@@ -358,97 +898,257 @@
     },
     {
       "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
       "y": 0.014348452072572994,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "y": 0.02228221558199309,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "y": 0.02732799035042927,
       "_kind": "line",
       "_group": 18
     },
     {
       "x": 0.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 19
     },
     {
       "x": 1.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 19
     },
     {
-      "category": "raw\nprojection",
-      "evil\nPearson r": 0.17225165704905313,
+      "category": "raw",
+      "evil\nwithin-corpus Pearson r": 0.17225165704905313,
       "error": 0.22054077390785579,
       "_kind": "bar",
       "_group": 20
     },
     {
-      "category": "map\n+\nprojection",
-      "evil\nPearson r": -0.003366478606171071,
+      "category": "5k-linear",
+      "evil\nwithin-corpus Pearson r": -0.07822249677864532,
+      "error": 0.2448025204445451,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "1M ridge",
+      "evil\nwithin-corpus Pearson r": 0.0950026624400385,
+      "error": 0.2830723695833468,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "1M mlp",
+      "evil\nwithin-corpus Pearson r": -0.003366478606171071,
       "error": 0.18526528768350647,
       "_kind": "bar",
       "_group": 20
     },
     {
-      "category": "direct\nin-corpus\nprobe",
-      "evil\nPearson r": 0.0,
+      "category": "1M krr",
+      "evil\nwithin-corpus Pearson r": -0.029843459240645923,
+      "error": 0.21368181436036218,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "v_C probe",
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "dmp:ridge",
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "dmp:mlp",
+      "evil\nwithin-corpus Pearson r": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 20
     },
     {
       "x": 0.0,
-      "evil\nPearson r": -0.06656688168628616,
+      "evil\nwithin-corpus Pearson r": -0.06656688168628616,
       "_kind": "line",
       "_group": 21
     },
     {
       "x": 1.0,
-      "evil\nPearson r": -0.1953776262736525,
+      "evil\nwithin-corpus Pearson r": -0.35763317106786074,
       "_kind": "line",
       "_group": 21
     },
     {
       "x": 2.0,
-      "evil\nPearson r": 0.0,
+      "evil\nwithin-corpus Pearson r": -0.2367705506899879,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "evil\nwithin-corpus Pearson r": -0.1953776262736525,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "evil\nwithin-corpus Pearson r": -0.2899714238834061,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
       "_kind": "line",
       "_group": 21
     },
     {
       "x": 0.0,
-      "evil\nPearson r": 0.3745146661294254,
+      "evil\nwithin-corpus Pearson r": 0.3745146661294254,
       "_kind": "line",
       "_group": 22
     },
     {
       "x": 1.0,
-      "evil\nPearson r": 0.17515294909336046,
+      "evil\nwithin-corpus Pearson r": 0.13197186982122946,
       "_kind": "line",
       "_group": 22
     },
     {
       "x": 2.0,
-      "evil\nPearson r": 0.0,
+      "evil\nwithin-corpus Pearson r": 0.3293741884767057,
       "_kind": "line",
       "_group": 22
     },
     {
-      "category": "raw\nprojection",
+      "x": 3.0,
+      "evil\nwithin-corpus Pearson r": 0.17515294909336046,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "evil\nwithin-corpus Pearson r": 0.1373922048373183,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "evil\nwithin-corpus Pearson r": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "category": "raw",
       "y": 0.015703675786632974,
       "error": 0.03388202387129266,
       "_kind": "bar",
       "_group": 23
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
+      "y": -0.005432728936881968,
+      "error": 0.030181877731355795,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "1M ridge",
+      "y": 0.008452993983291527,
+      "error": 0.03644985108990777,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "1M mlp",
       "y": 0.006985913870422288,
       "error": 0.03147229142322698,
       "_kind": "bar",
       "_group": 23
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M krr",
+      "y": 0.009336919976981717,
+      "error": 0.035709947446144856,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "v_C probe",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "dmp:ridge",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "dmp:mlp",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
@@ -462,12 +1162,42 @@
     },
     {
       "x": 1.0,
-      "y": -0.01797668100131919,
+      "y": -0.029817458987249763,
       "_kind": "line",
       "_group": 24
     },
     {
       "x": 2.0,
+      "y": -0.01938645596125541,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": -0.01797668100131919,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": -0.019427571099486285,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
       "y": 0.0,
       "_kind": "line",
       "_group": 24
@@ -480,32 +1210,97 @@
     },
     {
       "x": 1.0,
+      "y": 0.030546296475461827,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.05351324621856013,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
       "y": 0.04496790184513478,
       "_kind": "line",
       "_group": 25
     },
     {
-      "x": 2.0,
+      "x": 4.0,
+      "y": 0.05199232379280343,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
       "y": 0.0,
       "_kind": "line",
       "_group": 25
     },
     {
-      "category": "raw\nprojection",
+      "x": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "category": "raw",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 26
     },
     {
-      "category": "map\n+\nprojection",
+      "category": "5k-linear",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 26
     },
     {
-      "category": "direct\nin-corpus\nprobe",
+      "category": "1M ridge",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "1M mlp",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "1M krr",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "v_C probe",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "dmp:ridge",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "dmp:mlp",
       "y": 0.0,
       "error": 0.0,
       "_kind": "bar",
@@ -530,6 +1325,36 @@
       "_group": 27
     },
     {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
       "x": 0.0,
       "y": 0.0,
       "_kind": "line",
@@ -548,35 +1373,587 @@
       "_group": 28
     },
     {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
       "x": 0.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 29
     },
     {
       "x": 1.0,
       "y": 0.009062541043387327,
-      "series": "LMSYS ceiling r=0.009",
+      "series": "LMSYS ceiling 0.009",
       "_kind": "line",
       "_group": 29
+    },
+    {
+      "x": -0.26,
+      "held-out\nPearson r": 0.16751695308037184,
+      "error": 0.021479447667885496,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 0.74,
+      "held-out\nPearson r": 0.13162504356751406,
+      "error": 0.20355016017299993,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.74,
+      "held-out\nPearson r": 0.0017465095458447277,
+      "error": 0.028354949701380548,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "\u2192persona",
+      "held-out\nPearson r": 0.1684977074880412,
+      "error": 0.02157833679469616,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "\u2192PV-rig",
+      "held-out\nPearson r": -0.19062191468356707,
+      "error": 0.14947829134080737,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "\u2192LMSYS",
+      "held-out\nPearson r": 0.005942123236348272,
+      "error": 0.029032294363988354,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.26,
+      "held-out\nPearson r": -0.006480306050694709,
+      "error": 0.02132685467374754,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 1.26,
+      "held-out\nPearson r": 0.2837808665858884,
+      "error": 0.09477570939609087,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.26,
+      "held-out\nPearson r": 0.004779752432753058,
+      "error": 0.028072547644653723,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": -0.26,
+      "held-out\nPearson r": 0.145445757204984,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.74,
+      "held-out\nPearson r": -0.11591757314354542,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.7399999999999998,
+      "held-out\nPearson r": -0.026404794897785883,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": -0.26,
+      "held-out\nPearson r": 0.188404652540755,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.74,
+      "held-out\nPearson r": 0.29118274720245446,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.7399999999999998,
+      "held-out\nPearson r": 0.030305104504975214,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "held-out\nPearson r": 0.14641108167437442,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "held-out\nPearson r": -0.3337048830096291,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "held-out\nPearson r": -0.023436542300993842,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "held-out\nPearson r": 0.18956775526376674,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "held-out\nPearson r": -0.03474830032801432,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "held-out\nPearson r": 0.03462804642698286,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.26,
+      "held-out\nPearson r": -0.027261313293712217,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.2599999999999998,
+      "held-out\nPearson r": 0.16477954751320362,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.26,
+      "held-out\nPearson r": -0.021928892233302924,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.26,
+      "held-out\nPearson r": 0.015392396053782864,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.2599999999999998,
+      "held-out\nPearson r": 0.35433096630538535,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.26,
+      "held-out\nPearson r": 0.03421620305600452,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": -0.26,
+      "y": -0.10177581563836717,
+      "error": 0.021420247328319403,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 0.74,
+      "y": 0.2977291619038375,
+      "error": 0.1869117280398528,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 1.74,
+      "y": -0.009062022360223746,
+      "error": 0.02760055347242369,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "category": "\u2192persona",
+      "y": -0.10812263562641271,
+      "error": 0.021975348978712457,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "\u2192PV-rig",
+      "y": 0.16515295641074973,
+      "error": 0.2029471794978381,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "\u2192LMSYS",
+      "y": 0.00022466604686188036,
+      "error": 0.026546378281688487,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 0.26,
+      "y": -0.11860003358005249,
+      "error": 0.027704060438490753,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 1.26,
+      "y": 0.04582047334490486,
+      "error": 0.3016647506594745,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.26,
+      "y": 0.005360517702289029,
+      "error": 0.02749282709675588,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": -0.26,
+      "y": -0.12295619396117229,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.74,
+      "y": 0.08462000708680373,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": -0.03628089178775425,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": -0.26,
+      "y": -0.08011569930453348,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.74,
+      "y": 0.4584434631665093,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.01892021515709313,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": -0.12988350123287812,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": -0.040126977417539345,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": -0.026674866569791768,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": -0.0859328032754532,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.3657673815781369,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "y": 0.026417889993585207,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.26,
+      "y": -0.1473417632859824,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": -0.2328300197767882,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.26,
+      "y": -0.02150407788109176,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.26,
+      "y": -0.09193364240900088,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.37049948154216084,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.26,
+      "y": 0.03348157631242,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": -0.26,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 0.74,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.74,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "category": "\u2192persona",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "category": "\u2192PV-rig",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "category": "\u2192LMSYS",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 0.26,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 1.26,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 2.26,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": -0.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.74,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": -0.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.74,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.26,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
     }
   ],
-  "n_series": 30,
-  "total_points": 87,
+  "n_series": 57,
+  "total_points": 303,
   "text": {
-    "suptitle": "Behavior monitoring: raw projection vs map+projection vs direct in-corpus probe",
+    "suptitle": "Behavior monitoring: raw vs split map+projection vs v_C probe vs direct-map probe (top) + LODO transfer (bottom)",
     "fig_texts": [
-      "Metric: Pearson r (PV rig = within-condition; persona/LMSYS = group-CV / cluster-boot, L14). map+projection = <h(v_C), r_B>, best map n1m_mlp_w32768. raw = <v_C, r_B>. Pending cells: pooled probe run partial (hallucination-L14 complete)."
+      "Top: within-condition/within-corpus Pearson r (map+projection SPLIT per map, colored by training setup; L14). Bottom: pooled/LODO held-out transfer r \u2014 does probing answer-space h(v_C) transfer better than context-space v_C? Direct-map within-corpus is DPI-capped by the v_C probe for the linear map. N/A = partial pooled / direct-map run (regenerate when complete)."
     ],
     "axes": [
       {
-        "title_left": "PV rig (#779)\n(L19, n=260)",
-        "ylabel": "hallucination\nPearson r",
+        "title_left": "PV rig (#779) (L19, n=260)",
+        "ylabel": "hallucination\nwithin-corpus Pearson r",
+        "annotations": [
+          "N/A",
+          "N/A"
+        ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -589,11 +1966,16 @@
         ]
       },
       {
-        "title_left": "Persona corpus (#1092)\n(L14, n=7646)",
+        "title_left": "Persona corpus (#1092) (L14, n=7646)",
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -606,18 +1988,26 @@
         ]
       },
       {
-        "title_left": "LMSYS (real-user)\n(L14, n=4593)",
+        "title_left": "LMSYS (real-user) (L14, n=4593)",
         "legend_labels": [
-          "LMSYS ceiling r=0.009"
+          "LMSYS ceiling 0.009"
         ],
         "annotations": [
-          "N/A\n(pending)",
-          "N/A\n(pending)"
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A"
         ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -630,12 +2020,21 @@
         ]
       },
       {
-        "title_left": "PV rig (#779)\n(L26, n=260)",
-        "ylabel": "sycophancy\nPearson r",
+        "title_left": "PV rig (#779) (L26, n=260)",
+        "ylabel": "sycophancy\nwithin-corpus Pearson r",
+        "annotations": [
+          "N/A",
+          "N/A"
+        ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -648,11 +2047,16 @@
         ]
       },
       {
-        "title_left": "Persona corpus (#1092)\n(L14, n=7652)",
+        "title_left": "Persona corpus (#1092) (L14, n=7652)",
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -665,18 +2069,26 @@
         ]
       },
       {
-        "title_left": "LMSYS (real-user)\n(L14, n=4618)",
+        "title_left": "LMSYS (real-user) (L14, n=4618)",
         "legend_labels": [
-          "LMSYS ceiling r=0.009"
+          "LMSYS ceiling 0.009"
         ],
         "annotations": [
-          "N/A\n(pending)",
-          "N/A\n(pending)"
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A"
         ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -689,15 +2101,22 @@
         ]
       },
       {
-        "title_left": "PV rig (#779)\n(L14, n=260)",
-        "ylabel": "evil\nPearson r",
+        "title_left": "PV rig (#779) (L14, n=260)",
+        "ylabel": "evil\nwithin-corpus Pearson r",
         "annotations": [
-          "N/A\n(pending)"
+          "N/A",
+          "N/A",
+          "N/A"
         ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -710,14 +2129,21 @@
         ]
       },
       {
-        "title_left": "Persona corpus (#1092)\n(L14, n=7652)",
+        "title_left": "Persona corpus (#1092) (L14, n=7652)",
         "annotations": [
-          "N/A\n(pending)"
+          "N/A",
+          "N/A",
+          "N/A"
         ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -730,19 +2156,89 @@
         ]
       },
       {
-        "title_left": "LMSYS (real-user)\n(L14)",
+        "title_left": "LMSYS (real-user) (L14)",
         "legend_labels": [
-          "LMSYS ceiling r=0.009"
+          "LMSYS ceiling 0.009"
         ],
         "annotations": [
-          "N/A\n(pending)",
-          "N/A\n(pending)",
-          "N/A\n(pending)"
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A"
         ],
         "xticklabels": [
-          "raw\nprojection",
-          "map\n+\nprojection",
-          "direct\nin-corpus\nprobe"
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "dmp:ridge",
+          "dmp:mlp"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 LODO held-out transfer",
+        "ylabel": "held-out\nPearson r",
+        "xticklabels": [
+          "\u2192persona",
+          "\u2192PV-rig",
+          "\u2192LMSYS"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 LODO held-out transfer",
+        "xticklabels": [
+          "\u2192persona",
+          "\u2192PV-rig",
+          "\u2192LMSYS"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 LODO held-out transfer",
+        "legend_labels": [
+          "v_C probe",
+          "h(v_C) ridge",
+          "h(v_C) mlp"
+        ],
+        "annotations": [
+          "N/A (pending)"
+        ],
+        "xticklabels": [
+          "\u2192persona",
+          "\u2192PV-rig",
+          "\u2192LMSYS"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -756,7 +2252,10 @@
       }
     ],
     "series": [
-      "LMSYS ceiling r=0.009"
+      "LMSYS ceiling 0.009",
+      "v_C probe",
+      "h(v_C) ridge",
+      "h(v_C) mlp"
     ]
   }
 }
