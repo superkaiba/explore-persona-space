@@ -52,6 +52,7 @@ from explore_persona_space.backends.router import (
     DEFAULT_AUTO_LANE_ORDER,
     ENV_AUTO_LANE_ORDER,
     ENV_SPOT_MAX_GPU_HOURS,
+    FELLOWS_QUEUE_WAIT_ENV,
     FREE_WAIT_SECONDS,
     MAX_GCP_ATTEMPTS_PER_DAY,
     ROUTE_REASON_AUTO_FALLBACK_GCP,
@@ -3355,6 +3356,295 @@ def test_backend_poll_lane_set_includes_fellows():
     from explore_persona_space.backends.slurm import SlurmBackend
 
     assert isinstance(backend, SlurmBackend)
+
+
+# ---------------------------------------------------------------------------
+# #1609 fast-start guard — fellows queue-wait knob + pinned-lane exemption
+# ---------------------------------------------------------------------------
+
+
+def test_fellows_auto_queue_timeout_scancels_and_falls_through_to_gcp(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#1609 fast-start guard, requirement 1 (the main pinning test): a
+    fellows AUTO submit still PENDING at the park cap is scancelled
+    (``backend.teardown`` — the self-scoped scancel of our own job id)
+    and the chain advances to GCP. The fellows attempt row carries the
+    ``park_cap_exceeded`` outcome plus the grep-able
+    ``fellows_queue_timeout`` detail token; the final reason stays the
+    existing gcp-launch convention (no new ROUTE_REASON_* constant)."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    rp = _ExplodingRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # fellows never starts
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_AUTO_FALLBACK_GCP
+    assert len(fellows.launches) == 1
+    assert len(fellows.teardowns) == 1  # the scancel
+    assert len(gcp.launches) == 1
+    fellows_rows = [a for a in result.attempts if a.kind == "fellows"]
+    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"]
+    assert "fellows_queue_timeout cap=1s" in fellows_rows[0].detail
+    assert FELLOWS_QUEUE_WAIT_ENV in fellows_rows[0].detail
+
+
+def test_fellows_queue_wait_env_knob_overrides_park_cap(lease_store, monkeypatch):
+    """``EPS_FELLOWS_QUEUE_WAIT_SECONDS=5`` with
+    ``RouterConfig(free_wait_seconds=600)``: the fellows park gives up once
+    the fake clock passes 5 s (5 ``is_started`` probes — NOT 600) and the
+    chain advances to GCP."""
+    monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, "5")
+    calls = {"n": 0}
+
+    def counting_never_started(_b, _h):
+        calls["n"] += 1
+        return False
+
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=counting_never_started,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.teardowns) == 1
+    # The park ran to the ENV cap (5 fake-clock seconds = 5 probe calls),
+    # not to cfg.free_wait_seconds=600.
+    assert calls["n"] == 5
+    fellows_rows = [a for a in result.attempts if a.kind == "fellows"]
+    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"]
+    assert "fellows_queue_timeout cap=5s" in fellows_rows[0].detail
+
+
+@pytest.mark.parametrize(
+    "raw", ["abc", "-5", "0", None], ids=["malformed", "negative", "zero", "unset"]
+)
+def test_fellows_queue_wait_env_knob_malformed_falls_back_to_default(monkeypatch, raw):
+    """Direct unit test of the helper, mirroring the
+    ``backend_poll._gcp_queue_wait_seconds`` guard semantics: a missing /
+    malformed / non-positive env value falls back to the default."""
+    from explore_persona_space.backends.router import _fellows_queue_wait_seconds
+
+    if raw is None:
+        monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    else:
+        monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, raw)
+    assert _fellows_queue_wait_seconds(600) == 600
+
+
+def test_fellows_queue_wait_env_knob_valid_value_parsed(monkeypatch):
+    """A valid positive value is honored — and ONLY for the fellows lane
+    (the per-lane resolver keeps every other lane at cfg.free_wait_seconds)."""
+    from explore_persona_space.backends.router import (
+        _fellows_queue_wait_seconds,
+        _park_cap_for_lane,
+    )
+
+    monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, "42")
+    assert _fellows_queue_wait_seconds(600) == 42
+    cfg = RouterConfig(free_wait_seconds=600)
+    assert _park_cap_for_lane("fellows", cfg) == 42
+    assert _park_cap_for_lane("nibi", cfg) == 600
+    assert _park_cap_for_lane("fir", cfg) == 600
+    assert _park_cap_for_lane("mila", cfg) == 600
+
+
+def test_fellows_knob_does_not_affect_other_slurm_lanes(lease_store, monkeypatch):
+    """POSITIVE other-lane isolation pin: with the fellows knob set TINY
+    (2 s), a nibi auto-lane park still runs to ``cfg.free_wait_seconds``
+    — the job starts on the 4th probe (fake-clock second 4 > 2) and is
+    NOT cancelled. A knob-honoring nibi park would have scancelled at
+    2 s, before the job ever started."""
+    monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, "2")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=_is_started_after_n(4),
+        config=RouterConfig(
+            free_wait_seconds=6,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=("nibi", "gcp"),
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert nibi.teardowns == []  # no early scancel at the fellows knob value
+    assert len(gcp.launches) == 0
+
+
+@pytest.mark.parametrize(
+    ("env_value", "cfg_wait", "expected_cap"),
+    [
+        pytest.param(None, 2, 2, id="knob-unset-cfg-cap"),
+        pytest.param("3", 600, 3, id="knob-set-tiny"),
+    ],
+)
+def test_fellows_pin_queue_timeout_returns_pending_handle_no_scancel(
+    lease_store,
+    marker_poster,
+    captured_markers,
+    monkeypatch,
+    env_value,
+    cfg_wait,
+    expected_cap,
+):
+    """#1609 requirement 2: an explicit ``backend: fellows`` pin whose job
+    is still PENDING (or otherwise not-running) at the park cap is NOT
+    scancelled — the router returns the live queued handle
+    (``pinned_queue_wait``) and the async poll loop waits it out. Same
+    outcome with the knob set (the pin just reaches the exemption sooner)."""
+    if env_value is None:
+        monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    else:
+        monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, env_value)
+    fellows = _FreeLaneBackend(kind="fellows")
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # never starts — still queued at cap
+        # Must never be consulted: if the exemption failed to fire, the
+        # cancel machine would read live=True + grace 0 and raise
+        # ManualAttentionRequiredError, failing this test loudly.
+        is_live_after_cancel=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=cfg_wait, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert fellows.teardowns == []  # NO scancel
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert result.handle.job_id == "1000"  # the submitted job's live handle
+    assert result.extra == {"pinned_queue_wait": True, "park_cap_seconds": expected_cap}
+    pinned_rows = [a for a in result.attempts if a.outcome == "pinned_queue_wait"]
+    assert len(pinned_rows) == 1
+    assert f"park cap {expected_cap}s exceeded" in pinned_rows[0].detail
+    assert FELLOWS_QUEUE_WAIT_ENV in pinned_rows[0].detail
+    # epm:backend-selected posted with the override reason + machine-readable extra.
+    finals = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert finals
+    assert finals[-1]["extra"].get("pinned_queue_wait") is True
+    assert finals[-1]["extra"].get("park_cap_seconds") == expected_cap
+
+
+@pytest.mark.parametrize("park_reason", ["terminal_before_running", "probe_failures_exceeded"])
+def test_fellows_pin_non_park_cap_reasons_keep_existing_paths(
+    lease_store, monkeypatch, park_reason
+):
+    """The pinned exemption is EXACT-MATCH on ``reason ==
+    "park_cap_exceeded"``: ``terminal_before_running`` (job died in queue)
+    keeps the existing cancel → raise path, and ``probe_failures_exceeded``
+    (job state UNKNOWN, transport down) keeps the existing cancel →
+    manual_attention path — returning an unknown-state handle as
+    "launched" would lie to the poller. Both still run the cancel
+    machinery (teardown recorded); the exemption never fires."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    if park_reason == "terminal_before_running":
+        fellows = _FreeLaneBackend(kind="fellows", poll_status="dead")
+
+        def is_started(_b, _h):
+            return False
+
+        def is_live(_b, _h):
+            return False  # cancel confirms gone -> "cancelled" -> raise
+
+        expected_exc = NoComputeAvailableError
+    else:
+        fellows = _FreeLaneBackend(kind="fellows")
+
+        def is_started(_b, _h):
+            raise RuntimeError("ssh: connect to host charmander port 22: refused")
+
+        def is_live(_b, _h):
+            return True  # cancel cannot confirm dead -> manual_attention
+
+        expected_exc = ManualAttentionRequiredError
+    with pytest.raises(expected_exc) as excinfo:
+        route(
+            _spec(backend="fellows"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            lease_store=lease_store,
+            is_started=is_started,
+            is_live_after_cancel=is_live,
+            config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # The cancel machinery ran — the exemption did NOT fire ...
+    assert len(fellows.teardowns) == 1
+    # ... and no pinned_queue_wait attempt row exists.
+    attempts = excinfo.value.attempts or []
+    assert attempts
+    assert all(a["outcome"] != "pinned_queue_wait" for a in attempts)
+    assert any(a["outcome"] == park_reason for a in attempts)
+
+
+def test_other_slurm_pin_queue_timeout_still_cancels_and_raises(lease_store, monkeypatch):
+    """Regression pin: pinned-lane park semantics on the OTHER SLURM lanes
+    are byte-identical — an explicit nibi pin whose job is still queued at
+    ``cfg.free_wait_seconds`` is cancelled and the dispatch raises, EVEN
+    with the fellows knob set tiny (knob + exemption are fellows-only).
+    The raise message interpolates the lane's RESOLVED cap (nibi -> the
+    cfg value, not the knob)."""
+    monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, "1")
+    calls = {"n": 0}
+
+    def counting_never_started(_b, _h):
+        calls["n"] += 1
+        return False
+
+    nibi = _FreeLaneBackend(kind="nibi")
+    with pytest.raises(NoComputeAvailableError, match="did not start within 2s") as excinfo:
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=counting_never_started,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(nibi.teardowns) == 1  # the cancel still runs on a nibi pin
+    # The park ran to cfg.free_wait_seconds (2 fake-clock seconds = 2 probe
+    # calls), not to the 1-s fellows knob.
+    assert calls["n"] == 2
+    attempts = excinfo.value.attempts or []
+    assert all(a["outcome"] != "pinned_queue_wait" for a in attempts)
+    assert any(a["outcome"] == "park_cap_exceeded" for a in attempts)
 
 
 def test_route_rejects_runpod_in_config_lane_order(lease_store):
