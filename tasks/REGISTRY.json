@@ -4763,8 +4763,8 @@
     "1610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1610",
-      "status": "planning",
+      "path": "tasks/approved/1610",
+      "status": "approved",
       "title": "seam-pin _generate_responses_vllm row schema (contract test + consumer audit)"
     },
     "1611": {
