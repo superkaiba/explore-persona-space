@@ -1643,8 +1643,13 @@ only by a PM-chat directive one wasted implementer round later.
 **Edit-success gate:** when the draft was produced or modified by a SCRIPTED
 edit (the Step 2b/3 revise paths included), `&&`-chain edit → verify
 (positive evidence the revised text is present — grep the draft, or a
-non-empty diff vs the prior version) → the `new-plan-version` persist; an
-edit-script failure aborts the persist loudly, never `;`-chained
+non-empty diff vs the prior version) → the `new-plan-version` persist; the
+edit step is the committed helper `uv run python scripts/plan_patch.py`
+(anchor-normalized apply; fail-loud nearest-match diff on a missing/ambiguous
+anchor — #1631; its printed `PLAN-PATCH APPLIED` line and `--verify-contains`
+double as verify evidence; prefer ≥1-line distinctive anchors), never an
+improvised per-turn anchor script; an edit-script failure aborts the persist
+loudly, never `;`-chained
 (`adversarial-planner` SKILL.md § Edit-success gate; incident #1565: a
 chained persist landed v2 as an unmodified copy of v1 after the edit script
 died on an anchor-text `AssertionError`).

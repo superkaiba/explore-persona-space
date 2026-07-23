@@ -27,6 +27,7 @@ tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py
+tests/test_issue_tick_skill.py
 tests/test_mapping_baselines_wiring_pins.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py
@@ -34,6 +35,7 @@ tests/test_no_dollar_budget_caps.py
 tests/test_no_per_file_raw_completions_loop.py
 tests/test_no_pod_side_task_py_shellout.py
 tests/test_plan_handoff_path_convention.py
+tests/test_plan_patch.py
 tests/test_precommit_gitleaks_merge_scope.py
 tests/test_sparse_worktree.py
 tests/test_step10d_guard3.py

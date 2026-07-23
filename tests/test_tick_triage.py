@@ -53,6 +53,23 @@ def state_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
+# Saved BEFORE the autouse fixture below patches the module attribute, so the
+# #1629 resolution-chain tests can opt back in to the REAL resolver.
+_REAL_TRANSCRIPT_RESOLVER = tick_triage._own_session_transcript_path
+
+
+@pytest.fixture(autouse=True)
+def _neutralize_human_probe(monkeypatch):
+    """AUTOUSE (#1629, consistency WARN 2): the human-activity probe reads
+    AMBIENT state (/proc ancestry from ``os.getpid()``), so a pytest run
+    inside an interactive Claude session would resolve the LIVE session
+    transcript and could flip every pre-existing STALE-REDRIVE expectation
+    to HEALTHY. Neutralize by default; the #1629 suppression tests opt back
+    in by re-patching to their fixture path (or to
+    ``_REAL_TRANSCRIPT_RESOLVER`` for the resolution-chain tests)."""
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: None)
+
+
 # ── compute_issue_verdict ───────────────────────────────────────────────────
 
 
@@ -835,3 +852,417 @@ def test_breadcrumb_parse_on_real_931_note():
         "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-931/logs/"
         "issue931_author_blocked_folds_production.log"
     )
+
+
+# ── human-activity screen (#1629) ───────────────────────────────────────────
+# Transcript fixtures use the millisecond ISO timestamp form real transcripts
+# carry (`2026-07-23T06:27:15.951Z`; parse_event_ts handles it via
+# fromisoformat after the Z replace).
+
+
+def _iso_ms(epoch: float) -> str:
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _transcript_row(kind: str, age_s: float, text: str = "hello") -> dict:
+    """A transcript JSONL row in one of the measured §4.2 shapes:
+    ``human`` / ``cron`` / ``meta`` / ``tool_result`` / ``interrupt``."""
+    base: dict = {
+        "type": "user",
+        "isMeta": None,
+        "userType": "external",  # measured NON-discriminator: external on human AND cron
+        "timestamp": _iso_ms(NOW - age_s),
+    }
+    if kind == "human":
+        base["message"] = {"role": "user", "content": text}
+    elif kind == "cron":
+        base["message"] = {
+            "role": "user",
+            "content": (
+                "<command-message>issue-tick is running…</command-message>\n"
+                "<command-name>/issue-tick</command-name>\n<command-args>1629</command-args>"
+            ),
+        }
+    elif kind == "meta":
+        base["isMeta"] = True
+        base["message"] = {
+            "role": "user",
+            "content": [{"type": "text", "text": f"Base directory for this skill: {text}"}],
+        }
+    elif kind == "tool_result":
+        base["message"] = {
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": "toolu_x", "content": text}],
+        }
+    elif kind == "interrupt":
+        base["message"] = {
+            "role": "user",
+            "content": [{"type": "text", "text": "[Request interrupted by user]"}],
+        }
+    elif kind == "notification":
+        # Agent-tool completion notification / spawn brief (r2 Must-Fix):
+        # a plain-STRING user row starting with the literal
+        # <task-notification> — the dominant string-row class in autonomous
+        # transcripts (149/149 measured across two transcripts).
+        base["message"] = {
+            "role": "user",
+            "content": (
+                f"<task-notification>Background task bash_1 completed</task-notification>\n{text}"
+            ),
+        }
+    else:
+        raise ValueError(kind)
+    return base
+
+
+def _write_transcript(tmp_path: Path, rows: list, name: str = "transcript.jsonl") -> str:
+    path = tmp_path / name
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return str(path)
+
+
+def test_human_activity_suppresses_stale_redrive(state_dir, monkeypatch, tmp_path):
+    """Durability pin (#1629): ACTIVE status + stale marker + a fresh human
+    transcript row => HEALTHY with the `human-active` reason prefix."""
+    path = _write_transcript(tmp_path, [_transcript_row("human", 900)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(1629, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "human-active" in reason
+
+
+@pytest.mark.parametrize("status", ["planning", "followups_running"])
+def test_human_activity_suppresses_at_park_status(state_dir, monkeypatch, tmp_path, status):
+    path = _write_transcript(tmp_path, [_transcript_row("human", 900)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, status, [_event("epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(1629, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "human-active" in reason
+
+
+def test_cron_prompt_only_transcript_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """Fresh cron-injected slash-command, skill-load meta, and tool_result
+    rows are ALL automation — a transcript with only those keeps the
+    STALE-REDRIVE (the incident's cron row must never read as human)."""
+    rows = [
+        _transcript_row("cron", 900),
+        _transcript_row("meta", 890),
+        _transcript_row("tool_result", 880),
+    ]
+    path = _write_transcript(tmp_path, rows)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(1629, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_agent_notification_row_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """r2 Must-Fix pin (fresh-ts fixture): a FRESH Agent-tool
+    `<task-notification>` plain-string user row — the near-continuous
+    row class during agent-heavy autonomous work — classifies automation
+    and never suppresses the STALE-REDRIVE."""
+    path = _write_transcript(tmp_path, [_transcript_row("notification", 60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(1629, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_debug_error_rung_on_raising_probe(state_dir, monkeypatch, capsys):
+    """r2 Minor: with debug ON, a raising probe emits an `error=<ExcType>`
+    rung (type name only — content invariant #1000) and still returns
+    None (fail toward ticking)."""
+    monkeypatch.setenv("EPM_TICK_HUMAN_PROBE_DEBUG", "1")
+
+    def boom():
+        raise RuntimeError("resolution blew up")
+
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", boom)
+    assert tick_triage.human_activity_reason(NOW) is None
+    err = capsys.readouterr().err
+    assert "[human-probe] error=RuntimeError" in err
+    assert "resolution blew up" not in err  # exception TYPE only, never the message
+
+
+def test_resolution_failure_fails_toward_ticking(state_dir, monkeypatch, capsys):
+    """Resolution returning None AND raising both fall through to
+    STALE-REDRIVE; the exit-code contract is intact (main() returns 0)."""
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    # (a) resolution miss (the autouse default: _own_session_transcript_path -> None)
+    verdict, _ = tick_triage.triage(201, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+    # (b) resolution RAISES -> the blanket guard eats it -> still STALE-REDRIVE
+    def boom():
+        raise RuntimeError("resolution blew up")
+
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", boom)
+    rc = tick_triage.main(["201"])
+    out = capsys.readouterr().out.strip()
+    assert rc == 0
+    assert out.startswith("STALE-REDRIVE")
+
+
+def test_kill_switch_disables_human_probe(state_dir, monkeypatch, tmp_path):
+    monkeypatch.setenv("EPM_TICK_HUMAN_ACTIVE_PROBE", "0")
+    path = _write_transcript(tmp_path, [_transcript_row("human", 60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(1629, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_window_boundary(monkeypatch, tmp_path):
+    """Per-row window test: age just over the window never suppresses, just
+    under does, and a future-dated (clock-skewed) row never suppresses."""
+    window = tick_triage.human_active_s()
+    over = _write_transcript(tmp_path, [_transcript_row("human", window + 60)], name="over.jsonl")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: over)
+    assert tick_triage.human_activity_reason(NOW) is None
+    under = _write_transcript(tmp_path, [_transcript_row("human", window - 60)], name="under.jsonl")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: under)
+    reason = tick_triage.human_activity_reason(NOW)
+    assert reason is not None and "human-active" in reason
+    future = _write_transcript(tmp_path, [_transcript_row("human", -120)], name="future.jsonl")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: future)
+    assert tick_triage.human_activity_reason(NOW) is None
+
+
+def test_mixed_clock_skew_rows(monkeypatch, tmp_path):
+    """Any-row-in-window semantics pin: a future-dated human row (last in the
+    file — the position newest-row-wins would latch) can never mask a valid
+    fresh row earlier in the tail."""
+    rows = [_transcript_row("human", 300), _transcript_row("human", -600)]
+    path = _write_transcript(tmp_path, rows)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    reason = tick_triage.human_activity_reason(NOW)
+    assert reason is not None and "human-active" in reason
+
+
+def test_interrupt_row_counts_as_human(state_dir, monkeypatch, tmp_path):
+    """The `[Request interrupted by user]` list-text row is a direct human
+    action (the incident's 06:27:17 interrupt row) => suppression."""
+    path = _write_transcript(tmp_path, [_transcript_row("interrupt", 300)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(1629, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "human-active" in reason
+
+
+def test_terminal_and_gate_verdicts_unchanged_when_human_active(state_dir, monkeypatch, tmp_path):
+    """Teardown verdicts are deliberately NOT suppressed — the teardown is
+    what stops future interruptions (pro-human)."""
+    path = _write_transcript(tmp_path, [_transcript_row("human", 60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "awaiting_promotion", [_event("epm:progress v1", 60)])
+    verdict, _ = tick_triage.triage(301, "issue")
+    assert verdict == "GATE-TRANSITION", "first gate crossing fires the push branch"
+    verdict, _ = tick_triage.triage(301, "issue")
+    assert verdict == "TERMINAL"
+
+
+@pytest.mark.parametrize(
+    ("row", "expected"),
+    [
+        (_transcript_row("human", 60), True),
+        (_transcript_row("human", 60, text="what does this even mean"), True),
+        (_transcript_row("interrupt", 60), True),
+        (_transcript_row("cron", 60), False),
+        (_transcript_row("meta", 60), False),
+        (_transcript_row("tool_result", 60), False),
+        ("not a dict", False),
+        (42, False),
+        (None, False),
+        ({"type": "assistant", "message": {"role": "assistant", "content": "hi"}}, False),
+        ({"type": "user"}, False),  # missing message
+        ({"type": "user", "message": "not a dict"}, False),
+        ({"type": "user", "message": {"role": "assistant", "content": "hi"}}, False),
+        ({"type": "user", "message": {"role": "user", "content": ""}}, False),
+        ({"type": "user", "message": {"role": "user", "content": "   "}}, False),
+        ({"type": "user", "message": {"role": "user", "content": None}}, False),
+        (
+            {
+                "type": "user",
+                "message": {
+                    "role": "user",
+                    "content": (
+                        "<command-message>x</command-message>\n<command-name>/x</command-name>"
+                    ),
+                },
+            },
+            False,
+        ),
+        (
+            {"type": "user", "message": {"role": "user", "content": "<local-command-stdout>x"}},
+            False,
+        ),
+        (  # r2 Must-Fix pin: Agent-tool <task-notification> string rows are automation
+            _transcript_row("notification", 60),
+            False,
+        ),
+        (
+            {
+                "type": "user",
+                "message": {"role": "user", "content": "<task-notification>Agent brief…"},
+            },
+            False,
+        ),
+        (
+            {"type": "user", "isMeta": True, "message": {"role": "user", "content": "hello"}},
+            False,
+        ),
+        (  # a plain list text block is NOT the interrupt row => automation
+            {
+                "type": "user",
+                "message": {"role": "user", "content": [{"type": "text", "text": "plain text"}]},
+            },
+            False,
+        ),
+    ],
+)
+def test_is_human_transcript_row_classifier(row, expected):
+    assert tick_triage.is_human_transcript_row(row) is expected
+
+
+def test_human_reason_free_of_transcript_text(state_dir, monkeypatch, tmp_path):
+    """Content invariant #1000: the verdict reason carries ages only — never
+    the human message text (the reason line prints into an LLM tick turn)."""
+    secret = "SECRET-HUMAN-MESSAGE-TEXT-xyzzy"
+    path = _write_transcript(tmp_path, [_transcript_row("human", 300, text=secret)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(401, "issue")
+    assert verdict == "HEALTHY" and "human-active" in reason
+    assert secret not in reason
+
+
+def test_tail_read_bounded_finds_recent_rows(monkeypatch, tmp_path):
+    """Documents the 256 KB bound + the seek-from-END shape (#1287): a human
+    row at EOF of an over-bound transcript IS seen; a human row only BEFORE
+    the tail boundary (with an automation tail after it) is NOT."""
+    filler = [_transcript_row("tool_result", 400, text="x" * 2048) for _ in range(140)]
+    at_eof = _write_transcript(tmp_path, [*filler, _transcript_row("human", 300)], name="a.jsonl")
+    assert os.stat(at_eof).st_size > tick_triage.TRANSCRIPT_TAIL_BYTES
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: at_eof)
+    reason = tick_triage.human_activity_reason(NOW)
+    assert reason is not None and "human-active" in reason
+    before = _write_transcript(tmp_path, [_transcript_row("human", 300), *filler], name="b.jsonl")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: before)
+    assert tick_triage.human_activity_reason(NOW) is None
+
+
+def test_liveness_screen_takes_precedence(state_dir, monkeypatch, tmp_path):
+    """Ordering pin: the #1051 liveness screen runs FIRST — when both screens
+    have fresh evidence the reason is the liveness one (byte-preserving the
+    existing behavior; the human screen fires only on a liveness miss)."""
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    path = _write_transcript(tmp_path, [_transcript_row("human", 300)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_crumb(7200, pid=4242)])
+    verdict, reason = tick_triage.triage(501, "issue")
+    assert verdict == "HEALTHY"
+    assert "detached phase alive" in reason
+    assert "human-active" not in reason
+
+
+def test_campaign_kind_skips_human_probe(state_dir, monkeypatch, tmp_path):
+    """Scope pin: the campaign branch never consults the human-activity
+    screen (mirrors the #1051 campaign exclusion)."""
+    path = _write_transcript(tmp_path, [_transcript_row("human", 300)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    monkeypatch.setattr(tick_triage, "load_campaign_state", lambda _n: {})
+    monkeypatch.setattr(tick_triage, "load_children", lambda _n: [])
+    _patch_issue_state(monkeypatch, "running", [_event("epm:campaign-decision v1", 7200)])
+    verdict, _ = tick_triage.triage(601, "campaign")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_size_guard_boundary(monkeypatch, tmp_path):
+    """REAL _own_session_transcript_path with only the OS boundary faked:
+    a log at the byte cap resolves; one byte over the cap returns None
+    (both sides of EPM_TICK_HUMAN_LOG_MAX_BYTES; fail SAFE = skip)."""
+    import session_resolver
+
+    transcript = _write_transcript(tmp_path, [_transcript_row("human", 300)])
+    log = tmp_path / "2026-07-23-00-00-00-pid-12345.log"
+    log.write_text(json.dumps({"transcript_path": transcript}) + "\n")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", _REAL_TRANSCRIPT_RESOLVER)
+    monkeypatch.setattr(tick_triage, "_own_node_wrapper_pid", lambda: 12345)
+    monkeypatch.setattr(session_resolver, "_find_happy_log_for_node", lambda pid, now=None: log)
+    size = log.stat().st_size
+    monkeypatch.setenv("EPM_TICK_HUMAN_LOG_MAX_BYTES", str(size))  # log <= cap => resolves
+    assert tick_triage._own_session_transcript_path() == transcript
+    monkeypatch.setenv("EPM_TICK_HUMAN_LOG_MAX_BYTES", str(size - 1))  # log > cap => None
+    assert tick_triage._own_session_transcript_path() is None
+
+
+def test_transcript_extract_then_isfile_leg(monkeypatch, tmp_path):
+    """REAL _own_session_transcript_path: the extracted transcript_path is
+    returned iff it exists on disk; a missing file is a resolution miss."""
+    import session_resolver
+
+    transcript = _write_transcript(tmp_path, [_transcript_row("human", 300)])
+    log = tmp_path / "2026-07-23-00-00-00-pid-777.log"
+    log.write_text(json.dumps({"transcript_path": transcript}) + "\n")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", _REAL_TRANSCRIPT_RESOLVER)
+    monkeypatch.setattr(tick_triage, "_own_node_wrapper_pid", lambda: 777)
+    monkeypatch.setattr(session_resolver, "_find_happy_log_for_node", lambda pid, now=None: log)
+    assert tick_triage._own_session_transcript_path() == transcript
+    log.write_text(json.dumps({"transcript_path": str(tmp_path / "gone.jsonl")}) + "\n")
+    assert tick_triage._own_session_transcript_path() is None
+
+
+def test_ancestry_walk_with_faked_proc(monkeypatch):
+    """REAL _own_node_wrapper_pid over a synthetic /proc chain
+    (python -> uv -> bash -> claude -> node): returns the node wrapper pid;
+    a chain with no claude ancestor and a chain deeper than the cap both
+    return None."""
+    import session_resolver
+
+    me = os.getpid()
+    ppids = {me: 100, 100: 200, 200: 300, 300: 400, 400: 1}
+    comms = {me: "python3", 100: "uv", 200: "bash", 300: "claude", 400: "node"}
+    monkeypatch.setattr(tick_triage, "_proc_ppid", lambda pid: ppids.get(pid))
+    monkeypatch.setattr(session_resolver, "_read_proc_comm", lambda pid: comms.get(pid))
+    assert tick_triage._own_node_wrapper_pid() == 400
+
+    no_claude = {me: "python3", 100: "uv", 200: "bash", 300: "sshd", 400: "systemd"}
+    monkeypatch.setattr(session_resolver, "_read_proc_comm", lambda pid: no_claude.get(pid))
+    assert tick_triage._own_node_wrapper_pid() is None
+
+    deep_ppids: dict[int, int] = {}
+    deep_comms: dict[int, str] = {}
+    pid = me
+    for i in range(tick_triage._ANCESTRY_MAX_DEPTH + 3):
+        nxt = 10_000 + i
+        deep_ppids[pid] = nxt
+        deep_comms[pid] = "bash"
+        pid = nxt
+    deep_comms[pid] = "claude"  # claude sits DEEPER than the walk cap
+    deep_ppids[pid] = 99_999
+    monkeypatch.setattr(tick_triage, "_proc_ppid", lambda p: deep_ppids.get(p))
+    monkeypatch.setattr(session_resolver, "_read_proc_comm", lambda p: deep_comms.get(p))
+    assert tick_triage._own_node_wrapper_pid() is None
+
+
+def test_debug_telemetry_line(monkeypatch, tmp_path, capsys):
+    """EPM_TICK_HUMAN_PROBE_DEBUG=1 emits one stderr [human-probe] line with
+    path/counts/ages and NEVER transcript message text; default OFF emits
+    nothing (zero production output)."""
+    secret = "DEBUG-SECRET-MESSAGE-TEXT"
+    path = _write_transcript(tmp_path, [_transcript_row("human", 300, text=secret)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    monkeypatch.delenv("EPM_TICK_HUMAN_PROBE_DEBUG", raising=False)
+    assert tick_triage.human_activity_reason(NOW) is not None
+    assert capsys.readouterr().err == ""
+    monkeypatch.setenv("EPM_TICK_HUMAN_PROBE_DEBUG", "1")
+    assert tick_triage.human_activity_reason(NOW) is not None
+    err = capsys.readouterr().err
+    assert "[human-probe]" in err
+    assert path in err and "human=1" in err and "verdict=suppress" in err
+    assert secret not in err

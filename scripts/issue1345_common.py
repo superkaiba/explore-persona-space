@@ -145,8 +145,20 @@ MODEL_SLUG = {"instruct": "instruct", "pretrained": "base"}  # plan §6.5 file s
 PAIRED_STORIES_VARIANTS = (
     "conversation_paired_stories",  # v8 ARIA scope (superseded; stays addressable)
     "conversation_paired_stories_assistant",  # v9 Assistant scope (plan v9)
+    # base-measured round: instruct WRITES the wrappers embedding the shared
+    # instruct-generated track_s answers (load_paired_pool, model-independent);
+    # only the MEASURED/CAPTURE model is the pretrained (base) Qwen2.5-7B. This
+    # is the single-variable (measured-model) sibling of the v9 Assistant scope
+    # — the embedded answer text is identical to it AND to the base r1/r2
+    # comparator stores, so the framing contrast stays clean.
+    "conversation_paired_stories_assistant_base",  # base-measured scope
 )
 HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
+# The base-measured scope is the ONLY variant whose story arm measures the
+# pretrained model (R4_MODELS below keys off this); the two instruct scopes
+# keep the instruct-only story arm byte-identical.
+BASE_PAIRED_STORIES_VARIANTS = ("conversation_paired_stories_assistant_base",)
+HAS_BASE_PAIRED = VARIANT in BASE_PAIRED_STORIES_VARIANTS
 # story-slot-position-ablation round (plan v10 §4): re-reads the landed v9
 # paired-story corpus at 4 extra context-slot positions in ONE TF forward per
 # story. EXPLICIT membership (same rule as PAIRED_STORIES_VARIANTS — never a
@@ -181,9 +193,15 @@ STORY_REGIME_ARMED = HAS_R4 or HAS_ONPOLICY_STORY
 # REGIMES, so `regime == "r4"` simply never matches there); STORY_REGIME_ARMED
 # is the flag that gates whether the story machinery runs at all.
 STORY_REGIME = "r4op" if HAS_ONPOLICY_STORY else "r4"
-# Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
-# 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
-R4_MODELS = ("instruct",)
+# R4_MODELS names WHICH model carries the story (r4/r4op) arm. The two instruct
+# scopes measure instruct (base FREE-FORM story yield ≈19% made a base-WRITTEN
+# story arm N/A by scope — plan v8 §5/§12.6). The base-measured scope removes
+# that blocker: instruct WRITES the wrappers, so base only has to be MEASURED
+# (teacher-forced capture of the instruct-written story), and the r4/r4op arm
+# is the pretrained model. Single-variable vs the instruct scope: same wrapper
+# writer, same embedded (shared instruct-generated track_s) answer text, only
+# the capture model differs.
+R4_MODELS = ("pretrained",) if HAS_BASE_PAIRED else ("instruct",)
 if HAS_ONPOLICY_STORY:
     # on-policy round: chat (r1) + plain-text/no-template (r2) + on-policy paired
     # stories (r4op, PRIMARY). r3 free-form is out of scope (no gen this round);
