@@ -4568,7 +4568,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1586",
       "status": "interpreting",
-      "title": "Matched-install LoRA vs full fine-tune method comparison for sycophancy / impolite / casual (+ marker second seed) at the persona context"
+      "title": "Full fine-tuning's extra activation shift at matched install is behavior-dependent, not a universal method signature (MODERATE confidence)"
     },
     "1587": {
       "has_clean_result": false,
