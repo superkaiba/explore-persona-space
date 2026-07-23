@@ -13,6 +13,7 @@ round-added function stubbed somewhere here also has a body-executing test
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
 from unittest.mock import create_autospec
@@ -845,3 +846,78 @@ def test_figures_nondefault_roots_require_nondefault_figdir(tmp_path):
     with pytest.raises(SystemExit) as ei:
         figs.main(["--geo-root", str(tmp_path / "fu_geo")])
     assert ei.value.code == 2
+
+
+# ── sibling-smoke out-root reap (fu crash r3: epm:failure v9 quota starvation) ─
+
+
+def test_default_smoke_root_derivation_matches_build_cfg():
+    # real body: name is base-independent; base follows the /workspace probe
+    assert d.default_smoke_root("caveatfix").name == "issue-1586-fu-smoke"
+    assert d.default_smoke_root(None).name == "issue-1586-smoke"
+    base = Path("/workspace") if Path("/workspace").is_dir() else Path("/tmp")
+    assert d.default_smoke_root("caveatfix").parent == base
+    # build_cfg's smoke default is the SAME derivation (no writer/reaper drift)
+    args = d._parse_args(["--mode", "smoke", "--fu", "caveatfix"])
+    assert d.build_cfg(args).out_root == d.default_smoke_root("caveatfix")
+
+
+def test_full_mode_reaps_populated_smoke_root(tmp_path):
+    smoke_root = tmp_path / "issue-1586-fu-smoke"
+    (smoke_root / "mk-ft-po-s137" / "train").mkdir(parents=True)
+    (smoke_root / "mk-ft-po-s137" / "train" / "ckpt.bin").write_bytes(b"x" * 4096)
+    cfg = _cfg(tmp_path)  # smoke=False, fu="caveatfix"
+    d.reap_sibling_smoke_root(cfg, smoke_root=smoke_root)
+    assert not smoke_root.exists()
+
+
+def test_smoke_mode_never_reaps_its_own_root(tmp_path):
+    smoke_root = tmp_path / "issue-1586-fu-smoke"
+    smoke_root.mkdir()
+    (smoke_root / "stage_done.json").write_text("{}")
+    cfg = _cfg(tmp_path, smoke=True, out_root=smoke_root)
+    d.reap_sibling_smoke_root(cfg, smoke_root=smoke_root)
+    assert (smoke_root / "stage_done.json").exists()
+
+
+def test_reap_skips_when_out_root_is_the_smoke_root(tmp_path):
+    # a full run (mis)pointed at the smoke path must never delete its live out_root
+    smoke_root = tmp_path / "issue-1586-fu-smoke"
+    smoke_root.mkdir()
+    cfg = _cfg(tmp_path, out_root=smoke_root)
+    d.reap_sibling_smoke_root(cfg, smoke_root=smoke_root)
+    assert smoke_root.exists()
+
+
+def test_reap_absent_root_logs_and_noops(tmp_path, caplog):
+    # the "nothing to reap" line is the relaunch's fix-engaged signal
+    cfg = _cfg(tmp_path)
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        d.reap_sibling_smoke_root(cfg, smoke_root=tmp_path / "issue-1586-fu-smoke")
+    assert any("nothing to reap" in rec.message for rec in caplog.records)
+
+
+def test_reap_wired_at_p0_stage_entry_before_headroom(tmp_path, monkeypatch):
+    # behavioral ordering pin: the smoke root is gone BY THE TIME the headroom
+    # assert runs (the crash site's guard class), on the resumed-stage path
+    smoke_root = tmp_path / "issue-1586-fu-smoke"
+    (smoke_root / "cell").mkdir(parents=True)
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True)
+    (cfg.out_root / "stage_done.json").write_text('{"resumed": true}')
+    seen = {}
+
+    def _recording_headroom(c, phase):
+        seen["phase"] = phase
+        seen["smoke_root_gone_at_headroom"] = not smoke_root.exists()
+
+    monkeypatch.setattr(d, "_headroom", _recording_headroom)
+    monkeypatch.setattr(d, "default_smoke_root", lambda fu: smoke_root)
+    out = d.phase_stage(cfg)
+    assert out == {"resumed": True}
+    assert seen == {"phase": "p0_stage", "smoke_root_gone_at_headroom": True}
+    assert not smoke_root.exists()
+    # production call site derives the root itself (no explicit override)
+    import inspect
+
+    assert "smoke_root=" not in inspect.getsource(d.phase_stage)
