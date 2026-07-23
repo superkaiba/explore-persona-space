@@ -8624,6 +8624,43 @@ suite directly and posts an `epm:test-verdict` event with the result.
       FOREGROUND smokes ONLY — wrapping this gate in any ≤600s bound is the
       #991/#996/#906 kill class (exit 143 at 480-540s). The ONLY wedge bound
       is the selector-printed `timeout --kill-after=60s <T>s` prefix.
+
+      **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
+      9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
+      the launch call itself: the launch command's argv carries the
+      unbracketed junit path and would phantom-match its own shell — probe
+      for a live gate: `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
+      per the gotchas.md self-match entry; the junit path rides the argv of
+      the gate pytest, its `timeout` wrapper, its enclosing background
+      shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
+      sibling issue's gate never matches, and a recycled pid cannot
+      false-match because pgrep matches live argv, not pid identity). A
+      non-empty result = a gate for THIS issue is STILL RUNNING: do NOT
+      launch — the `rm -f` preamble below would clobber the live run's
+      junit/rc mid-run (#1606: a second gate launched into a live one left 4
+      live gate pids and fired two fail-CLOSED verdict blocks, ~12 min
+      churn). Default to WAITING for exit — the harness notification on your
+      own background call, or (bg handle lost, e.g. after a respawn) a
+      Monitor until-loop keyed on the probe, elapsed-capped for consistency
+      with the § Long-phase heartbeat 45-min segmentation:
+      `until ! pgrep -f 'step9c-junit-issue-<N>[.]xml' >/dev/null || [ $SECONDS -gt 2700 ]; do sleep 15; done`
+      (a still-non-empty probe at the cap re-arms a fresh segment) — then
+      read the result via the normal completion-read; the in-block
+      `timeout` wedge bounds guarantee the wait terminates. Kill FIRST only
+      on the recovery arms' TRIGGER — the run's completion signal fired yet
+      the rc/verdict file is missing, or the run is wedged past its bound
+      (NOT merely "its launching call is dead": post-respawn the launching
+      call is dead while the gate is healthy and will still write its rc) —
+      per crash-fix-rounds § Kill-before-relaunch, and re-probe empty before
+      launching. Corollary
+      (CLAUDE.md § Monitoring re-run discipline, restated here because
+      #1606's improvised Monitor violated it): any improvised gate wait keys
+      "done" on **process exit** — the probe returning empty —
+      NEVER on rc/verdict-file existence alone (the rc file is written
+      only at process exit; an existence-keyed Monitor false-fired
+      "done" twice mid-run in #1606). The same probe-then-launch rule governs 1c, 1d
+      (compare), and both Step 10d gate blocks — each names its site pattern
+      in place.
       ```bash
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
@@ -8702,6 +8739,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
       SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
+      — including 1b's **Single-flight probe (#1606)**, foreground-first —
       (a 60m run is 6x the foreground tool cap):
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
@@ -8788,6 +8826,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
       1b's foreground verdict read and the zero-collected guard run
       between them, and a folded call would burn up to ~77 min of
       pristine runs on a run those guards fail in seconds.
+
+      **Single-flight probe (#1606)** first, per the 1b statement: a
+      separate foreground `pgrep -af 'step9c-junit-issue-<N>[.]xml'` — a
+      live match (the 1b/1c pytest still running, or a prior compare still
+      consuming the junit) means WAIT/reap per 1b BEFORE this launch: the
+      compare-triplet `rm -f` below would clobber a live compare's outputs,
+      and compare must never read a junit a live pytest is still writing.
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       # earlyoom-protect the compare (#1045; FAIL-OPEN — never block the verdict on
@@ -10007,6 +10052,17 @@ tests BEFORE anything lands:
   any ≤600s foreground bound, or running it foreground, SIGKILLs the
   whole gate shell mid-lint — #1245), then read the verdict in a FRESH
   foreground call from the FILE (completion-read below).
+
+  **Single-flight probe (#1606) — before (re)launching this gate, including
+  every "re-run the gate ONCE" recovery path.** In a separate FOREGROUND
+  call: `pgrep -af 'issue-<N>-lint-gate-tre[e]'` (the same bracketed,
+  exact-issue-scoped pattern the completion-read's recovery arm uses — the
+  gate-tree path rides the whole background call's argv). A non-empty
+  result = this issue's gate is STILL RUNNING: do NOT relaunch — the
+  stale-verdict `rm -f` below would clobber the live run's verdict. WAIT or
+  reap per the Step 9c 1b single-flight statement, and key any improvised
+  wait on **process exit** (the probe returning empty), never on
+  verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
 
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
@@ -11330,6 +11386,17 @@ Decision tree:
   checkout itself fails** bullet below: post `epm:merge-failed v1` with the
   abort line, surface ONE line in chat, CONTINUE — never fall through to
   the checkout/stage/push block, and never post `epm:merged`.
+
+  **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
+  separate foreground
+  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'`.
+  An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
+  running — WAIT for exit, never relaunch into it (the outcome-sentinel
+  `rm -f` below would clobber it, and the root holds ITS staged payload). A
+  `workflow_lint.py`-only hit is AMBIGUOUS (root-copy lint invocations are
+  not issue-scoped in argv — possibly a SIBLING session's root lint or a
+  9a-ter inline gate): WAIT for exit, never kill — the same rule as this
+  block's completion-read recovery arm.
 
   Then, from the **repo root on `main`** (never switch the branch
   there), checkout each path from the branch, stage by EXPLICIT PATH

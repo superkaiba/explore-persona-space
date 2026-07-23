@@ -283,6 +283,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
     "tests/test_issue_skill_forensics_ingest_pointer.py",
+    # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
+    "tests/test_issue_skill_gate_single_flight.py",
     # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
     # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
     "tests/test_issue_skill_inline_measurement_duties.py",
