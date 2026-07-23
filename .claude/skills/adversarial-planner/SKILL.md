@@ -113,7 +113,16 @@ landed. Verify = grep the draft for the revised text
 a non-empty diff vs the prior persisted version
 (`! diff -q <draft> "$(uv run python scripts/task.py find <N>)/plans/plan.md"`
 — the `plan.md` symlink still points at v<K-1> until the persist; identical
-bytes mean the edit silently no-oped); a bare exit 0 is NOT evidence. Never
+bytes mean the edit silently no-oped); a bare exit 0 is NOT evidence. Run the
+EDIT step via the committed helper `uv run python scripts/plan_patch.py
+<draft> --anchor-file <a.txt> --replace-file <r.txt>` (exact-then-normalized
+anchor resolution — whitespace-collapsed, then case-tolerant —
+unique-match-only; fails loud with a nearest-match diff on a missing/ambiguous
+anchor; #1631) instead of improvising a per-turn python/sed anchor script —
+anchor byte-identity drift cost ≥4 re-derive rounds across 3 sessions on
+2026-07-22; prefer anchors carrying ≥1 full line of distinctive context, and
+let the verify step grep the helper's printed `PLAN-PATCH APPLIED` line and/or
+pass `--verify-contains` in addition to the draft grep. Never
 `;`-chain the edit and the persist, and never run the persist inside the same
 script before its asserts have executed. On ANY edit failure, abort LOUDLY
 without persisting — print `EDIT FAILED — not persisting`, Read the CURRENT

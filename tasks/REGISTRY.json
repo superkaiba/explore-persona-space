@@ -4924,29 +4924,29 @@
     "1631": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1631",
-      "status": "reviewing",
+      "path": "tasks/completed/1631",
+      "status": "completed",
       "title": "daily-fix: committed plan-patch helper for anchor edits"
     },
     "1632": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1632",
-      "status": "running",
+      "path": "tasks/reviewing/1632",
+      "status": "reviewing",
       "title": "daily-fix: exclude /tmp scratch from ruff format hook"
     },
     "1633": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1633",
-      "status": "running",
+      "path": "tasks/completed/1633",
+      "status": "completed",
       "title": "daily-fix: down-width probe for stalled multi-arm dispatch"
     },
     "1634": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1634",
-      "status": "running",
+      "path": "tasks/reviewing/1634",
+      "status": "reviewing",
       "title": "daily-fix: pid file from launch chain child, never pgrep"
     },
     "1635": {
@@ -4973,8 +4973,8 @@
     "1638": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1638",
-      "status": "proposed",
+      "path": "tasks/completed/1638",
+      "status": "completed",
       "title": "workflow-fix: extend pre_reg head-noun list for the #1586 'registered layer' escape"
     },
     "1639": {

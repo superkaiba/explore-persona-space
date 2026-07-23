@@ -1,0 +1,762 @@
+{
+  "commit": "5cbe74f897",
+  "created": "2026-07-23T19:00:25Z",
+  "figsize": [
+    12.299999999999999,
+    9.899999999999999
+  ],
+  "points": [
+    {
+      "category": "raw\nprojection",
+      "hallucination\nPearson r": 0.41424242948618545,
+      "error": 0.11059602226554993,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "map\n+\nprojection",
+      "hallucination\nPearson r": 0.45196457427649167,
+      "error": 0.07958551153802029,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "hallucination\nPearson r": 0.6980471337167093,
+      "error": 0.13751965194948534,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "hallucination\nPearson r": 0.30065727963264566,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "hallucination\nPearson r": 0.37126598878324424,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "hallucination\nPearson r": 0.5721437039088489,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "hallucination\nPearson r": 0.5218493241637455,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "hallucination\nPearson r": 0.5304370118592848,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "hallucination\nPearson r": 0.8471830078078196,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "raw\nprojection",
+      "y": -0.10278046577628802,
+      "error": 0.022015295737805272,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": 0.3541728432954156,
+      "error": 0.0163007731933065,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": 0.8641252395477983,
+      "error": 0.013044361741892108,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": -0.12513588774055134,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.3376837621430661,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.8507173221936027,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": -0.0811052962649408,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.3702853085296791,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.876806045677387,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "raw\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": 0.009062541043387327,
+      "error": 0.028890637270393368,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -0.019715565706183567,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.03806570883460317,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "category": "raw\nprojection",
+      "sycophancy\nPearson r": 0.6023495002275518,
+      "error": 0.05320801271547776,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "map\n+\nprojection",
+      "sycophancy\nPearson r": 0.6403132348742648,
+      "error": 0.029794959276125133,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "sycophancy\nPearson r": 0.6316728451445534,
+      "error": 0.1613148307593768,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "sycophancy\nPearson r": 0.5486117711952504,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "sycophancy\nPearson r": 0.6094689089197862,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "sycophancy\nPearson r": 0.47814497241725973,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "sycophancy\nPearson r": 0.6550277966262059,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "sycophancy\nPearson r": 0.6690588274720365,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "sycophancy\nPearson r": 0.8007746339360133,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "category": "raw\nprojection",
+      "y": 0.04216345437932784,
+      "error": 0.021465544045370613,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": -0.017935755557353505,
+      "error": 0.01498150246268589,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": 0.7601310091531392,
+      "error": 0.020768606493893227,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.01995449563245208,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": -0.03282468187391166,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.7376137239066924,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.0628855837231933,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": -0.0028616769485398773,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.7791509368944789,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "category": "raw\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": -0.012250608802857634,
+      "error": 0.0264763800903463,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": -0.03860430810811961,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 0.014348452072572994,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "category": "raw\nprojection",
+      "evil\nPearson r": 0.17225165704905313,
+      "error": 0.22054077390785579,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "map\n+\nprojection",
+      "evil\nPearson r": -0.003366478606171071,
+      "error": 0.18526528768350647,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "evil\nPearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "evil\nPearson r": -0.06656688168628616,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "evil\nPearson r": -0.1953776262736525,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "evil\nPearson r": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "evil\nPearson r": 0.3745146661294254,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "evil\nPearson r": 0.17515294909336046,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "evil\nPearson r": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "category": "raw\nprojection",
+      "y": 0.015703675786632974,
+      "error": 0.03388202387129266,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": 0.006985913870422288,
+      "error": 0.03147229142322698,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": -0.01186388455574694,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": -0.01797668100131919,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.05590016318683839,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.04496790184513478,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "category": "raw\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "map\n+\nprojection",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "direct\nin-corpus\nprobe",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.009062541043387327,
+      "series": "LMSYS ceiling r=0.009",
+      "_kind": "line",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 87,
+  "text": {
+    "suptitle": "Behavior monitoring: raw projection vs map+projection vs direct in-corpus probe",
+    "fig_texts": [
+      "Metric: Pearson r (PV rig = within-condition; persona/LMSYS = group-CV / cluster-boot, L14). map+projection = <h(v_C), r_B>, best map n1m_mlp_w32768. raw = <v_C, r_B>. Pending cells: pooled probe run partial (hallucination-L14 complete)."
+    ],
+    "axes": [
+      {
+        "title_left": "PV rig (#779)\n(L19, n=260)",
+        "ylabel": "hallucination\nPearson r",
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Persona corpus (#1092)\n(L14, n=7646)",
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "LMSYS (real-user)\n(L14, n=4593)",
+        "legend_labels": [
+          "LMSYS ceiling r=0.009"
+        ],
+        "annotations": [
+          "N/A\n(pending)",
+          "N/A\n(pending)"
+        ],
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "PV rig (#779)\n(L26, n=260)",
+        "ylabel": "sycophancy\nPearson r",
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Persona corpus (#1092)\n(L14, n=7652)",
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "LMSYS (real-user)\n(L14, n=4618)",
+        "legend_labels": [
+          "LMSYS ceiling r=0.009"
+        ],
+        "annotations": [
+          "N/A\n(pending)",
+          "N/A\n(pending)"
+        ],
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "PV rig (#779)\n(L14, n=260)",
+        "ylabel": "evil\nPearson r",
+        "annotations": [
+          "N/A\n(pending)"
+        ],
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Persona corpus (#1092)\n(L14, n=7652)",
+        "annotations": [
+          "N/A\n(pending)"
+        ],
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "LMSYS (real-user)\n(L14)",
+        "legend_labels": [
+          "LMSYS ceiling r=0.009"
+        ],
+        "annotations": [
+          "N/A\n(pending)",
+          "N/A\n(pending)",
+          "N/A\n(pending)"
+        ],
+        "xticklabels": [
+          "raw\nprojection",
+          "map\n+\nprojection",
+          "direct\nin-corpus\nprobe"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS ceiling r=0.009"
+    ]
+  }
+}
