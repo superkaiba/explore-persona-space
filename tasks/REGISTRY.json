@@ -4861,8 +4861,8 @@
     "1623": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1623",
-      "status": "reviewing",
+      "path": "tasks/completed/1623",
+      "status": "completed",
       "title": "daily-fix: similarity stats declare direction-aware or not"
     },
     "1624": {
