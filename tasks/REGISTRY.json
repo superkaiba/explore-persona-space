@@ -4791,8 +4791,8 @@
     "1614": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1614",
-      "status": "planning",
+      "path": "tasks/approved/1614",
+      "status": "approved",
       "title": "workflow-fix: decide bit-deterministic vs bit_byte_identical ban family (allowlist or widen)"
     },
     "1615": {
