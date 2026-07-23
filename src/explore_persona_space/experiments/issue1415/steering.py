@@ -155,6 +155,17 @@ class DeltaHook:
     position generating each token on EVERY step: the last prompt position at
     prefill, then every decode-step position.
 
+    ``edit_position`` (keyword-only, default ``None`` = off; the #1415
+    hooked-unhooked-decomposition mode, plan v11 §3.2) edits ONLY position
+    ``edit_position`` of the FIRST forward after :meth:`arm_at` — the
+    teacher-forced re-forward right-pads ``ctx_ids + comp_ids`` and processes
+    context + completion in ONE pass, so the last real context token sits at
+    ``ctx_len - 1``, NOT ``T - 1``, and the generation-mode
+    ``expected_prompt_len == T`` assert is deliberately inapplicable. Mutually
+    exclusive with ``all_positions``; asserts ``edit_position < T`` at edit
+    time. Every other code path is byte-identical (default ``None`` preserves
+    current behavior).
+
     ``delta`` is ``(H,)`` (broadcast over the batch) or ``(B, H)`` (per-row —
     lets one batched generate carry a different Δ per pair). The hook handles
     both tuple and bare-tensor block outputs and edits OUT-OF-PLACE (clone).
@@ -168,11 +179,16 @@ class DeltaHook:
         alpha: float,
         expected_prompt_len: int | None = None,
         all_positions: bool = False,
+        *,
+        edit_position: int | None = None,
     ):
         blocks, _, _ = _resolve_decoder_blocks(model)
         assert blocks is not None, "DeltaHook requires a standard decoder (model.model.layers)"
         assert 0 <= layer < len(blocks), (layer, len(blocks))
         assert delta.dim() in (1, 2), delta.shape
+        assert not (all_positions and edit_position is not None), (
+            "edit_position mode is mutually exclusive with all_positions"
+        )
         self.model = model
         self.layer = layer
         self.module = blocks[layer]
@@ -180,6 +196,7 @@ class DeltaHook:
         self.alpha = float(alpha)
         self.expected_prompt_len = expected_prompt_len
         self.all_positions = bool(all_positions)
+        self.edit_position = int(edit_position) if edit_position is not None else None
         self._handle = None
         self._prefill_seen = False
         self.n_edits = 0  # forward passes edited (telemetry / test hook)
@@ -201,6 +218,17 @@ class DeltaHook:
         self.expected_prompt_len = int(expected_prompt_len)
         self.reset()
 
+    def arm_at(self, edit_position: int) -> None:
+        """Arm the ``edit_position`` mode for the next forward + reset the
+        prefill latch (the teacher-forced per-chunk arming; plan v11 §3.2).
+        Asserts the position is non-negative and the mode is not
+        ``all_positions``; the ``edit_position < T`` bound is asserted at edit
+        time (T is unknown until the forward runs)."""
+        assert not self.all_positions, "arm_at() is incompatible with all_positions"
+        assert edit_position >= 0, edit_position
+        self.edit_position = int(edit_position)
+        self.reset()
+
     def reset(self) -> None:
         self._prefill_seen = False
 
@@ -218,6 +246,20 @@ class DeltaHook:
         if d.dim() == 2:
             assert d.shape[0] == B, (d.shape, B)
         scaled = self.alpha * d  # (H,) or (B, H)
+        if self.edit_position is not None:
+            # Teacher-forced mode (#1415 hooked decomposition): edit ONLY
+            # position ``edit_position`` on the FIRST forward after arm_at();
+            # any later forward (there are none in the teacher-forced capture,
+            # which re-arms per chunk) is untouched.
+            assert not self.all_positions
+            if self._prefill_seen:
+                return hidden
+            assert self.edit_position < T, (self.edit_position, T)
+            out = hidden.clone()
+            out[:, self.edit_position, :] = out[:, self.edit_position, :] + scaled
+            self._prefill_seen = True
+            self.n_edits += 1
+            return out
         if self.all_positions:
             if not self._prefill_seen:
                 # Prefill: edit ONLY the position generating the first token
@@ -490,6 +532,8 @@ def capture_binned_answer_profiles(
     completions: list[str],
     layers: list[int],
     batch_size: int = 8,
+    hook: DeltaHook | None = None,
+    capture_ctx_vec: bool = False,
 ) -> dict:
     """Per-position-binned answer profiles for ONE context's completions.
 
@@ -503,11 +547,25 @@ def capture_binned_answer_profiles(
     §3.5 parity-gate input). Empty completions are dropped with a recorded
     count; all-empty fails loud (parent convention).
 
+    ``hook`` (#1415 hooked-unhooked decomposition, plan v11 §3.2/§3.3): an
+    INSTALLED :class:`DeltaHook` re-armed via ``hook.arm_at(ctx_len - 1)``
+    before EACH chunk forward — every row in a chunk shares ``ctx_ids``
+    (single-context capture), so ``ctx_len - 1`` is each row's last real
+    context token under right padding, reproducing the generation-time
+    prefill edit. Asserts ``hook.n_edits`` increments by EXACTLY 1 per chunk.
+    ``capture_ctx_vec``: additionally return the per-chunk last-context-token
+    vector ``captured[L][0, ctx_len - 1]`` at every captured layer —
+    ``ctx_vec`` ``(n_chunks, L, H)`` fp32 (feeds the G2 edit-injection
+    exactness gate) + ``ctx_vec_max_dev`` (max cross-chunk L2 deviation from
+    the chunk mean, per-layer max — bf16 batch-composition jitter telemetry).
+    Default-off arguments preserve the round-1 behavior byte-identically.
+
     Returns a dict with fp32 CPU tensors:
     ``profiles`` ``(n_kept, 13, L, H)`` (NaN rows for empty bins),
     ``span_mean`` ``(n_kept, L, H)``, plus ``layers``, ``bin_names``,
     ``comp_token_counts`` (kept completions, in kept order) and
-    ``n_empty_completions``.
+    ``n_empty_completions`` (+ ``ctx_vec``/``ctx_vec_max_dev`` when
+    ``capture_ctx_vec``).
     """
     assert len(completions) >= 1 and len(layers) >= 1
     if tokenizer.pad_token_id is None:
@@ -521,14 +579,31 @@ def capture_binned_answer_profiles(
     kept = [ids for ids in comp_ids_list if len(ids) > 0]
     n_empty = len(comp_ids_list) - len(kept)
     assert len(kept) >= 1, f"all {len(comp_ids_list)} completions empty for context {context}"
+    if hook is not None:
+        assert hook._handle is not None, "install the DeltaHook before the capture (use `with`)"
 
     profiles: list[torch.Tensor] = []
     span_means: list[torch.Tensor] = []
+    ctx_vecs: list[torch.Tensor] = []
     for start in range(0, len(kept), batch_size):
         chunk = kept[start : start + batch_size]
         rows = [ctx_ids + cids for cids in chunk]
         input_ids, mask = _right_pad_batch(rows, pad_id, device)
+        if hook is not None:
+            n_edits_before = hook.n_edits
+            hook.arm_at(ctx_len - 1)
         captured = extract_layer_activations(model, input_ids, layers, attention_mask=mask)
+        if hook is not None:
+            assert hook.n_edits == n_edits_before + 1, (
+                f"DeltaHook edited {hook.n_edits - n_edits_before} time(s) on one chunk "
+                "forward (expected exactly 1) — arming/latch broken"
+            )
+        if capture_ctx_vec:
+            # Row 0's last-context-token activation per layer; rows share
+            # ctx_ids, so any cross-row/cross-chunk spread is batch jitter.
+            ctx_vecs.append(
+                torch.stack([captured[L][0, ctx_len - 1].float() for L in layers]).cpu()
+            )
         for j, cids in enumerate(chunk):
             span = slice(ctx_len, ctx_len + len(cids))  # answer span, unpadded coords
             acts = torch.stack([captured[L][j, span].float() for L in layers])  # (L, n, H)
@@ -539,7 +614,7 @@ def capture_binned_answer_profiles(
             span_means.append(acts.mean(dim=1).cpu())  # (L, H)
         del captured
 
-    return {
+    out = {
         "layers": list(layers),
         "bin_names": list(BIN_NAMES),
         "profiles": torch.stack(profiles),  # (n_kept, 13, L, H) fp32
@@ -547,3 +622,9 @@ def capture_binned_answer_profiles(
         "comp_token_counts": [len(c) for c in kept],
         "n_empty_completions": n_empty,
     }
+    if capture_ctx_vec:
+        cv = torch.stack(ctx_vecs)  # (n_chunks, L, H) fp32
+        dev = (cv - cv.mean(dim=0, keepdim=True)).norm(dim=-1)  # (n_chunks, L)
+        out["ctx_vec"] = cv
+        out["ctx_vec_max_dev"] = float(dev.max())
+    return out
