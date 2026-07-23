@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1636,
+  "highest_id": 1637,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4962,6 +4962,13 @@
       "path": "tasks/proposed/1636",
       "status": "proposed",
       "title": "daily-held: shared-root inline-round commit hygiene"
+    },
+    "1637": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1637",
+      "status": "proposed",
+      "title": "daily-held: corpus-capture redaction default (LMSYS rows)"
     },
     "164": {
       "has_clean_result": false,
