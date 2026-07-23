@@ -1,0 +1,13 @@
+{
+ "m": 32768,
+ "device_requested": "cuda",
+ "gpu_probe_ok": true,
+ "cpu_probe_ok": null,
+ "cpu_fallback_engaged": false,
+ "gpu_error": null,
+ "cpu_error": null,
+ "probe_seconds": {
+  "cuda": 3.9
+ },
+ "ts": "2026-07-23T03:56:00Z"
+}
