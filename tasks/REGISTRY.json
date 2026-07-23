@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1611,
+  "highest_id": 1612,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4773,6 +4773,13 @@
       "path": "tasks/proposed/1611",
       "status": "proposed",
       "title": "workflow-fix: smoke must cover every behavior-class x regime (smoke/parity family)"
+    },
+    "1612": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1612",
+      "status": "proposed",
+      "title": "workflow-fix: FT ckpt disk high-water must match implemented phase ordering (reap every accumulating phase)"
     },
     "162": {
       "has_clean_result": false,
