@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1618,
+  "highest_id": 1619,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4822,6 +4822,13 @@
       "path": "tasks/proposed/1618",
       "status": "proposed",
       "title": "daily-fix: research-pm.md over 47000-byte ratchet cap, main "
+    },
+    "1619": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1619",
+      "status": "proposed",
+      "title": "daily-fix: issue1092 fig scripts import heavy modules before"
     },
     "162": {
       "has_clean_result": false,
