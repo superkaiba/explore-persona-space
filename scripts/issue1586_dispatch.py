@@ -1610,7 +1610,14 @@ def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
     across waves (plan §10 declared discard; per-rung rates persist in
     ladder.json; non-selected rungs re-derive by deterministic retrain).
     ASSERTS the reap took — a silent no-op here re-creates the epm:failure
-    v5 ENOSPC class — and logs the freed bytes."""
+    v5 ENOSPC class — and logs the freed bytes.
+
+    Deferred-persist retention invariant (crash-fix r7): the keep-set is
+    ``{sel_step}`` from selection.json — NEVER keyed on persist state — so a
+    billing-403-deferred cell's selected rung is retained identically in
+    BOTH disk modes (keep-cell and the stream-reap/retrained-reselect
+    shape), and the post-reap ``left == {sel_step}`` assert fail-louds if
+    the selected rung is ever ABSENT, deferred or not."""
     free0 = shutil.disk_usage(cfg.out_root).free
     for cell in cells:
         cell_root = cfg.out_root / cell
@@ -1694,6 +1701,65 @@ def run_waves(cfg: Cfg, *, do_train: bool, do_ladder: bool, do_persist: bool) ->
 # ── p4: persist selected FT rungs + selection records (incremental) ─────────
 
 
+def _is_billing_403(err: BaseException) -> bool:
+    """True ONLY for the HF account-billing 403 on GB-scale LFS uploads —
+    ``403 Forbidden: You need to setup automatic credit recharge in order to
+    upload more data`` on the LFS batch endpoint (pod-1586 crash #6,
+    2026-07-23). This is the ONE upload-failure class p4 DEFERS (durable
+    ``<cell>/persist_deferred.json`` + p9 replay + fail-loud terminal, never
+    data loss) instead of raising; every other failure keeps the fail-loud
+    path. Structural, never a log-text grep: when the exception carries a
+    real response, the status code must be 403 (a 5xx/4xx-other NEVER
+    matches even with the phrase in its body); response-less shapes (the
+    xet Rust-boundary wrap, #931) fall back to the message carrying BOTH
+    "credit recharge" AND "403". Sibling of ``hub._is_storage_quota_403``,
+    whose "storage" conjunct this billing message does not carry — so it
+    correctly reaches ``hub._upload``'s except un-retried (403 is
+    non-transient) and, under ``raise_on_error=True``, re-raises to here."""
+    msg = str(err).lower()
+    if "credit recharge" not in msg:
+        return False
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if isinstance(code, int):
+        return code == 403
+    return "403" in msg
+
+
+def _persist_deferred_path(cfg: Cfg, cell: str) -> Path:
+    return cfg.out_root / cell / "persist_deferred.json"
+
+
+def _defer_persist(cfg: Cfg, cell: str, step: int, ckpt: Path, path_in_repo: str, err) -> None:
+    """Record a billing-403 selected-rung upload deferral durably (crash-fix
+    r7): the checkpoint is RETAINED on disk (the wave reap keeps the selected
+    rung regardless of persist state), the wave CONTINUES, and the record is
+    replayed at p4-resume or p9 — whichever a relaunch hits first. p9
+    fail-louds terminally if still blocked, so the failure signal survives
+    end-to-end."""
+    _atomic_json(
+        _persist_deferred_path(cfg, cell),
+        {
+            "cell": cell,
+            "step": step,
+            "local_path": str(ckpt),
+            "repo_id": G.OVERFLOW_REPO,
+            "repo_type": "model",
+            "path_in_repo": path_in_repo,
+            "error": str(err)[:2000],
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+    )
+    # Fix-engaged signal (crash-fix r7): this line in the p4 log proves the
+    # deferral branch is reached when the billing-403 hits.
+    logger.error(
+        "[persist] DEFERRED (billing-403) %s — checkpoint retained at %s "
+        "(durable record %s; replay at p4-resume/p9)",
+        cell,
+        ckpt,
+        _persist_deferred_path(cfg, cell),
+    )
+
+
 def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
     if cell == G.REUSED_FT_CELL:
         return _staged_ft_dir(cfg, "s3_con")
@@ -1765,11 +1831,25 @@ def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None
                 sel = _read_json(sel_path)
             step = int(sel["step"])
             ckpt = _selected_ft_ckpt(cfg, cell)
-            url = hub._upload(ckpt, G.OVERFLOW_REPO, "model", f"issue1586/{cell}/checkpoint-{step}")
+            path_in_repo = f"issue1586/{cell}/checkpoint-{step}"
+            # Crash-fix r7 (pod-1586 crash #6): raise_on_error surfaces the
+            # upload exception class here — the narrow billing-403 defers
+            # (durable record + continue the wave; p9 replays + fail-louds
+            # terminally); every other exception AND the legacy no-path ""
+            # return (missing token / 0-files verify) stay fail-loud.
+            try:
+                url = hub._upload(ckpt, G.OVERFLOW_REPO, "model", path_in_repo, raise_on_error=True)
+            except Exception as e:
+                if not _is_billing_403(e):
+                    raise
+                _defer_persist(cfg, cell, step, ckpt, path_in_repo, e)
+                continue
             if not url:
                 raise RuntimeError(f"selected-rung upload returned no path for {cell}")
             uploaded[cell] = str(url)
             _atomic_json(rec_path, {"cell": cell, "step": step, "url": str(url)})
+            # p4-resume with billing recovered: clear the deferral record.
+            _persist_deferred_path(cfg, cell).unlink(missing_ok=True)
         # Selection records: ONE batched upload_folder commit per pass
         # (was 3 file commits x 16 cells — review r1 Major 3 bug-class sweep).
         stage = (
@@ -2595,6 +2675,49 @@ def _git_commit() -> str:
         return "unknown"
 
 
+def _replay_deferred_persists(cfg: Cfg) -> list[dict]:
+    """p9 FIRST replays every durable p4 billing-403 deferral (crash-fix r7):
+    re-attempt each recorded selected-rung upload; on success write the
+    normal ``<cell>/persist.json`` record and delete the deferral record
+    (idempotent across relaunches — p4-resume clears the same records via
+    its own retry path). Returns the STILL-blocked records (billing-403
+    again); the caller fail-louds terminally on a non-empty return so
+    nothing is silently lost. Any OTHER failure raises immediately
+    (fail-fast unchanged)."""
+    still_blocked: list[dict] = []
+    for dpath in sorted(cfg.out_root.glob("*/persist_deferred.json")):
+        rec = _read_json(dpath)
+        cell = str(rec["cell"])
+        try:
+            url = hub._upload(
+                Path(rec["local_path"]),
+                str(rec["repo_id"]),
+                str(rec.get("repo_type", "model")),
+                str(rec["path_in_repo"]),
+                raise_on_error=True,
+            )
+        except Exception as e:
+            if not _is_billing_403(e):
+                raise
+            rec["error"] = str(e)[:2000]
+            still_blocked.append(rec)
+            logger.error(
+                "[persist] STILL DEFERRED (billing-403) %s — checkpoint retained at %s",
+                cell,
+                rec["local_path"],
+            )
+            continue
+        if not url:
+            raise RuntimeError(f"deferred persist replay returned no path for {cell}")
+        _atomic_json(
+            cfg.out_root / cell / "persist.json",
+            {"cell": cell, "step": int(rec["step"]), "url": str(url)},
+        )
+        dpath.unlink()
+        logger.info("[persist] deferred replay OK %s -> %s", cell, url)
+    return still_blocked
+
+
 def phase_upload(cfg: Cfg, selections: dict) -> dict:
     """p9 residual uploads as ~22 BATCHED upload_folder commits — one per
     cell + one per panel/marker_panel/margin/capture/capture_tf tree + one
@@ -2611,6 +2734,11 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
     uploaded: dict[str, str] = _read_json(manifest_path) if manifest_path.exists() else {}
     if not cfg.upload:
         return uploaded
+    # FIRST: replay every p4 billing-403 deferral (crash-fix r7). Still-
+    # blocked cells are collected and fail-louded AT THE END of the phase so
+    # the residual small/non-LFS commits below (which pass under the billing
+    # block — verified) still land before the terminal non-zero exit.
+    still_blocked = _replay_deferred_persists(cfg)
     stage_root = cfg.out_root / "_upload_stage" / "p9"
 
     def _commit(label: str, stage: Path) -> None:
@@ -2699,6 +2827,30 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
         _atomic_json(cjk_out, _cjk_scan(cfg))
     _stage_for_upload(stage, cjk_out, "cjk_audit.json")
     _commit("misc", stage)
+    # Fail-loud terminal (crash-fix r7): any selected-rung upload STILL
+    # blocked by the billing-403 at p9 exits the dispatcher non-zero, naming
+    # every deferred cell + retained local path — the durable records stay
+    # on disk for the next relaunch, and upload-verification gates Step 8
+    # downstream, so nothing is silently lost.
+    if still_blocked:
+        _atomic_json(
+            cfg.out_root / "persist_deferred_summary.json",
+            {
+                "deferred": [
+                    {k: r.get(k) for k in ("cell", "step", "local_path", "path_in_repo")}
+                    for r in still_blocked
+                ],
+                "error_class": "billing-403 (credit recharge)",
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+        )
+        raise RuntimeError(
+            "p9 deferred selected-rung uploads STILL blocked by HF billing-403 "
+            "(credit recharge) for: "
+            + "; ".join(f"{r['cell']} (retained at {r['local_path']})" for r in still_blocked)
+            + " — fix account billing, then relaunch (p4-resume/p9 replays the "
+            "<cell>/persist_deferred.json records)."
+        )
     return uploaded
 
 

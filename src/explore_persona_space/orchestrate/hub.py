@@ -1207,6 +1207,7 @@ def _upload(
     upload_as_file: bool = False,
     ignore_patterns: list[str] | None = None,
     private: bool = False,
+    raise_on_error: bool = False,
 ) -> str:
     """Shared upload logic for models and datasets.
 
@@ -1247,9 +1248,19 @@ def _upload(
             site; the overflow-routing path passes True so a not-yet-existing
             overflow repo is never created PUBLIC (which would put rerouted
             LFS straight back under the blocked public quota, #564).
+        raise_on_error: When True, an upload EXCEPTION re-raises to the caller
+            instead of the legacy log-and-return-"" swallow — so a caller can
+            classify the failure structurally (e.g. #1586 crash #6: the HF
+            billing-403 "credit recharge" class the dispatcher DEFERS). ONLY
+            the exception path changes: the non-exception "" returns (missing
+            HF_TOKEN, absent local path, 0-files verification) are unchanged,
+            and the #1108 file-count overflow fallback still runs first (its
+            recursive call threads the flag, so a failed fallback also
+            raises). Default False keeps every existing caller byte-identical.
 
     Returns:
-        "{repo_id}/{path_in_repo}" on verified success, "" on any failure.
+        "{repo_id}/{path_in_repo}" on verified success, "" on any failure
+        (with ``raise_on_error=True``, upload exceptions re-raise instead).
     """
     from huggingface_hub import HfApi
 
@@ -1380,6 +1391,7 @@ def _upload(
                 upload_as_file=upload_as_file,
                 ignore_patterns=ignore_patterns,
                 private=True,
+                raise_on_error=raise_on_error,
             )
             if result:
                 _emit_overflow_routing_event(
@@ -1397,6 +1409,9 @@ def _upload(
                     overflow_repo=DEFAULT_OVERFLOW_REPO,
                 )
             return result
+        if raise_on_error:
+            logger.error("Upload failed: %s. Raising (raise_on_error=True).", e)
+            raise
         logger.error("Upload failed: %s. Keeping local path.", e)
         return ""
 
