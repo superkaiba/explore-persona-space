@@ -1290,9 +1290,10 @@ _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
 
-def _make_repo_with_per_unit_orphan(tmp_path):
+def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.png"):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
-    `figures/issue_999/hero_percontext.png` (the per-unit companion) +
+    `figures/issue_999/<companion>` (the per-unit companion; default
+    `hero_percontext.png`) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
     when a test pins the real sha); returns (repo_path, head_sha)."""
     repo = tmp_path / "perunitrepo"
@@ -1307,7 +1308,7 @@ def _make_repo_with_per_unit_orphan(tmp_path):
     figdir = repo / "figures" / "issue_999"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
-    (figdir / "hero_percontext.png").write_bytes(b"\x89PNG fake bytes")
+    (figdir / companion).write_bytes(b"\x89PNG fake bytes")
     script = repo / "scripts" / "run.py"
     script.parent.mkdir(parents=True)
     script.write_text("print('entry script')\n")
@@ -1378,6 +1379,57 @@ def test_per_unit_figure_embedded_no_warn(tmp_path, monkeypatch):
     assert r.passed is True
     assert r.is_warn is False
     assert "no orphaned per-unit figures" in r.detail
+
+
+def test_orphan_perpair_figure_warns(tmp_path, monkeypatch):
+    """#1607 pin (incident #1415 Lens 11): a committed-but-unembedded
+    `*_perpair` companion at a body-cited SHA WARNs class A exactly like
+    the percontext family — per-PAIR was invisible to check 31 pre-#1607."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion="hero_perpair.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "figures/issue_999/hero_perpair.png" in r.detail
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # class A — never mentioned
+
+
+def test_perpair_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """Embedded per-pair companion → clean PASS (the new arm must not
+    WARN on a discipline-satisfying body)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion="hero_perpair.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_perpair.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-pair deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_perpair_named_not_embedded_warns_class_b(tmp_path, monkeypatch):
+    """The #1415 incident shape on the NEW arm: a pair-stem companion NAMED
+    in body prose (no exemption idiom) and embedded nowhere → class-B WARN
+    carrying the `companion-named-not-embedded` token (mirror of the
+    percontext class-B pin)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion="hero_perpair.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The per-pair views behind these aggregates are `hero_perpair.png`, "
+        "committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True  # WARN-tier: the overall verdict is never flipped
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
+    assert "figures/issue_999/hero_perpair.png" in r.detail
 
 
 def test_orphan_unreachable_sha_skips_silently(tmp_path, monkeypatch):
@@ -1705,11 +1757,18 @@ def test_orphan_issue_none_fallback_scans_cited_dirs(tmp_path, monkeypatch):
         ("experiment_percent", False),
         ("per_source_rates", False),  # other per-X families out of scope by design
         ("per_seed_scatter", False),
+        ("issue952_leg3_perpair_d_distribution", True),  # corpus-real compact form (#952)
+        ("h1_per_pair_scatter", True),  # the #1415 incident underscore form
+        ("position_profile_perpair_top", True),  # the #1607 candidate's own example stem
+        ("per-pair_deltas", True),  # hyphen spelling
+        ("repair_log", False),  # `pair` alone, no `per` prefix — never matches
+        ("pairwise_grid", False),  # bare pair-family word, no per prefix
+        ("super_pair_map", False),  # mid-word `per_pair` blocked by the lookbehind
     ],
 )
 def test_per_unit_basename_pattern(stem, expected):
-    """The deliberately-narrow check-31 pattern: the three per-unit nouns
-    (context/unit/cell) with -/_ spellings match; regime names (`indiv`),
+    """The deliberately-narrow check-31 pattern: the four per-unit nouns
+    (context/unit/cell/pair) with -/_ spellings match; regime names (`indiv`),
     mid-word hits (`supercontext`), and other per-X families
     (per_source/per_seed) do NOT — Lens 11 owns the substance."""
     assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected

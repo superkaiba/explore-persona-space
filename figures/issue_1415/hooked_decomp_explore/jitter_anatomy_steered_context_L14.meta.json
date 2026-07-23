@@ -1,0 +1,232 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:58Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 0.0,
+      "series": "empirical jitter transported L14\u2192L17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 0.04771175149427862,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 0.04315053581919936,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 0.03746184377862682,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 0.03767724973592091,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 0.0379881167998476,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.03776123448149067,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 0.037646614621720705,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 0.03751630540943699,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 0.03767602681876959,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.037324962950697926,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.037289405780767275,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 0.03800599760032834,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 0.04595593457650566,
+      "series": "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "jitter-band anatomy \u2014 steered/context/L14",
+        "legend_labels": [
+          "empirical jitter transported L14\u2192L17",
+          "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      }
+    ],
+    "series": [
+      "empirical jitter transported L14\u2192L17",
+      "fp16 quantization floor (2\u207b\u00b9\u00b9\u00b7\u221a2\u00b7\u2016state\u2016)"
+    ]
+  }
+}

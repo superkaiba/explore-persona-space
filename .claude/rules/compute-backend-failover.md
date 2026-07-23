@@ -74,7 +74,19 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
-   canonical `workload.log`, BEFORE the partial dirs (small-first);
+   canonical `workload.log`, BEFORE the partial dirs (small-first). As of
+   #1605 the SAME sweep ALSO walks `/workspace/logs` (env-overridable
+   `EPS_PERSIST_WORKSPACE_LOGS_DIR`) — the GCE lane's own dispatcher
+   per-phase log / pid / sentinel convention dir — into the SAME
+   newest-first `LOG_MAX_FILES` budget, the SAME `LOG_FILE_CAP` tail, and
+   the SAME single `worker_logs` commit, staged under
+   `worker_logs/workspace_logs/<rel>`; `*.pid` (detach pid files),
+   `*.processed` (poller drained-sentinel renames), and the canonical
+   workload.log are excluded at walk time (ONE aggregate EXCLUDED line),
+   there is NO git-tracked exclude on that root (it is outside the repo
+   clone), and a missing dir SKIPs loudly (the #1415 loss class: the p3
+   traceback lived only in an unswept `/workspace/logs` per-phase log
+   while `$WORKLOAD_ROOT/logs` read empty-after-excludes);
 4. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
    workload wrote before crashing;
 5. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
@@ -171,14 +183,23 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
-`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885) —
+`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885)
+plus the `/workspace/logs` dispatcher convention dir (#1605) —
 still NOT universal artifact discovery (e.g. `figures/issue_*`,
 checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
-only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
+when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
-exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
-`<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
-under the workload-root `logs/` convention. Within the worker-log tree,
+exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641) AND, as of #1605, under
+`/workspace/logs` (env-overridable `EPS_PERSIST_WORKSPACE_LOGS_DIR`) —
+staged under `worker_logs/workspace_logs/<rel>` with `*.pid` /
+`*.processed` / the canonical workload.log excluded at walk time, NO
+git-tracked exclude (the dir is outside the repo clone), and a fail-soft
+loud SKIP on a missing dir. Rationale for widening rather than
+redirecting dispatchers: the crash persist sweeps where the logs actually
+ARE (the #1415 p3 traceback lived only in `/workspace/logs`); the
+workload-root `logs/` convention remains PREFERRED for dispatcher worker
+logs, and OTHER absolute `<vm_scratch_dir>` paths stay unswept. Within
+the worker-log tree,
 git-TRACKED files (per `git ls-files -z -- logs` against the cloned repo)
 are excluded at walk time (#1351) — a run-generated forensic log at a
 git-tracked path is NOT swept, so never append crash forensics to a
@@ -438,6 +459,18 @@ artifacts on an explicit `--backend <slurm>` pin) STILL surfaces
 code` → `status:blocked`.
 
 ### Ladder order (length-aware, #680)
+
+NOTE (#1609): under the standing auto default the free `fellows` (charmander
+H200) SLURM lane sits BEFORE this GCP ladder — `DEFAULT_AUTO_LANE_ORDER =
+("fellows", "gcp", "nibi", "fir", "mila")` — so a fellows capacity miss /
+dead endpoint / PENDING-at-cap park advances INTO the ladder below; RunPod
+stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
+`available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
+instant, no code revert). Sentinel hazard: charmander HAS a `/workspace`, so
+a sentinel-writing dispatcher auto-routed onto fellows writes sentinels
+nobody drains (silent marker loss, vs #608's fail-loud on DRAC/Mila) —
+sentinel-dependent workloads still pin a /workspace-contract lane
+(gcp/runpod) at plan time.
 
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
 (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
@@ -699,7 +732,12 @@ Both GCP workload-crash detection paths now fail over to RunPod:
 Part A (crash diagnostics) covers BOTH crash modes regardless of how the
 workload died — the EXIT trap fires on any non-zero exit. So "a GCP
 workload failure of ANY class fails over to RunPod" now holds for both the
-synchronous-`route()` and the async-poller crash paths.
+synchronous-`route()` and the async-poller crash paths — with ONE named
+exception (#1596/#1601): a workload-class failure on the queue-vanish /
+queue-timeout ON-DEMAND RETRY create (RunPod just refused for capacity, so
+cascading back would ping-pong) mints the non-re-drivable terminal
+`gcp_workload_failed_on_ondemand_retry` instead — see § FLEX_START
+queue-vanish, "On-demand retry after a clean-residue RunPod refusal".
 
 ### FLEX_START queue-timeout → RunPod (#783/#778)
 
@@ -744,9 +782,34 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
   idempotency (durable lease + `.claude/cache` sentinel) + sidecar-repoint
   + terminal-JSON contract (the shared `_failover_gcp_to_runpod` core).
 - **An ADDITIONAL advance trigger, NOT a lane-precedence change** — RunPod
-  stays the terminal rung. A queue-timeout cancel is a CLEAN advance: it
-  does NOT touch `MAX_GCP_ATTEMPTS_PER_DAY` (the counter bumps only on a
-  create, inside `_attempt_one_gcp_rung`, which the poller never re-enters).
+  stays the terminal rung. A queue-timeout cancel is a CLEAN advance: the
+  timeout→RunPod FAILOVER leg does NOT touch `MAX_GCP_ATTEMPTS_PER_DAY`
+  (the counter bumps only on a create, inside `_attempt_one_gcp_rung`);
+  since #1601 the queue-timeout caller's own on-demand RETRY leg (below)
+  DOES re-enter the rung and burns attempts by design — the same two-leg
+  split as the queue-vanish sibling (#1596).
+- **On-demand retry after a clean-residue RunPod refusal (#1601/#779):**
+  the queue-timeout caller arms the SAME #1596 on-demand retry the
+  queue-vanish caller does (`gcp_ondemand_retry_reason=
+  ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY`) — a capacity-class RunPod
+  refusal with CLEAN provision residue retries the GCP ladder's STANDARD
+  rungs before minting the re-drivable `no_compute_available` terminal,
+  labeled `reason: queue_timeout_gcp_ondemand_retry`; mechanics (gate,
+  exactly-once lease, sidecar re-point, workload-error terminal, exhaustion
+  fall-through) are the #1596 machinery verbatim — see § FLEX_START
+  queue-vanish, "On-demand retry after a clean-residue RunPod refusal".
+  The `teardown_first` DELETE runs at core entry, BEFORE the RunPod rung
+  and hence before any retry create, so the timed-out queued instance is
+  already released. Documented pre-existing residual (bounded, NOT a bug):
+  a FAILED best-effort teardown can leave the timed-out PENDING instance
+  alive under the same `eps-issue-<N>` name, so the retry create may
+  reconnect to it — the exactly-once `gcp_failover_of` lease still bounds
+  paid launches, the re-pointed sidecar re-matures the timeout predicate
+  after another `EPS_GCP_QUEUE_WAIT_SECONDS`, and the stale-GCP janitor
+  reaps the orphan. (Motivating incident #779, 2026-07-22: three
+  consecutive queue-timeouts each hit a capacity-class RunPod refusal with
+  clean residue and minted `no_compute_available` without probing STANDARD
+  — ~6h lost to the #1112 manual recovery.)
 - **CPU-intent scope (#677/#747):** a `cpu-bigmem` PENDING instance is
   EXCLUDED (no cheap RunPod CPU lane → the ordinary dead path);
   `cpu-small` / `cpu-mid` (in `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) are
@@ -789,9 +852,59 @@ problem).
   server-side (that absence IS the trigger), so there is nothing to tear
   down — the #659 stance, NOT #783's (only a still-LIVE queued instance
   needs its capacity request released).
-- **No daily-attempt burn.** Structural, as for #783/#1029:
-  `gcp_attempts_today` bumps only on a create inside
-  `_attempt_one_gcp_rung`, which the poller never re-enters.
+- **No daily-attempt burn — on the vanish→RunPod failover LEG only (#1596
+  scoping).** Structural, as for #783/#1029: `gcp_attempts_today` bumps only
+  on a create inside `_attempt_one_gcp_rung`, and the vanish→RunPod failover
+  never re-enters it. The poller DOES re-enter the rung on the #1596
+  on-demand RETRY leg below, which therefore burns attempts normally.
+- **On-demand retry after a clean-residue RunPod refusal (#1596/#1112).**
+  When the vanish failover's RunPod terminal rung raises
+  `NoComputeAvailableError` AND the #1490 residue reclaim reports a CLEAN
+  outcome (`no-residue` / `torn-down` / `pre-existing` / `foreign-created` —
+  NEVER `leaked`, whose non-re-drivable terminal is untouched), the poller
+  retries the GCP ladder's STANDARD (on-demand) rungs itself — the #1112
+  manual `--provisioning-model STANDARD` recovery, automated. Mechanics:
+  `backend_poll._retry_gcp_ondemand_after_capacity_refusal` →
+  `router.retry_gcp_ondemand_after_queue_vanish`, which pins
+  `provisioning_model="STANDARD"` on `_gcp_ladder_specs` (base machine, then
+  A100-40 when the intent fits 40 GB, pinned wide rungs when width is
+  declared; H100 intents refused up front — no on-demand H100 pool) and
+  walks the rungs via `_attempt_one_gcp_rung` — so the retry **BURNS
+  `gcp_attempts_today`** (it IS a fresh create; `MAX_GCP_ATTEMPTS_PER_DAY`
+  caps it), unlike the failover leg's structural no-burn above. Gate =
+  clean residue ONLY, no evidence-text classifier: the motivating #1112
+  cost-cap refusal classifies `unknown` (an evidence-keyed gate would have
+  missed it), and every clean-residue refusal already authorizes the
+  watcher to re-run the FULL ladder — the immediate bounded retry is
+  strictly narrower. Exactly-once: the rung stamps `gcp_failover_of` (the
+  OLD vanished handle's identity) on the lease IN THE SAME FLOCK TRANSACTION
+  as the create and short-circuits `"already_launched"` on a matching stamp;
+  `backend_poll._lease_records_failover_of` and the RunPod rung's in-flock
+  `router._lease_already_failed_over` both match the `backend="gcp"`-stamped
+  lease too (identity comparison unchanged), so a crashed sidecar write or a
+  concurrent second triggerer can neither double-provision GCP nor launch a
+  paid RunPod pod alongside the retry. On success the sidecar is
+  authoritatively re-pointed at the NEW gcp handle (job_id — the per-create
+  instance id — is the readback discriminator; the fresh serialization
+  drops the stale `pending` clock, so a later death of the on-demand
+  instance cannot false-match the vanish predicate). Reason strings: the
+  LAUNCH is labeled `queue_vanish_gcp_ondemand_retry` (the running-JSON
+  `current_phase` + the FINAL `epm:backend-selected` marker; intermediate
+  per-rung markers wear the generic `auto_fallback_gcp` — accepted trail
+  noise); a WORKLOAD-class failure on the retry create mints the
+  non-re-drivable terminal `gcp_workload_failed_on_ondemand_retry` (NOT in
+  `TRANSIENT_CAPACITY_REASONS`; the #931 mislabel class) — an explicit
+  EXCEPTION to Part B's "a GCP workload failure of ANY class fails over to
+  RunPod": RunPod just refused, so cascading back would ping-pong. Retry
+  exhaustion / cap-hit falls through to the SAME re-drivable
+  `no_compute_available` terminal (log_tail keeps the original RunPod
+  refusal evidence — a recurring account-level cost-cap stays visible — plus
+  a `GCP on-demand retry also exhausted (#1596)` note), keeping the watcher
+  capacity-retry backstop reachable. Since #1601 the #783 queue-timeout
+  caller arms the SAME retry (labeled
+  `reason: queue_timeout_gcp_ondemand_retry` — see § FLEX_START
+  queue-timeout above); the #659 workload-crash and #1029 boot-loop callers
+  keep the retry OFF — their no-cascade bound is byte-identical.
 - **CPU-intent scope (#677/#747):** a `cpu-bigmem` vanish never
   rewrites/fails over (no cheap RunPod lane) — the guard gates the REWRITE
   itself, so its ordinary dead path INCLUDING today's #1029 boot-death
@@ -1396,7 +1509,9 @@ short-circuits at the once-more case via `_terminal_code_json`.
   / teardown-failure-still-fails-over)
 - `tests/test_router.py` (Part B FLEX_START queue vanish, #1116:
   `test_queue_vanish_failover_seam_carries_queue_vanish_reason`,
-  `test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons`)
+  `test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons`
+  — its pairwise-distinct set deliberately amended 6 → 7 by #1596 to admit
+  `queue_vanish_gcp_ondemand_retry`)
 - `tests/test_backend_poll.py` (Part B FLEX_START queue vanish end-to-end, #1116:
   `test_gcp_pending_vanish_fails_over_to_runpod`,
   `test_gcp_queue_vanish_failover_marker_carries_queue_vanish_reason`,
@@ -1405,6 +1520,34 @@ short-circuits at the once-more case via `_terminal_code_json`.
   `test_gcp_queue_vanish_does_not_record_boot_death`, + the negative
   controls: workload-clock / no-clock-record / terminated-phase /
   cpu-bigmem-excluded)
+- `tests/test_router.py` (queue-loss on-demand retry, #1596/#1601:
+  `test_attempt_one_gcp_rung_failover_identity_none_is_byte_identical`,
+  `test_attempt_one_gcp_rung_matching_failover_identity_returns_already_launched`,
+  `test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts`,
+  `test_retry_gcp_ondemand_reason_param_threads_to_result_and_final_marker`
+  — the #1601 reason generalization —
+  `test_retry_gcp_ondemand_respects_daily_cap`,
+  `test_retry_gcp_ondemand_h100_intent_unservable`,
+  `test_retry_gcp_ondemand_reraise_workload_error_cause`,
+  `test_runpod_terminal_rung_short_circuits_on_gcp_stamped_lease`)
+- `tests/test_backend_poll.py` (queue-loss on-demand retry end-to-end,
+  #1596/#1601:
+  `test_gcp_queue_vanish_runpod_refusal_clean_residue_retries_gcp_ondemand`,
+  `test_gcp_queue_vanish_ondemand_retry_exhausted_falls_through_no_compute`,
+  `test_gcp_queue_vanish_ondemand_retry_skipped_on_leaked_residue`,
+  `test_gcp_queue_vanish_ondemand_retry_crash_window_short_circuits`,
+  `test_gcp_queue_timeout_runpod_refusal_clean_residue_retries_gcp_ondemand`,
+  `test_gcp_queue_timeout_ondemand_retry_exhausted_falls_through_no_compute`,
+  `test_gcp_queue_timeout_ondemand_retry_skipped_on_leaked_residue`
+  — the #1601 queue-timeout arm —
+  `test_crash_and_boot_loop_failovers_do_not_retry_gcp_ondemand`
+  — the two remaining non-retry callers, parametrized (#1601 deliberately
+  flipped the #783 queue-timeout leg out of this negative-control set) —
+  `test_gcp_workload_error_on_ondemand_retry_parks_non_redrivable`,
+  `test_gcp_queue_vanish_ondemand_retry_sidecar_write_failure_mints_persistence_terminal`;
+  `test_lease_records_failover_of_is_keyed_per_gcp_crash_not_per_issue`'s
+  final leg deliberately amended: a `backend="gcp"` lease with a MATCHING
+  identity stamp now suppresses — the #1596 crash-window record)
 - `tests/test_gcp_backend.py::test_render_startup_script_persists_diagnostics_before_teardown`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_is_guarded_and_bounded`

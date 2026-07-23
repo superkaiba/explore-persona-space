@@ -1,0 +1,234 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:20Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 13.428729483059474,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 8.724392448152814,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 4.727531858852932,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 2.3693997178758894,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 1.5870702064463071,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 1.3983283245137759,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 1.3563780188560486,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 1.4234241555844034,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 1.2247703692742757,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 1.0773216310356344,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 1.1317992093307632,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 1.2257789011512483,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 2.9358594630445753,
+      "series": "steered text (context arm, read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 13.148452622549874,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 7.283288649150303,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 3.584702696119036,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 1.4184697419404984,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 1.0963986782091004,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.9530385147247996,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 0.8736849618809563,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 0.7950108104518482,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 0.7568255801286016,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.7398969169173922,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.7189713977277279,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 0.7790148992623601,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 2.413054815360478,
+      "series": "baseline text (pure direct, read L17)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "steered vs baseline text direct component \u2014 steer L14",
+        "legend_labels": [
+          "steered text (context arm, read L17)",
+          "baseline text (pure direct, read L17)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "steered text (context arm, read L17)",
+      "baseline text (pure direct, read L17)"
+    ]
+  }
+}

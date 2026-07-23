@@ -225,8 +225,9 @@ Producer duty, one of two forms:
 `a8060198a4`, 2026-07-01; every per-member check passed and the run crashed at
 a parity assert after a full GCE cycle.)
 
-**Resume-critical pipeline INPUTS must upload before any deliberate
-`pod.py stop` that expects a later resume.** The same logic extends
+**Resume-critical pipeline INPUTS — and the run's RESUME STATE — must
+upload before any deliberate `pod.py stop` that expects a later resume: a
+stopped volume is NOT durable.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,
 corpus JSONs), phase-0/1 intermediate outputs, and diagnostic adapters
 that the plan's later phases consume. RunPod `resume` is HOST-PINNED —
@@ -238,6 +239,18 @@ the relevant bucket) BEFORE stopping; they are usually MB-scale.
 while `data/issue_488/R_train_new.json` + Phase 0/1 outputs + diagnostic
 adapters lived only on the stopped pod's volume — the implementer's
 pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
+Resume STATE means done-JSONs, phase/resume sentinels, partial eval JSONs,
+progress manifests — anything a resume reads to know where to restart.
+Host-pinning is not the only threat: RunPod destroyed a stopped pod
+outright — capacity reclaim or billing-side cleanup, the mechanism is not
+derivable — despite the `keep-running` tag and well inside the 7-day idle
+window (incident #1112, 2026-07-21: stopped 07:25Z with volume preserved;
+live API `{"data": {"pod": null}}` ~22h later — done-JSONs lost, full
+re-run forced). Apply whenever the park may outlast ~1 hour; on resume,
+prefer the off-pod copies. Decision-point recipes:
+`.claude/skills/issue/SKILL.md` § User pause affordance step 1 +
+§ Step 8-bis; canonical rule: `.claude/rules/pod-config.md` § "Stopped pod
+volume is NOT durable".
 
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and

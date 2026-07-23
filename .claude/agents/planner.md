@@ -367,8 +367,14 @@ completion-probability SECONDARY) · **Install-strength control** for
 cross-condition leakage comparisons · **Statistical-input existence** for
 registered corrections · **Selection-symmetric nulls** for max-over-axis
 headlines · **OOD generalization folds** for group-structured held-out
-predictive DVs · **Figures to produce** (hero figure + over-produced
-exploratory dump).
+predictive DVs · **Mapping-baselines pair** for every FITTED representation
+map (any v_X→v_Y predictor): report BOTH the identity+learned-bias baseline
+(`analysis/mapping_baselines.identity_bias_predict`; dimension mismatch
+stated as inapplicable) AND the kNN-retrieval read
+(`analysis/mapping_baselines.knn_retrieval`; chance = k/n_pool stated)
+alongside held-out R² — omit only with a stated exemption (CLAUDE.md
+§ Identity+learned-bias baseline bullet) · **Figures to produce** (hero
+figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 6. Evaluation — read that section (grep the heading, chunked Read) BEFORE writing
@@ -577,3 +583,20 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
   as a new test in an already-registered file: an unregistered new pin file
   never runs on a later SKILL.md diff (#1242/#1268 registered after the fact;
   #1546), and `verify_plan.py` c31 WARNs on it.
+- **Self-count every count-style mechanical acceptance criterion.** Before
+  finalizing any `grep -c` / `wc -l` / "exactly once" / "appears exactly N
+  times" / "pure insertion(s)" acceptance criterion, COUNT the pattern in the
+  plan's OWN fenced verbatim insert text AND (via a draft-time
+  `grep -c '<pattern>' <file>`) in the live text of every file the criterion
+  targets, then set the expected count to the arithmetic total (existing hits
+  + insert hits), stating that arithmetic beside the criterion — or restate
+  the criterion count-robustly (`>= N`, a presence check, or uniqueness
+  scoped to one anchored inserted line). Two traps: `grep -c` counts LINES,
+  not occurrences (a token twice on one line counts once); and a "pure
+  insertion(s)" diff-shape claim is checked against the actual edit list (an
+  Edit that rewrites any existing line is not one). Lineage (#1592; two
+  same-morning union-revise rounds, 2026-07-21): #1581 plan v1's criterion 3
+  (`grep -c ... == 1`) contradicted Edit 3's own two-line insert and its
+  criterion 7 ("pure insertions") contradicted Edit 2's append; #1583 plan
+  v1's "exactly once" was unsatisfiable for a token its verbatim insert
+  carried twice.

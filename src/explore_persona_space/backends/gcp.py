@@ -1253,7 +1253,15 @@ def render_startup_script(
        bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
        ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
        commit (never a per-file ``upload_file`` loop — the #664
-       504-storm gotcha). As of #1339 a partial dir whose post-exclude
+       504-storm gotcha). As of #1605 the SAME sweep (shared budget,
+       shared tail cap, same single commit) ALSO walks ``/workspace/logs``
+       — the GCE lane's dispatcher per-phase log / pid / sentinel
+       convention dir (env-overridable
+       ``EPS_PERSIST_WORKSPACE_LOGS_DIR``) — staging those files under
+       ``worker_logs/workspace_logs/<rel>`` with ``*.pid``,
+       ``*.processed``, and the canonical workload.log excluded at walk
+       time (the #1415 loss class: the p3 traceback lived only in an
+       unswept ``/workspace/logs`` per-phase log). As of #1339 a partial dir whose post-exclude
        file count exceeds ``EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT``
        (default 1000; ``< 1`` disables chunking with a WARN) uploads as
        newest-first staged batches (staging root
@@ -1959,53 +1967,103 @@ def render_startup_script(
         "#     (_env_int / LOG_FILE_CAP / LOG_MAX_FILES are hoisted above the first",
         "#     bundle's staging — shared with the #1517 canonical-log tail cap.)",
         "def _up_logs():",
-        '    logs_root = root / "logs"',
-        "    if not logs_root.is_dir():",
-        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
-        "        return",
+        "    # hoisted FIRST (#1605): the documented disable must gate BOTH roots.",
         "    if LOG_MAX_FILES < 1:",
         '        _say(f"[crash-persist] SKIP worker_logs:'
         ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
         "        return",
-        "    tracked = set()",
-        "    try:",
-        "        _git = subprocess.run(",
-        '            ["git", "-C", str(root), "ls-files", "-z", "--", "logs"],',
-        "            capture_output=True, timeout=10,",
-        "            env={k: v for k, v in os.environ.items()",
-        '                 if not k.startswith("GIT_")})',
-        "        if _git.returncode == 0:",
-        '            tracked = {t for t in _git.stdout.decode("utf-8", "replace")',
-        '                       .split("\\0") if t}',
-        "        else:",
+        '    logs_root = root / "logs"',
+        "    entries = []  # (mtime, size, path, rel); rel = the staged/repo-relative name",
+        "    walked_any = False",
+        "    if logs_root.is_dir():",
+        "        walked_any = True",
+        "        tracked = set()",
+        "        try:",
+        "            _git = subprocess.run(",
+        '                ["git", "-C", str(root), "ls-files", "-z", "--", "logs"],',
+        "                capture_output=True, timeout=10,",
+        "                env={k: v for k, v in os.environ.items()",
+        '                     if not k.startswith("GIT_")})',
+        "            if _git.returncode == 0:",
+        '                tracked = {t for t in _git.stdout.decode("utf-8", "replace")',
+        '                           .split("\\0") if t}',
+        "            else:",
+        '                _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
+        '                     f" unavailable (git rc={_git.returncode}); sweeping all")',
+        "        except Exception as exc:",
         '            _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
-        '                 f" unavailable (git rc={_git.returncode}); sweeping all")',
-        "    except Exception as exc:",
-        '        _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
-        '             f" unavailable ({exc}); sweeping all")',
-        "    n_tracked = 0",
-        "    entries = []",
-        "    for dirpath, dirnames, filenames in os.walk(logs_root):",
-        "        dirnames[:] = [d for d in dirnames",
-        '                       if d not in PRUNE and not (d.startswith("g") and'
+        '                 f" unavailable ({exc}); sweeping all")',
+        "        n_tracked = 0",
+        "        for dirpath, dirnames, filenames in os.walk(logs_root):",
+        "            dirnames[:] = [d for d in dirnames",
+        '                           if d not in PRUNE and not (d.startswith("g") and'
         ' d.endswith("_dl"))]',
-        "        for f in filenames:",
-        "            p = Path(dirpath) / f",
-        '            if tracked and "logs/" + p.relative_to(logs_root).as_posix() in tracked:',
-        "                n_tracked += 1",
-        "                continue",
-        "            try:",
-        "                st = p.stat()",
-        "            except OSError:",
-        "                continue",
-        "            entries.append((st.st_mtime, st.st_size, p))",
-        "    if n_tracked:",
-        '        _say(f"[crash-persist] EXCLUDED {n_tracked} git-tracked file(s) from"',
-        '             " worker_logs sweep (committed repo content, durable in git)")',
+        "            for f in filenames:",
+        "                p = Path(dirpath) / f",
+        '                if tracked and "logs/" + p.relative_to(logs_root).as_posix() in tracked:',
+        "                    n_tracked += 1",
+        "                    continue",
+        "                try:",
+        "                    st = p.stat()",
+        "                except OSError:",
+        "                    continue",
+        "                entries.append((st.st_mtime, st.st_size, p,",
+        "                                p.relative_to(logs_root).as_posix()))",
+        "        if n_tracked:",
+        '            _say(f"[crash-persist] EXCLUDED {n_tracked} git-tracked file(s) from"',
+        '                 " worker_logs sweep (committed repo content, durable in git)")',
+        "    else:",
+        "        # kept SKIP line; NO return: the workspace_logs sweep below still runs (#1605)",
+        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
+        "    # 1b-bis. dispatcher per-phase logs (#1605): /workspace/logs is the GCE lane's",
+        "    # own log/pid/sentinel convention dir (#610 pre-create), OUTSIDE",
+        "    # $WORKLOAD_ROOT/logs; the #1415 p3 traceback lived only here. Same newest-first",
+        "    # LOG_MAX_FILES budget, same LOG_FILE_CAP tail, same single worker_logs commit",
+        "    # (dispatch files stage under workspace_logs/<rel>). No git-tracked exclude:",
+        "    # the dir is outside the repo clone. Env override mirrors the #935",
+        "    # EPS_DONE_LOGS_DIR test-isolation knob.",
+        '    d_root = Path(os.environ.get("EPS_PERSIST_WORKSPACE_LOGS_DIR", "/workspace/logs"))',
+        "    try:",
+        "        same_dir = (d_root.is_dir() and logs_root.is_dir()",
+        "                    and d_root.resolve() == logs_root.resolve())",
+        "    except OSError:",
+        "        same_dir = False",
+        "    if not d_root.is_dir():",
+        '        _say(f"[crash-persist] SKIP workspace_logs: no such dir ({d_root})")',
+        "    elif same_dir:",
+        "        # degenerate WORKLOAD_ROOT=/workspace would double-count the same tree",
+        '        _say(f"[crash-persist] SKIP workspace_logs: same dir as worker logs root'
+        ' ({d_root})")',
+        "    else:",
+        "        walked_any = True",
+        "        n_excl = 0",
+        "        for dirpath, dirnames, filenames in os.walk(d_root):",
+        "            dirnames[:] = [d for d in dirnames",
+        '                           if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "            for f in filenames:",
+        "                p = Path(dirpath) / f",
+        '                if f.endswith((".pid", ".processed")):',
+        "                    n_excl += 1  # detach pid files + poller drained-sentinel renames",
+        "                    continue",
+        "                try:",
+        "                    if log_path and p.resolve() == Path(log_path).resolve():",
+        "                        n_excl += 1  # canonical workload.log: staged tail-capped already",
+        "                        continue",
+        "                    st = p.stat()",
+        "                except OSError:",
+        "                    continue",
+        "                entries.append((st.st_mtime, st.st_size, p,",
+        '                                "workspace_logs/" + p.relative_to(d_root).as_posix()))',
+        "        if n_excl:",
+        '            _say(f"[crash-persist] EXCLUDED {n_excl} pid/drained-sentinel/canonical"',
+        '                 " file(s) from workspace_logs sweep")',
         "    if not entries:",
-        '        _say("[crash-persist] SKIP worker_logs: empty after cache/git-tracked excludes")',
+        "        if walked_any:",
+        '            _say("[crash-persist] SKIP worker_logs: empty after cache/git-tracked'
+        ' excludes")',
         "        return",
-        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last",
+        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last (4-tuple)",
         "    dropped = len(entries) - LOG_MAX_FILES",
         "    if dropped > 0:",
         '        _say(f"[crash-persist] SKIP {dropped} older worker log(s) beyond"',
@@ -2016,13 +2074,13 @@ def render_startup_script(
         "    # the count bound; best-effort — staging below recreates what it needs.",
         "    shutil.rmtree(staged_root, ignore_errors=True)",
         "    n_staged = 0",
-        "    for _, _, p in entries[:LOG_MAX_FILES]:",
+        "    for _, _, p, rel in entries[:LOG_MAX_FILES]:",
         "        try:",
+        "            # belt: the workspace_logs walk already excludes it at walk time (#1605)",
         "            if log_path and p.resolve() == Path(log_path).resolve():",
-        '                _say(f"[crash-persist] SKIP worker_logs/{p.relative_to(logs_root)}:"',
+        '                _say(f"[crash-persist] SKIP worker_logs/{rel}:"',
         '                     " is the canonical workload.log")',
         "                continue",
-        "            rel = p.relative_to(logs_root)",
         "            tmp = staged_root / rel",
         "            tmp.parent.mkdir(parents=True, exist_ok=True)",
         "            size = p.stat().st_size  # re-stat: may have grown/shrunk since the walk",
@@ -2828,9 +2886,39 @@ def render_startup_script(
         f"  git clone --depth 1 --branch {shlex.quote(repo_branch)} "
         f'{shlex.quote(config.repo_url)} "$WORKLOAD_ROOT"',
         "else",
-        f'  git -C "$WORKLOAD_ROOT" fetch --depth 1 origin {shlex.quote(repo_branch)}',
-        f'  git -C "$WORKLOAD_ROOT" checkout {shlex.quote(repo_branch)}',
-        f'  git -C "$WORKLOAD_ROOT" reset --hard origin/{shlex.quote(repo_branch)}',
+        # Branch-switch-safe reuse (#1602; incident #779 att-20260722-155004):
+        # a reused workspace disk can hold a single-branch clone of a
+        # DIFFERENT branch. There, a bare `fetch origin <branch>` lands ONLY
+        # in FETCH_HEAD (the clone's configured single-branch refspec covers
+        # no other branch, so no local/remote-tracking ref is created); the
+        # old by-name `checkout <branch>` died with `error: pathspec
+        # '<branch>' did not match any file(s) known to git`, and the old
+        # tracking-ref reset against origin/<branch> would die the same way.
+        # Four steps: (0) converge the clone's fetch-refspec CONFIG to the
+        # fresh-clone-of-<branch> shape (set-branches): git updates
+        # remote-tracking refs ON PUSH by mapping through this config, so
+        # without it a committing workload's successful push leaves
+        # origin/<branch> stale and the workload-cmd shape's push-verify leg
+        # reads a false nonzero unpushed count post-workload (#1602 round-1
+        # critique probe: a healthy pushed run exits 86); byte-no-op on
+        # same-branch reuse; (1) fetch with an EXPLICIT forced destination
+        # refspec — creates/updates refs/remotes/origin/<branch>, which the
+        # workload-cmd shape's push-verify leg's `rev-list
+        # origin/<branch>..HEAD` reads post-workload (`+` tolerates a
+        # rebased/force-pushed tip on a stale disk); (2) `reset --hard
+        # FETCH_HEAD` FIRST — a crashed prior run can leave dirty tracked
+        # files that would abort a bare create-or-reset checkout carry-over
+        # (sibling form: scripts/bootstrap_pod.sh fetch + reset --hard
+        # FETCH_HEAD); (3) create or reset the local branch from FETCH_HEAD
+        # (works from any current branch or detached HEAD; conflict-free
+        # because the tree already matches FETCH_HEAD after (2)).
+        '  echo "[startup-script] reusing repo at $WORKLOAD_ROOT (HEAD was'
+        ' $(git -C "$WORKLOAD_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown))"',
+        f'  git -C "$WORKLOAD_ROOT" remote set-branches origin {shlex.quote(repo_branch)}',
+        '  git -C "$WORKLOAD_ROOT" fetch --depth 1 origin '
+        + shlex.quote(f"+refs/heads/{repo_branch}:refs/remotes/origin/{repo_branch}"),
+        '  git -C "$WORKLOAD_ROOT" reset --hard FETCH_HEAD',
+        f'  git -C "$WORKLOAD_ROOT" checkout -B {shlex.quote(repo_branch)} FETCH_HEAD',
         "fi",
         "",
         "# === Install uv if missing + sync env ===",

@@ -1,0 +1,364 @@
+{
+  "metadata": {
+    "git_commit": "9e9ecfd3f9a1859dc61d56baadd97119d57fff05",
+    "timestamp": "2026-07-22T07:31:30Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity.py",
+    "issue": 931
+  },
+  "model_kind": "instruct",
+  "gcv_dof_cap": 0.9,
+  "rotation_null_note": "EFFICIENCY DEVIATION: the rotation matched-capacity null uses ONE shared orthogonal-matrix bank across pairs+models (identical target); shuffle nulls stay freshly drawn per pair. Draw counts unchanged.",
+  "headline_layer": 19,
+  "ordered_pairs": {
+    "Wren->HELIOS": {
+      "recovery_r2_foldmean": 0.3794893928805362,
+      "recovery_r2_boot": 0.38919297386544005,
+      "target_ceiling_foldmean": 0.40107670413358276,
+      "target_ceiling_boot": 0.4104427014888319,
+      "null_recovery_r2": -0.02634054160011958,
+      "null_shuffle_mean": -0.042244333319461494,
+      "null_rotation_mean": -0.02634054160011958,
+      "null_shuffle_draws": [
+        -0.05380448130911608,
+        -0.03860833417661391,
+        -0.07417426452107345,
+        -0.03525098223169465,
+        -0.009383604358809361
+      ],
+      "null_rotation_draws": [
+        -0.02633353960383933,
+        -0.025374516935918967,
+        -0.026945805040984316,
+        -0.027288613583786425,
+        -0.025760232836068875
+      ],
+      "recovery_minus_ceiling": -0.021249727623391834,
+      "recovery_minus_ceiling_ci_lo": -0.026142655841264628,
+      "recovery_minus_ceiling_ci_hi": -0.015664897880058124,
+      "recovery_frac_of_ceiling": 0.9461766015563529,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Wren->Dana": {
+      "recovery_r2_foldmean": 0.31300982992628257,
+      "recovery_r2_boot": 0.321622929618545,
+      "target_ceiling_foldmean": 0.3285635376004241,
+      "target_ceiling_boot": 0.3369816335784891,
+      "null_recovery_r2": -0.020861774846325877,
+      "null_shuffle_mean": -0.043312183681181525,
+      "null_rotation_mean": -0.020861774846325877,
+      "null_shuffle_draws": [
+        -0.05057415903124518,
+        -0.04860805220340558,
+        -0.06650905903419768,
+        -0.031128881356752958,
+        -0.01974076678030623
+      ],
+      "null_rotation_draws": [
+        -0.02022234590803973,
+        -0.022508663662661688,
+        -0.02184965775372838,
+        -0.019423936800801567,
+        -0.020304270106398015
+      ],
+      "recovery_minus_ceiling": -0.015358703959944098,
+      "recovery_minus_ceiling_ci_lo": -0.02525065739340513,
+      "recovery_minus_ceiling_ci_hi": -0.005781219256306255,
+      "recovery_frac_of_ceiling": 0.9526614919362815,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Wren->Vex": {
+      "recovery_r2_foldmean": 0.20087330899930178,
+      "recovery_r2_boot": 0.21198642047905136,
+      "target_ceiling_foldmean": 0.2328833350537587,
+      "target_ceiling_boot": 0.24355129685696875,
+      "null_recovery_r2": -0.022262003767476956,
+      "null_shuffle_mean": -0.03206227678633482,
+      "null_rotation_mean": -0.022262003767476956,
+      "null_shuffle_draws": [
+        -0.040935628464560114,
+        -0.034993252927238316,
+        -0.04412871419038655,
+        -0.027617632982595453,
+        -0.012636155366893664
+      ],
+      "null_rotation_draws": [
+        -0.021587666047628407,
+        -0.023089967803828326,
+        -0.022264390669678003,
+        -0.02272621721185586,
+        -0.02164177710439419
+      ],
+      "recovery_minus_ceiling": -0.031564876377917384,
+      "recovery_minus_ceiling_ci_lo": -0.03679395986140631,
+      "recovery_minus_ceiling_ci_hi": -0.026400288873637608,
+      "recovery_frac_of_ceiling": 0.8625490911701873,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "HELIOS->Wren": {
+      "recovery_r2_foldmean": 0.34368494225377444,
+      "recovery_r2_boot": 0.3508831545743981,
+      "target_ceiling_foldmean": 0.3548299086061537,
+      "target_ceiling_boot": 0.36190588720203865,
+      "null_recovery_r2": -0.018433361215475008,
+      "null_shuffle_mean": -0.03389468298891907,
+      "null_rotation_mean": -0.018433361215475008,
+      "null_shuffle_draws": [
+        -0.03495031532368098,
+        -0.03749301001210248,
+        -0.054958548039150124,
+        -0.03501314405461575,
+        -0.007058397515046
+      ],
+      "null_rotation_draws": [
+        -0.018165999381899445,
+        -0.0194117066880799,
+        -0.016621302039246943,
+        -0.017980549746853702,
+        -0.01998724822129505
+      ],
+      "recovery_minus_ceiling": -0.01102273262764053,
+      "recovery_minus_ceiling_ci_lo": -0.016869919984685747,
+      "recovery_minus_ceiling_ci_hi": -0.0036828268698073405,
+      "recovery_frac_of_ceiling": 0.9685906794155007,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "HELIOS->Dana": {
+      "recovery_r2_foldmean": 0.3197755440109209,
+      "recovery_r2_boot": 0.32830381895249716,
+      "target_ceiling_foldmean": 0.3285635376004241,
+      "target_ceiling_boot": 0.3369816335784891,
+      "null_recovery_r2": -0.021061237046411784,
+      "null_shuffle_mean": -0.040775043472581804,
+      "null_rotation_mean": -0.021061237046411784,
+      "null_shuffle_draws": [
+        -0.05126314317821379,
+        -0.04059360093292441,
+        -0.06927483500214415,
+        -0.030888521589974793,
+        -0.011855116659651888
+      ],
+      "null_rotation_draws": [
+        -0.022606398468375977,
+        -0.022668129881706633,
+        -0.020206490673271515,
+        -0.020854569244753485,
+        -0.018970596963951314
+      ],
+      "recovery_minus_ceiling": -0.008677814625991931,
+      "recovery_minus_ceiling_ci_lo": -0.01676232230594866,
+      "recovery_minus_ceiling_ci_hi": -0.0006655159023650107,
+      "recovery_frac_of_ceiling": 0.9732532902047379,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "HELIOS->Vex": {
+      "recovery_r2_foldmean": 0.20246067625485054,
+      "recovery_r2_boot": 0.2135517129003236,
+      "target_ceiling_foldmean": 0.2328833350537587,
+      "target_ceiling_boot": 0.24355129685696875,
+      "null_recovery_r2": -0.022295512281439132,
+      "null_shuffle_mean": -0.030855040936184963,
+      "null_rotation_mean": -0.022295512281439132,
+      "null_shuffle_draws": [
+        -0.042271222760587035,
+        -0.02784144364172292,
+        -0.045489820462678354,
+        -0.028035739721717245,
+        -0.010636978094219263
+      ],
+      "null_rotation_draws": [
+        -0.022819763540334215,
+        -0.02228921807588713,
+        -0.0215827202107286,
+        -0.022654888776895588,
+        -0.022130970803350136
+      ],
+      "recovery_minus_ceiling": -0.02999958395664515,
+      "recovery_minus_ceiling_ci_lo": -0.03535417615279631,
+      "recovery_minus_ceiling_ci_hi": -0.024612835427066222,
+      "recovery_frac_of_ceiling": 0.8693652390718065,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Dana->Wren": {
+      "recovery_r2_foldmean": 0.3375253483041908,
+      "recovery_r2_boot": 0.3447911166934049,
+      "target_ceiling_foldmean": 0.3548299086061537,
+      "target_ceiling_boot": 0.36190588720203865,
+      "null_recovery_r2": -0.018276900182560007,
+      "null_shuffle_mean": -0.032351832798885295,
+      "null_rotation_mean": -0.018276900182560007,
+      "null_shuffle_draws": [
+        -0.0316433957876785,
+        -0.03686467852559949,
+        -0.05281049743482291,
+        -0.029280175799640817,
+        -0.011160416446684751
+      ],
+      "null_rotation_draws": [
+        -0.018149565220468178,
+        -0.018281331026260617,
+        -0.01590799348522065,
+        -0.01980070098461817,
+        -0.019244910196232423
+      ],
+      "recovery_minus_ceiling": -0.017114770508633748,
+      "recovery_minus_ceiling_ci_lo": -0.023865543583157074,
+      "recovery_minus_ceiling_ci_hi": -0.00984041777383789,
+      "recovery_frac_of_ceiling": 0.9512313931766946,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Dana->HELIOS": {
+      "recovery_r2_foldmean": 0.3793513023089138,
+      "recovery_r2_boot": 0.3890570427622121,
+      "target_ceiling_foldmean": 0.40107670413358276,
+      "target_ceiling_boot": 0.4104427014888319,
+      "null_recovery_r2": -0.02614725223986176,
+      "null_shuffle_mean": -0.04126934296802705,
+      "null_rotation_mean": -0.02614725223986176,
+      "null_shuffle_draws": [
+        -0.05192404729729416,
+        -0.03749710366369974,
+        -0.0743366006255266,
+        -0.034476472111292455,
+        -0.008112491142322265
+      ],
+      "null_rotation_draws": [
+        -0.026461114231960625,
+        -0.02733480958550949,
+        -0.024618588635314964,
+        -0.027347457051640323,
+        -0.02497429169488341
+      ],
+      "recovery_minus_ceiling": -0.021385658726619794,
+      "recovery_minus_ceiling_ci_lo": -0.026435602467261312,
+      "recovery_minus_ceiling_ci_hi": -0.01568285758878047,
+      "recovery_frac_of_ceiling": 0.9458323018994563,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Dana->Vex": {
+      "recovery_r2_foldmean": 0.19595052167824512,
+      "recovery_r2_boot": 0.207132092245779,
+      "target_ceiling_foldmean": 0.2328833350537587,
+      "target_ceiling_boot": 0.24355129685696875,
+      "null_recovery_r2": -0.02222130225466592,
+      "null_shuffle_mean": -0.030389795838756804,
+      "null_rotation_mean": -0.02222130225466592,
+      "null_shuffle_draws": [
+        -0.039975027751902203,
+        -0.0316267398934702,
+        -0.04237745414997551,
+        -0.02651031103859558,
+        -0.01145944635984053
+      ],
+      "null_rotation_draws": [
+        -0.02244237869582788,
+        -0.02227867860920818,
+        -0.021472769078955567,
+        -0.02231668693949662,
+        -0.02259599794984135
+      ],
+      "recovery_minus_ceiling": -0.03641920461118975,
+      "recovery_minus_ceiling_ci_lo": -0.04235568496369532,
+      "recovery_minus_ceiling_ci_hi": -0.03059252288511947,
+      "recovery_frac_of_ceiling": 0.8414106644127712,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Vex->Wren": {
+      "recovery_r2_foldmean": 0.3022054022124495,
+      "recovery_r2_boot": 0.3098585462501735,
+      "target_ceiling_foldmean": 0.3548299086061537,
+      "target_ceiling_boot": 0.36190588720203865,
+      "null_recovery_r2": -0.017881369434633587,
+      "null_shuffle_mean": -0.031064073625507227,
+      "null_rotation_mean": -0.017881369434633587,
+      "null_shuffle_draws": [
+        -0.0332523140035923,
+        -0.03496967196210332,
+        -0.05295318631968571,
+        -0.02800424267939361,
+        -0.006140953162761198
+      ],
+      "null_rotation_draws": [
+        -0.018755853177683246,
+        -0.018065627520474914,
+        -0.017836203410756202,
+        -0.017408132289575162,
+        -0.017341030774678412
+      ],
+      "recovery_minus_ceiling": -0.05204734095186514,
+      "recovery_minus_ceiling_ci_lo": -0.06148608969035395,
+      "recovery_minus_ceiling_ci_hi": -0.04131099740988218,
+      "recovery_frac_of_ceiling": 0.8516908943769022,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Vex->HELIOS": {
+      "recovery_r2_foldmean": 0.3399357255688852,
+      "recovery_r2_boot": 0.35025784910504354,
+      "target_ceiling_foldmean": 0.40107670413358276,
+      "target_ceiling_boot": 0.4104427014888319,
+      "null_recovery_r2": -0.025618884663456677,
+      "null_shuffle_mean": -0.03788379174880081,
+      "null_rotation_mean": -0.025618884663456677,
+      "null_shuffle_draws": [
+        -0.05239157254762006,
+        -0.030627441544907708,
+        -0.07232296697232887,
+        -0.0312130981895804,
+        -0.0028638794895670117
+      ],
+      "null_rotation_draws": [
+        -0.026007564894950486,
+        -0.02586058681103931,
+        -0.025285578921803165,
+        -0.02554222139246831,
+        -0.025398471297022107
+      ],
+      "recovery_minus_ceiling": -0.060184852383788345,
+      "recovery_minus_ceiling_ci_lo": -0.06725569132857387,
+      "recovery_minus_ceiling_ci_hi": -0.05307720205913068,
+      "recovery_frac_of_ceiling": 0.847557891209922,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    },
+    "Vex->Dana": {
+      "recovery_r2_foldmean": 0.2831481576068794,
+      "recovery_r2_boot": 0.2921356462960578,
+      "target_ceiling_foldmean": 0.3285635376004241,
+      "target_ceiling_boot": 0.3369816335784891,
+      "null_recovery_r2": -0.02009299762752752,
+      "null_shuffle_mean": -0.03985192825074342,
+      "null_rotation_mean": -0.02009299762752752,
+      "null_shuffle_draws": [
+        -0.04809988372186025,
+        -0.03720863692229104,
+        -0.06555338620713913,
+        -0.03263593753573657,
+        -0.015761796866690103
+      ],
+      "null_rotation_draws": [
+        -0.020828958800666264,
+        -0.01944053813137092,
+        -0.01978058118472692,
+        -0.02010926614313746,
+        -0.020305643877736035
+      ],
+      "recovery_minus_ceiling": -0.04484598728243128,
+      "recovery_minus_ceiling_ci_lo": -0.05625846385921026,
+      "recovery_minus_ceiling_ci_hi": -0.03280529891062641,
+      "recovery_frac_of_ceiling": 0.8617759586921184,
+      "n_reparam_null_draws": 5,
+      "n_boot": 1000
+    }
+  }
+}

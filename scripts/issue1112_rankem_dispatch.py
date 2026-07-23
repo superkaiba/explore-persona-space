@@ -112,9 +112,15 @@ class Cfg:
     tier2_draws: int = 5
     eval_question_limit: int | None = None
     phases: tuple[str, ...] = field(default_factory=lambda: ALL_PHASES)
+    # Dose-extension knobs (installability follow-up: r1/r4 never entered the
+    # band at the 60-step ceiling — peak 0.29/0.27 vs 0.60 floor). Defaults
+    # None => byte-exact original behavior (ceiling R.ARMA_STEP_CEILING,
+    # evaluate every saved rung).
+    arma_max_steps: int | None = None
+    arma_eval_grid: tuple[int, ...] | None = None
 
     def regime_key(self) -> dict:
-        return {
+        key = {
             "seed": self.seed,
             "smoke": self.smoke,
             "cells": sorted(self.cells),
@@ -122,6 +128,13 @@ class Cfg:
             "tier2": [self.tier2_n, self.tier2_draws],
             "eval_question_limit": self.eval_question_limit,
         }
+        # Conditional inclusion keeps default-run regime dicts identical to the
+        # pre-extension shape (resume state stays compatible).
+        if self.arma_max_steps is not None:
+            key["arma_max_steps"] = self.arma_max_steps
+        if self.arma_eval_grid is not None:
+            key["arma_eval_grid"] = sorted(self.arma_eval_grid)
+        return key
 
 
 # ── thin stateless helpers (self-contained — the parent dispatcher is not
@@ -438,7 +451,7 @@ def _train_lora_cell(cfg: Cfg, cell: str) -> dict:
     callbacks = None
     if c.arm == "A":
         # A1/A2: ARMA_SAVE_STEPS cadence + marker_band_stop (set in arm_a_lora_config).
-        max_steps = 2 if cfg.smoke else R.ARMA_STEP_CEILING
+        max_steps = 2 if cfg.smoke else (cfg.arma_max_steps or R.ARMA_STEP_CEILING)
         train_cfg = R.arm_a_lora_config(cell, max_steps=max_steps, seed=cfg.seed)
         mix = cfg.out_root / "inputs" / "c3_frozen_mix.jsonl"
     else:
@@ -598,6 +611,18 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
     else:
         ckpts = _enumerate_rungs(adapter_root)
         all_steps = sorted(ckpts)
+        if cfg.arma_eval_grid is not None and R.CELLS[cell].arm == "A":
+            # Dose-extension sparse eval grid: judge only the requested rungs
+            # (every-2 saving to a 300-step ceiling would otherwise mean ~150
+            # tier-1 judge batteries per cell). Grid steps with no saved rung
+            # are dropped loudly.
+            want = set(cfg.arma_eval_grid)
+            missing = sorted(want - set(all_steps))
+            if missing:
+                logger.warning("[ladder] %s: eval-grid steps with no saved rung: %s", cell, missing)
+            all_steps = sorted(want & set(all_steps))
+            if not all_steps:
+                raise RuntimeError(f"{cell}: --arma-eval-grid matched zero saved rungs")
     done: dict[int, float] = {}
     if ladder_path.exists():
         prior = _read_json(ladder_path)
@@ -1473,6 +1498,10 @@ def _cfg_from_args(args: argparse.Namespace) -> Cfg:
         gpu_id=args.gpu_id,
         eval_question_limit=args.eval_question_limit,
         phases=normalize_phases(args.phases),
+        arma_max_steps=args.arma_max_steps,
+        arma_eval_grid=(
+            tuple(int(s) for s in args.arma_eval_grid.split(",")) if args.arma_eval_grid else None
+        ),
     )
 
 
@@ -1483,6 +1512,17 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--full", action="store_true", help="production run")
     p.add_argument("--out-root", default=f"eval_results/issue_{C.ISSUE}/rankem")
     p.add_argument("--cells", default=None, help=f"comma-separated subset of {R.ALL_CELLS}")
+    p.add_argument(
+        "--arma-max-steps",
+        type=int,
+        default=None,
+        help="Arm A dose-extension step ceiling (default: R.ARMA_STEP_CEILING)",
+    )
+    p.add_argument(
+        "--arma-eval-grid",
+        default=None,
+        help="comma-separated Arm A rung steps to judge (default: every saved rung)",
+    )
     p.add_argument(
         "--phases", default=None, help=f"comma-separated subset of {ALL_PHASES} (+aliases)"
     )

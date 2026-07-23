@@ -457,6 +457,8 @@ def test_gcp_fetch_results_skips_when_handle_missing_attempt_id(tmp_path) -> Non
         ("fir", "fir"),
         ("gcp", "gcp"),
         ("mila", "mila"),
+        ("fellows", "fellows"),  # #1609 charmander lane
+        ("  FELLOWS  ", "fellows"),  # case + whitespace tolerant
         ("cluster", "nibi"),  # legacy alias normalization
         ("  CLUSTER  ", "nibi"),  # case + whitespace tolerant
     ],

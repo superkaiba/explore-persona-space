@@ -176,6 +176,14 @@ all current items). The items I own:
     by construction (`.claude/rules/marker-leakage-measurement.md`).
 14. Fail-loud acceptance claims backed by committed tests (per-claim coverage;
     grep gates are not tests).
+15. Mapping-baselines pair — a plan that FITS a representation map (any v_X→v_Y
+    predictor over activation summaries) reports BOTH (a) the identity+learned-bias
+    baseline (`analysis/mapping_baselines.identity_bias_predict`; dimension mismatch
+    stated as inapplicable, never silently skipped) and (b) the kNN-retrieval read
+    (`analysis/mapping_baselines.knn_retrieval`; chance = k/n_pool stated) alongside
+    held-out R². REVISE when either read is omitted without a stated exemption. Per
+    the CLAUDE.md standing rule (2026-07-22); binding definition in the reference
+    section this lens loads.
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a

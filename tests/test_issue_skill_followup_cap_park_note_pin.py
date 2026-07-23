@@ -50,6 +50,14 @@ the generalized both-bands mirror clause in the same
 `epm:same-issue-followup-run` fields block of workflow.yaml + the
 generated markers.md row.
 
+#1588 pins the CONTRACT the #1575 rationale relies on (reading (b)): a
+re-entry into the autonomous block with `epm:follow-ups-autospawned v1`
+present runs step R (filing-verification ONLY) and parks — it never
+re-evaluates the step-3 partition, which executes at most ONCE per task
+lifetime (zero times on a depth-capped task) — via the step-R
+scope-contract sentence in SKILL.md and the never-re-partitions clause
+in the `epm:follow-ups-autospawned` fields block of workflow.yaml.
+
 Asserts are whitespace-normalized (the prose is line-wrapped in
 SKILL.md / workflow.yaml), per the pin-family convention of substring
 presence checks (mirrors tests/test_issue_skill_followup_defer_repark.py).
@@ -321,6 +329,48 @@ def test_expensive_band_cap_park_mirror_in_workflow_yaml_and_markers_md():
             f"{token!r} — re-run `workflow_lint.py --emit-tables` after "
             "editing workflow.yaml (the table is generated, never hand-edited)."
         )
+
+
+def test_reconcile_scope_one_partition_pinned():
+    """#1588: step R's scope contract (reading (b)) is pinned — a re-park
+    with `epm:follow-ups-autospawned v1` present verifies filing ONLY;
+    the step-3 partition executes at most ONCE per task lifetime."""
+    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    anchor_idx = skill_norm.find(_normalized(EXP_ANCHOR))
+    assert anchor_idx != -1, (
+        f"SKILL.md lost the {EXP_ANCHOR!r} anchor; if the autonomous "
+        "follow-up auto-spawn block was renamed, update this pin alongside it."
+    )
+    region = skill_norm[anchor_idx:]
+    required = [
+        # The canonical step-R scope-contract sentence (#1588 Edit B).
+        "Scope contract (#1588):",
+        "does NOT re-run the step-3 partition",
+        # Reading (b): AT MOST one partition per task lifetime (a
+        # depth-capped task runs it zero times) — never bare "runs ONCE".
+        "at most ONCE per task lifetime",
+        # Step R never arms a new same-issue round.
+        "NEVER posts a new `epm:followup-scope v1`",
+    ]
+    for token in required:
+        assert token in region, (
+            f"SKILL.md autonomous block (after the {EXP_ANCHOR!r} anchor) "
+            f"must carry {token!r} — the #1588 step-R scope contract "
+            "(reading (b): a re-park verifies filing only and never "
+            "re-evaluates the step-3 partition) must not be silently dropped."
+        )
+
+    wf = _normalized(WORKFLOW_YAML.read_text())
+    kind_idx = wf.find('kind: "epm:follow-ups-autospawned"')
+    assert kind_idx != -1, "workflow.yaml lost the `epm:follow-ups-autospawned` marker entry"
+    next_kind = wf.find('- kind: "epm:', kind_idx + 1)
+    fields_block = wf[kind_idx : next_kind if next_kind != -1 else len(wf)]
+    assert "never re-partitions the proposal set" in fields_block, (
+        "workflow.yaml `epm:follow-ups-autospawned` fields block must state "
+        "that the RECONCILE re-entry never re-partitions the proposal set "
+        "(#1588 mirror of the step-R scope contract; markers.md is "
+        "regenerated via `workflow_lint.py --emit-tables`)."
+    )
 
 
 def test_no_new_marker_kind_minted():

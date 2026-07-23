@@ -285,8 +285,7 @@ def _forbid_real_guard_apply_launches(request, monkeypatch):
         return _guarded
 
     for asw in watchers:
-        if hasattr(asw, "_launch_guard_apply"):
-            monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
+        monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
 
 
 # ─── #1247 fleet-mutating pass stub for FULL-main() watcher tests (#1278) ────

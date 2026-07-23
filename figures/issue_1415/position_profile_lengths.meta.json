@@ -1,0 +1,73 @@
+{
+  "commit": "48fe05ca85",
+  "created": "2026-07-22T23:04:15Z",
+  "figsize": [
+    12.8,
+    4.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "answer-length distributions by condition",
+        "xlabel": "answer tokens",
+        "legend_labels": [
+          "baseline",
+          "ceiling",
+          "rep43_steered",
+          "rep44_steered",
+          "steered"
+        ],
+        "xticklabels": [
+          "\u2212200",
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      },
+      {
+        "title_left": "call-out pairs (terse / formal), all conditions",
+        "xlabel": "answer tokens",
+        "legend_labels": [
+          "m685_04_terse",
+          "m685_05_formal"
+        ],
+        "xticklabels": [
+          "\u2212200",
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      }
+    ]
+  }
+}

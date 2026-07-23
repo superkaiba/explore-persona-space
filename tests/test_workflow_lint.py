@@ -2360,10 +2360,13 @@ def test_pipe_python_hook_subprocess_blocks_attached_arg():
 
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_piped_git_push`` (incident class #957 / #1048: a
-# `git push` / `git merge` / `gh pr merge|create` piped into a filter masks
+# `git push` / `git merge` / `git commit` / `gh pr merge|create` piped into
+# a filter masks
 # the producer's non-zero exit code — bash makes the pipeline's status the
 # LAST stage's — so a rejected push reads as success; 4 sessions hit the
-# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04). Each
+# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04; the
+# commit verb was added by #1591 after #1584's piped commit was
+# SIGPIPE-killed mid-pre-commit-hook). Each
 # fixture case writes a tiny ``*.sh`` under ``tmp_path`` and calls
 # ``check_piped_git_push(scripts_dir=tmp_path)``. The hook/lint agreement
 # test drives the SHARED semantic subset through BOTH the
@@ -2385,7 +2388,7 @@ def test_check_piped_git_push_fail_simple_pipe(tmp_path):
 
 def test_check_piped_git_push_fail_gh_pr_merge(tmp_path):
     """FAIL — `gh pr merge ... | head` masks a failed merge the same way
-    (the prose rule's 'merge/PR command' clause)."""
+    (the prose rule's 'merge/PR/`git commit` command' clause)."""
     (tmp_path / "x.sh").write_text("gh pr merge 123 --squash | head\n")
     errors = check_piped_git_push(scripts_dir=tmp_path)
     assert len(errors) == 1, f"expected exactly one error, got: {errors}"
@@ -2490,11 +2493,35 @@ def test_check_piped_git_push_pass_no_files(tmp_path):
     assert check_piped_git_push(scripts_dir=tmp_path) == []
 
 
+def test_check_piped_git_push_fail_piped_commit(tmp_path):
+    """FAIL — a piped `git commit` (#1591): the masked-exit harm plus the
+    #1584 SIGPIPE-mid-pre-commit-hook kill."""
+    (tmp_path / "x.sh").write_text('#!/usr/bin/env bash\ngit commit -m "wip" 2>&1 | head -20\n')
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "commit" in errors[0]
+
+
+def test_check_piped_git_push_pass_commit_dry_run(tmp_path):
+    """PASS — the verb-independent `--dry-run` span skip covers the commit
+    form (a dry-run commit lands nothing and runs no pre-commit hook)."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ngit commit --dry-run 2>&1 | head -5\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_commit_as_consumer(tmp_path):
+    """PASS — a message piped INTO commit (`cat msg | git commit -F -`) is
+    producer-as-consumer/final stage: nothing is masked."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ncat msg.txt | git commit -F -\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
 def test_check_piped_git_push_repo_tree_is_clean():
-    """The committed scripts/*.sh tree must carry no piped push/merge-class
-    commands — the regression lock (the plan #1048 §2 item-8 scan found the
-    tree clean: the sole `git push`+`|` hit, issue931_dispatch.sh:253, is an
-    `||` disjunction)."""
+    """The committed scripts/*.sh tree must carry no piped push/merge/
+    commit-class commands — the regression lock (the plan #1048 §2 item-8
+    scan found the tree clean: the sole `git push`+`|` hit,
+    issue931_dispatch.sh:253, is an `||` disjunction; the #1591 widened-verb
+    re-scan measured 0 commit-class hits too)."""
     errors = check_piped_git_push()
     assert errors == [], (
         "scripts/*.sh has piped git push/merge-class commands "
@@ -2548,11 +2575,16 @@ _PIPED_PUSH_SHARED = [
     ("gh pr merge 123 --squash | head", True),  # B3 gh producer
     ("git merge issue-x 2>&1 | tail -5", True),  # B7 git merge
     ("git push |& tail -5", True),  # B9 |& shorthand
+    ('git commit -m "wip" 2>&1 | head -20', True),  # B12 piped commit (#1584/#1591)
+    ('git commit -m "wip" |& head -3', True),  # B17 |& shorthand, commit form
     ('git push origin main || echo "push failed"', False),  # A7 || chain
     ("git merge-base --all main HEAD | head -1", False),  # A9 merge-base
     ("echo foo | git push", False),  # A14 producer as consumer
     ("git status | grep x && git push", False),  # A5 different segment
     ("git push --dry-run 2>&1 | head -5", False),  # A8 dry-run carve-out
+    ("cat msg.txt | git commit -F -", False),  # A21 commit as consumer/final stage
+    ("git commit --dry-run 2>&1 | head -5", False),  # A20 dry-run carve-out, commit form
+    ("git commit-tree HEAD^{tree} -m x | head -1", False),  # A22 verb-prefix word
 ]
 
 
@@ -6857,6 +6889,9 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
         "   brief's stale-checkpoint disposition before launch, confirming\n"
         "   the resume glob resolves as the disposition requires (empty /\n"
         "   the fresh path / exactly the RETAINED expected paths).\n"
+        "   On a MooseFS-backed pod (`/workspace` lane), ALSO run the MooseFS\n"
+        "   content read of every fix-touched path — `git hash-object -- <f>`\n"
+        "   vs `git rev-parse HEAD:<f>` (#1112).\n"
         "3. **Run preflight.**\n"
         "\n"
         "Decoy AFTER the span: the glob resolves EMPTY unconditionally.\n"
@@ -6891,11 +6926,13 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
     ),
 }
 
-# The three load-bearing pins (#1181 plan § deviations): the disposition trio,
-# the disposition-conditional confirm, and the fix_sha= note-token duty.
+# The four load-bearing pins (#1181 plan § deviations; MooseFS added by #1594):
+# the disposition trio, the disposition-conditional confirm, the fix_sha=
+# note-token duty, and the MooseFS content-read duty (#1112).
 _CRASH_FIX_TRIO_TOKEN = "empty / the fresh path / exactly the RETAINED expected paths"
 _CRASH_FIX_CONFIRM_TOKEN = "confirming the resume glob resolves as the disposition requires"
 _CRASH_FIX_SHA_TOKEN = "records `fix_sha=<sha>` and the executed disposition"
+_CRASH_FIX_MOOSEFS_TOKEN = "MooseFS content read"
 
 
 def _write_crash_fix_tree(tmp_path, bodies: dict[str, str] | None = None) -> None:
@@ -6993,12 +7030,19 @@ def test_crash_fix_relaunch_contract_fails_on_duplicate_anchor(tmp_path) -> None
             _CRASH_FIX_SHA_TOKEN,
             id="fix-sha-note-token",
         ),
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "ALSO run the MooseFS\n   content read of every fix-touched path",
+            "ALSO run a served-bytes\n   check of every fix-touched path",
+            _CRASH_FIX_MOOSEFS_TOKEN,
+            id="moosefs-content-read",
+        ),
     ],
 )
 def test_crash_fix_relaunch_contract_fails_on_missing_load_bearing_token(
     tmp_path, surface, old, new, token
 ) -> None:
-    """Deleting any of the THREE load-bearing pins from its fixture FAILs with
+    """Deleting any of the FOUR load-bearing pins from its fixture FAILs with
     a missing-token error naming that token — mutation-visibility for the
     surfaces table: an edit that drops one of these tokens from
     ``_CRASH_FIX_CONTRACT_SURFACES`` makes the corresponding case pass on the

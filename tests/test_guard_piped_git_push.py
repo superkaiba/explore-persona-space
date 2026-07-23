@@ -1,11 +1,13 @@
 """End-to-end tests for the ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook.
 
 The guard mechanizes CLAUDE.md § Concurrent repo-root committers ("Never pipe
-a `git push` (or merge/PR command) through `tail`/`grep`/`head` — the pipe
+a `git push` (or merge/PR/`git commit` command) through `tail`/`grep`/`head`
+— the pipe
 masks the non-zero exit code ... run it bare and check the exit code, or use
 `set -o pipefail` when a pipe is unavoidable"; the prose rule failed open in
-4 sessions on 2026-07-02 and masked #957's Step 10d push on 2026-07-04): a
-Bash tool call that pipes a ``git push`` / ``git merge`` /
+4 sessions on 2026-07-02, masked #957's Step 10d push on 2026-07-04, and
+#1584's piped commit was SIGPIPE-killed mid-pre-commit-hook): a
+Bash tool call that pipes a ``git push`` / ``git merge`` / ``git commit`` /
 ``gh pr merge|create`` PRODUCER into a consumer on the producer's own
 pipeline segment is BLOCKED (exit 2 + a ``BLOCKED`` stderr naming the
 bare-push + pipefail remediation), while pipefail-carrying commands,
@@ -114,6 +116,20 @@ BLOCK_CASES = [
     # `&`-bearing operators; the stage regex must still match through
     # ` 2>err.log `.
     pytest.param("git push 2>err.log | tail", id="B11-non-amp-redirection"),
+    # B12-B17 (#1591): the commit verb — same masked-exit harm as push/merge
+    # PLUS the SIGPIPE-mid-pre-commit-hook kill (#1584: an early-exiting
+    # `| head -N` reader terminated the commit while gitleaks was mid-scan).
+    pytest.param('git commit -m "wip" 2>&1 | head -20', id="B12-piped-commit"),
+    pytest.param(
+        'git -C .claude/worktrees/issue-1591 commit -m "x" 2>&1 | tail -5',
+        id="B13-flag-tolerant-commit",
+    ),
+    pytest.param("git commit --amend --no-edit 2>&1 | grep -i error", id="B14-amend-piped"),
+    # B15: the argless form is the #1584 incident's verbatim command shape
+    # (`git commit 2>&1 | head -N`).
+    pytest.param("git commit 2>&1 | head -20", id="B15-argless-commit"),
+    pytest.param("git add -A && git commit -m x 2>&1 | head", id="B16-compound-segment-commit"),
+    pytest.param('git commit -m "wip" |& head -3', id="B17-pipe-amp-commit"),
 ]
 
 
@@ -167,6 +183,13 @@ ALLOW_CASES = [
         "  || { git pull --rebase=merges --autostash && git push origin main; }",
         id="A17-step10d-recovery",
     ),
+    # A19-A24 (#1591): commit-verb allow channels — the inherited carve-outs
+    # fire verb-independently.
+    pytest.param('git commit -m "wip"', id="A19-bare-commit"),
+    pytest.param("git commit --dry-run 2>&1 | head -5", id="A20-commit-dry-run"),
+    pytest.param("cat /tmp/msg.txt | git commit -F -", id="A21-message-piped-into-commit"),
+    pytest.param("git commit-tree HEAD^{tree} -m x | head -1", id="A22-commit-tree"),
+    pytest.param("git cat-file commit HEAD | head -3", id="A24-commit-argument-word"),
 ]
 
 
@@ -207,6 +230,30 @@ def test_a18_heredoc_compound_documented_known_miss() -> None:
     """
     cmd = "git commit -m \"$(cat <<'EOF'\nmsg\nEOF\n)\" && git push 2>&1 | tail -3"
     _assert_allowed(_run_bash(cmd))
+
+
+def test_a23_heredoc_compound_commit_known_miss() -> None:
+    """A23 — DOCUMENTED KNOWN-MISS, the A18 commit sibling (#1591): a
+    heredoc-MESSAGE commit whose OWN output is piped
+    (``git commit -m "$(cat <<EOF...)" 2>&1 | tail``) is ALLOWED — the
+    heredoc blanket-allow fires before the widened verb regex ever runs.
+    Verified at implement time that the LINT engine misses this shape too
+    (its line-local span cannot cross the heredoc's newlines), so the
+    residual is accepted by BOTH engines; the prose rule stays the defense
+    in depth. Same reconciler binding rec as A18: any future post-terminator
+    scan must keep A13 green and be DROPPED on any new false block.
+    """
+    cmd = "git commit -m \"$(cat <<'EOF'\nmsg\nEOF\n)\" 2>&1 | tail -3"
+    _assert_allowed(_run_bash(cmd))
+
+
+def test_piped_commit_blocked_and_message_names_commit() -> None:
+    """#1591 durability pin: a hook-running piped commit refuses (the
+    SIGPIPE-mid-pre-commit-hook sibling of the #1048 masked-exit class,
+    #1584); the block message names the commit verb."""
+    r = _run_bash('git commit -m "wip" 2>&1 | head -20')
+    _assert_blocked(r)
+    assert "commit" in r.stderr
 
 
 def test_block_message_names_rule_and_remediations() -> None:

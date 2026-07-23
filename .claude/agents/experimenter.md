@@ -336,7 +336,11 @@ authoritative recipe is agent memory
    non-zero exit = fix absent — do NOT launch) and execute the brief's
    stale-checkpoint disposition before launch, confirming the resume
    glob resolves as the disposition requires (empty / the fresh path /
-   exactly the RETAINED expected paths). Recipe:
+   exactly the RETAINED expected paths). On a MooseFS-backed pod
+   (`/workspace` lane), ALSO run the MooseFS content read of every
+   fix-touched path — `git hash-object -- <f>` vs
+   `git rev-parse HEAD:<f>` — ancestry/HEAD do not prove the served
+   bytes are fresh (#1112). Recipe:
    `.claude/rules/crash-fix-rounds.md` § Crash-fix relaunch.
 3. **Run preflight on the pod.**
    ```bash

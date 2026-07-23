@@ -56,6 +56,13 @@ Touched-file -> test mapping (per touched file ``f``):
     file itself keeps the WORKFLOW_SURFACE skip (never ``untested_touched``),
     comment/docstring mentions count (over-selection is the safe direction),
     and a dynamically constructed filename is the accepted miss class.
+  * any test registered in :data:`TRANSITIVE_CONSUMER_TESTS` for a touched
+    file is ADDITIONALLY selected with reason
+    ``transitive-consumer:<touched file>`` (#1589). A pinned literal, NOT
+    discovered: these tests consume the touched module TRANSITIVELY (an
+    ``importlib`` load by CONSTRUCTED path inside a helper, a path-join
+    literal), so no text-scan arm can reach them. Additive only — never sets
+    ``matched``, so ``untested_touched`` WARNs still fire.
 
 ``safe-by-direction``: the broad ``*{stem}*`` glob arm deliberately OVER-matches
 on short stems (e.g. stem ``gcp`` selects ``test_gcp_backend.py``) — running a
@@ -158,7 +165,12 @@ rules-pin discovery hit on a ``.claude/rules/*.md`` payload file
 the src/scripts dependency arms (:func:`dependency_map_pairs`, #1573 —
 import-map (#1299) + literal-path (#1498) + stem-map pairs for ``.py``/``.sh``
 payloads (``.sh`` #1579) under the :func:`literal_path_targets` eligibility
-prefixes, WORKFLOW_INVARIANT members excluded), skipping the diff-based selection
+prefixes, WORKFLOW_INVARIANT members excluded) PLUS one
+``<consumer_test>\\t<touched_path>`` line per pinned transitive-consumer
+registration (:func:`transitive_consumer_pairs`, #1589 — WORKFLOW_INVARIANT
+members excluded; a registered consumer absent from the work root is
+dropped, the live-tree drift pins make staleness loud on main), skipping the
+diff-based selection
 entirely (mapping mode never runs git — no fetch). A scan
 test absent from the work root is dropped with a stderr WARN; an eligible
 src/scripts code file with ZERO pairs across all arms draws one tab-free
@@ -188,8 +200,9 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 "slow_tests_selected": [...]}`` (a
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
-``literal-path:<touched file>`` / ``rules-pin:<touched file>`` —
-#1022, #1299, #1498, #1496).
+``literal-path:<touched file>`` / ``rules-pin:<touched file>`` /
+``transitive-consumer:<touched file>`` —
+#1022, #1299, #1498, #1496, #1589).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -207,14 +220,20 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
-# --- + 1 #1268 pin + 1 #1289 pin + 1 #1397 pin + 1 #1546 pin + 1 #1563 pin
-# --- + 1 #1572 pin + 1 #1575 pin, 42 files). -
+# --- Pinned workflow-invariant tests. ----------------------------------------
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
 # on-disk existence check (a vanished entry prints WORKFLOW-INVARIANT MISSING) and
 # pinned against the live tree by tests/test_select_step9c_tests.py.
+# REGISTERING A NEW PIN TEST (#1593 — deliberately NO count to bump anywhere):
+# add ONE tuple entry below (at its group's position — prefer within-group
+# alphabetical placement, which scatters concurrent insertions — with a one-line
+# inline rationale comment) and ONE line at its sorted position in
+# tests/step9c_workflow_invariant_manifest.txt. The manifest set-equality pin
+# (tests/test_select_step9c_tests.py::test_workflow_invariant_matches_manifest)
+# replaces the retired integer count pin, whose single shared line made every
+# pair of same-window registering PRs merge-conflict (#1584).
 WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 1 — task-workflow API
     "tests/test_task_workflow.py",
@@ -260,8 +279,17 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
+    # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
+    "tests/test_issue_skill_stopped_volume_persist_pin.py",
+    # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
+    "tests/test_issue_skill_trigger_dense_tag_adoption.py",
+    # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
+    # planner/critic/statistics-critic/experiment-guidelines + helper)
+    "tests/test_mapping_baselines_wiring_pins.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
+    # NEW (#1598) — CLAUDE.md teammate-coordination bullet pins (a)-(d)
+    "tests/test_teammate_coordination_pins.py",
     "tests/test_plan_handoff_path_convention.py",
     "tests/test_clean_result_critic_planned_vs_actual.py",
     "tests/test_check_no_secret_shaped_strings.py",
@@ -343,6 +371,39 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
         "src/explore_persona_space/experiments/*/run_*.py",
         "src/explore_persona_space/experiments/*/dispatch_*.py",
         "src/explore_persona_space/experiments/*/__main__.py",
+    ),
+    # #1593: the WORKFLOW_INVARIANT manifest is READ by the pin test at test
+    # time (a .txt takes the data-suffix skip, so no stem/literal/import arm
+    # can reach the pin from a manifest-only diff); a touched manifest must
+    # re-run the tuple<->manifest set-equality pin.
+    "tests/test_select_step9c_tests.py": ("tests/step9c_workflow_invariant_manifest.txt",),
+}
+
+# --- Transitive-consumer pin map (#1589). -------------------------------------
+# Some tests consume a scripts/ module TRANSITIVELY — through a helper that
+# importlib-loads it BY PATH at runtime (step9c_baseline.load_selector_module
+# builds root / "scripts" / "select_step9c_tests.py"), or via a path-join
+# literal (_REPO_ROOT / "scripts" / "select_step9c_tests.py") — so NO
+# text-scan arm can reach them: the import arm sees no Import node (dynamic
+# loads; one-hop-only by contract), the literal arm needs the CONTIGUOUS
+# repo-relative path, and the stem arm needs the module stem in the test's
+# FILENAME. Founding incident #1589: a selector-module diff never selected
+# tests/test_step9c_baseline.py (loads the LIVE selector in
+# test_load_selector_module_real_body + the derive-pristine-timeout pins) or
+# tests/test_inline_lint_gate.py (live-selector TIMEOUT_FLOOR_S parity pin),
+# so a selector regression could break them without either running — at
+# Step 9c touched scope AND the Step 10d TG / inline-payload mapped-test
+# legs. A pinned literal, NOT discovered (the connecting evidence lives in
+# scripts/, outside the tests/ scan surface); same curation rule as
+# WORKFLOW_INVARIANT / GLOB_SCAN_TESTS — live-tree drift pins in
+# tests/test_select_step9c_tests.py. Additive only: a hit never sets
+# ``matched`` (untested_touched WARNs still fire — over-WARN is the safe
+# direction), and WORKFLOW_INVARIANT members are excluded on the map legs
+# (the rules_pin_pairs asymmetry).
+TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
+    "scripts/select_step9c_tests.py": (
+        "tests/test_inline_lint_gate.py",
+        "tests/test_step9c_baseline.py",
     ),
 }
 
@@ -477,6 +538,24 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
             if rel not in inv:
                 pairs.add((rel, f))
     return sorted(pairs)
+
+
+def transitive_consumer_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
+    """Sorted ``(consumer_test, touched_file)`` pairs for ``--map-files`` (#1589).
+
+    WORKFLOW_INVARIANT members are EXCLUDED (the :func:`rules_pin_pairs` /
+    :func:`dependency_map_pairs` asymmetry — they already gate every Step 9c
+    run and must stay out of the Step 10d / inline gates); a registered test
+    absent from *work_root* is dropped (live-tree drift pins in
+    tests/test_select_step9c_tests.py make staleness loud on main).
+    """
+    inv = set(WORKFLOW_INVARIANT)
+    return sorted(
+        (t, f)
+        for f in files
+        for t in TRANSITIVE_CONSUMER_TESTS.get(f, ())
+        if t not in inv and (work_root / t).exists()
+    )
 
 
 # --- Gate-timeout sizing (#1046). --------------------------------------------
@@ -913,6 +992,22 @@ def _add_glob_scan_reasons(f: str, work_root: Path, add) -> None:
             add(scan_test, f"glob-scan:{f}")
 
 
+def _seed_transitive_consumer_reasons(
+    touched: list[str], work_root: Path, selected: dict[str, set[str]]
+) -> None:
+    """Transitive-consumer pin arm (#1589): additive seed, same only-grows
+    contract; never sets ``matched`` (the glob-scan/literal precedent —
+    over-WARN is the safe direction). Invariant members are KEPT here
+    (harmless extra reason; the union dedupes — the rules-pin asymmetry).
+    Extracted as a module-level seed (the :func:`_add_glob_scan_reasons`
+    precedent) to keep :func:`select_tests_with_reasons` under the C901 cap.
+    """
+    for f in touched:
+        for t in TRANSITIVE_CONSUMER_TESTS.get(f, ()):
+            if (work_root / t).exists():
+                selected.setdefault(t, set()).add(f"transitive-consumer:{f}")
+
+
 def select_tests_with_reasons(
     touched: list[str], work_root: Path
 ) -> tuple[list[str], list[str], dict[str, list[str]]]:
@@ -920,7 +1015,8 @@ def select_tests_with_reasons(
 
     A reason is ``'invariant' | 'touched-test' | 'stem-map:<touched file>' |
     'glob-scan:<touched file>' | 'import-map:<touched file>' |
-    'literal-path:<touched file>' | 'rules-pin:<touched file>'``; a test may
+    'literal-path:<touched file>' | 'rules-pin:<touched file>' |
+    'transitive-consumer:<touched file>'``; a test may
     carry several (e.g. an invariant that is also stem-mapped from a touched
     file). Selection behavior is IDENTICAL to :func:`select_tests` — same
     tests, same ``untested_touched`` WARN list, same sorted ordering (#1022:
@@ -942,6 +1038,9 @@ def select_tests_with_reasons(
     # takes the WORKFLOW_SURFACE `continue` below, unchanged).
     for t, rule_files in rules_pin_hits(touched, work_root).items():
         selected.setdefault(t, set()).update(f"rules-pin:{r}" for r in rule_files)
+    # Transitive-consumer pin arm (#1589): additive seed, same only-grows
+    # contract — see _seed_transitive_consumer_reasons.
+    _seed_transitive_consumer_reasons(touched, work_root, selected)
     untested: list[str] = []
 
     def _add(test: str, reason: str) -> None:
@@ -1101,7 +1200,8 @@ def main(argv: list[str] | None = None) -> int:
             "'test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
             "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496) "
             "plus the src/scripts import/literal/stem dependency-arm pairs "
-            "(#1573; WORKFLOW_INVARIANT members excluded from both) and exit "
+            "(#1573) plus the pinned transitive-consumer pairs (#1589; "
+            "WORKFLOW_INVARIANT members excluded from all three) and exit "
             "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
             "diff-based selection entirely; empty stdout on no match is a "
             "SUCCESS, the gate's skip signal; a zero-mapped eligible code file "
@@ -1135,8 +1235,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.map_files is not None:
         # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
-        # src/scripts dependency arms (import/literal/stem, #1573,
-        # WORKFLOW_INVARIANT excluded) over an explicit file list — no git
+        # src/scripts dependency arms (import/literal/stem, #1573) +
+        # pinned transitive-consumer pairs (#1589) — all three
+        # WORKFLOW_INVARIANT-excluded — over an explicit file list — no git
         # diff; stderr carries the zero-mapped WARN floor + the
         # recommended-timeout-s sizing line (floor 300). The
         # Step 10d merge gate consumes the tab-separated stdout; empty output
@@ -1160,19 +1261,24 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
         # Rules-pin pairs (#1496) + the src/scripts dependency arms (#1573:
-        # import-map + literal-path + stem-map, WORKFLOW_INVARIANT excluded)
-        # join the scan-map pairs (union dedupes; a test hit by several arms
+        # import-map + literal-path + stem-map) + the pinned
+        # transitive-consumer pairs (#1589) join the scan-map pairs (union
+        # dedupes; a test hit by several arms
         # prints once per distinct matched path, and the consumers' `sort -u`
         # dedupes downstream). WORKFLOW_INVARIANT members are excluded inside
-        # rules_pin_pairs / dependency_map_pairs; the existing WARN loop above
+        # rules_pin_pairs / dependency_map_pairs / transitive_consumer_pairs;
+        # the existing WARN loop above
         # is scan-map-only by design (scan-map keys are pinned literals that
         # can vanish from the tree; the discovery arms only ever find on-disk
-        # tests, so they have no missing-test case).
+        # tests, and a vanished transitive-consumer registration is dropped by
+        # its existence check — the live-tree drift pins in
+        # tests/test_select_step9c_tests.py make that staleness loud on main).
         all_pairs = sorted(
             {
                 *scan_pairs,
                 *rules_pin_pairs(files, work_root),
                 *dependency_map_pairs(files, work_root),
+                *transitive_consumer_pairs(files, work_root),
             }
         )
         # The #1573 fail-loud floor: an eligible src/scripts code file with

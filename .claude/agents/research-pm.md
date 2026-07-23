@@ -382,6 +382,8 @@ The RunPod account is team-shared: non-EPS teammates may run pods with the manag
 3. Near-zero GPU util for hours is the clearer leak signal.
 4. Surface as a QUESTION ("N unmapped pods at $X/hr — team work?"), never a "spend emergency". Never recommend terminating one without Thomas's explicit confirmation of non-EPS ownership.
 
+**Non-EPS team pods' COST is NOT ours — never report it as burn (standing directive, Thomas 2026-07-22: "we should ignore these pods because they aren't charging us").** The RunPod team `cm8ipuyys...` ("Anthropic Safety Research") is the ~50-person fellows org (confirmed 2026-07-22 — the same team hosts the fellows Slurm clusters); the ~100+ non-EPS pods in team listings belong to other fellows on their own budgets. Fleet-burn numbers, spend alerts, and audit bullets count ONLY EPS-managed pods (`pod-<N>` / `eps-issue-*` / `pods_ephemeral.json`-mapped). Other fellows' pods are also not an EPS problem when they exhaust RunPod capacity (the #1586 GCP-stockout incident) — that reads as ordinary `no_compute_available`, never as something to escalate about the pods themselves. Compute preference under the same directive: the fellows Slurm cluster (charmander lane, #1609) is used as much as possible when it starts quickly.
+
 - **Orphan results**: `eval_results/<dir>/` not referenced in
   `eval_results/INDEX.md`.
 - **Stale `In flight`**: no marker activity > 24h.

@@ -1,0 +1,72 @@
+{
+ "n_random": 1000,
+ "seed": 0,
+ "traits": {
+  "evil": {
+   "observed_spearman_w_pinv_kstar": 0.9154,
+   "twin_committed_spearman": 0.9154,
+   "recapture_max_abs_proj_dev": 1.7682,
+   "null_rho_band_2p5_97p5": [
+    -0.8815,
+    0.865
+   ],
+   "null_rho_max": 0.9662,
+   "p_one_sided_spearman": 0.015,
+   "observed_own_strong_in_top4_of_25": 4,
+   "null_own_in_top4_mean": 0.829,
+   "null_own_in_top4_max": 4,
+   "p_one_sided_top4_selectivity": 0.013,
+   "own_strong_ranks_committed": {
+    "sys0": 1,
+    "sys1": 2,
+    "sys2": 3
+   }
+  },
+  "sycophancy": {
+   "observed_spearman_w_pinv_kstar": 0.7,
+   "twin_committed_spearman": 0.7,
+   "recapture_max_abs_proj_dev": 3.199,
+   "null_rho_band_2p5_97p5": [
+    -0.8,
+    0.8333
+   ],
+   "null_rho_max": 0.9833,
+   "p_one_sided_spearman": 0.0769,
+   "observed_own_strong_in_top4_of_25": 3,
+   "null_own_in_top4_mean": 0.66,
+   "null_own_in_top4_max": 4,
+   "p_one_sided_top4_selectivity": 0.04,
+   "own_strong_ranks_committed": {
+    "sys0": 10,
+    "sys1": 2,
+    "sys2": 1
+   }
+  },
+  "hallucination": {
+   "observed_spearman_w_pinv_kstar": 0.8333,
+   "twin_committed_spearman": 0.8333,
+   "recapture_max_abs_proj_dev": 0.5424,
+   "null_rho_band_2p5_97p5": [
+    -0.7833,
+    0.8
+   ],
+   "null_rho_max": 0.9667,
+   "p_one_sided_spearman": 0.021,
+   "observed_own_strong_in_top4_of_25": 0,
+   "null_own_in_top4_mean": 0.622,
+   "null_own_in_top4_max": 4,
+   "p_one_sided_top4_selectivity": 1.0,
+   "own_strong_ranks_committed": {
+    "sys0": 10,
+    "sys1": 14,
+    "sys2": 15
+   }
+  }
+ },
+ "metadata": {
+  "script": "finish_null_json (recomputed from local prefix_activations.pt; parent random_direction_null.py wedged in full-repo list verification after a successful upload)",
+  "activations_hf": "superkaiba1/explore-persona-space-data/issue779_monitoring/pinv_prefix_twin/prefix_activations.pt",
+  "capture_dtype": "bfloat16 CPU (fp32 OOM under fleet pressure; rank gate is dtype-robust)",
+  "wall_seconds": 145.2
+ }
+}

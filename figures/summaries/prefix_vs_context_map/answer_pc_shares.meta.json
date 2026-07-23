@@ -1,0 +1,930 @@
+{
+  "commit": "757407a925",
+  "created": "2026-07-23T05:41:06Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "Answer principal component (by variance)": 1.0,
+      "Variance share within the component": 0.7394274178011745,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "Variance share within the component": 0.5658121254186135,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "Variance share within the component": 0.5474380479049127,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "Variance share within the component": 0.8750346708543135,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "Variance share within the component": 0.8577132476406327,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "Variance share within the component": 0.9442105524118145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "Variance share within the component": 0.8965368585699868,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "Variance share within the component": 0.9295472045854278,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "Variance share within the component": 0.9215916404844778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "Variance share within the component": 0.9416082500141623,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "Variance share within the component": 0.9546774635653742,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "Variance share within the component": 0.9330410119965622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "Variance share within the component": 0.8951789758836242,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "Variance share within the component": 0.938505213515359,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "Variance share within the component": 0.8959871647438263,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "Variance share within the component": 0.8832328802664743,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "Variance share within the component": 0.9108518242233209,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "Variance share within the component": 0.9347001952321007,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "Variance share within the component": 0.9092995636745654,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "Variance share within the component": 0.8912678629673793,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "Variance share within the component": 0.8880415808478352,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "Variance share within the component": 0.8709150126165179,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "Variance share within the component": 0.8539402505125674,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "Variance share within the component": 0.9206314126297688,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer principal component (by variance)": 1.0,
+      "Variance share within the component": 0.1208979845836976,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "Variance share within the component": 0.3734583329195059,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "Variance share within the component": 0.3680747105085852,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "Variance share within the component": 0.06547531539975027,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "Variance share within the component": 0.06382813738182624,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "Variance share within the component": 0.01539299411384798,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "Variance share within the component": 0.03546832455534232,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "Variance share within the component": 0.020344320183499964,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "Variance share within the component": 0.013526837786181356,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "Variance share within the component": 0.01333358412715624,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "Variance share within the component": 0.004285615946096444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "Variance share within the component": 0.007246090163451235,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "Variance share within the component": 0.02653992411212258,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "Variance share within the component": 0.005614530910071136,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "Variance share within the component": 0.010140185058567952,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "Variance share within the component": 0.017494320457851043,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "Variance share within the component": 0.00820056458012941,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "Variance share within the component": 0.00698541375822892,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "Variance share within the component": 0.012424620913761397,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "Variance share within the component": 0.01412659218109047,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "Variance share within the component": 0.020020516197013616,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "Variance share within the component": 0.03301456141438275,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "Variance share within the component": 0.03152304844657561,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "Variance share within the component": 0.007899016011310489,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Answer principal component (by variance)": 1.0,
+      "Variance share within the component": 0.1396745976151259,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "Variance share within the component": 0.06072954166188682,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "Variance share within the component": 0.08448724158649756,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "Variance share within the component": 0.059490013745934545,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "Variance share within the component": 0.0784586149775357,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "Variance share within the component": 0.0403964534743404,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "Variance share within the component": 0.0679948168746749,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "Variance share within the component": 0.050108475231071425,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "Variance share within the component": 0.0648815217293427,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "Variance share within the component": 0.045058165858684496,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "Variance share within the component": 0.041036920488530804,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "Variance share within the component": 0.05971289783999023,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "Variance share within the component": 0.07828110000425048,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "Variance share within the component": 0.055880255574570104,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "Variance share within the component": 0.0938726501976046,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "Variance share within the component": 0.09927279927567412,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "Variance share within the component": 0.08094761119655458,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "Variance share within the component": 0.0583143910096644,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "Variance share within the component": 0.07827581541167539,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "Variance share within the component": 0.09460554485153505,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "Variance share within the component": 0.0919379029551528,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "Variance share within the component": 0.09607042596910176,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "Variance share within the component": 0.11453670104085689,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "Variance share within the component": 0.0714695713589204,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Answer principal component (by variance)": 1.0,
+      "y": 0.3879923968073691,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "y": 0.3424958935114247,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "y": 0.7699311280602847,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "y": 0.7836040741890987,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "y": 0.8876846500004609,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "y": 0.7196107406798642,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "y": 0.7982550533614785,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "y": 0.8700659543966811,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "y": 0.8062822657572493,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "y": 0.8362693235876965,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "y": 0.8145372188939234,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "y": 0.8677253148178582,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "y": 0.7551432607121574,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "y": 0.8347772483932548,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "y": 0.8191497396972893,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "y": 0.7910577646541124,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "y": 0.76413614615708,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "y": 0.7859891538735068,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "y": 0.8199488729855593,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "y": 0.7670139187258683,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "y": 0.8253308065956756,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "y": 0.8061212913142044,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "y": 0.8624554559449147,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "y": 0.7857425959697713,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Answer principal component (by variance)": 1.0,
+      "y": 0.4086651239376098,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "y": 0.4732393106407957,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "y": 0.03909520890263091,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "y": 0.0595150605771691,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "y": 0.024885005753752243,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "y": 0.02162343083306456,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "y": 0.010423813266342286,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "y": 0.012520870240399384,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "y": 0.013861714664898717,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "y": 0.00935590788247559,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "y": 0.02102531653453349,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "y": 0.012113310740924699,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "y": 0.01704253476160511,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "y": 0.008880322319017697,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "y": 0.008269796464740797,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "y": 0.022848390409228037,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "y": 0.03067471058894794,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "y": 0.01555732990802039,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "y": 0.014379959623523786,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "y": 0.031328331737125736,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "y": 0.0065094024836105935,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "y": 0.05292844537245284,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "y": 0.007719130641199612,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "y": 0.02492452160252223,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer principal component (by variance)": 1.0,
+      "y": 0.20334247925501558,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 2.0,
+      "y": 0.18426479584777855,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 3.0,
+      "y": 0.19097366303708874,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 4.0,
+      "y": 0.15688086523373057,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": "5",
+      "y": 0.087430344245789,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 6.0,
+      "y": 0.2587658284870693,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 7.0,
+      "y": 0.19132113337218515,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 8.0,
+      "y": 0.11741317536292017,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 9.0,
+      "y": 0.1798560195778558,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": "10",
+      "y": 0.15437476852983256,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 11.0,
+      "y": 0.1644374645715435,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 12.0,
+      "y": 0.12016137444122077,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 13.0,
+      "y": 0.2278142045262419,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 14.0,
+      "y": 0.1563424292877219,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": "15",
+      "y": 0.17258046383796688,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 16.0,
+      "y": 0.18609384493665415,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 17.0,
+      "y": 0.20518914325397875,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 18.0,
+      "y": 0.19845351621846674,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 19.0,
+      "y": 0.16567116739091958,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": "20",
+      "y": 0.201657749537008,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 21.0,
+      "y": 0.16815979092071343,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 22.0,
+      "y": 0.14095026331333704,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 23.0,
+      "y": 0.12982541341388432,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Answer principal component (by variance)": 24.0,
+      "y": 0.1893328824277003,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 144,
+  "text": {
+    "suptitle": "What each answer direction encodes: crossed shares per answer PC \u2014 dense core, layer 14, ambient",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Answer principal component (by variance)",
+        "ylabel": "Variance share within the component",
+        "legend_labels": [
+          "Query",
+          "Prefix",
+          "Prefix x query interaction"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Base model",
+        "xlabel": "Answer principal component (by variance)",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Query",
+      "Prefix",
+      "Prefix x query interaction"
+    ]
+  }
+}

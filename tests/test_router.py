@@ -508,10 +508,13 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     never skipping a cheaper rung. We inject a ``_PassiveRunpod`` that records
     launches; the assertion is that RunPod launches EXACTLY ONCE and its
     attempt is LAST in the trail, behind every GCP rung outcome and the
-    nibi park-fail. #680: a short lora-7b now walks 5 GCP rungs (spot A100-80,
-    spot A100-40, flex-start A100-80, on-demand A100-80, on-demand A100-40).
+    fellows + nibi park-fails. #680: a short lora-7b now walks 5 GCP rungs
+    (spot A100-80, spot A100-40, flex-start A100-80, on-demand A100-80,
+    on-demand A100-40). #1609: the fellows lane sits FIRST in the default
+    order and is exhausted alongside — RunPod stays last.
     """
     rp = _PassiveRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=10**9)  # never starts
     nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
     # Every GCP rung is doomed: A100-80 + A100-40, STANDARD + SPOT, all
     # capacity-miss on the create (a runtime miss, not a headroom skip — so
@@ -524,7 +527,7 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     result = route(
         _short_lora_spec(),
         runpod_backend=rp,
-        free_backends={"nibi": nibi},
+        free_backends={"nibi": nibi, "fellows": fellows},
         gcp_backend=gcp,
         lease_store=lease_store,
         is_started=lambda _b, _h: False,
@@ -542,15 +545,19 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     assert result.chosen_kind == "runpod"
     assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
     assert len(rp.launches) == 1
-    # Every GCP rung was attempted (5 ladder rungs, all provisioning_failure),
-    # the nibi lane failed, and RunPod is the FINAL attempt.
+    # The fellows lane failed FIRST, every GCP rung was attempted (5 ladder
+    # rungs, all provisioning_failure), the nibi lane failed, and RunPod is
+    # the FINAL attempt.
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
     gcp_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "gcp"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
     runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert fellows_idxs, "the fellows lane must have been attempted"
     assert len(gcp_fail_idxs) == 5  # all five ladder rungs attempted + failed
     assert nibi_idxs, "the free SLURM lane must have been attempted"
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
+    assert max(fellows_idxs) < min(gcp_fail_idxs)  # fellows BEFORE the GCP ladder
     assert max(gcp_fail_idxs) < runpod_idxs[-1]
     assert max(nibi_idxs) < runpod_idxs[-1]
     # The residual-gap marker names the exhausted lanes.
@@ -3181,8 +3188,11 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 
 def test_default_auto_lane_order_is_gcp_first():
-    """The standing default puts GCP before every free SLURM lane."""
-    assert DEFAULT_AUTO_LANE_ORDER == ("gcp", "nibi", "fir", "mila")
+    """The standing default (#1609): fellows first, then GCP, then the
+    legacy free SLURM lanes. (Test name kept — it is the durability pin
+    CLAUDE.md § Compute backends cites; the invariant it pins is the
+    DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
+    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "gcp", "nibi", "fir", "mila")
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
 
@@ -3220,6 +3230,131 @@ def test_auto_lane_order_env_rejects_duplicates(monkeypatch):
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,gcp,nibi")
     with pytest.raises(RouteError, match="duplicate"):
         auto_lane_order()
+
+
+# ---------------------------------------------------------------------------
+# #1609 — fellows lane (charmander H200 SLURM cluster) in the auto chain
+# ---------------------------------------------------------------------------
+
+
+def test_auto_lane_order_env_accepts_fellows(monkeypatch):
+    """``EPM_AUTO_LANE_ORDER=fellows,gcp`` round-trips (#1609)."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,gcp")
+    assert auto_lane_order() == ("fellows", "gcp")
+
+
+def test_auto_lane_order_env_rejects_runpod_alongside_fellows(monkeypatch):
+    """``runpod`` still raises loudly with fellows in the list."""
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,runpod")
+    with pytest.raises(RouteError, match="runpod"):
+        auto_lane_order()
+
+
+def test_auto_lane_order_env_rejects_duplicate_fellows(monkeypatch):
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,gcp,fellows")
+    with pytest.raises(RouteError, match="duplicate"):
+        auto_lane_order()
+
+
+def test_router_explicit_fellows_override_routes_to_lane(lease_store):
+    """``backend: fellows`` pin routes straight to the lane (mirror of the
+    mila override test MINUS the socket gate — fellows uses a plain
+    persistent key, and the mila gate keys on the literal lane name)."""
+    rp = _ExplodingRunpod()
+    fellows = _FreeLaneBackend(kind="fellows")
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert len(fellows.launches) == 1
+
+
+def test_fellows_prepare_failure_advances_to_gcp(lease_store):
+    """A dead fellows endpoint fails ``prepare`` → ``BackendPrepareError``
+    → the auto chain advances to GCP (the designed fall-through, #1609:
+    a charmander endpoint remap must never block science)."""
+    fellows = _PrepareRecordingLane(
+        kind="fellows", prepare_raises=OSError("ssh: connect to host charmander: refused")
+    )
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert fellows.calls == ["prepare"]
+    assert fellows.launches == []
+    assert len(gcp.launches) == 1
+
+
+def test_fellows_launch_valueerror_advances_to_gcp(lease_store):
+    """A launch-time ``ValueError`` (e.g. gpus > max_gpus_per_node=8) on
+    the fellows lane is provision-class on the auto chain — the router
+    records ``launch_failed`` and advances to GCP instead of crashing
+    (plan #1609 assumption 8, verified against the free-lane
+    ``except Exception`` advance at the auto-chain launch site)."""
+
+    class _LaunchRaisingLane(_FreeLaneBackend):
+        def launch(self, spec: RunSpec) -> RunHandle:
+            raise ValueError("requested gpus=9 > cluster 'fellows' max_gpus_per_node=8")
+
+    fellows = _LaunchRaisingLane(kind="fellows")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    fellows_outcomes = [(a.kind, a.outcome) for a in result.attempts if a.kind == "fellows"]
+    assert ("fellows", "launch_failed") in fellows_outcomes
+    assert len(gcp.launches) == 1
+
+
+def test_backend_poll_lane_set_includes_fellows():
+    """One-line pin on scripts/backend_poll.py's ``_resolve_backend`` lane
+    set (#1609): a missed edit would mis-route fellows polling. The live
+    probe is the backstop; this unit pin is the cheap insurance."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    script = Path(__file__).parent.parent / "scripts" / "backend_poll.py"
+    spec_ = importlib.util.spec_from_file_location("_bp_1609", script)
+    mod = importlib.util.module_from_spec(spec_)
+    sys.modules["_bp_1609"] = mod
+    try:
+        spec_.loader.exec_module(mod)
+        backend = mod._resolve_backend("fellows")
+    finally:
+        sys.modules.pop("_bp_1609", None)
+    from explore_persona_space.backends.slurm import SlurmBackend
+
+    assert isinstance(backend, SlurmBackend)
 
 
 def test_route_rejects_runpod_in_config_lane_order(lease_store):
@@ -5741,7 +5876,7 @@ def test_route_logs_resolved_auto_order(lease_store, caplog):
         )
     order_lines = [r.message for r in caplog.records if "auto lane order" in r.message]
     assert order_lines, "route() must log the resolved auto order"
-    assert "gcp -> nibi -> fir -> mila" in order_lines[0]
+    assert "fellows -> gcp -> nibi -> fir -> mila" in order_lines[0]
     assert "default" in order_lines[0]
 
 
@@ -8087,21 +8222,549 @@ def test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons():
     """#1116: the queue-vanish reason VALUE is pairwise-distinct from BOTH
     workload-crash reasons, the queue-timeout reason, the boot-loop reason,
     AND the capacity-exhaustion fallback reason (auto_fallback_runpod) — the
-    marker trail tells a server-side queue drop apart from every sibling."""
+    marker trail tells a server-side queue drop apart from every sibling.
+    #1596 amendment (deliberate, 6 -> 7): the queue-vanish ON-DEMAND-RETRY
+    reason joins the pairwise-distinct set — the RunPod-refused->GCP leg must
+    be tellable apart from the GCP->RunPod vanish leg it follows.
+    #1601 amendment (deliberate, 7 -> 8): the queue-TIMEOUT ON-DEMAND-RETRY
+    reason joins too — the marker trail must tell a timed-out queue's retry
+    apart from a vanished queue's retry AND from every failover leg."""
     from explore_persona_space.backends.router import (
         ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
+        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
     reasons = {
         ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
         ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
         ROUTE_REASON_RUNPOD_FALLBACK,
     }
-    assert len(reasons) == 6  # all six are distinct strings
+    assert len(reasons) == 8  # all eight are distinct strings
     assert ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD == "gcp_queue_vanish_failover_runpod"
+    assert ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY == "queue_vanish_gcp_ondemand_retry"
+    assert ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY == "queue_timeout_gcp_ondemand_retry"
+
+
+# ---------------------------------------------------------------------------
+# issue #1596 — queue-vanish on-demand RETRY (the RunPod-refused -> GCP leg).
+#
+# When the #1116 queue-vanish failover's RunPod terminal rung refuses for
+# capacity/cap reasons with CLEAN residue, the poller retries the GCP
+# ladder's STANDARD (on-demand) rungs via
+# router.retry_gcp_ondemand_after_queue_vanish — re-entering
+# _attempt_one_gcp_rung, so the retry BURNS gcp_attempts_today (unlike the
+# poller-side failovers, whose no-burn is structural). These tests pin the
+# router-level contract (rung enumeration, cap accounting, the in-flock
+# exactly-once identity stamp on the rung, the cross-rung
+# _lease_already_failed_over extension); the poller-side end-to-end tests
+# live in tests/test_backend_poll.py (the #1596 block).
+# ---------------------------------------------------------------------------
+
+
+def _today_utc() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%d")
+
+
+def _rung_kwargs(lease_store, marker_poster, gcp):
+    """Shared kwargs for a direct _attempt_one_gcp_rung invocation."""
+    return dict(
+        spec=_spec(backend="gcp"),
+        rung_label="ondemand_a100_80",
+        gcp_backend=gcp,
+        store=lease_store,
+        attempts=[],
+        started_at=0.0,
+        cfg=RouterConfig(),
+        now_fn=_clock(),
+        marker_poster=marker_poster,
+        on_launched=None,
+        terminal=True,
+    )
+
+
+def test_attempt_one_gcp_rung_failover_identity_none_is_byte_identical(lease_store, marker_poster):
+    """#1596 default-None parity: without ``failover_of_identity`` the rung
+    NEVER short-circuits ``already_launched`` (even against a lease whose
+    ``gcp_failover_of`` happens to match) and NEVER writes a stamp."""
+    from explore_persona_space.backends.router import RouteResult, _attempt_one_gcp_rung
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-0"}
+    # Leg A: fresh store -> launch, and the post-launch lease carries NO stamp.
+    gcp = _GcpBackendDouble()
+    outcome = _attempt_one_gcp_rung(**_rung_kwargs(lease_store, marker_poster, gcp))
+    assert isinstance(outcome, RouteResult)
+    assert len(gcp.launches) == 1
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_failover_of is None
+    # Leg B: a pre-seeded matching stamp does NOT short-circuit a default call.
+    lease.gcp_failover_of = identity
+    lease_store.write(lease)
+    gcp2 = _GcpBackendDouble()
+    outcome2 = _attempt_one_gcp_rung(**_rung_kwargs(lease_store, marker_poster, gcp2))
+    assert isinstance(outcome2, RouteResult)
+    assert len(gcp2.launches) == 1
+
+
+def test_attempt_one_gcp_rung_matching_failover_identity_returns_already_launched(
+    lease_store, marker_poster
+):
+    """#1596 in-flock exactly-once: a lease already stamped with THIS identity
+    short-circuits ``"already_launched"`` — no create, no counter bump; a
+    DIFFERENT identity proceeds to launch."""
+    from explore_persona_space.backends.router import _attempt_one_gcp_rung
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-0"}
+    lease = Lease(
+        issue=137,
+        spec_hash="deadbeef",
+        attempt_id="att-1",
+        backend="gcp",
+        gcp_attempts_today=2,
+        gcp_attempts_date=_today_utc(),
+        gcp_failover_of=identity,
+    )
+    lease_store.write(lease)
+    gcp = _GcpBackendDouble()
+    outcome = _attempt_one_gcp_rung(
+        **_rung_kwargs(lease_store, marker_poster, gcp), failover_of_identity=identity
+    )
+    assert outcome == "already_launched"
+    assert len(gcp.launches) == 0  # no create
+    after = lease_store.read(137)
+    assert after is not None and after.gcp_attempts_today == 2  # no counter bump
+    # A DIFFERENT identity (a genuinely-new vanish episode) does NOT match.
+    other = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-9"}
+    gcp2 = _GcpBackendDouble()
+    outcome2 = _attempt_one_gcp_rung(
+        **_rung_kwargs(lease_store, marker_poster, gcp2), failover_of_identity=other
+    )
+    assert not isinstance(outcome2, str)
+    assert len(gcp2.launches) == 1
+    # The launch stamped the NEW identity in the SAME flock transaction.
+    stamped = lease_store.read(137)
+    assert stamped is not None and stamped.gcp_failover_of == other
+
+
+def test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts(
+    lease_store, marker_poster, captured_markers
+):
+    """#1596 criteria 1+2 (router side): the retry walks ONLY on-demand rungs
+    (STANDARD pin on _gcp_ladder_specs — base A100-80 then the A100-40
+    fallback for a fits-40 intent), BURNS one daily attempt per create, stamps
+    the identity in-flock, and the FINAL epm:backend-selected marker carries
+    reason=queue_vanish_gcp_ondemand_retry (intermediate rung markers wear the
+    generic auto_fallback_gcp — accepted trail noise)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+        retry_gcp_ondemand_after_queue_vanish,
+    )
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-0"}
+    # First on-demand rung (A100-80/STANDARD) capacity-misses; the A100-40
+    # on-demand rung succeeds — both creates burn an attempt.
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={"A100-80/STANDARD": GcpProvisioningError("no capacity")}
+    )
+    result = retry_gcp_ondemand_after_queue_vanish(
+        spec=_spec(backend="gcp"),
+        gcp_backend=gcp,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(),
+        gcp_failover_of_identity=identity,
+    )
+    assert result is not None
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY
+    # Every launched rung-spec resolved STANDARD provisioning (no spot/flex).
+    from explore_persona_space.backends.gcp import resolve_provisioning_model
+
+    assert gcp.launches, "no GCP create attempted"
+    assert all(resolve_provisioning_model(s) == "STANDARD" for s in gcp.launches)
+    # The launched rung label is an on-demand one, and every recorded rung
+    # attempt names an ondemand_ rung.
+    assert result.extra["gcp_ladder_rung"].startswith("ondemand_")
+    rung_details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    assert rung_details and all("ondemand_" in d for d in rung_details)
+    # The retry BURNS attempts: two creates (miss + success) -> counter == 2.
+    assert result.extra["gcp_attempts_today"] == 2
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 2
+    # In-flock exactly-once stamp landed with the create.
+    assert lease.gcp_failover_of == identity
+    # FINAL marker carries the distinct retry reason (directive: assert on the
+    # LAST epm:backend-selected marker, not the intermediate rung markers).
+    finals = _by_reason(captured_markers, ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY)
+    assert finals
+    backend_selected = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"]
+    last_body = json.loads(backend_selected[-1]["note"])
+    assert last_body["reason"] == ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY
+
+
+def test_retry_gcp_ondemand_reason_param_threads_to_result_and_final_marker(
+    lease_store, marker_poster, captured_markers
+):
+    """#1601: the keyword-only ``reason`` param generalizes the #1596 walk to
+    the queue-timeout trigger — calling the router function with
+    reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY stamps that reason on
+    BOTH RouteResult.reason and the FINAL epm:backend-selected marker (the
+    default-reason vanish behavior is pinned by the untouched
+    test_retry_gcp_ondemand_walks_standard_rungs_only_and_burns_attempts)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
+        retry_gcp_ondemand_after_queue_vanish,
+    )
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-timedout-0"}
+    gcp = _GcpBackendDouble()
+    result = retry_gcp_ondemand_after_queue_vanish(
+        spec=_spec(backend="gcp"),
+        gcp_backend=gcp,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(),
+        gcp_failover_of_identity=identity,
+        reason=ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY,
+    )
+    assert result is not None
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY
+    finals = _by_reason(captured_markers, ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY)
+    assert finals
+    backend_selected = [m for m in captured_markers if m.get("marker") == "epm:backend-selected"]
+    last_body = json.loads(backend_selected[-1]["note"])
+    assert last_body["reason"] == ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY
+
+
+def test_retry_gcp_ondemand_respects_daily_cap(lease_store, marker_poster):
+    """#1596 criterion 2 (cap side): a counter already AT the per-day cap means
+    NO create is issued and the retry raises NoComputeAvailableError (the
+    caller falls through to the re-drivable terminal)."""
+    from explore_persona_space.backends.router import retry_gcp_ondemand_after_queue_vanish
+
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="deadbeef",
+            attempt_id="att-1",
+            gcp_attempts_today=MAX_GCP_ATTEMPTS_PER_DAY,
+            gcp_attempts_date=_today_utc(),
+        )
+    )
+    gcp = _GcpBackendDouble()
+    with pytest.raises(NoComputeAvailableError):
+        retry_gcp_ondemand_after_queue_vanish(
+            spec=_spec(backend="gcp"),
+            gcp_backend=gcp,
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+        )
+    assert len(gcp.launches) == 0
+    after = lease_store.read(137)
+    assert after is not None and after.gcp_attempts_today == MAX_GCP_ATTEMPTS_PER_DAY
+
+
+def test_retry_gcp_ondemand_h100_intent_unservable(lease_store, marker_poster):
+    """#1596: an H100 intent is refused UP FRONT — GCP offers no on-demand H100
+    pool and gcp.render_create_argv raises on H100+STANDARD, so building the
+    rung would guarantee a crash. Zero creates."""
+    from explore_persona_space.backends.router import retry_gcp_ondemand_after_queue_vanish
+
+    gcp = _GcpBackendDouble()
+    with pytest.raises(NoComputeAvailableError) as ei:
+        retry_gcp_ondemand_after_queue_vanish(
+            spec=RunSpec(issue=137, intent="sweep-8g-h100", backend="gcp"),
+            gcp_backend=gcp,
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+        )
+    assert "no on-demand H100 pool" in str(ei.value)
+    assert len(gcp.launches) == 0
+    assert any(a.get("outcome") == "ondemand_retry_unservable_h100" for a in ei.value.attempts)
+
+
+def test_retry_gcp_ondemand_reraise_workload_error_cause(lease_store, marker_poster):
+    """#1596 (Change 3 step 4): a workload-class create failure on the retry
+    re-raises the UNDERLYING GcpWorkloadError — the exact instance the rung
+    chained as _GcpWorkloadFailover.__cause__ (pins __cause__ non-None; a
+    __cause__-None regression would fail loud, never cascade to RunPod)."""
+    from explore_persona_space.backends.router import retry_gcp_ondemand_after_queue_vanish
+
+    err = GcpWorkloadError("entrypoint crashed on the retry", evidence={"exit_code": 1})
+    gcp = _GcpBackendDouble(launch_raises=err)
+    with pytest.raises(GcpWorkloadError) as ei:
+        retry_gcp_ondemand_after_queue_vanish(
+            spec=_spec(backend="gcp"),
+            gcp_backend=gcp,
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+        )
+    assert ei.value is err  # the UNDERLYING error, not a wrapper / new instance
+    assert not isinstance(ei.value, NoComputeAvailableError)
+
+
+def test_runpod_terminal_rung_short_circuits_on_gcp_stamped_lease(lease_store, marker_poster):
+    """#1596 Change 4b (cross-rung exactly-once): a lease with backend="gcp"
+    carrying a matching gcp_failover_of stamp (the on-demand retry's in-flock
+    stamp) short-circuits the RunPod terminal rung — ZERO RunPod provisions —
+    while a DIFFERENT identity does not."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-0"}
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="deadbeef",
+            attempt_id="att-1",
+            backend="gcp",
+            job_id="instance-retry-1",
+            gcp_failover_of=identity,
+        )
+    )
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller_queue_vanish"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        gcp_failover_of_identity=identity,
+    )
+    assert result.extra.get("failover_already_launched") is True
+    assert len(rp.launches) == 0  # no paid RunPod pod alongside the GCP retry
+    # A DIFFERENT identity (a genuinely-new crash episode) still launches.
+    other = {"pod_name": "eps-issue-137", "job_id": "instance-vanished-9"}
+    rp2 = _PassiveRunpod()
+    result2 = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp2,
+        evidence={"source": "async_poller_queue_vanish"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        gcp_failover_of_identity=other,
+    )
+    assert result2.extra.get("failover_already_launched") is None
+    assert len(rp2.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# #1603 — exit-75 still-waiting at the RunPod terminal rung (incident #1586).
+#
+# pod_lifecycle's bounded wait-for-capacity loop exits 75 (EX_TEMPFAIL) with
+# NOTHING provisioned and NOTHING billing — the contract is "re-run the same
+# command to continue waiting". Pre-#1603 the rung's catch-all collapsed that
+# into NoComputeAvailableError + the no_compute_available terminal, mis-parking
+# the task at blocked (#1586, 12:46:02Z). The rung now re-raises the exit-75
+# CalledProcessError VERBATIM (sync path: dispatch_issue's existing exit-75
+# still-waiting arm covers it); the ASYNC wrapper converts it back to
+# NoComputeAvailableError so the poller's terminal contract is byte-unchanged.
+# ---------------------------------------------------------------------------
+
+
+class _StillWaitingRunpod(_BaseBackend):
+    """RunPod double whose ``launch`` raises pod_lifecycle's exit-75
+    still-waiting error through the #1465 stderr-tail relay subclass.
+
+    Fixture-hygiene note (#1603 plan): the SHORT cmd ``["pod_lifecycle",
+    "provision"]`` is rung-only — the rung's predicate is rc-only, but this
+    cmd does NOT satisfy ``dispatch_issue._provision_still_waiting``'s
+    cmd-shape conjunct (``"pod_lifecycle.py"`` is not a substring of
+    ``"pod_lifecycle"``); any assertion crossing into that CLI helper uses
+    the real-shaped cmd (see tests/test_dispatch_issue_cli.py).
+    """
+
+    def __init__(self, *, returncode: int = 75) -> None:
+        self.launches: list[RunSpec] = []
+        self._returncode = returncode
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+        self.launches.append(spec)
+        raise PodLifecycleProcessError(
+            self._returncode,
+            ["pod_lifecycle", "provision"],
+            output=None,
+            stderr="[wait-for-capacity] STILL-WAITING: per-process budget reached",
+        )
+
+
+def test_runpod_terminal_rung_still_waiting_exit75_reraises_not_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC1 (durability pin): an exit-75 still-waiting provision at the
+    terminal rung re-raises the CalledProcessError VERBATIM — no
+    NoComputeAvailableError collapse, NO terminal failure marker, NO lease
+    write (nothing launched; the wait is state-free) — and records the
+    DISTINCT runpod_still_waiting RouteAttempt."""
+    import subprocess
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StillWaitingRunpod()
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(subprocess.CalledProcessError) as ei:
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    assert ei.value.returncode == 75
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1
+    # NO terminal failure marker on the still-waiting path (the orchestrator
+    # would otherwise post epm:failure + set-status blocked — the #1586 park).
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert attempts[-1].outcome == "runpod_still_waiting"
+    assert "re-run the same launch command" in attempts[-1].detail
+
+
+def test_runpod_terminal_rung_non75_process_error_keeps_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC3 (fail-loud backing test): a PodLifecycleProcessError with ANY
+    OTHER returncode keeps the pre-#1603 blanket branch byte-for-byte —
+    NoComputeAvailableError raised AND the no_compute_available terminal
+    marker posted BEFORE the raise."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StillWaitingRunpod(returncode=1)
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(NoComputeAvailableError):
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["reason"] == ROUTE_REASON_NO_COMPUTE
+    assert attempts[-1].outcome == "runpod_fallback_failed"
+
+
+def test_route_auto_chain_exit75_at_terminal_rung_propagates_still_waiting(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC2 (the #1586 sync-park replay): a full route() exhaustion walk
+    (every GCP rung capacity-misses, the free lane never starts) whose RunPod
+    terminal rung exits 75 propagates the CalledProcessError out of route()
+    — no intermediate handler swallows it — so dispatch_issue's existing
+    exit-75 still-waiting arm (exit 75 + still_waiting: true + rerun: true)
+    covers the terminal rung end-to-end."""
+    import subprocess
+
+    rp = _StillWaitingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    with pytest.raises(subprocess.CalledProcessError) as ei:
+        route(
+            _short_lora_spec(),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(
+                free_wait_seconds=1,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                max_gcp_attempts_per_day=99,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert ei.value.returncode == 75
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1  # the rung WAS reached (last resort), once
+    # State-free at the RUNPOD rung: no runpod lease was written (nothing
+    # provisioned), so a re-run of the same command re-walks the ladder. (The
+    # nibi PARK attempt writes its own free-lane lease — pre-existing route()
+    # behavior, deliberately not asserted away here.)
+    lease = lease_store.read(137)
+    assert lease is None or lease.backend != "runpod"
+
+
+def test_async_failover_exit75_converts_to_no_compute_available(
+    lease_store, marker_poster, captured_markers
+):
+    """#1603 AC4 (async parity): the async failover wrapper converts an
+    exit-75 still-waiting rung raise to NoComputeAvailableError (terminal
+    marker posted BEFORE the raise, per the test_router L2011-family
+    invariant), preserving the __cause__ chain backend_poll's residue
+    diagnostics read — every backend_poll consumer sees the same type as
+    today."""
+    import subprocess
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _StillWaitingRunpod()
+    with pytest.raises(NoComputeAvailableError) as ei:
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert "still WAITING" in str(ei.value)
+    cause = ei.value.__cause__
+    assert isinstance(cause, subprocess.CalledProcessError)
+    assert cause.returncode == 75
+    # Terminal marker posted before the raise, carrying the rung's
+    # runpod_still_waiting attempt row.
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["attempts"][-1]["outcome"] == "runpod_still_waiting"

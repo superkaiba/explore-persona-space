@@ -149,3 +149,22 @@ Full recipe: `docs/api_throughput_guidelines.md`;
 CLAUDE.md § "LLM judge" (Batch API for large sets).
 **Owner:** `efficiency-critic` (plan estimate vs the decision table;
 impl verifies the dispatcher route).
+
+## 11. Identity+learned-bias baseline AND kNN retrieval for every representation mapping
+
+Any experiment that FITS a map between activation summaries (context→answer,
+prefix→context, cross-model / cross-framing reparameterization — any v_X→v_Y
+predictor) reports, alongside held-out R²: (a) the identity-family baseline
+including the learned-bias form x + b, b = train-fold mean of (y − x)
+(canonical helper `analysis/mapping_baselines.identity_bias_predict`) whenever
+input and output spaces share dimension — a mismatch is stated as inapplicable,
+never silently skipped; and (b) the kNN-retrieval read P(true target within the
+k nearest neighbors of the prediction) among the held-out pool
+(`analysis/mapping_baselines.knn_retrieval`; euclidean + cosine, chance =
+k/n_pool stated). The two reads dissociate in both directions — R² alone both
+overstates and understates maps (#722 / #779 first measurements, 2026-07-22).
+Omitting either read without a stated exemption is a REVISE; no map fit → the
+plan states "N/A — no representation map fitted".
+Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".
+**Owner:** `statistics-critic` (+ Codex twin); v1: `critic` Statistics &
+Measurement lens item 15.

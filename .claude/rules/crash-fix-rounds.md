@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -331,6 +331,53 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      (`git fetch origin issue-<N>` + the index-lock recovery) and
      re-probe; still absent → `epm:failure v1` (`failure_class: infra`,
      `reason: fix-commit-absent-on-pod`, naming the SHA).
+   - **MooseFS content read (SAME-POD relaunch on a MooseFS-backed
+     checkout — the RunPod `/workspace` lane) (#1112).** Git-level
+     verification proves nothing about the BYTES a subprocess will
+     read: MooseFS FUSE can serve the pre-pull copy of a just-updated
+     file while HEAD + ancestry read correct (#1112 attempt 2,
+     2026-07-21: pod verified at the fix commit's HEAD, the training
+     subprocess crashed on the PRE-fix assert in
+     `scripts/train_behavior_fullft.py`, the on-pod re-probe then read
+     fresh bytes — ~15 min + one crash cycle on a billing 4×H100 pod;
+     trap entry: `.claude/rules/gotchas.md` § MooseFS stale-served
+     bytes). After the ancestry probe, verify the served bytes of
+     every path the declared fix commit(s) touched, pod-side in the
+     same SSH session and in the SAME checkout / working tree the
+     relaunch command dispatches from (a probe against a different
+     clone proves nothing about the tree the run reads):
+     `for f in $(git diff-tree --no-commit-id --name-only -r <fix-sha>); do
+        test "$(git hash-object -- $f)" = "$(git rev-parse HEAD:$f)" ||
+          { echo STALE-BYTES $f; exit 1; }; done && echo BYTES-OK`
+     (multiple declared SHAs: union of their diff-trees; cost: one SSH
+     round-trip, ~seconds for typical few-file fix commits — FUSE-slow
+     git ops can stretch large file sets).
+     `git hash-object` always reads the full working-tree content —
+     never the index stat cache that lets `git status` report clean
+     without reading — and must equal the blob OID at HEAD (HEAD, not
+     `<fix-sha>:<path>`: a later commit may touch the file again); a
+     fix-touched path ABSENT at HEAD (deleted/renamed since) is
+     verified absent instead (`test ! -e <f>` — stale serving can
+     resurrect a deletion; the fenced loop itself fail-louds
+     `STALE-BYTES` on such a path — `git rev-parse HEAD:<f>` errors —
+     so apply this branch for deletion-bearing fix commits rather
+     than reading that halt as a mount fault). On STALE-BYTES:
+     re-materialize the file (`rm -f <f> && git checkout HEAD -- <f>`
+     — the `rm` forces a real fresh write through the mount; a
+     stat-clean bare checkout can no-op) and re-probe ONCE; a
+     persistent mismatch means do NOT dispatch — post
+     `epm:failure v1` (`failure_class: infra`,
+     `reason: moosefs-stale-read`, naming the path) and let the
+     orchestrator swap the pod (stop/resume, else terminate + fresh
+     provision). Fresh bytes but the relaunch still hits pre-fix
+     behavior → clear the fix-touched modules' `__pycache__` before
+     condemning the mount (stale bytecode of IMPORTED modules is the
+     neighboring cause with the same symptom; a main script never
+     executes from `__pycache__`, so for a script-file fix the byte
+     probe alone is decisive). FRESH-PROVISION relaunches (GCE clone,
+     fresh-RunPod bootstrap clone, SLURM rsync) are EXEMPT: the
+     clone/rsync WRITES the files fresh, so no pre-update cached copy
+     exists to serve.
    - FRESH-PROVISION relaunch (GCP GCE / fresh RunPod — the lane clones
      `origin/issue-<N>` at boot, no pre-boot SSH): probe VM-SIDE before
      dispatch: `git fetch origin issue-<N> --quiet && git merge-base

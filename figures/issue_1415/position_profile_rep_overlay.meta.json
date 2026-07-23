@@ -1,0 +1,638 @@
+{
+  "commit": "48fe05ca85",
+  "created": "2026-07-22T23:04:10Z",
+  "figsize": [
+    12.8,
+    4.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 35.257106222212315,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 27.295368957466312,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.415773136275154,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.798651644161769,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.745236362729754,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.541187056473323,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.215652057102748,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.626676193305425,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.760405727795192,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.007009880883354,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.853172259671348,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.583148973328727,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.285368468080248,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 35.72840235834675,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 26.32568535554622,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.596814036369324,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.348732556615557,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.824028968811035,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.977874176842827,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.865069491522652,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.832817707742963,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.188271760940552,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.579531277929034,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.03500064781734,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.972039716584343,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.94395135130201,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 37.626461444688694,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 27.558785322787507,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.882353237697057,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.494087048939296,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.8701411315373,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.428149461746216,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.147225107465472,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.774751629148211,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.24246426991054,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.404296483312335,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.324140616825648,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 8.813861216817584,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.16257176228932,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 38.31411261484027,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 27.547627220728568,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 13.406048442636218,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.650207774979728,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.352919169834681,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.404359068189349,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.789506571633476,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.364408041749682,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.607559365885598,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.759274891444615,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.52367651462555,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.570437124797277,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 14.537198202950615,
+      "series": "parent L14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 39.32961670256087,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 26.991062011037553,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.605467489787511,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.385265895298549,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.02463368007115,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.721980384417943,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.83358543259757,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.254694189344134,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.158429724829537,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.249844295637947,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.356719732284546,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.168538093566895,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 13.240724274090358,
+      "series": "rep43",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "\u2016shift\u2016 (mean over pairs)": 37.36272427280034,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "\u2016shift\u2016 (mean over pairs)": 26.339824496103184,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.25344455242157,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "\u2016shift\u2016 (mean over pairs)": 11.366902453558785,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.021493537085396,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.422707523618426,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.770583067621503,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.059004443032402,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.149197561400277,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.944658330508641,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "\u2016shift\u2016 (mean over pairs)": 10.222322225570679,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "\u2016shift\u2016 (mean over pairs)": 9.604353530066353,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "\u2016shift\u2016 (mean over pairs)": 12.092506476811,
+      "series": "rep44",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 78,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix \u00b7 L14 \u2014 fresh-sampling overlays",
+        "ylabel": "\u2016shift\u2016 (mean over pairs)",
+        "legend_labels": [
+          "parent L14",
+          "rep43",
+          "rep44"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      },
+      {
+        "title_left": "context \u00b7 L14 \u2014 fresh-sampling overlays",
+        "ylabel": "\u2016shift\u2016 (mean over pairs)",
+        "legend_labels": [
+          "parent L14",
+          "rep43",
+          "rep44"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      }
+    ],
+    "series": [
+      "parent L14",
+      "rep43",
+      "rep44"
+    ]
+  }
+}

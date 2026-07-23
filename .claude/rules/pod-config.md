@@ -1,5 +1,5 @@
 ---
-description: Pod SSH/MCP config authority split — live RunPod API vs pods.conf vs pods_ephemeral.json, the three sync directions, and when to reach for pod.py config --refresh-from-api (loads when you touch the pod scripts or pods.conf)
+description: Pod SSH/MCP config authority split — live RunPod API vs pods.conf vs pods_ephemeral.json, the three sync directions, when to reach for pod.py config --refresh-from-api, and the stopped-volume NON-durability rule (persist resume state to HF before any multi-hour park) (loads when you touch the pod scripts or pods.conf)
 paths:
   - "scripts/pod*.py"
   - "scripts/pods.conf"
@@ -38,6 +38,33 @@ loop is failing on a port the live API no longer reports.
 the pod back at a new port outside the success path; `pods.conf` stayed at
 the pre-stop port and an autonomous SSH polling loop spun for 13+ hours at
 $32/hr.)
+
+## Stopped pod volume is NOT durable — persist resume state before a multi-hour park
+
+A STOPPED pod's volume is preserved only best-effort: RunPod can destroy a
+stopped pod outright — despite the `keep-running` tag and well inside the
+7-day idle window — taking the volume and everything on it. (Incident
+#1112, 2026-07-21: pod stopped 07:25Z, volume preserved + `keep-running`;
+~22h later the live API returned `{"data": {"pod": null}}` — done-JSONs and
+resume state lost, full re-run forced. Whether that was capacity reclaim or
+billing-side cleanup is not derivable from the destroyed record; the
+mitigation below holds under every volume-loss cause.) Separately, `resume`
+is HOST-PINNED, so even a surviving volume can be locked away for days by a
+SUPPLY_CONSTRAINT (#488).
+
+Therefore, before any `pod.py stop` whose park may outlast ~1 hour (a user
+pause, a Step 8-bis gate/crash halt, awaiting follow-ups), upload the run's
+RESUME STATE to the HF data repo (`issueN_<slug>/resume_state/`, or the
+bucket the pipeline already writes — or git, per the Upload Policy table's
+per-artifact destinations) — done-JSONs, phase/resume sentinels, partial
+eval JSONs, progress manifests: anything a resumed run would read from the
+volume to know where to restart. This extends the upload-policy
+persist-by-default + resume-critical-INPUTS-before-stop duties
+(`.claude/rules/upload-policy.md`) to resume STATE; the files are KB–MB
+text/JSON — the unconditional non-LFS path. On resume, prefer the off-pod
+copies over the volume's. Treat a stopped volume as a convenience cache
+(HF hub cache, venv), never as the only copy of anything. The `keep-running`
+tag shields only against PROJECT janitors, not provider-side reclaim.
 
 ## Live state vs seed (task #821 v3 relocation)
 

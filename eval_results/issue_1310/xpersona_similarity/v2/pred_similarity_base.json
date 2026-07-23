@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "git_commit": "3235d93dd8e9f4242e3c72fb519ed292d5435b72",
+    "timestamp": "2026-07-22T18:56:26Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity_v2.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "headline_layer": 19,
+  "ordered_pairs": {
+    "Wren->HELIOS": {
+      "cosine_mean": 0.35825840898349165,
+      "r2_source_vs_target": -0.17531968404867548,
+      "null_cosine_mean": -0.010385774978733461,
+      "null_cosine_p975": 0.01743332858810408,
+      "null_r2_mean": -0.332243652731418,
+      "null_r2_p975": -0.29054068523877535,
+      "cosine_over_null": 0.3686441839622251,
+      "n": 300
+    },
+    "Wren->Dana": {
+      "cosine_mean": 0.45806561425685344,
+      "r2_source_vs_target": -0.09886704745343144,
+      "null_cosine_mean": -0.011723684593103892,
+      "null_cosine_p975": 0.012378286214082698,
+      "null_r2_mean": -0.37288776214737157,
+      "null_r2_p975": -0.3268101556463587,
+      "cosine_over_null": 0.46978929884995735,
+      "n": 300
+    },
+    "Wren->Vex": {
+      "cosine_mean": 0.36332265522193363,
+      "r2_source_vs_target": -0.5006069748319337,
+      "null_cosine_mean": -0.011796218966821093,
+      "null_cosine_p975": 0.009181285065621256,
+      "null_r2_mean": -0.4486463816843059,
+      "null_r2_p975": -0.4255570774410119,
+      "cosine_over_null": 0.3751188741887547,
+      "n": 300
+    },
+    "HELIOS->Wren": {
+      "cosine_mean": 0.3317225144338546,
+      "r2_source_vs_target": -0.5494872175043068,
+      "null_cosine_mean": -0.007534327806665344,
+      "null_cosine_p975": 0.02236008213133961,
+      "null_r2_mean": -0.44683610568126236,
+      "null_r2_p975": -0.3863633878951899,
+      "cosine_over_null": 0.33925684224051994,
+      "n": 300
+    },
+    "HELIOS->Dana": {
+      "cosine_mean": 0.3680371789753717,
+      "r2_source_vs_target": -0.49048238393745636,
+      "null_cosine_mean": -0.013012962501502415,
+      "null_cosine_p975": 0.01663823775867581,
+      "null_r2_mean": -0.4583683124528945,
+      "null_r2_p975": -0.4143644536098392,
+      "cosine_over_null": 0.3810501414768741,
+      "n": 300
+    },
+    "HELIOS->Vex": {
+      "cosine_mean": 0.2848560322490433,
+      "r2_source_vs_target": -0.8959487110465001,
+      "null_cosine_mean": 0.001251797558376321,
+      "null_cosine_p975": 0.01642982115828075,
+      "null_r2_mean": -0.5324323107896722,
+      "null_r2_p975": -0.5110654973628386,
+      "cosine_over_null": 0.283604234690667,
+      "n": 300
+    },
+    "Dana->Wren": {
+      "cosine_mean": 0.43846859709655767,
+      "r2_source_vs_target": -0.07821957699076232,
+      "null_cosine_mean": -0.004099895627677636,
+      "null_cosine_p975": 0.029030165450062127,
+      "null_r2_mean": -0.32260282733774964,
+      "null_r2_p975": -0.29184619798843175,
+      "cosine_over_null": 0.4425684927242353,
+      "n": 300
+    },
+    "Dana->HELIOS": {
+      "cosine_mean": 0.3832594202218936,
+      "r2_source_vs_target": -0.12179309952221651,
+      "null_cosine_mean": -0.008700314144421744,
+      "null_cosine_p975": 0.025779186473070634,
+      "null_r2_mean": -0.2818830271352019,
+      "null_r2_p975": -0.22827309364091267,
+      "cosine_over_null": 0.3919597343663153,
+      "n": 300
+    },
+    "Dana->Vex": {
+      "cosine_mean": 0.38106320800378823,
+      "r2_source_vs_target": -0.36622977806068335,
+      "null_cosine_mean": -0.01726699329738359,
+      "null_cosine_p975": 0.007182083556124997,
+      "null_r2_mean": -0.4180020193518453,
+      "null_r2_p975": -0.4038503972334605,
+      "cosine_over_null": 0.3983302013011718,
+      "n": 300
+    },
+    "Vex->Wren": {
+      "cosine_mean": 0.35273678889648097,
+      "r2_source_vs_target": -0.15441214407545378,
+      "null_cosine_mean": -0.009305609398698155,
+      "null_cosine_p975": 0.006570814220260995,
+      "null_r2_mean": -0.33088455265265965,
+      "null_r2_p975": -0.3161263957109206,
+      "cosine_over_null": 0.36204239829517915,
+      "n": 300
+    },
+    "Vex->HELIOS": {
+      "cosine_mean": 0.2969134755732037,
+      "r2_source_vs_target": -0.17414178035214434,
+      "null_cosine_mean": -0.012382790334435614,
+      "null_cosine_p975": 0.015473088408634435,
+      "null_r2_mean": -0.2802034750509691,
+      "null_r2_p975": -0.2425463067490185,
+      "cosine_over_null": 0.3092962659076393,
+      "n": 300
+    },
+    "Vex->Dana": {
+      "cosine_mean": 0.3782480377916724,
+      "r2_source_vs_target": -0.17079823234669078,
+      "null_cosine_mean": 0.010369887298601981,
+      "null_cosine_p975": 0.025777512680504405,
+      "null_r2_mean": -0.32130223749240033,
+      "null_r2_p975": -0.28869119968303697,
+      "cosine_over_null": 0.3678781504930704,
+      "n": 300
+    }
+  }
+}

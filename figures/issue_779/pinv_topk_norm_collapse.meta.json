@@ -1,0 +1,156 @@
+{
+  "commit": "c2fb3959d9",
+  "created": "2026-07-22T19:51:34Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "pre-image direction norm (log scale)": 23.851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "pre-image direction norm (log scale)": 27.0766,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "pre-image direction norm (log scale)": 15.3211,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "pre-image direction norm (log scale)": 2800.4425,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "pre-image direction norm (log scale)": 7328.7267,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "pre-image direction norm (log scale)": 6246.6627,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.175,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.1905,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.825,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.1429,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.825,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.0152,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.175,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.0101,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.175,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.175,
+      "Jaccard overlap of top-100 LMSYS contexts": 0.0152,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pre-image norm, truncated vs full rank",
+        "ylabel": "pre-image direction norm (log scale)",
+        "legend_labels": [
+          "pre-image (rank-truncated)",
+          "pre-image (full rank)"
+        ],
+        "annotations": [
+          "24",
+          "27",
+          "15",
+          "2,800",
+          "7,329",
+          "6,247"
+        ],
+        "xticklabels": [
+          "evil (L14)",
+          "sycophancy (L26)",
+          "hallucination (L17)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "Top-100 context overlap between directions",
+        "ylabel": "Jaccard overlap of top-100 LMSYS contexts",
+        "legend_labels": [
+          "truncated pre-image\nvs raw persona vector",
+          "truncated pre-image\nvs full-rank pre-image"
+        ],
+        "annotations": [
+          "0.19",
+          "0.14",
+          "0.02",
+          "0.01",
+          "0.00",
+          "0.02"
+        ],
+        "xticklabels": [
+          "evil (L14)",
+          "sycophancy (L26)",
+          "hallucination (L17)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "pre-image (rank-truncated)",
+      "pre-image (full rank)",
+      "truncated pre-image\nvs raw persona vector",
+      "truncated pre-image\nvs full-rank pre-image"
+    ]
+  }
+}

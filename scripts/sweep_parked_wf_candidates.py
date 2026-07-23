@@ -44,10 +44,17 @@ Suppression rules (a candidate is SUPPRESSED == already routed):
 2. **fp-tag scan** (fingerprint computable only) — a ``kind: infra`` task
    whose ``body.md`` carries ``wf-fix-fp:<fp>`` (tag) or ``fingerprint: <fp>``
    (Provenance line). A NON-terminal hit suppresses unconditionally; a
-   TERMINAL (completed/archived) hit suppresses only when the task's creation
-   ts (first parseable events.jsonl row) POSTdates the candidate ts — a
-   candidate that predates the closed fix was subsumed by it; one raised
-   after it closed is a genuine re-raise and stays enumerated.
+   TERMINAL (completed/archived) hit suppresses only when the task's
+   merge/close ts POSTdates the candidate ts — the max ts over ``epm:merged``
+   / ``epm:done`` / ``epm:promoted`` rows and the ``epm:status-changed`` row
+   whose ``to`` is terminal, with the creation ts (first parseable row) as
+   the first check and the fallback when no close-signal row parses — a
+   candidate parked before the fix CLOSED was subsumed by it; one parked
+   after it closed is a genuine re-raise and stays enumerated. The
+   creation-only key missed the created-before-park/merged-after-park window
+   (#1599: #1577's park at 10:59:07Z sat 79 s before #1579's merge). The
+   emitted ``suppressed_by`` carries ``basis: creation|close``; the ``kind``
+   string stays ``fp-tag-closed``.
 3. **Row dedup** — identical (source, ts, content-hash) rows collapse to one;
    the dedup set is shared across all status folders of one task id, so
    byte-identical fork copies collapse too (observed verbatim duplication in
@@ -104,6 +111,13 @@ from explore_persona_space.task_workflow import (
 CANDIDATE_KIND_PREFIX = "epm:workflow-fix-candidate"
 FILED_KIND_PREFIX = "epm:workflow-fix-task-filed"
 TERMINAL_STATUSES = ("completed", "archived")
+
+# Close-signal event kinds for _task_closed_ts (#1599). epm:merged is
+# load-bearing: on the motivating incident the terminal status flip PREdated
+# the park while the Step 10d merge POSTdated it (#1577 park 10:59:07Z between
+# #1579's flip 10:46:50Z and merge 11:00:26Z). epm:promoted mirrors
+# task_workflow._WF_FIX_CLOSURE_EVENT_KINDS (never fires on kind: infra).
+_CLOSE_EVENT_KINDS = frozenset({"epm:merged", "epm:done", "epm:promoted"})
 
 _PARKED_LEAD_RE = re.compile(r"\s*parked\b", re.IGNORECASE)
 _PARKED_ROUTED_RE = re.compile(r"routed:\s*parked\b", re.IGNORECASE)
@@ -403,15 +417,70 @@ def _task_creation_ts(task_dir: Path) -> datetime | None:
     return None
 
 
+def _task_closed_ts(task_dir: Path) -> datetime | None:
+    """Latest merge/close-signal ts in events.jsonl; None when no such row parses.
+
+    Max ts over rows whose kind is in _CLOSE_EVENT_KINDS plus
+    epm:status-changed rows whose structured ``to`` is terminal
+    (completed/archived). Max, never "the last row": marker order varies
+    (#1577 posted epm:done AFTER epm:merged; #1579 the reverse). Unreadable
+    file / no close-signal row / unparseable ts -> None; the caller falls
+    back to the creation-ts rule (fail-open toward ENUMERATION, never a
+    silent drop).
+    """
+    events = task_dir / "events.jsonl"
+    try:
+        # split("\n"), NEVER splitlines(): splitlines() splits on U+2028/U+2029
+        # etc. and shreds valid JSONL rows whose note strings carry them
+        # (.claude/rules/gotchas.md "splitlines shreds JSONL", #950).
+        lines = events.read_text(encoding="utf-8").split("\n")
+    except OSError:
+        return None
+    closed: datetime | None = None
+    for line in lines:
+        if not line.strip():
+            continue
+        # Cheap substring prefilter before json.loads (the task_workflow
+        # _wf_fix_closed_at pattern; live events files run to hundreds of rows).
+        if (
+            '"epm:merged"' not in line
+            and '"epm:done"' not in line
+            and '"epm:promoted"' not in line
+            and '"epm:status-changed"' not in line
+        ):
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("kind") or "")
+        if kind not in _CLOSE_EVENT_KINDS and not (
+            kind == "epm:status-changed" and row.get("to") in TERMINAL_STATUSES
+        ):
+            continue
+        dt = parse_ts(row.get("ts"))
+        if dt is not None and (closed is None or dt > closed):
+            closed = dt
+    return closed
+
+
 def _fp_tag_scan(
     bodies: list[tuple[int, str, Path, str, dict]], fp: str, cand_ts: datetime
 ) -> dict | None:
     """Suppression rule 2: an infra task carrying this fp (tag or Provenance line).
 
-    Non-terminal hit -> suppress unconditionally; terminal hit -> suppress only
-    when the task's creation ts POSTdates the candidate (the candidate was
-    subsumed by the fix). An unreadable creation ts fails toward ENUMERATION
-    (treated as a re-raise), never toward a silent drop.
+    Non-terminal hit -> suppress unconditionally; terminal hit -> suppress when
+    the candidate ts PREdates the task's merge/close time — the creation ts
+    (first parseable row; the pre-#1599 rule, checked first) or the close ts
+    (_task_closed_ts: max over epm:merged / epm:done / epm:promoted / the
+    terminal epm:status-changed). The creation-only key missed the
+    created-before-park/merged-after-park window (#1599: #1577's park at
+    10:59:07Z sat between #1579's creation and its 11:00:26Z merge). An
+    unreadable creation AND close ts fails toward ENUMERATION (treated as a
+    re-raise), never toward a silent drop. suppressed_by carries
+    basis: "creation" | "close" for auditability; kind stays "fp-tag-closed".
     """
     for tid, status, body_path, text, fm in bodies:
         if fm.get("kind") != "infra":
@@ -422,7 +491,10 @@ def _fp_tag_scan(
             return {"kind": "fp-tag-open", "ref": f"#{tid}"}
         created = _task_creation_ts(body_path.parent)
         if created is not None and created > cand_ts:
-            return {"kind": "fp-tag-closed", "ref": f"#{tid}"}
+            return {"kind": "fp-tag-closed", "ref": f"#{tid}", "basis": "creation"}
+        closed = _task_closed_ts(body_path.parent)
+        if closed is not None and closed > cand_ts:
+            return {"kind": "fp-tag-closed", "ref": f"#{tid}", "basis": "close"}
     return None
 
 

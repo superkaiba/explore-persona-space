@@ -5,8 +5,9 @@ plus a pinned workflow-invariant literal set, for the ``/issue`` Step 9c
 test-verdict gate. Most cases inject a fake ``git diff`` runner and a
 ``tmp_path`` ``tests/`` tree so no real git / real branch state is needed.
 
-Two exceptions: the pinned-list test (case 6) asserts the literal
-``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree so an added/removed
+Two exceptions: the pinned-list tests (cases 6/6b) assert the literal
+``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree and the sorted
+manifest (``tests/step9c_workflow_invariant_manifest.txt``) so an added/removed
 invariant test forces a deliberate edit of the literal; and the #851 regression
 tests (cases 13-14) build a real throwaway git repo + worktree to pin the
 work-root resolution end to end (branch-new test selected, deleted-on-branch
@@ -129,8 +130,8 @@ def test_pinned_invariant_list_matches_live_tree():
     """Every WORKFLOW_INVARIANT entry must exist in the real repo tests/ tree.
 
     Fails LOUDLY if any pinned invariant test was renamed/removed without
-    updating the literal — forcing a deliberate edit (plan §4a-note). This is
-    the only test that reads the live repo rather than a tmp_path fixture.
+    updating the literal — forcing a deliberate edit. Reads the live repo
+    rather than a tmp_path fixture (as does case 6b below).
     """
     repo_root = Path(sel.__file__).resolve().parents[1]
     missing = sel.missing_invariants(repo_root)
@@ -138,34 +139,80 @@ def test_pinned_invariant_list_matches_live_tree():
         f"WORKFLOW_INVARIANT entries missing from the live tests/ tree: {missing}. "
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
-    # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 43 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
-    # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
-    # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
-    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
-    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin) + the
-    # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
-    # rationale: a SKILL.md-only recipe revert must still run the pin) + the #1397
-    # fit-loop batching review-lens pin suite (test_fit_loop_batching_review_pin —
-    # agent-`.md` diffs gate ONLY via this tuple) + the #1546 SKILL.md forensics-ingest
-    # pointer pin suite (test_issue_skill_forensics_ingest_pointer — same tuple
-    # rationale: a SKILL.md-only edit dropping the pointer must still run the pin) + the
-    # #1563 SKILL.md orchestrator-turn discipline pointer pin suite
-    # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
-    # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
-    # staged-index verification pin suite (test_issue_skill_staged_index_verification —
-    # same tuple rationale: a doc-site edit dropping the duty must still run the pin) +
-    # the #1575 cap-park surfacing pin suite (test_issue_skill_followup_cap_park_note_pin
-    # — same tuple rationale: a SKILL.md-only edit dropping the cap-park note duty must
-    # still run the #1548/#1558/#1575 pins) + the #1584 merge-scoped gitleaks
-    # stanza/wrapper pin suite
-    # (test_precommit_gitleaks_merge_scope — .pre-commit-config.yaml has no per-file test
-    # map, so a later config diff runs the pin ONLY via this tuple) + the #1577
-    # guard-script read-bounding hook pin suite (test_guard_trigger_dense_read —
-    # the stem/literal/dependency arms are .py-only, so a later .sh-hook /
-    # settings.json diff runs the pin ONLY via this tuple).
+    # De-duplicated (no accidental double-listing). Cardinality is deliberately
+    # NOT pinned as an integer (#1593): the retired `== N` count pin made every
+    # pair of same-window registering PRs conflict on one shared line (#1584);
+    # accidental-removal coverage lives in the manifest set-equality pin below
+    # (case 6b). Per-addition rationale belongs as an inline comment on the
+    # tuple entry itself, NOT in an accreting block here.
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 44
+
+
+# --- Case 6b (#1593): tuple <-> sorted-manifest set-equality pin -------------
+# NOTE: this literal relpath is also the GLOB_SCAN_TESTS drift-pin anchor
+# (test_glob_scan_map_matches_live_tree asserts it appears verbatim here).
+_MANIFEST_RELPATH = "tests/step9c_workflow_invariant_manifest.txt"
+
+
+def _manifest_lines(path: Path) -> list[str]:
+    """Data lines of a WORKFLOW_INVARIANT manifest (blank + '#' lines skipped)."""
+    return [
+        ln.strip()
+        for ln in path.read_text().splitlines()
+        if ln.strip() and not ln.strip().startswith("#")
+    ]
+
+
+def _assert_manifest_matches(entries: tuple[str, ...], manifest: Path) -> None:
+    """Core two-place pin: manifest well-formed (unique, sorted) + set-equal."""
+    assert manifest.exists(), f"manifest missing: {manifest}"
+    lines = _manifest_lines(manifest)
+    assert len(lines) == len(set(lines)), f"duplicate lines in {manifest}"
+    assert lines == sorted(lines), (
+        f"{manifest} must stay sorted (python sorted()); add new entries at their sorted position."
+    )
+    tuple_set, manifest_set = set(entries), set(lines)
+    only_tuple = sorted(tuple_set - manifest_set)
+    only_manifest = sorted(manifest_set - tuple_set)
+    assert tuple_set == manifest_set, (
+        "WORKFLOW_INVARIANT (scripts/select_step9c_tests.py) and the manifest "
+        f"disagree. In tuple only (add its manifest line, or a manifest line "
+        f"was removed): {only_tuple}. In manifest only (add its tuple entry, "
+        f"or a tuple entry was removed): {only_manifest}."
+    )
+
+
+def test_workflow_invariant_matches_manifest():
+    """The tuple and the sorted manifest agree as SETS (#1593 count-pin
+    replacement): an accidental tuple-entry removal (file still on disk, so
+    missing_invariants() stays silent) fails HERE unless the manifest line
+    was removed too — a deliberate two-place change. Registration = one tuple
+    entry + one sorted manifest line; no shared line is ever edited, so
+    concurrent registrations 3-way-merge cleanly server-side (#1584)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    _assert_manifest_matches(sel.WORKFLOW_INVARIANT, repo_root / _MANIFEST_RELPATH)
+
+
+def test_manifest_pin_negative_paths(tmp_path: Path):
+    """The pin's predicates fire on removal / unsorted / duplicate / empty manifests."""
+    m = tmp_path / "manifest.txt"
+    m.write_text("# header\n\ntests/test_a.py\ntests/test_b.py\n")
+    _assert_manifest_matches(("tests/test_b.py", "tests/test_a.py"), m)  # order-free
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)  # dropped tuple entry
+    with pytest.raises(AssertionError, match="disagree"):  # dropped manifest line
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py", "tests/test_c.py"), m)
+    m.write_text("tests/test_b.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="sorted"):
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py"), m)
+    m.write_text("tests/test_a.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="duplicate"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
+    # Empty / comments-only manifest: zero data lines against a non-empty tuple
+    # is a loud set mismatch, never a silent pass (critic concern 1).
+    m.write_text("# header only\n\n")
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
@@ -1778,3 +1825,124 @@ def test_cli_map_files_sh_unmapped_warns(tmp_path: Path, capsys):
     assert captured.out.strip() == ""  # no pairs
     assert "no mapped tests for code file" in captured.err  # the fail-loud floor
     assert "scripts/lonely_helper.sh" in captured.err
+
+
+# --- Cases 81+ (#1589): the transitive-consumer pin map ---------------------------
+_SELECTOR_KEY = "scripts/select_step9c_tests.py"
+
+
+# --- Case 81: THE #1589 durability pin — both registered consumers on the LIVE tree
+def test_transitive_consumer_map_live_tree():
+    """THE #1589 durability pin: a selector-module payload maps to BOTH
+    registered transitive consumers on the live tree (neither is reachable by
+    any text-scan arm — dynamic loads by constructed path / path-join
+    literals)."""
+    repo_root = _HELPER_PATH.parents[1]
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo_root)
+    assert ("tests/test_step9c_baseline.py", _SELECTOR_KEY) in pairs
+    assert ("tests/test_inline_lint_gate.py", _SELECTOR_KEY) in pairs
+
+
+# --- Case 82: drift pin — every map entry exists on disk and is NOT invariant -----
+def test_transitive_consumer_entries_exist_on_live_tree():
+    """Drift pin: every key + registered test exists; no entry is invariant
+    (an invariant member would be silently excluded from the map legs)."""
+    repo_root = _HELPER_PATH.parents[1]
+    for key, consumer_tests in sel.TRANSITIVE_CONSUMER_TESTS.items():
+        assert (repo_root / key).exists(), key
+        for t in consumer_tests:
+            assert (repo_root / t).exists(), t
+            assert t not in sel.WORKFLOW_INVARIANT, (
+                f"{t}: invariant members are excluded from --map-files by design; "
+                "registering one here is dead weight — remove one of the two."
+            )
+
+
+# --- Case 83: Step 9c diff path — the transitive-consumer reason; additive only ---
+def test_transitive_consumer_diff_path_reason(tmp_path: Path):
+    """Step 9c diff path: touching a map key selects the consumer with the
+    transitive-consumer reason; the arm is additive (never sets ``matched``,
+    so the untested WARN for the key still fires in this stem-less fixture)."""
+    repo = _make_tree(tmp_path, ["test_step9c_baseline.py"])
+    # _make_tree materializes every GLOB_SCAN_TESTS key, including the #1593
+    # manifest-scan key tests/test_select_step9c_tests.py — unlink it so the
+    # fixture is genuinely stem-less for the selector payload and the
+    # additive-only pin below is observable via untested_touched.
+    (repo / "tests" / "test_select_step9c_tests.py").unlink()
+    tests_, untested, reasons = sel.select_tests_with_reasons([_SELECTOR_KEY], repo)
+    assert "tests/test_step9c_baseline.py" in tests_
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in reasons["tests/test_step9c_baseline.py"]
+    assert untested == [_SELECTOR_KEY]  # additive-only pinned: matched is never set
+
+
+# --- Case 84: monotonicity — the arm only ever GROWS the selection ----------------
+def test_transitive_consumer_only_grows_selection(tmp_path: Path):
+    """Parity with the other arms: adding a map-key file to a diff never drops
+    a previously selected test or reason."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_step9c_baseline.py"])
+    t_before, u_before, r_before = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    t_after, _u_after, r_after = sel.select_tests_with_reasons(
+        ["scripts/widget.py", _SELECTOR_KEY], repo
+    )
+    assert set(t_before) <= set(t_after)
+    assert u_before == []
+    for t, rs in r_before.items():
+        assert set(rs) <= set(r_after[t])  # every prior reason preserved verbatim
+    assert "tests/test_step9c_baseline.py" in t_after
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in r_after["tests/test_step9c_baseline.py"]
+
+
+# --- Case 85: a registered consumer absent from the work root is dropped ----------
+def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
+    """A registered consumer absent from the work root is dropped from pairs
+    (fixture tree without tests/test_step9c_baseline.py -> no pair for it),
+    while the present sibling registration survives."""
+    repo = _make_tree(tmp_path, ["test_inline_lint_gate.py"])
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo)
+    assert pairs == [("tests/test_inline_lint_gate.py", _SELECTOR_KEY)]
+
+
+# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 6 pairs verbatim --
+def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 4
+    pre-existing pairs PLUS the 2 transitive pairs (6 pairs, 6 tests) and the
+    sizing line stays at the 300 s floor. Exact-set assert — a new arm/pin
+    joining later legitimately forces a deliberate 1-line update here (that
+    loudness is the point; cf. the case-60 drift-pin posture)."""
+    repo_root = _HELPER_PATH.parents[1]
+    payload = tmp_path / "payload.txt"
+    payload.write_text(f"{_SELECTOR_KEY}\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo_root)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out.splitlines() == [
+        f"tests/test_inline_lint_gate.py\t{_SELECTOR_KEY}",
+        f"tests/test_inline_payload_lint_gate_contract.py\t{_SELECTOR_KEY}",
+        f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
+        f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
+        f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
+        f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
+    ]
+    assert "map-files — 6 pairs, 6 tests; recommended-timeout-s=300" in captured.err
+
+
+# --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------
+def test_transitive_consumer_excludes_invariant(tmp_path: Path, monkeypatch):
+    """Map-leg asymmetry: a (monkeypatched) entry naming an invariant member
+    is excluded from transitive_consumer_pairs while the non-invariant sibling
+    survives — mirror of test_map_files_excludes_invariant_hits. The Step 9c
+    diff arm KEEPS the invariant member (harmless extra reason; the union
+    dedupes — the rules-pin asymmetry)."""
+    repo = _make_tree(tmp_path, ["test_free_consumer.py"])
+    inv_member = sel.WORKFLOW_INVARIANT[0]
+    monkeypatch.setattr(
+        sel,
+        "TRANSITIVE_CONSUMER_TESTS",
+        {_SELECTOR_KEY: (inv_member, "tests/test_free_consumer.py")},
+    )
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo)
+    assert pairs == [("tests/test_free_consumer.py", _SELECTOR_KEY)]
+    # The 9c diff arm keeps the invariant member's transitive-consumer reason.
+    _, _, reasons = sel.select_tests_with_reasons([_SELECTOR_KEY], repo)
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in reasons[inv_member]
+    assert "invariant" in reasons[inv_member]
