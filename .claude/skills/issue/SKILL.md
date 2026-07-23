@@ -6823,8 +6823,13 @@ explicit eval-data path):
    Step 2.9 (#537) — this block is the inline-round copy (those agents
    are not in the inline path).
 
-   **Inline payload lint gate (§ Inline payload lint gate — BEFORE the
-   push lands any non-artifact payload; #1460).** PAYLOAD = the round's
+   **Inline payload lint gate (§ Inline payload lint gate — the cert must
+   exist BEFORE the `git commit` that carries any non-artifact payload:
+   `guard_root_code_commit.sh` validates it at COMMIT time, not push time
+   (#1460). Preferred ordering: kick the gate off as a background Bash as
+   soon as the round's scripts stop changing — before figure/body work —
+   so the cert is ready by commit time; ~5 block events across 3 sessions
+   on 2026-07-22 came from reaching the commit first).** PAYLOAD = the round's
    to-be-committed paths outside the artifact-only set (`tasks/`,
    `figures/`, `eval_results/`, `ood_eval_results/`, `raw/`, `data/`,
    `docs/methodology/`) — typically the new `scripts/issue<N>_*.py`
