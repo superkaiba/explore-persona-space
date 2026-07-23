@@ -3288,6 +3288,27 @@ def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str
     return argv
 
 
+def render_delete_operations_list_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """Build a ``gcloud compute operations list`` argv probing for a server-side
+    delete operation targeting instance ``name`` (#1628 positive-issuance probe).
+
+    Zone-scoped (``--zones``); the ``targetLink~/instances/<name>$`` regex filter
+    anchors the instance name so a sibling suffix (``eps-issue-N`` vs
+    ``eps-issue-N-p2``) can never cross-match. Filter + projection live-verified
+    against the project 2026-07-23 (SDK 576.0.0). ``targetId`` rides in the
+    projection so the issuance probe can pin an op to THIS incarnation when the
+    pre-delete describe captured the instance id (#1029 name-reuse hardening).
+    """
+    argv = _base_gcloud_argv(config, "compute", "operations", "list")
+    argv += [
+        f"--zones={zone}",
+        f"--filter=operationType=delete AND targetLink~/instances/{name}$",
+        "--format=json(name,operationType,status,targetLink,insertTime,targetId)",
+        "--limit=10",
+    ]
+    return argv
+
+
 #: Appended to fetch_results ssh-failure logs on the IAP arm (#1454). The
 #: firewall prerequisite was verified satisfied live at plan time
 #: (default-allow-ssh 0.0.0.0/0 tcp:22 ⊇ 35.235.240.0/20); the IAM grant for
@@ -3769,6 +3790,107 @@ def default_gcloud_runner(
         returncode=proc.returncode,
         stdout=proc.stdout or "",
         stderr=proc.stderr or "",
+    )
+
+
+#: Wall-clock budget (s) for the post-delete bounded existence poll (#1628).
+#: Raised 300 -> 600 in the #1628 plan v2: the #1586 DWS cancel completed within
+#: ~10 min of the first delete attempt; 300s sync cap + 600s poll = a 15 min
+#: ceiling with margin.
+GCLOUD_DELETE_VERIFY_BUDGET_SEC = 600
+#: Interval (s) between existence probes (a describe is ~2s; <=30 probes/budget).
+GCLOUD_DELETE_VERIFY_POLL_SEC = 20
+#: Wall-clock budget (s) to observe the delete OPERATION server-side after a
+#: detached spawn — the Compute API returns the Operation at request time, so
+#: it lists within seconds; 60s covers a slow API tail.
+GCLOUD_DELETE_ISSUANCE_BUDGET_SEC = 60
+GCLOUD_DELETE_ISSUANCE_POLL_SEC = 5
+#: Max age (s) of a listed delete op that counts as OUR issuance. eps-issue-<N>
+#: names are reused across incarnations (live listing 2026-07-23: 3 stale DONE
+#: delete ops on one reused name); covers the 300s sync cap + margin.
+GCLOUD_DELETE_OP_RECENCY_SEC = 900
+#: stderr substrings (lowercased) marking a delete/operation ALREADY IN FLIGHT
+#: (the GCE concurrent-operation "not ready" class) — success-equivalent for
+#: ISSUANCE-probing, never a raise. Conservative; a miss falls toward today's
+#: behavior ("being deleted" is ungrounded — flagged needs-smoke in plan §11).
+_DELETE_IN_FLIGHT_STDERR_MARKERS = ("is not ready", "being deleted")
+
+
+def _delete_verify_budget_sec() -> int:
+    """Read the delete-verify poll budget (#1628), defaulting to 600s.
+
+    Read at CALL time from ``EPS_GCP_DELETE_VERIFY_BUDGET_SEC`` (the #783
+    ``backend_poll._gcp_queue_wait_seconds`` pattern) so ops can retune without
+    a restart. A missing / non-integer / NEGATIVE value falls back to
+    :data:`GCLOUD_DELETE_VERIFY_BUDGET_SEC`; ZERO is honored (one probe, then
+    deadline — the plan §5 test convention).
+    """
+    raw = os.environ.get("EPS_GCP_DELETE_VERIFY_BUDGET_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_VERIFY_BUDGET_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_VERIFY_BUDGET_SEC
+    return val if val >= 0 else GCLOUD_DELETE_VERIFY_BUDGET_SEC
+
+
+def _delete_verify_poll_sec() -> float:
+    """Interval between verify describes (``EPS_GCP_DELETE_VERIFY_POLL_SEC``; 0 = no-op sleep)."""
+    raw = os.environ.get("EPS_GCP_DELETE_VERIFY_POLL_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_VERIFY_POLL_SEC
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_VERIFY_POLL_SEC
+    return val if val >= 0 else GCLOUD_DELETE_VERIFY_POLL_SEC
+
+
+def _delete_issuance_budget_sec() -> int:
+    """Budget (s) for the issuance probe (``EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC``; 0 = one probe)."""
+    raw = os.environ.get("EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+    return val if val >= 0 else GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+
+
+def _delete_issuance_poll_sec() -> float:
+    """Interval between issuance probes (``EPS_GCP_DELETE_ISSUANCE_POLL_SEC``; 0 = no-op sleep)."""
+    raw = os.environ.get("EPS_GCP_DELETE_ISSUANCE_POLL_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_ISSUANCE_POLL_SEC
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_ISSUANCE_POLL_SEC
+    return val if val >= 0 else GCLOUD_DELETE_ISSUANCE_POLL_SEC
+
+
+#: Injectable detached-delete seam (#1628): fire-and-forget an argv, return None.
+DeleteSpawner = Callable[[Sequence[str]], None]
+
+
+def _default_delete_spawner(argv: Sequence[str]) -> None:
+    """Fire an ordinary synchronous ``gcloud ... instances delete`` WITHOUT
+    waiting (#1628). The detached child keeps gcloud's own server-side wait and
+    exits on its own (~minutes for a DWS cancel); we never join it.
+
+    ``start_new_session=True`` detaches it from our process group so a caller
+    SIGINT cannot kill the delete mid-flight; stdin/stdout/stderr go to DEVNULL
+    (no pipe-buffer blocking); CPython's subprocess machinery reaps the eventual
+    zombie opportunistically (``subprocess._active``).
+    """
+    subprocess.Popen(
+        list(argv),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
 
 
@@ -4944,9 +5066,13 @@ class GcpBackend(ComputeBackend):
         marker_poster: Callable[..., None] | None = None,
         marker_reader: Callable[..., dict[str, Any] | None] | None = None,
         startup_script_renderer: Callable[..., str] | None = None,
+        delete_spawner: DeleteSpawner | None = None,
     ) -> None:
         self._config = config or default_gcp_config()
         self._run = runner or default_gcloud_runner
+        # Detached-delete seam (#1628): fire-and-forget delete for DWS-queued
+        # (PENDING) instances so teardown never joins the slow queue cancel.
+        self._spawn_delete = delete_spawner or _default_delete_spawner
         # Lazy import default poster (matches SlurmBackend's pattern) so
         # this module stays importable without a configured task.py.
         if marker_poster is None:
@@ -6898,11 +7024,58 @@ class GcpBackend(ComputeBackend):
         the original #683 leak occurred on a run where teardown was NOT
         reached before the leak was observed — that path is closed by the
         watcher-side complement (see plan §10), not by this guard.
+
+        DWS-PENDING awareness (#1628/#1586): deleting a DWS-queued (PENDING)
+        instance is a slow server-side queue cancel (~10 min observed in
+        #1586), which exceeds the ``GCLOUD_DEFAULT_TIMEOUT_SEC`` subprocess
+        cap. A pre-delete describe therefore probes the status: a PENDING
+        instance gets a DETACHED delete spawn (never joined) + a positive
+        operations-list issuance probe + a bounded existence verify, so the
+        caller unblocks in seconds; issuance NOT observed falls through to
+        the synchronous delete (never a silent skip). On every path a
+        ``subprocess.TimeoutExpired`` from the synchronous delete is caught
+        and escalated to the same issuance probe + bounded verify instead of
+        propagating raw (the delete-side sibling of the #736 create-timeout
+        catch). Every teardown exit either confirms the instance absent
+        (404), positively confirms a server-side delete op is in flight
+        (PENDING fast return), or raises :class:`GcpBackendError`.
+        Pathological stacked ceiling (~37 min, every component individually
+        capped at its own subprocess/budget bound): pre-describe <=300s +
+        PENDING-path issuance (60s budget + one <=300s op-list overshoot) +
+        sync delete <=300s + escalation issuance (60s + <=300s overshoot) +
+        verify (600s budget + one <=300s describe overshoot).
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
+        # (1) PENDING probe — one cheap describe. ANY anomaly (probe error,
+        #     404, unparseable, absent/other status) falls through to the
+        #     sync path (fail-open: equivalent to today's behavior).
+        status, instance_id = self._pre_delete_status(handle, zone)
+        if status == "PENDING":
+            logger.warning(
+                "GCP teardown: %s is DWS-queued (PENDING); using detached delete + "
+                "issuance probe + bounded verify so the caller is not serialized "
+                "behind the slow DWS cancel (#1628/#1586).",
+                handle.pod_name,
+            )
+            if self._teardown_pending_detached(handle, zone, instance_id=instance_id):
+                return
+            # Issuance NOT observed -> NEVER skip: fall through to the
+            # synchronous delete below (fails toward today's behavior).
+        # (2) Synchronous delete — unchanged semantics + a NEW timeout catch.
         argv = render_delete_argv(config=config, name=handle.pod_name, zone=zone)
-        result = self._run(argv)
+        try:
+            result = self._run(argv)
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                "GCP teardown: delete of %s exceeded the %ds subprocess cap "
+                "(slow-cancel signature, #1586); escalating to issuance probe + "
+                "bounded existence verify.",
+                handle.pod_name,
+                GCLOUD_DEFAULT_TIMEOUT_SEC,
+            )
+            self._escalate_slow_delete(handle, zone, instance_id=instance_id)
+            return
         if result.returncode == 0:
             self._confirm_deleted(handle, zone)
             return
@@ -6913,12 +7086,214 @@ class GcpBackend(ComputeBackend):
                 handle.pod_name,
             )
             return
+        if any(m in stderr_low for m in _DELETE_IN_FLIGHT_STDERR_MARKERS):
+            # A delete/operation already in flight (a concurrent janitor /
+            # finalize, or our own detached spawn) — probe for positive
+            # issuance evidence and verify instead of raising (#1628).
+            issuance = self._probe_delete_issuance(
+                handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+            )
+            self._verify_delete_landed(handle, zone, issuance_confirmed=issuance)
+            return
         # Anything else is a real failure (auth blip, transient API
         # error). Raise so the orchestrator surfaces it rather than
         # silently leaving a VM up.
         raise GcpBackendError(
             f"gcloud delete {handle.pod_name} returned {result.returncode}: {result.stderr[:500]}"
         )
+
+    def _pre_delete_status(self, handle: RunHandle, zone: str) -> tuple[str | None, str | None]:
+        """One describe; ``(status, instance_id)``, or ``(None, None)`` on ANY anomaly.
+
+        Fail-open by design (#1628): a probe error / timeout / 404 /
+        unparseable payload / absent status all return ``None`` so teardown
+        takes the synchronous path — equivalent to today's behavior. A
+        pre-describe 404 deliberately returns ``None`` too: the sync delete
+        still runs and lands on the existing "was not found" success branch,
+        so missing-VM semantics are identical (no transient-404-skips-the-
+        delete residual). The instance ``id`` (when present) lets the
+        issuance probe pin delete ops to THIS incarnation (#1029 name reuse).
+        """
+        try:
+            probe = self._run(
+                render_describe_argv(config=self._config, name=handle.pod_name, zone=zone)
+            )
+        except Exception:  # incl. subprocess.TimeoutExpired — fail-open
+            return None, None
+        if probe.returncode != 0 or not probe.stdout.strip():
+            return None, None
+        try:
+            payload = json.loads(probe.stdout)
+        except json.JSONDecodeError:
+            return None, None
+        if not isinstance(payload, dict):
+            return None, None
+        status = (payload.get("status") or "").upper() or None
+        raw_id = payload.get("id")
+        instance_id = str(raw_id) if raw_id not in (None, "") else None
+        return status, instance_id
+
+    def _teardown_pending_detached(
+        self, handle: RunHandle, zone: str, *, instance_id: str | None
+    ) -> bool:
+        """Detached delete of a DWS-queued instance + positive-issuance probe (#1628).
+
+        Returns True when a RECENT server-side delete op was observed and the
+        bounded verify ran (fast path complete); False when no op was observed
+        within the issuance budget OR the spawn itself failed — the caller
+        then falls through to the synchronous delete (never a silent skip).
+        """
+        argv = render_delete_argv(config=self._config, name=handle.pod_name, zone=zone)
+        try:
+            # Fire-and-forget; the detached gcloud waits server-side on its
+            # own and exits alone. Never joined.
+            self._spawn_delete(argv)
+        except OSError as exc:
+            logger.warning(
+                "GCP teardown: detached delete spawn for %s failed (%s); "
+                "falling back to the synchronous delete (#1628).",
+                handle.pod_name,
+                exc,
+            )
+            return False
+        if self._probe_delete_issuance(
+            handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+        ):
+            self._verify_delete_landed(handle, zone, issuance_confirmed=True)
+            return True
+        logger.warning(
+            "GCP teardown: no recent delete operation observed for %s within %ss "
+            "of the detached spawn; falling back to the synchronous delete (#1628).",
+            handle.pod_name,
+            _delete_issuance_budget_sec(),
+        )
+        return False
+
+    def _probe_delete_issuance(
+        self, handle: RunHandle, zone: str, *, budget_sec: float, instance_id: str | None = None
+    ) -> bool:
+        """True iff a RECENT server-side delete operation targets this instance (#1628).
+
+        Polls the zone-scoped, targetLink-filtered operations list through the
+        NORMAL runner (seconds per call). Rows older than
+        :data:`GCLOUD_DELETE_OP_RECENCY_SEC` — or with a missing/unparseable
+        ``insertTime`` — are IGNORED: instance names recur across incarnations
+        (#1029 boot loops), so a prior incarnation's delete op must never read
+        as our issuance. When the pre-delete describe captured the instance
+        ``id``, an op additionally must match ``targetId`` (the incarnation
+        pin); without an id the recency-guarded name match stands alone. Any
+        probe anomaly counts as not-observed this round (fails toward the
+        sync path).
+        """
+        deadline = time.monotonic() + budget_sec
+        poll = _delete_issuance_poll_sec()
+        op_argv = render_delete_operations_list_argv(
+            config=self._config, name=handle.pod_name, zone=zone
+        )
+        while True:
+            try:
+                r = self._run(op_argv)
+                if r.returncode == 0 and r.stdout.strip():
+                    now = datetime.now(UTC)
+                    for op in json.loads(r.stdout):
+                        try:
+                            age = (now - datetime.fromisoformat(op["insertTime"])).total_seconds()
+                        except (KeyError, TypeError, ValueError):
+                            continue  # unparseable/missing insertTime -> ignore (conservative)
+                        if age > GCLOUD_DELETE_OP_RECENCY_SEC:
+                            continue  # a prior incarnation's stale op
+                        if instance_id is not None and str(op.get("targetId") or "") != instance_id:
+                            continue  # a same-name op from ANOTHER incarnation
+                        logger.info(
+                            "GCP teardown: delete op %s observed for %s (status=%s, age=%.0fs).",
+                            op.get("name"),
+                            handle.pod_name,
+                            op.get("status"),
+                            age,
+                        )
+                        return True
+            except Exception:  # incl. TimeoutExpired, JSON errors
+                logger.debug(
+                    "GCP teardown: issuance probe anomaly for %s; not observed this round.",
+                    handle.pod_name,
+                    exc_info=True,
+                )
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(poll)
+
+    def _escalate_slow_delete(
+        self, handle: RunHandle, zone: str, *, instance_id: str | None = None
+    ) -> None:
+        """Post-``TimeoutExpired`` escalation: probe issuance, then bounded-verify (#1628).
+
+        ``subprocess.run(..., timeout=)`` killed the LOCAL gcloud child, but
+        the server-side operation it already issued persists — so POSITIVELY
+        confirm it via the operations list and feed the boolean forward. No
+        re-issue here; the verify's fall-throughs handle everything else.
+        """
+        issuance = self._probe_delete_issuance(
+            handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+        )
+        self._verify_delete_landed(handle, zone, issuance_confirmed=issuance)
+
+    def _verify_delete_landed(
+        self, handle: RunHandle, zone: str, *, issuance_confirmed: bool
+    ) -> None:
+        """Bounded existence poll after a slow/detached delete (#1628).
+
+        404 -> success; PENDING + positive issuance -> loud in-flight fast
+        return (a queued instance bills no GPU; the gcp_audit janitor +
+        ``--max-run-duration`` fence remain the backstops); deadline
+        exhausted -> loud :class:`GcpBackendError`. Never returns silently:
+        an unconfirmed-issuance PENDING instance polls to the deadline and
+        raises. Each describe probe is individually guarded — a probe
+        exception counts as not-confirmed this round, never propagates raw.
+        """
+        budget = _delete_verify_budget_sec()
+        poll = _delete_verify_poll_sec()
+        deadline = time.monotonic() + budget
+        last_status: str | None = None
+        describe_argv = render_describe_argv(config=self._config, name=handle.pod_name, zone=zone)
+        while True:
+            try:
+                probe = self._run(describe_argv)
+            except Exception:  # incl. subprocess.TimeoutExpired — not confirmed this round
+                logger.debug(
+                    "GCP teardown: verify probe anomaly for %s; not confirmed this round.",
+                    handle.pod_name,
+                    exc_info=True,
+                )
+                probe = None
+            if probe is not None:
+                low = (probe.stderr or "").lower()
+                if probe.returncode != 0 and ("was not found" in low or "404" in low):
+                    logger.info("GCP teardown: %s confirmed deleted.", handle.pod_name)
+                    return
+                if probe.returncode == 0 and probe.stdout.strip():
+                    try:
+                        payload = json.loads(probe.stdout)
+                        if isinstance(payload, dict):
+                            last_status = (payload.get("status") or "").upper() or last_status
+                    except json.JSONDecodeError:
+                        pass
+                    if last_status == "PENDING" and issuance_confirmed:
+                        logger.warning(
+                            "GCP teardown: delete of DWS-queued %s is issued and in flight "
+                            "server-side; NOT blocking the caller on the slow DWS cancel "
+                            "(queued instances bill no GPU; backstops: gcp_audit janitor + "
+                            "--max-run-duration fence). (#1628)",
+                            handle.pod_name,
+                        )
+                        return  # the pivot-unblocking fast return
+            if time.monotonic() >= deadline:
+                raise GcpBackendError(
+                    f"gcloud delete of {handle.pod_name} did not confirm within "
+                    f"{budget}s (last_status={last_status!r}, "
+                    f"issuance_confirmed={issuance_confirmed}); gcp_audit janitor + "
+                    f"--max-run-duration fence remain the backstops"
+                )
+            time.sleep(poll)
 
     def _confirm_deleted(self, handle: RunHandle, zone: str) -> None:
         """Verify the post-delete instance is gone; re-issue the delete on a RUNNING zombie (#683).
@@ -7254,6 +7629,7 @@ __all__ = [
     "STARTUP_SECRET_ENV_KEYS",
     "WIDE_A100_80_BY_WIDTH",
     "WIDTH_ELIGIBLE_INTENTS",
+    "DeleteSpawner",
     "GcloudRunResult",
     "GcloudRunner",
     "GcpBackend",
@@ -7279,6 +7655,7 @@ __all__ = [
     "region_for_zone",
     "render_create_argv",
     "render_delete_argv",
+    "render_delete_operations_list_argv",
     "render_describe_argv",
     "render_list_argv",
     "render_region_describe_argv",
