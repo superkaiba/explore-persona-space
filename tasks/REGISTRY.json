@@ -4875,8 +4875,8 @@
     "1625": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1625",
-      "status": "planning",
+      "path": "tasks/approved/1625",
+      "status": "approved",
       "title": "daily-fix: inline rounds both mapping arms + PNG check"
     },
     "1626": {
