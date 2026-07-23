@@ -1,6 +1,6 @@
 {
-  "commit": "9b60558da7",
-  "created": "2026-07-23T00:16:32Z",
+  "commit": "43b27d1136",
+  "created": "2026-07-23T00:43:15Z",
   "figsize": [
     6.4,
     4.4
@@ -105,6 +105,9 @@
           "963k MLP (w=8192)",
           "963k MLP (w=32768)",
           "963k kernel (Nystr\u00f6m)"
+        ],
+        "annotations": [
+          "\u2020"
         ],
         "xticklabels": [
           "14",
