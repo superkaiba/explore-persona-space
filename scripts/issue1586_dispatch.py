@@ -37,6 +37,14 @@ same teardown. The smoke cell is also the staging-probe carrier (checkpoint
 family consumer-open through the REAL per-file staging path). Every phase
 reads its cell list from the ONE resolver (``cfg.cells``).
 
+``--fu caveatfix`` (plan v7 amendment) swaps the cell universe to the FU
+registry — 4 marker full-FT cells at the REGISTERED fallback lr 2e-6
+(per-step chunked coarse-then-fine ladders, run_fu_marker_ladder) + 2
+impolite LoRA-at-FT-rate cells (p2l via the factory train_lora path, dosed
+to the reused FT partners' confirmed Tier-2 rates) — and roots everything
+under out_fu/ + the fu_caveatfix data prefix. ``--fu`` smoke = ONE CELL PER
+ARM CLASS (mk ft2e6 + imp lora5e6) through the identical phase chain.
+
 Pod-side contract: NEVER shells out to scripts/task.py; progress =
 ``[phase=...]`` log lines + the end-of-run sentinel (pod-side-reporting.md).
 ``[phase=done]`` is emitted by the launcher wrapper ONLY, never here.
@@ -149,6 +157,13 @@ PILOT_PLAN_P3_GPU_H_MARKER = 1.25
 PILOT_PARALLELISM = 2.0  # 2 concurrent ZeRO-3 quads (p2)
 PILOT_GATE_RC = 7  # designed halt (never bare rc=1 — gotchas #1415)
 
+# FU round (plan v7): chunked marker per-step ladders + the fu pilot gate.
+FU_MARKER_CHUNK = 4  # plan §9: stream-reap bounds in-flight marker rungs to <=4 x 15.2 GB
+# fu compute-pilot kill (plan §7 gate 2): marker cell 1 is the measured pilot
+# (train + chunked ladder wall); 4 x measured_cell_wall re-projected against
+# the §9 f1 (1.3 h) + f3 (1.8 h) rows, HALT at >2x via _pilot_gate (rc=7).
+FU_PILOT_PLAN_F1F3_WALL_H = 3.1
+
 # Disk arithmetic (crash-fix r5, epm:failure v5 — phase-ordering ENOSPC).
 RUNG_GB = 15.2  # weights-only bf16 7B rung checkpoint (measured, #1112/pod A)
 WAVE_MARGIN_GB = 25.0  # per-wave working margin (logs / rollouts / tmp)
@@ -205,11 +220,13 @@ class Cfg:
     sentinel_dir: Path | None = None
     upload: bool = True
     phases: tuple[str, ...] = ()  # empty -> all
+    fu: str | None = None  # None (executed grid) | "caveatfix" (plan v7 FU round)
 
     def regime_key(self) -> dict:
         return {
             "issue": G.ISSUE,
             "smoke": self.smoke,
+            "fu": self.fu,  # output-affecting regime key (plan v7 §4.C)
             "cells": list(self.cells),
             "ladder_disk_mode": self.resolved_disk_mode(),
             "tier1": [self.tier1_n, self.tier1_draws],
@@ -327,20 +344,24 @@ def normalize_phases(raw: str | None) -> tuple[str, ...]:
     return tuple(out)
 
 
-def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
-    """The ONE cell resolver every phase consumes (smoke = same path, 1 cell).
+def resolve_cells(cells_arg: str | None, smoke: bool, fu: str | None = None) -> tuple[str, ...]:
+    """The ONE cell resolver every phase consumes (smoke = same path, 1 cell —
+    under ``--fu`` ONE CELL PER ARM CLASS, the #1586 r3-r6 coverage lesson).
 
     Cells are FT cells; each threads its method-paired LoRA arm through
     ``G.lora_pair_of`` — so the --cells subset shapes train, ladder, parity,
     tier2, panel, margin, capture, AND upload alike (PASS_UNIFIED per-phase
-    subset threading)."""
-    known = set(G.ALL_FT_CELLS)
+    subset threading). ``fu`` swaps the cell universe to the FU registry
+    (plan v7 §4.C): 4 marker-FT2e6 cells + 2 impolite-LoRA5e6 cells."""
+    known = set(G.FU_ALL_CELLS) if fu else set(G.ALL_FT_CELLS)
     if cells_arg:
         ids = tuple(t.strip() for t in cells_arg.split(",") if t.strip())
         bad = [t for t in ids if t not in known]
         if bad:
             raise ValueError(f"bad cells {bad!r}: want a subset of {sorted(known)}")
         return ids
+    if fu:
+        return G.FU_SMOKE_CELLS if smoke else G.FU_ALL_CELLS
     if smoke:
         return (G.SMOKE_CELL,)
     return G.ALL_FT_CELLS
@@ -348,6 +369,16 @@ def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
 
 def _n_gpus() -> int:
     return max(1, len(_physical_gpu_ids()))
+
+
+def _fu(cfg: Cfg) -> bool:
+    return cfg.fu == "caveatfix"
+
+
+def _data_prefix(cfg: Cfg) -> str:
+    """Data-repo upload prefix — FU rounds land under fu_caveatfix/, never
+    clobbering executed SLUG/ entries (plan v7 §4.C)."""
+    return G.FU_DATA_PREFIX if _fu(cfg) else G.DATA_PREFIX
 
 
 def _is_marker(cell: str) -> bool:
@@ -361,7 +392,16 @@ def _behavior(cell: str) -> str:
 def _cell_rung_demand_gb(cell: str, *, smoke: bool = False) -> float:
     """Peak rung-checkpoint bytes ONE cell's training writes (weights-only
     rungs at every ckpt step; the trainer writes them regardless of disk
-    mode — stream-reap only bounds ladder-time retention)."""
+    mode — stream-reap only bounds ladder-time retention).
+
+    FU cells (plan v7 §9): a FU marker cell trains its per-step ladder in
+    CHUNKS of FU_MARKER_CHUNK deterministic same-seed retrains, so at most
+    FU_MARKER_CHUNK full-FT rungs are ever in-flight (~61 GB); a FU impolite
+    LoRA cell's full adapter ladder is <= FU_IMP_LADDER_GB total."""
+    if G.cell_method(cell) == "lora5e6":
+        return G.FU_IMP_LADDER_GB
+    if G.cell_method(cell) == "ft2e6":
+        return RUNG_GB if smoke else FU_MARKER_CHUNK * RUNG_GB
     if smoke:
         return RUNG_GB  # smoke trains a single rung (ckpts=(2,))
     n_rungs = len(G.MARKER_FT_GRID) if _is_marker(cell) else len(P1112.FT_CKPT_STEPS)
@@ -663,7 +703,22 @@ def _grounding_from_adapter_config(dest: Path, recipe_class: str) -> dict:
 
 
 def _arms_in_scope(cfg: Cfg) -> list[G.ReusedLoraArm]:
-    return [G.lora_pair_of(c) for c in cfg.cells]
+    """Reused LoRA verdict arms paired to the in-scope FT-method cells. FU
+    impolite LoRA cells pair to a reused FT PARTNER (staged separately at
+    p0), not a reused LoRA arm — they contribute none here."""
+    return [G.lora_pair_of(c) for c in cfg.cells if G.cell_method(c) != "lora5e6"]
+
+
+def _fu_dose_labels_local(cfg: Cfg) -> Path:
+    return cfg.out_root / "inputs" / "fu_dose_labels.json"
+
+
+def _fu_imp_anchor(cfg: Cfg, cell: str) -> float:
+    """Runtime dose anchor for a FU impolite LoRA cell = the FT partner's
+    CONFIRMED Tier-2 rate from the committed dose_labels.json (staged at p0;
+    plan §4.B 'read at runtime, not hardcoded')."""
+    labels = G.load_fu_dose_labels(_fu_dose_labels_local(cfg))
+    return labels[G.fu_ft_partner_of(cell).dose_label_key]
 
 
 def phase_stage(cfg: Cfg) -> dict:
@@ -750,6 +805,61 @@ def phase_stage(cfg: Cfg) -> dict:
 
         AutoConfig.from_pretrained(str(_staged_ft_dir(cfg, "s3_con")))  # consumer-open
         rec["reused_ft"] = {"revision": overflow_rev, "consumer_open": "AutoConfig OK"}
+
+    # 4) FU round (plan v7 §4.B): dose-label anchors + the reused impolite FT
+    # partner checkpoints for every in-scope FU LoRA cell.
+    fu_lora_cells = [c for c in cfg.cells if G.is_fu_lora_cell(c)]
+    if fu_lora_cells:
+        # Runtime dose anchors from the COMMITTED dose_labels.json (repo
+        # checkout carries it) — validated + copied under the out_root so
+        # every unit subprocess reads one pinned local copy.
+        src_labels = REPO_ROOT / "figures" / "issue_1586" / "dose_labels.json"
+        labels = G.load_fu_dose_labels(src_labels)  # fail-loud key/range check
+        dest_labels = _fu_dose_labels_local(cfg)
+        dest_labels.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src_labels, dest_labels)
+        rec["fu_dose_anchors"] = labels
+        overflow_rev = overflow_rev or _resolve_revision(G.OVERFLOW_REPO, "model")
+        from huggingface_hub import hf_hub_download
+        from transformers import AutoConfig
+
+        fu_partners: dict[str, dict] = {}
+        for cell in fu_lora_cells:
+            fc = G.fu_ft_partner_of(cell)
+            # 1-file staging probe + HF consumer-open per (family x consumer)
+            # pair (reuse leg (h)(iv)): pull ONLY config.json through the real
+            # per-file download path into a SEPARATE probe dir (the full-stage
+            # dest's config.json is _stage_overflow_prefix's resume predicate
+            # — probing into it would short-circuit the shard pull) and open
+            # it with the HF config loader BEFORE the 15 GB shard pull. (The
+            # vLLM consumer-open happens in-run: p5's partner parity read
+            # generates from the staged dir.)
+            probe_dir = cfg.out_root / "inputs" / "fu_probe" / fc.ft_partner_cell
+            probe_dir.mkdir(parents=True, exist_ok=True)
+            got = hub.retry_transient(
+                lambda p=f"{fc.ft_partner_subfolder}/config.json": hf_hub_download(
+                    G.OVERFLOW_REPO, p, repo_type="model", revision=overflow_rev
+                ),
+                what=f"fu partner probe {fc.ft_partner_subfolder}/config.json",
+            )
+            if not (probe_dir / "config.json").exists():
+                shutil.copyfile(got, probe_dir / "config.json")
+            AutoConfig.from_pretrained(str(probe_dir))  # consumer-open (HF loader)
+            dest = _staged_ft_dir(cfg, fc.ft_partner_cell)
+            _stage_overflow_prefix(fc.ft_partner_subfolder, dest, revision=overflow_rev)
+            n_files = sum(1 for p in dest.rglob("*") if p.is_file())
+            if n_files < 5:  # config + shards + index at minimum (16 on Hub)
+                raise RuntimeError(
+                    f"fu partner {fc.ft_partner_cell}: only {n_files} staged files "
+                    f"under {dest} — incomplete checkpoint stage"
+                )
+            fu_partners[fc.ft_partner_cell] = {
+                "subfolder": fc.ft_partner_subfolder,
+                "revision": overflow_rev,
+                "n_files": n_files,
+                "consumer_open": "AutoConfig OK (probe-first)",
+            }
+        rec["fu_ft_partners"] = fu_partners
     _atomic_json(done_path, rec)
     return rec
 
@@ -824,14 +934,17 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
 
 def phase_parity(cfg: Cfg) -> dict:
     _phase("p1_parity")
-    pending = [c for c in cfg.cells if not (cfg.out_root / c / "parity.json").exists()]
+    # FU impolite LoRA cells pair to a reused FT PARTNER, not a reused LoRA
+    # arm — their parity gate is the p5 fresh Tier-2 re-read (plan v7 §4.B).
+    scope = [c for c in cfg.cells if G.cell_method(c) != "lora5e6"]
+    pending = [c for c in scope if not (cfg.out_root / c / "parity.json").exists()]
     if pending:
         if _n_gpus() == 1 or len(pending) == 1:
             for c in pending:
                 run_parity_unit(cfg, c)
         else:
             _fanout_units(cfg, [_unit_args(cfg, "parity", c) for c in pending])
-    return {c: _read_json(cfg.out_root / c / "parity.json") for c in cfg.cells}
+    return {c: _read_json(cfg.out_root / c / "parity.json") for c in scope}
 
 
 # ── p2: FT training (content quads + marker grid) ────────────────────────────
@@ -909,15 +1022,31 @@ def _content_ft_cmd(
 
 
 def ft_wandb_run_name(cell: str) -> str:
-    """The realized trainer run name (train_behavior_fullft.py:638-640)."""
+    """The realized trainer run name (train_behavior_fullft.py:638-640).
+    FU LoRA cells (trained via train_lora, not the FT trainer) get their own
+    issue-scoped name — one distinct WandB run per cell (#480)."""
     beh, _r, seed = G.parse_ft_cell(cell)
+    if G.cell_method(cell) == "lora5e6":
+        return f"issue1586_fu_lora_{cell}"
     if beh == "mk":
         return f"issue1586_mk_fullft_{cell}"
     return f"issue642_ft_{G.BEHAVIOR_BY_KEY[beh]}_seed{seed}_i1586_{cell}"
 
 
-def _marker_ft_cmd(cfg: Cfg, cell: str, *, out_dir: Path, grid: Sequence[int]) -> list[str]:
+def _marker_ft_cmd(
+    cfg: Cfg, cell: str, *, out_dir: Path, grid: Sequence[int], horizon: int | None = None
+) -> list[str]:
+    """Marker full-FT launch. ``horizon`` (FU chunked per-step ladders, plan
+    v7 §4.A) FIXES the --max-steps schedule span independently of the saved
+    grid, so every deterministic same-seed chunk retrain shares ONE lr
+    schedule; default (executed grid) keeps --max-steps = max(grid). LR: the
+    FU ft2e6 cells train at the REGISTERED fallback 2e-6 (imported —
+    G.FU_MARKER_FT_LR); executed cells keep P1112.MARKER_FT_LR."""
     _beh, regime, seed = G.parse_ft_cell(cell)
+    lr = G.FU_MARKER_FT_LR if G.cell_method(cell) == "ft2e6" else P1112.MARKER_FT_LR
+    max_steps = int(horizon) if horizon is not None else max(grid)
+    if max_steps < max(grid):
+        raise ValueError(f"horizon {max_steps} < max grid step {max(grid)} for {cell}")
     return [
         "uv",
         "run",
@@ -935,11 +1064,11 @@ def _marker_ft_cmd(cfg: Cfg, cell: str, *, out_dir: Path, grid: Sequence[int]) -
         "--ckpt-steps",
         ",".join(str(s) for s in grid),
         "--max-steps",
-        str(max(grid)),
+        str(max_steps),
         "--seed",
         str(seed),
         "--learning-rate",
-        str(P1112.MARKER_FT_LR),
+        str(lr),
         "--max-length",
         str(MARKER_MAX_LENGTH),
         "--wandb-project",
@@ -1017,6 +1146,8 @@ def phase_train(cfg: Cfg, cells: Sequence[str] | None = None) -> dict:
     _phase("p2_train")
     _headroom(cfg, "p2_train")
     scope = [c for c in (cells if cells is not None else cfg.cells) if c != G.REUSED_FT_CELL]
+    if _fu(cfg):
+        return _fu_phase_train(cfg, scope)
     pending = [c for c in scope if not (cfg.out_root / c / "build_result.json").exists()]
     n_lanes = wave_width(len(_physical_gpu_ids()))
     gate_rep = cfg.out_root / "pilot_gate_report_p2_train.json"
@@ -1083,13 +1214,343 @@ def _pilot_gate(
         raise SystemExit(PILOT_GATE_RC)
 
 
+# ── FU round: p2 stubs + p2l LoRA training + chunked marker ladders ──────────
+
+
+def _fu_phase_train(cfg: Cfg, scope: Sequence[str]) -> dict:
+    """FU p2 (plan v7 §4.C): marker ft2e6 cells write a build STUB — their
+    chunked per-step training runs INSIDE run_fu_marker_ladder (plan §9:
+    <= FU_MARKER_CHUNK rungs ever in-flight); impolite lora5e6 cells train via
+    subprocess-isolated ``p2l`` units (train_lora must never run in the
+    dispatcher process — the gotchas CVD-clobber shape (b))."""
+    results: dict[str, dict] = {}
+    p2l_pending: list[str] = []
+    for cell in scope:
+        build_path = cfg.out_root / cell / "build_result.json"
+        if build_path.exists():
+            results[cell] = _read_json(build_path)
+            continue
+        if G.cell_method(cell) == "ft2e6":
+            (cfg.out_root / cell).mkdir(parents=True, exist_ok=True)
+            beh, regime, _s = G.parse_ft_cell(cell)
+            mix = _mix_local(cfg, beh, regime)
+            _atomic_json(
+                build_path,
+                {
+                    "cell": cell,
+                    "status": "fu_marker_chunked_ladder",  # trained inside p3
+                    "adapter_root": str(cfg.out_root / cell / "train"),
+                    "mix": str(mix),
+                    "mix_sha256": _sha256_file(mix),
+                    "wandb_run_name": ft_wandb_run_name(cell),
+                },
+            )
+            results[cell] = _read_json(build_path)
+        else:
+            p2l_pending.append(cell)
+    if p2l_pending:
+        # ALWAYS subprocess-isolated (even a single unit): the launcher env
+        # pins CVD per unit, so train_lora's in-process clobber sees an
+        # authoritative single-GPU pin (_apply_cvd_pin); train_lora NEVER
+        # runs in the dispatcher process (gotchas CVD shape (b)).
+        if _n_gpus() == 1 or len(p2l_pending) == 1:
+            for c in p2l_pending:
+                _run_unit_subprocess(cfg, "p2l", c, cfg.out_root / c / "train.log")
+        else:
+            _fanout_units(cfg, [_unit_args(cfg, "p2l", c) for c in p2l_pending])
+        for c in p2l_pending:
+            results[c] = _read_json(cfg.out_root / c / "build_result.json")
+    return results
+
+
+def _run_unit_subprocess(cfg: Cfg, kind: str, arg: str, log_path: Path) -> None:
+    """Blocking single-unit self-invocation with a launcher-env CVD pin (the
+    serial sibling of _fanout_units — same env-injection shape)."""
+    ids = _physical_gpu_ids()
+    gpu = ids[0] if ids else "0"
+    env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu}
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(_SCRIPTS_DIR / "issue1586_dispatch.py"),
+        *_unit_args(cfg, kind, arg),
+        "--gpu-id",
+        gpu,
+    ]
+    _run_subprocess(cmd, log_path, env=env)
+
+
+def _p2l_train_cfg(cfg: Cfg, cell: str, *, max_steps: int):
+    """Pure config builder (CPU-testable) for the FU impolite LoRA cells:
+    the factory content recipe at the FT lr — fu4_recipe_spec defaults
+    (r32/α64/rsLoRA/7-module, save_steps 5, max_length 2048, per-device 4 ×
+    accum 4, cosine; grounded on the factory arms' own adapter_config.json +
+    the #1481 cadence) with ONLY lr moved to G.FU_IMP_LORA_LR (plan §4.B) —
+    max_steps threaded through the same TrainLoraConfig seam the fu4 smoke
+    clamp exercises (HF semantics: max_steps > 0 overrides epochs)."""
+    from explore_persona_space.artifacts.recipe import build_train_config
+
+    spec = fu4.fu4_recipe_spec(G.BEHAVIOR_BY_KEY["imp"], G.FU_IMP_LORA_LR)
+    train_cfg = build_train_config(
+        spec,
+        run_name=ft_wandb_run_name(cell),
+        seed=G.parse_ft_cell(cell)[2],  # training seed = cell seed (plan §4.B)
+        extra_overrides={"logging_steps": 1},
+    )
+    return dataclasses.replace(train_cfg, max_steps=int(max_steps))
+
+
+def _p2l_expected_rungs(max_steps: int) -> set[int]:
+    return set(range(G.FU_IMP_SAVE_STEPS, max_steps + 1, G.FU_IMP_SAVE_STEPS)) | {max_steps}
+
+
+def run_p2l_unit(cfg: Cfg, cell: str) -> dict:
+    """FU p2l: train ONE impolite LoRA-at-FT-rate ladder cell via the factory
+    ``train_lora`` path (plan §4.B — the #1112 s5_lora_neg_lr5e6 transplant
+    with the dose anchor re-pointed at the reused FT partner). Smoke trains
+    max_steps=5 (exactly one rung at the factory cadence — the fu4 smoke
+    convention), full trains the 180-step ceiling with ckpt-every-5."""
+    cell_root = cfg.out_root / cell
+    build_path = cell_root / "build_result.json"
+    if build_path.exists():
+        return _read_json(build_path)
+    from explore_persona_space.artifacts.organisms import release_trainer_cuda_memory
+    from explore_persona_space.train.sft import train_lora
+
+    max_steps = G.FU_IMP_SAVE_STEPS if cfg.smoke else G.FU_IMP_STEP_CEILING
+    train_cfg = _p2l_train_cfg(cfg, cell, max_steps=max_steps)
+    mix = _mix_local(cfg, "imp", "con")
+    adapter_dir, loss = train_lora(
+        DEFAULT_BASE_MODEL, str(mix), str(cell_root / "train"), cfg=train_cfg
+    )
+    release_trainer_cuda_memory()
+    rungs = _enumerate_rungs(Path(adapter_dir))
+    # Recipe gauge on the artifact's OWN adapter_config (r32/α64/rsLoRA,
+    # content class — plan §4.B / A8; #545 config-wins rule).
+    gauge = _grounding_from_adapter_config(rungs[max(rungs)], "content")
+    missing = sorted(_p2l_expected_rungs(max_steps) - set(rungs))
+    if not cfg.smoke and missing:
+        raise RuntimeError(f"p2l ladder incomplete for {cell}: missing rungs {missing}")
+    rec = {
+        "cell": cell,
+        "status": "trained",
+        "adapter_root": str(adapter_dir),
+        "training_loss": float(loss),
+        "rungs": sorted(rungs),
+        "max_steps": max_steps,
+        "lr": G.FU_IMP_LORA_LR,
+        "adapter_gauge": gauge,
+        "mix": str(mix),
+        "mix_sha256": _sha256_file(mix),
+        "wandb_run_name": ft_wandb_run_name(cell),
+    }
+    _atomic_json(build_path, rec)
+    return rec
+
+
+def run_p2l_ext_unit(cfg: Cfg, cell: str) -> dict:
+    """FU imp registered one-shot extension (plan §4.B: ceiling 180 → 360):
+    deterministic retrain at the 360 horizon into train_ext, then GRAFT only
+    the EXTENSION-RANGE rungs (> 180) into the ladder tree — the ext run's
+    sub-ceiling rungs ride a DIFFERENT (360-span) cosine schedule and never
+    overwrite run-A rungs (the marker-extension convention, review r1
+    Minor 1); they are RETAINED under train_ext for the full-ladder upload
+    (plan §10: no LoRA rung discarded)."""
+    cell_root = cfg.out_root / cell
+    ext_result = cell_root / "extend_result.json"
+    if ext_result.exists():
+        return _read_json(ext_result)
+    from explore_persona_space.artifacts.organisms import release_trainer_cuda_memory
+    from explore_persona_space.train.sft import train_lora
+
+    ext_dir = cell_root / "train_ext"
+    if ext_dir.exists():
+        shutil.rmtree(ext_dir)
+    train_cfg = _p2l_train_cfg(cfg, cell, max_steps=G.FU_IMP_EXT_CEILING)
+    adapter_dir, _loss = train_lora(
+        DEFAULT_BASE_MODEL, str(_mix_local(cfg, "imp", "con")), str(ext_dir), cfg=train_cfg
+    )
+    release_trainer_cuda_memory()
+    train_dir = Path(_read_json(cell_root / "build_result.json")["adapter_root"])
+    moved: list[int] = []
+    for step, p in sorted(_enumerate_rungs(Path(adapter_dir)).items()):
+        if step > G.FU_IMP_STEP_CEILING:
+            target = train_dir / p.name
+            if not target.exists():
+                shutil.move(str(p), str(target))
+            moved.append(step)
+    if not moved:
+        raise RuntimeError(f"p2l ext for {cell}: no extension-range rungs realized")
+    rec = {"cell": cell, "moved_steps": moved, "ext_ceiling": G.FU_IMP_EXT_CEILING}
+    _atomic_json(ext_result, rec)
+    return rec
+
+
+def _fu_marker_horizon(step: int) -> int:
+    """FIXED --max-steps schedule span for a FU marker rung: base-grid rungs
+    share the 24-step horizon; extension rungs share the 48-step horizon (the
+    executed marker-ext different-schedule convention, labeled)."""
+    return G.FU_MARKER_STEP_CEILING if step <= G.FU_MARKER_STEP_CEILING else G.FU_MARKER_EXT_CEILING
+
+
+def _fu_marker_train_rungs(cfg: Cfg, cell: str, steps: Sequence[int], horizon: int) -> None:
+    """Deterministic same-seed chunk retrain writing ONLY ``steps`` rungs
+    under a FIXED ``horizon`` schedule (plan §9: <= FU_MARKER_CHUNK full-FT
+    rungs in-flight; determinism premise A9 — the executed stream-reap
+    retrain-to-step contract). Per-chunk headroom canary BEFORE the trainer
+    writes (the #1333 mount-binding preamble duty)."""
+    cell_root = cfg.out_root / cell
+    out_dir = cell_root / "train"
+    have = set(_rungs_or_empty(out_dir))
+    todo = tuple(s for s in steps if s not in have)
+    if not todo:
+        return
+    assert_out_root_headroom(
+        cfg.out_root,
+        need_gb=len(todo) * RUNG_GB + WAVE_MARGIN_GB,
+        phase=f"p3_fu_chunk_{cell}",
+    )
+    cmd = _marker_ft_cmd(cfg, cell, out_dir=out_dir, grid=todo, horizon=horizon)
+    _run_subprocess(cmd, cell_root / "train.log", env=_ft_lane_env(0))
+
+
+def run_fu_mkread_unit(cfg: Cfg, arg: str) -> None:
+    """One FU marker rung slot read (fanout unit kind ``mkread``, 1 GPU):
+    ``arg`` = ``<cell>:<step>``. Writes rung<step>/slot_read.json (+ rollout
+    text) via the executed _marker_source_read instrument verbatim."""
+    cell, step_s = arg.rsplit(":", 1)
+    step = int(step_s)
+    train_dir = Path(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])
+    rung = _enumerate_rungs(train_dir)[step]
+    _marker_source_read(cfg, str(rung), cfg.out_root / cell / f"rung{step}")
+
+
+def run_fu_marker_ladder(cfg: Cfg, cell: str) -> dict:
+    """FU marker chunked coarse-then-fine per-step ladder (plan v7 §4.A):
+
+    - COARSE: even rungs 2..24 in chunks of FU_MARKER_CHUNK (train chunk →
+      4-way slot reads → persist → reap), EARLY-STOP once any read rung has
+      ΔG >= the window ceiling (install is monotone on this ramp).
+    - REFINE: step-1 rungs inside every floor-straddling bracket [k, k+2]
+      (read(k) < floor <= read(k+2); read(0) := 0 by definition).
+    - EXTENSION (registered one-shot): coarse evens 26..48 at the 48-step
+      horizon when ΔG@24 < MARKER_EXT_MIN_DELTA_NATS, + the same refine.
+
+    Reads persist per rung (ladder.json); read rungs are reaped immediately
+    under stream-reap (re-derivable via deterministic retrain-to-step — the
+    executed contract), so at most one chunk of rungs is ever on disk."""
+    cell_root = cfg.out_root / cell
+    ladder_path = cell_root / "ladder.json"
+    done: dict[int, dict] = {}
+    if ladder_path.exists():
+        prior = _read_json(ladder_path)
+        if prior.get("regime") != cfg.regime_key():
+            raise RuntimeError(f"ladder regime drift under {ladder_path} — fresh --out-root")
+        done = {int(k): v for k, v in (prior.get("reads_by_step") or {}).items()}
+
+    def _persist() -> None:
+        _atomic_json(
+            ladder_path,
+            {
+                "cell": cell,
+                "regime": cfg.regime_key(),
+                "reads_by_step": {str(k): v for k, v in sorted(done.items())},
+            },
+        )
+
+    floor, ceil_ = G.INSTALL_WINDOW
+    stream_reap = cfg.resolved_disk_mode() == "stream-reap" and not cfg.smoke
+
+    def _early_stopped() -> bool:
+        return any(float(v["delta_logp_mean"]) >= ceil_ for v in done.values())
+
+    def _run_chunk(steps: list[int], horizon: int) -> None:
+        pending = [s for s in steps if s not in done]
+        if not pending:
+            return
+        _fu_marker_train_rungs(cfg, cell, pending, horizon)
+        units = [
+            _unit_args(cfg, "mkread", f"{cell}:{s}")
+            for s in pending
+            if not (cell_root / f"rung{s}" / "slot_read.json").exists()
+        ]
+        if units:
+            if len(units) == 1 or _n_gpus() == 1:
+                for u in units:
+                    run_fu_mkread_unit(cfg, u[2])
+            else:
+                _fanout_units(cfg, units)
+        for s in pending:
+            rec = _read_json(cell_root / f"rung{s}" / "slot_read.json")
+            done[s] = {
+                k: rec[k]
+                for k in (
+                    "delta_logp_mean",
+                    "delta_margin_mean",
+                    "gen_emission_rate",
+                    "argmax_rate",
+                )
+            }
+        _persist()
+        if stream_reap:
+            rungs = _rungs_or_empty(cell_root / "train")
+            for s in pending:
+                if s in rungs:
+                    shutil.rmtree(rungs[s], ignore_errors=True)
+
+    def _refine_pass(horizon_ceiling: int) -> None:
+        want: list[int] = []
+        for s_hi in sorted(k for k in done if k % 2 == 0 and 2 <= k <= horizon_ceiling):
+            mid = s_hi - 1
+            if mid < 1 or mid in done:
+                continue
+            lo_val = float(done[s_hi - 2]["delta_logp_mean"]) if (s_hi - 2) in done else 0.0
+            if lo_val < floor <= float(done[s_hi]["delta_logp_mean"]):
+                want.append(mid)
+        for i in range(0, len(want), FU_MARKER_CHUNK):
+            chunk = want[i : i + FU_MARKER_CHUNK]
+            _run_chunk(chunk, _fu_marker_horizon(max(chunk)))
+
+    if cfg.smoke:
+        # tiny-real: ONE rung end-to-end through the SAME train→read→persist
+        # path (grid (2,), horizon 2 — the parent smoke marker convention).
+        _run_chunk([2], 2)
+        _persist()
+        return done
+
+    coarse = list(range(2, G.FU_MARKER_STEP_CEILING + 1, 2))
+    for i in range(0, len(coarse), FU_MARKER_CHUNK):
+        if _early_stopped():
+            break
+        _run_chunk(coarse[i : i + FU_MARKER_CHUNK], G.FU_MARKER_STEP_CEILING)
+    _refine_pass(G.FU_MARKER_STEP_CEILING)
+    top_read = done.get(G.FU_MARKER_STEP_CEILING)
+    if (
+        not _early_stopped()
+        and top_read is not None
+        and float(top_read["delta_logp_mean"]) < G.MARKER_EXT_MIN_DELTA_NATS
+        and not (cell_root / "extended.json").exists()
+    ):
+        ext = list(range(G.FU_MARKER_STEP_CEILING + 2, G.FU_MARKER_EXT_CEILING + 1, 2))
+        for i in range(0, len(ext), FU_MARKER_CHUNK):
+            if _early_stopped():
+                break
+            _run_chunk(ext[i : i + FU_MARKER_CHUNK], G.FU_MARKER_EXT_CEILING)
+        _refine_pass(G.FU_MARKER_EXT_CEILING)
+        _atomic_json(cell_root / "extended.json", {"ts": time.time(), "ext_grid": ext})
+    _persist()
+    return done
+
+
 # ── p3: ladders + anchor-nearest selection ───────────────────────────────────
 
 
 def _reap_rungs(train_dir: Path, keep_steps: set[int]) -> int:
     """Delete non-kept rung dirs (declared discard, plan §10 — rates persist
-    in ladder.json; selected rung re-derivable by deterministic retrain)."""
-    rungs = _enumerate_rungs(train_dir)
+    in ladder.json; selected rung re-derivable by deterministic retrain).
+    Tolerates a rung-less dir (FU chunked ladders reap as they read)."""
+    rungs = _rungs_or_empty(train_dir)
     n = 0
     for step, p in rungs.items():
         if step not in keep_steps:
@@ -1193,7 +1654,11 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict:
             },
         )
 
-    stream_reap = cfg.resolved_disk_mode() == "stream-reap" and not cfg.smoke
+    # FU imp LoRA rungs are NEVER stream-reaped (~10^2 MB each; the FULL
+    # ladder uploads at p4 — plan v7 §10 "no LoRA rung discarded").
+    stream_reap = (
+        cfg.resolved_disk_mode() == "stream-reap" and not cfg.smoke and not G.is_fu_lora_cell(cell)
+    )
     if _is_marker(cell):
         for step, rung in sorted(_enumerate_rungs(train_dir).items()):
             if step in done:
@@ -1249,7 +1714,8 @@ def _select_cell(cfg: Cfg, cell: str) -> dict:
     sel_path = cell_root / "selection.json"
     if sel_path.exists():
         return _read_json(sel_path)
-    arm = G.lora_pair_of(cell)
+    fu_lora = G.is_fu_lora_cell(cell)
+    arm = None if fu_lora else G.lora_pair_of(cell)
     reads = {int(k): v for k, v in _read_json(cell_root / "ladder.json")["reads_by_step"].items()}
     if _is_marker(cell):
         metric = {s: float(v["delta_logp_mean"]) for s, v in reads.items()}
@@ -1269,20 +1735,26 @@ def _select_cell(cfg: Cfg, cell: str) -> dict:
         sel["window"] = list(G.INSTALL_WINDOW)
     else:
         metric = {s: float(v["rate"]) for s, v in reads.items()}
-        sel = G.select_anchor_nearest(metric, anchor=arm.anchor, band=G.JUDGED_RATE_BAND)
+        # FU imp LoRA cells anchor on the FIXED reused FT partner's CONFIRMED
+        # Tier-2 rate, read at runtime from the committed dose labels (plan
+        # v7 §4.B — the anchor-nearest rule with the anchor re-pointed).
+        anchor = _fu_imp_anchor(cfg, cell) if fu_lora else arm.anchor
+        sel = G.select_anchor_nearest(metric, anchor=anchor, band=G.JUDGED_RATE_BAND)
         sel["band"] = list(G.JUDGED_RATE_BAND)
     sel["cell"] = cell
-    sel["paired_arm"] = arm.run_id
+    sel["paired_arm"] = G.fu_ft_partner_of(cell).ft_partner_subfolder if fu_lora else arm.run_id
     sel["reads_by_step"] = {str(k): v for k, v in sorted(reads.items())}
     # Between-cell rung reap (plan §9): keep selected + latest only. In
     # stream-reap mode the selected rung may already be gone -> deterministic
     # retrain to the selected step (the #1112 coarse+refine contingency).
+    # FU imp LoRA ladders are NEVER reaped (adapter rungs are ~10^2 MB; the
+    # FULL ladder uploads at p4 — plan §10 "no LoRA rung discarded").
     train_dir = Path(_read_json(cell_root / "build_result.json")["adapter_root"])
     keep = {int(sel["step"]), max(metric)}
-    if not cfg.smoke:
+    if not cfg.smoke and not fu_lora:
         n_reaped = _reap_rungs(train_dir, keep)
         sel["rungs_reaped"] = n_reaped
-    if int(sel["step"]) not in _enumerate_rungs(train_dir):
+    if int(sel["step"]) not in _rungs_or_empty(train_dir):
         sel["retrained_to_step"] = _retrain_to_step(cfg, cell, int(sel["step"]))
     _atomic_json(sel_path, sel)
     _mirror_deliverable(cfg, cell, sel)
@@ -1297,7 +1769,11 @@ def _retrain_to_step(cfg: Cfg, cell: str, step: int) -> dict:
     if out_dir.exists():
         shutil.rmtree(out_dir)
     if _is_marker(cell):
-        cmd = _marker_ft_cmd(cfg, cell, out_dir=out_dir, grid=(step,))
+        # FU ft2e6 rungs re-derive under their FIXED chunk horizon (24 / 48)
+        # so the retrained weights are bit-comparable to the laddered read
+        # (plan v7 §4.A); executed cells keep the legacy max(grid) horizon.
+        horizon = _fu_marker_horizon(step) if G.cell_method(cell) == "ft2e6" else None
+        cmd = _marker_ft_cmd(cfg, cell, out_dir=out_dir, grid=(step,), horizon=horizon)
     else:
         cmd = _content_ft_cmd(cfg, cell, out_dir=out_dir, max_steps=step, ckpt_steps=(step,))
     _run_subprocess(cmd, cell_root / "retrain_reselect.log", env=_ft_lane_env(0))
@@ -1337,6 +1813,39 @@ def _retrain_to_step(cfg: Cfg, cell: str, step: int) -> dict:
     return rec
 
 
+def _fu_phase_ladder(cfg: Cfg, trainable: Sequence[str]) -> dict:
+    """FU p3 (plan v7 §4.A/§4.B): marker ft2e6 cells run the CHUNKED
+    coarse-then-fine ladder IN THE PARENT (their chunk trains hold the 4-GPU
+    quad; slot reads fan out 1-GPU); impolite lora5e6 cells ladder through
+    the generic content unit flow over their on-disk adapter rungs. The
+    generic p3 pilot gate is REPLACED by the fu §7 gate 2 (run_waves times
+    marker cell 1's whole train+ladder wall)."""
+    mk_cells = [c for c in trainable if G.cell_method(c) == "ft2e6"]
+    others = [c for c in trainable if G.cell_method(c) != "ft2e6"]
+    for c in mk_cells:
+        if not (cfg.out_root / c / "ladder_done.json").exists():
+            run_fu_marker_ladder(cfg, c)
+            _atomic_json(cfg.out_root / c / "ladder_done.json", {"ts": time.time()})
+    units = [
+        _unit_args(cfg, "ladder", c)
+        for c in others
+        if not (cfg.out_root / c / "ladder_done.json").exists()
+    ]
+    if units:
+        if len(units) == 1 or _n_gpus() == 1:
+            for u in units:
+                run_ladder_unit(cfg, u[2])
+        else:
+            _fanout_units(cfg, units)
+    for c in others:
+        if not (cfg.out_root / c / "ladder_done.json").exists():
+            _atomic_json(cfg.out_root / c / "ladder_done.json", {"ts": time.time()})
+    if not cfg.smoke:
+        for c in others:
+            _maybe_extend(cfg, c)  # fu-imp registered extension (180 -> 360)
+    return {c: _select_cell(cfg, c) for c in trainable}
+
+
 def phase_ladder(cfg: Cfg, cells: Sequence[str] | None = None) -> dict:
     """p3 ladders + selection over ``cells`` (default: every cfg cell).
     Wave-scoped by run_waves (crash-fix r5); the reused #1112 cell's
@@ -1346,6 +1855,8 @@ def phase_ladder(cfg: Cfg, cells: Sequence[str] | None = None) -> dict:
     _headroom(cfg, "p3_ladder")
     scope = list(cells) if cells is not None else list(cfg.cells)
     trainable = [c for c in scope if c != G.REUSED_FT_CELL]
+    if _fu(cfg):
+        return _fu_phase_ladder(cfg, trainable)
     units = [
         _unit_args(cfg, "ladder", c)
         for c in trainable
@@ -1431,12 +1942,32 @@ def _ext_headroom(cfg: Cfg, cell: str, n_ext_rungs: int) -> None:
 
 def _maybe_extend(cfg: Cfg, cell: str) -> None:
     """One-shot registered extensions: content 30->60 when no in-band rung;
-    marker grid 1-6 -> 7-12 when ΔG@6 < 5 nat (plan §4.2)."""
+    marker grid 1-6 -> 7-12 when ΔG@6 < 5 nat (plan §4.2). FU (plan v7):
+    imp LoRA 180 -> 360 when no rung is in-band AND within the dose gap of
+    the FT partner anchor; FU marker extensions live INSIDE
+    run_fu_marker_ladder and never route here."""
     cell_root = cfg.out_root / cell
     if (cell_root / "extended.json").exists() or (cell_root / "selection.json").exists():
         return
     reads = {int(k): v for k, v in _read_json(cell_root / "ladder.json")["reads_by_step"].items()}
     train_dir = Path(_read_json(cell_root / "build_result.json")["adapter_root"])
+    if G.cell_method(cell) == "ft2e6":
+        raise RuntimeError(f"{cell}: FU marker extensions are owned by run_fu_marker_ladder")
+    if G.is_fu_lora_cell(cell):
+        anchor = _fu_imp_anchor(cfg, cell)
+        lo, hi = G.JUDGED_RATE_BAND
+        rates = [float(v["rate"]) for v in reads.values()]
+        if any(lo <= r <= hi and abs(r - anchor) <= G.DOSE_MATCH_MAX_RATE_GAP for r in rates):
+            return
+        # registered one-shot extension (plan v7 §4.B): 360-horizon retrain in
+        # a CVD-pinned subprocess (train_lora never runs in the dispatcher —
+        # gotchas shape (b)); grafts >180 rungs, then re-ladders them.
+        _run_unit_subprocess(cfg, "p2l_ext", cell, cell_root / "extend.log")
+        _atomic_json(cell_root / "extended.json", {"ts": time.time()})
+        (cell_root / "ladder_done.json").unlink(missing_ok=True)
+        run_ladder_unit(cfg, cell)  # per-rung resume ladders only the new rungs
+        _atomic_json(cell_root / "ladder_done.json", {"ts": time.time()})
+        return
     if _is_marker(cell):
         top = max(reads)
         if float(reads[top]["delta_logp_mean"]) >= G.MARKER_EXT_MIN_DELTA_NATS:
@@ -1506,6 +2037,9 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
             else []
         )
         + ([] if cfg.upload else ["--no-upload"])
+        # FU mode threads into EVERY unit subprocess (PASS_UNIFIED per-phase
+        # subset threading — plan v7 §4.C).
+        + (["--fu", cfg.fu] if cfg.fu else [])
     )
 
 
@@ -1623,6 +2157,11 @@ def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
         cell_root = cfg.out_root / cell
         sel_path = cell_root / "selection.json"
         build_path = cell_root / "build_result.json"
+        if G.is_fu_lora_cell(cell):
+            # FU imp LoRA ladders are retained whole (plan v7 §10: the FULL
+            # adapter ladder uploads at p4; no LoRA rung discarded).
+            logger.info("[wave] reap skip %s: fu LoRA ladder retained whole", cell)
+            continue
         if not sel_path.exists() or not build_path.exists():
             logger.warning("[wave] reap skip %s: no selection/build record yet", cell)
             continue
@@ -1672,6 +2211,7 @@ def run_waves(cfg: Cfg, *, do_train: bool, do_ladder: bool, do_persist: bool) ->
     them)."""
     waves = _wave_partition(cfg)
     selections: dict[str, dict] = {}
+    fu_gate_rep = cfg.out_root / "pilot_gate_report_fu_f1f3.json"
     for k, wave in enumerate(waves, start=1):
         logger.info(
             "[wave] k=%d/%d cells=%s train->ladder->persist->reap",
@@ -1679,11 +2219,33 @@ def run_waves(cfg: Cfg, *, do_train: bool, do_ladder: bool, do_persist: bool) ->
             len(waves),
             ",".join(wave),
         )
+        t0 = time.time()
         if do_train:
             _wave_headroom(cfg, k, wave)
             phase_train(cfg, cells=wave)
         if do_ladder:
             selections.update(phase_ladder(cfg, cells=wave))
+        # fu compute-pilot kill (plan v7 §7 gate 2): the FIRST marker cell's
+        # measured train+ladder wall re-projects the 4-cell marker leg
+        # against the §9 f1+f3 rows; >2x HALTs (rc=7). A resumed wave
+        # measures a small residual wall and PASSes — the gate exists to
+        # catch fresh-run blowups, not resumes.
+        if (
+            _fu(cfg)
+            and not cfg.smoke
+            and do_train
+            and do_ladder
+            and not fu_gate_rep.exists()
+            and any(G.cell_method(c) == "ft2e6" for c in wave)
+        ):
+            _pilot_gate(
+                cfg,
+                label="fu_f1f3",
+                unit_wall_s=time.time() - t0,
+                n_units=sum(1 for c in cfg.cells if G.cell_method(c) == "ft2e6"),
+                parallelism=1.0,
+                plan_wall_h=FU_PILOT_PLAN_F1F3_WALL_H,
+            )
         if do_persist:
             phase_persist(cfg, selections, cells=wave)
         if do_ladder or do_persist:
@@ -1729,20 +2291,30 @@ def _persist_deferred_path(cfg: Cfg, cell: str) -> Path:
     return cfg.out_root / cell / "persist_deferred.json"
 
 
-def _defer_persist(cfg: Cfg, cell: str, step: int, ckpt: Path, path_in_repo: str, err) -> None:
+def _defer_persist(
+    cfg: Cfg,
+    cell: str,
+    step: int,
+    ckpt: Path,
+    path_in_repo: str,
+    err,
+    *,
+    repo_id: str | None = None,
+) -> None:
     """Record a billing-403 selected-rung upload deferral durably (crash-fix
     r7): the checkpoint is RETAINED on disk (the wave reap keeps the selected
     rung regardless of persist state), the wave CONTINUES, and the record is
     replayed at p4-resume or p9 — whichever a relaunch hits first. p9
     fail-louds terminally if still blocked, so the failure signal survives
-    end-to-end."""
+    end-to-end. ``repo_id`` defaults to the overflow repo (marker/content FT
+    rungs); FU LoRA ladders defer against the model repo (plan v7 §10)."""
     _atomic_json(
         _persist_deferred_path(cfg, cell),
         {
             "cell": cell,
             "step": step,
             "local_path": str(ckpt),
-            "repo_id": G.OVERFLOW_REPO,
+            "repo_id": repo_id or G.OVERFLOW_REPO,
             "repo_type": "model",
             "path_in_repo": path_in_repo,
             "error": str(err)[:2000],
@@ -1763,6 +2335,13 @@ def _defer_persist(cfg: Cfg, cell: str, step: int, ckpt: Path, path_in_repo: str
 def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
     if cell == G.REUSED_FT_CELL:
         return _staged_ft_dir(cfg, "s3_con")
+    if cell in _FU_PARTNER_ARM_IDS:
+        # Reused impolite FT partner (plan v7 §4.B) — the p0-staged full
+        # checkpoint dir (never a cfg cell; no selection record of its own).
+        d = _staged_ft_dir(cfg, cell)
+        if not (d / "config.json").exists():
+            raise RuntimeError(f"fu FT partner {cell} not staged under {d} — run p0 first")
+        return d
     sel = _read_json(cfg.out_root / cell / "selection.json")
     train_dir = Path(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])
     ckpt = _enumerate_rungs(train_dir)[int(sel["step"])]
@@ -1830,8 +2409,46 @@ def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None
                     continue
                 sel = _read_json(sel_path)
             step = int(sel["step"])
+            if G.is_fu_lora_cell(cell):
+                # FU imp LoRA: the FULL adapter ladder uploads (plan v7 §10 —
+                # rungs are ~10^2 MB; enables re-selection; ONE upload_folder
+                # commit per tree; the #1108 file-count fallback reroutes to
+                # overflow if the model repo refuses). train_ext's
+                # sub-ceiling rungs (different-schedule scaffolding) ride
+                # along under ext_subceiling/ — no LoRA rung discarded.
+                train_dir = Path(
+                    _read_json(cfg.out_root / cell / "build_result.json")["adapter_root"]
+                )
+                path_in_repo = f"{G.FU_CKPT_PREFIX}/{cell}"
+                try:
+                    url = hub._upload(
+                        train_dir, G.HF_MODEL_REPO, "model", path_in_repo, raise_on_error=True
+                    )
+                    ext_dir = cfg.out_root / cell / "train_ext"
+                    if ext_dir.exists():
+                        hub._upload(
+                            ext_dir,
+                            G.HF_MODEL_REPO,
+                            "model",
+                            f"{path_in_repo}/ext_subceiling",
+                            raise_on_error=True,
+                        )
+                except Exception as e:
+                    if not _is_billing_403(e):
+                        raise
+                    _defer_persist(
+                        cfg, cell, step, train_dir, path_in_repo, e, repo_id=G.HF_MODEL_REPO
+                    )
+                    continue
+                if not url:
+                    raise RuntimeError(f"fu ladder upload returned no path for {cell}")
+                uploaded[cell] = str(url)
+                _atomic_json(rec_path, {"cell": cell, "step": step, "url": str(url)})
+                _persist_deferred_path(cfg, cell).unlink(missing_ok=True)
+                continue
             ckpt = _selected_ft_ckpt(cfg, cell)
-            path_in_repo = f"issue1586/{cell}/checkpoint-{step}"
+            ckpt_prefix = G.FU_CKPT_PREFIX if _fu(cfg) else "issue1586"
+            path_in_repo = f"{ckpt_prefix}/{cell}/checkpoint-{step}"
             # Crash-fix r7 (pod-1586 crash #6): raise_on_error surfaces the
             # upload exception class here — the narrow billing-403 defers
             # (durable record + continue the wave; p9 replays + fail-louds
@@ -1861,7 +2478,7 @@ def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None
             for name in ("selection.json", "ladder.json", "parity.json"):
                 _stage_for_upload(stage, cfg.out_root / cell / name, f"selection/{cell}/{name}")
         if _stage_has_files(stage):
-            uploaded["__records__"] = _upload_with_transport_retry(stage, G.DATA_PREFIX)
+            uploaded["__records__"] = _upload_with_transport_retry(stage, _data_prefix(cfg))
     if cells is None:
         # Terminal pass: collect per-cell records into the legacy marker.
         for cell in cfg.cells:
@@ -1953,6 +2570,51 @@ def run_tier2_unit(cfg: Cfg, cell: str) -> dict:
         draws=cfg.tier2_draws,
         questions=_eval_questions(cfg, beh),
     )
+    if G.is_fu_lora_cell(cell):
+        # FU Round B (plan v7 §4.B): pair label vs the FT partner's CONFIRMED
+        # rate + the FRESH partner parity re-read on THIS rig — WARN-class at
+        # REUSED_FT_PARITY_TOL, values persisted + analyzer adjudication
+        # (gate-calibration rule); a partner LOAD failure raises (HALT —
+        # structural only). This read is ALSO the partner's vLLM
+        # consumer-open (reuse leg (h)(iv)).
+        partner = G.fu_ft_partner_of(cell)
+        anchor = _fu_imp_anchor(cfg, cell)
+        partner_rate = _content_rate(
+            cfg,
+            behavior=G.BEHAVIOR_BY_KEY[beh],
+            context_id=source_context_id(beh),
+            seed=seed,
+            model_path=str(_staged_ft_dir(cfg, partner.ft_partner_cell)),
+            out_dir=cfg.out_root / cell / "ft_parity_rate",
+            n=cfg.tier2_n,
+            draws=cfg.tier2_draws,
+            questions=_eval_questions(cfg, beh),
+        )
+        delta = abs(partner_rate - anchor)
+        rec = {
+            "cell": cell,
+            "step": step,
+            "tier2_rate": rate,
+            "dose_label": G.fu_pair_dose_label(rate, anchor),
+            "ft_partner_parity": {
+                "partner": partner.ft_partner_cell,
+                "subfolder": partner.ft_partner_subfolder,
+                "rate": partner_rate,
+                "committed": anchor,
+                "abs_delta": delta,
+                "warn_band": G.REUSED_FT_PARITY_TOL,
+                "rate_window_pass": bool(delta <= G.REUSED_FT_PARITY_TOL),
+                "severity": (
+                    "PASS" if delta <= G.REUSED_FT_PARITY_TOL else "WARN-analyzer-adjudication"
+                ),
+            },
+        }
+        _atomic_json(res_path, rec)
+        # §6.5 deliverable glob selection/imp-*/selection.json: the partner
+        # parity record mirrors under the PARTNER's arm id (2 new-cell
+        # selections + 2 reused-FT parity records = the >=4 contract).
+        _mirror_deliverable(cfg, partner.ft_partner_cell, rec["ft_partner_parity"])
+        return rec
     arm = G.lora_pair_of(cell)
     rec = {
         "cell": cell,
@@ -2044,18 +2706,51 @@ def _reused_ft_committed_rate(cfg: Cfg) -> float:
 # ── p6: six-context leakage panel (both arms, fresh, in-run) ─────────────────
 
 
+def _fu_marker_matched(cfg: Cfg, cell: str) -> bool:
+    """True when a FU marker cell's selection landed an in-window rung. A
+    not-dose-matchable cell contributes NO fresh contrast arm — its verdict
+    folds from the ladder/selection records alone (plan v7 §4.A registered
+    conditional; all-4-fail skips the marker panel/capture arms entirely).
+    DISABLED under smoke so the marker panel/capture paths stay exercised."""
+    if cfg.smoke:
+        return True
+    sel_path = cfg.out_root / cell / "selection.json"
+    if not sel_path.exists():
+        return True  # phases subset: fail loud later rather than silently skip
+    return bool(_read_json(sel_path).get("in_band"))
+
+
 def _panel_arms(cfg: Cfg) -> list[tuple[str, str]]:
-    """[(arm_id, kind)] — every FT cell + its paired LoRA arm (kind ft|lora)."""
+    """[(arm_id, kind)] — every FT cell + its paired LoRA arm (kind ft|lora).
+    FU: an imp lora5e6 cell pairs to its reused FT PARTNER; a marker ft2e6
+    cell without an in-window rung is skipped WITH its pair (plan v7 §4.A)."""
     arms: list[tuple[str, str]] = []
     for cell in cfg.cells:
+        if G.is_fu_lora_cell(cell):
+            arms.append((cell, "lora"))
+            arms.append((G.fu_ft_partner_of(cell).ft_partner_cell, "ft"))
+            continue
+        if _fu(cfg) and G.cell_method(cell) == "ft2e6" and not _fu_marker_matched(cfg, cell):
+            logger.info("[panel] fu marker %s not in-window — pair contributes no arm", cell)
+            continue
         arms.append((cell, "ft"))
         arms.append((G.lora_pair_of(cell).cell, "lora"))
     return arms
 
 
+_FU_PARTNER_ARM_IDS = frozenset(fc.ft_partner_cell for fc in G.FU_IMP_LORA_CELLS)
+
+
 def _resolve_arm_model(cfg: Cfg, arm_id: str, kind: str) -> tuple[str, Path | None]:
-    """(model_path, merged_dir_to_cleanup) for one panel/margin/capture arm."""
+    """(model_path, merged_dir_to_cleanup) for one panel/margin/capture arm.
+    FU: a lora5e6 cfg cell merges its SELECTED adapter rung; a reused FT
+    partner arm resolves to its p0-staged checkpoint dir."""
     if kind == "lora":
+        if G.is_fu_lora_cell(arm_id):
+            merged = _merge_adapter(
+                cfg, str(_selected_ft_ckpt(cfg, arm_id)), cfg.out_root / arm_id / "merged_panel"
+            )
+            return str(merged), merged
         arm = G.LORA_ARM_BY_CELL[arm_id]
         merged = _merge_adapter(
             cfg, str(_staged_arm_dir(cfg, arm)), cfg.out_root / arm_id / "merged_panel"
@@ -2416,12 +3111,16 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
 
 def capture_passes(cfg: Cfg) -> list[tuple[str, str]]:
     """Registered (arm_id|base_<beh>, kind) capture passes — every FT cell,
-    every paired LoRA arm, one base pass per behavior in scope (fail-loud on
-    an unroutable arm; #546 silent-skip canary)."""
+    every paired LoRA arm, one base pass per behavior WITH >=1 arm (fail-loud
+    on an unroutable arm; #546 silent-skip canary). Deriving base behaviors
+    from the ARMS keeps the FU all-marker-cells-fail conditional coherent
+    (plan v7 §4.A: the whole marker capture leg is skipped, base included)."""
     passes: list[tuple[str, str]] = []
+    arm_behs: set[str] = set()
     for arm_id, kind in _panel_arms(cfg):
         passes.append((arm_id, kind))
-    for beh in sorted({G.parse_ft_cell(c)[0] for c in cfg.cells}):
+        arm_behs.add(arm_id.split("-")[0])
+    for beh in sorted(arm_behs):
         passes.append((f"base_{beh}", "base"))
     return passes
 
@@ -2744,7 +3443,7 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
     def _commit(label: str, stage: Path) -> None:
         if label in uploaded or not _stage_has_files(stage):
             return
-        uploaded[label] = _upload_with_transport_retry(stage, G.DATA_PREFIX)
+        uploaded[label] = _upload_with_transport_retry(stage, _data_prefix(cfg))
         _atomic_json(manifest_path, uploaded)
 
     # per-cell staged subtree -> ONE commit per cell (resume granularity).
@@ -2758,12 +3457,14 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
             "parity.json",
             "tier2.json",
             "extended.json",
+            "extend_result.json",  # fu imp 360-extension graft record
         ):
             _stage_for_upload(stage, cell_root / name, f"selection/{cell}/{name}")
         for stage_name, sub in (
             ("tier1", "rate"),
             ("tier2", "tier2_rate"),
             ("parity", "parity_rate"),
+            ("ft_parity", "ft_parity_rate"),  # fu reused-FT partner parity gens
             ("reselect", "reselect_rate"),  # stream-reap spot re-read gens (Minor 3)
         ):
             _stage_tree_for_upload(stage, cell_root / sub, f"raw_completions/{stage_name}/{cell}")
@@ -2911,8 +3612,9 @@ def _cjk_scan(cfg: Cfg) -> dict:
 
 
 def _reproducibility_card(cfg: Cfg, selections: dict) -> dict:
+    ckpt_prefix = G.FU_CKPT_PREFIX if _fu(cfg) else "issue1586"
     adapters = {
-        cell: f"issue1586/{cell}/checkpoint-{int(sel['step'])}"
+        cell: f"{ckpt_prefix}/{cell}/checkpoint-{int(sel['step'])}"
         for cell, sel in selections.items()
         if cell != G.REUSED_FT_CELL and "step" in sel
     }
@@ -2922,6 +3624,15 @@ def _reproducibility_card(cfg: Cfg, selections: dict) -> dict:
         "wandb_project": G.WANDB_PROJECT,
         "wandb_run_names": [ft_wandb_run_name(c) for c in adapters],
     }
+    if _fu(cfg):
+        # FU imp LoRA full ladders land on the MODEL repo (plan v7 §10);
+        # the #1108 file-count fallback may reroute to overflow with an
+        # OVERFLOW_POINTER breadcrumb — the verifier adjudicates via the
+        # upload manifest either way.
+        card["adapter_repo_overrides"] = {
+            c: G.HF_MODEL_REPO for c in adapters if G.is_fu_lora_cell(c)
+        }
+        card["fu"] = cfg.fu
     try:
         import wandb
 
@@ -2991,6 +3702,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--cells", default=None)
     p.add_argument("--out-root", default=None)
     p.add_argument(
+        "--fu",
+        choices=["caveatfix"],
+        default=None,
+        help="FU round (plan v7): swaps the cell universe to the FU registry "
+        "(4 marker ft2e6 + 2 impolite lora5e6 cells), roots outputs under "
+        "out_fu/ + the fu_caveatfix data prefix",
+    )
+    p.add_argument(
         "--ladder-disk-mode", choices=["auto", "keep-cell", "stream-reap"], default="auto"
     )
     p.add_argument("--eval-question-limit", type=int, default=None)
@@ -3010,23 +3729,27 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 def build_cfg(args: argparse.Namespace) -> Cfg:
     smoke = bool(args.smoke)
+    fu = getattr(args, "fu", None)
     # Smoke default out_root prefers /workspace (GCE boot disk / RunPod
     # volume) over /tmp: the RunPod container disk is ~50 GB, below the
     # p2_train 60 GB headroom floor + a ~15 GB full-FT smoke ckpt (review r1
     # Minor 2; the sentinel_dir logic below already keys on /workspace).
+    # FU roots are DISTINCT from the executed run's (plan v7 §4.C — never
+    # clobber the executed out/ or smoke trees).
+    fu_tag = "-fu" if fu else ""
     smoke_root = (
-        f"/workspace/issue-{G.ISSUE}-smoke"
+        f"/workspace/issue-{G.ISSUE}{fu_tag}-smoke"
         if Path("/workspace").is_dir()
-        else f"/tmp/issue-{G.ISSUE}-smoke"
+        else f"/tmp/issue-{G.ISSUE}{fu_tag}-smoke"
     )
+    full_root = f"data/issue_{G.ISSUE}/out_fu" if fu else f"data/issue_{G.ISSUE}/out"
     out_root = Path(
-        args.out_root
-        if args.out_root is not None
-        else (smoke_root if smoke else f"data/issue_{G.ISSUE}/out")
+        args.out_root if args.out_root is not None else (smoke_root if smoke else full_root)
     )
     return Cfg(
         smoke=smoke,
-        cells=resolve_cells(args.cells, smoke),
+        fu=fu,
+        cells=resolve_cells(args.cells, smoke, fu),
         out_root=out_root,
         ladder_disk_mode=args.ladder_disk_mode,
         tier1_n=2 if smoke else 5,
@@ -3076,6 +3799,12 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
             run_capture_unit(cfg, arg)
         elif kind == "capture_tf":
             run_capture_tf_unit(cfg, arg)
+        elif kind == "p2l":
+            run_p2l_unit(cfg, arg)
+        elif kind == "p2l_ext":
+            run_p2l_ext_unit(cfg, arg)
+        elif kind == "mkread":
+            run_fu_mkread_unit(cfg, arg)
         else:
             raise ValueError(f"unknown unit kind {kind!r}")
         return 0
@@ -3094,6 +3823,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
     summary: dict = {
         "issue": G.ISSUE,
         "smoke": cfg.smoke,
+        "fu": cfg.fu,
+        "followup_label": G.FU_LABEL if _fu(cfg) else None,
         "cells": list(cfg.cells),
         "git_commit": _git_commit(),
     }

@@ -13,12 +13,12 @@ All figures via paper_plots.set_paper_style("blog") + savefig_paper
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -735,7 +735,28 @@ def fig_shape_forest() -> None:
     plt.close(fig)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    """Input/output-root plumb (plan v7 §4.C item 3): ``--geo-root`` /
+    ``--hf-root`` / ``--fig-dir`` / ``--lattice`` override the module roots so
+    the analyzer can render against the FU trees. A FU invocation MUST pass a
+    non-default ``--fig-dir`` (e.g. figures/issue_1586/fu_caveatfix) — the
+    default dir holds the EXECUTED run's committed figures + dose_labels.json,
+    which this script rewrites (smoke/committed-artifact clobber rule).
+    Defaults are byte-identical to the executed run's behavior."""
+    global GEO, HF, FIGDIR
+    import argparse
+
+    ap = argparse.ArgumentParser(description="#1586 paper-quality figures (p11)")
+    ap.add_argument("--geo-root", type=Path, default=GEO)
+    ap.add_argument("--hf-root", type=Path, default=HF)
+    ap.add_argument("--fig-dir", type=Path, default=FIGDIR)
+    ap.add_argument(
+        "--lattice",
+        type=Path,
+        default=Path("eval_results/issue_1586/panel/leakage_lattice.json"),
+    )
+    args = ap.parse_args(argv)
+    GEO, HF, FIGDIR = Path(args.geo_root), Path(args.hf_root), Path(args.fig_dir)
     FIGDIR.mkdir(parents=True, exist_ok=True)
     doses = dose_labels()
     (FIGDIR / "dose_labels.json").write_text(json.dumps(doses, indent=1))
@@ -749,7 +770,7 @@ def main() -> int:
     fig_mk_threespace()
     fig_mk_transfer()
     fig_shape_forest()
-    if Path("eval_results/issue_1586/panel/leakage_lattice.json").exists():
+    if Path(args.lattice).exists():
         fig_hero_leakage(doses)
         fig_panel_rates(doses)
     else:

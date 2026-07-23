@@ -28,6 +28,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 import issue1481_cells as c1481  # noqa: E402
 import issue1481_marker as mk1481  # noqa: E402
 
+
 ISSUE = 1586
 SLUG = "issue1586_methodgen"
 DATA_PREFIX = SLUG  # issue1586_methodgen/... on the data repo
@@ -309,9 +310,13 @@ ALL_FT_CELLS: tuple[str, ...] = (REUSED_FT_CELL, *NEW_FT_CELLS)
 
 
 def parse_ft_cell(cell: str) -> tuple[str, str, int]:
-    """'syc-pers-ft-con-s137' -> ('syc', 'con', 137) (fail-loud)."""
+    """'syc-pers-ft-con-s137' -> ('syc', 'con', 137) (fail-loud).
+
+    Accepts the executed grid's ``ft`` method token AND the FU round's
+    ``ft2e6`` / ``lora5e6`` tokens (plan v7 §4.C — the FU cells thread through
+    the SAME per-phase resolvers; ``cell_method`` reads the token)."""
     parts = cell.split("-")
-    if len(parts) != 5 or parts[1] != "pers" or parts[2] != "ft":
+    if len(parts) != 5 or parts[1] != "pers" or parts[2] not in ("ft", "ft2e6", "lora5e6"):
         raise ValueError(f"bad FT cell id: {cell!r}")
     beh, regime, seed = parts[0], parts[3], int(parts[4].removeprefix("s"))
     if beh not in BEH_KEYS or regime not in REGIMES or seed not in SEEDS:
@@ -320,7 +325,13 @@ def parse_ft_cell(cell: str) -> tuple[str, str, int]:
 
 
 def lora_pair_of(ft_cell: str) -> ReusedLoraArm:
-    """The method-paired reused LoRA verdict arm of an FT cell."""
+    """The method-paired reused LoRA verdict arm of an FT-method cell
+    (executed ``ft`` AND FU ``ft2e6`` cells — both pair to the reused #1481
+    LoRA verdict arms; a FU ``lora5e6`` cell has NO reused-LoRA pair — its
+    fixed comparator is an FT partner — so it fail-louds here)."""
+    parts = ft_cell.split("-")
+    if len(parts) == 5 and parts[2] == "lora5e6":
+        raise ValueError(f"{ft_cell!r} is a FU LoRA cell — pair via fu_ft_partner_of")
     beh, regime, seed = parse_ft_cell(ft_cell)
     return LORA_ARM_BY_CELL[f"{beh}-pers-lora-{regime}-s{seed}"]
 
@@ -431,3 +442,169 @@ N_BOOT = 1000
 N_BOOT_NORM = 2000
 HALF_DRAW_SEED = 1112
 HALF_DRAW_M = 60
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FU round: caveat-fix-marker-dosematch-impolite-lr-deconfound (plan v7 §4)
+# ═════════════════════════════════════════════════════════════════════════════
+
+import issue1090_fu4 as fu4  # noqa: E402  — factory content-LoRA cadence (FU_IMP_SAVE_STEPS)
+
+from explore_persona_space.experiments import issue_1112 as P1112  # noqa: E402
+
+FU_LABEL = "caveat-fix-marker-dosematch-impolite-lr-deconfound"
+FU_DATA_PREFIX = f"{SLUG}/fu_caveatfix"  # data-repo prefix — never clobbers executed SLUG/ paths
+FU_CKPT_PREFIX = "issue1586/fu_caveatfix"  # ckpt prefix (overflow + model repos) — never
+# clobbers the executed issue1586/<cell>/checkpoint-<k> entries (plan §4.C)
+FU_RESULTS_DIR = f"eval_results/issue_1586/{FU_LABEL}"
+
+# LRs — IMPORTED from their canonical modules, never retyped (plan §11):
+# Round A full-FT lr = the #1112/#514 ft_lowlr registered fallback rung.
+FU_MARKER_FT_LR = P1112.MARKER_FT_FALLBACK_LR  # 2e-6 (experiments/issue_1112 L145)
+# Round B LoRA-at-FT-rate lr = the #1112 LR_MATCHED_CELL precedent (CELL_TRAIN_OVERRIDES).
+FU_IMP_LORA_LR = P1112.FT_LR  # 5e-6
+assert FU_IMP_LORA_LR == P1112.CELL_TRAIN_OVERRIDES[P1112.LR_MATCHED_CELL]["lr"]
+
+# Round A marker grid (plan §4.A): per-step rungs, ceiling 24, one registered
+# extension to 48 (25..48); coarse-then-fine read schedule (even rungs first,
+# step-1 refine at floor-straddling brackets, early-stop at ΔG >= window
+# ceiling). Ceilings are plan-derived arithmetic (5e-6 cliff at steps 6-7 x LR
+# ratio 2.5 => expected transition ~15-18; 24 ≈ 1.4x margin), Source: plan §11.
+FU_MARKER_STEP_CEILING = 24
+FU_MARKER_EXT_CEILING = 48
+
+# Round B impolite LoRA ladder (plan §4.B): ceiling 180, ckpt cadence = the
+# factory grid cadence (fu4 save_steps=5 — imported), one registered extension
+# to 360. Ceiling derivation: #1112 LR-step scaling (x2 LR drop -> x1.57
+# steps) applied to the factory 3e-5 selections (steps 30-35), Source: plan §11.
+FU_IMP_SAVE_STEPS = fu4.FU4_SAVE_STEPS  # 5 (the #1481/#1090 factory cadence)
+FU_IMP_STEP_CEILING = 180
+FU_IMP_EXT_CEILING = 360
+FU_IMP_LADDER_GB = 12.0  # plan §9 disk row: full adapter ladder <= 12 GB/run
+
+
+@dataclass(frozen=True)
+class FuMarkerFtCell:
+    """Round A marker full-FT cell (lr 2e-6, per-step grid; plan §4.A)."""
+
+    cell: str  # mk-pers-ft2e6-<regime>-s<seed>
+    regime: str
+    seed: int
+    paired_lora_cell: str  # reused #1481 marker LoRA verdict arm (anchor source)
+
+
+@dataclass(frozen=True)
+class FuImpLoraCell:
+    """Round B impolite LoRA-at-FT-rate cell (lr 5e-6, dose-to-FT-partner;
+    plan §4.B — the #1112 s5_lora_neg_lr5e6 design with the anchor re-pointed
+    at the FIXED reused FT partner)."""
+
+    cell: str  # imp-pers-lora5e6-con-s<seed>
+    seed: int
+    ft_partner_cell: str  # panel/capture arm id of the reused FT partner
+    ft_partner_subfolder: str  # OVERFLOW_REPO checkpoint subfolder (Hub-verified plan §10)
+    dose_label_key: str  # figures/issue_1586/dose_labels.json key (runtime anchor)
+
+
+FU_MARKER_FT_CELLS: tuple[FuMarkerFtCell, ...] = tuple(
+    FuMarkerFtCell(
+        cell=f"mk-pers-ft2e6-{regime}-s{seed}",
+        regime=regime,
+        seed=seed,
+        paired_lora_cell=f"mk-pers-lora-{regime}-s{seed}",
+    )
+    for regime in REGIMES
+    for seed in SEEDS
+)
+FU_IMP_LORA_CELLS: tuple[FuImpLoraCell, ...] = tuple(
+    FuImpLoraCell(
+        cell=f"imp-pers-lora5e6-con-s{seed}",
+        seed=seed,
+        ft_partner_cell=f"imp-pers-ft-con-s{seed}",
+        ft_partner_subfolder=f"issue1586/imp-pers-ft-con-s{seed}/checkpoint-{step}",
+        dose_label_key=f"imp-con-s{seed}",
+    )
+    for seed, step in ((42, 14), (137, 12))  # steps: plan §4.B (Hub-verified 2026-07-23)
+)
+FU_MARKER_BY_CELL = {c.cell: c for c in FU_MARKER_FT_CELLS}
+FU_IMP_BY_CELL = {c.cell: c for c in FU_IMP_LORA_CELLS}
+FU_ALL_CELLS: tuple[str, ...] = tuple(FU_MARKER_BY_CELL) + tuple(FU_IMP_BY_CELL)
+assert len(FU_ALL_CELLS) == 6 and len(set(FU_ALL_CELLS)) == 6
+# FU ids must never collide with the executed grid's ids (fresh upload paths,
+# fresh out-root records — plan §4.C "never clobbering executed entries").
+assert not set(FU_ALL_CELLS) & set(ALL_FT_CELLS)
+for _c in FU_MARKER_FT_CELLS:
+    assert _c.paired_lora_cell in LORA_ARM_BY_CELL, _c
+
+# Smoke = ONE CELL PER ARM CLASS (marker-FT + impolite-LoRA; the #1586 r3-r6
+# regime/class-coverage lesson — a single-arm smoke is blind to per-arm seams).
+FU_SMOKE_CELLS: tuple[str, ...] = ("mk-pers-ft2e6-con-s42", "imp-pers-lora5e6-con-s42")
+
+_CELL_METHODS = ("ft", "ft2e6", "lora5e6")
+
+
+def cell_method(cell: str) -> str:
+    """'ft' (executed grid) | 'ft2e6' (FU marker FT) | 'lora5e6' (FU imp LoRA)."""
+    parts = cell.split("-")
+    if len(parts) != 5 or parts[1] != "pers" or parts[2] not in _CELL_METHODS:
+        raise ValueError(f"bad cell id: {cell!r}")
+    return parts[2]
+
+
+def is_fu_lora_cell(cell: str) -> bool:
+    return cell in FU_IMP_BY_CELL
+
+
+def fu_ft_partner_of(cell: str) -> FuImpLoraCell:
+    """The FU imp cell record (carries the FIXED reused FT partner fields)."""
+    return FU_IMP_BY_CELL[cell]
+
+
+def load_fu_dose_labels(path: Path) -> dict[str, float]:
+    """{dose_label_key: confirmed FT Tier-2 rate} from the committed
+    figures/issue_1586/dose_labels.json (runtime anchor read — plan §4.B:
+    'read at runtime, not hardcoded'). Fail-loud on missing keys / bad range."""
+    import json as _json
+
+    raw = _json.loads(Path(path).read_text())
+    out: dict[str, float] = {}
+    for fc in FU_IMP_LORA_CELLS:
+        rec = raw.get(fc.dose_label_key)
+        if not isinstance(rec, dict) or "ft_dose" not in rec:
+            raise RuntimeError(f"dose_labels {path}: missing ft_dose for {fc.dose_label_key!r}")
+        rate = float(rec["ft_dose"])
+        if not 0.0 < rate < 1.0:
+            raise RuntimeError(f"dose_labels {path}: ft_dose {rate} out of (0,1)")
+        out[fc.dose_label_key] = rate
+    return out
+
+
+def fu_pair_dose_label(lora_tier2_rate: float, ft_partner_rate: float) -> dict:
+    """Round B pair label (plan §3): matched iff new-LoRA Tier-2 in band AND
+    within DOSE_MATCH_MAX_RATE_GAP of the FT partner's CONFIRMED rate."""
+    lo, hi = JUDGED_RATE_BAND
+    gap = abs(lora_tier2_rate - ft_partner_rate)
+    return {
+        "lora_tier2_rate": lora_tier2_rate,
+        "ft_partner_rate": ft_partner_rate,
+        "rate_gap": gap,
+        "dose_matched": bool(lo <= lora_tier2_rate <= hi and gap <= DOSE_MATCH_MAX_RATE_GAP),
+        "max_gap": DOSE_MATCH_MAX_RATE_GAP,
+    }
+
+
+def fu_diff_pairs_for(beh_key: str, arms: list[str]) -> tuple[tuple[str, str, str], ...]:
+    """FU geometry diff pairs (label, ft_arm, lora_arm) restricted to present
+    arms — Round A: 4 marker pairs (fresh ft2e6 vs re-captured reused LoRA);
+    Round B: 2 impolite-con pairs (re-captured reused FT partner vs fresh
+    lora5e6). Plan §3 registered lattices."""
+    present = set(arms)
+    pairs: list[tuple[str, str, str]] = []
+    if beh_key == "mk":
+        for fc in FU_MARKER_FT_CELLS:
+            if fc.cell in present and fc.paired_lora_cell in present:
+                pairs.append((f"{fc.cell}__ft_vs_lora", fc.cell, fc.paired_lora_cell))
+    elif beh_key == "imp":
+        for ic in FU_IMP_LORA_CELLS:
+            if ic.ft_partner_cell in present and ic.cell in present:
+                pairs.append((f"{ic.cell}__ft_vs_lora", ic.ft_partner_cell, ic.cell))
+    return tuple(pairs)

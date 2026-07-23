@@ -16,13 +16,13 @@ Output: eval_results/issue_1586/geometry/pooled_lattice.json
 
 from __future__ import annotations
 
-import json
-import sys
-from pathlib import Path
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import json  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
