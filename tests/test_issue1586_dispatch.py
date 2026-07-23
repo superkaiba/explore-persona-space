@@ -367,6 +367,38 @@ def test_wave_headroom_asserts_wave_demand(monkeypatch, tmp_path):
     assert seen["p2_train_wave1"] == pytest.approx(2 * 15 * d.RUNG_GB + d.WAVE_MARGIN_GB)
 
 
+def test_wave_headroom_clears_pending_stale_partial_before_assert(monkeypatch, tmp_path):
+    """Pin for CONCERN wave-headroom-stale-partial-not-credited (r2): a
+    PENDING cell's stale partial train dir (the pod-A crash-resume shape:
+    sibling done + stale partial P held on disk) is cleared BEFORE the wave
+    need assert — the _maybe_extend reap-before-assert shape — crediting its
+    bytes to free. The fake assert below raises exactly while the stale dir
+    still exists (free < need with the doomed partial held), so the pre-fix
+    ordering (assert first; _train_one_cell clears later) raises RuntimeError
+    and fails this test. A completed sibling's train dir is never touched."""
+    _eight_gpus(monkeypatch)
+    content2 = [c for c in d.G.ALL_FT_CELLS if not d._is_marker(c)][1:3]
+    done, pending_cell = content2
+    cfg = _cfg(tmp_path, cells=tuple(content2))
+    _write_json(tmp_path / done / "build_result.json", {"cell": done})
+    done_train = tmp_path / done / "train"
+    _mk_rungs(done_train, [30])  # completed sibling's retained selected rung
+    stale = tmp_path / pending_cell / "train"
+    _mk_rungs(stale, range(2, 32, 2))  # full 15-rung stale partial (last-rungs crash)
+    asserted: list[float] = []
+
+    def fake_assert(out_root, *, need_gb, phase):
+        asserted.append(need_gb)
+        if stale.exists():
+            raise RuntimeError(f"insufficient headroom for {phase}: stale partial still held")
+
+    monkeypatch.setattr(d, "assert_out_root_headroom", fake_assert)
+    d._wave_headroom(cfg, 1, content2)  # must NOT raise
+    assert not stale.exists()
+    assert done_train.exists()
+    assert asserted == [pytest.approx(d._cell_rung_demand_gb(pending_cell) + d.WAVE_MARGIN_GB)]
+
+
 # ── resume-aware wave headroom (code-review v5 Critical pin) ─────────────────
 
 

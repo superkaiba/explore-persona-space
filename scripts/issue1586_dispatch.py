@@ -415,6 +415,21 @@ def wave_width(n_gpus: int) -> int:
     return 2 if n_gpus >= 8 else 1
 
 
+def partition_waves(trainable: Sequence[str], w: int) -> list[list[str]]:
+    """Deterministic wave partition: width-``w`` chunks of the FT cells, with
+    the FU imp LoRA cells (1-GPU p2l fanout units) grouped into ONE trailing
+    wave so both trainings overlap on distinct GPUs (plan v7 §9 f2: 2x 1-GPU
+    overlapped — a width-1 FT partition would otherwise serialize them across
+    two waves at 3/4 GPUs idle). No-op on the executed grid (no fu cells);
+    launch WIDTH per unit is untouched (the p2l units stay 1-GPU CVD-pinned)."""
+    fu_lora = [c for c in trainable if G.is_fu_lora_cell(c)]
+    rest = [c for c in trainable if not G.is_fu_lora_cell(c)]
+    waves = [rest[i : i + w] for i in range(0, len(rest), w)]
+    if fu_lora:
+        waves.append(fu_lora)
+    return waves
+
+
 def keepcell_demand_gb(cells: Sequence[str], n_gpus: int, *, smoke: bool = False) -> float:
     """GRID-AWARE keep-cell peak disk demand under the bounded-wave flow
     (crash-fix r5, epm:failure v5): the largest single wave's rung
@@ -425,8 +440,7 @@ def keepcell_demand_gb(cells: Sequence[str], n_gpus: int, *, smoke: bool = False
     trainable = [c for c in cells if c != G.REUSED_FT_CELL]
     if not trainable:
         return KEEPCELL_FIXED_OVERHEAD_GB
-    w = wave_width(n_gpus)
-    waves = [trainable[i : i + w] for i in range(0, len(trainable), w)]
+    waves = partition_waves(trainable, wave_width(n_gpus))
     wave_peak = max(sum(_cell_rung_demand_gb(c, smoke=smoke) for c in wv) for wv in waves)
     return wave_peak + len(trainable) * RUNG_GB + KEEPCELL_FIXED_OVERHEAD_GB
 
@@ -2093,10 +2107,10 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
 def _wave_partition(cfg: Cfg) -> list[list[str]]:
     """Deterministic wave partition of the trainable cells (the reused #1112
     cell never trains -> excluded; run_waves' terminal pass owns its
-    selection record). Width = the realized concurrent-quad count."""
+    selection record). Width = the realized concurrent-quad count; the FU imp
+    LoRA cells share one trailing wave (partition_waves — plan v7 §9 f2)."""
     trainable = [c for c in cfg.cells if c != G.REUSED_FT_CELL]
-    w = wave_width(len(_physical_gpu_ids()))
-    return [trainable[i : i + w] for i in range(0, len(trainable), w)]
+    return partition_waves(trainable, wave_width(len(_physical_gpu_ids())))
 
 
 def _wave_headroom(cfg: Cfg, k: int, wave: Sequence[str]) -> None:
@@ -2115,6 +2129,20 @@ def _wave_headroom(cfg: Cfg, k: int, wave: Sequence[str]) -> None:
     if not pending:
         logger.info("[wave] headroom skip wave %d: 0 pending / %d done", k, len(wave))
         return
+    # Reap-before-assert (code-review v6 CONCERN
+    # wave-headroom-stale-partial-not-credited — the _maybe_extend shape): a
+    # PENDING cell's stale partial train dir is doomed anyway (_train_one_cell
+    # clears it moments after this assert), so asserting need while free still
+    # holds those bytes spuriously deadlocks a crash-resume in a cell's last
+    # rungs (pod-A shape: sibling done + stale partial P > ~201 GB). Clearing
+    # here credits the bytes to free BEFORE the assert; resume semantics are
+    # unchanged — only build_result-less cells are cleared, the exact
+    # predicate _train_one_cell / run_p2l_unit key their own resume on.
+    for c in pending:
+        stale = cfg.out_root / c / "train"
+        if stale.exists():
+            logger.warning("[wave] headroom wave %d: clearing stale partial train dir %s", k, stale)
+            shutil.rmtree(stale)
     need = sum(_cell_rung_demand_gb(c, smoke=cfg.smoke) for c in pending) + WAVE_MARGIN_GB
     logger.info(
         "[wave] headroom wave %d: %d pending / %d done, need %.1f GB (pending only)",
