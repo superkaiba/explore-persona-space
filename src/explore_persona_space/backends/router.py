@@ -240,6 +240,14 @@ logger = logging.getLogger(__name__)
 #: :mod:`selector` and the ``EPM_CLUSTER_MAX_WAIT_SECONDS`` env knob).
 FREE_WAIT_SECONDS: int = 600
 
+#: Env knob for the fellows-lane queue-wait cap (#1609 fast-start guard).
+#: Read at CALL time so ops can retune without a restart, mirroring
+#: ``EPS_GCP_QUEUE_WAIT_SECONDS`` (``backend_poll._gcp_queue_wait_seconds``).
+#: Unset/malformed/non-positive -> the caller-supplied default
+#: (``cfg.free_wait_seconds``; production 600 s) — so with the env var
+#: unset, behavior is byte-identical to pre-amendment for EVERY lane.
+FELLOWS_QUEUE_WAIT_ENV = "EPS_FELLOWS_QUEUE_WAIT_SECONDS"
+
 #: Default poll interval inside the park watchdog. The SLURM scheduler
 #: state updates on multi-second cycles; faster polling burns ssh round
 #: trips without speeding the result. Tests inject smaller values.
@@ -1752,6 +1760,36 @@ def cancel_and_wait(
 # ---------------------------------------------------------------------------
 # Park watchdog
 # ---------------------------------------------------------------------------
+
+
+def _fellows_queue_wait_seconds(default: int) -> int:
+    """Fellows queue-wait cap: env knob at call time, else ``default``.
+
+    Mirrors ``backend_poll._gcp_queue_wait_seconds`` semantics: the
+    :data:`FELLOWS_QUEUE_WAIT_ENV` value is read on every call (ops can
+    retune without a restart); a missing / malformed / non-positive value
+    falls back to ``default`` (the caller passes ``cfg.free_wait_seconds``,
+    so unset-env behavior is byte-identical to pre-#1609-amendment).
+    """
+    raw = os.environ.get(FELLOWS_QUEUE_WAIT_ENV)
+    if raw is None:
+        return default
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return val if val > 0 else default
+
+
+def _park_cap_for_lane(kind: BackendKind, cfg: RouterConfig) -> int:
+    """Per-lane park cap: fellows honors ``EPS_FELLOWS_QUEUE_WAIT_SECONDS``.
+
+    Every other lane (nibi / fir / mila) keeps ``cfg.free_wait_seconds``
+    verbatim — the #1609 fast-start knob is fellows-only by design.
+    """
+    if kind == "fellows":
+        return _fellows_queue_wait_seconds(cfg.free_wait_seconds)
+    return cfg.free_wait_seconds
 
 
 def park_until_running_or_cap(
@@ -3936,11 +3974,15 @@ def _override_free_or_gcp(
             return result
 
         # SLURM-style free lane: run the park watchdog (under the flock).
+        # #1609: the cap is per-lane — fellows honors the
+        # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane keeps
+        # cfg.free_wait_seconds verbatim.
+        cap = _park_cap_for_lane(kind, cfg)
         started, reason, terminal_status = park_until_running_or_cap(
             backend=backend,
             handle=handle,
             is_started=is_started,
-            cap_seconds=cfg.free_wait_seconds,
+            cap_seconds=cap,
             poll_interval=cfg.poll_interval,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
@@ -3966,6 +4008,47 @@ def _override_free_or_gcp(
                 cluster=spec.cluster,
                 attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
+            )
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
+
+        # #1609 fast-start guard, pinned exemption: an explicit `backend:
+        # fellows` pin may wait indefinitely (pinned = deliberate). On
+        # park_cap_exceeded the job is still PENDING (or otherwise
+        # not-running) at the cap — not terminal, not probe-unknown: do NOT
+        # scancel — return the live PENDING handle and let the async poll
+        # loop track it to RUNNING (slurm_monitor maps PENDING->status
+        # "running" and never stall-classifies PENDING, so the wait is
+        # unbounded poll-side). Precedent: _override_runpod ("just submit.
+        # No park") + the GCP flex PENDING handle. Blocking route() past the
+        # cap is a non-starter (the per-issue flock serializes the tick
+        # cron; the CLI would hang). terminal_before_running and
+        # probe_failures_exceeded keep the existing paths below untouched.
+        if kind == "fellows" and reason == "park_cap_exceeded":
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="pinned_queue_wait",
+                    detail=(
+                        f"park cap {cap}s exceeded; pinned fellows job stays queued "
+                        f"(pinned = deliberate; {FELLOWS_QUEUE_WAIT_ENV})"
+                    ),
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_OVERRIDE,
+                cluster=spec.cluster,
+                attempts=attempts,
+                elapsed_seconds=now_fn() - started_at,
+                extra={"pinned_queue_wait": True, "park_cap_seconds": cap},
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -4093,7 +4176,7 @@ def _override_free_or_gcp(
             attempts=attempts,
         )
         raise NoComputeAvailableError(
-            f"explicit override {kind!r} did not start within {cfg.free_wait_seconds}s "
+            f"explicit override {kind!r} did not start within {cap}s "
             f"(park: {reason}, cancel: {cancel_outcome})",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
@@ -4751,11 +4834,15 @@ def _try_one_free_lane(
         # Park (still under the flock — wait IS contention surface, but
         # the lock is per-ISSUE, not cross-issue, so the only callers
         # serialized are the two we are deliberately serializing).
+        # #1609: the cap is per-lane — fellows honors the
+        # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane keeps
+        # cfg.free_wait_seconds verbatim.
+        cap = _park_cap_for_lane(kind, cfg)
         started, reason, terminal_status = park_until_running_or_cap(
             backend=backend,
             handle=handle,
             is_started=is_started,
-            cap_seconds=cfg.free_wait_seconds,
+            cap_seconds=cap,
             poll_interval=cfg.poll_interval,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
@@ -4850,6 +4937,12 @@ def _try_one_free_lane(
                 extra={"cancel_race": True},
             )
 
+        # #1609: make the fellows queue-timeout fall-through grep-able on the
+        # attempts trail (no new ROUTE_REASON_* constant — the final reason
+        # stays the existing auto_fallback_gcp / auto_started convention).
+        detail = f"cancel_outcome={cancel_outcome}"
+        if kind == "fellows" and reason == "park_cap_exceeded":
+            detail += f"; fellows_queue_timeout cap={cap}s ({FELLOWS_QUEUE_WAIT_ENV})"
         attempts.append(
             RouteAttempt(
                 kind=kind,
@@ -4857,7 +4950,7 @@ def _try_one_free_lane(
                 est_start_seconds_raw=est_raw,
                 est_start_seconds_clamped=est_clamped,
                 outcome=reason,
-                detail=f"cancel_outcome={cancel_outcome}",
+                detail=detail,
                 elapsed_seconds=now_fn() - started_at,
             )
         )
@@ -6028,6 +6121,7 @@ __all__ = [
     "ENV_AUTO_LANE_ORDER",
     "ENV_GCP_SPOT_FALLBACK",
     "ENV_SPOT_MAX_GPU_HOURS",
+    "FELLOWS_QUEUE_WAIT_ENV",
     "FREE_WAIT_SECONDS",
     "LEASE_STORE_DIRNAME",
     "MAX_GCP_ATTEMPTS_PER_DAY",
