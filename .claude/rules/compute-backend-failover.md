@@ -945,6 +945,22 @@ sanctioned actor ever starts deleting LIVE PENDING instances, the trigger
 needs an operations-log delete-op check (a genuine vanish leaves NO delete
 operation; an actor's delete leaves one) — a re-plan, not a tweak.
 
+### Coupled multi-arm dispatch stall → down-width split (#1633)
+
+Every trigger in this Part re-shapes or fails over ONE dispatch's machine
+(queue-timeout, queue-vanish, boot-loop, the #1379 wide-intent 8→4→2
+degrade). None of them can DECOMPOSE a dispatch that bundles arms of
+DIFFERENT minimum GPU widths behind one provision — the #1112 failure
+mode: 1×-runnable arms held ~14 h behind a coupled 4×/8× provision during
+an A100 drought while the 1× shape had stock. On a SUSTAINED capacity
+stall (≥ ~1 h queued / stocked-out across rungs) of a coupled multi-arm
+dispatch, the owning orchestrator splits out and probes the
+narrowest-runnable arms as their own dispatch(es) instead of continuing
+to hold them; the wide arm keeps its ladder walk. The plan-side duty
+(per-arm MINIMUM runnable width + the pre-registered split) lives in
+`.claude/rules/plan-compute-sizing.md` § Multi-arm min-width + stall-time
+down-width split; this section is the dispatch-time cross-reference.
+
 ### Pre-workload boot-loop → RunPod (#1029)
 
 A boot-looping rung — the #763 shape: `flexstart_l4` re-selected by every
