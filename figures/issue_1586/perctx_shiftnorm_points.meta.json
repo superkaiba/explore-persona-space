@@ -1,0 +1,1002 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:14Z",
+  "figsize": [
+    14.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": -0.09,
+      "seed 42\nper-context shift norm": 5.887229919433594,
+      "label": "5.9",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.91,
+      "seed 42\nper-context shift norm": 5.965901851654053,
+      "label": "6.0",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.91,
+      "seed 42\nper-context shift norm": 5.822913646697998,
+      "label": "5.8",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.91,
+      "seed 42\nper-context shift norm": 7.323965072631836,
+      "label": "7.3",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 3.91,
+      "seed 42\nper-context shift norm": 7.563140392303467,
+      "label": "7.6",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 4.91,
+      "seed 42\nper-context shift norm": 5.105311870574951,
+      "label": "5.1",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09,
+      "seed 42\nper-context shift norm": 8.773515701293945,
+      "label": "8.8",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.09,
+      "seed 42\nper-context shift norm": 8.445615768432617,
+      "label": "8.4",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.09,
+      "seed 42\nper-context shift norm": 8.621828079223633,
+      "label": "8.6",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.09,
+      "seed 42\nper-context shift norm": 9.877949714660645,
+      "label": "9.9",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.09,
+      "seed 42\nper-context shift norm": 9.688833236694336,
+      "label": "9.7",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.09,
+      "seed 42\nper-context shift norm": 8.984999656677246,
+      "label": "9.0",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09,
+      "y": 10.549420356750488,
+      "label": "10.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.91,
+      "y": 15.065552711486816,
+      "label": "15.1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.91,
+      "y": 14.428317070007324,
+      "label": "14.4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.91,
+      "y": 11.854477882385254,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.91,
+      "y": 17.363576889038086,
+      "label": "17.4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.91,
+      "y": 10.927911758422852,
+      "label": "10.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09,
+      "y": 8.802984237670898,
+      "label": "8.8",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.09,
+      "y": 10.424253463745117,
+      "label": "10.4",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.09,
+      "y": 18.64336395263672,
+      "label": "18.6",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.09,
+      "y": 13.34736442565918,
+      "label": "13.3",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.09,
+      "y": 17.69866371154785,
+      "label": "17.7",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.09,
+      "y": 8.619097709655762,
+      "label": "8.6",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.09,
+      "y": 6.109192848205566,
+      "label": "6.1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.91,
+      "y": 8.185843467712402,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.91,
+      "y": 6.585142612457275,
+      "label": "6.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.91,
+      "y": 10.517644882202148,
+      "label": "10.5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.91,
+      "y": 7.041265964508057,
+      "label": "7.0",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.91,
+      "y": 5.308952331542969,
+      "label": "5.3",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09,
+      "y": 7.694675445556641,
+      "label": "7.7",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.09,
+      "y": 8.125625610351562,
+      "label": "8.1",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.09,
+      "y": 9.833708763122559,
+      "label": "9.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.09,
+      "y": 9.040386199951172,
+      "label": "9.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.09,
+      "y": 8.320719718933105,
+      "label": "8.3",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.09,
+      "y": 7.812485218048096,
+      "label": "7.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.09,
+      "y": 7.031009197235107,
+      "label": "7.0",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.91,
+      "y": 7.252628803253174,
+      "label": "7.3",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.91,
+      "y": 6.770225524902344,
+      "label": "6.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.91,
+      "y": 8.174017906188965,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.91,
+      "y": 7.725724697113037,
+      "label": "7.7",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.91,
+      "y": 6.234729766845703,
+      "label": "6.2",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.09,
+      "y": 6.086929798126221,
+      "label": "6.1",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.09,
+      "y": 5.653867244720459,
+      "label": "5.7",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.09,
+      "y": 6.36758279800415,
+      "label": "6.4",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.09,
+      "y": 7.1611223220825195,
+      "label": "7.2",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.09,
+      "y": 9.966747283935547,
+      "label": "10.0",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.09,
+      "y": 4.932291507720947,
+      "label": "4.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.09,
+      "seed 137\nper-context shift norm": 6.14756441116333,
+      "label": "6.1",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.91,
+      "seed 137\nper-context shift norm": 5.918867111206055,
+      "label": "5.9",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.91,
+      "seed 137\nper-context shift norm": 5.737955093383789,
+      "label": "5.7",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.91,
+      "seed 137\nper-context shift norm": 7.534806251525879,
+      "label": "7.5",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.91,
+      "seed 137\nper-context shift norm": 7.116456985473633,
+      "label": "7.1",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.91,
+      "seed 137\nper-context shift norm": 5.113159656524658,
+      "label": "5.1",
+      "series": "LoRA",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.09,
+      "seed 137\nper-context shift norm": 10.3517484664917,
+      "label": "10.4",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.09,
+      "seed 137\nper-context shift norm": 9.787273406982422,
+      "label": "9.8",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.09,
+      "seed 137\nper-context shift norm": 13.010326385498047,
+      "label": "13.0",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.09,
+      "seed 137\nper-context shift norm": 11.233895301818848,
+      "label": "11.2",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.09,
+      "seed 137\nper-context shift norm": 10.740456581115723,
+      "label": "10.7",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.09,
+      "seed 137\nper-context shift norm": 12.507471084594727,
+      "label": "12.5",
+      "series": "full FT",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.09,
+      "y": 11.706058502197266,
+      "label": "11.7",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.91,
+      "y": 16.673484802246094,
+      "label": "16.7",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.91,
+      "y": 15.962955474853516,
+      "label": "16.0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.91,
+      "y": 13.76795768737793,
+      "label": "13.8",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.91,
+      "y": 18.582246780395508,
+      "label": "18.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.91,
+      "y": 11.966097831726074,
+      "label": "12.0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.09,
+      "y": 8.73574447631836,
+      "label": "8.7",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.09,
+      "y": 10.7449369430542,
+      "label": "10.7",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.09,
+      "y": 17.9406795501709,
+      "label": "17.9",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.09,
+      "y": 13.681845664978027,
+      "label": "13.7",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.09,
+      "y": 16.48626136779785,
+      "label": "16.5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.09,
+      "y": 8.074503898620605,
+      "label": "8.1",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.09,
+      "y": 6.90211296081543,
+      "label": "6.9",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.91,
+      "y": 9.141467094421387,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.91,
+      "y": 8.470190048217773,
+      "label": "8.5",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.91,
+      "y": 10.44580078125,
+      "label": "10.4",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.91,
+      "y": 8.27614974975586,
+      "label": "8.3",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.91,
+      "y": 6.064268112182617,
+      "label": "6.1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09,
+      "y": 7.567399978637695,
+      "label": "7.6",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.09,
+      "y": 9.59855842590332,
+      "label": "9.6",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.09,
+      "y": 11.489358901977539,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.09,
+      "y": 8.95654582977295,
+      "label": "9.0",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.09,
+      "y": 9.626543045043945,
+      "label": "9.6",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.09,
+      "y": 9.358769416809082,
+      "label": "9.4",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -0.09,
+      "y": 6.837623596191406,
+      "label": "6.8",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.91,
+      "y": 6.847418308258057,
+      "label": "6.8",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.91,
+      "y": 6.75526762008667,
+      "label": "6.8",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.91,
+      "y": 8.31335163116455,
+      "label": "8.3",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.91,
+      "y": 8.816079139709473,
+      "label": "8.8",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.91,
+      "y": 6.466883182525635,
+      "label": "6.5",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.09,
+      "y": 6.3633880615234375,
+      "label": "6.4",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.09,
+      "y": 6.130537509918213,
+      "label": "6.1",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.09,
+      "y": 6.3819260597229,
+      "label": "6.4",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.09,
+      "y": 6.694287300109863,
+      "label": "6.7",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.09,
+      "y": 9.305123329162598,
+      "label": "9.3",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.09,
+      "y": 4.773820400238037,
+      "label": "4.8",
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-context mean-shift norms behind each con-regime pair (grey = LoRA, color = full FT)"
+    ],
+    "axes": [
+      {
+        "title_left": "sycophancy (L14)",
+        "ylabel": "seed 42\nper-context shift norm",
+        "legend_labels": [
+          "LoRA",
+          "full FT"
+        ],
+        "annotations": [
+          "5.9",
+          "6.0",
+          "5.8",
+          "7.3",
+          "7.6",
+          "5.1",
+          "8.8",
+          "8.4",
+          "8.6",
+          "9.9",
+          "9.7",
+          "9.0"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11"
+        ]
+      },
+      {
+        "title_left": "impolite (L14)",
+        "annotations": [
+          "10.5",
+          "15.1",
+          "14.4",
+          "11.9",
+          "17.4",
+          "10.9",
+          "8.8",
+          "10.4",
+          "18.6",
+          "13.3",
+          "17.7",
+          "8.6"
+        ],
+        "xticklabels": [
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "20"
+        ]
+      },
+      {
+        "title_left": "casual style (L14)",
+        "annotations": [
+          "6.1",
+          "8.2",
+          "6.6",
+          "10.5",
+          "7.0",
+          "5.3",
+          "7.7",
+          "8.1",
+          "9.8",
+          "9.0",
+          "8.3",
+          "7.8"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11"
+        ]
+      },
+      {
+        "title_left": "marker (L25)",
+        "annotations": [
+          "7.0",
+          "7.3",
+          "6.8",
+          "8.2",
+          "7.7",
+          "6.2",
+          "6.1",
+          "5.7",
+          "6.4",
+          "7.2",
+          "10.0",
+          "4.9"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11"
+        ]
+      },
+      {
+        "ylabel": "seed 137\nper-context shift norm",
+        "annotations": [
+          "6.1",
+          "5.9",
+          "5.7",
+          "7.5",
+          "7.1",
+          "5.1",
+          "10.4",
+          "9.8",
+          "13.0",
+          "11.2",
+          "10.7",
+          "12.5"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14"
+        ]
+      },
+      {
+        "annotations": [
+          "11.7",
+          "16.7",
+          "16.0",
+          "13.8",
+          "18.6",
+          "12.0",
+          "8.7",
+          "10.7",
+          "17.9",
+          "13.7",
+          "16.5",
+          "8.1"
+        ],
+        "xticklabels": [
+          "default assi",
+          "icl_prefix_i",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "20"
+        ]
+      },
+      {
+        "annotations": [
+          "6.9",
+          "9.1",
+          "8.5",
+          "10.4",
+          "8.3",
+          "6.1",
+          "7.6",
+          "9.6",
+          "11.5",
+          "9.0",
+          "9.6",
+          "9.4"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12"
+        ]
+      },
+      {
+        "annotations": [
+          "6.8",
+          "6.8",
+          "6.8",
+          "8.3",
+          "8.8",
+          "6.5",
+          "6.4",
+          "6.1",
+          "6.4",
+          "6.7",
+          "9.3",
+          "4.8"
+        ],
+        "xticklabels": [
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "source perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA",
+      "full FT"
+    ]
+  }
+}

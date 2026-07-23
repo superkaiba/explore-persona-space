@@ -1,0 +1,196 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:32Z",
+  "figsize": [
+    12.5,
+    6.2
+  ],
+  "points": [
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": -0.005439941584519881,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": -0.25885170743902297,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": -0.13214582451177143,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.2890682730923695,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.025522613593205845,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.208,
+      "y": 5.6,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.22093117408906882,
+      "y": 6.6,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.2144655870445344,
+      "y": 7.6,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.1046277665995976,
+      "y": 8.6,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.06880142353402119,
+      "y": 9.6,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.08440192346223202,
+      "y": 11.2,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.12780990696504907,
+      "y": 12.2,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.10610591521364054,
+      "y": 13.2,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": 0.06578022350973312,
+      "y": 14.2,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)": -0.021314258295262567,
+      "y": 15.2,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -3.3569422149658203,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -2.7840722656249994,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -3.07050724029541,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -2.7496228027343768,
+      "y": 3.6,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -3.0634930419921877,
+      "y": 4.6,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Pooled non-source EOS-margin\ndifference (nats)": -2.906557922363282,
+      "y": 5.6,
+      "_kind": "errorbar",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Full fine-tuning leaks impolite and casual style to non-source contexts more than LoRA;\nsycophancy shows no matched-dose difference; every marker pair is dose-mismatched"
+    ],
+    "axes": [
+      {
+        "xlabel": "Pooled non-source judged-rate difference,\nfull fine-tune minus LoRA (95% bootstrap CI)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "sycophancy con s42",
+          "sycophancy con s137",
+          "sycophancy con POOLED",
+          "sycophancy po s42",
+          "sycophancy po s137",
+          "impolite con s42",
+          "impolite con s137",
+          "impolite con POOLED",
+          "impolite po s42",
+          "impolite po s137",
+          "casual style con s42",
+          "casual style con s137",
+          "casual style con POOLED",
+          "casual style po s42",
+          "casual style po s137"
+        ]
+      },
+      {
+        "xlabel": "Pooled non-source EOS-margin\ndifference (nats)",
+        "xticklabels": [
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ],
+        "yticklabels": [
+          "marker con s42",
+          "marker con s137",
+          "marker con POOLED",
+          "marker po s42",
+          "marker po s137",
+          "marker po POOLED"
+        ]
+      }
+    ]
+  }
+}

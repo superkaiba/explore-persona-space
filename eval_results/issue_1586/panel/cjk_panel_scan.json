@@ -1,0 +1,98 @@
+{
+ "cas-pers-ft-con-s137": {
+  "intruded": 60,
+  "n": 600
+ },
+ "cas-pers-ft-con-s42": {
+  "intruded": 73,
+  "n": 600
+ },
+ "cas-pers-ft-po-s137": {
+  "intruded": 52,
+  "n": 600
+ },
+ "cas-pers-ft-po-s42": {
+  "intruded": 59,
+  "n": 600
+ },
+ "cas-pers-lora-con-s137": {
+  "intruded": 54,
+  "n": 600
+ },
+ "cas-pers-lora-con-s42": {
+  "intruded": 50,
+  "n": 600
+ },
+ "cas-pers-lora-po-s137": {
+  "intruded": 59,
+  "n": 600
+ },
+ "cas-pers-lora-po-s42": {
+  "intruded": 54,
+  "n": 600
+ },
+ "imp-pers-ft-con-s137": {
+  "intruded": 43,
+  "n": 600
+ },
+ "imp-pers-ft-con-s42": {
+  "intruded": 33,
+  "n": 600
+ },
+ "imp-pers-ft-po-s137": {
+  "intruded": 37,
+  "n": 600
+ },
+ "imp-pers-ft-po-s42": {
+  "intruded": 35,
+  "n": 600
+ },
+ "imp-pers-lora-con-s137": {
+  "intruded": 98,
+  "n": 600
+ },
+ "imp-pers-lora-con-s42": {
+  "intruded": 93,
+  "n": 600
+ },
+ "imp-pers-lora-po-s137": {
+  "intruded": 37,
+  "n": 600
+ },
+ "imp-pers-lora-po-s42": {
+  "intruded": 37,
+  "n": 600
+ },
+ "syc-pers-ft-con-s137": {
+  "intruded": 36,
+  "n": 600
+ },
+ "syc-pers-ft-con-s42": {
+  "intruded": 22,
+  "n": 600
+ },
+ "syc-pers-ft-po-s137": {
+  "intruded": 12,
+  "n": 600
+ },
+ "syc-pers-ft-po-s42": {
+  "intruded": 13,
+  "n": 600
+ },
+ "syc-pers-lora-con-s137": {
+  "intruded": 21,
+  "n": 600
+ },
+ "syc-pers-lora-con-s42": {
+  "intruded": 15,
+  "n": 600
+ },
+ "syc-pers-lora-po-s137": {
+  "intruded": 9,
+  "n": 600
+ },
+ "syc-pers-lora-po-s42": {
+  "intruded": 16,
+  "n": 600
+ }
+}

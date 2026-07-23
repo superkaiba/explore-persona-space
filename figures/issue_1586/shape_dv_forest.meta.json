@@ -1,0 +1,217 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:30Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -0.5,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -1.5,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -6.5,
+      "y": 2.5,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -1.5,
+      "y": 3.5,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -3.0,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -9.0,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -0.5,
+      "y": 7.5,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)": -2.0,
+      "y": 8.5,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -6.625892767266889,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -1.420306316743396,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -6.621211805740837,
+      "y": 2.5,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -1.7067947259150689,
+      "y": 3.5,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -2.8854383175292346,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": -19.24222426203615,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": 0.4971782671045162,
+      "y": 7.5,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)": 4.698176552728679,
+      "y": 8.5,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.022499793626152675,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": -0.0001736248191128581,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.08013420770230173,
+      "y": 2.5,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.022373641929682914,
+      "y": 3.5,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.023531465189150044,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.09510269243212485,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": 0.009140281938102762,
+      "y": 7.5,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)": -0.00814907169807639,
+      "y": 8.5,
+      "_kind": "errorbar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Shift-cloud shape differences at the selected rungs: null except impolite-con and casual-po concentration"
+    ],
+    "axes": [
+      {
+        "xlabel": "\u0394 rank containing 90% of shift variance\n(full FT \u2212 LoRA, pooled)",
+        "xticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6"
+        ],
+        "yticklabels": [
+          "sycophancy con",
+          "sycophancy po",
+          "impolite con",
+          "impolite po",
+          "casual style con",
+          "casual style po",
+          "marker con",
+          "marker po"
+        ]
+      },
+      {
+        "xlabel": "\u0394 participation ratio\n(full FT \u2212 LoRA, pooled)",
+        "xticklabels": [
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      },
+      {
+        "xlabel": "\u0394 top-eigenvalue share\n(full FT \u2212 LoRA, pooled)",
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ]
+  }
+}

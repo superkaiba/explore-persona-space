@@ -1,0 +1,998 @@
+{
+  "commit": "3f10522719",
+  "created": "2026-07-23T08:03:26Z",
+  "figsize": [
+    13.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 6.199617958068847,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 4.8299507141113285,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 4.808267402648926,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 4.6529539108276365,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 5.501386833190918,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 5.2639930725097654,
+      "series": "lora-con-s42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 5.817143344879151,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 4.2539714813232425,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 4.666327857971192,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 4.608375930786133,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 5.077731132507324,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 4.780892086029053,
+      "series": "lora-con-s137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 2.2127389907836914,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 1.3897873878479003,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 2.256294918060303,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 1.700376605987549,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 1.5604304313659667,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 1.6083030700683594,
+      "series": "ft-con-s42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 2.433948612213135,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 1.43235502243042,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 2.3709653854370116,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 1.7437520027160645,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 1.807413101196289,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 1.6887207984924317,
+      "series": "ft-con-s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 7.32801513671875,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 5.254510021209716,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 5.067479515075684,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 5.097354125976563,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 6.218699741363525,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 5.42023401260376,
+      "series": "lora-po-s42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 7.181894683837891,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 5.115509796142578,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 5.093205070495605,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 5.409869384765625,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 6.109647464752197,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 5.639047145843506,
+      "series": "lora-po-s137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 3.133887767791748,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 2.295553112030029,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 3.2358192443847655,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 2.549804210662842,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 2.5706963539123535,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 2.304526615142822,
+      "series": "ft-po-s42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "trained \u2212 base at the marker slot": 2.977451133728027,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "trained \u2212 base at the marker slot": 2.10225887298584,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "trained \u2212 base at the marker slot": 2.80650634765625,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "trained \u2212 base at the marker slot": 2.2240549087524415,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "trained \u2212 base at the marker slot": 2.3322986602783202,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "trained \u2212 base at the marker slot": 2.194102478027344,
+      "series": "ft-po-s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 6.0473388671875,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 4.489599609375,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 4.270703125,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 4.17122802734375,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 4.79853515625,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 4.891131973266601,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 5.4531982421875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 3.8680419921875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 4.2708984375,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 4.087060546875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 4.2704833984375,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": 4.428271484375,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 1.92978515625,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.8975341796875,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 1.4744140625,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 1.28775634765625,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 1.206024169921875,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": 0.970758056640625,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 2.24886474609375,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 1.11435546875,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 2.11875,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 1.1019287109375,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 1.4109130859375,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": 1.258447265625,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 7.08240966796875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 4.999639892578125,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 4.7890625,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 4.83631591796875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 5.93189697265625,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "y": 5.14989013671875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 6.5875244140625,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 4.838861083984375,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 4.648046875,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 5.082058715820312,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 5.95107421875,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 5.4586669921875,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 2.942333984375,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 2.104296875,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 3.1076171875,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 2.4010009765625,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 2.3096923828125,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "y": 2.036083984375,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 2.776318359375,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 1.909393310546875,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 2.6071044921875,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 2.096148681640625,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 2.231982421875,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "y": 1.81661376953125,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.05,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.05,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.05,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.05,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Marker three-space panel reads per context (grey = LoRA, color = full FT; solid = con, dashed = po)"
+    ],
+    "axes": [
+      {
+        "title_left": "log-prob shift (nats)",
+        "ylabel": "trained \u2212 base at the marker slot",
+        "legend_labels": [
+          "lora-con-s42",
+          "lora-con-s137",
+          "ft-con-s42",
+          "ft-con-s137",
+          "lora-po-s42",
+          "lora-po-s137",
+          "ft-po-s42",
+          "ft-po-s137"
+        ],
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      {
+        "title_left": "EOS-margin shift (nats)",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      },
+      {
+        "title_left": "greedy emission rate",
+        "xticklabels": [
+          "source perso",
+          "default assi",
+          "ICL prefix",
+          "maritime-med",
+          "police perso",
+          "WildChat pre"
+        ]
+      }
+    ],
+    "series": [
+      "lora-con-s42",
+      "lora-con-s137",
+      "ft-con-s42",
+      "ft-con-s137",
+      "lora-po-s42",
+      "lora-po-s137",
+      "ft-po-s42",
+      "ft-po-s137"
+    ]
+  }
+}
