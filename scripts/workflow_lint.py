@@ -11137,7 +11137,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # re-measured row 918 B). Cap = measured + <=40.
     # #1526 added the off-pod-phase upload-set trigger (row 918 B -> 972 B).
     # Cap = measured + <=40.
-    "gotchas": 1000,
+    # #1640 added the chained smoke-then-full leg out-root residue trigger
+    # (row 994 B -> 1040 B). Cap = measured + <=40.
+    "gotchas": 1075,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
