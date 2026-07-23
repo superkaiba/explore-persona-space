@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1631,
+  "highest_id": 1632,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4927,6 +4927,13 @@
       "path": "tasks/proposed/1631",
       "status": "proposed",
       "title": "daily-fix: committed plan-patch helper for anchor edits"
+    },
+    "1632": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1632",
+      "status": "proposed",
+      "title": "daily-fix: exclude /tmp scratch from ruff format hook"
     },
     "164": {
       "has_clean_result": false,
