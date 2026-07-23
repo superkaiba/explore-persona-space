@@ -2,62 +2,57 @@
 
 ## Motivation
 
-- The sibling result showed that on the **instruct** model the pre-query **direct prefix vector** (prefix-end state) predicts a prefix's average sycophancy/hallucination at parity with the query-averaged read — the model's average behavioral disposition is already fixed before the query.
-- Does this hold on the **base** (pretrained, non-instruction-tuned) model? The base-model reads had been noted only as a one-line "reads collapse" aside; I wanted to know what that collapse actually is.
+- A **prefix** is everything before the user's query — the system prompt / persona / prior conversation. A prefix has an average **behavioral disposition**: how sycophantic or hallucination-prone the model tends to be under that prefix, averaged over many possible queries.
+- We want to know whether that disposition is already encoded in the model's activations **before it reads the query**, and whether this differs between the instruct and base models. Two reads per prefix:
+    - **direct prefix vector** (pre-query): the prefix-end state — the activation at the last prefix token, before any query exists.
+    - **averaged prefix vector** (post-query): the prefix's context-end states averaged over its queries.
+- If the disposition is fixed pre-query, the direct prefix vector should predict it as well as the averaged one.
 
 ## TLDR
 
-- On the base model the reads drop toward zero, but "collapse" is **two different phenomena** depending on trait (Result 1, reliability-normalized).
-    - **Sycophancy: nothing to read.** The base model barely varies its sycophancy across prefixes (per-prefix target reliability 0.078, ceiling 0.278), so both reads sit near floor (prefix-end 0.01 / averaged 0.13) — not hidden signal, absent signal.
-    - **Hallucination: signal exists but only forms post-query.** The disposition is real (averaged read 0.62 = 0.88 of the 0.71 ceiling) but the pre-query prefix-end read collapses to 0.05.
-- The raw persona-vector (r_B) projection confirms it (Result 2): the instruct prefix-end carries the trait r_B-shaped before the query (0.665 sycophancy / −0.43 hallucination); the base prefix-end carries none (≈0.02 both traits, CIs straddle 0).
+- On the **instruct** model both reads recover the disposition well; on the **base** model the reads drop toward zero — but that drop is **two different phenomena** depending on the trait (Result 1).
+    - **Sycophancy: nothing to read.** The base model barely varies its sycophancy across prefixes, so the reliability ceiling itself is near-floor — both reads are low because the disposition is absent, not hidden.
+    - **Hallucination: signal exists, but only forms post-query.** The disposition is real (the averaged read recovers most of the ceiling) but the pre-query prefix-end read collapses.
+- The unsupervised persona-vector (r_B) projection confirms it (Result 2): the instruct prefix-end carries the trait direction before the query; the base prefix-end carries none.
 - **Instruction tuning installs a pre-query behavioral disposition the base model lacks.**
 
 ## Methodology (shared)
 
 - Models: Qwen-2.5-7B-Instruct + Qwen-2.5-7B (base); teacher-forced captures of own-policy greedy answers; layer 14, ambient basis.
-- Reads (per prefix): a supervised ridge probe from the activation state → the prefix's mean graded judge score (sycophancy, hallucination; Sonnet judge, on-policy answers), held out by prefix; plus the unsupervised raw r_B projection ⟨state, r_B⟩. Inputs: **direct prefix vector** (prefix-end) vs **averaged prefix vector** (context-end averaged over queries).
-- **Reliability ceiling** = split-half reliability of the per-prefix target — the max r any probe could reach given target noise.
-- Instruct cell = 149 prefixes; **base cell = the 50 constructed battery prefixes only** (natural WildChat/LMSYS prefixes were never judged on the base model — a coverage gap).
-- Pure re-read of existing #1092 artifacts, 0 GPU.
+- Reads (per prefix): a supervised ridge probe from the activation state → the prefix's mean graded judge score (sycophancy, hallucination; Sonnet judge, on-policy answers), held out by prefix; plus the unsupervised raw r_B projection ⟨state, r_B⟩. Inputs: the direct prefix vector vs the averaged prefix vector.
+- **Reliability ceiling** = split-half reliability of the per-prefix target — the maximum correlation any probe could reach given target noise. A read must be judged against its own ceiling, not against 1.0.
+- Instruct cell = 149 prefixes; **base cell = the 50 constructed battery prefixes only** — the natural WildChat/LMSYS prefixes were never judged on the base model, a coverage gap.
 
 ## Results
 
 ### Result 1 — the base "collapse" is two phenomena, separated by the reliability ceiling
 
-| model / trait | prefix-end r | averaged r | reliability | ceiling |
-|---|---|---|---|---|
-| instruct, sycophancy | 0.759 | 0.774 | 0.74 | 0.86 |
-| instruct, hallucination | 0.888 | 0.887 | 0.83 | 0.91 |
-| base, sycophancy | 0.013 | 0.134 | **0.078** | **0.278** |
-| base, hallucination | 0.052 | 0.621 | 0.503 | 0.709 |
+Supervised read of each prefix's average sycophancy / hallucination, from the pre-query (prefix-end) vs post-query (averaged) state. The dashed line is each cell's reliability ceiling — the most any probe could achieve.
 
-![base pre-query reframe (left: supervised read vs ceiling; right: raw r_B projection)](https://raw.githubusercontent.com/superkaiba/explore-persona-space/51d282a327622f72763b3345ab030b10464471b3/figures/issue_1092/base_prequery_reframe.png)
+![Supervised read of average behavioral disposition (prefix-end vs averaged) vs its reliability ceiling, instruct vs base](https://raw.githubusercontent.com/superkaiba/explore-persona-space/999277123e0c99980b08dfb9096a6a65e53252c4/figures/issue_1092/base_prequery_supervised.png)
 
 **Takeaways**
-- Instruct: both reads sit near ceiling for both traits — disposition is legible pre-query and post-query.
-- Base sycophancy: the ceiling itself is near-floor (0.278), so the low reads reflect an absent disposition, not a failed probe.
-- Base hallucination: the averaged read recovers 88% of the ceiling (signal is there) while the pre-query prefix-end read recovers 7% (the pre-query state doesn't hold it).
+- Instruct: both reads sit near the ceiling for both traits — the disposition is legible pre-query and post-query.
+- Base **sycophancy**: the ceiling itself is near-floor, so the low reads reflect an absent disposition, not a failed probe — the base model does not carry a stable per-prefix sycophancy lean to begin with.
+- Base **hallucination**: the ceiling is high and the averaged (post-query) read nearly reaches it, so the disposition is real — but the pre-query prefix-end read collapses to the floor. The disposition exists; it just forms only once the query is present.
 
 ### Result 2 — the raw r_B projection confirms no pre-query disposition in the base model
 
-Unsupervised check: does the pre-query state carry the trait direction at all, without a fitted probe?
+Unsupervised check: does the pre-query state carry the trait direction at all, without a fitted probe? Project each state onto the persona vector r_B and correlate with the per-prefix mean judge score.
 
-**Methodology**
-- Project each prefix-end / averaged state onto the reused persona vector r_B (#779 bank) and correlate with the per-prefix mean judge score.
+![Raw persona-vector (r_B) projection of the prefix-end vs averaged state, instruct vs base](https://raw.githubusercontent.com/superkaiba/explore-persona-space/999277123e0c99980b08dfb9096a6a65e53252c4/figures/issue_1092/base_prequery_rb.png)
 
-**Takeaways (right panel of the figure above)**
-- Instruct prefix-end: r_B projection r = 0.665 (sycophancy) / −0.43 (hallucination) — the persona signal sits r_B-shaped before the query.
-- Base prefix-end: r_B projection r ≈ 0.02 for both traits, CIs straddle 0 — no pre-query trait structure to read.
+**Takeaways**
+- Instruct prefix-end: a strong r_B projection (positive for sycophancy, negative for hallucination) — the persona signal sits r_B-shaped in the state before the query.
+- Base prefix-end: the r_B projection is indistinguishable from zero for both traits (confidence intervals straddle 0) — there is no pre-query trait structure to read.
 
 ## Conclusion and next steps
 
-- Instruction tuning installs a pre-query behavioral disposition the base model lacks: the instruct model forms an internal behavioral stance from the setup alone, before the question; the base model either has no stable stance (sycophancy) or forms it only once the query arrives (hallucination).
-- Caveats: this is a **decodability** result, not a causal mechanism; and it is about a prefix's **average** disposition, not single-query expression (which stays query-driven even on instruct).
+- Instruction tuning installs a pre-query behavioral disposition the base model lacks: the instruct model forms an internal behavioral stance from the setup alone, before the question; the base model either has no stable stance (sycophancy) or forms it only once the question arrives (hallucination).
+- Caveats: this is a **decodability** result, not a causal mechanism; and it concerns a prefix's **average** disposition, not single-query expression (which stays query-driven even on instruct).
 - Next step: close the coverage gap — judge the base model's **natural** WildChat/LMSYS prefixes so the base-side claim isn't confined to the 50 constructed battery conditions.
 
 ## Sources
 
 - Artifact: `eval_results/issue_1092/inline_base_prequery_reframe/base_prequery_reframe.json` (script `scripts/issue1092_base_prequery_reframe.py`); figure `figures/issue_1092/base_prequery_reframe.png`.
 - Underlying reads: `eval_results/issue_1092/inline_prefixend_monitoring/{results,readout_constructions}.json`.
-- Sibling writeup: `docs/results_summaries/2026-07-22-direct-vs-averaged-prefix-map.md`.
