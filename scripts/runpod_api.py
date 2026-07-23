@@ -470,13 +470,42 @@ def _build_inputs_block(inputs: dict[str, Any]) -> str:
     """
     fields: list[str] = []
     for k, v in inputs.items():
-        if isinstance(v, bool):
+        if isinstance(v, _RawGraphQL):
+            fields.append(f"{k}: {v}")
+        elif isinstance(v, bool):
             fields.append(f"{k}: {'true' if v else 'false'}")
         elif isinstance(v, int) or k in _CREATE_ENUM_FIELDS:
             fields.append(f"{k}: {v}")
         else:
             fields.append(f'{k}: "{v}"')
     return ", ".join(fields)
+
+
+class _RawGraphQL(str):
+    """A pre-serialized GraphQL fragment (env object lists) — emitted verbatim."""
+
+
+def _public_key_env() -> "_RawGraphQL | None":
+    """A ``PUBLIC_KEY`` env entry for the pod create input, or None.
+
+    The runpod/pytorch image writes ``PUBLIC_KEY`` into authorized_keys at
+    boot — an injection path INDEPENDENT of RunPod account-key propagation,
+    which broke fleet-wide on 2026-07-23 (pods booted sshd with our
+    account-listed key absent; TCP fine, auth denied, across two DCs).
+    Reads ``RUNPOD_SSH_PUBKEY_FILE`` (default ``~/.ssh/id_ed25519.pub``);
+    missing file returns None (fail-open to the account-key path).
+    """
+    import os as _os
+
+    path = _os.path.expanduser(_os.environ.get("RUNPOD_SSH_PUBKEY_FILE", "~/.ssh/id_ed25519.pub"))
+    try:
+        key = Path(path).read_text().strip()
+    except OSError:
+        return None
+    if not key.startswith("ssh-"):
+        return None
+    key = key.replace("\\", "").replace('"', "")
+    return _RawGraphQL(f'[{{ key: "PUBLIC_KEY", value: "{key}" }}]')
 
 
 def _deploy_once(
@@ -519,6 +548,9 @@ def _deploy_once(
         "startSsh": True,
         "ports": "8888/http,22/tcp",
     }
+    _pk_env = _public_key_env()
+    if _pk_env is not None:
+        inputs["env"] = _pk_env
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     if interruptible:
@@ -692,6 +724,9 @@ def _deploy_cpu_once(
         "startSsh": True,
         "ports": "8888/http,22/tcp",
     }
+    _pk_env = _public_key_env()
+    if _pk_env is not None:
+        inputs["env"] = _pk_env
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     inputs_block = _build_inputs_block(inputs)
