@@ -4840,8 +4840,8 @@
     "1620": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1620",
-      "status": "proposed",
+      "path": "tasks/planning/1620",
+      "status": "planning",
       "title": "daily-fix: root-commit guard blocks on foreign staged files"
     },
     "1621": {
