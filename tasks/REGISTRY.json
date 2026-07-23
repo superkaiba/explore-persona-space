@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1622,
+  "highest_id": 1623,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4857,6 +4857,13 @@
       "path": "tasks/proposed/1622",
       "status": "proposed",
       "title": "daily-fix: artifact turns end with bare URL (project rule)"
+    },
+    "1623": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1623",
+      "status": "proposed",
+      "title": "daily-fix: similarity stats declare direction-aware or not"
     },
     "163": {
       "has_clean_result": false,
