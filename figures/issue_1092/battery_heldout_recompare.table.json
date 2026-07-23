@@ -1,0 +1,159 @@
+{
+  "layer": "L14",
+  "arms": [
+    "raw",
+    "5k-linear",
+    "1M ridge",
+    "1M mlp",
+    "1M krr",
+    "v_C probe",
+    "h-ridge probe",
+    "h-mlp probe"
+  ],
+  "traits": {
+    "hallucination": {
+      "label_flat": false,
+      "n_eval": 2400,
+      "prefix_overlap": 0,
+      "variants_coincide": true,
+      "arms": {
+        "raw": {
+          "within_corpus_r": -0.1028,
+          "battery_novelq_r": -0.1042,
+          "query_familiarity_delta": 0.0014
+        },
+        "5k-linear": {
+          "within_corpus_r": 0.2325,
+          "battery_novelq_r": 0.2229,
+          "query_familiarity_delta": 0.0096
+        },
+        "1M ridge": {
+          "within_corpus_r": 0.3052,
+          "battery_novelq_r": 0.287,
+          "query_familiarity_delta": 0.0181
+        },
+        "1M mlp": {
+          "within_corpus_r": 0.3542,
+          "battery_novelq_r": 0.3429,
+          "query_familiarity_delta": 0.0113
+        },
+        "1M krr": {
+          "within_corpus_r": 0.2915,
+          "battery_novelq_r": 0.2798,
+          "query_familiarity_delta": 0.0117
+        },
+        "v_C probe": {
+          "within_corpus_r": 0.8641,
+          "battery_novelq_r": 0.7763,
+          "query_familiarity_delta": 0.0878
+        },
+        "h-ridge probe": {
+          "within_corpus_r": 0.8528,
+          "battery_novelq_r": 0.7887,
+          "query_familiarity_delta": 0.064
+        },
+        "h-mlp probe": {
+          "within_corpus_r": 0.8579,
+          "battery_novelq_r": 0.7929,
+          "query_familiarity_delta": 0.065
+        }
+      }
+    },
+    "sycophancy": {
+      "label_flat": false,
+      "n_eval": 2400,
+      "prefix_overlap": 0,
+      "variants_coincide": true,
+      "arms": {
+        "raw": {
+          "within_corpus_r": 0.0422,
+          "battery_novelq_r": 0.1136,
+          "query_familiarity_delta": -0.0714
+        },
+        "5k-linear": {
+          "within_corpus_r": -0.0789,
+          "battery_novelq_r": -0.0566,
+          "query_familiarity_delta": -0.0223
+        },
+        "1M ridge": {
+          "within_corpus_r": -0.0429,
+          "battery_novelq_r": -0.0539,
+          "query_familiarity_delta": 0.0109
+        },
+        "1M mlp": {
+          "within_corpus_r": -0.0179,
+          "battery_novelq_r": -0.0384,
+          "query_familiarity_delta": 0.0205
+        },
+        "1M krr": {
+          "within_corpus_r": -0.0078,
+          "battery_novelq_r": -0.0201,
+          "query_familiarity_delta": 0.0123
+        },
+        "v_C probe": {
+          "within_corpus_r": 0.7601,
+          "battery_novelq_r": 0.6593,
+          "query_familiarity_delta": 0.1008
+        },
+        "h-ridge probe": {
+          "within_corpus_r": 0.7411,
+          "battery_novelq_r": 0.6696,
+          "query_familiarity_delta": 0.0715
+        },
+        "h-mlp probe": {
+          "within_corpus_r": 0.7488,
+          "battery_novelq_r": 0.6648,
+          "query_familiarity_delta": 0.084
+        }
+      }
+    },
+    "evil": {
+      "label_flat": true,
+      "n_eval": 2400,
+      "prefix_overlap": 0,
+      "variants_coincide": true,
+      "arms": {
+        "raw": {
+          "within_corpus_r": 0.0157,
+          "battery_novelq_r": -0.0319,
+          "query_familiarity_delta": 0.0476
+        },
+        "5k-linear": {
+          "within_corpus_r": -0.0054,
+          "battery_novelq_r": -0.0497,
+          "query_familiarity_delta": 0.0443
+        },
+        "1M ridge": {
+          "within_corpus_r": 0.0085,
+          "battery_novelq_r": -0.0346,
+          "query_familiarity_delta": 0.043
+        },
+        "1M mlp": {
+          "within_corpus_r": 0.007,
+          "battery_novelq_r": -0.0318,
+          "query_familiarity_delta": 0.0388
+        },
+        "1M krr": {
+          "within_corpus_r": 0.0093,
+          "battery_novelq_r": -0.0341,
+          "query_familiarity_delta": 0.0434
+        },
+        "v_C probe": {
+          "within_corpus_r": null,
+          "battery_novelq_r": -0.0117,
+          "query_familiarity_delta": null
+        },
+        "h-ridge probe": {
+          "within_corpus_r": null,
+          "battery_novelq_r": 0.0055,
+          "query_familiarity_delta": null
+        },
+        "h-mlp probe": {
+          "within_corpus_r": null,
+          "battery_novelq_r": -0.0087,
+          "query_familiarity_delta": null
+        }
+      }
+    }
+  }
+}

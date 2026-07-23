@@ -1,0 +1,441 @@
+{
+  "commit": "75f94efcd5",
+  "created": "2026-07-23T22:03:29Z",
+  "figsize": [
+    11.0,
+    10.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "Pearson r": -0.10278046577628802,
+      "error": 0.022015295737805272,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "Pearson r": -0.10417869135401522,
+      "error": 0.03784293660748507,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "Pearson r": 0.2325097764461291,
+      "error": 0.02128178288310663,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "Pearson r": 0.22288178894987845,
+      "error": 0.0342454964596159,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "Pearson r": 0.3051653801255238,
+      "error": 0.01926190349009385,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "Pearson r": 0.28702589356894187,
+      "error": 0.030031301393865284,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.8,
+      "Pearson r": 0.3541728432954156,
+      "error": 0.0163007731933065,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.2,
+      "Pearson r": 0.3429065915258425,
+      "error": 0.027432566808370584,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.8,
+      "Pearson r": 0.29151278984027046,
+      "error": 0.01879142918820853,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.2,
+      "Pearson r": 0.27980231114071313,
+      "error": 0.029394719773436884,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.8,
+      "Pearson r": 0.8641252395477983,
+      "error": 0.013044361741892108,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 5.2,
+      "Pearson r": 0.7763447049024693,
+      "error": 0.054704727540244136,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 5.8,
+      "Pearson r": 0.8527563584288258,
+      "error": 0.01505912081609423,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 6.2,
+      "Pearson r": 0.7887458418396999,
+      "error": 0.029123917643804953,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 6.8,
+      "Pearson r": 0.8579240805025375,
+      "error": 0.014033680781757873,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 7.2,
+      "Pearson r": 0.7929289241662625,
+      "error": 0.034046879195994084,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.2,
+      "Pearson r": 0.04216345437932784,
+      "error": 0.021465544045370613,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.2,
+      "Pearson r": 0.11359187930464619,
+      "error": 0.03870827213930807,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.8,
+      "Pearson r": -0.0789018538632885,
+      "error": 0.015357674808060003,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.2,
+      "Pearson r": -0.05658739771466297,
+      "error": 0.02066662455055171,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.8,
+      "Pearson r": -0.042941539641143216,
+      "error": 0.016259702334427327,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.2,
+      "Pearson r": -0.053850823633316565,
+      "error": 0.025495174020657686,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.8,
+      "Pearson r": -0.017935755557353505,
+      "error": 0.01498150246268589,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 3.2,
+      "Pearson r": -0.03842120591019874,
+      "error": 0.026178278292469437,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 3.8,
+      "Pearson r": -0.007820717431802727,
+      "error": 0.014175709883663729,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 4.2,
+      "Pearson r": -0.020087394425322504,
+      "error": 0.02483368018648857,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 4.8,
+      "Pearson r": 0.7601310091531392,
+      "error": 0.020768606493893227,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 5.2,
+      "Pearson r": 0.6593291517060278,
+      "error": 0.07058348897263245,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 5.8,
+      "Pearson r": 0.7411194706161353,
+      "error": 0.01759441175782306,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 6.2,
+      "Pearson r": 0.6696130416971598,
+      "error": 0.04920683644928664,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 6.8,
+      "Pearson r": 0.7488145044430166,
+      "error": 0.017175689943504158,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 7.2,
+      "Pearson r": 0.664798715094608,
+      "error": 0.045459997012051445,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": -0.2,
+      "Pearson r": 0.015703675786632974,
+      "error": 0.03388202387129266,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 0.2,
+      "Pearson r": -0.0319287157844435,
+      "error": 0.0339305512026242,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 0.8,
+      "Pearson r": -0.005432728936881968,
+      "error": 0.030181877731355795,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 1.2,
+      "Pearson r": -0.04973353801001275,
+      "error": 0.03420189926504132,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 1.8,
+      "Pearson r": 0.008452993983291527,
+      "error": 0.03644985108990777,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 2.2,
+      "Pearson r": -0.03459191851379057,
+      "error": 0.03005750994525575,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 2.8,
+      "Pearson r": 0.006985913870422288,
+      "error": 0.03147229142322698,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.2,
+      "Pearson r": -0.031796748228842424,
+      "error": 0.026906908927663807,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 3.8,
+      "Pearson r": 0.009336919976981717,
+      "error": 0.035709947446144856,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 4.2,
+      "Pearson r": -0.03410541946619643,
+      "error": 0.023010245676729102,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 4.8,
+      "Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 5.2,
+      "Pearson r": -0.011660906169774672,
+      "error": 0.016738325274181967,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 5.8,
+      "Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 6.2,
+      "Pearson r": 0.005496957785932376,
+      "error": 0.013666656113179281,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 6.8,
+      "Pearson r": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 7.2,
+      "Pearson r": -0.00873044403068599,
+      "error": 0.01508233569515718,
+      "_kind": "bar",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48,
+  "text": {
+    "suptitle": "Fair recompare: existing within-corpus vs battery-held-out (novel-question) Pearson r",
+    "fig_texts": [
+      "Battery = 2,400 fixed eval rows, questions disjoint from the query bank; battery prefixes 0-overlap with the non-battery training prefixes, so double-held-out COINCIDES with novel-question (prefix-familiarity \u0394 = 0). within\u2192battery drop = query-familiarity inflation. Map+r_B arms are matmul re-scores (no refit); probes are refit on the non-battery pool. Banked within-corpus leaks (battery rows were in its train+CV pool)."
+    ],
+    "axes": [
+      {
+        "title_left": "hallucination \u2014 within-corpus vs battery-held-out (L14, battery n=2400)",
+        "ylabel": "Pearson r",
+        "legend_labels": [
+          "within-corpus (existing)",
+          "battery held-out (novel-Q)"
+        ],
+        "xticklabels": [
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "h-ridge probe",
+          "h-mlp probe"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 within-corpus vs battery-held-out (L14, battery n=2400)",
+        "ylabel": "Pearson r",
+        "xticklabels": [
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "h-ridge probe",
+          "h-mlp probe"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 within-corpus vs battery-held-out (L14, battery n=2400)  [LABEL-FLAT: battery scores ~0 variance \u2192 uninformative]",
+        "ylabel": "Pearson r",
+        "annotations": [
+          "N/A",
+          "N/A",
+          "N/A"
+        ],
+        "xticklabels": [
+          "raw",
+          "5k-linear",
+          "1M ridge",
+          "1M mlp",
+          "1M krr",
+          "v_C probe",
+          "h-ridge probe",
+          "h-mlp probe"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "within-corpus (existing)",
+      "battery held-out (novel-Q)"
+    ]
+  }
+}
