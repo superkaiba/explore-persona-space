@@ -4896,8 +4896,8 @@
     "1628": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1628",
-      "status": "planning",
+      "path": "tasks/approved/1628",
+      "status": "approved",
       "title": "daily-fix: GCP DWS-PENDING delete needs longer timeout"
     },
     "1629": {
