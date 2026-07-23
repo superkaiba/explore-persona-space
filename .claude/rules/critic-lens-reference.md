@@ -548,6 +548,34 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     retaining per-cell outputs/tensors is IN scope (it accumulates
     identically). Plan-time storage-budget check only, never a mid-run
     gate.
+    PHASE-ORDERING EXTENSION (#1612, from incident #1586 r5): when a
+    plan's checkpoint-disk high-water depends on a reap/deletion
+    interleaved with training (between-rung deletion, between-cell reap,
+    a stream-reap inside a consumer unit), ALSO verify §9 STATES the
+    phase ordering the high-water assumes (per-cell train→select→reap /
+    W-wide bounded waves) AND that every phase accumulating checkpoints
+    without an intervening reap is itself reap-bounded — a reap living
+    only inside a downstream consumer phase (the ladder/selection unit)
+    cannot bound an upstream train-all-cells accumulation (per
+    `.claude/rules/plan-compute-sizing.md` § Phase-ordering checkpoint
+    high-water). REVISE when the stated high-water assumes an
+    interleaving the plan's own phase sequence does not implement, or
+    when the ordering is unstated and keep-all accumulation across the
+    plan's phases exceeds the sized disk (#1586 r5: §9 modeled 2
+    concurrent ladders ≈ 456 GB; the dispatcher's train-all-11-cells →
+    ladder phasing projected ~2.5 TB on a 750 GB volume — ENOSPC
+    mid-safetensors; the phase-START headroom canary passed and cannot
+    see per-wave demand). Escapes: the ordering-consistent high-water
+    stated; keep-all sized to the FULL cross-phase accumulation (the
+    ladder keep-all exception's duties); or "N/A — no checkpoint
+    accumulation across phases" (NO per-rung AND no per-cell
+    checkpoints persist across the plan's phases — c33's narrower
+    "no per-rung checkpoint persistence" escape does NOT by itself
+    escape this extension when per-CELL checkpoints accumulate, the
+    #1481 fan-out shape). `kind: infra|batch|survey` exempt — a
+    `kind: analysis` plan whose phases persist checkpoints is IN scope
+    (it accumulates identically). Plan-time storage-budget check only,
+    never a mid-run gate.
     MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
     transient-merge trigger above — for EVERY §9 disk row naming an out-root a
     write-heavy phase writes (checkpoints, stores / analysis tensors, staged
