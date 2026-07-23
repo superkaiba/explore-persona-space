@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1619,
+  "highest_id": 1620,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4836,6 +4836,13 @@
       "path": "tasks/completed/162",
       "status": "completed",
       "title": "If you train on \"speak in spanish\" with english completions"
+    },
+    "1620": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1620",
+      "status": "proposed",
+      "title": "daily-fix: root-commit guard blocks on foreign staged files"
     },
     "163": {
       "has_clean_result": false,
