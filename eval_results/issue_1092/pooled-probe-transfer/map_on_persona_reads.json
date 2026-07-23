@@ -1,0 +1,681 @@
+{
+  "metadata": {
+    "script": "issue1092_map_on_persona.py",
+    "followup_label": "map-on-persona-reads",
+    "git_commit": "a39fd0df1e1fe17e3c5b49b9b16e709241640a68",
+    "timestamp_utc": "2026-07-23T18:32:33Z",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "traits": [
+      "hallucination",
+      "sycophancy",
+      "evil"
+    ],
+    "layers": [
+      14,
+      19
+    ],
+    "map_arms": [
+      "h_n5k_linear",
+      "n1m_ridge",
+      "n1m_mlp_w8192",
+      "n1m_mlp_w32768",
+      "n1m_krr_nystrom"
+    ],
+    "n_boot": 2000,
+    "seed": 0,
+    "readouts": [
+      "dot",
+      "cos"
+    ],
+    "provenance": {
+      "persona_corpus": "reused #1092 cell_inst_own context-end summaries + p5 judge scores staged read-only under data/issue_1092/transfer_probe (loaded via issue1092_transfer_probe.load_1092_unit; group_key=prefix_id)",
+      "n1m_weights": "HF superkaiba1/explore-persona-space-data:issue779_monitoring/n1m_readout/weights/L{14,19}/{fitter}.pt (#779 issue779_ffc_n1m_fits --persist-weights, mixed_1m fit point)",
+      "n1m_weights_shas": {
+        "L14/ridge": "present",
+        "L14/mlp_w8192": "present",
+        "L14/mlp_w32768": "present",
+        "L14/krr_nystrom": "present",
+        "L19/ridge": "present",
+        "L19/mlp_w8192": "present",
+        "L19/mlp_w32768": "present",
+        "L19/krr_nystrom": "present"
+      },
+      "map_5k_linear": "recomputed in-process: A.GramRidge on the parent pass_b bundle data/issue_779/pass_b/train_context_vectors.pt cx_last->v_x per layer (same machinery as issue779_n1m_readout h_n5k_linear)",
+      "r_b": "data/issue_779/r_b/{trait}.pt ['r_b'][layer] (#779 persona/behavior direction; same source as pooled round r_b_baseline)",
+      "same_rows_invariant": "per (trait, layer): pv_raw + every map arm read over the identical scored-row set (the trait's judged cell_inst_own rows); no dedup applied (matches the pooled round within-corpus ceiling, not the cross-corpus eval)"
+    },
+    "notes": [
+      "map input = context-end activation (3584-d, layer L) \u2014 same space+position the #779 maps were fit on; the persona corpus is a different context distribution (the intended cross-application / transfer read).",
+      "dot = <h(v_C), r_B>; cos = cosine(h(v_C), r_B); pv_raw = <v_C, r_B>."
+    ],
+    "wall_seconds": 261.9
+  },
+  "reads": {
+    "hallucination": {
+      "L14": {
+        "monitors": {
+          "pv_raw": {
+            "r": -0.10278046577628802,
+            "ci_r": [
+              -0.12513588774055134,
+              -0.0811052962649408
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": 0.2325097764461291,
+            "ci_r": [
+              0.21033252529907046,
+              0.2528960910652837
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": 0.23877786309392687,
+            "ci_r": [
+              0.21671951343011633,
+              0.25703402776319234
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": 0.3051653801255238,
+            "ci_r": [
+              0.2849669316092159,
+              0.3234907385894036
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": 0.3046744983380499,
+            "ci_r": [
+              0.2849979945006443,
+              0.32385140675258434
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": 0.3346238707384645,
+            "ci_r": [
+              0.31658606788529214,
+              0.35174991607317946
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": 0.332890163563086,
+            "ci_r": [
+              0.31319812096576444,
+              0.3510028082389847
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": 0.3541728432954156,
+            "ci_r": [
+              0.3376837621430661,
+              0.3702853085296791
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": 0.35662533652088285,
+            "ci_r": [
+              0.33839761420146147,
+              0.3730312470701585
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": 0.29151278984027046,
+            "ci_r": [
+              0.27253166954610375,
+              0.3101145279225208
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": 0.2984176481241931,
+            "ci_r": [
+              0.2794042478793252,
+              0.31586342783570825
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      },
+      "L19": {
+        "monitors": {
+          "pv_raw": {
+            "r": 0.048844034289353445,
+            "ci_r": [
+              0.019790887973895402,
+              0.07735268651063903
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": 0.28508303948096836,
+            "ci_r": [
+              0.26014960030153744,
+              0.3085424928179642
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": 0.2804571333077735,
+            "ci_r": [
+              0.2569855521463098,
+              0.3024926701173905
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": 0.32443809536911755,
+            "ci_r": [
+              0.3044976805748441,
+              0.3442930653360252
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": 0.3236661763188837,
+            "ci_r": [
+              0.30285107878608875,
+              0.3434768672600441
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": 0.3575481142079223,
+            "ci_r": [
+              0.3391737869237004,
+              0.37541386289737727
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": 0.35338269437176073,
+            "ci_r": [
+              0.33368444011778586,
+              0.3713745040377536
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": 0.35203719604928085,
+            "ci_r": [
+              0.33271880587103486,
+              0.3693570680708436
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": 0.3485461270846617,
+            "ci_r": [
+              0.3289145030244667,
+              0.36684717541358075
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": 0.3452089164579304,
+            "ci_r": [
+              0.32553759928872805,
+              0.3635100570946107
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": 0.3429279740146944,
+            "ci_r": [
+              0.32325935454407495,
+              0.36191410389252193
+            ],
+            "n": 7646,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "L14": {
+        "monitors": {
+          "pv_raw": {
+            "r": 0.04216345437932784,
+            "ci_r": [
+              0.01995449563245208,
+              0.0628855837231933
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": -0.0789018538632885,
+            "ci_r": [
+              -0.09407429680361123,
+              -0.06335894718749123
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": -0.07750920987708801,
+            "ci_r": [
+              -0.09143572496668195,
+              -0.062242363708528044
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": -0.042941539641143216,
+            "ci_r": [
+              -0.05906710989137994,
+              -0.026547705222525284
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": -0.038204897829721716,
+            "ci_r": [
+              -0.053378560861834436,
+              -0.02183116718877142
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": -0.040621061901849914,
+            "ci_r": [
+              -0.055238305171538125,
+              -0.02657426522051903
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": -0.03674057125375975,
+            "ci_r": [
+              -0.050734426126758554,
+              -0.02202998543838172
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": -0.017935755557353505,
+            "ci_r": [
+              -0.03282468187391166,
+              -0.002861676948539877
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": -0.017550415961479306,
+            "ci_r": [
+              -0.03216055086593773,
+              -0.0027293521464030915
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": -0.007820717431802727,
+            "ci_r": [
+              -0.021270057824127574,
+              0.007081361943199884
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": -0.011416744775032451,
+            "ci_r": [
+              -0.025868896816499367,
+              0.002876503340220823
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      },
+      "L19": {
+        "monitors": {
+          "pv_raw": {
+            "r": 0.07110670327035302,
+            "ci_r": [
+              0.056733911117236024,
+              0.08509920354062996
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": -0.05181034145376188,
+            "ci_r": [
+              -0.06380121769547559,
+              -0.03887011456809795
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": -0.06149403885747953,
+            "ci_r": [
+              -0.0738715681198207,
+              -0.049272508509693544
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": -0.0464240011372979,
+            "ci_r": [
+              -0.05989886480981133,
+              -0.03272836551340465
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": -0.058526244923687,
+            "ci_r": [
+              -0.07168432880540816,
+              -0.045398481931924244
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": -0.0583225104700705,
+            "ci_r": [
+              -0.07152692828171424,
+              -0.04399670973914182
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": -0.06735042254451556,
+            "ci_r": [
+              -0.08060587039671578,
+              -0.053846119400060816
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": -0.053154265563140846,
+            "ci_r": [
+              -0.06658904852398256,
+              -0.039660029352910346
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": -0.06394482931332494,
+            "ci_r": [
+              -0.07703792577041757,
+              -0.049319888609336976
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": -0.03902289414856966,
+            "ci_r": [
+              -0.05195890483984373,
+              -0.024739842765658798
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": -0.05089940099486525,
+            "ci_r": [
+              -0.06442121491712476,
+              -0.03730182593786087
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      }
+    },
+    "evil": {
+      "L14": {
+        "monitors": {
+          "pv_raw": {
+            "r": 0.015703675786632974,
+            "ci_r": [
+              -0.011863884555746938,
+              0.05590016318683839
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": -0.005432728936881968,
+            "ci_r": [
+              -0.029817458987249763,
+              0.03054629647546183
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": -0.006667749135627962,
+            "ci_r": [
+              -0.03439613000536077,
+              0.03219090332340173
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": 0.008452993983291527,
+            "ci_r": [
+              -0.01938645596125541,
+              0.053513246218560136
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": 0.005211179249782337,
+            "ci_r": [
+              -0.027454717302264488,
+              0.0539433426076771
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": 0.0037299398137473553,
+            "ci_r": [
+              -0.01679069872672945,
+              0.03584411920131335
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": 0.0008193647143225133,
+            "ci_r": [
+              -0.021280062123826028,
+              0.03563516488421062
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": 0.006985913870422288,
+            "ci_r": [
+              -0.017976681001319186,
+              0.04496790184513478
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": 0.003602846598405417,
+            "ci_r": [
+              -0.023725512465472685,
+              0.04749729757342637
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": 0.009336919976981717,
+            "ci_r": [
+              -0.019427571099486285,
+              0.05199232379280343
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": 0.0050597428320111,
+            "ci_r": [
+              -0.028079014339901023,
+              0.053935329667654824
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      },
+      "L19": {
+        "monitors": {
+          "pv_raw": {
+            "r": 0.019424297358629824,
+            "ci_r": [
+              -0.005221935721652105,
+              0.058434267321029756
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_dot": {
+            "r": 0.00940842239294544,
+            "ci_r": [
+              -0.011729879918509893,
+              0.0413407350668706
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "h_n5k_linear_cos": {
+            "r": 0.005176154148883914,
+            "ci_r": [
+              -0.02154073677381899,
+              0.043419875288582245
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_dot": {
+            "r": 0.00826375333960636,
+            "ci_r": [
+              -0.018043674496182712,
+              0.047670172615911506
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_ridge_cos": {
+            "r": 0.007403233835496784,
+            "ci_r": [
+              -0.02156902314904902,
+              0.05214294064150185
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_dot": {
+            "r": 0.009030107377179054,
+            "ci_r": [
+              -0.017604552605269656,
+              0.04956384000159924
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w8192_cos": {
+            "r": 0.0071853154725089905,
+            "ci_r": [
+              -0.023093380201995105,
+              0.05259536061881264
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_dot": {
+            "r": 0.009141233855149053,
+            "ci_r": [
+              -0.01846517124543971,
+              0.04996299109559717
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_mlp_w32768_cos": {
+            "r": 0.0070755360572623185,
+            "ci_r": [
+              -0.0238219924536807,
+              0.05304039731115999
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_dot": {
+            "r": 0.011313967526825112,
+            "ci_r": [
+              -0.012816865682091902,
+              0.047945754083641816
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          },
+          "n1m_krr_nystrom_cos": {
+            "r": 0.008517369570150313,
+            "ci_r": [
+              -0.020817970181697818,
+              0.053502925112364645
+            ],
+            "n": 7652,
+            "n_valid_boot_replicates": 2000
+          }
+        }
+      }
+    }
+  }
+}

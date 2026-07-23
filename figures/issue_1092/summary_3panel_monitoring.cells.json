@@ -1,0 +1,166 @@
+{
+  "figure": "summary_3panel_monitoring",
+  "panels": [
+    "PV rig (#779)",
+    "Persona corpus (#1092)",
+    "LMSYS (real-user)"
+  ],
+  "methods": [
+    "raw projection",
+    "map + projection",
+    "direct in-corpus probe"
+  ],
+  "traits": [
+    "hallucination",
+    "sycophancy",
+    "evil"
+  ],
+  "persona_layer": "L14",
+  "best_map": "n1m_mlp_w32768",
+  "lmsys_ceiling_r": 0.009062541043387327,
+  "sources": {
+    "pv_rig": "eval_results/issue_779/n1m-nonlinear-map-behavior-readout/n1m_readout.json",
+    "pv_rig_l26_overlay": "eval_results/issue_779/l26-kernel-gate-recovery/l26_recovery_readout.json",
+    "persona_map_reads": "eval_results/issue_1092/pooled-probe-transfer/map_on_persona_reads.json",
+    "pooled_ceilings": "eval_results/issue_1092/pooled-probe-transfer/pooled_probe_transfer.json"
+  },
+  "pending_note": "pooled_probe_transfer.json is PARTIAL (run PID 583418 died at layer14/sycophancy); direct-in-corpus-probe bars exist only for hallucination-L14; all other direct-probe cells drawn as N/A (pending) \u2014 regenerate when the pooled run completes.",
+  "cell_values": {
+    "hallucination": {
+      "pv_rig": {
+        "layer": 19,
+        "raw projection": {
+          "r": 0.41424242948618545,
+          "lo": 0.30065727963264566,
+          "hi": 0.5218493241637455
+        },
+        "map + projection": {
+          "r": 0.45196457427649167,
+          "lo": 0.37126598878324424,
+          "hi": 0.5304370118592848
+        },
+        "n": 260,
+        "direct in-corpus probe": {
+          "r": 0.6980471337167093,
+          "lo": 0.5721437039088489,
+          "hi": 0.8471830078078196
+        }
+      },
+      "persona_corpus": {
+        "layer": 14,
+        "raw projection": {
+          "r": -0.10278046577628802,
+          "lo": -0.12513588774055134,
+          "hi": -0.0811052962649408
+        },
+        "map + projection": {
+          "r": 0.3541728432954156,
+          "lo": 0.3376837621430661,
+          "hi": 0.3702853085296791
+        },
+        "n": 7646,
+        "direct in-corpus probe": {
+          "r": 0.8641252395477983,
+          "lo": 0.8507173221936027,
+          "hi": 0.876806045677387
+        }
+      },
+      "lmsys": {
+        "layer": 14,
+        "direct in-corpus probe": {
+          "r": 0.009062541043387327,
+          "lo": -0.019715565706183567,
+          "hi": 0.03806570883460317
+        },
+        "n": 4593
+      }
+    },
+    "sycophancy": {
+      "pv_rig": {
+        "layer": 26,
+        "raw projection": {
+          "r": 0.6023495002275518,
+          "lo": 0.5486117711952504,
+          "hi": 0.6550277966262059
+        },
+        "map + projection": {
+          "r": 0.6403132348742648,
+          "lo": 0.6094689089197862,
+          "hi": 0.6690588274720365
+        },
+        "n": 260,
+        "direct in-corpus probe": {
+          "r": 0.6316728451445534,
+          "lo": 0.47814497241725973,
+          "hi": 0.8007746339360133
+        }
+      },
+      "persona_corpus": {
+        "layer": 14,
+        "raw projection": {
+          "r": 0.04216345437932784,
+          "lo": 0.01995449563245208,
+          "hi": 0.0628855837231933
+        },
+        "map + projection": {
+          "r": -0.017935755557353505,
+          "lo": -0.03282468187391166,
+          "hi": -0.002861676948539877
+        },
+        "n": 7652,
+        "direct in-corpus probe": {
+          "r": 0.7601310091531392,
+          "lo": 0.7376137239066924,
+          "hi": 0.7791509368944789
+        }
+      },
+      "lmsys": {
+        "layer": 14,
+        "direct in-corpus probe": {
+          "r": -0.012250608802857634,
+          "lo": -0.03860430810811961,
+          "hi": 0.014348452072572994
+        },
+        "n": 4618
+      }
+    },
+    "evil": {
+      "pv_rig": {
+        "layer": 14,
+        "raw projection": {
+          "r": 0.17225165704905313,
+          "lo": -0.06656688168628616,
+          "hi": 0.3745146661294254
+        },
+        "map + projection": {
+          "r": -0.003366478606171071,
+          "lo": -0.1953776262736525,
+          "hi": 0.17515294909336046
+        },
+        "n": 260
+      },
+      "persona_corpus": {
+        "layer": 14,
+        "raw projection": {
+          "r": 0.015703675786632974,
+          "lo": -0.011863884555746938,
+          "hi": 0.05590016318683839
+        },
+        "map + projection": {
+          "r": 0.006985913870422288,
+          "lo": -0.017976681001319186,
+          "hi": 0.04496790184513478
+        },
+        "n": 7652
+      },
+      "lmsys": {
+        "layer": 14
+      }
+    }
+  },
+  "outputs": {
+    "png": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/summary_3panel_monitoring.png",
+    "pdf": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/summary_3panel_monitoring.pdf",
+    "meta": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/summary_3panel_monitoring.meta.json"
+  }
+}
