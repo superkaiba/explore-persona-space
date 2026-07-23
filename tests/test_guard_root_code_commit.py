@@ -123,6 +123,11 @@ def _env(
     return env
 
 
+# Sentinel for _run(cwd=...): omit the top-level `cwd` field from the hook
+# stdin JSON entirely (the missing-cwd fallback cell, c13).
+_OMIT_CWD = object()
+
+
 def _run(
     cmd: str | None,
     repo: Path,
@@ -130,9 +135,19 @@ def _run(
     *,
     raw: str | None = None,
     script: Path | None = None,
+    cwd: object = None,
     **env_kw,
 ) -> subprocess.CompletedProcess[str]:
-    payload = raw if raw is not None else json.dumps({"tool_input": {"command": cmd}})
+    """Invoke the hook. The synthesized stdin JSON carries a top-level `cwd`
+    DEFAULTING to the fixture repo root (so pathspec scoping can engage);
+    pass cwd=<path> to override or cwd=_OMIT_CWD to drop the field."""
+    if raw is not None:
+        payload = raw
+    else:
+        obj: dict[str, object] = {"tool_input": {"command": cmd}}
+        if cwd is not _OMIT_CWD:
+            obj["cwd"] = str(repo if cwd is None else cwd)
+        payload = json.dumps(obj)
     return subprocess.run(
         [str(script or SCRIPT)],
         input=payload,
@@ -593,3 +608,156 @@ class TestSettingsWiring:
     def test_configured_command_allows_artifact_commit(self, art_repo: Path, cert: Path) -> None:
         r = _run("git commit -m x", art_repo, cert, script=self._configured_command())
         _assert_allowed(r)
+
+
+# ---------------------------------------------------------------------------
+# c-group (issue #1620): pathspec-scoped staged-index certification check.
+# A pathspec-limited root-cwd commit is never blocked by a FOREIGN uncertified
+# staged file outside its pathspec; every ambiguity falls back to the
+# whole-index check (block direction).
+
+
+@pytest.fixture
+def foreign_repo(tmp_path: Path) -> Path:
+    """Repo with a FOREIGN uncertified gated file staged + artifacts staged."""
+    repo = _init_repo(tmp_path, "foreign")
+    _stage(repo, "scripts/foreign.py", "print(0)\n")
+    _stage(repo, "tasks/t.md", "note\n")
+    _stage(repo, "eval_results/a.json", "{}\n")
+    _stage(repo, "docs/b.md", "doc\n")
+    return repo
+
+
+def test_c1_pathspec_commit_foreign_uncertified_staged_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _assert_allowed(_run("git commit -m x -- tasks/t.md", foreign_repo, cert))
+
+
+def test_c1b_no_dashdash_form_allowed(foreign_repo: Path, cert: Path) -> None:
+    _assert_allowed(_run("git commit -m x tasks/t.md", foreign_repo, cert))
+
+
+def test_c1c_quoted_pathspec_after_dashdash_allowed(foreign_repo: Path, cert: Path) -> None:
+    _assert_allowed(_run('git commit -m x -- "tasks/t.md"', foreign_repo, cert))
+
+
+def test_c16_glob_pathspec_excluding_foreign_allowed(foreign_repo: Path, cert: Path) -> None:
+    # Incident event (b) shape: unquoted glob + dir pathspec; git evaluates both.
+    _assert_allowed(_run("git commit -m x -- eval_results/*.json docs/", foreign_repo, cert))
+
+
+def test_c2_pathspec_commit_own_gated_payload_uncertified_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    r = _run("git commit -m x -- scripts/own.py", foreign_repo, cert)
+    _assert_blocked(r)
+    # Negative control for c9: an own-payload (non-foreign) block carries no
+    # FOREIGN-STAGED? paragraph.
+    assert "FOREIGN-STAGED?" not in r.stderr, r.stderr
+
+
+def test_c6_pathspec_certified_own_payload_allowed_despite_foreign(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    # Cert bound to the WORKTREE sha: a pathspec commit lands worktree content.
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    _assert_allowed(_run("git commit -m x -- scripts/own.py", foreign_repo, cert))
+
+
+def test_c3_dir_pathspec_covering_uncertified_staged_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("git commit -m x -- scripts/", foreign_repo, cert))
+
+
+def test_c4_bare_commit_foreign_uncertified_staged_still_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _assert_blocked(_run("git commit -m x", foreign_repo, cert))
+
+
+def test_c11_subdir_cwd_relative_pathspec_blocks(tmp_path: Path, cert: Path) -> None:
+    # MF-1 must-BLOCK cell: subdir cwd + bare-name pathspec naming a gated
+    # staged file cwd-relatively; naive root-anchored scoping would false-ALLOW.
+    repo = _init_repo(tmp_path, "subdir")
+    _stage(repo, "scripts/inner.py", "print(1)\n")
+    _assert_blocked(_run("git commit -m x inner.py", repo, cert, cwd=repo / "scripts"))
+
+
+def test_c12_scoping_engages_only_at_root_cwd(foreign_repo: Path, cert: Path) -> None:
+    cmd = "git commit -m x -- tasks/t.md"
+    _assert_allowed(_run(cmd, foreign_repo, cert, cwd=foreign_repo))
+    _assert_blocked(_run(cmd, foreign_repo, cert, cwd=foreign_repo / "tasks"))
+
+
+def test_c13_missing_cwd_falls_back_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("git commit -m x -- tasks/t.md", foreign_repo, cert, cwd=_OMIT_CWD))
+
+
+def test_c14_in_command_cd_nonroot_disables_scoping(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("cd tasks && git commit -m x -- t.md", foreign_repo, cert))
+
+
+def test_c14b_env_chdir_disables_scoping(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("env --chdir=tasks git commit -m x -- t.md", foreign_repo, cert))
+
+
+@pytest.mark.parametrize(
+    "tok",
+    ["$F", "$(ls)", "`ls`", "~/tasks/t.md"],
+    ids=["variable", "cmdsub", "backtick", "tilde"],
+)
+def test_c15_variable_pathspec_token_blocks(tok: str, foreign_repo: Path, cert: Path) -> None:
+    # MF-2: an unexpanded shell token would scope-away real landing content.
+    _assert_blocked(_run(f"git commit -m x -- {tok}", foreign_repo, cert))
+
+
+def test_c7_opaque_spacey_quoted_pathspec_falls_back_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run('git commit -m x -- "tasks/my file.md"', foreign_repo, cert))
+
+
+def test_c7b_include_flag_disables_scoping_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("git commit -i -m x -- tasks/t.md", foreign_repo, cert))
+
+
+def test_c7c_pathspec_from_file_disables_scoping_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("git commit --pathspec-from-file=list.txt -m x", foreign_repo, cert))
+
+
+def test_c7d_unknown_long_flag_disables_scoping_blocks(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run("git commit --future-flag arg -m x -- tasks/t.md", foreign_repo, cert))
+
+
+def test_c9_block_message_orders_pathspec_recovery_before_escape_hatch(
+    foreign_repo: Path, cert: Path
+) -> None:
+    r = _run("git commit -m x", foreign_repo, cert)
+    _assert_blocked(r)
+    # Anchored on the recovery paragraph's unique opener, before the env-var
+    # escape hatch is ever named.
+    assert "FOREIGN-STAGED?" in r.stderr, r.stderr
+    assert r.stderr.index("FOREIGN-STAGED?") < r.stderr.index("EPM_ALLOW_ROOT_CODE_COMMIT"), (
+        r.stderr
+    )
+
+
+def test_c8_cert_diag_line_no_cert(code_repo: Path, cert: Path) -> None:
+    r = _run("git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert f"cert-diag: {GATED}" in r.stderr, r.stderr
+    assert "cert=none-for-path" in r.stderr, r.stderr
+
+
+def test_c8b_cert_diag_sha_mismatch(code_repo: Path, cert: Path) -> None:
+    _cert_line(cert, GATED, "0" * 40)
+    r = _run("git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert "cert=sha-mismatch:" in r.stderr, r.stderr
+
+
+def test_c8c_cert_diag_stale(code_repo: Path, cert: Path) -> None:
+    _cert_line(cert, GATED, _staged_sha(code_repo, GATED), epoch=1)
+    r = _run("git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert "cert=stale:" in r.stderr, r.stderr

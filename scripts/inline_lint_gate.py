@@ -421,9 +421,13 @@ def write_cert(
     """Append `v1 <epoch> <sha> <path>` lines for passing paths whose worktree
     content still matches the read_payload snapshot; a mismatch means the file
     was edited DURING the gate run -> INCONCLUSIVE for that path, no cert
-    (TOCTOU guard). Append runs under flock; the 500-line trim writes
-    tmp+rename so a concurrent hook read never sees a truncated file (a lost
-    line only re-blocks — safe direction)."""
+    (TOCTOU guard). Append runs under flock with an inode re-check (#1620): a
+    concurrent trim's os.replace can swap the path to a NEW inode while this
+    writer waits on the OLD inode's lock, so after acquiring the lock the fd
+    is re-opened until it still names cert_path (bounded; exhaustion degrades
+    to the pre-fix lost-line behavior, which only re-blocks — safe
+    direction). The 500-line trim writes tmp+rename so a concurrent hook
+    read never sees a truncated file."""
     certified: list[str] = []
     toctou: list[str] = []
     epoch = int(time.time())
@@ -437,8 +441,27 @@ def write_cert(
         certified.append(p)
     if lines:
         cert_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(cert_path, "a+", encoding="utf-8") as fh:
+        fh = open(cert_path, "a+", encoding="utf-8")
+        try:
             fcntl.flock(fh, fcntl.LOCK_EX)
+            # Inode re-check under flock (#1620 fix (d)): the fd above is
+            # opened BEFORE the lock, so a concurrent trim's os.replace can
+            # swap cert_path to a NEW inode while this writer blocks on the
+            # OLD inode's flock — appending would land on the orphaned inode
+            # and the lines would never appear at cert_path. Re-open +
+            # re-lock until the locked fd still names the path (bounded at 5
+            # attempts; exhaustion proceeds with the last fd — the pre-fix
+            # lost-line behavior, which only re-blocks: safe direction).
+            for _ in range(5):
+                try:
+                    path_ino = os.stat(cert_path).st_ino
+                except FileNotFoundError:
+                    path_ino = -1  # path vanished mid-race: treat as mismatch
+                if os.fstat(fh.fileno()).st_ino == path_ino:
+                    break
+                fh.close()
+                fh = open(cert_path, "a+", encoding="utf-8")
+                fcntl.flock(fh, fcntl.LOCK_EX)
             fh.write("".join(lines))
             fh.flush()
             os.fsync(fh.fileno())
@@ -454,6 +477,8 @@ def write_cert(
                     if os.path.exists(tmp):
                         os.unlink(tmp)
                     raise
+        finally:
+            fh.close()
     return certified, toctou
 
 
