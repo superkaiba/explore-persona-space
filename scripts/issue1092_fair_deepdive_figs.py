@@ -331,10 +331,13 @@ def fig_induced_vs_refit() -> None:
 
 
 def fig_same_operator() -> None:
-    """Same-operator evidence for induced vs refit: prediction agreement bars +
-    operator subspace principal angles vs the Haar-random null (dashed ticks).
+    """Same-operator evidence for induced vs refit: (A) held-out prediction
+    agreement bars, both directions x both models; (B) per-(prefix, dimension)
+    scatter of the two constructions' held-out predictions (instruct, pca48,
+    centered per dimension) with the y=x reference and OLS slope.
 
-    Ambient, L14, both models; from the operator-coincidence artifact.
+    Panel B reads the persisted predictions npz written by
+    issue1092_prediction_scatter.py.
     """
     oc = json.loads(
         (
@@ -346,7 +349,7 @@ def fig_same_operator() -> None:
     set_paper_style("blog")
     colors = paper_palette(3)
     model_colors = [colors[0], colors[2]]
-    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5.2))
     w = 0.36
 
     ax = axes[0]
@@ -362,37 +365,32 @@ def fig_same_operator() -> None:
     ax.set_xticklabels([label for _, label in dirs])
     ax.set_ylim(0, 1.0)
     ax.set_ylabel("held-out prediction agreement $R^2$")
-    ax.set_title("A. The two maps make the same predictions")
+    ax.set_title("A. Agreement between the two constructions")
     ax.legend(loc="lower right", frameon=False, fontsize=9)
 
     ax = axes[1]
-    subs = [("output_k48", "Output subspace (k=48)"), ("input_k48", "Input subspace (k=48)")]
-    x = np.arange(len(subs))
-    for i, ((cell, label), color) in enumerate(zip(cells, model_colors, strict=True)):
-        b = oc["cells"][cell]["bases"]["ambient"]["subspaces"]
-        vals = [b[k]["mean_angle_deg"] for k, _ in subs]
-        ax.bar(x + (i - 0.5) * w, vals, w, label=label, color=color)
-        for xc, (k, _) in zip(x, subs, strict=True):
-            null_deg = float(
-                np.degrees(0.5 * (b[k]["null"]["mean_angle_p05"] + b[k]["null"]["mean_angle_p95"]))
-            )
-            ax.plot(
-                [xc + (i - 1) * w, xc + i * w], [null_deg, null_deg], ls="--", color="0.25", lw=1.3
-            )
-    ax.set_xticks(x)
-    ax.set_xticklabels([label for _, label in subs])
-    ax.set_ylim(0, 95)
-    ax.set_ylabel("mean principal angle (degrees, lower = more aligned)")
-    ax.set_title("B. Their operators share subspaces beyond chance")
-    handles, labels = ax.get_legend_handles_labels()
-    from matplotlib.lines import Line2D
-
-    handles.append(Line2D([0], [0], ls="--", color="0.25", lw=1.3))
-    labels.append("random-subspace null")
-    ax.legend(handles, labels, loc="lower right", frameon=False, fontsize=9)
+    z = np.load(
+        PROJECT_ROOT
+        / "eval_results/issue_1092/inline_operator_coincidence/heldout_predictions_cell_inst_own_pca48.npz"
+    )
+    ind_c = z["P_induced"] - z["P_induced"].mean(0)
+    ref_c = z["P_refit"] - z["P_refit"].mean(0)
+    xs, ys = ind_c.reshape(-1), ref_c.reshape(-1)
+    lim = float(np.percentile(np.abs(np.concatenate([xs, ys])), 99.9))
+    slope = float((ind_c * ref_c).sum() / (ind_c**2).sum())
+    ax.scatter(xs, ys, s=3, alpha=0.12, edgecolor="none", color=model_colors[0])
+    ax.plot([-lim, lim], [-lim, lim], ls="--", color="0.35", lw=1.2, label="y = x (identical)")
+    ax.plot([-lim, lim], [-slope * lim, slope * lim], color="0.1", lw=1.4, label=f"OLS slope = {slope:.2f}")
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_aspect("equal")
+    ax.set_xlabel("Induced prediction (centered)")
+    ax.set_ylabel("Refit prediction (centered)")
+    ax.set_title("B. Held-out predictions, per (prefix, dimension)")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
 
     fig.suptitle(
-        "Induced vs refit are one operator — prediction agreement and operator geometry (layer 14, ambient)"
+        "Induced vs refit are one operator — agreement and prediction scatter (layer 14; A ambient, B pca48 instruct)"
     )
     fig.tight_layout()
     savefig_paper(fig, "same_operator_evidence", dir=FIGDIR)
