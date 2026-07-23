@@ -10,6 +10,7 @@ tests/test_autonomous_session_watch.py
 tests/test_check_mcp_json_no_secrets.py
 tests/test_check_no_secret_shaped_strings.py
 tests/test_clean_result_critic_planned_vs_actual.py
+tests/test_daily_skill_commit_pathspec_pin.py
 tests/test_diff_base_origin_main_pin.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
