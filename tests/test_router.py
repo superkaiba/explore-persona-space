@@ -508,10 +508,13 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     never skipping a cheaper rung. We inject a ``_PassiveRunpod`` that records
     launches; the assertion is that RunPod launches EXACTLY ONCE and its
     attempt is LAST in the trail, behind every GCP rung outcome and the
-    nibi park-fail. #680: a short lora-7b now walks 5 GCP rungs (spot A100-80,
-    spot A100-40, flex-start A100-80, on-demand A100-80, on-demand A100-40).
+    fellows + nibi park-fails. #680: a short lora-7b now walks 5 GCP rungs
+    (spot A100-80, spot A100-40, flex-start A100-80, on-demand A100-80,
+    on-demand A100-40). #1609: the fellows lane sits FIRST in the default
+    order and is exhausted alongside — RunPod stays last.
     """
     rp = _PassiveRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=10**9)  # never starts
     nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
     # Every GCP rung is doomed: A100-80 + A100-40, STANDARD + SPOT, all
     # capacity-miss on the create (a runtime miss, not a headroom skip — so
@@ -524,7 +527,7 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     result = route(
         _short_lora_spec(),
         runpod_backend=rp,
-        free_backends={"nibi": nibi},
+        free_backends={"nibi": nibi, "fellows": fellows},
         gcp_backend=gcp,
         lease_store=lease_store,
         is_started=lambda _b, _h: False,
@@ -542,15 +545,19 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     assert result.chosen_kind == "runpod"
     assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
     assert len(rp.launches) == 1
-    # Every GCP rung was attempted (5 ladder rungs, all provisioning_failure),
-    # the nibi lane failed, and RunPod is the FINAL attempt.
+    # The fellows lane failed FIRST, every GCP rung was attempted (5 ladder
+    # rungs, all provisioning_failure), the nibi lane failed, and RunPod is
+    # the FINAL attempt.
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
     gcp_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "gcp"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
     runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert fellows_idxs, "the fellows lane must have been attempted"
     assert len(gcp_fail_idxs) == 5  # all five ladder rungs attempted + failed
     assert nibi_idxs, "the free SLURM lane must have been attempted"
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
+    assert max(fellows_idxs) < min(gcp_fail_idxs)  # fellows BEFORE the GCP ladder
     assert max(gcp_fail_idxs) < runpod_idxs[-1]
     assert max(nibi_idxs) < runpod_idxs[-1]
     # The residual-gap marker names the exhausted lanes.
@@ -3181,8 +3188,11 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 
 def test_default_auto_lane_order_is_gcp_first():
-    """The standing default puts GCP before every free SLURM lane."""
-    assert DEFAULT_AUTO_LANE_ORDER == ("gcp", "nibi", "fir", "mila")
+    """The standing default (#1609): fellows first, then GCP, then the
+    legacy free SLURM lanes. (Test name kept — it is the durability pin
+    CLAUDE.md § Compute backends cites; the invariant it pins is the
+    DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
+    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "gcp", "nibi", "fir", "mila")
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
 
@@ -3220,6 +3230,131 @@ def test_auto_lane_order_env_rejects_duplicates(monkeypatch):
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,gcp,nibi")
     with pytest.raises(RouteError, match="duplicate"):
         auto_lane_order()
+
+
+# ---------------------------------------------------------------------------
+# #1609 — fellows lane (charmander H200 SLURM cluster) in the auto chain
+# ---------------------------------------------------------------------------
+
+
+def test_auto_lane_order_env_accepts_fellows(monkeypatch):
+    """``EPM_AUTO_LANE_ORDER=fellows,gcp`` round-trips (#1609)."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,gcp")
+    assert auto_lane_order() == ("fellows", "gcp")
+
+
+def test_auto_lane_order_env_rejects_runpod_alongside_fellows(monkeypatch):
+    """``runpod`` still raises loudly with fellows in the list."""
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,runpod")
+    with pytest.raises(RouteError, match="runpod"):
+        auto_lane_order()
+
+
+def test_auto_lane_order_env_rejects_duplicate_fellows(monkeypatch):
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,gcp,fellows")
+    with pytest.raises(RouteError, match="duplicate"):
+        auto_lane_order()
+
+
+def test_router_explicit_fellows_override_routes_to_lane(lease_store):
+    """``backend: fellows`` pin routes straight to the lane (mirror of the
+    mila override test MINUS the socket gate — fellows uses a plain
+    persistent key, and the mila gate keys on the literal lane name)."""
+    rp = _ExplodingRunpod()
+    fellows = _FreeLaneBackend(kind="fellows")
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert len(fellows.launches) == 1
+
+
+def test_fellows_prepare_failure_advances_to_gcp(lease_store):
+    """A dead fellows endpoint fails ``prepare`` → ``BackendPrepareError``
+    → the auto chain advances to GCP (the designed fall-through, #1609:
+    a charmander endpoint remap must never block science)."""
+    fellows = _PrepareRecordingLane(
+        kind="fellows", prepare_raises=OSError("ssh: connect to host charmander: refused")
+    )
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert fellows.calls == ["prepare"]
+    assert fellows.launches == []
+    assert len(gcp.launches) == 1
+
+
+def test_fellows_launch_valueerror_advances_to_gcp(lease_store):
+    """A launch-time ``ValueError`` (e.g. gpus > max_gpus_per_node=8) on
+    the fellows lane is provision-class on the auto chain — the router
+    records ``launch_failed`` and advances to GCP instead of crashing
+    (plan #1609 assumption 8, verified against the free-lane
+    ``except Exception`` advance at the auto-chain launch site)."""
+
+    class _LaunchRaisingLane(_FreeLaneBackend):
+        def launch(self, spec: RunSpec) -> RunHandle:
+            raise ValueError("requested gpus=9 > cluster 'fellows' max_gpus_per_node=8")
+
+    fellows = _LaunchRaisingLane(kind="fellows")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    fellows_outcomes = [(a.kind, a.outcome) for a in result.attempts if a.kind == "fellows"]
+    assert ("fellows", "launch_failed") in fellows_outcomes
+    assert len(gcp.launches) == 1
+
+
+def test_backend_poll_lane_set_includes_fellows():
+    """One-line pin on scripts/backend_poll.py's ``_resolve_backend`` lane
+    set (#1609): a missed edit would mis-route fellows polling. The live
+    probe is the backstop; this unit pin is the cheap insurance."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    script = Path(__file__).parent.parent / "scripts" / "backend_poll.py"
+    spec_ = importlib.util.spec_from_file_location("_bp_1609", script)
+    mod = importlib.util.module_from_spec(spec_)
+    sys.modules["_bp_1609"] = mod
+    try:
+        spec_.loader.exec_module(mod)
+        backend = mod._resolve_backend("fellows")
+    finally:
+        sys.modules.pop("_bp_1609", None)
+    from explore_persona_space.backends.slurm import SlurmBackend
+
+    assert isinstance(backend, SlurmBackend)
 
 
 def test_route_rejects_runpod_in_config_lane_order(lease_store):
@@ -5741,7 +5876,7 @@ def test_route_logs_resolved_auto_order(lease_store, caplog):
         )
     order_lines = [r.message for r in caplog.records if "auto lane order" in r.message]
     assert order_lines, "route() must log the resolved auto order"
-    assert "gcp -> nibi -> fir -> mila" in order_lines[0]
+    assert "fellows -> gcp -> nibi -> fir -> mila" in order_lines[0]
     assert "default" in order_lines[0]
 
 

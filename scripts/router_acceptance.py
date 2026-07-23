@@ -173,7 +173,7 @@ CLUSTER_LAUNCHED_MARKER = "epm:cluster-launched"
 
 #: Lanes whose kind IS a SLURM cluster name (mirror of
 #: ``backends.router._PER_CLUSTER_LANES``).
-PER_CLUSTER_LANES = frozenset({"nibi", "fir", "mila"})
+PER_CLUSTER_LANES = frozenset({"nibi", "fir", "mila", "fellows"})
 
 #: Default Hydra overrides for the smoke workload. ~20 LoRA steps on
 #: 50-row data; report_to=wandb so training metrics land in WandB per
@@ -860,7 +860,7 @@ def check_clean_teardown(
       ``test_no_auto_runpod_path_under_any_failure``).
     """
     job_name = canonical_job_name or f"eps-issue-{int(issue)}"
-    if lane in {"nibi", "fir", "mila"}:
+    if lane in {"nibi", "fir", "mila", "fellows"}:
         if robot_alias_for_slurm is None:
             return CheckResult(
                 name="clean_teardown",
@@ -2318,7 +2318,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     live.add_argument("--issue", type=int, required=True, help="Acceptance task / issue number.")
     live.add_argument(
         "--backend",
-        choices=["nibi", "fir", "mila", "gcp", "auto"],
+        choices=["nibi", "fir", "mila", "fellows", "gcp", "auto"],
         required=True,
         help="Lane to test. ``auto`` exercises the free->GCP escalation chain.",
     )
@@ -2376,7 +2376,7 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Run the PASS checklist (a)-(d) on a finished lane.",
     )
     verify.add_argument("--issue", type=int, required=True)
-    verify.add_argument("--lane", required=True, choices=["nibi", "fir", "mila", "gcp"])
+    verify.add_argument("--lane", required=True, choices=["nibi", "fir", "mila", "fellows", "gcp"])
     verify.add_argument(
         "--expected-lane",
         default=None,

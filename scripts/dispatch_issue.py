@@ -502,7 +502,7 @@ def _build_production_backends() -> dict[str, Any]:
         typed terminal instead of blind-submitting a duplicate
         (round-6 B1).
         """
-        if kind in {"nibi", "fir", "mila"}:
+        if kind in {"nibi", "fir", "mila", "fellows"}:
             # _resolve_cluster_cfg raises on a typo'd / unavailable
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
@@ -516,7 +516,10 @@ def _build_production_backends() -> dict[str, Any]:
                 scratch_dir_for,
             )
 
-            name = job_name(spec, plan_hash=spec.extra.get("plan_hash"))
+            # Thread the resolved cluster so a suffixed lane (fellows,
+            # #1609 rule 8) reconnects by the SAME name the launch path
+            # stamped onto the sbatch.
+            name = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
             found_id = query_by_name(robot_alias=cluster.ssh_host, job_name=name)
             if not found_id:
                 return None
@@ -2349,10 +2352,12 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Frontmatter ``backend:`` value verbatim (empty / absent → auto). "
-            "One of: runpod, nibi, fir, gcp, mila, cluster (legacy alias), auto."
+            "One of: runpod, nibi, fir, gcp, mila, fellows, cluster (legacy alias), auto."
         ),
     )
-    launch.add_argument("--cluster", type=str, default=None, help="SLURM cluster name (nibi/fir).")
+    launch.add_argument(
+        "--cluster", type=str, default=None, help="SLURM cluster name (nibi/fir/fellows)."
+    )
     launch.add_argument(
         "--gpus",
         type=int,
@@ -2531,7 +2536,7 @@ def _build_argparser() -> argparse.ArgumentParser:
             "bootstrap. GCP lane: may be blocking or self-daemonizing — a detached "
             "(setsid-forked) workload MUST write its pid to a fresh file under "
             "/workspace/logs/*.pid; the GCP startup script waits on it before declaring "
-            "done (#601). SLURM lanes (nibi/fir/mila): the command MUST BLOCK until the "
+            "done (#601). SLURM lanes (nibi/fir/mila/fellows): the command MUST BLOCK until the "
             "workload finishes — the sbatch terminal block + job COMPLETED fire on command "
             "return and the job-exit cgroup teardown kills detached children (no /workspace "
             "pid contract exists there; #601 follow-up). An inline-interpreter one-liner "
