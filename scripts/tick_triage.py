@@ -30,6 +30,24 @@ pid dies fires STALE-REDRIVE exactly when the re-driven session can harvest
 (the intended sequencing; a 48h breadcrumb cap bounds a wedged-leader
 latch). Kill switch: ``EPM_TICK_LIVENESS_PROBE=0``.
 
+A second screen (issue #1629, ``human_activity_reason``) runs when the
+liveness screen finds nothing: a HUMAN (non-cron) user message in THIS
+session's transcript within ``EPM_TICK_HUMAN_ACTIVE_S`` (default 2700 s)
+converts the would-be STALE-REDRIVE to HEALTHY (reason prefix
+``human-active``) — an interactive session is not a stalled autonomous
+session, and re-driving the 44K-token /issue skill would hijack the
+human's thread. The transcript is resolved happy-log-only via a /proc
+ancestry walk (bash -> claude -> happy node wrapper -> the wrapper's
+log names the transcript); cron-injected ``<command-message>``-wrapped
+prompts, skill-load meta rows, and tool results never count as human.
+Fail toward ticking: ANY resolution, parse, or classification failure
+suppresses nothing (today's exact behavior). Teardown verdicts
+(TERMINAL / GATE-TRANSITION) are never suppressed — the teardown is
+what stops future interruptions. Kill switch:
+``EPM_TICK_HUMAN_ACTIVE_PROBE=0``; debug telemetry:
+``EPM_TICK_HUMAN_PROBE_DEBUG=1`` (stderr ``[human-probe]`` line —
+paths/counts/ages only, never transcript text).
+
 Side effects (both under ``~/.eps-autonomous``, overridable for tests via
 ``EPM_TICK_STATE_DIR``):
 
@@ -92,6 +110,20 @@ CAMPAIGN_CHILD_DONEISH = CAMPAIGN_CHILD_LANDED | {"archived"}
 
 STALE_S_DEFAULT = 25 * 60  # the tick skills' long-standing ~25-min staleness window
 RUNAWAY_STREAK_DEFAULT = 3
+
+# ── human-activity screen constants (issue #1629) ───────────────────────────
+# Recency window default: one tick interval — "any human message since the
+# last tick fired" is the natural semantics (env: EPM_TICK_HUMAN_ACTIVE_S).
+HUMAN_ACTIVE_S_DEFAULT = 45 * 60
+# Transcript tail-read bound: watcher parity (the #1104 wedge-probe widening).
+TRANSCRIPT_TAIL_BYTES = 262_144
+# /proc ancestry walk bound (measured chain depth to `claude` is 4 hops from a
+# `uv run python` child; 15 covers deeper shell nesting with margin).
+_ANCESTRY_MAX_DEPTH = 15
+# Happy-log whole-read stat guard (~2x the largest measured live wrapper log,
+# 66.6 MB on 2026-07-23; env: EPM_TICK_HUMAN_LOG_MAX_BYTES). Crossing it
+# fails SAFE: skip -> no suppression -> today's behavior.
+HUMAN_LOG_MAX_BYTES_DEFAULT = 128 * 2**20
 
 # VM root-disk band labels mirrored from autonomous_session_watch (task #679):
 # the tick snapshot carries the same coarse band so a cron-driven tick surfaces
@@ -583,6 +615,227 @@ def issue_liveness_reason(events: list[dict], now: float, stale_after_s: float) 
         return None
 
 
+# ── human-activity screen (issue #1629) ─────────────────────────────────────
+
+
+def _human_probe_debug(msg: str) -> None:
+    """Emit one ``[human-probe] <msg>`` stderr line iff
+    ``EPM_TICK_HUMAN_PROBE_DEBUG=1`` (default off — ZERO output in
+    production ticks). Callers pass paths/counts/ages ONLY, never
+    transcript message text (content invariant #1000)."""
+    if os.environ.get("EPM_TICK_HUMAN_PROBE_DEBUG", "").strip() == "1":
+        print(f"[human-probe] {msg}", file=sys.stderr)
+
+
+def human_active_probe_enabled() -> bool:
+    """``EPM_TICK_HUMAN_ACTIVE_PROBE`` kill switch (default on; ``0``/
+    ``false`` disables — restores pre-#1629 STALE-REDRIVE behavior
+    fleet-wide; clone of ``liveness_probe_enabled``)."""
+    raw = os.environ.get("EPM_TICK_HUMAN_ACTIVE_PROBE", "").strip().lower()
+    return raw not in ("0", "false")
+
+
+def human_active_s() -> float:
+    """``EPM_TICK_HUMAN_ACTIVE_S`` (seconds) -> recency window; malformed or
+    non-positive -> ``HUMAN_ACTIVE_S_DEFAULT`` (the ``stale_s()`` parse
+    shape)."""
+    raw = os.environ.get("EPM_TICK_HUMAN_ACTIVE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return float(HUMAN_ACTIVE_S_DEFAULT)
+    return val if val > 0 else float(HUMAN_ACTIVE_S_DEFAULT)
+
+
+def human_log_max_bytes() -> float:
+    """``EPM_TICK_HUMAN_LOG_MAX_BYTES`` (bytes) -> happy-log read ceiling;
+    malformed or non-positive -> ``HUMAN_LOG_MAX_BYTES_DEFAULT`` (the
+    ``stale_s()`` parse shape)."""
+    raw = os.environ.get("EPM_TICK_HUMAN_LOG_MAX_BYTES", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return float(HUMAN_LOG_MAX_BYTES_DEFAULT)
+    return val if val > 0 else float(HUMAN_LOG_MAX_BYTES_DEFAULT)
+
+
+def _proc_ppid(pid: int) -> int | None:
+    """Parent pid from ``_PROC_ROOT/<pid>/stat`` (parsed after the LAST
+    ``)`` so a comm containing ``') '`` cannot shift fields — the
+    ``proc_start_epoch`` parse shape; ppid = index 1 after comm).
+    ``None`` on any read/parse failure."""
+    try:
+        stat = (_PROC_ROOT / str(pid) / "stat").read_text()
+        after_comm = stat.rsplit(")", 1)[1].split()
+        # after_comm[0] is field 3 (state); field 4 (ppid) is index 1.
+        return int(after_comm[1])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _own_node_wrapper_pid() -> int | None:
+    """Walk UP the /proc ancestry from this process to the first ancestor
+    whose comm is ``claude``; return its PARENT pid (the happy node
+    wrapper). ``None`` when no claude ancestor within
+    ``_ANCESTRY_MAX_DEPTH`` (bare-claude / non-happy runtimes -> the
+    caller suppresses nothing). Uses ``session_resolver._read_proc_comm``
+    (it strips the trailing newline — an inline unstripped
+    ``/proc/<pid>/comm`` read comparing ``== "claude"`` would never
+    match)."""
+    import session_resolver  # lazy: sys.path[0]=scripts/ per the SKILL contract
+
+    pid = os.getpid()
+    for _ in range(_ANCESTRY_MAX_DEPTH):
+        ppid = _proc_ppid(pid)
+        if ppid is None or ppid <= 1:
+            return None
+        if session_resolver._read_proc_comm(pid) == "claude":
+            return ppid
+        pid = ppid
+    return None
+
+
+def _own_session_transcript_path() -> str | None:
+    """Resolve THIS session's Claude transcript path via the happy wrapper
+    log — happy-log-only resolution (the #845 wedge-probe policy: a
+    filesystem fallback could bind the WRONG session's transcript, and a
+    wrong-session match is worse than a miss). ``None`` at every miss
+    (fail toward ticking); the ``st_size`` guard runs BEFORE the
+    whole-file log read so a pathological log never stalls the tick."""
+    import session_resolver  # lazy: an import failure is a caller-guarded miss
+
+    node = _own_node_wrapper_pid()
+    if node is None:
+        _human_probe_debug("miss=no-claude-ancestor")
+        return None
+    log = session_resolver._find_happy_log_for_node(node)
+    if log is None:
+        _human_probe_debug("miss=no-happy-log")
+        return None
+    if log.stat().st_size > human_log_max_bytes():
+        _human_probe_debug("miss=log-too-big")
+        return None
+    path = session_resolver.extract_transcript_from_happy_log(log.read_text(errors="replace"))
+    if not path:
+        _human_probe_debug("miss=no-transcript-path")
+        return None
+    if not os.path.isfile(path):
+        _human_probe_debug("miss=transcript-missing")
+        return None
+    return path
+
+
+def _transcript_tail_rows_1629(path: str, max_bytes: int = TRANSCRIPT_TAIL_BYTES) -> list[dict]:
+    """Parsed dict rows from the LAST ``max_bytes`` of a transcript JSONL.
+
+    SEEK-FROM-END is load-bearing (#1287: a head-capped read defeated its
+    own motivating incident — recent rows live at EOF). After a mid-file
+    seek the partial first line is dropped; each line's ``json.loads`` is
+    guarded (a concurrent append can truncate the last line — one skipped
+    row, re-read next tick)."""
+    size = os.stat(path).st_size
+    with open(path, "rb") as fh:
+        if size > max_bytes:
+            fh.seek(size - max_bytes)
+        data = fh.read()
+    lines = data.split(b"\n")
+    if size > max_bytes:
+        lines = lines[1:]  # drop the partial first line after the seek
+    rows: list[dict] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+def is_human_transcript_row(row: object) -> bool:
+    """True iff a transcript JSONL row is direct HUMAN input (#1629).
+
+    Conservative toward ticking: any ambiguous / automation-shaped row
+    reads False. A human-typed slash command reads False too (wrapped
+    identically to a cron-injected one) — acceptable: mistaking a human
+    for automation only costs one tick turn, never a stranded task.
+    """
+    if not isinstance(row, dict) or row.get("type") != "user" or row.get("isMeta"):
+        return False
+    msg = row.get("message")
+    if not isinstance(msg, dict) or msg.get("role") != "user":
+        return False
+    content = msg.get("content")
+    if isinstance(content, str):
+        s = content.lstrip()
+        if not s:
+            return False
+        if "<command-name>" in content or s.startswith(("<command-message>", "<local-command")):
+            return False
+        return True
+    if isinstance(content, list):  # the ONE list-shape human signal: the interrupt row
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and isinstance(block.get("text"), str)
+                and block["text"].lstrip().startswith("[Request interrupted by user")
+            ):
+                return True
+    return False
+
+
+def human_activity_reason(now: float) -> str | None:
+    """Return a content-invariant reason suffix when a HUMAN (non-cron)
+    user message appears in THIS session's transcript within the recency
+    window (issue #1629), else ``None``. Entirely exception-guarded: ANY
+    failure -> ``None`` (fail toward ticking — the #1629 hard
+    constraint; the helper can never raise into ``triage()``).
+
+    Aggregation is any-row-in-window (per-row ``0 <= age < window``,
+    smallest in-window age reported): a single future-dated row (clock
+    skew, ``age < 0``) can never mask a valid fresh row — future rows
+    are skipped, never latched as "the newest"."""
+    try:
+        if not human_active_probe_enabled():
+            _human_probe_debug("miss=disabled")
+            return None
+        path = _own_session_transcript_path()
+        if path is None:
+            return None
+        window = human_active_s()
+        n_rows = 0
+        n_human = 0
+        best_age: float | None = None  # smallest IN-WINDOW age among human rows
+        for row in _transcript_tail_rows_1629(path):
+            n_rows += 1
+            if not is_human_transcript_row(row):
+                continue
+            n_human += 1
+            ts = parse_event_ts(row.get("timestamp"))
+            if ts is None:
+                continue
+            age = now - ts
+            if 0 <= age < window and (best_age is None or age < best_age):
+                best_age = age
+        if n_human == 0:
+            _human_probe_debug("miss=no-human-rows")
+            return None
+        age_str = "none" if best_age is None else f"{best_age:.1f}"
+        verdict_str = "suppress" if best_age is not None else "no-suppress"
+        _human_probe_debug(
+            f"transcript={path} rows={n_rows} human={n_human} "
+            f"newest_age_s={age_str} verdict={verdict_str}"
+        )
+        if best_age is None:
+            return None
+        return f"human-active (last human msg {best_age / 60:.0f}m ago < {window / 60:.0f}m)"
+    except Exception:
+        return None
+
+
 # ── pure verdict logic ──────────────────────────────────────────────────────
 
 
@@ -778,8 +1031,13 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             # ACTIVE (#931's incident status `followups_running` is in
             # ISSUE_PARK). Streak semantics unchanged (STALE-REDRIVE and
             # HEALTHY are both non-teardown verdicts); snapshot shape
-            # untouched; campaign branch untouched.
+            # untouched; campaign branch untouched. The human-activity
+            # screen (issue #1629) runs SECOND, only when the liveness
+            # screen found nothing — same PARK+ACTIVE scope, same
+            # fail-toward-ticking posture.
             live = issue_liveness_reason(events, now, stale_s())
+            if live is None:
+                live = human_activity_reason(now)
             if live is not None:
                 age_desc = (
                     "no markers" if marker_age is None else f"marker age {marker_age / 60:.0f}m"

@@ -299,6 +299,7 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_trigger_dense_tag_adoption.py",
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
     "tests/test_issue_skill_width_reeval_pointer.py",
+    "tests/test_issue_tick_skill.py",  # NEW (#1629) — issue-tick SKILL prose pins
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
