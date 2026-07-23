@@ -4868,8 +4868,8 @@
     "1624": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1624",
-      "status": "running",
+      "path": "tasks/reviewing/1624",
+      "status": "reviewing",
       "title": "daily-fix: lint bare list_repo_files on the data repo"
     },
     "1625": {
