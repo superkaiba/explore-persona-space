@@ -251,6 +251,16 @@ def make_figures(res: dict, fits: dict, fig_dir: str) -> dict[str, str]:
             color=pal[fi % len(pal)],
             label=FITTER_LABELS[fitter],
         )
+    # Dagger the flagged point: the kernel arm failed its Nystrom-vs-exact gate at L26 only.
+    ax.text(
+        FLAGGED_LAYER,
+        r2[FLAGGED_LAYER]["krr_nystrom"] - 0.006,
+        "†",
+        ha="center",
+        va="top",
+        fontsize=10,
+        color=pal[3 % len(pal)],
+    )
     ax.set_xticks(layers)
     ax.set_xlabel("layer")
     ax.set_ylabel("held-out whole-map R2 (pinned test)")
