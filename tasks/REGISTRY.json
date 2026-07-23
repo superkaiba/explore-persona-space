@@ -4819,8 +4819,8 @@
     "1618": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1618",
-      "status": "running",
+      "path": "tasks/reviewing/1618",
+      "status": "reviewing",
       "title": "daily-fix: research-pm.md over 47000-byte ratchet cap, main "
     },
     "1619": {
