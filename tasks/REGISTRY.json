@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1639,
+  "highest_id": 1640,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4990,6 +4990,13 @@
       "path": "tasks/completed/164",
       "status": "completed",
       "title": "Measure Betley+Wang \u03b1 for #111's bureaucratic-authority winners (PAIR + Grid)"
+    },
+    "1640": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1640",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 chained smoke-then-full per-leg out-root residue trap"
     },
     "165": {
       "has_clean_result": false,
