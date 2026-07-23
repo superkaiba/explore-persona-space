@@ -307,6 +307,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
+    # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
+    "tests/test_plan_patch.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1598) — CLAUDE.md teammate-coordination bullet pins (a)-(d)
