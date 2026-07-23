@@ -1,19 +1,24 @@
-# Result: How does the single-context map (context end → answer) relate to the averaged prefix map (context end averaged over queries → answer)?
+# Result: The averaged prefix map is the single-context map at coarser grain
 
 ## Motivation
 
-- The **averaged prefix map** came first: fit on a prefix's context-end states averaged over many queries, R² ≈ 0.8 on constructed substrates. The **single-context map** came later: fit per (prefix, query) row on realistic data, also R² ≈ 0.8.
-- Two strong maps onto the same target raise the mechanism question: are these two objects, or one object read at two grains?
-- Both maps are built from the same object — context-end states — and differ only in aggregation grain, so the comparison isolates the grain as the single variable.
+- Two strong maps onto the answer state have been in play: the **averaged prefix map** (fit on a prefix's context-end states averaged over queries; historically R² ≈ 0.8) and the **single-context map** (fit per (prefix, query) row; R² ≈ 0.8). One mechanism or two?
+- Both are built from the same object — context-end states — and differ only in aggregation grain, so the comparison isolates the grain as the single variable.
 
-## TLDR
+## The theoretical relationship
 
-- **Nothing is lost at the finer grain**: the single-context map predicts single answer states at R² 0.81 (instruct) / 0.74 (base), and its predictions, averaged per prefix, score 0.82 / 0.76 at the averaged grain — exactly where the averaged prefix map's ~0.8 lives (Result 1).
-- **One operator, two grains — now measured, not just argued.** By linearity the single-context map *induces* an averaged-grain predictor (average of predictions = prediction from the averaged vector). An averaged map fit independently on the averaged vectors is a strictly worse, noisier estimate of the *same* operator: R² 0.65 vs 0.82 (instruct; base 0.60 vs 0.76), loses on 90–95% of prefixes, predictions agree R² 0.79–0.93, and both operator subspaces align beyond chance (Result 2).
-- So "averaged prefix map" names an **evaluation grain**, not a mechanism — and the induced read strictly dominates: never refit at the averaged grain; fit per-row and average the predictions.
-- **The one map is approximately additive**: a prefix-only part plus a query-only part, computed in forward passes that never attend to each other, stitch back to 91% of the full map (Result 3).
+Write $v_C(P,q)$ for the context-end state of prefix $P$ with query $q$, and $\bar{v}_C(P) = \text{mean}_q\, v_C(P,q)$ for the averaged prefix vector; likewise $v_A$ / $\bar{v}_A$ for the per-row and per-prefix-averaged answer states. For any linear map $M$:
 
-## Methodology (shared)
+$$\text{mean}_q\,[\,M\,v_C(P,q)\,] = M\,\bar{v}_C(P)$$
+
+A linear map commutes with averaging. So the single-context map **induces** an averaged prefix map for free: average its per-row predictions over a prefix's queries — equivalently, apply it to $\bar{v}_C$. If the single-context map exists, an averaged prefix map exists automatically, with at least the induced map's skill.
+
+Linearity does **not** guarantee two things, and these are the empirical questions:
+
+1. **Existence at the fine grain** (Result 1). The historical evidence was averaged-grain only; the map could have been an "on average" phenomenon that fails on individual answers.
+2. **Nothing beyond the induced map** (Result 2). An averaged map fit *independently* on $(\bar{v}_C, \bar{v}_A)$ pairs optimizes purely for between-prefix structure, which the per-row fit under-weights (~79% of its objective is query-driven variance). In principle it could beat the induced read. Whether it does is the operator-coincidence question.
+
+## Methodology
 
 - **Model:** Qwen-2.5-7B-Instruct and Qwen-2.5-7B (base), analyzed separately.
 - **Data:** 1,145 real WildChat/LMSYS conversation prefixes sparse-crossed with 1,397 real user queries → 21,193 (prefix, query) contexts. The model answers each context (own-policy greedy); activations captured teacher-forced at layer 14.
@@ -26,40 +31,30 @@
 
 ## Results
 
-### Result 1 — skill by grain: the single-context map subsumes the averaged map
+### Result 1 — the map exists at the fine grain, and induces the averaged map's skill
 
-**Methodology**
-- Held-out R² of the context map at both grains (per-row targets; per-prefix averaged targets), both bases, both models; compare to the historical averaged-map results.
+![single-context map at both grains](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d48cbddf4d7d19c5c5c226714ec7f10491aef5fa/figures/summaries/prefix_vs_context_map/grain_skill.png)
 
-| held-out R², L14 | single-context targets | averaged targets (induced read) |
-|---|---|---|
-| instruct (ambient / pca48) | 0.814 / 0.914 | 0.819 / 0.936 |
-| base (ambient / pca48) | 0.738 / 0.837 | 0.763 / 0.884 |
+> Held-out R² of the single-context map scored on per-row targets (left) and on per-prefix averaged targets via the induced read (right); layer 14, ambient, novel-prefix 6-fold CV.
 
 **Takeaways**
-- The same fitted operator scores ~0.8 at BOTH grains — the averaged-grain skill is not a separate achievement; it is implied by the per-row map plus linearity (mean over queries of M·v_C = M·(mean v_C)).
-- This is where the historical averaged prefix map's ~0.8 (leave-one-family-out on constructed substrates) lands on realistic data: it was the context map all along, evaluated coarsely.
-- The map is far above trivial-transport floors at both grains (identity / scaled-identity / diagonal-affine), and the shuffled-pairing carrier floor is 0.06–0.08 — a real learned operator, not carrier structure.
+- The map predicts *individual* answers (R² 0.81 instruct / 0.74 base), not just per-prefix tendencies — had it been an averaged-only phenomenon, the left bars would sit near the ~0.11 between-prefix variance floor.
+- Its induced averaged-grain read (0.82 / 0.76) lands exactly where the historical averaged prefix map's ~0.8 lives — that result is recovered as a by-product. (pca48: 0.914 per-row → 0.936 averaged, instruct.)
+- Caveat: R² at the two grains uses different variance denominators (total vs between-prefix), so the near-equality of the bars is not "equal difficulty" — each bar is the explained share of its own grain's variance. Both sit far above trivial-transport floors; the shuffled-pairing carrier floor is 0.06–0.08.
 
-### Result 2 — operator coincidence: the independently-fit averaged map is a noisier estimate of the same operator
+### Result 2 — the independently-fit averaged map adds nothing: same operator, noisier estimate
 
-Skill agreement alone can't distinguish "same operator" from "different operator, similar score." Test: fit the averaged map independently (refit), compare to the induced read on aligned folds — predictions, per-prefix wins, and the fitted operators' singular subspaces.
+Skill agreement alone cannot distinguish "same operator" from "different operator, similar score." Test: fit the averaged map independently (refit) and compare it to the induced read on aligned folds — skill, predictions, and the fitted operators' singular subspaces.
 
-**Methodology**
-- Refit: PRESS-ridge on (averaged prefix vector → averaged profile), 996 rows, prefix folds derived from the per-row grouped folds (both arms hold out the same prefixes).
-- Operators extracted in raw input coordinates at a matched PRESS-selected λ; principal angles between top-48 input (right) and output (left) singular subspaces vs a Haar-random subspace null.
+![induced vs refit](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d48cbddf4d7d19c5c5c226714ec7f10491aef5fa/figures/summaries/prefix_vs_context_map/induced_vs_refit.png)
 
-| L14 | refit R² | induced R² | agreement (ind→ref) | induced wins |
-|---|---|---|---|---|
-| instruct ambient | 0.655 | **0.819** | 0.815 | 95.2% |
-| instruct pca48 | 0.873 | **0.936** | 0.926 | 93.4% |
-| base ambient | 0.602 | **0.763** | 0.785 | 94.4% |
-| base pca48 | 0.803 | **0.884** | 0.887 | 89.9% |
+> Averaged-grain held-out R² of the two constructions; layer 14, ambient, aligned novel-prefix folds. pca48: induced 0.936 / 0.884 vs refit 0.873 / 0.803 (instruct / base).
 
 **Takeaways**
-- The refit never beats the induced read — it loses on ~90–95% of prefixes near-uniformly, with no coherent subset where it wins: the signature of estimation noise, not of different structure. The refit sees 996 averaged rows; the induced read borrows strength from all 17,308 rows and gets the averaging for free by linearity.
-- The two arms' held-out predictions agree at R² 0.79–0.93, and the operators share both subspaces beyond chance: output k48 principal angle 42.7° vs null ≈86.7°; **input 78.6° vs null ≈84.3°** (instruct ambient). The refit operator is ≈0.49× the Frobenius norm — the small-n fit is heavily over-shrunk, as "noisy estimate of the same map" predicts.
-- Caveats: sparse-crossing prefixes average as few as 3 rows, so part of the refit's deficit is input/target noise (the historical ~0.8 refits were on dense 48–144-query substrates); output-subspace alignment is partly generic for two regressions onto the same target (the Haar null does not control for shared-target structure) — the prediction-agreement and win-rate legs carry the claim.
+- The refit loses at its own game — 0.655 vs 0.819 (instruct), 0.602 vs 0.763 (base) — and loses on 90–95% of individual prefixes near-uniformly, with no coherent subset where it wins: the signature of estimation noise, not of different structure. It sees 996 averaged rows; the induced read borrows strength from all 17,308 rows and gets the averaging free by linearity.
+- The two constructions' held-out predictions agree at R² 0.79–0.93, and their operators share both singular subspaces beyond chance (output k48 principal angle 42.7° vs Haar null ≈86.7°; input 78.6° vs ≈84.3°; instruct ambient), with the refit operator at ≈0.49× the Frobenius norm — an over-shrunk small-n estimate of the same operator.
+- Caveats: sparse-crossing prefixes average as few as 3 rows, so part of the refit's deficit is input/target noise (the historical ~0.8 refits were on dense 48–144-query substrates); output-subspace alignment is partly generic for two regressions onto the same target — the prediction-agreement and win-rate legs carry the claim.
+- Practical rule: never refit at the averaged grain — fit per-row and average the predictions.
 - Artifacts: `eval_results/issue_1092/inline_operator_coincidence/operator_coincidence.json` (`scripts/issue1092_operator_coincidence.py`).
 
 ### Result 3 — the one map is approximately additive: prefix part + query part ≈ context map
@@ -76,7 +71,7 @@ Skill agreement alone can't distinguish "same operator" from "different operator
 
 ## Conclusion and next steps
 
-- One operator, two grains: the averaged prefix map is the single-context map evaluated coarsely — verified at the skill, prediction, and operator-subspace levels. No second mechanism.
+- One operator, two grains: the averaged prefix map is the single-context map evaluated coarsely — verified at the skill, prediction, and operator-subspace levels. "Averaged prefix map" names an evaluation grain, not a mechanism.
 - Practical rule: never refit at the averaged grain — fit per-row and average the predictions (the refit only adds small-n noise and shrinkage).
 - Next: fold-spread error bars on the headline bars; an MLP induced-vs-refit check at the averaged grain (the Jensen-gap analysis on this corpus shows the map has real curvature — the linear coincidence result should be re-read there); close the 0.08 stitch gap (where does the interaction live — layers, directions, positions?).
 
