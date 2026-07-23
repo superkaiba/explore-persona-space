@@ -4868,43 +4868,43 @@
     "1624": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1624",
-      "status": "reviewing",
+      "path": "tasks/completed/1624",
+      "status": "completed",
       "title": "daily-fix: lint bare list_repo_files on the data repo"
     },
     "1625": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1625",
-      "status": "running",
+      "path": "tasks/completed/1625",
+      "status": "completed",
       "title": "daily-fix: inline rounds both mapping arms + PNG check"
     },
     "1626": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1626",
-      "status": "running",
+      "path": "tasks/completed/1626",
+      "status": "completed",
       "title": "daily-fix: workflow_lint root-guard rc=-1 retry-then-WARN"
     },
     "1627": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1627",
-      "status": "planning",
+      "path": "tasks/completed/1627",
+      "status": "completed",
       "title": "daily-fix: Step 9c/10d gate single-flight guard"
     },
     "1628": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1628",
-      "status": "proposed",
+      "path": "tasks/reviewing/1628",
+      "status": "reviewing",
       "title": "daily-fix: GCP DWS-PENDING delete needs longer timeout"
     },
     "1629": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1629",
-      "status": "proposed",
+      "path": "tasks/running/1629",
+      "status": "running",
       "title": "daily-fix: issue-tick no-op in interactive sessions"
     },
     "163": {
@@ -4917,15 +4917,15 @@
     "1630": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1630",
-      "status": "proposed",
+      "path": "tasks/reviewing/1630",
+      "status": "reviewing",
       "title": "daily-fix: daily brief commits stage only its own paths"
     },
     "1631": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1631",
-      "status": "proposed",
+      "path": "tasks/planning/1631",
+      "status": "planning",
       "title": "daily-fix: committed plan-patch helper for anchor edits"
     },
     "1632": {
