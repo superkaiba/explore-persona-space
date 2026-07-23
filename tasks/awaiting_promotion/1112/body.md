@@ -8,7 +8,6 @@ tags:
 - lora-vs-fullft
 - activation-geometry
 - followup-auto
-- keep-running
 created_at: '2026-07-07T16:23:18Z'
 has_clean_result: true
 origin_prompt: can we check the difference between LoRA and full finetuning on the
