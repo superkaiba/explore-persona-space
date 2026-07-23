@@ -3,3 +3,4 @@
 {"ts": "2026-07-23T06:41:59Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-23T06:47:52Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to $(task.py find 1616)/plans/plan.md (gpu_hours_total=0). Register tests/test_issue_skill_width_reeval_pointer.py in WORKFLOW_INVARIANT (tuple + #1593 sorted manifest); architectural: false."}
 {"ts": "2026-07-23T06:48:19Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS on plans/v1.md — n_fail=0 n_warn=0, no overrides."}
+{"ts": "2026-07-23T06:52:22Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics."}
