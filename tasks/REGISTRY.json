@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1608,
+  "highest_id": 1609,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4745,6 +4745,13 @@
       "path": "tasks/on_hold/1608",
       "status": "on_hold",
       "title": "First-token identity accounting for the #1415 steering shift (parked: duplicates the 9a-ter cap-parked item)"
+    },
+    "1609": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1609",
+      "status": "proposed",
+      "title": "Add fellows Slurm cluster (charmander) as backend lane preferred over GCP/RunPod"
     },
     "161": {
       "has_clean_result": false,
