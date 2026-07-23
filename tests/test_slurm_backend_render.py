@@ -2785,9 +2785,15 @@ def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) 
     commit still refuses."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
-           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"],
-           "PRE_COMMIT_ALLOW_NO_CONFIG": "1"}
+    env = {
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@x",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@x",
+        "HOME": str(tmp_path),
+        "PATH": os.environ["PATH"],
+        "PRE_COMMIT_ALLOW_NO_CONFIG": "1",
+    }
 
     def _git(*args: str, cwd=repo) -> None:
         subprocess.run(["git", *args], cwd=cwd, env=env, check=True, capture_output=True)
@@ -2803,8 +2809,12 @@ def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) 
     _git("checkout", "-q", "main")
 
     branch_commit = subprocess.run(
-        ["git", "rev-parse", "issue-X"], cwd=repo, env=env, check=True,
-        capture_output=True, text=True,
+        ["git", "rev-parse", "issue-X"],
+        cwd=repo,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
     ).stdout.strip()
     # The materializer's own shape: a DETACHED worktree at the branch commit.
     detached = tmp_path / "detached"
