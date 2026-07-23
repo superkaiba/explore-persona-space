@@ -4798,8 +4798,8 @@
     "1615": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/proposed/1615",
-      "status": "proposed",
+      "path": "tasks/awaiting_promotion/1615",
+      "status": "awaiting_promotion",
       "title": "The persona vector's pre-image under the context\u2192answer map makes sense: its top activating contexts are related to the specific persona and correlate with behavioral elicitation as judged by an LLM judge"
     },
     "162": {
