@@ -1,0 +1,111 @@
+{
+  "commit": "0bc84f6d85",
+  "created": "2026-07-23T06:09:34Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out prediction agreement $R^2$": 0.8148488877131719,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out prediction agreement $R^2$": 0.7770236816395586,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out prediction agreement $R^2$": 0.7854024107712283,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out prediction agreement $R^2$": 0.7541895995093211,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "mean principal angle (degrees, lower = more aligned)": 42.71142605192567,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "mean principal angle (degrees, lower = more aligned)": 78.64238911554074,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "mean principal angle (degrees, lower = more aligned)": 40.53965570324133,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "mean principal angle (degrees, lower = more aligned)": 78.19627848916484,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 8,
+  "text": {
+    "suptitle": "Induced vs refit are one operator \u2014 prediction agreement and operator geometry (layer 14, ambient)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "A. The two maps make the same predictions",
+        "ylabel": "held-out prediction agreement $R^2$",
+        "legend_labels": [
+          "Instruct model",
+          "Base model"
+        ],
+        "xticklabels": [
+          "Induced explains refit",
+          "Refit explains induced"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "B. Their operators share subspaces beyond chance",
+        "ylabel": "mean principal angle (degrees, lower = more aligned)",
+        "legend_labels": [
+          "Instruct model",
+          "Base model",
+          "random-subspace null"
+        ],
+        "xticklabels": [
+          "Output subspace (k=48)",
+          "Input subspace (k=48)"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct model",
+      "Base model"
+    ]
+  }
+}

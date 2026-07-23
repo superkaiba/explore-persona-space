@@ -330,6 +330,75 @@ def fig_induced_vs_refit() -> None:
     plt.close(fig)
 
 
+def fig_same_operator() -> None:
+    """Same-operator evidence for induced vs refit: prediction agreement bars +
+    operator subspace principal angles vs the Haar-random null (dashed ticks).
+
+    Ambient, L14, both models; from the operator-coincidence artifact.
+    """
+    oc = json.loads(
+        (
+            PROJECT_ROOT
+            / "eval_results/issue_1092/inline_operator_coincidence/operator_coincidence.json"
+        ).read_text()
+    )
+    cells = [("cell_inst_own", "Instruct model"), ("cell_pre_own", "Base model")]
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    model_colors = [colors[0], colors[2]]
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    w = 0.36
+
+    ax = axes[0]
+    dirs = [
+        ("agreement_r2_induced_explains_refit", "Induced explains refit"),
+        ("agreement_r2_refit_explains_induced", "Refit explains induced"),
+    ]
+    x = np.arange(len(dirs))
+    for i, ((cell, label), color) in enumerate(zip(cells, model_colors, strict=True)):
+        b = oc["cells"][cell]["bases"]["ambient"]
+        ax.bar(x + (i - 0.5) * w, [b[k] for k, _ in dirs], w, label=label, color=color)
+    ax.set_xticks(x)
+    ax.set_xticklabels([label for _, label in dirs])
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("held-out prediction agreement $R^2$")
+    ax.set_title("A. The two maps make the same predictions")
+    ax.legend(loc="lower right", frameon=False, fontsize=9)
+
+    ax = axes[1]
+    subs = [("output_k48", "Output subspace (k=48)"), ("input_k48", "Input subspace (k=48)")]
+    x = np.arange(len(subs))
+    for i, ((cell, label), color) in enumerate(zip(cells, model_colors, strict=True)):
+        b = oc["cells"][cell]["bases"]["ambient"]["subspaces"]
+        vals = [b[k]["mean_angle_deg"] for k, _ in subs]
+        ax.bar(x + (i - 0.5) * w, vals, w, label=label, color=color)
+        for xc, (k, _) in zip(x, subs, strict=True):
+            null_deg = float(
+                np.degrees(0.5 * (b[k]["null"]["mean_angle_p05"] + b[k]["null"]["mean_angle_p95"]))
+            )
+            ax.plot(
+                [xc + (i - 1) * w, xc + i * w], [null_deg, null_deg], ls="--", color="0.25", lw=1.3
+            )
+    ax.set_xticks(x)
+    ax.set_xticklabels([label for _, label in subs])
+    ax.set_ylim(0, 95)
+    ax.set_ylabel("mean principal angle (degrees, lower = more aligned)")
+    ax.set_title("B. Their operators share subspaces beyond chance")
+    handles, labels = ax.get_legend_handles_labels()
+    from matplotlib.lines import Line2D
+
+    handles.append(Line2D([0], [0], ls="--", color="0.25", lw=1.3))
+    labels.append("random-subspace null")
+    ax.legend(handles, labels, loc="lower right", frameon=False, fontsize=9)
+
+    fig.suptitle(
+        "Induced vs refit are one operator — prediction agreement and operator geometry (layer 14, ambient)"
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "same_operator_evidence", dir=FIGDIR)
+    plt.close(fig)
+
+
 def fig_shrinkage() -> None:
     dd = json.loads((DD / "deepdive.json").read_text())
     labels, glob_res, diag_res = [], [], []
