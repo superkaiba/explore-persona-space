@@ -4,3 +4,4 @@
 {"ts": "2026-07-23T05:16:02Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-23T05:29:59Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS — n_fail=0 n_warn=0, no overridden checks; plan v1."}
 {"ts": "2026-07-23T05:38:05Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 critic lenses."}
+{"ts": "2026-07-23T05:40:27Z", "kind": "epm:consistency", "version": 1, "by": "unknown", "note": "Consistency check PASS — exactly 2 touched files match Goal scope; no open sibling task; live repro confirms gap still open on main; plan-internal consistency (pins/acceptance/exit-code semantics) all MATCH. Full report in the Phase-2 batch record."}
