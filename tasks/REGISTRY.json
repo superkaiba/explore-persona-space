@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1616,
+  "highest_id": 1617,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4808,6 +4808,13 @@
       "path": "tasks/proposed/1616",
       "status": "proposed",
       "title": "daily-fix: register width-reeval pointer test in WORKFLOW_IN"
+    },
+    "1617": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1617",
+      "status": "proposed",
+      "title": "daily-fix: gcp.py loud marker on boot-disk reuse + size mism"
     },
     "162": {
       "has_clean_result": false,
