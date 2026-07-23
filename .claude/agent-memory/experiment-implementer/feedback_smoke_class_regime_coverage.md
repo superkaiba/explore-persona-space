@@ -8,9 +8,12 @@ A dispatcher grid crossing behavior classes (marker vs content), training
 regimes (contrastive `con` vs positive-only `po`), or methods (LoRA vs
 full-FT) has class-specific code paths (marker parity reads, per-class mix
 asserts, panel-disjointness reads, reuse-seam loaders) a single-cell smoke
-never reaches; the bugs then surface live one per phase (#1586 r3/r4/r6 —
-three distinct class-gated bug classes after every recorded smoke ran only
-`syc-pers-ft-con-s137`).
+cannot cover: bug classes in cells the smoke never runs surface live one
+per phase, and a class-gated read-side path the smoke itself reaches only
+late kills the smoke leg (#1586: r3 panel-disjointness died in the smoke
+leg at p6_panel; r4 marker-`po` mix rowcount and r6 reuse-seam schema then
+surfaced live post-smoke, after every recorded smoke ran only the
+content-class full-FT cell `syc-pers-ft-con-s137`).
 
 **Why:** "arm class" (Step 6d.0-bis / the gotchas.md single-arm entry) had
 been read as source-context class only; the class-defining axes are the

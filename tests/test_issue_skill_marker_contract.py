@@ -237,13 +237,15 @@ def test_item3_data_gate_exercise_clause_present():
 
 # --- #1611: Step 6d.0-bis arm-class clause names the class-defining axes ---
 #
-# Incident #1586 r3/r4/r6: every recorded smoke ran ONE content-class cell
-# (`syc-pers-ft-con-s137`) of a marker/content x con/po x LoRA/full-FT grid;
-# three class-gated bug classes then surfaced live, one per phase (a
-# read-side panel-disjointness check, a marker-po mix row-count assert, a
-# reuse-seam loader). The Step 6d.0-bis arm-class clause must keep naming
-# the class-defining axes so a multi-class dispatcher's smoke set is
-# composed per realized (class x regime) combination.
+# Incident #1586 r3/r4/r6: every recorded smoke ran ONE content-class
+# full-FT cell (`syc-pers-ft-con-s137`) of a marker/content x con/po x
+# LoRA/full-FT grid; a read-side panel-disjointness check (r3) killed the
+# smoke leg itself at its first full-panel read, and two class-gated bug
+# classes the smoke cell could not reach then surfaced live post-smoke,
+# one per phase (a marker-po mix row-count assert, a reuse-seam loader).
+# The Step 6d.0-bis arm-class clause must keep naming the class-defining
+# axes so a multi-class dispatcher's smoke set is composed per realized
+# (class x regime) combination.
 
 
 def test_step6d0bis_smoke_covers_class_regime_axes():
