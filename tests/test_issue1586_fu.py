@@ -921,3 +921,197 @@ def test_reap_wired_at_p0_stage_entry_before_headroom(tmp_path, monkeypatch):
     import inspect
 
     assert "smoke_root=" not in inspect.getsource(d.phase_stage)
+
+
+# ── crash-fix r4: overflow hub-cache eviction + wave-boundary residue drain ──
+
+
+def test_evict_overflow_hub_cache_only_overflow_entry_and_idempotent(tmp_path, monkeypatch, caplog):
+    import huggingface_hub.constants as hf_consts
+
+    hub_cache = tmp_path / "hub"
+    monkeypatch.setattr(hf_consts, "HF_HUB_CACHE", str(hub_cache))
+    overflow = hub_cache / f"models--{G.OVERFLOW_REPO.replace('/', '--')}"
+    blob = overflow / "blobs" / "shard"
+    blob.parent.mkdir(parents=True)
+    blob.write_bytes(b"x" * 4096)
+    snap = overflow / "snapshots" / "rev"
+    snap.mkdir(parents=True)
+    (snap / "model.safetensors").symlink_to(blob)  # symlink must not double-count
+    qwen = hub_cache / "models--Qwen--Qwen2.5-7B-Instruct" / "blobs"
+    qwen.mkdir(parents=True)
+    (qwen / "shard").write_bytes(b"y" * 2048)
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        n = d._evict_overflow_hub_cache()
+    assert n == 4096
+    assert not overflow.exists()
+    assert (qwen / "shard").exists()  # ONLY the overflow entry is evicted
+    assert any("[hub-evict] evicted" in r.message for r in caplog.records)
+    caplog.clear()
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        assert d._evict_overflow_hub_cache() == 0  # idempotent: absent -> no-op line
+    assert any("nothing to evict" in r.message for r in caplog.records)
+
+
+def test_hub_evict_wired_after_staged_set_guard_and_on_resume(tmp_path, monkeypatch):
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True)
+    (cfg.out_root / "stage_done.json").write_text(json.dumps({"fu_ft_partners": {}}))
+    calls = []
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: calls.append(1) or 0)
+    monkeypatch.setattr(d, "_headroom", lambda c, phase: None)
+    monkeypatch.setattr(d, "default_smoke_root", lambda fu: tmp_path / "no-such-smoke-root")
+    # resume path: an overflow-staging stage_done (pre-fix, or re-staged) re-evicts
+    assert d.phase_stage(cfg) == {"fu_ft_partners": {}}
+    assert calls == [1]
+    # a non-overflow stage_done does NOT evict
+    (cfg.out_root / "stage_done.json").write_text(json.dumps({"mixes": {}}))
+    calls.clear()
+    assert d.phase_stage(cfg) == {"mixes": {}}
+    assert calls == []
+    # fresh path source-order pin (r3 convention): eviction fires AFTER the
+    # fu-partner staged-set guard verified the consumer copies and BEFORE the
+    # done record lands.
+    import inspect
+
+    src = inspect.getsource(d.phase_stage)
+    i_guard = src.index("incomplete checkpoint stage")
+    i_evict = src.index("_evict_overflow_hub_cache", i_guard)
+    i_done = src.index("_atomic_json(done_path, rec)")
+    assert i_guard < i_evict < i_done
+
+
+def _completed_marker_cell(out_root, cell, sel_step=12, shard_bytes=4096):
+    """On-disk replica of pod-1586's post-selection retrain-reselect residue:
+    orphaned train/ root save + train_reselect/ root save beside the selected
+    self-contained checkpoint rung (the epm:failure v10 43 GB shape)."""
+    cell_root = out_root / cell
+    reselect = cell_root / "train_reselect"
+    ckpt = reselect / f"checkpoint-{sel_step}"
+    ckpt.mkdir(parents=True)
+    (ckpt / "model-00001-of-00001.safetensors").write_bytes(b"k" * 64)
+    (ckpt / "config.json").write_text("{}")
+    (reselect / "model-00001-of-00004.safetensors").write_bytes(b"r" * shard_bytes)
+    (reselect / "model.safetensors.index.json").write_text("{}")
+    (reselect / "config.json").write_text("{}")
+    train = cell_root / "train"
+    train.mkdir(parents=True)
+    (train / "model-00001-of-00004.safetensors").write_bytes(b"t" * shard_bytes)
+    (train / "config.json").write_text("{}")
+    (cell_root / "selection.json").write_text(json.dumps({"step": sel_step}))
+    (cell_root / "build_result.json").write_text(json.dumps({"adapter_root": str(reselect)}))
+    return cell_root
+
+
+def test_wave_headroom_would_fail_drains_prior_residue_before_assert(tmp_path, monkeypatch):
+    import collections
+
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True)
+    prior = G.FU_MARKER_FT_CELLS[0].cell
+    _completed_marker_cell(cfg.out_root, prior)
+    nxt = G.FU_MARKER_FT_CELLS[1].cell  # pending (no build_result.json)
+    usage = collections.namedtuple("usage", "total used free")
+    monkeypatch.setattr(d.shutil, "disk_usage", lambda p: usage(1, 1, 0))  # would-fail
+    seen = {}
+
+    def _recording_assert(root, need_gb, *, phase, canary_gb=1.0):
+        seen["phase"] = phase
+        seen["orphan_train_gone"] = not (cfg.out_root / prior / "train").exists()
+        seen["root_save_gone"] = not list(
+            (cfg.out_root / prior / "train_reselect").glob("model-*.safetensors")
+        )
+        seen["ckpt_kept"] = (
+            cfg.out_root
+            / prior
+            / "train_reselect"
+            / "checkpoint-12"
+            / "model-00001-of-00001.safetensors"
+        ).exists()
+
+    rec_assert = create_autospec(d.assert_out_root_headroom, side_effect=_recording_assert)
+    monkeypatch.setattr(d, "assert_out_root_headroom", rec_assert)
+    d._wave_headroom(cfg, 2, [nxt])
+    assert rec_assert.call_count == 1
+    # the drain ran BEFORE the assert: dead residue gone, selected rung intact
+    assert seen == {
+        "phase": "p2_train_wave2",
+        "orphan_train_gone": True,
+        "root_save_gone": True,
+        "ckpt_kept": True,
+    }
+
+
+def test_wave_headroom_would_pass_skips_boundary_drain(tmp_path, monkeypatch):
+    import collections
+
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True)
+    prior = G.FU_MARKER_FT_CELLS[0].cell
+    _completed_marker_cell(cfg.out_root, prior)
+    nxt = G.FU_MARKER_FT_CELLS[1].cell
+    usage = collections.namedtuple("usage", "total used free")
+    monkeypatch.setattr(d.shutil, "disk_usage", lambda p: usage(10**15, 0, 10**15))
+    monkeypatch.setattr(d, "assert_out_root_headroom", create_autospec(d.assert_out_root_headroom))
+    d._wave_headroom(cfg, 2, [nxt])
+    # an already-passing boundary never forces a drain (work-conservation)
+    assert (cfg.out_root / prior / "train").exists()
+    assert list((cfg.out_root / prior / "train_reselect").glob("model-*.safetensors"))
+
+
+def test_wave_reap_reclaims_root_saves_and_orphaned_train_dir(tmp_path, caplog):
+    cfg = _cfg(tmp_path)
+    prior = G.FU_MARKER_FT_CELLS[0].cell
+    _completed_marker_cell(cfg.out_root, prior)
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        d._wave_reap(cfg, [prior])
+    root = cfg.out_root / prior
+    assert not (root / "train").exists()  # orphaned original train dir removed
+    assert not list((root / "train_reselect").glob("model-*.safetensors"))
+    assert not (root / "train_reselect" / "model.safetensors.index.json").exists()
+    ckpt = root / "train_reselect" / "checkpoint-12"
+    assert (ckpt / "model-00001-of-00001.safetensors").exists()  # selected rung intact
+    assert (ckpt / "config.json").exists()
+    drains = [r.message for r in caplog.records if "[wave] drain" in r.message]
+    assert len(drains) == 2  # orphan-dir + root-save lines (fix-engaged signal)
+
+
+def test_reclaim_residue_safety_gates_keep_everything(tmp_path):
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    root = _completed_marker_cell(cfg.out_root, cell)
+    # no selection yet -> untouched (mid-ladder cells keep their root saves)
+    (root / "selection.json").unlink()
+    assert d._reclaim_completed_cell_residue(cfg, [cell]) == 0
+    assert (root / "train").exists()
+    # selected rung absent under adapter_root -> untouched
+    (root / "selection.json").write_text(json.dumps({"step": 99}))
+    assert d._reclaim_completed_cell_residue(cfg, [cell]) == 0
+    assert (root / "train").exists()
+    # fu LoRA cells never touched (ladders persist WHOLE incl. root adapter)
+    lora = G.FU_IMP_LORA_CELLS[0].cell
+    lroot = _completed_marker_cell(cfg.out_root, lora)
+    assert d._reclaim_completed_cell_residue(cfg, [lora]) == 0
+    assert (lroot / "train").exists()
+    assert list((lroot / "train_reselect").glob("model-*.safetensors"))
+
+
+def test_reclaim_residue_non_retrained_shape_keeps_train_dir_and_rung(tmp_path):
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    cell_root = cfg.out_root / cell
+    train = cell_root / "train"
+    ckpt = train / "checkpoint-12"
+    ckpt.mkdir(parents=True)
+    (ckpt / "model-00001-of-00001.safetensors").write_bytes(b"k" * 64)
+    (train / "model-00001-of-00004.safetensors").write_bytes(b"t" * 4096)
+    (train / "model.safetensors.index.json").write_text("{}")
+    (train / "config.json").write_text("{}")
+    (cell_root / "selection.json").write_text(json.dumps({"step": 12}))
+    (cell_root / "build_result.json").write_text(json.dumps({"adapter_root": str(train)}))
+    freed = d._reclaim_completed_cell_residue(cfg, [cell])
+    assert freed >= 4096
+    assert train.exists()  # adapter_root itself is never rmtree'd
+    assert (ckpt / "model-00001-of-00001.safetensors").exists()
+    assert not (train / "model-00001-of-00004.safetensors").exists()
+    assert (train / "config.json").exists()  # small root metadata untouched
