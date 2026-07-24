@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1663,
+  "highest_id": 1664,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5165,6 +5165,13 @@
       "path": "tasks/proposed/1663",
       "status": "proposed",
       "title": "daily-held: auto-escalate GCP queue-starve to RunPod?"
+    },
+    "1664": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1664",
+      "status": "proposed",
+      "title": "workflow-fix: verify_uploads honors card adapter_repo_overrides"
     },
     "168": {
       "has_clean_result": true,
