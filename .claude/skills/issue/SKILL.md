@@ -8638,7 +8638,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 58-file (2026-07-24)
+      OPTIONAL: the selection always contains the 61-file (2026-07-24)
       workflow-invariant set incl. `tests/test_workflow_lint.py` (median
       ~13 min alone, max ~30 min; whole gate median ~18 min, max ~38 min of
       test time plus collection overhead — 330 junit runs measured
@@ -8948,7 +8948,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ledger refresh so the next session gets a fresh baseline — do NOT block
       this verdict on it:
       ```bash
-      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 4560s \
+      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 4650s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py refresh \
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")

@@ -701,11 +701,11 @@ def recommended_timeout_s(tests: list[str], *, floor: int = TIMEOUT_FLOOR_S) -> 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
     *floor* (default ``TIMEOUT_FLOOR_S`` — diff-path callers unchanged;
     ``--map-files`` mode passes ``floor=MAP_TIMEOUT_FLOOR_S``, the Step-10d
-    TG-leg 600 s floor, #1573/#1646). Invariant-only selection (58 files as
-    of 2026-07-24, incl. the workflow-lint surcharge) -> 4260 s (71 min),
+    TG-leg 600 s floor, #1573/#1646). Invariant-only selection (61 files as
+    of 2026-07-24, incl. the workflow-lint surcharge) -> 4350 s (72.5 min),
     matching the invariant-set-scale precedents (``step9c_baseline.py
-    refresh`` ``--timeout-s`` default 4260 s; the SKILL.md detached
-    refresh's 4560 s).
+    refresh`` ``--timeout-s`` default 4350 s; the SKILL.md detached
+    refresh's 4650 s).
     """
     t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
     t += sum(SLOW_TESTS.get(x, 0) for x in tests)

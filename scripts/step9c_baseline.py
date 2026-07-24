@@ -12,7 +12,7 @@ vouch for.
 
 Subcommands::
 
-    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 4260] [--json]
+    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 4350] [--json]
     uv run python scripts/step9c_baseline.py status  [--repo-root PATH] [--max-age-hours 24]
                                                      [--max-code-commits 150] [--json]
     uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base REF]
@@ -62,7 +62,7 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
-wholesale (only the predictable Step 9c workflow-invariant universe — 58 files
+wholesale (only the predictable Step 9c workflow-invariant universe — 61 files
 as of 2026-07-24 — timeout-bounded,
 thread-capped, process-group-killed on expiry); blind-strip requires a fresh,
 clean-rooted (``dirty_code_paths: false``) ledger AND a non-diff-linked node
@@ -1894,8 +1894,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_refresh = sub.add_parser("refresh", help="run the Step 9c universe on main; write ledger")
     p_refresh.add_argument("--repo-root", default=None, help="main-root override (tests)")
     # #1646: == recommended_timeout_s(WORKFLOW_INVARIANT) at current constants
-    # (120 + 30*58 + 2400); re-derive when SLOW_TESTS / the invariant set change.
-    p_refresh.add_argument("--timeout-s", type=float, default=4260.0)
+    # (120 + 30*61 + 2400); re-derive when SLOW_TESTS / the invariant set change.
+    p_refresh.add_argument("--timeout-s", type=float, default=4350.0)
     p_refresh.add_argument("--json", action="store_true")
     p_refresh.set_defaults(func=cmd_refresh)
 
