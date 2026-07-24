@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1651,
+  "highest_id": 1652,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5081,6 +5081,13 @@
       "path": "tasks/proposed/1651",
       "status": "proposed",
       "title": "daily-fix: implementer pin-sweep states sweep_scope"
+    },
+    "1652": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1652",
+      "status": "proposed",
+      "title": "daily-fix: scope RunPod hourly cap to EPS-managed pods"
     },
     "168": {
       "has_clean_result": true,
