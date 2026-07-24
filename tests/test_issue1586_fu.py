@@ -1452,7 +1452,10 @@ def test_panel_parent_prestages_before_any_unit_spawn(tmp_path, monkeypatch):
     monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
     monkeypatch.setattr(d, "_n_gpus", lambda: 4)
     monkeypatch.setattr(
-        d, "_fanout_units", lambda cfg_, units: events.append(("fanout", len(units)))
+        # r10: phase fanouts pass merge_bearing= (width clamp) — accept it here
+        d,
+        "_fanout_units",
+        lambda cfg_, units, **kw: events.append(("fanout", len(units))),
     )
     d.phase_panel(cfg)
     staged = [e[1] for e in events if isinstance(e, tuple) and e[0] == "stage"]

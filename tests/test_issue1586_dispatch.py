@@ -1086,3 +1086,170 @@ def test_hub_upload_raise_on_error_real_body(monkeypatch, tmp_path):
         hub._upload(src, "org/ovf", "model", "issue1586/cA/checkpoint-4", raise_on_error=True)
     assert calls["n"] == 2
     assert d._is_billing_403(err)
+
+
+# ── fu crash-fix r10 (epm:failure v15): last-consumer reaps + width clamp ────
+
+
+def test_merge_reap_fires_only_after_last_consumer(tmp_path, caplog):
+    """Pin (i): the merged-model reap NEVER fires while a later enabled
+    consumer exists, and fires (incl. the .tmp strand) once the arm's LAST
+    enabled consumer phase completes."""
+    import logging
+
+    cfg = _cfg(tmp_path)  # phases=() -> all enabled; capture_tf is last
+    arm = ("syc-pers-lora-con-s42", "lora")
+    md = d._merged_model_dir(cfg, arm[0])
+    tmp = md.parent / (md.name + ".tmp")
+    for p in (md, tmp):
+        p.mkdir(parents=True)
+        (p / "config.json").write_text("{}")
+    with caplog.at_level(logging.INFO):
+        d._reap_arm_artifacts_after(cfg, "panel", arms=[arm])
+        assert md.exists() and tmp.exists()  # capture_tf still enabled -> kept
+        assert any("[merge-reap]" in m and "kept" in m for m in caplog.messages)
+        d._reap_arm_artifacts_after(cfg, "capture", arms=[arm])
+        assert md.exists() and tmp.exists()
+        d._reap_arm_artifacts_after(cfg, "capture_tf", arms=[arm])
+    assert not md.exists() and not tmp.exists()
+    assert any("reaped merged model after last consumer capture_tf" in m for m in caplog.messages)
+
+
+def test_merge_reap_subset_dispatch_last_enabled_consumer(tmp_path):
+    """Pin (i): under a --phases subset the LAST ENABLED consumer moves
+    earlier — capture reaps when capture_tf is not in this dispatch; a
+    marker arm's margin is never a consumer (panel last under
+    phases=(panel, margin))."""
+    cfg = _cfg(tmp_path, phases=("panel", "capture"))
+    arm = ("syc-pers-lora-con-s42", "lora")
+    md = d._merged_model_dir(cfg, arm[0])
+    md.mkdir(parents=True)
+    d._reap_arm_artifacts_after(cfg, "panel", arms=[arm])
+    assert md.exists()  # capture still enabled
+    d._reap_arm_artifacts_after(cfg, "capture", arms=[arm])
+    assert not md.exists()
+    cfg2 = _cfg(tmp_path / "b", phases=("panel", "margin"))
+    mk = ("mk-pers-lora-con-s42", "lora")
+    md2 = d._merged_model_dir(cfg2, mk[0])
+    md2.mkdir(parents=True)
+    d._reap_arm_artifacts_after(cfg2, "panel", arms=[mk])
+    assert not md2.exists()  # margin never consumes a marker arm -> panel is last
+
+
+def test_ft_dest_reap_hub_verified_after_last_consumer(monkeypatch, tmp_path, caplog):
+    """Pin (i, FT side): the restaged selected checkpoint survives every
+    phase with a later enabled consumer (no Hub probe fired), then reaps at
+    the last consumer ONLY when Hub-verified; fail-toward-keep and
+    deferral-pending keep are preserved."""
+    import logging
+
+    cfg = _cfg(tmp_path)
+    cell = "c1"
+    root = cfg.out_root / cell
+    train = root / "train"
+    _mk_rungs(train, [60])
+    _write_json(root / "selection.json", {"step": 60})
+    _write_json(root / "build_result.json", {"adapter_root": str(train)})
+    verified = create_autospec(d._selected_ckpt_hub_verified, return_value=False)
+    monkeypatch.setattr(d, "_selected_ckpt_hub_verified", verified)
+    arm = (cell, "ft")
+    d._reap_arm_artifacts_after(cfg, "capture", arms=[arm])
+    assert (train / "checkpoint-60").exists()
+    verified.assert_not_called()  # later consumer (capture_tf) -> no probe, no reap
+    d._reap_arm_artifacts_after(cfg, "capture_tf", arms=[arm])
+    assert (train / "checkpoint-60").exists()  # NOT Hub-verified -> fail-toward-keep
+    verified.return_value = True
+    with caplog.at_level(logging.INFO):
+        d._reap_arm_artifacts_after(cfg, "capture_tf", arms=[arm])
+    assert not (train / "checkpoint-60").exists()
+    assert any("[ckpt-reap]" in m and "capture_tf" in m for m in caplog.messages)
+    # deferral-pending cell: kept without any Hub probe
+    cell2 = "c2"
+    root2 = cfg.out_root / cell2
+    _mk_rungs(root2 / "train", [60])
+    _write_json(root2 / "selection.json", {"step": 60})
+    _write_json(root2 / "build_result.json", {"adapter_root": str(root2 / "train")})
+    _write_json(d._persist_deferred_path(cfg, cell2), {"cell": cell2})
+    verified.reset_mock()
+    d._reap_arm_artifacts_after(cfg, "capture_tf", arms=[(cell2, "ft")])
+    assert (root2 / "train" / "checkpoint-60").exists()
+    verified.assert_not_called()
+
+
+def test_merge_width_clamp_arithmetic():
+    """Pin (ii): free=63 GB, margin 8, transient 16 => width 3; free=20 =>
+    width 1 (floor); free huge => n_gpus; boundary + negative-numerator."""
+    assert d.merge_width_clamp(int(63e9), 8) == 3
+    assert d.merge_width_clamp(int(20e9), 8) == 1
+    assert d.merge_width_clamp(int(1e15), 8) == 8
+    assert d.merge_width_clamp(int(40e9), 8) == 2  # exact boundary (40-8)/16
+    assert d.merge_width_clamp(int(5e9), 4) == 1  # negative numerator -> floor 1
+
+
+def test_fanout_units_clamps_concurrency_for_merge_bearing(monkeypatch, tmp_path, caplog):
+    """Pin (ii wiring): merge-bearing fanouts cap CONCURRENT lanes at the
+    clamp; non-merge fanouts keep full GPU width at the same free space."""
+    import logging
+    import types
+
+    cfg = _cfg(tmp_path)
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(d, "_physical_gpu_ids", lambda: ["0", "1", "2", "3"])
+    monkeypatch.setattr(d.time, "sleep", lambda s: None)
+    live: set[int] = set()
+    peak = [0]
+
+    class _Proc:
+        def __init__(self, cmd, **kw):
+            self._polls = 0
+            live.add(id(self))
+            peak[0] = max(peak[0], len(live))
+
+        def poll(self):
+            self._polls += 1
+            if self._polls >= 2:
+                live.discard(id(self))
+                return 0
+            return None
+
+    monkeypatch.setattr(d.subprocess, "Popen", _Proc)
+    monkeypatch.setattr(
+        d.shutil, "disk_usage", lambda p: types.SimpleNamespace(total=0, used=0, free=int(63e9))
+    )
+    units = [["--unit", "capture", f"lora:a{i}"] for i in range(6)]
+    with caplog.at_level(logging.INFO):
+        d._fanout_units(cfg, units, merge_bearing=6)
+    assert peak[0] == 3  # clamped: (63-8)//16 = 3 of 4 GPUs
+    assert any("merge width clamp" in m for m in caplog.messages)
+    live.clear()
+    peak[0] = 0
+    d._fanout_units(cfg, units)  # merge_bearing=0 -> full width, no disk gate
+    assert peak[0] == 4
+
+
+def test_n_merge_bearing_counts_only_unmerged_lora_arms(tmp_path):
+    cfg = _cfg(tmp_path)
+    done = d._merged_model_dir(cfg, "syc-a-lora")
+    done.mkdir(parents=True)
+    (done / "config.json").write_text("{}")
+    arms = [("syc-a-lora", "lora"), ("syc-b-lora", "lora"), ("c1", "ft")]
+    assert d._n_merge_bearing(cfg, arms) == 1  # complete merge + ft arm excluded
+
+
+def test_reap_and_clamp_wired_at_every_consumer_phase():
+    """Pin (i/ii wiring): every heavy-model consumer phase ends with the
+    last-consumer reap, and every merge-capable fanout passes
+    merge_bearing=."""
+    for phase in (
+        d.phase_tier2,
+        d.phase_panel,
+        d.phase_margin,
+        d.phase_capture,
+        d.phase_capture_tf,
+    ):
+        assert "_reap_arm_artifacts_after(cfg" in inspect.getsource(phase), phase.__name__
+    for phase in (d.phase_panel, d.phase_margin, d.phase_capture, d.phase_capture_tf):
+        assert "merge_bearing=_n_merge_bearing(" in inspect.getsource(phase), phase.__name__
+    # writer + count + reaper share ONE merged-dir derivation (r3 lesson)
+    for fn in (d._resolve_arm_model, d._n_merge_bearing, d._reap_arm_artifacts_after):
+        assert "_merged_model_dir(" in inspect.getsource(fn), fn.__name__
