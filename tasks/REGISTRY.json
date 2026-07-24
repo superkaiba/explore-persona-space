@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1655,
+  "highest_id": 1656,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5109,6 +5109,13 @@
       "path": "tasks/proposed/1655",
       "status": "proposed",
       "title": "daily-fix: provision preflight checks account SSH keys"
+    },
+    "1656": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1656",
+      "status": "proposed",
+      "title": "daily-fix: detached runs declare a harvest step at launch"
     },
     "168": {
       "has_clean_result": true,
