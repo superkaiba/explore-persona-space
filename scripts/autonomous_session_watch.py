@@ -525,8 +525,9 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_ORPHAN_WRAPPER_PASS=1``; ``--orphan-wrapper-only`` runs
    just this pass with an in-invocation two-sample CPU delta (pair with
    ``--dry-run`` for a read-only live smoke). (:func:`orphan_wrapper_pass`.)
-29. **Completed-unmerged flag pass (#1564; incident #1540; FLAG-ONLY;
-   daemon-INDEPENDENT; runs right after pass 27).** Hourly-self-gated
+29. **Completed-unmerged flag + bounded-respawn pass (#1564 + #1653;
+   incident #1540; daemon-INDEPENDENT flag half; runs right after
+   pass 27).** Hourly-self-gated
    (``EPM_COMPLETED_UNMERGED_INTERVAL_HOURS``, 1h) audit of the #1540
    stranded-merge shape: a ``completed`` task whose events carry
    ``epm:done`` (within a 72h lookback,
@@ -542,7 +543,15 @@ adding a pass means adding a numbered item here AND bumping the digit:
    interval + ONE marker per (issue, done_ts) episode + a deduped push
    re-firing every 24h while unresolved
    (``EPM_COMPLETED_UNMERGED_REALERT_HOURS``), naming the Step 10d
-   recovery. NEVER merges/pushes/spawns, never mutates status. Known v1
+   recovery. NEVER merges/pushes, never mutates status; #1653 adds a
+   bounded respawn arm — on a LATER interval with the same (issue,
+   done_ts) episode still stranded and NO live owning session (#1582
+   owner union; daemon probe fails toward skip), dispatch ``spawn-issue
+   --issue <N> --auto`` once per episode
+   (``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``=3/day fleet-wide,
+   auth-outage-gated #1027, kill switch
+   ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN``) so the fresh session's
+   /issue resume row runs the Step 10d backstop (#1578). Known v1
    bounds (fail-toward-silence; /daily stays the backstop): once ANY
    ``epm:merged`` exists a LATER round's stranded merge never fires;
    suffixed ``issue-<N>-<slug>`` follow-up branches are invisible to the
@@ -1445,13 +1454,22 @@ STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 # `completed` task whose events carry `epm:done` but NO `epm:merged` while
 # the issue-<N> PR/branch is still unmerged — the #1540 class (a killed
 # Step 10d merge turn left the merge stranded 16h, invisible to every other
-# lane). FLAG-ONLY: the pass posts one marker per (issue, done_ts) episode +
-# a sidecar row + a TTL'd Telegram digest line and NEVER merges or mutates
-# status. Same staleness-filter contract as every other watcher-posted
-# sentinel (membership in _WATCHER_NOTE_SENTINELS below is load-bearing —
-# the flag marker must not refresh the very events-mtime/staleness clocks
-# other passes read).
+# lane). Flag + bounded respawn (#1653): the pass posts one marker per
+# (issue, done_ts) episode + a sidecar row + a TTL'd Telegram digest line
+# and NEVER merges or mutates status — the only action beyond flagging is
+# the #1653 respawn arm's bounded spawn-issue dispatch (see the RESPAWN
+# sentinel below). Same staleness-filter contract as every other
+# watcher-posted sentinel (membership in _WATCHER_NOTE_SENTINELS below is
+# load-bearing — the flag marker must not refresh the very
+# events-mtime/staleness clocks other passes read).
 _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-flag]"
+
+# Substring stamped into the completed-unmerged RESPAWN marker (task #1653):
+# posted once per (issue, done_ts) episode when the bounded respawn arm
+# dispatches spawn-issue --auto to run the Step 10d backstop (#1578 resume
+# row). Anti-liveness membership below is load-bearing (same contract as the
+# flag sentinel).
+_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-respawn]"
 
 # Substring stamped into the boot-death stop marker (task #1267): a freshly
 # dispatched AUTO session whose transcript holds ZERO response rows
@@ -1564,6 +1582,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
         _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL,
+        _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL,
         _BOOT_DEATH_STOP_NOTE_SENTINEL,
         _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
@@ -6397,7 +6416,7 @@ def registry_drift_pass(dry_run: bool) -> bool:
         return False
 
 
-# ─── Completed-unmerged flag pass (task #1564) ────────────────────────────────
+# ─── Completed-unmerged flag + bounded-respawn pass (tasks #1564 + #1653) ─────
 #
 # WHY: incident #1540 — the task reached `completed` + `epm:done` at
 # 2026-07-19T14:49:17Z, the NEXT turn (the Step 10d worktree merge) was
@@ -6406,11 +6425,16 @@ def registry_drift_pass(dry_run: bool) -> bool:
 # lane (the tick cron is torn down at `completed`; the wedge lane needs >=3
 # failed wakes; nothing audits the marker SHAPE). This pass is the periodic
 # audit of exactly that shape: `completed` + `epm:done` + NO `epm:merged`
-# while the `issue-<N>` PR/branch is still unmerged. FLAG-ONLY (the
+# while the `issue-<N>` PR/branch is still unmerged. Flag channels (the
 # stale-blocked posture): sidecar row every flagged interval + ONE marker per
 # (issue, done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
-# recovery — NEVER merges, never pushes branches, never mutates status,
-# never spawns sessions.
+# recovery — NEVER merges, never pushes branches, never mutates status. The
+# #1653 respawn arm adds ONE bounded action beyond flagging: once per
+# (issue, done_ts) episode — persistence-gated (flagged on a PRIOR
+# interval), day-capped fleet-wide, live-owner- + daemon- +
+# auth-outage-gated — dispatch `spawn-issue --issue <N> --auto` so the fresh
+# session's /issue resume row runs the Step 10d backstop (#1578); the merge
+# itself still runs only in-session, never here.
 #
 # Known v1 bounds (each fails toward SILENCE by design; the /daily sweep
 # stays the backstop for all four):
@@ -6451,6 +6475,16 @@ COMPLETED_UNMERGED_REALERT_HOURS = 24.0
 # flagged candidates (measured live, 2026-07-20). Env
 # EPM_COMPLETED_UNMERGED_PROBE_CAP.
 COMPLETED_UNMERGED_PROBE_CAP = 10
+# #1653: fleet-wide per-UTC-day cap on respawn dispatches (across issues —
+# strandings are rare: 2 incidents in the month before this arm, so 3/day is
+# >=40x headroom; the once-per-episode latch already bounds per-issue churn
+# to 1, so this cap's job is bounding fleet-wide pathology, e.g. a registry
+# corruption opening many false episodes). Value mirrors the validated
+# wedge-lane budgets (TICK_WEDGE_RESPAWNS_PER_DAY /
+# TICK_WEDGE_DEAD_RESPAWNS_PER_DAY = 3, #1209/#1241). Env
+# EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY; malformed or < 1 falls back
+# (disabling the arm is the kill switch's job, never the cap's).
+COMPLETED_UNMERGED_RESPAWNS_PER_DAY = 3
 
 
 def _completed_unmerged_enabled() -> bool:
@@ -6459,6 +6493,36 @@ def _completed_unmerged_enabled() -> bool:
     :func:`_registry_drift_enabled`."""
     raw = os.environ.get("EPM_DISABLE_COMPLETED_UNMERGED_PASS", "").strip().lower()
     return raw not in {"1", "true", "yes"}
+
+
+def _completed_unmerged_respawn_enabled() -> bool:
+    """Respawn-arm kill switch (#1653, default ENABLED): False when
+    ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN`` is set truthy ("1"/"true"/
+    "yes", case-insensitive). Independent of — and subordinate to —
+    ``EPM_DISABLE_COMPLETED_UNMERGED_PASS`` (the whole-pass switch, which
+    disables this arm too by never running the pass). Disabled restores
+    byte-equivalent #1564 flag-only behavior, marker text included."""
+    raw = os.environ.get("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _completed_unmerged_respawns_per_day() -> int:
+    """Fleet-wide per-UTC-day cap on #1653 respawn dispatches (env
+    ``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``; default
+    :data:`COMPLETED_UNMERGED_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env
+    falls back to the default — disabling the arm is the kill switch's job
+    (``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN=1``), never the cap's (exact
+    parse-shape clone of :func:`_tick_wedge_respawns_per_day`, #1241)."""
+    raw = os.environ.get("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY")
+    if not raw:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    if parsed < 1:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    return parsed
 
 
 def _completed_unmerged_sidecar_path() -> Path:
@@ -6470,8 +6534,14 @@ def _completed_unmerged_sidecar_path() -> Path:
 def _completed_unmerged_state_path() -> Path:
     """Singleton throttle+episode state (deliberately NOT a per-issue GC
     target — the registry-drift-observer shape): ``{"last_run_ts": <float>,
+    "respawn_day": "YYYY-MM-DD", "respawns_today": <int>,
     "episodes": {"<issue>": {done_ts, flagged, marker_posted, alerted_ts,
-    verdict, resolved_verdict}}}``."""
+    verdict, resolved_verdict, respawned_ts, respawn_result}}}``. The
+    ``respawn_day``/``respawns_today`` pair is the #1653 arm's fleet day
+    counter (read via :func:`_day_scoped_count` — malformed/rolled values
+    read 0, cost at most one extra bounded respawn); the per-episode
+    ``respawned_ts`` + ``respawn_result`` (``"spawned" | "failed"``) are its
+    once-per-episode latch."""
     return AUTONOMOUS_REGISTRY_DIR / "completed-unmerged-observer.json"
 
 
@@ -6776,8 +6846,10 @@ def _completed_unmerged_flag(
     """Emit the flag channels for one confirmed stranded merge, keyed per
     (issue, done_ts) episode: sidecar row EVERY flagged interval; ONE task
     marker per episode; Telegram push at episode open, re-fired every
-    ``realert_s`` while unresolved. FLAG-ONLY: never merges, never mutates
-    status (pinned by test)."""
+    ``realert_s`` while unresolved. This emitter itself never merges, never
+    mutates status (pinned by test); the #1653 respawn arm lives in
+    :func:`_completed_unmerged_maybe_respawn`, called AFTER this — the
+    same-episode rewrite below carries its latch fields forward."""
     key = str(issue)
     raw_entry = episodes.get(key)
     entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
@@ -6802,6 +6874,20 @@ def _completed_unmerged_flag(
         },
         dry_run,
     )
+    # #1653: the trailing sentence is conditional on the respawn arm — the
+    # kill switch restores the pre-#1653 flag-only text BYTE-VERBATIM (AC7).
+    if _completed_unmerged_respawn_enabled():
+        cap = _completed_unmerged_respawns_per_day()
+        marker_tail = (
+            f"The watcher never merges; if this strand persists to the next hourly interval "
+            f"with no live owning session, a bounded auto-respawn (once per episode, "
+            f"<={cap}/day fleet-wide; #1653) will re-drive /issue {issue} to run the "
+            f"Step 10d backstop."
+        )
+        push_tail = "Watcher never merges; bounded auto-respawn arms next interval (#1653)."
+    else:
+        marker_tail = "FLAG-ONLY: the watcher never merges."
+        push_tail = "Watcher never merges."
     if not (same_episode and entry.get("marker_posted")):
         _post_progress_marker(
             issue,
@@ -6810,8 +6896,7 @@ def _completed_unmerged_flag(
             f"(#1540 class). Recover: spawn a session on issue {issue} and run the SKILL.md "
             f"Step 10d auto-merge procedure — `uv run python scripts/spawn_session.py "
             f"spawn-issue --issue {issue}` then type `/issue {issue}` (the resume path runs "
-            f"the Step 10d auto-merge idempotently when the PR is unmerged). FLAG-ONLY: the "
-            f"watcher never merges.",
+            f"the Step 10d auto-merge idempotently when the PR is unmerged). {marker_tail}",
             dry_run,
             label="completed-unmerged-flag",
         )
@@ -6821,11 +6906,11 @@ def _completed_unmerged_flag(
         _telegram_push(
             f"EPS #{issue}: completed with epm:done ({done_iso}) but NO epm:merged — {detail}; "
             f"likely a killed Step 10d merge turn (#1540 class). Recover: spawn-issue --issue "
-            f"{issue} then /issue {issue} (Step 10d re-runs idempotently). Watcher never merges.",
+            f"{issue} then /issue {issue} (Step 10d re-runs idempotently). {push_tail}",
             dry_run,
         )
         alerted_ts = now
-    episodes[key] = {
+    new_entry = {
         "done_ts": done_ts,
         "flagged": True,
         "marker_posted": True,
@@ -6833,18 +6918,231 @@ def _completed_unmerged_flag(
         "verdict": verdict,
         "resolved_verdict": None,
     }
+    if same_episode:
+        # #1653: carry the respawn latch across the per-interval rewrite —
+        # without this, the interval AFTER a respawn would erase
+        # respawned_ts/respawn_result and re-arm the once-per-episode
+        # dispatch (a NEW done_ts deliberately drops the latch — a fresh
+        # episode may respawn once again).
+        for field in ("respawned_ts", "respawn_result"):
+            if field in entry:
+                new_entry[field] = entry[field]
+    episodes[key] = new_entry
+
+
+def decide_completed_unmerged_respawn(
+    *,
+    respawn_enabled: bool,
+    prior_flagged: bool,
+    already_respawned: bool,
+    respawns_today: int,
+    owner_live: bool | None,
+    max_per_day: int,
+) -> str:
+    """Pure decision for the #1653 respawn arm. Returns one of:
+    ``"respawn"`` | ``"skip-disabled"`` | ``"skip-first-interval"`` |
+    ``"skip-already-respawned"`` | ``"skip-day-cap"`` | ``"skip-owner-live"``
+    | ``"skip-owner-unknown"``. Cheap gates first so the impure caller can
+    pre-evaluate with ``owner_live=False`` and probe the daemon ONLY when
+    everything cheap passes (the probe is the one expensive signal). Every
+    uncertain signal fails toward skip (the :func:`decide_capacity_retry` /
+    #1582 unknown-freeze posture)."""
+    if not respawn_enabled:
+        return "skip-disabled"
+    if already_respawned:
+        return "skip-already-respawned"
+    if not prior_flagged:
+        return "skip-first-interval"  # persistence: flagged on a PRIOR interval
+    if respawns_today >= max_per_day:
+        return "skip-day-cap"
+    if owner_live is None:
+        return "skip-owner-unknown"  # daemon down / children unreadable
+    if owner_live:
+        return "skip-owner-live"
+    return "respawn"
+
+
+def _completed_unmerged_live_owner(issue: int) -> bool | None:
+    """True = a live session owns ``issue``; False = provably none; None =
+    unknowable (fail toward NO respawn). Reuses the #1582 owner-candidate
+    union: registration sids (``issue-<N>.json`` + ``manual-issue-<N>.json``)
+    resolved through the /list children sid->pid map, PLUS cwd-mapped
+    children (the #1345 unregistered-owner class). Daemon-gated HERE — the
+    flag half of the pass stays daemon-independent; only this probe (and
+    thus the respawn arm) needs the daemon. Single :func:`_daemon_reachable`
+    probe, not ``_with_retry``: a false negative merely defers one hourly
+    interval (the #811/#845 retry tradeoff, considered + declined in the
+    #1653 plan §11)."""
+    try:
+        if not _daemon_reachable():
+            return None
+        children = _live_children(strict=True)  # strict: a /list flake raises
+    except RuntimeError:
+        return None
+    return bool(_keep_running_owner_candidates(issue, children))
+
+
+def _completed_unmerged_respawn(issue: int, dry_run: bool) -> str:
+    """``spawn-issue --auto`` for a confirmed stranded merge (#1653): the
+    fresh session's /issue resume row (#1578, SKILL.md Step 0 resume table)
+    runs the Step 10d idempotent backstop — the watcher itself still never
+    merges. Tri-state ``"spawned" | "suppressed" | "failed"`` (#843 M1b:
+    suppressed books nothing); ``dry_run`` logs only and returns
+    ``"failed"`` (parity with :func:`_redrive_capacity_retry`).
+    ``"completed-unmerged"`` is deliberately NOT in
+    :data:`_AUTH_OUTAGE_CANARY_ARMS`: during an auth-outage episode the arm
+    is fully suppressed — a stranded merge is not time-critical, the flag
+    channels keep firing, and the gate's fail-open TTL bounds the delay."""
+    if _auth_outage_spawn_gate(issue, "completed-unmerged", dry_run=dry_run) is not None:
+        print(f"  completed-unmerged: respawn #{issue} suppressed — auth-outage episode active")
+        return "suppressed"
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto",
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn stranded-merge session: {' '.join(cmd)}")
+        return "failed"  # dry-run: nothing spawned
+    try:
+        res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        # Deliberate deviation from the _redrive_capacity_retry clone (which
+        # lets a timeout propagate to its caller's fail-soft): the spawn may
+        # have fired before the 120s kill, so returning "failed" lets the
+        # caller BOOK the attempt (day slot + episode latch) — the
+        # conservative direction; an unbooked timeout would re-dispatch next
+        # interval, the double-spawn shape the latch exists to prevent.
+        print(f"  COMPLETED-UNMERGED RESPAWN DISPATCH TIMED OUT #{issue} (120s)", file=sys.stderr)
+        return "failed"
+    if res.returncode != 0:
+        print(
+            f"  COMPLETED-UNMERGED RESPAWN DISPATCH FAILED #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (completed-unmerged)")
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  completed-unmerged: respawn #{issue} suppressed (lease/collision/hold): "
+            f"{first_line}"
+        )
+        return "suppressed"
+    print(f"  COMPLETED-UNMERGED RESPAWNED #{issue}: {first_line}")
+    _auth_outage_record_spawn(issue, "completed-unmerged", None)
+    return "spawned"
+
+
+def _completed_unmerged_maybe_respawn(
+    issue: int,
+    done_ts: float,
+    verdict: str,
+    episodes: dict,
+    state: dict,
+    now: float,
+    day_key: str,
+    prior_flagged: bool,
+    dry_run: bool,
+) -> None:
+    """Orchestrate the #1653 respawn arm for ONE flagged candidate (called
+    right after :func:`_completed_unmerged_flag`, so only verdicts
+    ``unmerged-open-pr``/``unmerged-branch-commits`` ever reach it): pure
+    decide with cheap gates first, daemon probe ONLY when they pass, then
+    dispatch + book. A ``"suppressed"`` result books NOTHING (#843 M1b);
+    ``"spawned"`` and ``"failed"`` both consume the fleet day slot + latch
+    the episode (strict once per (issue, done_ts)); the latch is saved
+    FIRST — before the marker/push — so a later crash can never re-arm a
+    double-spawn. Marker + push fire on ``"spawned"`` only (skips are
+    print-only; the flag channels already row every interval)."""
+    key = str(issue)
+    raw_entry = episodes.get(key)
+    entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    max_per_day = _completed_unmerged_respawns_per_day()
+    respawns_today = _day_scoped_count(state, "respawn_day", "respawns_today", day_key)
+    common = dict(
+        respawn_enabled=_completed_unmerged_respawn_enabled(),
+        prior_flagged=prior_flagged,
+        already_respawned=entry.get("respawned_ts") is not None,
+        respawns_today=respawns_today,
+        max_per_day=max_per_day,
+    )
+    pre = decide_completed_unmerged_respawn(owner_live=False, **common)
+    if pre != "respawn":
+        if pre not in ("skip-disabled", "skip-first-interval"):
+            # Keep logs quiet on the two common paths (a disabled arm skips
+            # every candidate; every episode's first interval is
+            # skip-first-interval by construction).
+            print(f"  completed-unmerged: respawn #{issue} {pre}")
+        return
+    owner = _completed_unmerged_live_owner(issue)  # the one expensive probe
+    action = decide_completed_unmerged_respawn(owner_live=owner, **common)
+    if action != "respawn":
+        print(f"  completed-unmerged: respawn #{issue} {action}")
+        return
+    result = _completed_unmerged_respawn(issue, dry_run)
+    if result == "suppressed":
+        return  # book NOTHING (#843 M1b) — the next interval re-evaluates
+    # Book the attempt (spawned OR failed): fleet day counter + episode
+    # latch, saved latch-FIRST (a crash between dispatch and save is the
+    # one residual double-spawn window; the spawn-side lease + the fresh
+    # session's Step 0 guard bound it to one duplicate).
+    state["respawn_day"] = day_key
+    state["respawns_today"] = respawns_today + 1
+    entry["respawned_ts"] = now
+    entry["respawn_result"] = result
+    episodes[key] = entry
+    _save_completed_unmerged_state(state, dry_run)
+    _append_completed_unmerged_sidecar(
+        {
+            "issue": issue,
+            "done_ts": done_ts,
+            "verdict": verdict,
+            "action": "respawned",
+            "result": result,
+            "respawns_today": respawns_today + 1,
+            "dry_run": dry_run,
+        },
+        dry_run,
+    )
+    if result == "spawned":
+        done_iso = _triage_observer_iso_z(done_ts)
+        _post_progress_marker(
+            issue,
+            f"{_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} stranded merge persisted a full "
+            f"interval past the flag (epm:done {done_iso}, no epm:merged, {verdict}); no live "
+            f"session owns this issue — auto-respawned via `spawn-issue --issue {issue} "
+            f"--auto` (once per episode, {respawns_today + 1}/{max_per_day} today; #1653). "
+            f"The fresh session's /issue resume row runs the Step 10d auto-merge backstop "
+            f"(#1578). The watcher itself never merges/pushes or mutates status.",
+            dry_run,
+            label="completed-unmerged-respawn",
+        )
+        _telegram_push(
+            f"EPS #{issue}: stranded merge (epm:done {done_iso}, no epm:merged) "
+            f"auto-respawned — spawn-issue --auto dispatched to run Step 10d "
+            f"({respawns_today + 1}/{max_per_day} today; #1653). Watcher never merges.",
+            dry_run,
+        )
 
 
 def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
-    """FLAG-ONLY audit of the #1540 stranded-merge shape (task #1564): a
-    ``completed`` task whose events carry ``epm:done`` but NO ``epm:merged``
-    while the ``issue-<N>`` PR/branch is still unmerged — a killed Step 10d
-    merge turn is invisible to every other watcher lane (the tick cron is
-    torn down at ``completed``; the wedge lane needs failed wakes). Hourly
-    self-gated; probe-capped; hard invariants pinned by test: never mutates
-    status, never merges/pushes anything, never spawns a session.
-    Daemon-INDEPENDENT (marker posts go via the task.py subprocess, like
-    :func:`stale_blocked_flag_pass`)."""
+    """Audit + bounded respawn of the #1540 stranded-merge shape (#1564 flag
+    channels; #1653 respawn arm): a ``completed`` task whose events carry
+    ``epm:done`` but NO ``epm:merged`` while the ``issue-<N>`` PR/branch is
+    still unmerged — a killed Step 10d merge turn is invisible to every
+    other watcher lane (the tick cron is torn down at ``completed``; the
+    wedge lane needs failed wakes). Hourly self-gated; probe-capped. Hard
+    invariants pinned by test: never mutates status, never merges/pushes
+    anything. The ONLY action beyond flagging is ONE ``spawn-issue --auto``
+    per (issue, done_ts) episode — persistence-gated (flagged on a PRIOR
+    interval), day-capped fleet-wide
+    (``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``, default 3), suppressed
+    when a live session owns the issue, daemon-gated (the owner probe fails
+    toward skip), auth-outage-gated (#1027); kill switch
+    ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN``. The FLAG half stays
+    daemon-INDEPENDENT (marker posts go via the task.py subprocess, like
+    :func:`stale_blocked_flag_pass`); only the respawn probe needs the
+    daemon."""
     if not _completed_unmerged_enabled():
         print("  completed-unmerged: disabled via EPM_DISABLE_COMPLETED_UNMERGED_PASS; skipping")
         return
@@ -6894,6 +7192,7 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         # crashing sweep is bounded to one attempt per interval, not one
         # per 10-min tick.
         _save_completed_unmerged_state(state, dry_run)
+        day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # #1653 fleet day-cap key
         raw_eps = state.get("episodes")
         episodes: dict = raw_eps if isinstance(raw_eps, dict) else {}
         state["episodes"] = episodes
@@ -6956,8 +7255,18 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
                     dry_run,
                 )
                 continue
+            # #1653 persistence signal, read from the PRE-flag entry (the
+            # flag emitter rewrites episodes[key] below): flagged on a PRIOR
+            # interval for the SAME done_ts — the hourly self-gate makes
+            # this a free >=~1h flag-to-respawn window, on top of the 2h
+            # done-grace (a human already pushed at episode open gets an
+            # hour to intervene).
+            prior_flagged = entry.get("done_ts") == done_ts and entry.get("flagged") is True
             _completed_unmerged_flag(
                 issue, done_ts, mf_ts, verdict, detail, episodes, now, realert_s, dry_run
+            )
+            _completed_unmerged_maybe_respawn(
+                issue, done_ts, verdict, episodes, state, now, day_key, prior_flagged, dry_run
             )
         # Episodes whose task left the candidate window entirely (events
         # mtime past the lookback) never reach the predicate above — prune
@@ -25079,11 +25388,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     parser.add_argument(
         "--completed-unmerged-only",
         action="store_true",
-        help="run ONLY the completed-unmerged flag pass (#1564, flag-only — "
-        "a completed task with epm:done but NO epm:merged whose issue-<N> "
-        "PR/branch is still unmerged, the #1540 stranded Step 10d merge "
-        "class) and exit; skip every other pass. Daemon-independent; pair "
-        "with --dry-run for a live smoke against the real completed set.",
+        help="run ONLY the completed-unmerged pass (#1564 flag + #1653 "
+        "bounded respawn — a completed task with epm:done but NO epm:merged "
+        "whose issue-<N> PR/branch is still unmerged, the #1540 stranded "
+        "Step 10d merge class) and exit; skip every other pass. The flag "
+        "half is daemon-independent (the respawn arm probes the daemon "
+        "lazily and skips toward flag-only when unreachable); pair with "
+        "--dry-run for a live smoke against the real completed set.",
     )
     parser.add_argument(
         "--auth-outage-only",
@@ -25206,9 +25517,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
-    # --completed-unmerged-only mirrors --registry-drift-only: the pass is
-    # daemon-independent (registry + events.jsonl reads + read-only gh/git
-    # probes; marker posts go via the task.py subprocess), so run it alone.
+    # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
+    # is daemon-independent (registry + events.jsonl reads + read-only
+    # gh/git probes; marker posts go via the task.py subprocess), and the
+    # #1653 respawn arm probes the daemon lazily per candidate — skipping
+    # toward flag-only when unreachable — so the pass still runs alone.
     if args.completed_unmerged_only:
         completed_unmerged_pass(args.dry_run)
         return 0
@@ -25329,15 +25642,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # so it runs on a daemon outage too.
     registry_drift_pass(args.dry_run)
 
-    # Completed-unmerged flag pass (#1564; incident #1540): hourly FLAG-ONLY
-    # audit of `completed` tasks whose events carry epm:done but NO
-    # epm:merged while the issue-<N> PR/branch is still unmerged — the
-    # stranded Step 10d merge class (a killed merge turn is invisible to
-    # every other lane: the tick cron is torn down at `completed`, the
+    # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
+    # #1540): hourly audit of `completed` tasks whose events carry epm:done
+    # but NO epm:merged while the issue-<N> PR/branch is still unmerged —
+    # the stranded Step 10d merge class (a killed merge turn is invisible
+    # to every other lane: the tick cron is torn down at `completed`, the
     # wedge lane needs failed wakes). Sidecar + one marker per (issue,
     # done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
-    # recovery; NEVER merges, never mutates status, never spawns.
-    # Daemon-independent, so it runs on a daemon outage too.
+    # recovery; on a LATER flagged interval with no live owning session,
+    # ONE bounded spawn-issue --auto per episode re-drives the Step 10d
+    # backstop (#1578). NEVER merges, never mutates status. The flag half
+    # is daemon-independent (the respawn probe skips toward flag-only on a
+    # daemon outage), so it runs in this block on a daemon outage too.
     completed_unmerged_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from

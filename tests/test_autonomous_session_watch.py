@@ -20853,11 +20853,35 @@ def _cu_sidecar(asw, monkeypatch, tmp_path) -> Path:
     return tmp_path / "root" / ".claude" / "cache" / "completed-unmerged-events.jsonl"
 
 
-def _cu_patch_pass(monkeypatch, asw, candidates, verdicts):
+def _cu_patch_pass(
+    monkeypatch,
+    asw,
+    candidates,
+    verdicts,
+    *,
+    respawn=False,
+    owner_live=False,
+    respawn_result="spawned",
+):
     """Stub the candidate gate + probe + marker/push boundaries; the events
     parse + predicate + episode state machine + sidecar writes run for real.
     ``candidates``: list[(issue, task_dir)] (mutable — reread each call);
-    ``verdicts``: issue -> (verdict, detail). Returns (probed, posted, pushed)."""
+    ``verdicts``: issue -> (verdict, detail). Returns
+    ``(probed, posted, pushed, respawned)``.
+
+    DEFAULT: the #1653 respawn arm is DISABLED via env, so the pre-#1653
+    tests keep exercising the flag machinery byte-equivalent (itself pinning
+    plan control #2 — flag/push/sidecar behavior unchanged with the arm
+    off); ``respawned`` is then always []. ``respawn=True`` instead deletes
+    that env (the arm's ENABLED default) and stubs
+    ``_completed_unmerged_live_owner`` (returns ``owner_live``) +
+    ``_completed_unmerged_respawn`` (recording stub returning
+    ``respawn_result``); tests needing per-interval dynamics re-monkeypatch
+    those seams directly (a later setattr wins)."""
+    if respawn:
+        monkeypatch.delenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", raising=False)
+    else:
+        monkeypatch.setenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", "1")
     monkeypatch.setattr(
         asw, "_completed_unmerged_candidates", lambda now, lookback_s: list(candidates)
     )
@@ -20876,7 +20900,16 @@ def _cu_patch_pass(monkeypatch, asw, candidates, verdicts):
     )
     pushed: list[str] = []
     monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
-    return probed, posted, pushed
+    respawned: list[int] = []
+    if respawn:
+        monkeypatch.setattr(asw, "_completed_unmerged_live_owner", lambda issue: owner_live)
+
+        def _respawn(issue, dry_run):
+            respawned.append(issue)
+            return respawn_result
+
+        monkeypatch.setattr(asw, "_completed_unmerged_respawn", _respawn)
+    return probed, posted, pushed, respawned
 
 
 def _cu_sidecar_actions(sidecar: Path) -> list[str]:
@@ -20896,7 +20929,7 @@ def test_completed_unmerged_pass_flags_once_per_episode(isolated_registry, tmp_p
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "1540"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    probed, posted, pushed = _cu_patch_pass(
+    probed, posted, pushed, respawned = _cu_patch_pass(
         monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN (draft)")}
     )
 
@@ -20920,6 +20953,7 @@ def test_completed_unmerged_pass_flags_once_per_episode(isolated_registry, tmp_p
     asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
     assert len(posted) == 1 and len(pushed) == 1 and probed == [1540, 1540]
     assert _cu_sidecar_actions(sidecar) == ["flagged", "flagged"]
+    assert respawned == []  # fixture default: the #1653 arm is env-disabled
 
 
 def test_completed_unmerged_pass_realert_ttl_repushes(isolated_registry, tmp_path, monkeypatch):
@@ -20929,7 +20963,7 @@ def test_completed_unmerged_pass_realert_ttl_repushes(isolated_registry, tmp_pat
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "1540"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    _probed, posted, pushed = _cu_patch_pass(
+    _probed, posted, pushed, _respawned = _cu_patch_pass(
         monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
     )
     asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
@@ -20949,7 +20983,7 @@ def test_completed_unmerged_pass_new_done_ts_new_episode(isolated_registry, tmp_
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "1540"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    _probed, posted, pushed = _cu_patch_pass(
+    _probed, posted, pushed, _respawned = _cu_patch_pass(
         monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
     )
     asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
@@ -20980,7 +21014,7 @@ def test_completed_unmerged_pass_resolved_verdict_cached_no_reprobe(
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "77"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    probed, posted, pushed = _cu_patch_pass(
+    probed, posted, pushed, _respawned = _cu_patch_pass(
         monkeypatch, asw, [(77, task_dir)], {77: ("nothing-to-merge", "no PR; branch absent")}
     )
     asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
@@ -21004,7 +21038,7 @@ def test_completed_unmerged_pass_prune_labels_recovered_vs_aged_out(
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "1540"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    _probed, posted, _pushed = _cu_patch_pass(
+    _probed, posted, _pushed, _respawned = _cu_patch_pass(
         monkeypatch, asw, [(1540, task_dir)], {1540: ("unmerged-open-pr", "PR #1312 OPEN")}
     )
     asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
@@ -21043,7 +21077,7 @@ def test_completed_unmerged_pass_probe_failure_skips_no_state_write(
     done = asw._parse_event_ts(_CU_DONE_1540)
     task_dir = tmp_path / "tasks" / "completed" / "1540"
     _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    _probed, posted, pushed = _cu_patch_pass(
+    _probed, posted, pushed, _respawned = _cu_patch_pass(
         monkeypatch, asw, [(1540, task_dir)], {1540: ("probe-failed", "gh rc=1")}
     )
     asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
@@ -21065,7 +21099,7 @@ def test_completed_unmerged_pass_probe_cap(isolated_registry, tmp_path, monkeypa
     d21 = tmp_path / "tasks" / "completed" / "21"
     for d in (d20, d21):
         _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
-    probed, posted, _pushed = _cu_patch_pass(
+    probed, posted, _pushed, _respawned = _cu_patch_pass(
         monkeypatch,
         asw,
         [(20, d20), (21, d21)],
@@ -21098,6 +21132,10 @@ def test_completed_unmerged_pass_dry_run_no_writes(isolated_registry, tmp_path, 
     # Acceptance criterion 3: dry-run performs ZERO writes (no state file,
     # no sidecar) and ZERO subprocesses beyond read-only enumeration (the
     # marker/push helpers no-op internally BEFORE their subprocess).
+    # NOTE (#1653): no fixture env shield here — the respawn arm holds at
+    # its ENABLED default because this is a FIRST flag interval (the
+    # persistence gate skips pre-probe); the respawn-interval dry-run
+    # sibling is test_completed_unmerged_respawn_dry_run_no_writes.
     import autonomous_session_watch as asw
 
     sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
@@ -21142,12 +21180,17 @@ def test_completed_unmerged_pass_interval_throttle(isolated_registry, tmp_path, 
 def test_completed_unmerged_pass_never_mutates_status_or_merges(
     isolated_registry, tmp_path, monkeypatch
 ):
-    # Acceptance criterion 5 — the flag-only HARD invariant, TWO-PRONGED
+    # Acceptance criterion 5 — the never-merge HARD invariant, TWO-PRONGED
     # (mirrors test_stale_blocked_pass_never_mutates_status): (i) no recorded
     # subprocess argv contains `set-status`, a merge, a push, or a spawn;
     # (ii) the in-process mutators task_workflow.set_status / post_event
     # raise if touched. Runs the REAL probe + REAL marker/push paths through
     # the recorded subprocess seam (production-body coverage).
+    # NOTE (#1653): no fixture here, so the respawn arm runs at its ENABLED
+    # default — this test exercises ONE interval, and the FIRST flag interval
+    # never spawns (the persistence gate skips before any daemon probe), so
+    # the no-spawn prong holds verbatim; the respawn-interval sibling is
+    # test_completed_unmerged_respawn_never_merges_or_mutates.
     import subprocess as _subprocess
 
     import autonomous_session_watch as asw
@@ -21194,11 +21237,12 @@ def test_completed_unmerged_pass_never_mutates_status_or_merges(
 
 def test_completed_unmerged_sentinel_in_watcher_note_sentinels():
     # Mirrors test_stale_blocked_sentinel_in_watcher_note_sentinels: the flag
-    # note rides epm:progress; membership keeps it from ever resetting the
-    # _latest_progress_ts staleness clocks.
+    # + respawn notes ride epm:progress; membership keeps them from ever
+    # resetting the _latest_progress_ts staleness clocks.
     import autonomous_session_watch as asw
 
     assert asw._COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
 
 
 def test_main_completed_unmerged_only_flag(isolated_registry, monkeypatch):
@@ -21254,3 +21298,568 @@ def test_main_wires_completed_unmerged_pass_order(isolated_registry, monkeypatch
     rc = asw.main([])
     assert rc == 0
     assert order.index("registry_drift") < order.index("completed_unmerged")
+
+
+# ─── Completed-unmerged bounded respawn arm (task #1653) ──────────────────────
+
+
+def test_completed_unmerged_respawn_decide_matrix():
+    # Plan §6 test 1: the pure decision truth table, incl. the
+    # cheap-gates-before-owner ordering (owner_live=None with
+    # prior_flagged=False -> skip-first-interval, NOT skip-owner-unknown —
+    # the impure caller pre-evaluates with owner_live=False and probes the
+    # daemon only when every cheap gate passes).
+    import autonomous_session_watch as asw
+
+    def d(**kw):
+        base = dict(
+            respawn_enabled=True,
+            prior_flagged=True,
+            already_respawned=False,
+            respawns_today=0,
+            owner_live=False,
+            max_per_day=3,
+        )
+        base.update(kw)
+        return asw.decide_completed_unmerged_respawn(**base)
+
+    assert d() == "respawn"
+    assert d(respawn_enabled=False) == "skip-disabled"
+    assert d(already_respawned=True) == "skip-already-respawned"
+    assert d(prior_flagged=False) == "skip-first-interval"
+    assert d(respawns_today=3) == "skip-day-cap"
+    assert d(respawns_today=4) == "skip-day-cap"
+    assert d(owner_live=None) == "skip-owner-unknown"
+    assert d(owner_live=True) == "skip-owner-live"
+    # Cheap gates win before the owner signal is even consulted.
+    assert d(prior_flagged=False, owner_live=None) == "skip-first-interval"
+    assert d(respawn_enabled=False, owner_live=None) == "skip-disabled"
+    assert d(already_respawned=True, owner_live=None) == "skip-already-respawned"
+    assert d(respawns_today=3, owner_live=None) == "skip-day-cap"
+
+
+def test_completed_unmerged_respawn_fires_on_second_interval_once_per_episode(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Durability pin (plan §6 test 2 = AC1+AC2+AC3): interval 1 flags only;
+    # interval 2 dispatches exactly once + posts the respawn marker + pushes
+    # + latches; interval 3 dispatches nothing new while the flag channels
+    # keep rowing.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(1540, task_dir)],
+        {1540: ("unmerged-open-pr", "PR #1312 OPEN (draft)")},
+        respawn=True,
+        owner_live=False,
+    )
+
+    # Interval 1 (AC1): flag channels only — no dispatch.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    assert respawned == []
+    assert [label for _i, label, _n in posted] == ["completed-unmerged-flag"]
+    # The ENABLED-branch flag-note tail (plan §4.9 + critic advisory 2): the
+    # FLAG-ONLY sentence is replaced by the bounded-auto-respawn notice.
+    flag_note = posted[0][2]
+    assert "FLAG-ONLY" not in flag_note
+    assert "bounded auto-respawn" in flag_note
+    assert len(pushed) == 1 and "bounded auto-respawn arms next interval" in pushed[0]
+
+    # Interval 2 (AC2): the persisted episode carries flagged=True -> respawn.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert respawned == [1540]
+    assert [label for _i, label, _n in posted] == [
+        "completed-unmerged-flag",
+        "completed-unmerged-respawn",
+    ]
+    note = posted[1][2]
+    assert asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL in note
+    assert "1/3 today" in note
+    assert "Step 10d" in note
+    assert len(pushed) == 2
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "flagged", "respawned"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    entry = state["episodes"]["1540"]
+    assert entry["respawn_result"] == "spawned"
+    assert entry["respawned_ts"] == done + 4.5 * 3600
+    assert state["respawns_today"] == 1
+
+    # Interval 3 (AC3): latched — no new dispatch; flag channels continue.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 6 * 3600)
+    assert respawned == [1540]
+    assert len(posted) == 2 and len(pushed) == 2
+    assert _cu_sidecar_actions(sidecar) == ["flagged", "flagged", "respawned", "flagged"]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["respawn_result"] == "spawned"  # latch survived the rewrite
+
+
+def test_completed_unmerged_respawn_new_done_ts_new_episode(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Plan §6 test 3 (AC3 tail): a LATER round's fresh epm:done opens a NEW
+    # (issue, done_ts) episode that may respawn once again (the flag rewrite
+    # deliberately DROPS the latch on a done_ts change).
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, _posted, _pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(1540, task_dir)],
+        {1540: ("unmerged-open-pr", "PR #1312 OPEN")},
+        respawn=True,
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert respawned == [1540]
+    done2_iso = "2026-07-19T20:49:17Z"  # done + 6h — a fresh round's done
+    _cu_write_events(
+        task_dir,
+        [{"kind": "epm:done", "ts": _CU_DONE_1540}, {"kind": "epm:done", "ts": done2_iso}],
+    )
+    done2 = asw._parse_event_ts(done2_iso)
+    # Fresh episode: first interval flags only, the second respawns AGAIN.
+    asw.completed_unmerged_pass(dry_run=False, now=done2 + 3 * 3600)
+    assert respawned == [1540]
+    asw.completed_unmerged_pass(dry_run=False, now=done2 + 4.5 * 3600)
+    assert respawned == [1540, 1540]
+
+
+def test_completed_unmerged_respawn_owner_live_or_unknown_skips_books_nothing(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Plan §6 test 4 (AC4): owner True (live session) and owner None (daemon
+    # unreachable / strict /list flake) each skip WITHOUT consuming day
+    # budget or latching; a later interval with owner False fires.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, _pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(1540, task_dir)],
+        {1540: ("unmerged-open-pr", "PR #1312 OPEN")},
+        respawn=True,
+        owner_live=True,
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)  # interval 1: flag
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)  # owner LIVE: skip
+    assert respawned == []
+    monkeypatch.setattr(asw, "_completed_unmerged_live_owner", lambda issue: None)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 6 * 3600)  # owner UNKNOWN: skip
+    assert respawned == []
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert "respawned_ts" not in state["episodes"]["1540"]
+    assert state.get("respawns_today") in (None, 0)
+    # Re-evaluated next interval: owner now provably absent -> fires.
+    monkeypatch.setattr(asw, "_completed_unmerged_live_owner", lambda issue: False)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 7.5 * 3600)
+    assert respawned == [1540]
+    assert _cu_sidecar_actions(sidecar).count("respawned") == 1
+    assert [label for _i, label, _n in posted].count("completed-unmerged-respawn") == 1
+
+
+def test_completed_unmerged_respawn_day_cap_and_day_roll(isolated_registry, tmp_path, monkeypatch):
+    # Plan §6 test 5 (AC5) + critic advisory 3: at the fleet day cap no
+    # dispatch occurs and no latch is written; a rolled UTC day re-arms.
+    # Within-one-interval accounting variant: with cap=1 and TWO episodes
+    # eligible in the SAME interval, only the first dispatches (the second
+    # reads the just-bumped in-memory counter -> skip-day-cap).
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    d30 = tmp_path / "tasks" / "completed" / "30"
+    d31 = tmp_path / "tasks" / "completed" / "31"
+    for d in (d30, d31):
+        _cu_write_events(d, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, _posted, _pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(30, d30), (31, d31)],
+        {30: ("unmerged-open-pr", "PR #1 OPEN"), 31: ("unmerged-open-pr", "PR #2 OPEN")},
+        respawn=True,
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)  # interval 1: flags only
+    # Seed an exhausted fleet day budget for the interval-2 day.
+    day2 = done + 4.5 * 3600
+    day2_key = _time.strftime("%Y-%m-%d", _time.gmtime(day2))
+    state_path = isolated_registry / "completed-unmerged-observer.json"
+    state = json.loads(state_path.read_text())
+    state["respawn_day"] = day2_key
+    state["respawns_today"] = 3
+    state_path.write_text(json.dumps(state))
+    asw.completed_unmerged_pass(dry_run=False, now=day2)  # capped: no dispatch, no latch
+    assert respawned == []
+    state = json.loads(state_path.read_text())
+    assert state["respawns_today"] == 3
+    assert "respawned_ts" not in state["episodes"]["30"]
+    assert "respawned_ts" not in state["episodes"]["31"]
+    # Rolled UTC day + cap=1: the budget re-arms; the SAME interval's second
+    # candidate reads the first's bump -> exactly ONE dispatch.
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", "1")
+    asw.completed_unmerged_pass(dry_run=False, now=done + 30 * 3600)  # next UTC day
+    assert respawned == [30]
+    state = json.loads(state_path.read_text())
+    assert state["respawns_today"] == 1
+    assert "respawned_ts" in state["episodes"]["30"]
+    assert "respawned_ts" not in state["episodes"]["31"]
+
+
+def test_completed_unmerged_respawn_suppressed_books_nothing(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Plan §6 test 6 (AC6): a "suppressed" dispatch (auth-outage gate /
+    # spawn-side lease/collision/hold) books NOTHING — no day counter, no
+    # latch (#843 M1b); the next interval retries and a "spawned" result
+    # then latches.
+    import autonomous_session_watch as asw
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, _pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(1540, task_dir)],
+        {1540: ("unmerged-open-pr", "PR #1312 OPEN")},
+        respawn=True,
+        respawn_result="suppressed",
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert respawned == [1540]  # dispatch attempted…
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert "respawned_ts" not in state["episodes"]["1540"]  # …but nothing booked
+    assert state.get("respawns_today") in (None, 0)
+    assert [label for _i, label, _n in posted] == ["completed-unmerged-flag"]
+
+    # Next interval retries; a real spawn then latches.
+    def _respawn(issue, dry_run):
+        respawned.append(issue)
+        return "spawned"
+
+    monkeypatch.setattr(asw, "_completed_unmerged_respawn", _respawn)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 6 * 3600)
+    assert respawned == [1540, 1540]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["respawn_result"] == "spawned"
+    assert state["respawns_today"] == 1
+
+
+def test_completed_unmerged_respawn_failed_still_latches_episode(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Plan §6 test 7: a "failed" dispatch consumes the day slot + latches
+    # (strict once-per-episode — deliberate: the flag/push channels persist
+    # as the fallback; a new done_ts re-arms); no respawn marker fires.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    _probed, posted, _pushed, respawned = _cu_patch_pass(
+        monkeypatch,
+        asw,
+        [(1540, task_dir)],
+        {1540: ("unmerged-open-pr", "PR #1312 OPEN")},
+        respawn=True,
+        respawn_result="failed",
+    )
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)
+    assert respawned == [1540]
+    state = json.loads((isolated_registry / "completed-unmerged-observer.json").read_text())
+    assert state["episodes"]["1540"]["respawn_result"] == "failed"
+    assert state["respawns_today"] == 1
+    # No respawn marker on a failed dispatch; the sidecar records it.
+    assert [label for _i, label, _n in posted] == ["completed-unmerged-flag"]
+    rows = [json.loads(line) for line in sidecar.read_text().splitlines()]
+    respawn_rows = [r for r in rows if r["action"] == "respawned"]
+    assert len(respawn_rows) == 1 and respawn_rows[0]["result"] == "failed"
+    # Interval 3: latched — never re-dispatched; flag channel continues.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 6 * 3600)
+    assert respawned == [1540]
+    assert _cu_sidecar_actions(sidecar)[-1] == "flagged"
+
+
+def test_completed_unmerged_respawn_helper_auth_outage_gate(monkeypatch):
+    # Plan §6 test 8 (mirrors the capacity-retry helper shape): an active
+    # auth-outage episode suppresses BEFORE any subprocess (#1027; the arm
+    # is deliberately NOT a canary arm).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", lambda i, arm, *, dry_run: "auth-outage")
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **kw: pytest.fail("subprocess despite auth-outage gate")
+    )
+    assert asw._completed_unmerged_respawn(1540, dry_run=False) == "suppressed"
+
+
+def test_completed_unmerged_respawn_helper_spawn_shapes(monkeypatch):
+    # Plan §6 test 9: the dispatch helper's tri-state through a recorded
+    # subprocess seam — rc!=0 -> "failed"; a suppression sentinel in stdout
+    # -> "suppressed" (nothing recorded); clean -> "spawned" +
+    # _auth_outage_record_spawn with arm "completed-unmerged"; argv is
+    # exactly spawn-issue --issue N --auto; a TimeoutExpired -> "failed"
+    # (the deliberate book-the-attempt deviation from the capacity-retry
+    # clone); dry-run is print-only.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    gate_arms: list[str] = []
+
+    def _gate(issue, arm, *, dry_run=False):
+        gate_arms.append(arm)
+        return None
+
+    monkeypatch.setattr(asw, "_auth_outage_spawn_gate", _gate)
+    recorded: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw, "_auth_outage_record_spawn", lambda issue, arm, prev: recorded.append((issue, arm))
+    )
+    argvs: list[list[str]] = []
+    outcome = {"rc": 1, "stdout": ""}
+
+    def _run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        return _subprocess.CompletedProcess(cmd, outcome["rc"], outcome["stdout"], "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _run)
+    assert asw._completed_unmerged_respawn(9, dry_run=False) == "failed"
+    assert argvs[-1] == [
+        "uv", "run", "python", "scripts/spawn_session.py",
+        "spawn-issue", "--issue", "9", "--auto",
+    ]  # fmt: skip
+    outcome.update(rc=0, stdout="DISPATCH-LEASE HELD by another dispatch\n")
+    assert asw._completed_unmerged_respawn(9, dry_run=False) == "suppressed"
+    assert recorded == []
+    outcome.update(rc=0, stdout="spawned session abc123\n")
+    assert asw._completed_unmerged_respawn(9, dry_run=False) == "spawned"
+    assert recorded == [(9, "completed-unmerged")]
+    assert gate_arms == ["completed-unmerged"] * 3
+
+    def _run_timeout(cmd, *a, **kw):
+        raise _subprocess.TimeoutExpired(cmd, 120)
+
+    monkeypatch.setattr(asw.subprocess, "run", _run_timeout)
+    assert asw._completed_unmerged_respawn(9, dry_run=False) == "failed"
+    # Dry-run: print-only, no subprocess, "failed" (clone parity).
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **kw: pytest.fail("subprocess.run in dry-run")
+    )
+    assert asw._completed_unmerged_respawn(9, dry_run=True) == "failed"
+
+
+def test_completed_unmerged_respawn_never_merges_or_mutates(
+    isolated_registry, tmp_path, monkeypatch
+):
+    # Durability pin (plan §6 test 10 = AC8): the RESPAWN interval through
+    # the REAL subprocess seam (the never_mutates recipe with the arm
+    # ENABLED + the owner probe stubbed False): the ONLY new argv class is
+    # spawn-issue --issue N --auto (exactly once); still no set-status, no
+    # merge, no push, no git fetch; in-process mutators raise if touched.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    _cu_sidecar(asw, monkeypatch, tmp_path)
+    monkeypatch.delenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", raising=False)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "9"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(9, task_dir)]
+    )
+    monkeypatch.setattr(asw, "_completed_unmerged_live_owner", lambda issue: False)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("completed_unmerged_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    push_script = tmp_path / "push.sh"
+    push_script.write_text("#!/usr/bin/env bash\n")
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(push_script))
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        if cmd[:3] == ["gh", "pr", "list"] and "open" in cmd:
+            return _subprocess.CompletedProcess(cmd, 0, '[{"number": 9, "isDraft": false}]', "")
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)  # interval 1: flag
+    asw.completed_unmerged_pass(dry_run=False, now=done + 4.5 * 3600)  # interval 2: respawn
+    spawn_argvs = [cmd for cmd in argvs if "spawn-issue" in cmd]
+    assert len(spawn_argvs) == 1
+    assert spawn_argvs[0][-4:] == ["spawn-issue", "--issue", "9", "--auto"]
+    assert any("post-marker" in cmd for cmd in argvs)
+    assert not any("set-status" in cmd for cmd in argvs)
+    assert not any("merge" in cmd for cmd in argvs)
+    assert not any("push" in cmd for cmd in argvs)
+    assert not any(cmd[:2] == ["git", "fetch"] for cmd in argvs)
+
+
+def test_completed_unmerged_respawn_dry_run_no_writes(isolated_registry, tmp_path, monkeypatch):
+    # Plan §6 test 11 (AC9): a dry-run respawn interval performs zero writes
+    # and zero spawn subprocesses — the REAL dispatch helper prints its
+    # intent and returns "failed" BEFORE any subprocess; the in-memory
+    # booking is never persisted (dry-run save/sidecar are no-ops), so a
+    # dry run never consumes real budget.
+    import autonomous_session_watch as asw
+
+    sidecar = _cu_sidecar(asw, monkeypatch, tmp_path)
+    monkeypatch.delenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", raising=False)
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    task_dir = tmp_path / "tasks" / "completed" / "1540"
+    _cu_write_events(task_dir, [{"kind": "epm:done", "ts": _CU_DONE_1540}])
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_candidates", lambda now, lookback_s: [(1540, task_dir)]
+    )
+    monkeypatch.setattr(
+        asw, "_completed_unmerged_probe", lambda issue: ("unmerged-open-pr", "PR #1312 OPEN")
+    )
+    posted: list = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label)),
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    monkeypatch.setattr(asw, "_completed_unmerged_live_owner", lambda issue: False)
+    # Interval 1 (real): latch the flagged episode.
+    asw.completed_unmerged_pass(dry_run=False, now=done + 3 * 3600)
+    state_path = isolated_registry / "completed-unmerged-observer.json"
+    state_before = state_path.read_text()
+    rows_before = sidecar.read_text()
+    # Interval 2 (dry-run): the respawn intent is print-only.
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **kw: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.completed_unmerged_pass(dry_run=True, now=done + 4.5 * 3600)
+    assert state_path.read_text() == state_before  # no state write — no latch, no day slot
+    assert sidecar.read_text() == rows_before  # no sidecar write
+    assert len(posted) == 1  # interval 1's flag marker only — no respawn marker
+
+
+def test_completed_unmerged_respawn_enabled_by_default(monkeypatch):
+    # Plan §6 test 12 (AC7 knobs): unset env -> ENABLED; truthy values
+    # disable; the day-cap helper's malformed / < 1 env falls back to 3
+    # (disabling is the kill switch's job, never the cap's).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", raising=False)
+    assert asw._completed_unmerged_respawn_enabled() is True
+    for val in ("1", "true", "YES"):
+        monkeypatch.setenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", val)
+        assert asw._completed_unmerged_respawn_enabled() is False
+    monkeypatch.setenv("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", "0")
+    assert asw._completed_unmerged_respawn_enabled() is True
+
+    monkeypatch.delenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", raising=False)
+    assert asw._completed_unmerged_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", "garbage")
+    assert asw._completed_unmerged_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", "0")
+    assert asw._completed_unmerged_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", "-2")
+    assert asw._completed_unmerged_respawns_per_day() == 3
+    monkeypatch.setenv("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY", "5")
+    assert asw._completed_unmerged_respawns_per_day() == 5
+
+
+def test_completed_unmerged_live_owner_fail_directions(monkeypatch):
+    # Plan §6 test 13 (AC4 seams): daemon unreachable -> None; a strict
+    # _live_children /list flake (RuntimeError) -> None; candidates present
+    # -> True; provably none -> False.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
+    assert asw._completed_unmerged_live_owner(9) is None
+
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+
+    def _flake(strict=False):
+        raise RuntimeError("/list flake")
+
+    monkeypatch.setattr(asw, "_live_children", _flake)
+    assert asw._completed_unmerged_live_owner(9) is None
+
+    monkeypatch.setattr(asw, "_live_children", lambda strict=False: [])
+    monkeypatch.setattr(asw, "_keep_running_owner_candidates", lambda issue, children: {123: "s"})
+    assert asw._completed_unmerged_live_owner(9) is True
+    monkeypatch.setattr(asw, "_keep_running_owner_candidates", lambda issue, children: {})
+    assert asw._completed_unmerged_live_owner(9) is False
+
+
+def test_completed_unmerged_flag_preserves_respawn_latch():
+    # Plan §6 test 14 (the §4.7 carry-over): the per-interval flag rewrite
+    # of a SAME-episode entry carries respawned_ts/respawn_result forward —
+    # without it the interval after a respawn would erase the latch and
+    # re-arm the once-per-episode dispatch. A NEW done_ts (fresh episode)
+    # deliberately DROPS the latch.
+    import autonomous_session_watch as asw
+
+    done = asw._parse_event_ts(_CU_DONE_1540)
+    episodes = {
+        "9": {
+            "done_ts": done,
+            "flagged": True,
+            "marker_posted": True,
+            "alerted_ts": done + 3 * 3600,
+            "verdict": "unmerged-open-pr",
+            "resolved_verdict": None,
+            "respawned_ts": done + 4 * 3600,
+            "respawn_result": "spawned",
+        }
+    }
+    asw._completed_unmerged_flag(
+        9,
+        done,
+        None,
+        "unmerged-open-pr",
+        "PR #1 OPEN",
+        episodes,
+        done + 5 * 3600,
+        24 * 3600.0,
+        True,  # dry_run: marker/push helpers are print-only
+    )
+    assert episodes["9"]["respawned_ts"] == done + 4 * 3600
+    assert episodes["9"]["respawn_result"] == "spawned"
+    done2 = done + 6 * 3600
+    asw._completed_unmerged_flag(
+        9,
+        done2,
+        None,
+        "unmerged-open-pr",
+        "PR #1 OPEN",
+        episodes,
+        done2 + 3 * 3600,
+        24 * 3600.0,
+        True,
+    )
+    assert "respawned_ts" not in episodes["9"]
+    assert "respawn_result" not in episodes["9"]

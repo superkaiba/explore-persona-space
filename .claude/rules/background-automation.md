@@ -1327,9 +1327,10 @@ repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
 switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
 just this pass (pair with `--dry-run` for a zero-write live smoke).
 
-**Completed-unmerged flag pass (task #1564, `completed_unmerged_pass`;
-incident #1540; FLAG-ONLY, daemon-INDEPENDENT, runs right after
-`registry_drift_pass`).** The stranded-Step-10d-merge audit: task #1540
+**Completed-unmerged flag + bounded-respawn pass (tasks #1564 + #1653,
+`completed_unmerged_pass`; incident #1540; daemon-INDEPENDENT flag half,
+runs right after `registry_drift_pass`).** The stranded-Step-10d-merge
+audit: task #1540
 reached `completed` + `epm:done` at 2026-07-19T14:49:17Z, the next turn (the
 Step 10d worktree merge) was killed, and `epm:merged` landed only at
 2026-07-20T06:57:10Z via a /daily-spawned recovery session — a 16h08m window
@@ -1379,11 +1380,38 @@ re-fired every 24h while unresolved
 skip the probe budget; pruned episodes are labeled honestly — `recovered`
 only when `epm:merged` now exists or the probe said resolved, `aged-out`
 when the strand left the lookback unresolved (never logged as recovered); a
-later round's fresh `epm:done` opens a NEW episode and re-fires. **FLAG-ONLY
-is a hard invariant** (pinned two-pronged by
-`test_completed_unmerged_pass_never_mutates_status_or_merges`): the pass
-never mutates status, never merges/pushes anything, never spawns a session
-— recovery is always a human/orchestrator action on the flag. **Known v1
+later round's fresh `epm:done` opens a NEW episode and re-fires.
+**Never-merge is a hard invariant** (pinned two-pronged by
+`test_completed_unmerged_pass_never_mutates_status_or_merges` +
+`test_completed_unmerged_respawn_never_merges_or_mutates`): the pass never
+mutates status, never merges/pushes anything — the merge itself always runs
+in-session, never in the watcher. **Bounded respawn arm (#1653,
+`decide_completed_unmerged_respawn` + `_completed_unmerged_maybe_respawn`;
+pinned by
+`test_completed_unmerged_respawn_fires_on_second_interval_once_per_episode`):**
+the ONE action beyond flagging. On a LATER interval with the SAME (issue,
+done_ts) episode still stranded (persistence: `flagged` was already latched
+on a PRIOR interval — the hourly self-gate makes that a free >=~1h window
+on top of the 2h done-grace, so a human pushed at episode open gets an hour
+first), verdict `unmerged-open-pr`/`unmerged-branch-commits` (the other
+verdicts never reach the flag), NO live owning session
+(`_completed_unmerged_live_owner` — the #1582 owner union of registration
+sids + cwd-mapped children; daemon-unreachable / a strict `_live_children`
+flake reads None and SKIPS, fail toward flag-only), fleet day budget
+available (`EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY`, default 3/day
+fleet-wide; malformed-or-<1 falls back), and the #1027 auth-outage gate
+allowing (arm `completed-unmerged`, deliberately NOT a canary arm) — the
+pass dispatches `spawn-issue --issue <N> --auto` exactly ONCE per episode:
+a `suppressed` result (auth-outage / lease / collision / takeover-hold)
+books NOTHING (#843 M1b) and re-evaluates next interval; `spawned` OR
+`failed` consumes the day slot + latches the episode
+(`respawned_ts`/`respawn_result`, saved latch-FIRST so a crash never
+re-arms a double-spawn; the flag rewrite carries the latch forward). On
+`spawned` it posts ONE respawn marker (anti-liveness sentinel
+`[autonomous_session_watch:completed-unmerged-respawn]`) + one push; the
+fresh session's `/issue` resume row runs the Step 10d idempotent backstop
+(#1578). Kill switch `EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN=1` restores
+byte-equivalent flag-only behavior (marker text included). **Known v1
 bounds** (each fails toward silence by design; the /daily sweep stays the
 backstop for all four): (i) post-first-merge multi-round blind spot — once
 ANY `epm:merged` exists on the task, a LATER round's stranded merge (fresh
@@ -1395,10 +1423,11 @@ are invisible — every probe rung is remote-side; (iv) a session killed
 between `set-status <N> completed` and the `epm:done` post leaves
 done_ts=None and the predicate stays silent. State singleton
 `~/.eps-autonomous/completed-unmerged-observer.json` (atomic tmp+rename;
-deliberately NOT a per-issue GC target). Kill switch
-`EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only` runs
-just this pass (pair with `--dry-run` for a live smoke — zero writes, zero
-marker/push subprocesses).
+deliberately NOT a per-issue GC target; carries the fleet day counter
+`respawn_day`/`respawns_today` + the per-episode latch). Whole-pass kill
+switch `EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only`
+runs just this pass (pair with `--dry-run` for a live smoke — zero writes,
+zero marker/push/spawn subprocesses).
 
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
