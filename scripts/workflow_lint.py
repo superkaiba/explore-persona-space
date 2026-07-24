@@ -677,6 +677,25 @@ Behaviours:
   fence-scoped: prose inline-code recipes, ``#``-commented instruction
   lines inside fences, untagged fences, and the placeholder-substitution
   false-PASS direction are NAMED residuals (see the check docstring).
+* ``--check-bare-commit-pathspec`` (also bundled into the no-flags default
+  run): scan every ``bash``/``sh``/``shell``-tagged fenced block in
+  ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
+  ``.claude/rules/*.md`` + ``CLAUDE.md`` (the root-guard surface, reused)
+  and FAIL any ``git commit`` invocation with no trailing
+  `` -- <pathspec>``: a bare commit at the always-concurrent shared repo
+  root commits the WHOLE staged index, sweeping sibling sessions' staged
+  files onto the commit (incident ``7dbde267f1``, 2026-07-21: 4 foreign
+  files swept onto main; #1630 fixed /daily per-file; #1648 generalizes
+  the guard mechanically). Structural exemptions: the `` -- <pathspec>``
+  tail itself, per-invocation ``git -C <tree>`` scope (a named tree with
+  its own index), ``xargs -r``/``--no-run-if-empty``-driven commits (the
+  appended file list is a runtime pathspec — a flag-less xargs is NOT
+  exempt), ``--dry-run`` previews, and ``#`` comment lines. Waive a
+  deliberate anti-pattern example / pod-side recipe with
+  ``<!-- workflow-lint: allow-bare-commit-block: <reason> -->`` on the
+  line directly above the fence opener. Untagged fences, prose
+  inline-code recipes, heredoc bodies, and compound-line quoted-text
+  false-exemptions are NAMED residuals (see the check docstring).
 
 Exit codes:
 
@@ -9645,17 +9664,19 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
         yield opener_lineno, preceding, "\n".join(block_lines)
 
 
-def _root_guard_fence_exempt(prev_line: str) -> bool:
+def _root_guard_fence_exempt(prev_line: str, sentinel: str = _ROOT_GUARD_EXEMPT_SENTINEL) -> bool:
     """True when a fence's immediately-preceding non-blank line carries the
-    ``workflow-lint: allow-root-guard-block: <reason>`` sentinel with a
+    ``<sentinel>: <reason>`` waiver (default: the root-guard
+    ``workflow-lint: allow-root-guard-block`` sentinel;
+    :func:`check_bare_commit_pathspec` passes its own sentinel, #1648) with a
     NON-EMPTY reason. Reason-stripping mirrors the FI2 semantics of
     :func:`_line_waived`: strip the leading ``:``/whitespace and the trailing
     HTML-comment closer (``-->``) / backticks / whitespace before testing, so
     a bare closer (``: -->``, or the sentinel with no colon) never counts as
     a reason and wrongly waives."""
-    if _ROOT_GUARD_EXEMPT_SENTINEL not in prev_line:
+    if sentinel not in prev_line:
         return False
-    _, _, tail = prev_line.partition(_ROOT_GUARD_EXEMPT_SENTINEL)
+    _, _, tail = prev_line.partition(sentinel)
     reason = tail.lstrip(": ")
     if reason.rstrip().endswith("-->"):
         reason = reason.rstrip()[: -len("-->")]
@@ -9922,6 +9943,157 @@ def check_git_recipes_root_guard(  # noqa: C901 -- flat fail-loud ladder + per-f
                     f"error, not a verdict — #1610) ({first!r})."
                 )
         return errors
+
+
+# --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
+# pathspec commits the WHOLE staged index — on the always-concurrent shared
+# repo root that sweeps sibling sessions' staged files onto the commit
+# (incident 7dbde267f1, 2026-07-21: 4 foreign files swept onto main; #1630
+# fixed /daily per-file). Convention: CLAUDE.md § Concurrent repo-root
+# committers ("stage by explicit path only") — the commit-side analogue is
+# the pathspec-limited `git commit -m "..." -- <paths>` form. Python string
+# data only: this check scans workflow-surface .md files, never scripts/**,
+# so these constants cannot self-flag.
+_BARE_COMMIT_SENTINEL = "workflow-lint: allow-bare-commit-block"
+# One git-commit INVOCATION: `git <global-flags>* commit`; group 1 captures
+# the global flags so the -C exemption is per-invocation (a `git -C` command
+# elsewhere on the line cannot waive a separate bare commit).
+BARE_COMMIT_GIT_RE = re.compile(
+    r"(?<![\w./-])git\s+((?:-c\s+\S+\s+|--\S+\s+|-C\s+\S+\s+)*)commit\b"
+)
+# Case-sensitive: `-C <dir>` (a named tree), never `-c <cfg>`.
+BARE_COMMIT_GITC_FLAG_RE = re.compile(r"(?:^|\s)-C\s")
+# ` -- ` separator + >=1 following token (a bare trailing `--` with nothing
+# after commits the whole index anyway and does NOT count).
+BARE_COMMIT_PATHSPEC_RE = re.compile(r"\s--\s+\S")
+# xargs exempts ONLY with -r/--no-run-if-empty: a flag-less GNU xargs runs
+# the command ONCE on empty input -> `git commit -m "..." --` with nothing
+# appended -> whole-index sweep. The one live form (the issue/SKILL.md
+# additive-checkout recipe) uses -r. Token loop: whole whitespace-delimited
+# tokens free of `|`/`;`/`&`, then a short-flag cluster containing `r` or
+# the long form.
+BARE_COMMIT_XARGS_RE = re.compile(
+    r"(?<![\w./-])xargs\s(?:[^|;&\s]+\s+)*(?:-\w*r\w*\b|--no-run-if-empty\b)"
+)
+_BARE_COMMIT_UNESCAPED_DQUOTE_RE = re.compile(r'(?<!\\)"')
+
+
+def check_bare_commit_pathspec(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any ``bash``/``sh``/``shell``-tagged fenced block in the
+    workflow docs (``.claude/agents/*.md``, ``.claude/skills/**/SKILL.md``,
+    ``.claude/rules/*.md``, ``CLAUDE.md`` — the
+    :func:`_root_guard_target_files` surface, reused) prescribes a
+    ``git commit`` invocation with no trailing `` -- <pathspec>``.
+
+    A bare commit at the always-concurrent shared repo root commits the
+    WHOLE staged index, sweeping sibling sessions' staged files onto the
+    commit (incident ``7dbde267f1``, 2026-07-21: 4 foreign files swept onto
+    main; #1630 fixed /daily's recipes per-file — this check generalizes
+    that guard to the whole workflow surface mechanically, #1648).
+
+    Structural exemptions (why each form is safe):
+
+    * `` -- <pathspec>`` tail (the literal `` -- `` separator + >=1
+      following token) — the required convention itself;
+    * ``git -C <tree> commit`` (per-invocation, case-sensitive ``-C``) —
+      commits a NAMED tree (worktree / scratch / pod clone) with its OWN
+      index, not the ambient shared root;
+    * ``xargs -r ... git commit`` (``-r``/``--no-run-if-empty`` REQUIRED) —
+      xargs appends the file list as trailing args = a runtime pathspec; a
+      flag-less xargs runs once on empty input (whole-index sweep) and is
+      NOT exempt;
+    * ``#`` comment lines — instruction/anti-pattern prose, not a command;
+    * ``--dry-run`` — preview, commits nothing (the ``check_piped_git_push``
+      precedent);
+    * per-fence sentinel ``<!-- workflow-lint: allow-bare-commit-block:
+      <reason> -->`` (NON-EMPTY reason, on the immediately-preceding
+      non-blank line) — for deliberate anti-pattern examples / pod-side
+      recipes.
+
+    NAMED RESIDUALS (fail-toward-pass unless stated otherwise): (a)
+    untagged / other-tagged fences are not scanned; (b) prose inline-code
+    recipes are structurally outside a fence scanner; (c) heredoc bodies
+    inside fences are scanned as lines (a heredoc-embedded commit string
+    could false-positive — zero live; sentinel waives); (d) a quoted
+    message CONTAINING the literal text ``git commit -m ...`` could
+    false-positive after quote-joining — zero live; sentinel waives; (e)
+    ``-C "path with spaces"`` fails the flags-group match and the
+    invocation goes unflagged; (f) ``scripts/**/*.sh`` shell scripts are
+    OUT of scope (they run in varied cwds — pods, worktrees — where bare
+    commits are often legitimately scoped; the guard targets the
+    documented-recipe teaching surface); (g) the pathspec / ``--dry-run`` /
+    xargs searches operate on the whole logical line, so a `` -- <token>``
+    or ``--dry-run`` INSIDE a quoted ``-m`` message — or a LATER command's
+    `` -- `` on a compound ``&&``/``;`` line — falsely exempts an earlier
+    bare commit; (h) the ``git -C <tree>`` exemption is a static heuristic
+    — a ``-C`` target that RESOLVES to the shared root at runtime is exempt
+    though not provably safe; (i) skill SUPPORT files (``markers.md``,
+    ``SPEC.md``, exemplars) are outside :func:`_root_guard_target_files`.
+
+    Line handling: backslash continuations are joined (bash drops the
+    backslash-newline pair), then lines are joined until double quotes
+    balance (multi-line ``-m "..."`` messages); errors report the FIRST
+    line of the joined logical line. ``repo_root`` is a unit-test override;
+    production callers pass the default. Bundled into the no-flags default
+    run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for path in _root_guard_target_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for opener, prev_line, block in _iter_bash_fences(text):
+            if "git" not in block:
+                continue
+            if _root_guard_fence_exempt(prev_line, sentinel=_BARE_COMMIT_SENTINEL):
+                continue
+            lines = block.split("\n")
+            n = len(lines)
+            i = 0
+            while i < n:
+                start = i
+                if lines[i].lstrip().startswith("#"):
+                    i += 1
+                    continue
+                logical = lines[i]
+                # Join backslash continuations (bash drops the
+                # backslash-newline pair, concatenating directly).
+                while logical.endswith("\\") and i + 1 < n:
+                    i += 1
+                    logical = logical[:-1] + lines[i]
+                # Join following lines until double quotes balance
+                # (multi-line `-m "..."` messages).
+                while len(_BARE_COMMIT_UNESCAPED_DQUOTE_RE.findall(logical)) % 2 == 1 and i + 1 < n:
+                    i += 1
+                    logical = logical + "\n" + lines[i]
+                i += 1
+                for m in BARE_COMMIT_GIT_RE.finditer(logical):
+                    if BARE_COMMIT_GITC_FLAG_RE.search(m.group(1)):
+                        continue  # `git -C <tree> commit`: named tree, own index
+                    if BARE_COMMIT_XARGS_RE.search(logical[: m.start()]):
+                        # xargs WITH -r/--no-run-if-empty appends the file
+                        # list = runtime pathspec; xargs AFTER the match
+                        # never waives (search bounded to logical[:m.start()]).
+                        continue
+                    if "--dry-run" in logical:
+                        continue  # preview, commits nothing
+                    if BARE_COMMIT_PATHSPEC_RE.search(logical[m.end() :]):
+                        continue  # ` -- <pathspec>` present
+                    errors.append(
+                        f"{path}:{opener + 1 + start}: fenced `git commit` without a "
+                        f"trailing ` -- <pathspec>` — a bare commit at the "
+                        f"always-concurrent shared repo root sweeps sibling sessions' "
+                        f"staged files onto the commit (incident 7dbde267f1; #1630 "
+                        f"fixed /daily per-file; #1648). Append ` -- <explicit paths>` "
+                        f"(prefer file-level pathspecs for shared-root recipes; note "
+                        f"`-a`/`--amend` are incompatible with this remedy), scope "
+                        f"with `git -C <tree>`, or waive the fence with "
+                        f"`<!-- {_BARE_COMMIT_SENTINEL}: <reason> -->` on the "
+                        f"immediately-preceding non-blank line."
+                    )
+    return errors
 
 
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
@@ -12902,6 +13074,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "run.",
     )
     parser.add_argument(
+        "--check-bare-commit-pathspec",
+        action="store_true",
+        help="Verify no bash/sh/shell-tagged fenced block in the workflow "
+        "docs (.claude/agents/*.md, .claude/skills/**/SKILL.md, "
+        ".claude/rules/*.md, CLAUDE.md) prescribes a `git commit` with no "
+        "` -- <pathspec>` tail: a bare commit at the always-concurrent "
+        "shared repo root sweeps sibling sessions' staged files (incident "
+        "7dbde267f1; #1630 fixed /daily per-file). `git -C <tree>` forms, "
+        "xargs -r/--no-run-if-empty-driven commits, `--dry-run`, and "
+        "comment lines are exempt; waive a fence with "
+        "'<!-- workflow-lint: allow-bare-commit-block: <reason> -->' on "
+        "the line directly above the fence opener. Bundled into the "
+        "no-flags default run (#1648).",
+    )
+    parser.add_argument(
         "--check-marker-scalar-integrity",
         action="store_true",
         help="Scan every workflow.yaml § markers entry's four string fields "
@@ -13022,6 +13209,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
+        or args.check_bare_commit_pathspec
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
@@ -13167,6 +13355,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_or_true())
     if args.check_git_recipes_root_guard or no_flags:
         errors.extend(check_git_recipes_root_guard())
+    if args.check_bare_commit_pathspec or no_flags:
+        errors.extend(check_bare_commit_pathspec())
     if args.check_asw_docstring_pass_count or no_flags:
         errors.extend(check_asw_docstring_pass_count())
     if args.check_skill_bang_backtick or no_flags:
