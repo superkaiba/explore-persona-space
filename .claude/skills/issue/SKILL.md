@@ -6126,13 +6126,48 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry three additional fields:
-`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry four additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
+(additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
-— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
-genuinely new field), and the `external-markers triaged:` line
+— this convention upgrades it to a REQUIRED absolute path, `pid=` is the
+genuinely new #833 field, and `harvest=` is the § Harvest contract's declared
+results location, new with #1656), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Harvest contract (declared AT LAUNCH — a closed session never strands finished
+results; #1310, #1656).** Detachment protects the RUN; this clause protects the
+RESULTS. Every detached launch declares its harvest path at launch time:
+
+1. **Durable out-root (REQUIRED).** `<cmd>` writes its results to a durable,
+   session-independent location — `eval_results/issue_<N>/...`, the task's
+   `artifacts/` dir, an HF-upload staging dir under `data/issue_<N>/`, or (for a
+   log-only probe) the breadcrumb's own `log=` file — never session-scoped scratch
+   only the launching conversation knows about.
+2. **`harvest=` token (REQUIRED).** The stage-dispatch breadcrumb's
+   `harvest=<abs, space-free output path or glob>` (comma-separate multiple paths;
+   values are whitespace-split tokens, so no spaces) names where completion outputs
+   land. The § Successor / re-entry rule probes THIS path for "completion output
+   present" and collects from it — no guessing. Breadcrumbs predating this contract
+   lack the token: consumers fall back to log-tail + known output dirs (the same
+   graceful-optional convention as `label=`).
+3. **Self-harvest chaining (PREFERRED).** When collection is one idempotent command,
+   make it part of the detached unit itself — as a SINGLE command unit substituted
+   for `<cmd>`: a driver script whose final act is the collection/upload (an HF
+   upload of raw completions/tensors, a copy into `eval_results/issue_<N>/`), or an
+   inner `bash -c '<workload> && <harvest-cmd>'`. NEVER splice a bare
+   `<workload> && <harvest-cmd>` into the template: the `&&` splits the launch line,
+   binding setsid/nohup/env to the first command and the redirections + trailing `&`
+   to the second — detachment silently breaks. This is the detached-phase instance
+   of the batch-judge deadline-bounded self-harvest. The identity verify is
+   unchanged (the distinctive workload substring still appears in
+   `ps -p $PHASE_PID -o args=` for either wrapped form). Only the steps that MUST
+   stay session-side — the explicit-path git commit under the concurrent-committer
+   discipline, folding numbers into the body — are left to the successor; the DATA
+   is durable before any session touches it.
+
+The contract costs one token + a path choice at launch — never a new gate.
 
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
@@ -6209,8 +6244,15 @@ FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
 signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
-args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
-output present → stage done; proceed. Dead with no completion output →
+args MISMATCH (recycled pid: treat as dead) — with completion output present
+at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
+breadcrumbs lack the token — fall back to log-tail + known output dirs) →
+stage done; RUN THE HARVEST — collect the declared outputs, commit/upload
+them per the Upload Policy, fold them forward — then proceed. An EMPTY
+`harvest=` path beside a log tail showing clean completion is a
+declared-path mismatch (typo / divergence), not a failed run — cross-check
+the log's real output locations before treating the phase as failed.
+Dead with no completion output →
 genuinely failed: run the kill-before-relaunch probe
 (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
 `stage_dispatch_should_skip` knows nothing about pids, so the polling
@@ -6756,7 +6798,8 @@ statement is posted before that launch. A round with no fit/battery stage AND no
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
-(`choom=ok|failed`) per the Step 9 entry-guard
+(`choom=ok|failed`) **+ the harvest contract (the durable
+out-root + the `harvest=` token)** per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 

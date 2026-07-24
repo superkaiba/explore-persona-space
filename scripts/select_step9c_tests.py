@@ -287,6 +287,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
+    # NEW (#1656) — SKILL.md detached-phase harvest contract pin (#1310):
+    # four-field breadcrumb (harvest= token), successor consumption, 9a-ter
+    # mention + the two mirror duty-lists
+    "tests/test_issue_skill_detached_harvest_pin.py",
     # Registration rider (#1659) — the pre-existing 9a-ter element-(5) content
     # pin (#1393) was never registered (the #1546 unregistered-pin class)
     "tests/test_issue_skill_disk_routing_pin.py",
