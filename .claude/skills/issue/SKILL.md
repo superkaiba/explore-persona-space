@@ -6739,7 +6739,7 @@ for the pilot (the ported rule's own alternative basis) — a guess never can.
 A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
 a user-facing wall-time estimate from a guessed per-call basis (2026-07-23,
 #1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its own
-healthy ~25 min/cell full run at EXIT=124 — relaunch+resume — and two
+healthy ~25 min/cell full run at exit=124 — relaunch+resume — and two
 same-day chat wall-time estimates were off by ~an order of magnitude).
 Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
