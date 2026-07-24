@@ -1236,8 +1236,10 @@ def preflight_check(
         planned_upload_gb: Planned canonical-public LFS upload size in decimal GB
             (#1034). When supplied, the HF-storage check hard-FAILs on a
             LIVE-CONFIRMED insufficient headroom with overflow routing off
-            (WARNs when armed; fail-open on unknown/disabled). None (default)
-            => today's WARN-only behavior, so existing callers are unaffected.
+            (WARNs when armed; fail-open on unknown/disabled), AND the LFS
+            write-gate leg (#1654) hard-FAILs on a billing-blocked /
+            storage-blocked batch-negotiation probe. None (default) => WARN-only
+            behavior on both legs, so existing callers are unaffected.
 
     Returns:
         PreflightReport with pass/fail status and details.
@@ -1340,7 +1342,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Planned canonical-public LFS upload size in decimal GB (#1034); FAILs "
         "preflight when a LIVE-CONFIRMED headroom read says used + planned exceeds the "
         "soft ceiling and EPM_HF_OVERFLOW_ROUTING is off (WARNs when armed; fail-open "
-        "on unknown). Omit to keep the WARN-only advisory.",
+        "on unknown), and arms the #1654 LFS write-gate probe (billing/quota 403 at "
+        "declared ~16 GB scale) as a hard gate. Omit to keep the WARN-only advisory.",
     )
     parser.add_argument(
         "--per-pod-quota-gb",
