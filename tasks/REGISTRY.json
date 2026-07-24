@@ -5155,8 +5155,8 @@
     "1662": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1662",
-      "status": "proposed",
+      "path": "tasks/planning/1662",
+      "status": "planning",
       "title": "daily-fix: suffixed follow-up pods terminate on done"
     },
     "1663": {
