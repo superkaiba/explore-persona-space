@@ -163,7 +163,7 @@ uv run python scripts/pod.py stop --issue <N>
 ```
 If pod was running on entry, leave it running.
 
-NEVER call `terminate`. Termination is always user-approved (CLAUDE.md rule).
+NEVER call `terminate`. Pod lifecycle is owned by the owning session/orchestrator, which auto-terminates on verified completion (Step 8 primary-pod auto-terminate; #1662 completion-side teardown for suffixed pods) — never by the uploader.
 
 ### 8. Post the marker (DEFAULT)
 

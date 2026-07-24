@@ -6880,6 +6880,20 @@ was repeatedly auto-stopped mid-bootstrap and misdiagnosed as a flaky
 host). Remove the tag (`task.py remove-tag <N> keep-running`) when the run
 completes so the auto-stop re-arms (a crashed run leaves the tag and the
 pod bills until manual removal — check `pod.py audit-stale` output).
+**Completion-side teardown (no ask-gate):** in that SAME completion
+step — run complete + uploads verified (THIS round's artifacts, not a
+prior round's PASS) — TERMINATE the pod the round provisioned (surgical
+`pod.py terminate --issue <N> --name-suffix <slug> --yes` for a suffixed
+`pod-<N>-<slug>`; the bare form only when the round's pod is the issue's
+ONLY live pod, with the `keep-running` tag removed FIRST — #1485 refuses
+the bare form while the tag is set, and it destroys EVERY live pod
+resolving to the issue): verified-done teardown is unconditional,
+never a user ask (the Step-8 primary-pod precedent; #1662: pod-1586-b
+idled ~$12–13/hr behind an ask-gate), EXCEPT when a NAMED next queued
+round reuses this pod — record it in the completion `epm:progress` note
+and keep the tag; a pending user question about a possible next round is
+NOT a named round. Never terminate before uploads verify, and never
+substitute `pod.py stop` (a STOPPED volume is NOT durable, #1112).
 
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
