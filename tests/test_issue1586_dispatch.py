@@ -450,6 +450,106 @@ def test_run_waves_resume_headroom_pending_only(monkeypatch, tmp_path):
     assert trained == [content4[:2], content4[2:]]
 
 
+# ── resume-aware phase-entry headroom (crash-fix r8, epm:failure v13) ────────
+
+
+def _record_headroom(monkeypatch):
+    seen: list[tuple[str, float]] = []
+
+    def fake_assert(out_root, *, need_gb, phase):
+        seen.append((phase, need_gb))
+
+    monkeypatch.setattr(d, "assert_out_root_headroom", fake_assert)
+    return seen
+
+
+def test_headroom_p2_all_done_resume_skips_gate(monkeypatch, tmp_path):
+    """The epm:failure v13 shape: free (50.8 GB) < the blanket 60 GB p2 floor
+    but EVERY cell is resume-done (build_result.json — the same predicate
+    phase_train no-ops on) ⇒ the phase-entry gate is SKIPPED, never asserted.
+    The fake below raises on ANY call, so the pre-fix unconditional blanket
+    assert (the relaunch-4 crash ~0.1 s into p2) fails this test."""
+    cells = ("cA", "cB", "cC")
+    cfg = _cfg(tmp_path, cells=cells)
+    for c in cells:
+        _write_json(tmp_path / c / "build_result.json", {"cell": c})
+
+    def fake_assert(out_root, *, need_gb, phase):
+        raise RuntimeError(f"insufficient headroom for {phase}: free 50.8 < {need_gb} GB")
+
+    monkeypatch.setattr(d, "assert_out_root_headroom", fake_assert)
+    d._headroom(cfg, "p2_train")  # must NOT raise
+
+
+def test_headroom_p2_p3_partial_pending_scales_need(monkeypatch, tmp_path):
+    """Partial-pending resume: need = PHASE_HEADROOM_GB floor x pending
+    fraction (constants untouched), keyed on each phase's OWN resume record
+    (p2 build_result.json, p3 ladder_done.json)."""
+    cells = ("cA", "cB", "cC", "cD")
+    cfg = _cfg(tmp_path, cells=cells)
+    for c in cells[:3]:
+        _write_json(tmp_path / c / "build_result.json", {"cell": c})
+    for c in cells[:2]:
+        _write_json(tmp_path / c / "ladder_done.json", {"ts": 0})
+    seen = _record_headroom(monkeypatch)
+    d._headroom(cfg, "p2_train")
+    d._headroom(cfg, "p3_ladder")
+    assert seen == [
+        ("p2_train", pytest.approx(d.PHASE_HEADROOM_GB["p2_train"] * 1 / 4)),
+        ("p3_ladder", pytest.approx(d.PHASE_HEADROOM_GB["p3_ladder"] * 2 / 4)),
+    ]
+
+
+def test_headroom_p8_capture_resume_scaling(monkeypatch, tmp_path):
+    """p8 pending is keyed on capture/<arm>/pooled.pt over the REAL
+    capture_passes enumeration: all-done skips; one-done scales."""
+    cell = next(c for c in d.G.ALL_FT_CELLS if not d._is_marker(c) and c != d.G.REUSED_FT_CELL)
+    cfg = _cfg(tmp_path, cells=(cell,))
+    passes = d.capture_passes(cfg)
+    assert len(passes) == 3  # ft arm + lora pair + base pass
+    seen = _record_headroom(monkeypatch)
+    for a, _k in passes:
+        (tmp_path / "capture" / a).mkdir(parents=True, exist_ok=True)
+        (tmp_path / "capture" / a / "pooled.pt").write_bytes(b"x")
+    d._headroom(cfg, "p8_capture")
+    assert seen == []  # all done ⇒ skipped
+    (tmp_path / "capture" / passes[0][0] / "pooled.pt").unlink()
+    d._headroom(cfg, "p8_capture")
+    assert seen == [("p8_capture", pytest.approx(d.PHASE_HEADROOM_GB["p8_capture"] * 1 / 3))]
+
+
+def test_headroom_fresh_run_need_identical(monkeypatch, tmp_path):
+    """Fresh run (0 resume-done): the asserted need is the UNCHANGED
+    PHASE_HEADROOM_GB float for every per-cell-gated phase — the scale
+    branch is entered only when n_pending < n_total, so the plan-§9
+    fresh-run floor semantics are byte-identical to the pre-fix code."""
+    cell = next(c for c in d.G.ALL_FT_CELLS if not d._is_marker(c) and c != d.G.REUSED_FT_CELL)
+    cfg = _cfg(tmp_path, cells=(cell,))
+    seen = _record_headroom(monkeypatch)
+    for phase in ("p2_train", "p3_ladder", "p8_capture"):
+        d._headroom(cfg, phase)
+    assert seen == [(p, d.PHASE_HEADROOM_GB[p]) for p in ("p2_train", "p3_ladder", "p8_capture")]
+    for _phase_name, need in seen:
+        assert need == d.PHASE_HEADROOM_GB[_phase_name]  # identity, not approx
+
+
+def test_headroom_blanket_phases_unchanged(monkeypatch, tmp_path):
+    """p0_stage / p9_upload keep the blanket floor (fixed staging / commit
+    margins, not per-cell demand) — asserted at the unchanged constant even
+    on a fully resume-done out_root."""
+    cells = ("cA",)
+    cfg = _cfg(tmp_path, cells=cells)
+    _write_json(tmp_path / "stage_done.json", {"ts": 0})
+    _write_json(tmp_path / "cA" / "build_result.json", {"cell": "cA"})
+    seen = _record_headroom(monkeypatch)
+    d._headroom(cfg, "p0_stage")
+    d._headroom(cfg, "p9_upload")
+    assert seen == [
+        ("p0_stage", d.PHASE_HEADROOM_GB["p0_stage"]),
+        ("p9_upload", d.PHASE_HEADROOM_GB["p9_upload"]),
+    ]
+
+
 # ── registered-extension disk demand (code-review v5 Minor 1 / CONCERN) ──────
 
 
