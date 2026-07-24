@@ -5183,8 +5183,8 @@
     "1666": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1666",
-      "status": "approved",
+      "path": "tasks/running/1666",
+      "status": "running",
       "title": "fix: load_dotenv before heavy imports in issue1586_fu_caveatfix_figures.py (thread-caps red on main)"
     },
     "168": {
