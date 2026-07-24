@@ -23,7 +23,11 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 ROOT = Path("data/issue_1586/hf_dl/p11_json/issue1586_methodgen")
 OUT = Path("eval_results/issue_1586/panel")
