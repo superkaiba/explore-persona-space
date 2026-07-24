@@ -106,6 +106,24 @@ repos:
         files: ^(scripts/.*\.sh|scripts/workflow_lint\.py)$
         pass_filenames: false
 
+      - id: workflow-lint-agent-spec-size
+        name: "workflow_lint: agent-spec size ratchet — WARN >28KB, FAIL >40KB / grandfather cap (#1618)"
+        entry: uv run python scripts/workflow_lint.py --check-agent-spec-size
+        language: system
+        # Fire when any agent spec changes (the incident class: a direct-to-main
+        # .claude/agents/*.md edit past its ratchet cap redded every Step 9c
+        # gate fleet-wide until #1618 trimmed it) or when the lint itself
+        # changes (AGENT_SPEC_* threshold / grandfather-cap edits move the
+        # verdict, matching the sibling hooks' pattern).
+        # check_agent_spec_size scans .claude/agents/*.md non-recursively;
+        # single-check run measured ~1.5 s (2026-07-24). Read-only, so it
+        # stays on the default commit stage (the stages:[manual] NOTE above
+        # covers mutating/large-file hooks only); high-frequency automated
+        # task-state commits (tasks/**, eval_results/**) never match the
+        # files regex, so fleet commit latency is unchanged for them.
+        files: ^(\.claude/agents/[^/]+\.md|scripts/workflow_lint\.py)$
+        pass_filenames: false
+
       - id: check-mcp-json-no-secrets
         name: Refuse secrets in committed .mcp.json
         entry: uv run python scripts/check_mcp_json_no_secrets.py
