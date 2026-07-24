@@ -600,7 +600,8 @@ def transitive_consumer_pairs(files: list[str], work_root: Path) -> list[tuple[s
 # Measured from 330 Step 9c gate junits on the shared VM (2026-07-13..24,
 # /tmp/step9c-junit-issue-*.xml, per-testcase `time` summed per file):
 # tests/test_workflow_lint.py alone min 472 s / median 789 s / p90 1111 s /
-# max 1819 s (58/330 runs exceeded the previous 1050 s one-file bound);
+# max 1819 s (58/330 runs exceeded the previous 1050 s one-file bound;
+# fresh standalone re-measure 1271 s, 2026-07-24, #1646);
 # whole-gate testcase-time totals median ~1094 s / p90 ~1568 s / max ~2289 s.
 # The foreground Bash tool cap is 600 s, so the printed command carries this
 # bound and Step 9c runs the gate as a BACKGROUND invocation (SKILL.md 9c 1b).
