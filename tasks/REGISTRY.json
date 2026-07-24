@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1648,
+  "highest_id": 1649,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5053,6 +5053,13 @@
       "path": "tasks/proposed/1648",
       "status": "proposed",
       "title": "daily-fix: lint bare git-commit recipes lacking pathspec"
+    },
+    "1649": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1649",
+      "status": "proposed",
+      "title": "daily-fix: step9c baseline scan-set dirt wedge"
     },
     "165": {
       "has_clean_result": false,
