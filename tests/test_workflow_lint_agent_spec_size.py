@@ -29,10 +29,12 @@ constant is literally 3_000.
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 _HERE = Path(__file__).resolve().parent
 _SCRIPTS = _HERE.parent / "scripts"
@@ -277,3 +279,21 @@ def test_grandfather_headroom_bound_is_3000() -> None:
     convention — a false-green. This literal pin closes that class.
     """
     assert AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES == 3_000
+
+
+def test_precommit_hook_covers_agent_spec_size() -> None:
+    """.pre-commit-config.yaml must carry a local hook running
+    --check-agent-spec-size whose files: regex covers .claude/agents/*.md
+    AND the lint itself — without it, no commit gate fires on the #1618
+    direct-to-main offender class (task #1661)."""
+    cfg = yaml.safe_load((_HERE.parent / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
+    local_hooks = [h for repo in cfg["repos"] if repo["repo"] == "local" for h in repo["hooks"]]
+    matching = [h for h in local_hooks if "--check-agent-spec-size" in h.get("entry", "")]
+    assert matching, "no pre-commit hook runs --check-agent-spec-size (#1661)"
+    assert any(
+        re.search(h["files"], ".claude/agents/research-pm.md")
+        and re.search(h["files"], "scripts/workflow_lint.py")
+        and not h.get("pass_filenames", True)
+        for h in matching
+        if "files" in h
+    ), f"no matching hook's files: regex covers agents/*.md + the lint: {matching}"
