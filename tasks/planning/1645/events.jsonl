@@ -4,3 +4,4 @@
 {"ts": "2026-07-24T08:36:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-24T08:44:17Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=1 (c34_ratchet_headroom — WARN only, riding into critic briefs as mechanical pre-pass note), plan v1."}
 {"ts": "2026-07-24T08:53:31Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py on plan v2 (fact-checker corrections applied: counts 56->59 not 48->51; workflow-fix-on-bug.md rules-pin leg caveat; c34 escape line): PASS, n_fail=0, n_warn=0."}
+{"ts": "2026-07-24T08:53:34Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 critic lenses."}
