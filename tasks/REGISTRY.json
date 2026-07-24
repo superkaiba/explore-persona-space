@@ -5092,8 +5092,8 @@
     "1653": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1653",
-      "status": "running",
+      "path": "tasks/reviewing/1653",
+      "status": "reviewing",
       "title": "daily-fix: completed-unmerged watcher respawn arm"
     },
     "1654": {
