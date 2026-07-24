@@ -5148,8 +5148,8 @@
     "1661": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1661",
-      "status": "reviewing",
+      "path": "tasks/completed/1661",
+      "status": "completed",
       "title": "daily-fix: agent-spec-size ratchet in pre-commit"
     },
     "1662": {
