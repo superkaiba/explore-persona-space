@@ -589,11 +589,16 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     headroom assert against the mount the out-root RESOLVES to
     (`orchestrate.preflight.assert_out_root_headroom`, statvfs + ~1 GB
     posix_fallocate canary — full recipe:
-    `.claude/rules/plan-compute-sizing.md` § Out-root mount binding). REVISE
+    `.claude/rules/plan-compute-sizing.md` § Out-root mount binding), stated
+    resume-AWARE for a resumable multi-phase dispatcher (need computed over
+    the phase's PENDING set — skip on zero pending, scale on partial; a
+    blanket fresh-run floor deadlocks a resume, #1586). REVISE
     when a disk row carries a bare GB number with no mount named for the
     routed lane, when a multi-candidate-lane plan names only the planned
-    lane's mount, or when no preamble assert is named for a write-heavy
-    phase. Conclusion-changing because a correct GB estimate on the WRONG
+    lane's mount, when no preamble assert is named for a write-heavy
+    phase, or when a resumable dispatcher's phase-entry gate is specified as
+    a blanket fresh-run floor (the #1586 resume-deadlock shape).
+    Conclusion-changing because a correct GB estimate on the WRONG
     mount still ENOSPCs mid-write and the phase dies producing no result
     (#1333 attempt 3: the out-root resolved to the ~50 GB RunPod container
     disk instead of `/workspace` and died mid-checkpoint-serialization
