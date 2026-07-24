@@ -5106,8 +5106,8 @@
     "1655": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1655",
-      "status": "reviewing",
+      "path": "tasks/completed/1655",
+      "status": "completed",
       "title": "daily-fix: provision preflight checks account SSH keys"
     },
     "1656": {
