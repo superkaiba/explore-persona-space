@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1652,
+  "highest_id": 1653,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5088,6 +5088,13 @@
       "path": "tasks/proposed/1652",
       "status": "proposed",
       "title": "daily-fix: scope RunPod hourly cap to EPS-managed pods"
+    },
+    "1653": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1653",
+      "status": "proposed",
+      "title": "daily-fix: completed-unmerged watcher respawn arm"
     },
     "168": {
       "has_clean_result": true,
