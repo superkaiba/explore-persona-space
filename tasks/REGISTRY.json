@@ -5176,8 +5176,8 @@
     "1665": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1665",
-      "status": "planning",
+      "path": "tasks/approved/1665",
+      "status": "approved",
       "title": "fix: rewrite use_rslora literal assert in test_issue1090_fu5_round (red on main)"
     },
     "1666": {
