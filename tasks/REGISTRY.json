@@ -5008,8 +5008,8 @@
     "1642": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1642",
-      "status": "proposed",
+      "path": "tasks/planning/1642",
+      "status": "planning",
       "title": "workflow-fix: plan-compute-sizing \u2014 phase-entry headroom gates must be resume-aware"
     },
     "165": {
