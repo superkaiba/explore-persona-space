@@ -5078,8 +5078,8 @@
     "1651": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1651",
-      "status": "reviewing",
+      "path": "tasks/completed/1651",
+      "status": "completed",
       "title": "daily-fix: implementer pin-sweep states sweep_scope"
     },
     "1652": {
