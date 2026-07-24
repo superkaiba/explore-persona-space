@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1656,
+  "highest_id": 1657,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5116,6 +5116,13 @@
       "path": "tasks/proposed/1656",
       "status": "proposed",
       "title": "daily-fix: detached runs declare a harvest step at launch"
+    },
+    "1657": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1657",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d update head branch before merge"
     },
     "168": {
       "has_clean_result": true,
