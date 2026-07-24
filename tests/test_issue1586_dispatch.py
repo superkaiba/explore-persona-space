@@ -51,10 +51,16 @@ def _write_json(p: Path, obj) -> None:
 
 
 def _mk_rungs(train_dir: Path, steps) -> None:
+    """Rung fixtures satisfy the r7 production completeness predicate
+    (config.json + non-empty single-file weights = complete under
+    d._ckpt_incomplete_reason), so resolver-consuming tests never route to a
+    real overflow restage (review r6 Minor: fixtures below the bar mask the
+    partial-rung class)."""
     for s in steps:
         ck = train_dir / f"checkpoint-{s}"
         ck.mkdir(parents=True, exist_ok=True)
         (ck / "model.safetensors").write_text("x")
+        (ck / "config.json").write_text("{}")
 
 
 # ── the wave scheduler (ordering; the headline pin) ──────────────────────────

@@ -2603,6 +2603,74 @@ def _defer_persist(
     )
 
 
+_CKPT_WEIGHT_INDEXES = ("model.safetensors.index.json", "pytorch_model.bin.index.json")
+_CKPT_SINGLE_WEIGHTS = ("model.safetensors", "pytorch_model.bin")
+
+
+def _ckpt_incomplete_reason(ckpt: Path) -> str | None:
+    """None iff ``ckpt`` holds the complete consumer-load-bearing file set:
+    config.json + ALL weight shards, the required set derived from the
+    checkpoint's OWN shard manifest (index weight_map + metadata.total_size)
+    where present, else the single-file weights; a size-0 or ``*.incomplete``
+    member counts absent. Crash-fix r7 (fu, epm:failure v12 residue; review
+    r6 Critical ``partial-restage-invisible-to-missing-predicate``): a
+    PARTIALLY-restaged checkpoint-<step>/ dir — _stage_overflow_prefix
+    mkdirs dest BEFORE its per-file download loop, and _reap_unit_groups'
+    TERM-then-KILL can truncate a file mid-copy — previously PASSED the
+    rung-presence lookup in BOTH _restageable_missing_ft_cells and
+    _selected_ft_ckpt, so the parent pre-stage skipped it and panel units
+    loaded shard-less checkpoints. ONE shared predicate so classifier and
+    resolver can never disagree. Local-only by design (no Hub call on the
+    per-unit hot path): every adjudicable case is decidable from the dir
+    itself — a sharded dir without its index cannot from_pretrained-load
+    regardless of what the Hub holds, so it reads incomplete and the
+    restage refreshes it. Scope: full-FT checkpoint dirs only (callers
+    exclude LoRA ladders — adapter_config.json trees never enter)."""
+
+    def _absent(p: Path) -> bool:
+        try:
+            return (not p.is_file()) or p.stat().st_size == 0
+        except OSError:
+            return True
+
+    if _absent(ckpt / "config.json"):
+        return "config.json absent/empty"
+    stray = next(ckpt.rglob("*.incomplete"), None)
+    if stray is not None:
+        return f"{stray.name} download residue"
+    index = next((ckpt / n for n in _CKPT_WEIGHT_INDEXES if (ckpt / n).exists()), None)
+    if index is not None:
+        if _absent(index):
+            return f"{index.name} empty"
+        try:
+            idx = json.loads(index.read_text())
+            shards = sorted(set(idx["weight_map"].values()))
+        except (OSError, ValueError, KeyError, AttributeError):
+            return f"{index.name} unreadable"
+        if not shards:
+            return f"{index.name} lists no shards"
+        required = ["config.json", index.name, *shards]
+        n_have = sum(1 for f in required if not _absent(ckpt / f))
+        if n_have < len(required):
+            return f"{n_have}/{len(required)} required files present"
+        total = (idx.get("metadata") or {}).get("total_size")
+        if isinstance(total, int) and total > 0:
+            have_bytes = sum((ckpt / s).stat().st_size for s in shards)
+            if have_bytes < total:  # shard headers only ADD bytes -> < means truncation
+                return f"shards truncated ({have_bytes}/{total} weight bytes)"
+        return None
+    if any(not _absent(ckpt / n) for n in _CKPT_SINGLE_WEIGHTS):
+        # Unsharded save: config + single-file weights is the full set — UNLESS
+        # sharded-name files coexist (a partial that lost its index would still
+        # be missing shards only the index can enumerate).
+        if any(ckpt.glob("*-of-*.safetensors")) or any(ckpt.glob("*-of-*.bin")):
+            return "mixed single-file + shard names without an index"
+        return None
+    if any(ckpt.glob("*-of-*.safetensors")) or any(ckpt.glob("*-of-*.bin")):
+        return "shard files present but index absent"
+    return "no weight files (index and shards absent)"
+
+
 def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
     if cell == G.REUSED_FT_CELL:
         return _staged_ft_dir(cfg, "s3_con")
@@ -2617,6 +2685,28 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
     step = int(sel["step"])
     train_dir = Path(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])
     ckpt = _rungs_or_empty(train_dir).get(step)
+    if ckpt is not None and not G.is_fu_lora_cell(cell):
+        # Crash-fix r7 (fu, epm:failure v12 residue): a PARTIALLY-restaged
+        # rung passes the presence lookup above; without this check the
+        # prestage/backstop hands consumers a shard-less checkpoint. Remove
+        # the partial dir BEFORE restaging — _stage_overflow_prefix's
+        # config.json early-return + per-file target.exists() skip
+        # (issue1112_dispatch.py) would otherwise preserve a config-only or
+        # truncated-file partial in place. Scope: the SELECTED full-FT
+        # checkpoint dir only — never out_fu/inputs, never non-selected
+        # rungs, never LoRA ladders (guarded above).
+        reason = _ckpt_incomplete_reason(ckpt)
+        if reason is not None:
+            n_present = sum(1 for p in ckpt.rglob("*") if p.is_file())
+            logger.info(
+                "[ckpt-restage] %s: removing incomplete %s (%d files present; %s) before restage",
+                cell,
+                ckpt,
+                n_present,
+                reason,
+            )
+            shutil.rmtree(ckpt)  # fail-loud: no ignore_errors
+            ckpt = None
     if ckpt is None:
         # Crash-fix r5 (fu, epm:failure v11): the [ckpt-reap] arm reaps a
         # Hub-verified selected checkpoint after p4; every post-persist
@@ -2643,11 +2733,14 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
         _stage_overflow_prefix(
             path_in_repo, ckpt, revision=_resolve_revision(G.OVERFLOW_REPO, "model")
         )
-        n_files = sum(1 for p in ckpt.rglob("*") if p.is_file())
-        if not (ckpt / "config.json").exists() or n_files < 5:
+        # r7: verify the restage with the SAME completeness predicate the
+        # classifier + pre-restage check use (supersedes the r5 >=5-file
+        # heuristic — a config-only partial restage must fail loud here).
+        reason = _ckpt_incomplete_reason(ckpt)
+        if reason is not None:
             raise RuntimeError(
                 f"[ckpt-restage] {cell}: restaged checkpoint incomplete under {ckpt} "
-                f"({n_files} files) — expected config.json + shards + index"
+                f"({reason}) — expected config.json + ALL weight shards (+ index)"
             )
         # Crash-fix r6 (fu, epm:failure v12): NO per-restage hub-cache evict
         # here. Concurrent fan-out units each restaging their own cell race
@@ -2665,8 +2758,12 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
 
 def _restageable_missing_ft_cells(cfg: Cfg, cells: Sequence[str]) -> list[str]:
     """Trained cfg FT cells in ``cells`` whose SELECTED rung checkpoint is
-    locally absent (the [ckpt-restage] trigger; mirrors _selected_ft_ckpt's
-    lookup). Skips the classes with no overflow-restage path: p0-staged
+    locally absent OR INCOMPLETE (the [ckpt-restage] trigger; shares
+    _ckpt_incomplete_reason with _selected_ft_ckpt so classifier and
+    resolver can never disagree — crash-fix r7, review r6 Critical: a
+    partially-restaged crash-residue dir previously read PRESENT here, the
+    prestage skipped it, and panel units loaded shard-less checkpoints).
+    Skips the classes with no overflow-restage path: p0-staged
     inputs (the reused #1112 cell + FU FT partners) and never-reaped LoRA
     ladders; ids without selection/build records (reused LoRA arm ids,
     base_<beh> passes, not-yet-selected cells) resolve in the consumer's own
@@ -2681,7 +2778,8 @@ def _restageable_missing_ft_cells(cfg: Cfg, cells: Sequence[str]) -> list[str]:
             continue
         step = int(_read_json(sel_path)["step"])
         train_dir = Path(_read_json(build_path)["adapter_root"])
-        if _rungs_or_empty(train_dir).get(step) is None:
+        rung = _rungs_or_empty(train_dir).get(step)
+        if rung is None or _ckpt_incomplete_reason(rung) is not None:
             missing.append(cell)
     return missing
 
@@ -2699,12 +2797,17 @@ def _prestage_selected_ft_ckpts(cfg: Cfg, cells: Sequence[str]) -> int:
     then find local copies present and their restage branch stays a
     fail-loud, evict-free backstop) and evicts the overflow hub-cache entry
     ONCE per batch — only when >=1 restage happened (the r4 #1092-P6
-    duplication class). Partial residue a crashed run left under the entry
+    duplication class). HUB-CACHE residue a crashed run left under the entry
     (.incomplete blobs, tmp scratch) needs no separate sweep: hf 0.36.2's
     _download_to_tmp_and_move removes-or-resumes a stale etag-keyed
-    .incomplete (verified), _stage_overflow_prefix publishes per-file with a
-    target.exists() skip, and the terminal batch evict rmtree-sweeps
-    whatever remains. Returns the number of cells restaged."""
+    .incomplete (verified), and the terminal batch evict rmtree-sweeps
+    whatever remains. CONSUMER-DIR residue (a partially-restaged
+    checkpoint-<step>/ the v12 crash left) is handled by the r7
+    completeness predicate: _restageable_missing_ft_cells classifies it
+    missing and _selected_ft_ckpt rmtree's it before restaging —
+    _stage_overflow_prefix's config.json early-return + target.exists()
+    skip alone would preserve truncated files in place (review r6
+    Critical). Returns the number of cells restaged."""
     missing = _restageable_missing_ft_cells(cfg, cells)
     for cell in missing:
         _selected_ft_ckpt(cfg, cell)

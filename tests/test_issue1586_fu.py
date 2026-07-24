@@ -613,7 +613,7 @@ def test_phase_persist_fu_paths(monkeypatch, tmp_path):
     cfg = _cfg(tmp_path, cells=("mk-pers-ft2e6-con-s42", "imp-pers-lora5e6-con-s42"))
     mk_root = cfg.out_root / "mk-pers-ft2e6-con-s42"
     mk_train = mk_root / "train"
-    (mk_train / "checkpoint-15").mkdir(parents=True)
+    _write_complete_ckpt(mk_train / "checkpoint-15")  # r7: meets the completeness bar
     d._atomic_json(mk_root / "build_result.json", {"adapter_root": str(mk_train)})
     d._atomic_json(mk_root / "selection.json", {"step": 15, "in_band": True})
     imp_root = cfg.out_root / "imp-pers-lora5e6-con-s42"
@@ -982,16 +982,29 @@ def test_hub_evict_wired_after_staged_set_guard_and_on_resume(tmp_path, monkeypa
     assert i_guard < i_evict < i_done
 
 
+def _write_complete_ckpt(ckpt, shard_bytes=64, fill=b"k"):
+    """Materialize a checkpoint dir satisfying the PRODUCTION completeness
+    predicate (d._ckpt_incomplete_reason is None): config.json + index whose
+    weight_map enumerates the shard + metadata.total_size matching the shard
+    bytes (review r6 Minor: pre-r7 fixtures sat below the production bar,
+    masking exactly the partial-rung class)."""
+    ckpt.mkdir(parents=True, exist_ok=True)
+    shard = "model-00001-of-00001.safetensors"
+    (ckpt / shard).write_bytes(fill * shard_bytes)
+    (ckpt / "model.safetensors.index.json").write_text(
+        json.dumps({"metadata": {"total_size": shard_bytes}, "weight_map": {"w": shard}})
+    )
+    (ckpt / "config.json").write_text("{}")
+    return ckpt
+
+
 def _completed_marker_cell(out_root, cell, sel_step=12, shard_bytes=4096):
     """On-disk replica of pod-1586's post-selection retrain-reselect residue:
     orphaned train/ root save + train_reselect/ root save beside the selected
     self-contained checkpoint rung (the epm:failure v10 43 GB shape)."""
     cell_root = out_root / cell
     reselect = cell_root / "train_reselect"
-    ckpt = reselect / f"checkpoint-{sel_step}"
-    ckpt.mkdir(parents=True)
-    (ckpt / "model-00001-of-00001.safetensors").write_bytes(b"k" * 64)
-    (ckpt / "config.json").write_text("{}")
+    _write_complete_ckpt(reselect / f"checkpoint-{sel_step}", shard_bytes=64)
     (reselect / "model-00001-of-00004.safetensors").write_bytes(b"r" * shard_bytes)
     (reselect / "model.safetensors.index.json").write_text("{}")
     (reselect / "config.json").write_text("{}")
@@ -1166,7 +1179,11 @@ def test_ckpt_reap_fires_only_with_hub_verification(tmp_path, monkeypatch, caplo
 
     def _verified(api, repo, path, **kw):
         assert repo == G.OVERFLOW_REPO and path == prefix
-        return [f"{prefix}/config.json", f"{prefix}/model-00001-of-00001.safetensors"]
+        return [
+            f"{prefix}/config.json",
+            f"{prefix}/model-00001-of-00001.safetensors",
+            f"{prefix}/model.safetensors.index.json",
+        ]
 
     monkeypatch.setattr(d.hub, "list_hf_files_under_path", _verified)
     caplog.clear()
@@ -1192,7 +1209,11 @@ def test_ckpt_reap_never_touches_unuploaded_or_deferred_cell(tmp_path, monkeypat
 
     def _probe(api, repo, path, **kw):
         probes.append(path)
-        return [f"{path}/config.json", f"{path}/model-00001-of-00001.safetensors"]
+        return [
+            f"{path}/config.json",
+            f"{path}/model-00001-of-00001.safetensors",
+            f"{path}/model.safetensors.index.json",
+        ]
 
     monkeypatch.setattr(d.hub, "list_hf_files_under_path", _probe)
     # no persist.json (in-progress / un-uploaded) -> never probed, never reaped
@@ -1231,8 +1252,14 @@ def test_selected_ft_ckpt_restages_on_missing_local(tmp_path, monkeypatch, caplo
         staged["prefix"], staged["revision"] = prefix, revision
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "config.json").write_text("{}")
+        wm = {}
         for i in range(1, 5):
-            (dest / f"model-0000{i}-of-00004.safetensors").write_bytes(b"s")
+            name = f"model-0000{i}-of-00004.safetensors"
+            (dest / name).write_bytes(b"s")
+            wm[f"w{i}"] = name
+        (dest / "model.safetensors.index.json").write_text(
+            json.dumps({"metadata": {"total_size": 4}, "weight_map": wm})
+        )
         return dest
 
     monkeypatch.setattr(d, "_stage_overflow_prefix", fake_stage)
@@ -1306,14 +1333,22 @@ def _reaped_cell(out_root, cell, sel_step=12, extra_sel=None):
 
 def _fake_overflow_stage(events):
     """Signature-conformant _stage_overflow_prefix fake: records the staged
-    cell and materializes a complete checkpoint tree at dest."""
+    cell and materializes a checkpoint tree at dest that satisfies the
+    PRODUCTION completeness predicate (config.json + ALL index-listed
+    shards; r7)."""
 
     def fake_stage(prefix, dest, *, revision, recursive=True):
         events.append(("stage", prefix.split("/")[-2]))
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "config.json").write_text("{}")
+        wm = {}
         for i in range(1, 5):
-            (dest / f"model-0000{i}-of-00004.safetensors").write_bytes(b"s")
+            name = f"model-0000{i}-of-00004.safetensors"
+            (dest / name).write_bytes(b"s")
+            wm[f"w{i}"] = name
+        (dest / "model.safetensors.index.json").write_text(
+            json.dumps({"metadata": {"total_size": 4}, "weight_map": wm})
+        )
         return dest
 
     return fake_stage
@@ -1418,3 +1453,151 @@ def test_prestage_wired_before_dispatch_at_every_consumer_phase():
     assert "_prestage_selected_ft_ckpts" not in inspect.getsource(d.phase_parity)
     # pin (iii) wiring: the in-unit backstop no longer evicts per restage
     assert "_evict_overflow_hub_cache" not in inspect.getsource(d._selected_ft_ckpt)
+
+
+# ── crash-fix r7 (fu, review r6 Critical): partial-rung completeness ─────────
+# partial-restage-invisible-to-missing-predicate: a PARTIALLY-restaged
+# checkpoint-<step>/ (the v12 crash residue — _stage_overflow_prefix mkdirs
+# dest BEFORE its download loop; _reap_unit_groups TERM-KILL truncates
+# mid-copy) previously PASSED the rung-presence lookup in BOTH
+# _restageable_missing_ft_cells and _selected_ft_ckpt.
+
+
+def _idx4(total_size=4):
+    wm = {f"w{i}": f"model-0000{i}-of-00004.safetensors" for i in range(1, 5)}
+    return json.dumps({"metadata": {"total_size": total_size}, "weight_map": wm}).encode()
+
+
+def _partial_rung(out_root, cell, files, sel_step=12):
+    """Selection/build records + a PARTIALLY-materialized selected rung (the
+    v12 crash-residue shape). ``files`` maps rung-relative name -> bytes."""
+    root = _reaped_cell(out_root, cell, sel_step=sel_step)
+    ckpt = root / "train_reselect" / f"checkpoint-{sel_step}"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    for name, data in files.items():
+        (ckpt / name).write_bytes(data)
+    return ckpt
+
+
+_PARTIAL_SHAPES = {
+    "config_only": {"config.json": b"{}"},
+    "missing_shard": {
+        "config.json": b"{}",
+        "model.safetensors.index.json": _idx4(),
+        "model-00001-of-00004.safetensors": b"s",
+        "model-00002-of-00004.safetensors": b"s",
+        "model-00003-of-00004.safetensors": b"s",
+    },
+    "size_zero_shard": {
+        "config.json": b"{}",
+        "model.safetensors.index.json": _idx4(),
+        "model-00001-of-00004.safetensors": b"s",
+        "model-00002-of-00004.safetensors": b"s",
+        "model-00003-of-00004.safetensors": b"s",
+        "model-00004-of-00004.safetensors": b"",
+    },
+    "incomplete_member": {
+        "config.json": b"{}",
+        "model.safetensors.index.json": _idx4(),
+        "model-00001-of-00004.safetensors": b"s",
+        "model-00002-of-00004.safetensors": b"s",
+        "model-00003-of-00004.safetensors": b"s",
+        "model-00004-of-00004.safetensors": b"s",
+        "model-00004-of-00004.safetensors.incomplete": b"x",
+    },
+    "truncated_shards": {
+        "config.json": b"{}",
+        "model.safetensors.index.json": _idx4(total_size=100),
+        "model-00001-of-00004.safetensors": b"s",
+        "model-00002-of-00004.safetensors": b"s",
+        "model-00003-of-00004.safetensors": b"s",
+        "model-00004-of-00004.safetensors": b"s",
+    },
+    "shards_without_index": {
+        "config.json": b"{}",
+        "model-00001-of-00004.safetensors": b"s",
+        "model-00002-of-00004.safetensors": b"s",
+        "model-00003-of-00004.safetensors": b"s",
+        "model-00004-of-00004.safetensors": b"s",
+    },
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_PARTIAL_SHAPES))
+def test_partial_rung_reads_missing_in_classifier_and_resolver(shape, tmp_path, monkeypatch):
+    """r7 pin (i): every partial-rung crash-residue shape reads MISSING in the
+    classifier AND triggers a fresh restage in the resolver (fails on r6 code,
+    where the rung-presence lookup read all of these PRESENT)."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    ckpt = _partial_rung(cfg.out_root, cell, _PARTIAL_SHAPES[shape])
+    assert d._ckpt_incomplete_reason(ckpt) is not None
+    assert d._restageable_missing_ft_cells(cfg, [cell]) == [cell]
+    events: list = []
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
+    got = d._selected_ft_ckpt(cfg, cell)
+    assert [e for e in events if e[0] == "stage"] == [("stage", cell)]
+    assert got == ckpt and d._ckpt_incomplete_reason(got) is None
+
+
+def test_resolver_rmtrees_incomplete_rung_before_restage(tmp_path, monkeypatch, caplog):
+    """r7 pin (ii): the resolver REMOVES an incomplete rung dir before staging
+    (logging the [ckpt-restage] removal line), so _stage_overflow_prefix's
+    config.json early-return / per-file target.exists() skip can never
+    preserve truncated files — the stale poison member must be GONE after the
+    round-trip. Also pins the prestage integration: classify -> rmtree ->
+    restage -> ONE batch evict."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[1].cell
+    files = dict(_PARTIAL_SHAPES["missing_shard"])
+    files["stale_truncated.bin"] = b"poison"  # survives any exists()-skip re-stage
+    ckpt = _partial_rung(cfg.out_root, cell, files)
+    events: list = []
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: events.append("evict") or 0)
+    monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        assert d._prestage_selected_ft_ckpts(cfg, [cell]) == 1
+    assert events == [("stage", cell), "evict"]
+    removal = [r.message for r in caplog.records if "removing incomplete" in r.message]
+    assert len(removal) == 1 and cell in removal[0] and "[ckpt-restage]" in removal[0]
+    assert not (ckpt / "stale_truncated.bin").exists()  # rmtree, not in-place re-stage
+    assert d._ckpt_incomplete_reason(ckpt) is None
+    # everything local + complete now -> no further restage, no evict
+    events.clear()
+    assert d._prestage_selected_ft_ckpts(cfg, [cell]) == 0
+    assert events == []
+
+
+def test_complete_rung_untouched_no_rmtree_no_restage(tmp_path, monkeypatch):
+    """r7 pin (iii): a COMPLETE rung is never rmtree'd nor restaged — and the
+    fixtures satisfy the production completeness predicate (review r6 Minor)."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[2].cell
+    root = _completed_marker_cell(cfg.out_root, cell)
+    ckpt = root / "train_reselect" / "checkpoint-12"
+    assert d._ckpt_incomplete_reason(ckpt) is None  # fixture meets production bar
+    assert d._restageable_missing_ft_cells(cfg, [cell]) == []
+
+    def _never(prefix, dest, *, revision, recursive=True):
+        raise AssertionError("complete rung must not be restaged")
+
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_stage_overflow_prefix", _never)
+    got = d._selected_ft_ckpt(cfg, cell)
+    assert got == ckpt
+    shard = ckpt / "model-00001-of-00001.safetensors"
+    assert shard.read_bytes() == b"k" * 64  # untouched, not re-materialized
+    # LoRA rungs stay out of the completeness scope (never rmtree'd here):
+    lora = G.FU_IMP_LORA_CELLS[0].cell
+    lroot = cfg.out_root / lora
+    (lroot / "train" / "checkpoint-12").mkdir(parents=True)  # adapter-shaped, no config.json
+    d._atomic_json(lroot / "selection.json", {"step": 12})
+    d._atomic_json(lroot / "build_result.json", {"adapter_root": str(lroot / "train")})
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    got_lora = d._selected_ft_ckpt(cfg, lora)
+    assert got_lora == lroot / "train" / "checkpoint-12" and got_lora.exists()
