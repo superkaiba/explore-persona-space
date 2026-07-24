@@ -5141,8 +5141,8 @@
     "1660": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1660",
-      "status": "running",
+      "path": "tasks/reviewing/1660",
+      "status": "reviewing",
       "title": "daily-fix: ddp_timeout default for ZeRO-3 multi-GPU runs"
     },
     "1661": {
