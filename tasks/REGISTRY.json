@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1645,
+  "highest_id": 1646,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5032,6 +5032,13 @@
       "path": "tasks/proposed/1645",
       "status": "proposed",
       "title": "daily-fix: register 3 unregistered step9c pin tests"
+    },
+    "1646": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1646",
+      "status": "proposed",
+      "title": "daily-fix: step9c map-mode slow-file timeout surcharges"
     },
     "165": {
       "has_clean_result": false,
