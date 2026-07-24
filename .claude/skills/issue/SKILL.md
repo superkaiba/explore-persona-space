@@ -6723,8 +6723,25 @@ has free headroom ≥ ~1.5× the projected bytes (headroom for partial shards,
 retries, and cross-filesystem cache→`local_dir` copies; the routing mandate
 binds even when the headroom probe passes — #823 projected ~6 GB, realized
 14 GB). While the #681 worktree bind-mount is pending, the worktree's own
-`data/` dir resolves to `/` — exactly what the `df -P` probe catches. Projected
-wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+`data/` dir resolves to `/` — exactly what the `df -P` probe catches.
+Projected wall-time > ~15 min for any fit/battery stage additionally makes
+element (1)'s per-call basis MEASUREMENT-REQUIRED: run a 1-cell/1-unit pilot
+THROUGH the production entrypoint at production shape (batch width included)
+FIRST — an asserted or guessed per-call cost is never a sizing basis
+(`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases) — state the
+measured per-cell wall in the dispatch note, and size EVERY self-set
+timeout/fence (`timeout(1)` bounds, watchdog kills, run-duration caps) ≥2×
+the pilot-extrapolated wall (measured per-cell wall × remaining cells /
+parallelism; the ×2 is the p90-style dispersion default when only a 1-cell
+pilot exists — § p90 fence sizing + the #1092 `pilot-gated` ≥2× presumption).
+A cited prior-issue MEASURED figure for the SAME kernel + shape may stand in
+for the pilot (the ported rule's own alternative basis) — a guess never can.
+A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
+a user-facing wall-time estimate from a guessed per-call basis (2026-07-23,
+#1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its own
+healthy ~25 min/cell full run at EXIT=124 — relaunch+resume — and two
+same-day chat wall-time estimates were off by ~an order of magnitude).
+Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
@@ -8382,7 +8399,8 @@ orchestrators driving one round is the #778 root cause.
      re-runs (step 2) skip this.
    - **Compute-character pre-launch statement** (canonical block: Step
      9a-ter § Compute-character pre-launch statement — same five elements,
-     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
+     same > ~1h stop-and-vectorize + >~15 min measured-pilot / ≥2×
+     pilot-extrapolated fence sizing + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
      disk-routing rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that

@@ -280,6 +280,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_autonomous_session_watch.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
     "tests/test_daily_skill_commit_pathspec_pin.py",
+    # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
+    # ≥2× pilot-extrapolated fence-sizing pin
+    "tests/test_issue_skill_compute_pilot_fence_pin.py",
+    # Registration rider (#1659) — the pre-existing 9a-ter element-(5) content
+    # pin (#1393) was never registered (the #1546 unregistered-pin class)
+    "tests/test_issue_skill_disk_routing_pin.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
