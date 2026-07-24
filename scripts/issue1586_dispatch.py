@@ -451,10 +451,63 @@ def _mirror_deliverable(cfg: Cfg, unit: str, payload: dict) -> None:
     _atomic_json(cfg.out_root / "selection" / unit / "selection.json", payload)
 
 
+def _phase_pending(cfg: Cfg, phase: str) -> tuple[int, int] | None:
+    """(n_pending, n_total) of a phase's per-cell/per-arm work, keyed on the
+    SAME resume predicates the phase's own scan no-ops on (crash-fix r8,
+    epm:failure v13): p2_train -> build_result.json (generic AND fu paths),
+    p3_ladder -> ladder_done.json (generic AND fu paths; post-ladder
+    selection is cheap JSON and _maybe_extend carries its own per-cell
+    _ext_headroom assert), p8_capture -> capture/<arm>/pooled.pt. Returns
+    None for phases whose need is NOT per-cell — p0_stage's fixed staging
+    floor and p9_upload's fixed hardlink-staging/commit margin keep the
+    blanket form."""
+    if phase == "p2_train":
+        cells = [c for c in cfg.cells if c != G.REUSED_FT_CELL]
+        done = sum((cfg.out_root / c / "build_result.json").exists() for c in cells)
+        return len(cells) - done, len(cells)
+    if phase == "p3_ladder":
+        cells = [c for c in cfg.cells if c != G.REUSED_FT_CELL]
+        done = sum((cfg.out_root / c / "ladder_done.json").exists() for c in cells)
+        return len(cells) - done, len(cells)
+    if phase == "p8_capture":
+        passes = capture_passes(cfg)
+        done = sum((cfg.out_root / "capture" / a / "pooled.pt").exists() for a, _k in passes)
+        return len(passes) - done, len(passes)
+    return None
+
+
 def _headroom(cfg: Cfg, phase: str) -> None:
+    """Phase-entry out-root canary — RESUME-AWARE for per-cell phases
+    (crash-fix r8, epm:failure v13: the blanket fresh-run 60 GB p2 floor
+    blocked a resume with 0 pending cells — the 'used' space was the run's
+    OWN completed resume artifacts — and blocked the very phase whose
+    downstream reclaim arms free space). Pending work per _phase_pending:
+    0 pending skips the gate; partial pending scales the plan-§9 floor to
+    the pending fraction. A fresh run (0 resume-done) asserts the UNCHANGED
+    PHASE_HEADROOM_GB float (byte-identical — the scale branch is entered
+    only when n_pending < n_total; pinned by
+    test_headroom_fresh_run_need_identical). Per-cell demand asserts
+    (_wave_headroom, _ext_headroom) are unchanged."""
     need = PHASE_HEADROOM_GB.get(phase)
     if need is None:
         return
+    pending = _phase_pending(cfg, phase)
+    if pending is not None:
+        n_pending, n_total = pending
+        if n_pending == 0:
+            logger.info("[headroom] %s: 0 pending — gate skipped (resume)", phase)
+            return
+        if n_pending < n_total:
+            scaled = need * (n_pending / n_total)
+            logger.info(
+                "[headroom] %s: %d/%d pending — need scaled %.1f -> %.1f GB (resume)",
+                phase,
+                n_pending,
+                n_total,
+                need,
+                scaled,
+            )
+            need = scaled
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     assert_out_root_headroom(cfg.out_root, need_gb=need, phase=phase)
 
