@@ -8646,9 +8646,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       It prints the exact gate command —
       `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,
       `<T>` sized deterministically from the selection
-      (`recommended_timeout_s()`: 120s base + 30s/file + a 900s surcharge when
-      `tests/test_workflow_lint.py` is selected, which alone measured up to
-      771s) — plus stderr diagnostics: a one-line work-root + branch
+      (`recommended_timeout_s()`: 120s base + 30s/file + a 2400s surcharge when
+      `tests/test_workflow_lint.py` is selected, which alone measured median
+      789s / max 1819s across 330 gate junits 2026-07-13..24, #1646) — plus
+      stderr diagnostics: a one-line work-root + branch
       provenance breadcrumb on every run, a `recommended-timeout-s=<T>`
       sizing line, any `untested touched file: <path>` WARN lines, and the
       empty-diff NOTE described above. (A code-change task with NO worktree
@@ -8660,10 +8661,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 37-file workflow-invariant
-      set incl. `tests/test_workflow_lint.py` (median ~6.5 min alone, max
-      ~13 min; whole gate median ~11 min, max ~21 min of test time plus
-      collection overhead — 26 junit runs measured 2026-07-04/05), so the
+      OPTIONAL: the selection always contains the 61-file (2026-07-24)
+      workflow-invariant set incl. `tests/test_workflow_lint.py` (median
+      ~13 min alone, max ~30 min; whole gate median ~18 min, max ~38 min of
+      test time plus collection overhead — 330 junit runs measured
+      2026-07-13..24, #1646), so the
       gate can NEVER fit the 600s foreground Bash tool cap. The
       crash-fix-rounds ~510s foreground `timeout` bound
       (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies to
@@ -8835,7 +8837,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rc-file/junitxml contract (#1046: the gate is a background invocation;
       `PYTEST_RC` travels via `/tmp/step9c-rc-issue-<N>`, not shell state).
       Step 1d compare — including its pristine single-file oracle runs
-      (600–1950s each, #1129) — runs as its OWN background + rc-file call
+      (600–4950s each, #1129/#1646) — runs as its OWN background + rc-file call
       with the SAME fail-open self-choom preamble (see step 1d); only the
       1d ledger-refresh kick keeps the post-hoc session-sweep form (it
       launches detached BEFORE a choom can be applied). FAIL-OPEN: a
@@ -8863,14 +8865,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       background + rc-file pattern as 1b. BACKGROUND IS REQUIRED, NOT
       OPTIONAL: `--run-pristine` (always passed here) may run up to
       `--max-pristine-files` (5) single-file pristine oracle runs, each
-      bounded by `derive_pristine_timeout_s` at 600–1950s (#1129:
-      tests/test_workflow_lint.py alone derives 1950s), so a healthy
+      bounded by `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
+      tests/test_workflow_lint.py alone derives 4950s), so a healthy
       compare can NEVER be guaranteed to fit the 600s foreground Bash tool
       cap — a foreground call converts a classifiable in-process exit 2
       into a tool-layer kill with COMPARE_OUT lost (#1129/#1098). Compare
       stays a SEPARATE background call, NOT folded into the 1b gate call:
       1b's foreground verdict read and the zero-collected guard run
-      between them, and a folded call would burn up to ~77 min of
+      between them, and a folded call would burn up to ~2 h of
       pristine runs on a run those guards fail in seconds.
 
       **Single-flight probe (#1606)** first, per the 1b statement: a
@@ -8899,9 +8901,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
       # Wedge bound 10800s ≥ the structural ceiling of compare's own in-process
-      # bounds (5 pristine files × 1950s max derived bound + 120s scratch +
-      # ruff/parse overhead) — it only ever fires on a genuine wedge (#1129
-      # generous bias; re-derive if SLOW_TESTS / max-pristine-files change):
+      # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
+      # so ceiling = 4950s (workflow-lint derived) + 4 × 600s floor + 120s
+      # scratch + ruff/parse overhead ≈ 7500s; 10800s keeps ~1.4x margin and
+      # only ever fires on a genuine wedge (#1129 generous bias, figures #1646;
+      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes):
       timeout --kill-after=60s 10800s uv run python scripts/step9c_baseline.py compare \
         --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
         --run-pristine --json \
@@ -8967,7 +8971,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ledger refresh so the next session gets a fresh baseline — do NOT block
       this verdict on it:
       ```bash
-      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 2100s \
+      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 4650s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py refresh \
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
@@ -10325,9 +10329,9 @@ tests BEFORE anything lands:
       # matched payload paths (attribution grep list) + gated test list:
       cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
       mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
-      # Sized from the selector's map (#1573; floor = the pre-#1573 fixed 300s):
+      # Sized from the selector's map (#1573; floor 600s, #1646):
       TG_T=$(grep -oE 'recommended-timeout-s=[0-9]+' /tmp/issue-<N>-tg-map-err.txt \
-             | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=300
+             | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=600
       # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
       # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
       # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
@@ -10551,10 +10555,11 @@ tests BEFORE anything lands:
   recovery covers that, and baseline subtraction still removes deterministic
   trunk red. Each pytest leg is bounded at the selector-sized `${TG_T}` —
   grepped from the gated map's machine-greppable `recommended-timeout-s=`
-  stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to the
-  pre-#1573 fixed 300 s when the line is absent (the sizing floor is also
-  300 s, so small maps keep today's bound; the historical 2-test scan map
-  measured ~12.6 s, 2026-07-08). The baseline leg reuses the gated map's
+  stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to a
+  fixed 600 s when the line is absent (the sizing floor is also 600 s —
+  raised from 300 s by #1646: #1634's healthy 5-file baseline leg measured
+  202.9 s and the gated leg was killed at 300 s under residual load; the
+  historical 2-test scan map measured ~12.6 s, 2026-07-08). The baseline leg reuses the gated map's
   `TG_T` (its own map call discards stderr; the gated map is the superset in
   the common case and over-sizing is the safe direction) — a
   k_baseline ≫ k_gated residual fails CLOSED (rc 124 → crash); the known
@@ -11517,9 +11522,9 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
     mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
-    # Sized from the selector's map (#1573; floor = the pre-#1573 fixed 300s):
+    # Sized from the selector's map (#1573; floor 600s, #1646):
     TG_T=$(grep -oE 'recommended-timeout-s=[0-9]+' /tmp/issue-<N>-tg-map-err.txt \
-           | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=300
+           | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=600
     # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
     # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
     # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp

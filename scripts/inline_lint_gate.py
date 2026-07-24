@@ -75,7 +75,7 @@ FETCH_TIMEOUT_S = 60
 # — a false-INCONCLUSIVE generator on slow machines, never a false pass).
 PYTEST_BASE_S = 120
 PYTEST_PER_FILE_S = 30
-PYTEST_WORKFLOW_LINT_SURCHARGE_S = 900
+PYTEST_WORKFLOW_LINT_SURCHARGE_S = 2400  # select_step9c_tests.SLOW_TESTS parity (#1646)
 PYTEST_TIMEOUT_FLOOR_S = 900  # select_step9c_tests.TIMEOUT_FLOOR_S parity (pinned by test)
 
 # Healthy lint terminal line; `workflow_lint: schema FAIL` does NOT match.
