@@ -539,7 +539,8 @@ MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 #                            healthy 5-file baseline leg measured 202.9 s and
 #                            the identical gated leg was killed at 300 s under
 #                            residual load; 600 ~= 3x the measured healthy
-#                            small-map wall.
+#                            small-map wall (#1634 run 2 passed, TG legs
+#                            174/174 on both trees).
 
 
 def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
