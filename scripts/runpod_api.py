@@ -485,16 +485,13 @@ class _RawGraphQL(str):
     """A pre-serialized GraphQL fragment (env object lists) — emitted verbatim."""
 
 
-def _public_key_env() -> "_RawGraphQL | None":
-    """A ``PUBLIC_KEY`` env entry for the pod create input, or None.
-
-    The runpod/pytorch image writes ``PUBLIC_KEY`` into authorized_keys at
-    boot — an injection path INDEPENDENT of RunPod account-key propagation,
-    which broke fleet-wide on 2026-07-23 (pods booted sshd with our
-    account-listed key absent; TCP fine, auth denied, across two DCs).
-    Reads ``RUNPOD_SSH_PUBKEY_FILE`` (default ``~/.ssh/id_ed25519.pub``);
-    missing file returns None (fail-open to the account-key path).
-    """
+def read_vm_pubkey() -> str | None:
+    """Raw VM SSH public-key line (``RUNPOD_SSH_PUBKEY_FILE``, default
+    ``~/.ssh/id_ed25519.pub``), stripped, or None when the file is missing,
+    unreadable, or not ``ssh-``-prefixed — exactly the fail-open condition
+    of :func:`_public_key_env` (#1655 shares one read so the ``PUBLIC_KEY``
+    injection and the account-key preflight can never disagree about
+    availability)."""
     import os as _os
 
     path = _os.path.expanduser(_os.environ.get("RUNPOD_SSH_PUBKEY_FILE", "~/.ssh/id_ed25519.pub"))
@@ -504,8 +501,38 @@ def _public_key_env() -> "_RawGraphQL | None":
         return None
     if not key.startswith("ssh-"):
         return None
+    return key
+
+
+def _public_key_env() -> _RawGraphQL | None:
+    """A ``PUBLIC_KEY`` env entry for the pod create input, or None.
+
+    The runpod/pytorch image writes ``PUBLIC_KEY`` into authorized_keys at
+    boot — an injection path INDEPENDENT of RunPod account-key propagation,
+    which broke fleet-wide on 2026-07-23 (pods booted sshd with our
+    account-listed key absent; TCP fine, auth denied, across two DCs).
+    Key availability is read via :func:`read_vm_pubkey` (shared with the
+    #1655 account-key preflight); missing/malformed file returns None
+    (fail-open to the account-key path). The ``\\``/``"`` scrub below is
+    GraphQL-fragment escaping, not availability logic — it stays here.
+    """
+    key = read_vm_pubkey()
+    if key is None:
+        return None
     key = key.replace("\\", "").replace('"', "")
     return _RawGraphQL(f'[{{ key: "PUBLIC_KEY", value: "{key}" }}]')
+
+
+def get_account_pubkey() -> str:
+    """The team account's SSH key blob — GraphQL ``myself { pubKey }``: a
+    single string of newline-separated authorized_keys-style lines (the list
+    the RunPod console Settings page shows and fresh pods are seeded from).
+    Returns ``''`` when unset. Raises :class:`RunPodError` on
+    transport/GraphQL failure (read-only query; the remediation mutation
+    ``updateUserSettings`` is deliberately NOT wrapped here — never
+    auto-mutate the shared team list, #1655)."""
+    data = graphql("{ myself { id pubKey } }")
+    return ((data.get("myself") or {}).get("pubKey")) or ""
 
 
 def _deploy_once(

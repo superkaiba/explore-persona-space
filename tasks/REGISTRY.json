@@ -5015,22 +5015,22 @@
     "1643": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1643",
-      "status": "reviewing",
+      "path": "tasks/completed/1643",
+      "status": "completed",
       "title": "daily-fix: runpod_api UP037 reds ruff-policy test on main"
     },
     "1644": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1644",
-      "status": "proposed",
+      "path": "tasks/reviewing/1644",
+      "status": "reviewing",
       "title": "daily-fix: issue1586 scripts load_dotenv before torch"
     },
     "1645": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1645",
-      "status": "proposed",
+      "path": "tasks/planning/1645",
+      "status": "planning",
       "title": "daily-fix: register 3 unregistered step9c pin tests"
     },
     "1646": {
@@ -5071,8 +5071,8 @@
     "1650": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1650",
-      "status": "running",
+      "path": "tasks/reviewing/1650",
+      "status": "reviewing",
       "title": "daily-fix: poller pid-identity check + pgrep memory sync"
     },
     "1651": {
@@ -5106,8 +5106,8 @@
     "1655": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1655",
-      "status": "running",
+      "path": "tasks/completed/1655",
+      "status": "completed",
       "title": "daily-fix: provision preflight checks account SSH keys"
     },
     "1656": {
@@ -5134,8 +5134,8 @@
     "1659": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1659",
-      "status": "running",
+      "path": "tasks/completed/1659",
+      "status": "completed",
       "title": "daily-fix: inline rounds size fences from measured pilot"
     },
     "1660": {

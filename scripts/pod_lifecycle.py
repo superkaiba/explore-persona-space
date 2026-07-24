@@ -98,8 +98,10 @@ from runpod_api import (  # noqa: E402
     create_pod,
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
+    get_account_pubkey,
     get_pod,
     list_team_pods,
+    read_vm_pubkey,
     resume_pod,
     stop_pod,
     terminate_pod,
@@ -1946,6 +1948,134 @@ def _provision_wait_register_bootstrap(
     print(f"\nDone. SSH with: ssh {name}")
 
 
+def _authorized_key_fields(line: str) -> tuple[str, str] | None:
+    """(key_type, base64_blob) from an authorized_keys-style line; None for
+    blank/unparseable lines. Scans for the FIRST token starting with a known
+    key-type prefix (``ssh-``, ``ecdsa-``, ``sk-``) and takes it plus the next
+    token — tolerating options-prefixed lines (``from="..." ssh-ed25519 AAA c``)
+    — rather than blindly taking parts[0:2]. Comments are deliberately
+    excluded: the console/API copy of a key routinely carries a different
+    trailing comment than the VM file (#1655)."""
+    parts = line.split()
+    for i, tok in enumerate(parts[:-1]):
+        if tok.startswith(("ssh-", "ecdsa-", "sk-")):
+            return (tok, parts[i + 1])
+    return None
+
+
+def decide_account_key_preflight(
+    vm_pubkey: str | None,
+    account_pubkey: str | None,  # None == query failed (fail-open row)
+    *,
+    query_error: str = "",
+) -> tuple[str, str]:
+    """Pure decision core for the #1655 plan §4.1 matrix: (verdict, message),
+    verdict in {'ok', 'warn', 'fail'}. The decision keys on the PARSED local
+    identity ``vm_fields`` (None ⟺ no usable local key identity: file
+    missing/unreadable/non-``ssh-``/or <2 tokens — per-key membership is then
+    UNDECIDABLE). ``fail`` ONLY when ``vm_fields`` is None AND
+    ``account_pubkey`` is a real (non-None) blob parsing to ZERO keys — the
+    one state where a fresh pod provably seeds no authorized key while the
+    PUBLIC_KEY injection (b66910d748) is unavailable. A failed query
+    (``account_pubkey=None``) can never fail."""
+    vm_fields = _authorized_key_fields(vm_pubkey) if vm_pubkey else None
+    if account_pubkey is None:
+        # Fail-open rows (query error): 'warn' — loudest wording when
+        # vm_fields is None (cannot verify either path).
+        if vm_fields is None:
+            return (
+                "warn",
+                "account-key preflight SKIPPED: the RunPod account-key query failed "
+                f"({query_error or 'unknown error'}) AND the VM pubkey file is "
+                "missing/malformed ($RUNPOD_SSH_PUBKEY_FILE or ~/.ssh/id_ed25519.pub) "
+                "— cannot verify either SSH-seeding path; proceeding fail-open per the "
+                "guardrail contract. Restore the pubkey file and check the account list "
+                "via RunPod console -> Settings -> SSH Public Keys.",
+            )
+        return (
+            "warn",
+            "account-key preflight SKIPPED: the RunPod account-key query failed "
+            f"({query_error or 'unknown error'}); proceeding fail-open — an unreachable "
+            "API cannot disprove key presence. Fresh EPS pods stay reachable via the "
+            "PUBLIC_KEY boot injection (b66910d748).",
+        )
+    account_fields = {
+        f for line in account_pubkey.splitlines() if (f := _authorized_key_fields(line)) is not None
+    }
+    if vm_fields is not None:
+        if vm_fields in account_fields:
+            return (
+                "ok",
+                "team account list contains the VM key (provider-side seeding not "
+                "verifiable from the list; the 2026-07-23 mode is covered by the "
+                "PUBLIC_KEY injection, b66910d748).",
+            )
+        return (
+            "warn",
+            "VM key absent from the RunPod team account key list — the SHARED team "
+            "list is mutated by fellows-cluster onboarding (live hazard class). Fresh "
+            "EPS pods stay reachable via the PUBLIC_KEY boot injection, but "
+            "pre-injection pod resumes / non-EPS tooling may refuse SSH. Re-add via "
+            "RunPod console -> Settings -> SSH Public Keys.",
+        )
+    # vm_fields is None (no usable local key identity) + query succeeded.
+    if not account_fields:
+        return (
+            "fail",
+            "VM pubkey file missing/malformed (~/.ssh/id_ed25519.pub or "
+            "$RUNPOD_SSH_PUBKEY_FILE) — the PUBLIC_KEY boot injection (b66910d748) is "
+            "unavailable — AND the RunPod team account key list (myself.pubKey) parses "
+            "to ZERO keys. A fresh pod would seed NO authorized key and refuse SSH "
+            "(the publickey-denied signature of 2026-07-23). Remediation: restore the "
+            "pubkey file, and/or re-add keys via RunPod console -> Settings -> "
+            "SSH Public Keys (the API mutation updateUserSettings REPLACES the whole "
+            "shared list — do not script it).",
+        )
+    return (
+        "warn",
+        "VM pubkey file missing/malformed — the PUBLIC_KEY boot injection is "
+        "unavailable AND the VM key's membership in the team account list cannot be "
+        f"verified (no local key identity). A fresh pod is reachable only if one of "
+        f"the {len(account_fields)} listed account keys is ours. Restore the pubkey "
+        "file ($RUNPOD_SSH_PUBKEY_FILE or ~/.ssh/id_ed25519.pub).",
+    )
+
+
+def _account_key_preflight(pod_label: str) -> None:
+    """Provision-time account-key guardrail (#1655) — read-only, warn-mostly;
+    ``sys.exit(1)`` only on the both-paths-broken row of
+    :func:`decide_account_key_preflight`. NEVER mutates the shared team key
+    list (the remediation mutation is named in the FAIL message for a
+    deliberate human, never called). Kill switch:
+    ``EPM_SKIP_ACCOUNT_KEY_PREFLIGHT=1``."""
+    if os.environ.get("EPM_SKIP_ACCOUNT_KEY_PREFLIGHT") == "1":
+        print(
+            "  account-key preflight: SKIPPED (EPM_SKIP_ACCOUNT_KEY_PREFLIGHT=1)",
+            file=sys.stderr,
+        )
+        return
+    vm_key = read_vm_pubkey()
+    account: str | None
+    query_error = ""
+    try:
+        account = get_account_pubkey()
+    except (RunPodError, OSError, ValueError) as exc:
+        # Fact-check correction (#1655 plan v2): RunPodError alone is NOT the
+        # complete fail-open catch — json.loads at runpod_api._graphql_once's
+        # caller sits OUTSIDE its try (json.JSONDecodeError ⊂ ValueError
+        # escapes), and a socket read-timeout in resp.read() raises raw
+        # TimeoutError (⊂ OSError, not URLError). All three classes are
+        # transient and MUST fail open (acceptance criterion 4).
+        account, query_error = None, str(exc)
+    verdict, msg = decide_account_key_preflight(vm_key, account, query_error=query_error)
+    if verdict == "ok":
+        print(f"  account-key preflight: OK ({pod_label}) — {msg}")
+        return
+    print(f"  account-key preflight [{verdict.upper()}] ({pod_label}): {msg}", file=sys.stderr)
+    if verdict == "fail":
+        sys.exit(1)
+
+
 def cmd_provision(args: argparse.Namespace) -> None:
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
@@ -2003,6 +2133,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+
+    # Account-key preflight (#1655): read-only guardrail BEFORE any create —
+    # covers the CPU branch, the GPU branch (wait + one-shot), and --dry-run
+    # (the idempotency exit(1) above already fires in dry-run; same precedent
+    # as the #1177 warn placement). Runs ONCE per provision invocation —
+    # deliberately NOT inside _wait_mode_preflight, which fires per
+    # capacity-retry tick.
+    _account_key_preflight(name)
 
     # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
     # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This
