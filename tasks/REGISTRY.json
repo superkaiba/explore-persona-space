@@ -5050,8 +5050,8 @@
     "1648": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1648",
-      "status": "running",
+      "path": "tasks/reviewing/1648",
+      "status": "reviewing",
       "title": "daily-fix: lint bare git-commit recipes lacking pathspec"
     },
     "1649": {
