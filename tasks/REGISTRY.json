@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1664,
+  "highest_id": 1665,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5172,6 +5172,13 @@
       "path": "tasks/completed/1664",
       "status": "completed",
       "title": "workflow-fix: verify_uploads honors card adapter_repo_overrides"
+    },
+    "1665": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1665",
+      "status": "proposed",
+      "title": "fix: rewrite use_rslora literal assert in test_issue1090_fu5_round (red on main)"
     },
     "168": {
       "has_clean_result": true,
