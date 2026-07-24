@@ -298,7 +298,11 @@ relaunch, a watch-session correction — not just first launches:
    (b) an ad-hoc liveness monitor's pattern-probe FALLBACK — a harness
    Monitor / until-loop watcher (the #1112 shape), NOT
    `poll_pipeline.py`, whose verdict path item 2's contract still
-   governs — run ALONGSIDE the pid-file probe, the pattern bracketed
+   governs (#1650 adds a poller-side marker-signature-derived
+   pattern-probe as a DETECTION/rescue read inside the verdict path —
+   alive-direction-only, inert without a signature-bearing marker;
+   acquisition stays banned — the poller never writes a pid file) — run
+   ALONGSIDE the pid-file probe, the pattern bracketed
    per (a) (an unbracketed pattern can self-match the monitor's own
    command line and mint a false-ALIVE verdict masking a dead run), so
    a stale or transient pid alone cannot mint a false "exited"
@@ -307,12 +311,18 @@ relaunch, a watch-session correction — not just first launches:
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
-   marker_pid_alive` (poll_once, ~line 4199), so a stale pid FILE is rescued
-   only while the newest marker's `pid=` is itself the live process. A
-   PRESENT-but-stale pid file is worse than a missing one: the
-   `pid_file_missing` fallback + WARN (~4205-4212) fires ONLY when the file
-   is absent — a stale file silently probes a dead pid every tick, with no
-   warning.
+   marker_pid_alive OR sig_proc_rescue` (poll_once; the third term is
+   #1650's marker-signature-derived, alive-direction-only rescue — it fires
+   only on `cmd='...'`/`launcher_script=`-bearing markers, when BOTH probed
+   pids are dead and live processes match the derived launch signature), so
+   a stale pid FILE is rescued while the newest marker's `pid=` is itself
+   the live process, or — on a signature-bearing marker — while
+   signature-matched processes are live. A PRESENT-but-stale pid file is
+   worse than a missing one: the `pid_file_missing` fallback + WARN fires
+   ONLY when the file is absent — a stale file silently probes a dead pid
+   every tick, with no warning — #1650 adds a cmdline identity WARN
+   (`pid_identity=mismatch` in the tick JSON) for an alive-but-wrong pid,
+   verdict unchanged.
 3. **Worked example (incident #813 v5, 2026-07-02).** The run-4 relaunch
    (00:31, `bash scripts/issue813_dispatch.sh`) skipped the pid-file
    rewrite, leaving run-2's dead pid 6267 in `/workspace/logs/issue-813.pid`;
@@ -327,10 +337,17 @@ Residual honesty: this contract now HAS a WARN-only runtime detector (#1156 —
 `pid_file_stale_vs_marker`, when the pid file's pod-clock mtime predates the
 newest `epm:run-launched` marker by more than
 `EPM_POLL_PID_MARKER_SLACK_SEC`, default 600 s), so a rewrite-skipping
-relaunch is named in the poll log instead of left to manual archaeology. The
-detector never changes a verdict: the poller's marker-pid OR-probe remains
-the only VERDICT-bearing mechanical rescue, and only while the newest
-marker's pid is itself alive.
+relaunch is named in the poll log instead of left to manual archaeology, and
+a cmdline identity detector (#1650 — `pid_identity` / `marker_pid_identity`
+in the tick JSON, WARN on `mismatch`). Neither detector changes a verdict.
+TWO mechanical rescues ARE verdict-bearing: the marker-pid OR-probe (while
+the newest marker's pid is itself alive), and the #1650 signature rescue
+(`sig_proc_rescue`, alive-direction only — fires when BOTH probed pids are
+dead but live processes match the launch signature derived from the marker's
+`cmd='...'`/`launcher_script=` fields; kill switch `EPM_POLL_PID_IDENTITY=0`).
+On a free-prose marker (no signature fields) the pre-#1650 residual stands:
+the marker-pid probe is the only rescue, and a wrong-and-dead pid in BOTH
+the file and the marker still reads `dead`.
 
 ### Result-push verification contract (#1205)
 
