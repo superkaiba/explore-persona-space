@@ -295,6 +295,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
     "tests/test_issue_skill_forensics_ingest_pointer.py",
+    # Registration rider (#1651) — the pre-existing #1305/#1533 gate-scope
+    # pin file was never registered (the #1546 unregistered-pin class).
+    "tests/test_issue_skill_gate_scope_brief_pin.py",
     # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
     "tests/test_issue_skill_gate_single_flight.py",
     # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +

@@ -588,8 +588,10 @@ both reviewers are graded against the same standard. Read
   the inlined marker body must carry the `**Gate-scope check (#1288):**`
   line with the contract fields (selector `n_tests` + resolved base,
   locally-run files, pin-sweep fragments →
-  hit count + verbatim deduplicated hit-file list, deferred
-  invariant-only count; count-only / no list = present-but-terse);
+  hit count + verbatim deduplicated hit-file list + `sweep_scope:`
+  universe token, deferred
+  invariant-only count; count-only / no list / missing `sweep_scope:` =
+  present-but-terse);
   ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
   Critical tagged `marker-shape` whose body NAMES `Gate-scope check` (the
   orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
