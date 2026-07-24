@@ -1,13 +1,30 @@
 ---
-name: pgrep self-match poisons pidfile over SSH
-description: When resolving a relaunched workload's PID over SSH, pgrep -f on the launch command self-matches the SSH wrapper; use a pattern absent from your own command string.
+name: pid acquisition is launch-expression capture; pgrep is recovery/monitor-only
+description: Relaunch pid resolution: capture $$/$! in the launch chain (pod-side-reporting.md 1d), never a post-hoc pgrep; pgrep survives only as bracketed identity-verified recovery probe + monitor pattern-probe fallback, with self-match hygiene.
 type: feedback
 ---
 
-When confirming a pod relaunch over SSH, resolve the child PID with a `pgrep` pattern that is ABSENT from your own SSH command string (e.g. `venv/bin/python3 <script>.py`) — `pgrep -f 'bash <script>.sh'` self-matches the SSH wrapper process and writes a transient PID into the pidfile, which then yields false `status=dead` polls.
+Acquisition rule (supersedes the old "pgrep -fx is the robust fix"): the pid
+you write to `/workspace/logs/issue-<N>.pid` comes from the LAUNCH EXPRESSION
+— the launcher's pre-exec `echo $$`, or `$!` captured in the same command
+chain as the launch (`.claude/rules/pod-side-reporting.md` § Pid-file launch
+contract, clause 1d; #1634). A post-hoc pgrep can capture a transient sibling
+(#1112 relaunch, 2026-07-23: an unanchored pgrep populated the pid file AND
+the epm:run-launched marker with a wrong pid — two false "exited" monitor
+alarms on a healthy dispatcher).
 
-**Why:** task #602 respawn 1 (2026-06-11) — the pidfile briefly carried the SSH wrapper's PID before correction.
+pgrep keeps exactly two roles, and the OLD hygiene still binds in both:
+(a) RECOVERY probe when the launch-expression pid was genuinely lost —
+bracket one pattern char (`pgrep -f 'issue<N>_dispatc[h]'`) and
+identity-verify with `ps -p "$PID" -o args=` BEFORE trusting or writing the
+result; (b) ad-hoc monitor pattern-probe FALLBACK run alongside the pid file
+(never `poll_pipeline.py` acquisition — the poller's own #1650
+marker-signature read is a DETECTION/rescue read, not a source you imitate).
+Within those roles: a pattern present in your own SSH command self-matches
+the wrapper (#602 respawn 1); even a bracketed pattern can match a
+still-alive launch-wrapper subshell — `pgrep -fx "bash scripts/X[.]sh"`
+exact-full-cmdline match selects only the exec'd driver (#601 relaunch 3).
+Verify `ps -o sess` equals the pid (setsid leader) before posting.
 
-**Second variant (#601 relaunch 3, 2026-06-11):** even a SEPARATE-invocation probe with a bracketed pattern (`i601_launch[.]sh`) matched the still-alive LAUNCH wrapper subshell — `bash -c 'cd ... && setsid nohup bash scripts/X.sh ... & echo ok'` parses as `(cd && setsid nohup bash X.sh) & echo ok`, so a forked subshell carrying the full launch string in its cmdline survives as parent-of-driver and pgrep `head -1` picks it (lower PID). Robust fix: `pgrep -fx "bash scripts/X[.]sh"` — exact-full-cmdline match selects only the exec'd driver; the bracket also self-excludes the probe.
-
-**How to apply:** any relaunch-confirmation step that writes/verifies `/workspace/logs/issue-<N>.pid`. Verify the resolved PID's `ps -o sess` equals its own PID (setsid session leader) before posting. Also: a transient single-file HF upload failure at a skip-if-exists dispatcher's upload gate needs only a resume relaunch — zero GPU re-work.
+Also retained: a transient single-file HF upload failure at a skip-if-exists
+dispatcher's upload gate needs only a resume relaunch — zero GPU re-work.

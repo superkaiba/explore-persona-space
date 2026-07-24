@@ -362,6 +362,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -455,6 +456,23 @@ DONE_QUOTED_NOISE_RE = re.compile(
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
+# #1650: launch-signature fields on key=value-style markers. `cmd='<dispatch>'`
+# is the documented convention (experimenter.md "Post epm:run-launched");
+# `launcher_script=<path>` is live practice (#1092). Most live markers are
+# free prose carrying NEITHER field — every #1650 consumer is inert on an
+# empty parse, so partial adoption is safe by construction.
+MARKER_CMD_RE = re.compile(r"\bcmd='([^']*)'|\bcmd=\"([^\"]*)\"")
+MARKER_LAUNCHER_RE = re.compile(r"\blauncher_script=(\S+)")
+# Generic interpreter / wrapper basenames that discriminate nothing about the
+# launched workload — dropped from the launch signature (#1650).
+_SIG_GENERIC_TOKENS = frozenset(
+    {"bash", "sh", "python", "python3", "uv", "env", "nohup", "setsid", "timeout", "run"}
+)
+# Obvious log-READER executables: a straggler `tail -f`/`vim` on an
+# issue-keyed path must neither rescue liveness (pod-side comm filter in the
+# sig probe) nor classify as identity `match` (#1650 reviewer concern (c)).
+# The shell `case` list in `_ssh_probe`'s sig probe mirrors this set.
+_READER_COMMS = frozenset({"tail", "grep", "less", "more", "cat", "vi", "vim", "nano", "emacs"})
 
 # ── Adaptive bg-poll interval (anti-stall redesign §7) ──────────────────────
 #
@@ -929,6 +947,28 @@ def _marker_pid(issue: int) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _marker_launch_fields(issue: int) -> tuple[int | None, str]:
+    """Return ``(pid, note_text)`` from the latest epm:run-launched marker.
+
+    #1650: the pid comes from the module-level :func:`_marker_pid` (so the
+    ~14 existing test sites that monkeypatch ``_marker_pid`` keep governing
+    the pid — plan #1650 §4 Step 1 test-compat shape (i)); the note text is
+    read in its OWN fail-soft branch (broad except -> ``""``), costing one
+    extra events read per tick, accepted. An empty note (missing task /
+    unreadable events / free-prose marker) leaves every downstream
+    signature consumer inert.
+    """
+    pid = _marker_pid(issue)
+    try:
+        ev = latest_event(issue, prefix="epm:run-launched")
+    except Exception as exc:
+        log.debug("could not read epm:run-launched note for #%d (ignored, #1650): %s", issue, exc)
+        return pid, ""
+    if ev is None:
+        return pid, ""
+    return pid, str(ev.get("note", "") or "")
+
+
 def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     """Seconds since the latest ``epm:run-launched`` marker, or None.
 
@@ -1035,6 +1075,216 @@ def _maybe_warn_stale_pid_file(
     except Exception as exc:
         log.debug("stale-pid-file-vs-marker check failed (ignored, #1156): %s", exc)
         return False
+
+
+def _pid_identity_enabled() -> bool:
+    """#1650 kill switch: ``EPM_POLL_PID_IDENTITY=0`` disables the
+    marker-signature identity + rescue arms (empty token derivation =>
+    no sig probe, no rescue, identities ``unknown``). The verdict-inert
+    cmdline capture lines in the probe heredoc are unconditional."""
+    return os.environ.get("EPM_POLL_PID_IDENTITY", "1") != "0"
+
+
+def _launch_signature_tokens(note: str, issue: int) -> tuple[str, ...]:
+    """Path-like basenames from the marker note's ``cmd='...'`` +
+    ``launcher_script=`` fields (#1650).
+
+    Splits each field on whitespace + shell metachars (``> < & ; |``),
+    keeps tokens containing ``/`` or ending in ``.sh``/``.py``, reduces to
+    ``os.path.basename``, and drops generic interpreter names
+    (:data:`_SIG_GENERIC_TOKENS`), short (<6 char) tokens, and output-file
+    basenames (``.log``/``.json``/``.pid``/``.txt`` — outputs, not launch
+    identity). Returns ``()`` when neither field parses (the common
+    free-prose marker) — every downstream consumer is inert on empty.
+    ``issue`` rides along for signature parity with the classifier (the
+    issue-token fallback lives there, not here). Pure; unit-tested with
+    no SSH.
+    """
+    del issue  # reserved: the issue-token read lives in _classify_pid_identity
+    fields: list[str] = []
+    m = MARKER_CMD_RE.search(note)
+    if m:
+        fields.append(m.group(1) or m.group(2) or "")
+    m2 = MARKER_LAUNCHER_RE.search(note)
+    if m2:
+        fields.append(m2.group(1))
+    tokens: list[str] = []
+    for field in fields:
+        for raw in re.split(r"[\s><&;|]+", field):
+            if not raw:
+                continue
+            if "/" not in raw and not raw.endswith((".sh", ".py")):
+                continue
+            base = os.path.basename(raw.rstrip("/"))
+            if len(base) < 6 or base.lower() in _SIG_GENERIC_TOKENS:
+                continue
+            if base.endswith((".log", ".json", ".pid", ".txt")):
+                continue
+            if base not in tokens:
+                tokens.append(base)
+    return tuple(tokens)
+
+
+def _classify_pid_identity(cmdline: str, tokens: tuple[str, ...], issue: int) -> str:
+    """``"unknown" | "match" | "mismatch"`` for a probed pid's cmdline (#1650).
+
+    ``unknown`` when the cmdline is blank (dead pid / ``ps`` unavailable) OR
+    the token set is empty (legacy free-prose marker). ``match`` when any
+    signature token is a substring of the cmdline OR the issue-token
+    fallback ``issue[-_]?<N>(?!\\d)`` hits (covers an exec'd workload like
+    ``python scripts/issue1092_dispatch.py`` whose cmdline shares no
+    basename with the ``cmd='...'`` launcher string; the ``(?!\\d)`` guard —
+    not ``\\b``, which a trailing ``_`` defeats — stops issue 109 matching
+    issue 1092 while still matching ``issue1092_dispatch.py``). An obvious log-READER
+    cmdline (:data:`_READER_COMMS` first token — a straggler ``tail -f`` /
+    ``vim`` on an issue-keyed path) classifies ``mismatch`` even when the
+    issue token appears in its args (reviewer concern (c)). Else
+    ``mismatch``. Pure; unit-tested with no SSH.
+    """
+    stripped = cmdline.strip()
+    if not stripped or not tokens:
+        return "unknown"
+    first = os.path.basename(stripped.split()[0])
+    if first in _READER_COMMS:
+        return "mismatch"
+    if any(tok in stripped for tok in tokens):
+        return "match"
+    if re.search(rf"issue[-_]?{issue}(?!\d)", stripped):
+        return "match"
+    return "mismatch"
+
+
+def _sig_pgrep_pattern(tokens: tuple[str, ...]) -> str | None:
+    """Bracketed ``pgrep -f`` pattern from the LONGEST usable token (#1650):
+    ``re.escape(tok[:-1]) + "[" + tok[-1] + "]"``. ``None`` when no token
+    ends in an alphanumeric char — the pod-side sig probe is then omitted
+    entirely. The bracket is the gotchas.md self-match idiom: the probing
+    remote shell's own cmdline carries the bracketed LITERAL, which the
+    regex does not match, so the probe can never count itself."""
+    usable = [t for t in tokens if t and t[-1].isalnum()]
+    if not usable:
+        return None
+    tok = max(usable, key=len)
+    return re.escape(tok[:-1]) + "[" + tok[-1] + "]"
+
+
+def _maybe_rescue_by_signature(
+    *,
+    pod: str,
+    sig_pattern: str | None,
+    sig_proc_count: int,
+    sig_proc_pids: str,
+    pidfile_pid_alive: bool,
+    marker_pid_alive: bool,
+) -> bool:
+    """#1650 alive-direction-only liveness rescue decision (+ its WARN).
+
+    True iff BOTH probed pids are dead AND live process(es) match the
+    marker-derived launch signature — the #1112 fresh-but-wrong-pid class,
+    where the same wrong pid populated the pid file AND the marker so the
+    #451/#521 marker-pid OR-probe could not rescue. The caller ORs the
+    result into ``pid_alive``: the rescue can only ADD liveness, never
+    remove it, so no false ``dead`` can be introduced. Inert on free-prose
+    markers (``sig_pattern is None``) and under ``EPM_POLL_PID_IDENTITY=0``
+    (no pattern is derived). Extracted from ``poll_once`` for C901
+    headroom (the #664/#826 `_apply_zombie_override` precedent).
+    """
+    rescue = (
+        sig_pattern is not None
+        and sig_proc_count > 0
+        and not pidfile_pid_alive
+        and not marker_pid_alive
+    )
+    if rescue:
+        log.warning(
+            "pid file pid AND marker pid dead on pod %s but %d live process(es) "
+            "(%s) match launch signature %r — rescuing liveness (#1650, the "
+            "#1112 fresh-but-wrong-pid class); pid-file launch-contract "
+            "violation: kill any straggler that is NOT the live workload, "
+            "rewrite the pid file with the live workload pid, and re-post "
+            "epm:run-launched (pod-side-reporting.md § Pid-file launch "
+            "contract items 1/1d).",
+            pod,
+            sig_proc_count,
+            sig_proc_pids.strip() or "?",
+            sig_pattern,
+        )
+    return rescue
+
+
+def _maybe_warn_pid_identity(
+    *,
+    issue: int,
+    pod: str,
+    pid_file: str,
+    probe: dict[str, str],
+    sig_tokens: tuple[str, ...],
+    pidfile_pid_alive: bool,
+    marker_pid: int | None,
+    marker_pid_alive: bool,
+    prev_state: dict[str, str] | None = None,
+) -> tuple[str, str]:
+    """Fail-soft #1650 cmdline-identity classifier; returns
+    ``(pid_identity, marker_pid_identity)``.
+
+    WARN + tick-JSON flag ONLY by contract: an identity mismatch NEVER
+    demotes ``pid_alive`` / changes ``status`` (#1650 plan §11 row 1 — a
+    demotion risks a false ``dead`` exactly when token derivation fails on
+    a healthy run, and the false-alive class it would fix already
+    self-corrects to ``stalled`` within ``stall_sec``). Classifies ONLY
+    alive pids (a dead pid's cmdline is empty => ``unknown``). Raw cmdline
+    text goes to the LOG only, never into PollResult / tick JSON
+    (trigger-dense hygiene). A repeat mismatch (same classification as the
+    previous tick, per ``prev_state``) logs at DEBUG instead of WARNING —
+    once-per-state-change dedup against alarm fatigue on generic exec'd
+    workloads (reviewer concern (a)). Whole body in try/except ->
+    ``log.debug`` + ``("unknown", "unknown")`` — a broken classifier must
+    never break a tick (#1156 precedent).
+    """
+    try:
+        pid_identity = "unknown"
+        marker_pid_identity = "unknown"
+        if sig_tokens:
+            if pidfile_pid_alive:
+                pid_identity = _classify_pid_identity(
+                    probe.get("pid_cmdline", ""), sig_tokens, issue
+                )
+            if marker_pid is not None and marker_pid_alive:
+                marker_pid_identity = _classify_pid_identity(
+                    probe.get("marker_pid_cmdline", ""), sig_tokens, issue
+                )
+        prev = prev_state or {}
+        for state_key, identity, cmdline_key, pid_label in (
+            ("pid_identity_last", pid_identity, "pid_cmdline", f"pid file {pid_file} pid"),
+            (
+                "marker_pid_identity_last",
+                marker_pid_identity,
+                "marker_pid_cmdline",
+                f"epm:run-launched marker pid {marker_pid}",
+            ),
+        ):
+            if identity != "mismatch":
+                continue
+            emit = log.warning if prev.get(state_key) != "mismatch" else log.debug
+            emit(
+                "%s on pod %s is ALIVE but its cmdline does not match the launch "
+                "signature derived from #%d's epm:run-launched marker "
+                "(identity=mismatch; tokens=%r, cmdline=%r) — possible "
+                "recycled/wrong pid (#1650, the #1112 class). WARN-only; status "
+                "verdict unchanged. Recovery: kill any straggler that is NOT the "
+                "live workload, rewrite the pid file with the live workload pid, "
+                "and re-post epm:run-launched (pod-side-reporting.md § Pid-file "
+                "launch contract items 1/1d).",
+                pid_label,
+                pod,
+                issue,
+                sig_tokens,
+                probe.get(cmdline_key, "")[:300],
+            )
+        return pid_identity, marker_pid_identity
+    except Exception as exc:
+        log.debug("pid-identity check failed (ignored, #1650): %s", exc)
+        return "unknown", "unknown"
 
 
 # Schema version the poller knows how to parse. Bump in lockstep with the
@@ -1261,6 +1511,19 @@ class PollResult:
     # only; status routing unchanged. Declared LAST with a default so
     # cross-backend PollResult(...) call sites need no change.
     log_tail_digested: bool = False
+    # #1650 pid-identity observability: cmdline classification of the probed
+    # pid-file pid / marker pid against the epm:run-launched launch signature
+    # ("match" | "mismatch" | "unknown"). A mismatch is WARN + flag ONLY —
+    # never a verdict change. ``sig_proc_rescue`` records whether the
+    # alive-direction signature rescue fired this tick (the ONLY
+    # verdict-affecting #1650 arm; it can only ADD liveness via the
+    # ``pid_alive`` OR). Raw cmdline text is deliberately LOG-ONLY
+    # (trigger-dense hygiene) — these fields are enums/bools. Declared LAST
+    # with defaults so cross-backend PollResult(...) call sites need no
+    # change.
+    pid_identity: str = "unknown"
+    marker_pid_identity: str = "unknown"
+    sig_proc_rescue: bool = False
 
 
 # Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
@@ -1314,6 +1577,7 @@ def _ssh_probe(
     marker_pid: int | None = None,
     *,
     stall_sec: int = DEFAULT_STALL_SEC,
+    sig_pattern: str | None = None,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
@@ -1323,7 +1587,26 @@ def _ssh_probe(
     ``stall_sec`` sizes the output-artifact freshness window (#1033 —
     ``output_mtime_epoch`` below); it does NOT change any log probe.
 
+    ``sig_pattern`` (#1650) is the bracketed marker-derived launch-signature
+    ``pgrep -f`` pattern from :func:`_sig_pgrep_pattern`; ``None`` (the
+    common free-prose-marker case) omits the sig-probe block entirely.
+    All #1650 lines ride INSIDE the same single heredoc — no second SSH
+    round-trip per tick.
+
     Batches into a single heredoc to keep the SSH cost to one connection.
+
+    #1650 identity/signature keys (all default-inert on legacy replays /
+    SSH failure):
+    * ``pid_cmdline`` — ``ps -o args=`` (capped 300 chars) of the pid-file
+      pid; ``""`` when the pid is dead / the file is absent / ``ps``
+      errors => classification ``unknown``.
+    * ``marker_pid_cmdline`` — same capture for ``marker_pid``.
+    * ``sig_proc_count`` / ``sig_proc_pids`` — count + space-separated
+      pids of live processes whose cmdline matches ``sig_pattern``,
+      EXCLUDING obvious log-reader comms (``tail``/``grep``/``vim``/... —
+      the shell ``case`` list mirrors :data:`_READER_COMMS`) so a
+      straggler reader can never rescue liveness. ``"0"`` / ``""`` when
+      no pattern was supplied or nothing matches.
 
     Liveness keys:
     * ``pid_alive`` — liveness of the PID stored in ``pid_file``.
@@ -1446,6 +1729,30 @@ def _ssh_probe(
         marker_probe = (
             f"if ps -p {marker_pid} > /dev/null 2>&1; "
             f"then echo MARKER_PID_ALIVE=1; else echo MARKER_PID_ALIVE=0; fi; "
+            # #1650: cmdline of the marker pid for the identity check. A dead
+            # pid prints nothing => empty value => classification `unknown`.
+            f"MPC=$(ps -p {marker_pid} -o args= 2>/dev/null | head -c 300); "
+            f'echo "MARKER_PID_CMDLINE=$MPC"; '
+        )
+    # #1650 launch-signature pattern probe (built ONLY when the marker carried
+    # a parseable cmd='...'/launcher_script= field — sig_pattern is None on
+    # the common free-prose markers, omitting the block entirely). The
+    # bracketed pattern cannot match this remote shell's own cmdline (the
+    # gotchas.md self-match idiom), and obvious log-READER comms are filtered
+    # so a straggler `tail -f`/`vim` on an issue-keyed path never counts
+    # toward the alive-direction rescue (the case list mirrors
+    # _READER_COMMS).
+    sig_probe = ""
+    if sig_pattern is not None:
+        sig_probe = (
+            f"SIG_RAW=$(pgrep -f {shlex.quote(sig_pattern)} 2>/dev/null | head -20); "
+            'SIG_PIDS=""; for P in $SIG_RAW; do '
+            "C=$(ps -p $P -o comm= 2>/dev/null); "
+            'case "$C" in tail|grep|less|more|cat|vi|vim|nano|emacs) ;; '
+            '*) SIG_PIDS="$SIG_PIDS $P";; esac; done; '
+            "SIG_PIDS=$(echo $SIG_PIDS | head -c 200); "
+            'echo "SIG_PROC_PIDS=$SIG_PIDS"; '
+            'echo "SIG_PROC_COUNT=$(echo $SIG_PIDS | wc -w)"; '
         )
     # Cell-log probe: strip a trailing `.log` from log_path to get the
     # per-cell log directory (the dispatch_sweep convention used since
@@ -1762,8 +2069,12 @@ def _ssh_probe(
         f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
         f"  echo PID_FILE_MTIME_EPOCH=$(stat -c %Y {pid_file} 2>/dev/null || echo 0); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
+        # #1650: cmdline of the pid-file pid for the identity check. A dead
+        # pid prints nothing => empty value => classification `unknown`.
+        f'  PIDC=$(ps -p $PID -o args= 2>/dev/null | head -c 300); echo "PID_CMDLINE=$PIDC"; '
         f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
+        f"{sig_probe}"
         f"if [ -f $LOG_PATH ]; then "
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
         f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
@@ -1801,6 +2112,10 @@ def _ssh_probe(
             "pid_file_missing": "0",
             "pid_file_mtime_epoch": "0",
             "marker_pid_alive": "0",
+            "pid_cmdline": "",
+            "marker_pid_cmdline": "",
+            "sig_proc_count": "0",
+            "sig_proc_pids": "",
             "mtime_epoch": "0",
             "pod_now_epoch": "0",
             "cell_mtime_epoch": "0",
@@ -1834,6 +2149,10 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_FILE_MISSING",
     "PID_FILE_MTIME_EPOCH",
     "MARKER_PID_ALIVE",
+    "PID_CMDLINE",
+    "MARKER_PID_CMDLINE",
+    "SIG_PROC_COUNT",
+    "SIG_PROC_PIDS",
     "MTIME_EPOCH",
     "POD_NOW_EPOCH",
     "CELL_MTIME_EPOCH",
@@ -1864,6 +2183,10 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "pid_file_missing": "0",
         "pid_file_mtime_epoch": "0",
         "marker_pid_alive": "0",
+        "pid_cmdline": "",
+        "marker_pid_cmdline": "",
+        "sig_proc_count": "0",
+        "sig_proc_pids": "",
         "mtime_epoch": "0",
         "pod_now_epoch": "0",
         "cell_mtime_epoch": "0",
@@ -4948,9 +5271,17 @@ def poll_once(
     # the on-pod pidfile can hold the dead first-run PID while the live
     # python child runs under a new PID carried by the latest
     # epm:run-launched marker. Cross-check the marker pid so a healthy
-    # re-run is not misreported as dead.
-    marker_pid = _marker_pid(issue)
-    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec)
+    # re-run is not misreported as dead. #1650 additionally derives a
+    # launch SIGNATURE from the same marker's cmd='...'/launcher_script=
+    # fields — empty on the common free-prose markers, leaving every
+    # signature consumer inert — feeding the cmdline identity check + the
+    # alive-direction pattern-probe rescue below.
+    marker_pid, marker_note = _marker_launch_fields(issue)
+    sig_tokens = _launch_signature_tokens(marker_note, issue) if _pid_identity_enabled() else ()
+    sig_pattern = _sig_pgrep_pattern(sig_tokens)
+    probe = _ssh_probe(
+        pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec, sig_pattern=sig_pattern
+    )
 
     # ── #488 stale-port self-heal ────────────────────────────────────────
     # Track consecutive SSH-probe failures across ticks. When the live API
@@ -4973,7 +5304,31 @@ def poll_once(
 
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
-    pid_alive = pidfile_pid_alive or marker_pid_alive
+    # ── #1650 marker-signature liveness rescue (alive-direction ONLY) ────
+    # Decision + WARN live in `_maybe_rescue_by_signature` (its docstring
+    # carries the #1112 rationale); the OR below is the ONLY #1650
+    # verdict-affecting wiring — it can only ADD liveness.
+    sig_proc_rescue = _maybe_rescue_by_signature(
+        pod=pod,
+        sig_pattern=sig_pattern,
+        sig_proc_count=_parse_probe_count(probe.get("sig_proc_count")) or 0,
+        sig_proc_pids=probe.get("sig_proc_pids", ""),
+        pidfile_pid_alive=pidfile_pid_alive,
+        marker_pid_alive=marker_pid_alive,
+    )
+    pid_alive = pidfile_pid_alive or marker_pid_alive or sig_proc_rescue
+    # ── #1650 cmdline identity of the probed pids (WARN + flag ONLY) ─────
+    pid_identity, marker_pid_identity = _maybe_warn_pid_identity(
+        issue=issue,
+        pod=pod,
+        pid_file=pid_file,
+        probe=probe,
+        sig_tokens=sig_tokens,
+        pidfile_pid_alive=pidfile_pid_alive,
+        marker_pid=marker_pid,
+        marker_pid_alive=marker_pid_alive,
+        prev_state=prev_state,
+    )
     # Observability for the #521 false-dead diagnosis: surface "the pid
     # FILE was absent" (vs "the pid probed dead") in the tick JSON, and
     # warn when the epm:run-launched marker pid is the fallback standing
@@ -5498,6 +5853,11 @@ def poll_once(
             # #873 run-scope anchor: the epm:run-launched epoch the tripwire
             # dedup keys above belong to (AC #6). A fresh launch clears them.
             "tripwire_run_epoch": str(tripwire_run_epoch),
+            # #1650 identity WARN dedup: the previous tick's classifications,
+            # so a persistent mismatch WARNs once per state change (repeats
+            # demote to DEBUG) instead of every tick.
+            "pid_identity_last": pid_identity,
+            "marker_pid_identity_last": marker_pid_identity,
             # #983 post-done phase-consistency guard: the matched done
             # line's identity (truncated text), when + on which pod it was
             # accepted, and the once-per-episode dedup flag. Voided only by
@@ -5556,6 +5916,9 @@ def poll_once(
         pid_alive=pid_alive,
         pid_file_missing=pid_file_missing,
         pid_file_stale_vs_marker=pid_file_stale_vs_marker,
+        pid_identity=pid_identity,
+        marker_pid_identity=marker_pid_identity,
+        sig_proc_rescue=sig_proc_rescue,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -5637,6 +6000,11 @@ def main(argv: list[str] | None = None) -> int:
                 "pid_alive": result.pid_alive,
                 "pid_file_missing": result.pid_file_missing,
                 "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
+                # #1650 pid-identity observability (enums/bools only — raw
+                # cmdline text is deliberately log-only, never in tick JSON).
+                "pid_identity": result.pid_identity,
+                "marker_pid_identity": result.marker_pid_identity,
+                "sig_proc_rescue": result.sig_proc_rescue,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 # #1556: True when log_tail_excerpt is the trigger-dense
                 # structural digest, not raw tail lines (additive key;
