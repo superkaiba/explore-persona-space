@@ -1242,7 +1242,10 @@ def test_selected_ft_ckpt_restages_on_missing_local(tmp_path, monkeypatch, caplo
     assert (got / "config.json").exists()
     assert staged["prefix"] == f"{G.FU_CKPT_PREFIX}/{cell}/checkpoint-12"
     assert staged["revision"] == "rev0"
-    assert evicts == [1]  # per-restage hub-cache eviction (r4 duplication class)
+    # r6 pin (iii): the in-unit restage is EVICT-FREE — the r5 per-restage
+    # evict raced siblings' in-flight downloads under the shared hub cache
+    # (epm:failure v12); the PARENT batch evict owns it now.
+    assert evicts == []
     assert any("[ckpt-restage]" in r.message and cell in r.message for r in caplog.records)
     # local present again -> no re-stage (idempotent resolve)
     staged.clear()
@@ -1286,3 +1289,132 @@ def test_selected_ft_ckpt_restage_fail_loud_paths(tmp_path, monkeypatch):
     d._atomic_json(lroot / "build_result.json", {"adapter_root": str(lroot / "train")})
     with pytest.raises(RuntimeError, match="never ckpt-reaped"):
         d._selected_ft_ckpt(cfg, lora)
+
+
+# ── crash-fix r6 (fu, epm:failure v12): parent pre-stage + ONE batch evict ───
+
+
+def _reaped_cell(out_root, cell, sel_step=12, extra_sel=None):
+    """Selection/build records present, selected rung ABSENT — the
+    post-[ckpt-reap] state a fan-out unit would lazily restage pre-r6."""
+    root = out_root / cell
+    (root / "train_reselect").mkdir(parents=True)
+    d._atomic_json(root / "selection.json", {"step": sel_step, **(extra_sel or {})})
+    d._atomic_json(root / "build_result.json", {"adapter_root": str(root / "train_reselect")})
+    return root
+
+
+def _fake_overflow_stage(events):
+    """Signature-conformant _stage_overflow_prefix fake: records the staged
+    cell and materializes a complete checkpoint tree at dest."""
+
+    def fake_stage(prefix, dest, *, revision, recursive=True):
+        events.append(("stage", prefix.split("/")[-2]))
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "config.json").write_text("{}")
+        for i in range(1, 5):
+            (dest / f"model-0000{i}-of-00004.safetensors").write_bytes(b"s")
+        return dest
+
+    return fake_stage
+
+
+def test_prestage_restages_all_serially_then_one_batch_evict(tmp_path, monkeypatch):
+    """Pin (ii): the parent restages EVERY missing cell serially through the
+    REAL _selected_ft_ckpt resolver, then evicts the overflow hub-cache entry
+    EXACTLY ONCE per batch — and only when >=1 restage happened."""
+    cfg = _cfg(tmp_path)
+    c1, c2, c3 = (fc.cell for fc in G.FU_MARKER_FT_CELLS[:3])
+    _reaped_cell(cfg.out_root, c1)
+    _reaped_cell(cfg.out_root, c2)
+    _completed_marker_cell(cfg.out_root, c3)  # rung present -> never restaged
+    events: list = []
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: events.append("evict") or 0)
+    monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
+    # duplicate + present-cell mix: ordered dedupe, present cell skipped
+    assert d._prestage_selected_ft_ckpts(cfg, [c3, c1, c2, c1]) == 2
+    assert events == [("stage", c1), ("stage", c2), "evict"]
+    # everything local now -> zero restages AND zero evicts (batch-gated)
+    events.clear()
+    assert d._prestage_selected_ft_ckpts(cfg, [c3, c1, c2]) == 0
+    assert events == []
+
+
+def test_prestage_skips_p0_staged_lora_and_recordless_ids(tmp_path, monkeypatch):
+    """Pin (ii b): classes with no overflow-restage path never reach the
+    resolver from the parent — the reused #1112 cell, FU FT partners,
+    never-reaped LoRA ladders (records present), and record-less arm ids
+    (reused LoRA arms, base_<beh> passes)."""
+    cfg = _cfg(tmp_path)
+    lora = G.FU_IMP_LORA_CELLS[0].cell
+    _reaped_cell(cfg.out_root, lora)  # records exist, but LoRA -> skipped
+    partner = G.FU_IMP_LORA_CELLS[0].ft_partner_cell
+
+    def _never(cfg_, cell_):
+        raise AssertionError(f"parent must not resolve {cell_}")
+
+    monkeypatch.setattr(d, "_selected_ft_ckpt", _never)
+    evicts: list[int] = []
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: evicts.append(1) or 0)
+    ids = [G.REUSED_FT_CELL, partner, lora, "base_syc", "syc-recordless-arm"]
+    assert d._prestage_selected_ft_ckpts(cfg, ids) == 0
+    assert evicts == []
+
+
+def test_panel_parent_prestages_before_any_unit_spawn(tmp_path, monkeypatch):
+    """Pin (i): p6_panel entry with >=1 missing selected checkpoint => the
+    PARENT resolves ALL of them serially ([ckpt-restage] from the parent pid)
+    + ONE batch [hub-evict] BEFORE _fanout_units spawns anything."""
+    cfg = _cfg(tmp_path)
+    events: list = []
+    marker_cells = [fc.cell for fc in G.FU_MARKER_FT_CELLS]
+    for cell in marker_cells:
+        _reaped_cell(cfg.out_root, cell, extra_sel={"in_band": True})
+    for ic in G.FU_IMP_LORA_CELLS:  # LoRA ladders: rung present (never reaped)
+        lroot = cfg.out_root / ic.cell
+        (lroot / "train" / "checkpoint-12").mkdir(parents=True)
+        d._atomic_json(lroot / "selection.json", {"step": 12, "in_band": True})
+        d._atomic_json(lroot / "build_result.json", {"adapter_root": str(lroot / "train")})
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: events.append("evict") or 0)
+    monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
+    monkeypatch.setattr(d, "_n_gpus", lambda: 4)
+    monkeypatch.setattr(
+        d, "_fanout_units", lambda cfg_, units: events.append(("fanout", len(units)))
+    )
+    d.phase_panel(cfg)
+    staged = [e[1] for e in events if isinstance(e, tuple) and e[0] == "stage"]
+    # every reaped marker FT cell restaged by the PARENT, serially, exactly once
+    assert sorted(staged) == sorted(marker_cells)
+    # strict ordering: all restages -> ONE batch evict -> ONE fanout spawn
+    assert events[: len(staged)] == [("stage", c) for c in staged]
+    assert events[len(staged) :] == ["evict", events[-1]]
+    assert events[-1][0] == "fanout" and events[-1][1] > 0
+    # FT partner arms (p0-staged inputs) were never overflow-restaged
+    assert not set(staged) & {ic.ft_partner_cell for ic in G.FU_IMP_LORA_CELLS}
+
+
+def test_prestage_wired_before_dispatch_at_every_consumer_phase():
+    """Pin (i wiring, r4 source-order convention): every fan-out phase whose
+    units consume selected FT checkpoints calls _prestage_selected_ft_ckpts
+    BEFORE its _fanout_units dispatch. phase_parity is deliberately absent
+    (parity units read p0-staged reused arms only, pre-selection)."""
+    import inspect
+
+    for phase in (
+        d.phase_tier2,
+        d.phase_panel,
+        d.phase_margin,
+        d.phase_capture,
+        d.phase_capture_tf,
+    ):
+        src = inspect.getsource(phase)
+        i_pre = src.index("_prestage_selected_ft_ckpts")
+        i_fan = src.index("_fanout_units")
+        assert i_pre < i_fan, phase.__name__
+    assert "_prestage_selected_ft_ckpts" not in inspect.getsource(d.phase_parity)
+    # pin (iii) wiring: the in-unit backstop no longer evicts per restage
+    assert "_evict_overflow_hub_cache" not in inspect.getsource(d._selected_ft_ckpt)
