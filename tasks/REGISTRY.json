@@ -5120,8 +5120,8 @@
     "1657": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1657",
-      "status": "approved",
+      "path": "tasks/running/1657",
+      "status": "running",
       "title": "daily-fix: Step 10d update head branch before merge"
     },
     "1658": {
