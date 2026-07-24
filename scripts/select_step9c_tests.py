@@ -179,7 +179,7 @@ src/scripts code file with ZERO pairs across all arms draws one tab-free
 ``no mapped tests for code file`` stderr WARN (#1573's fail-loud floor —
 rc stays 0). A non-empty map additionally prints a tab-free machine-greppable
 ``recommended-timeout-s=<T>`` stderr sizing line
-(``recommended_timeout_s(tests, floor=MAP_TIMEOUT_FLOOR_S)``, floor 300 s —
+(``recommended_timeout_s(tests, floor=MAP_TIMEOUT_FLOOR_S)``, floor 600 s —
 the Step-10d TG legs size their pytest bound from it). Empty stdout on
 no match is a SUCCESS (exit 0 — the gate's skip signal); exit 1 only when FILE
 is unreadable (the gate fails CLOSED on an unclassifiable payload). A FILE
@@ -194,9 +194,9 @@ payload is a legitimate zero-resolution list).
 Default output: the exact gate invocation
 ``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
 stdout — ``<T>`` sized deterministically by :func:`recommended_timeout_s`
-(#1046: 120s base + 30s/file + a 900s surcharge when
-``tests/test_workflow_lint.py`` is selected; measured from 27 real gate junits
-2026-07-04/05, workflow-lint present in 26 of them) — then any
+(#1046: 120s base + 30s/file + a 2400s surcharge when
+``tests/test_workflow_lint.py`` is selected; re-measured from 330 real gate
+junits 2026-07-13..24, #1646) — then any
 ``untested touched file: <path>`` WARN lines on stderr. Every run also prints
 a one-line provenance breadcrumb to stderr (the resolved work root + current
 branch) so the Step 9c marker records which checkout the subset was selected
@@ -519,7 +519,7 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
     """Sorted ``(pin_test, rule_file)`` pairs for ``--map-files`` (#1496).
 
     WORKFLOW_INVARIANT members are EXCLUDED here (they already gate every
-    Step 9c run; this also keeps the 900 s tests/test_workflow_lint.py out of
+    Step 9c run; this also keeps the 2400 s tests/test_workflow_lint.py out of
     the Step 10d / inline-payload lint gate). The Step 9c selection arm keeps
     them (harmless extra reason; the union dedupes) — the deliberate asymmetry
     is pinned by test_cli_map_files_rules_pin_excludes_invariant.
@@ -534,8 +534,12 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
 
 
 # --- src/scripts dependency arms for --map-files (#1573). ---------------------
-MAP_TIMEOUT_FLOOR_S = 300  # Step-10d TG-leg parity floor (SKILL.md measured basis
-#                            ~12.6 s for the historical 2-test scan map, 2026-07-08)
+MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
+#                            ~12.6 s 2-test scan map of 2026-07-08). #1634's
+#                            healthy 5-file baseline leg measured 202.9 s and
+#                            the identical gated leg was killed at 300 s under
+#                            residual load; 600 ~= 3x the measured healthy
+#                            small-map wall.
 
 
 def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
@@ -544,7 +548,7 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
     (#1498) via the ONE shared :func:`_scan_test_files` read pass, plus
     stem-map path arithmetic. WORKFLOW_INVARIANT members are EXCLUDED
     (the :func:`rules_pin_pairs` asymmetry: they already gate every Step 9c
-    run, and exclusion keeps the 900 s tests/test_workflow_lint.py out of the
+    run, and exclusion keeps the 2400 s tests/test_workflow_lint.py out of the
     Step 10d / inline-payload gates — sft.py literal-hits it via
     workflow_lint's LIVE_WORKFLOW_HELPERS list). The stem arm is restricted
     to the :func:`literal_path_targets` eligibility set (``.py`` under
@@ -591,17 +595,18 @@ def transitive_consumer_pairs(files: list[str], work_root: Path) -> list[tuple[s
     )
 
 
-# --- Gate-timeout sizing (#1046). --------------------------------------------
-# Measured from 27 Step 9c gate junits on the shared VM (2026-07-04..05,
-# /tmp/step9c-junit-issue-*.xml, per-testcase `time` summed per file;
-# test_workflow_lint.py present in 26 of them):
-# tests/test_workflow_lint.py alone min 319 s / median 390 s / max 771 s;
-# whole-gate totals median ~662 s / max 1285 s on 32-46-file selections. The
-# foreground Bash tool cap is 600 s, so the printed command carries this bound
-# and Step 9c runs the gate as a BACKGROUND invocation (SKILL.md 9c step 1b).
+# --- Gate-timeout sizing (#1046; figures re-measured by #1646). ---------------
+# Measured from 330 Step 9c gate junits on the shared VM (2026-07-13..24,
+# /tmp/step9c-junit-issue-*.xml, per-testcase `time` summed per file):
+# tests/test_workflow_lint.py alone min 472 s / median 789 s / p90 1111 s /
+# max 1819 s (58/330 runs exceeded the previous 1050 s one-file bound);
+# whole-gate testcase-time totals median ~1094 s / p90 ~1568 s / max ~2289 s.
+# The foreground Bash tool cap is 600 s, so the printed command carries this
+# bound and Step 9c runs the gate as a BACKGROUND invocation (SKILL.md 9c 1b).
 # Constants are deliberately generous (~1.4-2x over worst measured): an
 # oversized bound only ever fires on a genuine wedge; an undersized one kills
-# healthy gates (#991/#996/#906, exit 143 at 480-540 s foreground bounds).
+# healthy gates (#991/#996/#906, exit 143 at 480-540 s foreground bounds;
+# #1642: a 900 s surcharge vs a 1188.62 s measured wall).
 TIMEOUT_BASE_S = 120  # pytest startup + collection (~2500 tests) + imports
 TIMEOUT_PER_FILE_S = 30  # ~2x the p90 per-file runtime of non-slow files
 TIMEOUT_FLOOR_S = 900
@@ -609,8 +614,11 @@ TIMEOUT_FLOOR_S = 900
 # by an order of magnitude. Pinned literal (same curation rule as
 # WORKFLOW_INVARIANT); live-tree drift pin in tests/test_select_step9c_tests.py.
 SLOW_TESTS: dict[str, int] = {
-    # 3845 lines; runs whole-tree lints repeatedly. Max 771 s measured (n=26).
-    "tests/test_workflow_lint.py": 900,
+    # Runs whole-tree lints repeatedly; wall GREW 771 -> 1819 s max between the
+    # n=26 (2026-07-04..05) and n=330 (2026-07-13..24) junit samples (#1642
+    # measured 1188.62 s standalone). 2400 puts the one-file bound at
+    # 120 + 30 + 2400 = 2550 s = 1.40x the 1819 s worst measured (#1646).
+    "tests/test_workflow_lint.py": 2400,
 }
 
 # --- Diff-base resolution (#1289). -------------------------------------------
@@ -691,11 +699,11 @@ def recommended_timeout_s(tests: list[str], *, floor: int = TIMEOUT_FLOOR_S) -> 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
     *floor* (default ``TIMEOUT_FLOOR_S`` — diff-path callers unchanged;
     ``--map-files`` mode passes ``floor=MAP_TIMEOUT_FLOOR_S``, the Step-10d
-    TG-leg 300 s parity floor, #1573). Invariant-only selection (38 files
-    incl. the workflow-lint surcharge) -> 2160 s (36 min), consistent with
-    the existing invariant-set-scale precedents (``step9c_baseline.py
-    refresh`` ``--timeout-s`` default 1800 s; the SKILL.md detached
-    refresh's 2100 s).
+    TG-leg 600 s floor, #1573/#1646). Invariant-only selection (58 files as
+    of 2026-07-24, incl. the workflow-lint surcharge) -> 4260 s (71 min),
+    matching the invariant-set-scale precedents (``step9c_baseline.py
+    refresh`` ``--timeout-s`` default 4260 s; the SKILL.md detached
+    refresh's 4560 s).
     """
     t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
     t += sum(SLOW_TESTS.get(x, 0) for x in tests)

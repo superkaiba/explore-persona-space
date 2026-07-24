@@ -1646,8 +1646,8 @@ def test_cli_map_files_import_edge_sft_regression(tmp_path: Path, capsys):
     ZERO pairs pre-#1573 — the founding incident (the ``use_rslora`` change,
     commit d7908a3837, broke test_rslora_engine_pin with no gate firing).
     Also pins the WORKFLOW_INVARIANT exclusion on the live tree: sft.py
-    literal-hits the 900 s tests/test_workflow_lint.py (LIVE_WORKFLOW_HELPERS)
-    which must NOT reach the 300 s-class TG legs (A1 + A4 live half)."""
+    literal-hits the 2400 s tests/test_workflow_lint.py (LIVE_WORKFLOW_HELPERS)
+    which must NOT reach the 600 s-class TG legs (A1 + A4 live half)."""
     repo_root = Path(sel.__file__).resolve().parents[1]
     listing = tmp_path / "payload.txt"
     listing.write_text("src/explore_persona_space/train/sft.py\n")
@@ -1734,22 +1734,22 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
     rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
     assert rc == 0
     captured = capsys.readouterr()
-    # 2 tests: 120 + 2*30 = 180 -> floored at MAP_TIMEOUT_FLOOR_S = 300.
-    assert "recommended-timeout-s=300" in captured.err
+    # 2 tests: 120 + 2*30 = 180 -> floored at MAP_TIMEOUT_FLOOR_S = 600.
+    assert "recommended-timeout-s=600" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
     assert len(captured.out.splitlines()) == 2
-    # 7 tests clear the floor: 120 + 7*30 = 330.
-    repo7 = _make_import_tree(
-        tmp_path / "seven",
+    # 17 tests clear the floor: 120 + 17*30 = 630.
+    repo17 = _make_import_tree(
+        tmp_path / "seventeen",
         {
             f"test_consumer_{i}.py": "from explore_persona_space.widgetlib import f\n"
-            for i in range(7)
+            for i in range(17)
         },
     )
-    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo7)])
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo17)])
     assert rc == 0
     captured = capsys.readouterr()
-    assert "recommended-timeout-s=330" in captured.err
+    assert "recommended-timeout-s=630" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
 
 
@@ -1757,10 +1757,10 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
 def test_recommended_timeout_s_floor_kwarg():
     """Default floor unchanged (TIMEOUT_FLOOR_S = 900, diff-path callers
     byte-identical); an explicit floor= is honored; the formula wins above it."""
-    assert sel.MAP_TIMEOUT_FLOOR_S == 300
+    assert sel.MAP_TIMEOUT_FLOOR_S == 600
     two = ["tests/test_a.py", "tests/test_b.py"]
     assert sel.recommended_timeout_s(two) == sel.TIMEOUT_FLOOR_S  # default floor binds
-    assert sel.recommended_timeout_s(two, floor=sel.MAP_TIMEOUT_FLOOR_S) == 300
+    assert sel.recommended_timeout_s(two, floor=sel.MAP_TIMEOUT_FLOOR_S) == 600
     forty = [f"tests/test_x{i}.py" for i in range(40)]
     expected = sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S  # 1320 > both floors
     assert sel.recommended_timeout_s(forty, floor=sel.MAP_TIMEOUT_FLOOR_S) == expected
@@ -2028,7 +2028,7 @@ def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
         f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
         f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
     ]
-    assert "map-files — 6 pairs, 6 tests; recommended-timeout-s=300" in captured.err
+    assert "map-files — 6 pairs, 6 tests; recommended-timeout-s=600" in captured.err
 
 
 # --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------

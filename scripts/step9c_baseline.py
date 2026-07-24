@@ -12,7 +12,7 @@ vouch for.
 
 Subcommands::
 
-    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 1800] [--json]
+    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 4260] [--json]
     uv run python scripts/step9c_baseline.py status  [--repo-root PATH] [--max-age-hours 24]
                                                      [--max-code-commits 150] [--json]
     uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base REF]
@@ -62,7 +62,8 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
-wholesale (only the predictable 37-file Step 9c universe, timeout-bounded,
+wholesale (only the predictable Step 9c workflow-invariant universe — 58 files
+as of 2026-07-24 — timeout-bounded,
 thread-capped, process-group-killed on expiry); blind-strip requires a fresh,
 clean-rooted (``dirty_code_paths: false``) ledger AND a non-diff-linked node
 whose test file is unchanged on main since the ledger SHA — everything else is
@@ -1070,7 +1071,7 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:
-    """Run the 37-file predictable Step 9c universe on main; write the ledger atomically."""
+    """Run the predictable Step 9c workflow-invariant universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
     lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
     if lock is None:
@@ -1269,8 +1270,10 @@ def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
     Reads the #1046 constants off the LOADED selector module (``ctx.sel``) via
     ``getattr`` so a pre-#1046 worktree selector copy (deliberate version skew,
     #1022 §3.3) degrades to the legacy 600 s floor instead of crashing.
-    tests/test_workflow_lint.py -> 120 + 30 + 2*900 = 1950 s (~2.5x its ~780 s
-    measured pristine runtime, #1098); files without surcharge knowledge -> 600 s.
+    tests/test_workflow_lint.py -> 120 + 30 + 2*2400 = 4950 s (#1646: in-gate
+    walls median 789 s / max 1819 s over 330 junits 2026-07-13..24, ~2.7x the
+    worst measured; #1098 had measured ~780 s pristine at the old 900 surcharge);
+    files without surcharge knowledge -> 600 s.
     """
     base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
     per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
@@ -1890,7 +1893,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_refresh = sub.add_parser("refresh", help="run the Step 9c universe on main; write ledger")
     p_refresh.add_argument("--repo-root", default=None, help="main-root override (tests)")
-    p_refresh.add_argument("--timeout-s", type=float, default=1800.0)
+    # #1646: == recommended_timeout_s(WORKFLOW_INVARIANT) at current constants
+    # (120 + 30*58 + 2400); re-derive when SLOW_TESTS / the invariant set change.
+    p_refresh.add_argument("--timeout-s", type=float, default=4260.0)
     p_refresh.add_argument("--json", action="store_true")
     p_refresh.set_defaults(func=cmd_refresh)
 

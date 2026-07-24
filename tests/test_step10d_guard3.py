@@ -1303,8 +1303,8 @@ def _tg_blocks(text: str) -> list[str]:
 def test_tg_leg_selector_sized_timeout():
     """#1573: both TG blocks size their pytest bound from the selector's
     machine-greppable `recommended-timeout-s=` stderr line (gated map,
-    /tmp/issue-<N>-tg-map-err.txt) with the pre-#1573 fixed 300s as the
-    fallback floor; NO fixed `--kill-after=30s 300s` remains as a TG pytest
+    /tmp/issue-<N>-tg-map-err.txt) with the fixed 600s (#1646; pre-#1573:
+    300s) as the fallback floor; NO fixed `--kill-after=30s 300s` remains as a TG pytest
     bound. The surgical pass-arm `git push origin main` 300s bound is a
     DIFFERENT command — exempted by its `git push` CONTENT, never by line
     number (it may move)."""
@@ -1314,15 +1314,16 @@ def test_tg_leg_selector_sized_timeout():
             "TG block must grep the selector's sizing line"
         )
         assert "/tmp/issue-<N>-tg-map-err.txt" in block
-        assert "TG_T=300" in block, "the 300s floor fallback must be present"
+        assert "TG_T=600" in block, "the 600s floor fallback must be present (#1646)"
         assert block.count("timeout --kill-after=30s ${TG_T}s") == 2, (
             "BOTH pytest legs (baseline + gated) must carry the sized bound"
         )
         for line in block.splitlines():
-            if "--kill-after=30s 300s" in line:
-                assert "git push" in line, (
-                    f"a fixed 300s bound must not remain on a TG pytest leg: {line!r}"
-                )
+            for fixed in ("--kill-after=30s 300s", "--kill-after=30s 600s"):
+                if fixed in line:
+                    assert "git push" in line, (
+                        f"a fixed bound must not remain on a TG pytest leg: {line!r}"
+                    )
 
 
 def test_tg_leg_node_grain_subtraction():

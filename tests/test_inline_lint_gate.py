@@ -493,10 +493,18 @@ def test_mapped_pytest_timeout_floor_matches_selector(tmp_path: Path) -> None:
     sel = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sel)
     assert ilg.PYTEST_TIMEOUT_FLOOR_S == sel.TIMEOUT_FLOOR_S  # parity pin
+    # Surcharge parity (#1646): the deliberately-duplicated ilg constant must
+    # track the selector's SLOW_TESTS entry — drift here is a silent re-split
+    # of the two gates' sizing.
+    assert sel.SLOW_TESTS["tests/test_workflow_lint.py"] == ilg.PYTEST_WORKFLOW_LINT_SURCHARGE_S
     # 1 non-slow file: formula 120+30=150 < floor -> floored.
     assert ilg.mapped_pytest_timeout(["tests/test_x.py"]) == sel.TIMEOUT_FLOOR_S
-    # Slow-surcharge case stays above the floor (120 + 30 + 900).
-    assert ilg.mapped_pytest_timeout(["tests/test_workflow_lint.py"]) == 1050
+    # Slow-surcharge case stays above the floor (120 + 30 + 2400) and matches
+    # the selector's own sizing for the identical selection.
+    assert ilg.mapped_pytest_timeout(["tests/test_workflow_lint.py"]) == 2550
+    assert ilg.mapped_pytest_timeout(["tests/test_workflow_lint.py"]) == sel.recommended_timeout_s(
+        ["tests/test_workflow_lint.py"]
+    )
 
 
 def test_added_line_ranges_parses_u0_hunks(tmp_path: Path) -> None:
