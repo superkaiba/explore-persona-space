@@ -6905,7 +6905,30 @@ explicit eval-data path):
    script or an `src/.../analysis/` helper. Empty payload ⇒ skip.
    Otherwise run BOTH legs as ONE background Bash (the no-flags leg is
    ~2.5-6 min; never a ≤600 s foreground bound — #991/#996), verdict
-   read from the file before the push:
+   read from the file before the push.
+
+   **Single-flight probe (#1606)** first, per the Step 9c 1b
+   single-flight statement: in a separate FOREGROUND call — never inside
+   the launch call itself, whose argv carries the unbracketed payload
+   path — probe `pgrep -af 'issue-<N>-inline-payload[.]txt'` (bracketed
+   per the gotchas.md self-match entry; the payload-file path rides the
+   argv of the helper AND its enclosing background shell, and the
+   `-inline-payload` suffix anchors the issue number, so the probe is
+   exact-ISSUE-scoped — a sibling issue's gate never matches). A
+   non-empty result = an inline gate for THIS issue is STILL RUNNING:
+   do NOT launch — the `printf` below would rewrite the live run's
+   payload file, and the helper's audit files
+   (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
+   unconditional overwrites, so a relaunch clobbers the live run's
+   audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
+   reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
+   § Kill-before-relaunch); key any improvised wait on **process
+   exit** (the probe returning empty), never on cert/audit-file
+   existence (CLAUDE.md § Monitoring re-run discipline). Site nuance:
+   the cert is per-content-hash and flock-guarded (#1620), so a live
+   run on the SAME payload produces the cert this round needs — wait
+   and read its verdict; a CHANGED payload still waits for the live
+   run's exit before relaunching.
 
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
@@ -8682,8 +8705,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       NEVER on rc/verdict-file existence alone (the rc file is written
       only at process exit; an existence-keyed Monitor false-fired
       "done" twice mid-run in #1606). The same probe-then-launch rule governs 1c, 1d
-      (compare), and both Step 10d gate blocks — each names its site pattern
-      in place.
+      (compare), both Step 10d gate blocks, and the Step 9a-ter § Inline
+      payload lint gate — each names its site pattern in place.
       ```bash
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
