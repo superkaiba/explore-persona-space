@@ -378,6 +378,228 @@ def check_projected_upload_headroom(
     return ProjectedUploadHeadroom("insufficient", projected_tb, h.used_tb, h.ceiling_tb, h.basis)
 
 
+# ── LFS write-gate probe (billing/quota 403 at production scale, #1654) ──────
+
+# Declared probe size, decimal GB — strictly above the 15.2 GB FT-checkpoint
+# scale that 403'd on #1586 ("You need to setup automatic credit recharge in
+# order to upload more data"), and above both the 10 MB LFS force-route and
+# the 5 GB single-part cap, so the negotiation is unambiguously
+# production-scale. Env override: EPM_HF_BILLING_PROBE_GB.
+DEFAULT_BILLING_PROBE_GB = 16.0
+
+# Worst-wins ordering for the per-repo fold in check_lfs_write_gate.
+_LFS_GATE_SEVERITY = {"ok": 0, "unknown": 1, "storage-blocked": 2, "billing-blocked": 3}
+
+
+@dataclass(frozen=True)
+class LfsWriteGateProbe:
+    """Verdict of a zero-byte, declared-size LFS batch-negotiation probe (#1654)."""
+
+    verdict: str  # "ok" | "billing-blocked" | "storage-blocked" | "unknown" | "disabled"
+    repo_id: str | None  # repo whose probe produced a blocked verdict (worst-wins), else None
+    detail: str  # short basis / error excerpt (never tokens/secrets)
+    probe_gb: float
+    billing_context: dict | None  # {"canPay","billingMode","isPro"} subset from whoami, or None
+
+
+def is_billing_403(err: BaseException) -> bool:
+    """True ONLY for the HF account-billing 403 on GB-scale LFS uploads.
+
+    Ported verbatim from ``scripts/issue1586_dispatch.py::_is_billing_403``
+    (``origin/issue-1586``, #1586 crash-fix r7) — the ``403 Forbidden: You
+    need to setup automatic credit recharge in order to upload more data``
+    class observed at the LFS batch endpoint. Structural, never a bare log
+    grep: response-bearing shapes require ``status_code == 403`` (a
+    5xx/4xx-other NEVER matches even with the phrase in its body);
+    response-less shapes (the xet Rust-boundary wrap, #931) require BOTH
+    "credit recharge" AND "403" in the message. Sibling of
+    :func:`_is_storage_quota_403`, whose "storage" conjunct this billing
+    message does not carry.
+    """
+    msg = str(err).lower()
+    if "credit recharge" not in msg:
+        return False
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if isinstance(code, int):
+        return code == 403
+    return "403" in msg
+
+
+def _billing_context() -> dict | None:
+    """Fail-soft whoami read: ``{"canPay","billingMode","isPro"}`` or None.
+
+    Advisory ONLY — the mapping from these account fields to "will a GB-scale
+    LFS upload 403?" is undocumented (#1654 plan §3 mechanism (b)), so this
+    never gates anything; it only enriches blocked-verdict messages.
+    """
+    try:
+        from huggingface_hub import HfApi
+
+        d = HfApi(token=os.environ.get("HF_TOKEN")).whoami()
+        return {k: d.get(k) for k in ("canPay", "billingMode", "isPro")}
+    except Exception:
+        return None
+
+
+def _classify_lfs_gate_error(err: BaseException) -> str:
+    """Map one probe failure to a gate verdict (billing > storage > unknown).
+
+    Order matters: :func:`is_billing_403` is checked first (its "credit
+    recharge" conjunct is the more specific signature), then the #541
+    storage-403 predicate. Anything else — transient network errors, 5xx,
+    the hub-issue-#3366 class ONLY IF its text someday stops carrying
+    "storage" — degrades to ``"unknown"`` (fail-open). NOTE the REALIZED
+    #3366 arm: its verbatim text ("Your storage patterns tripped our internal
+    systems...") DOES carry "storage", so with a 403 it classifies
+    ``storage-blocked`` (pinned in tests; the plan's §8 row 4 statement of
+    ``unknown`` was wrong) — the blocked-verdict message tells the user the
+    error excerpt governs the exact remediation path.
+    """
+    if is_billing_403(err):
+        return "billing-blocked"
+    if isinstance(err, Exception) and _is_storage_quota_403(err):
+        return "storage-blocked"
+    return "unknown"
+
+
+def _excerpt(text: str, limit: int = 240) -> str:
+    """One-line, length-capped error excerpt for probe details."""
+    flat = " ".join(str(text).split())
+    return flat if len(flat) <= limit else flat[: limit - 1] + "…"
+
+
+def check_lfs_write_gate(
+    *,
+    repos: Sequence[tuple[str, str]] | None = None,
+    probe_gb: float | None = None,
+) -> LfsWriteGateProbe:
+    """Zero-byte probe of the LFS write path at declared production scale (#1654).
+
+    POSTs the git-LFS batch endpoint (:func:`huggingface_hub.lfs.post_lfs_batch_info`)
+    with ONE fabricated object (random sha256, declared size = ``probe_gb``
+    decimal GB, ``transfers=["basic","multipart","xet"]`` — production parity
+    with ``_commit_api.py:377``) per probed repo. Negotiation-only: no bytes
+    are transferred and no commit ever references the oid, so nothing lands in
+    any repo (the #1586 billing-403 and the #541 storage-403 both fire AT this
+    negotiation step, before any transfer; zero-side-effect live-verified
+    2026-07-24 on both default repos).
+
+    Args:
+        repos: ``(repo_id, repo_type)`` pairs to probe. Default: the canonical
+            model repo + the private overflow repo (both write paths production
+            uses — #541/#1034/#1108 routing).
+        probe_gb: Declared object size in decimal GB. Default: env
+            ``EPM_HF_BILLING_PROBE_GB``, else :data:`DEFAULT_BILLING_PROBE_GB`.
+
+    Verdicts (worst wins across repos: billing-blocked > storage-blocked >
+    unknown > ok):
+
+    * kill switch ``EPM_HF_BILLING_PROBE=0`` -> ``"disabled"`` (checked FIRST,
+      the ``EPM_HF_STORAGE_CHECK`` precedent — no env parsing, no network).
+    * :func:`is_billing_403` on the raised error -> ``"billing-blocked"``.
+    * :func:`_is_storage_quota_403` -> ``"storage-blocked"``.
+    * any other exception -> ``"unknown"`` (fail-open; single attempt, NO retry
+      envelope — a transient error must degrade to WARN in seconds, not block
+      preflight for the 1800 s retry budget).
+    * 200 + no per-object errors -> ``"ok"``.
+    * 200 + per-object errors -> classify each error on BOTH its ``message``
+      and its ``code`` field (the git-lfs in-band validation-error channel:
+      ``{"error": {"code": 403, "message": "..."}}`` — the message alone may
+      lack "403"); unmatched -> ``"unknown"`` with the message excerpt.
+
+    ``billing_context`` is fetched (fail-soft) ONLY for blocked verdicts.
+    Never raises except ``ValueError`` on a non-parseable env knob (the
+    :func:`_env_float` fail-fast contract).
+    """
+    if os.environ.get("EPM_HF_BILLING_PROBE") == "0":
+        return LfsWriteGateProbe(
+            verdict="disabled",
+            repo_id=None,
+            detail="EPM_HF_BILLING_PROBE=0",
+            probe_gb=0.0,
+            billing_context=None,
+        )
+    resolved_gb = (
+        probe_gb
+        if probe_gb is not None
+        else _env_float("EPM_HF_BILLING_PROBE_GB", DEFAULT_BILLING_PROBE_GB)
+    )
+    if repos is None:
+        repos = ((DEFAULT_MODEL_REPO, "model"), (DEFAULT_OVERFLOW_REPO, "model"))
+    token = os.environ.get("HF_TOKEN")
+
+    worst_verdict = "ok"
+    worst_repo: str | None = None
+    worst_detail = ""
+    ok_details: list[str] = []
+    for repo_id, repo_type in repos:
+        verdict, detail = _probe_lfs_write_one(
+            repo_id, repo_type, probe_gb=resolved_gb, token=token
+        )
+        if verdict == "ok":
+            ok_details.append(f"{repo_id}: {detail}")
+        elif _LFS_GATE_SEVERITY[verdict] > _LFS_GATE_SEVERITY[worst_verdict]:
+            worst_verdict = verdict
+            worst_repo = repo_id
+            worst_detail = f"{repo_id}: {detail}"
+    if worst_verdict == "ok":
+        detail = "; ".join(ok_details) if ok_details else "no repos probed"
+    else:
+        detail = worst_detail
+    blocked = worst_verdict in {"billing-blocked", "storage-blocked"}
+    return LfsWriteGateProbe(
+        verdict=worst_verdict,
+        repo_id=worst_repo if blocked else None,
+        detail=detail,
+        probe_gb=resolved_gb,
+        billing_context=_billing_context() if blocked else None,
+    )
+
+
+def _probe_lfs_write_one(
+    repo_id: str, repo_type: str, *, probe_gb: float, token: str | None
+) -> tuple[str, str]:
+    """One repo's batch-negotiation probe -> ``(verdict, detail)``.
+
+    Fabricated oid (``os.urandom(32)``) + declared size; the server validates
+    the WRITE (auth/billing/quota) without any transfer. Returns a verdict in
+    {"ok","billing-blocked","storage-blocked","unknown"} — never raises.
+    """
+    try:
+        from huggingface_hub.lfs import UploadInfo, post_lfs_batch_info
+
+        info = UploadInfo(sha256=os.urandom(32), size=int(probe_gb * 1e9), sample=b"\x00" * 512)
+        # NO_RETRY: preflight probe is fail-open advisory; a transient error
+        # degrades to WARN, never blocks (plan #1654 §11 — wrapping in
+        # retry_transient would let preflight hang up to the 1800 s budget).
+        actions, errors, chosen_transfer = post_lfs_batch_info(
+            [info],
+            token,
+            repo_type=repo_type,
+            repo_id=repo_id,
+            transfers=["basic", "multipart", "xet"],
+        )
+    except Exception as e:  # single attempt; classification decides severity
+        return _classify_lfs_gate_error(e), _excerpt(e)
+    if errors:
+        # In-band per-object validation errors (git-lfs spec): classify each
+        # on message + code by synthesizing a "<code> <message>" shim so both
+        # predicates see the status code even when the message omits "403".
+        worst = "unknown"
+        worst_detail = ""
+        for obj in errors:
+            err_info = obj.get("error") or {}
+            code = err_info.get("code")
+            message = err_info.get("message", "")
+            verdict = _classify_lfs_gate_error(RuntimeError(f"{code} {message}"))
+            if not worst_detail or _LFS_GATE_SEVERITY[verdict] > _LFS_GATE_SEVERITY[worst]:
+                worst = verdict
+                worst_detail = _excerpt(f"in-band batch error code={code}: {message}")
+        return worst, worst_detail
+    n_actions = sum(1 for _ in actions)
+    return "ok", f"negotiated ({chosen_transfer or 'basic'}, {n_actions} action(s))"
+
+
 def _repo_is_private(repo_id: str, repo_type: str = "model") -> bool | None:
     """TRI-STATE privacy probe: True | False | None (undeterminable).
 
