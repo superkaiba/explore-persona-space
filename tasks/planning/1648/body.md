@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:1318d69480dd
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-24T06:47:01Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-23 problem sweep (route 2): no mechanical check flags
