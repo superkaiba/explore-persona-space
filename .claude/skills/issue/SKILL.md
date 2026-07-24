@@ -5136,7 +5136,12 @@ sources contribute to `running`-phase progress:
     `adapter_paths` as an explicit per-cell mapping of REAL HF
     subfolder paths — every value existence-checked under
     `hf_model_repo` (defaults to the canonical model repo; declare only
-    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    when different; cells whose adapters land in a DIFFERENT repo than
+    `hf_model_repo` — the #1108 overflow split — additionally declare
+    `adapter_repo_overrides`, a per-cell `{cell_id: repo_id}` dict
+    keyed on `adapter_paths` cells, and the verifier resolves those
+    cells against the override repo, #1664), so NO
+    `<arm>`/`<source>`/`<seed>`-style template
     placeholders and no `(16 adapters)` prose summaries — plus
     `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
     display names; a single run may instead declare `wandb_run_path`).

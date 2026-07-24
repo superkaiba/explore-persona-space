@@ -565,11 +565,13 @@ def _is_declared(value) -> bool:
 
 
 # Card fields the epm:results sentinel contract requires as per-cell
-# dicts/lists (SKILL.md Step 7; the #612 ``_prose_declaration_row`` pair).
-# A prose-pointer string here ("unchanged from epm:results v1 ...") is
-# truthy, so it would win the newest-wins fold and shadow an older
-# marker's real declaration (#1489).
-_STRUCTURED_CARD_FIELDS = ("adapter_paths", "wandb_run_names")
+# dicts/lists (SKILL.md Step 7; the #612 ``_prose_declaration_row`` pair,
+# plus ``adapter_repo_overrides`` — #1664: once the verifier reads that
+# field, a truthy prose re-post winning the fold would silently reroute
+# override cells back to the default repo). A prose-pointer string here
+# ("unchanged from epm:results v1 ...") is truthy, so it would win the
+# newest-wins fold and shadow an older marker's real declaration (#1489).
+_STRUCTURED_CARD_FIELDS = ("adapter_paths", "wandb_run_names", "adapter_repo_overrides")
 
 
 def _is_structural(key: str, value) -> bool:
@@ -727,71 +729,167 @@ def _prose_declaration_row(field: str, value: str) -> dict:
     }
 
 
+def _strip_repo_prefix(p: str, cell_repo: str) -> str:
+    """Drop a leading ``<repo>/`` from a declared path (#610), where
+    ``<repo>`` is the repo this path is CHECKED AGAINST, so it
+    existence-checks as the in-repo subfolder it names. Paths that don't
+    carry that prefix (plain in-repo paths, https URLs, other repos'
+    prefixes) pass through verbatim and MISS visibly (fail-loud)."""
+    prefix = cell_repo.rstrip("/") + "/"
+    if p.startswith(prefix) and len(p) > len(prefix):
+        return p[len(prefix) :]
+    return p
+
+
+def _card_repo_overrides(card: dict) -> tuple[dict[str, str], list[str]]:
+    """Parse ``adapter_repo_overrides`` into ``(overrides, notes)`` (#1664).
+
+    Valid form: a per-cell ``{cell_id: repo_id}`` dict of non-empty
+    strings (#1586's overflow split). Malformed input — a non-dict value,
+    non-string repo ids — never crashes and never silently drops: the
+    affected cells fall through to the default repo and a visible note
+    is returned for the row detail.
+    """
+    overrides_raw = card.get("adapter_repo_overrides")
+    overrides: dict[str, str] = {}
+    notes: list[str] = []  # visible diagnostics appended to the row detail
+    if isinstance(overrides_raw, dict):
+        overrides = {
+            str(k): str(v).strip()
+            for k, v in overrides_raw.items()
+            if isinstance(v, str) and v.strip()
+        }
+        n_bad = len(overrides_raw) - len(overrides)
+        if n_bad:
+            notes.append(
+                f"{n_bad} adapter_repo_overrides value(s) not a non-empty "
+                "string — ignored (cell checked against the default repo)"
+            )
+    elif _is_declared(overrides_raw):
+        notes.append(
+            "adapter_repo_overrides is not a per-cell dict "
+            f"({type(overrides_raw).__name__}) — ignored; every path "
+            "checked against the default repo"
+        )
+    return overrides, notes
+
+
+def _card_model_pairs(
+    card: dict, repo: str, overrides: dict[str, str], notes: list[str]
+) -> tuple[list[tuple[str, str]], dict | None]:
+    """Collect the unique ``(repo, path)`` pairs a card declares (#1664).
+
+    Dict-form ``adapter_paths`` cells resolve against
+    ``overrides.get(cell, repo)``; list-form paths and ``hf_model_path``
+    carry no cell key and always use the default ``repo``. Appends
+    orphan-override-key / list-form-mismatch diagnostics to ``notes`` in
+    place. Dedup key is the ``(repo, path)`` tuple — the same path string
+    under two repos is two distinct existence checks (collapsing on the
+    path alone would skip one repo's). Returns ``(pairs,
+    prose_violation)``, the latter the #612 prose row when
+    ``adapter_paths`` is a non-empty string.
+    """
+    pairs: list[tuple[str, str]] = []
+    adapter_paths = card.get("adapter_paths")
+    prose_violation: dict | None = None
+    if isinstance(adapter_paths, dict):
+        for cell, p in adapter_paths.items():
+            cell_repo = overrides.get(str(cell), repo)
+            pairs.append((cell_repo, _strip_repo_prefix(str(p), cell_repo)))
+        orphans = sorted(set(overrides) - {str(c) for c in adapter_paths})
+        if orphans:
+            notes.append(
+                f"{len(orphans)} adapter_repo_overrides key(s) with no "
+                "matching adapter_paths cell (nothing checked for them): " + ", ".join(orphans[:5])
+            )
+    elif isinstance(adapter_paths, list):
+        pairs.extend((repo, _strip_repo_prefix(str(p), repo)) for p in adapter_paths)
+        if overrides:
+            notes.append(
+                "adapter_repo_overrides declared but adapter_paths is a "
+                "LIST (no cell keys) — overrides unmatchable; every path "
+                "checked against the default repo"
+            )
+    elif isinstance(adapter_paths, str) and _is_declared(adapter_paths):
+        prose_violation = _prose_declaration_row("adapter_paths", adapter_paths)
+    single = card.get("hf_model_path")
+    if single:  # no cell key → always the default repo (see the caller)
+        pairs.append((repo, _strip_repo_prefix(str(single), repo)))
+    return list(dict.fromkeys(pairs)), prose_violation
+
+
 def check_hf_model_from_card(card: dict) -> dict | None:
     """Verify model paths declared in an epm:results reproducibility_card.
 
     Accepts a per-cell ``adapter_paths`` dict/list and/or a single
-    ``hf_model_path``, all under ``hf_model_repo`` (default
-    ``HF_MODEL_REPO``). Each path is existence-checked via
+    ``hf_model_path``. Every path resolves against ``hf_model_repo``
+    (default ``HF_MODEL_REPO``) UNLESS the card carries a per-cell
+    ``adapter_repo_overrides`` dict (``{cell_id: repo_id}`` keyed on
+    ``adapter_paths`` cells — the #1108 overflow-repo split; incident
+    #1586: two cells uploaded to the main repo while the card default
+    was the overflow repo read as a false hf_model MISSING, #1664):
+    dict-form ``adapter_paths`` cells then check against
+    ``overrides.get(cell, default)``, while list-form paths and
+    ``hf_model_path`` carry no cell key and always use the default
+    repo. Each unique ``(repo, path)`` pair is existence-checked via
     ``check_hf_hub_path``. Declared paths prefixed with the repo id
-    itself (#610's ``<repo>/adapters/...`` shape) have that leading
-    ``<repo>/`` stripped first — passed verbatim as ``path_in_repo``
-    they can never match the repo's ``adapters/...`` file list, which
-    false-MISSed a fully-uploaded sweep. A STRING-valued
-    ``adapter_paths`` (the #612 prose-template shape) is unverifiable;
-    instead of silently ignoring it (which read as a generic
-    declaration-gap MISSING on a fully-uploaded sweep), the row names
-    the producer-contract violation (``_prose_declaration_row``).
-    Returns ``None`` when the card declares no model paths (caller
-    falls through to the MISSING row).
+    they are CHECKED AGAINST (#610's ``<repo>/adapters/...`` shape)
+    have that leading ``<repo>/`` stripped first — passed verbatim as
+    ``path_in_repo`` they can never match the repo's ``adapters/...``
+    file list, which false-MISSed a fully-uploaded sweep; a path
+    carrying a DIFFERENT repo's prefix passes through verbatim and
+    MISSes visibly. Malformed overrides (a non-dict value, non-string
+    repo ids, keys with no matching cell) never crash and never
+    silently drop: affected cells check against the default repo and a
+    ``NOTE:`` is appended to the detail. Merge-layer caveat: the field
+    folds per-field newest-wins like ``adapter_paths`` (#601), so an
+    older STRUCTURAL overrides dict persists even when a corrected
+    re-post OMITS the field — re-declare it corrected instead. A
+    STRING-valued ``adapter_paths`` (the #612 prose-template shape) is
+    unverifiable; instead of silently ignoring it (which read as a
+    generic declaration-gap MISSING on a fully-uploaded sweep), the
+    row names the producer-contract violation
+    (``_prose_declaration_row``). Returns ``None`` when the card
+    declares no model paths (caller falls through to the MISSING row).
     """
     repo = str(card.get("hf_model_repo") or HF_MODEL_REPO)
-    repo_prefix = repo.rstrip("/") + "/"
-
-    def _strip_repo_prefix(p: str) -> str:
-        """Drop a leading ``<repo>/`` from a declared path (#610) so it
-        existence-checks as the in-repo subfolder it names. Paths that
-        don't carry the prefix (plain in-repo paths, https URLs, other
-        repos) pass through verbatim."""
-        if p.startswith(repo_prefix) and len(p) > len(repo_prefix):
-            return p[len(repo_prefix) :]
-        return p
-
-    paths: list[str] = []
-    adapter_paths = card.get("adapter_paths")
-    prose_violation: dict | None = None
-    if isinstance(adapter_paths, dict):
-        paths.extend(str(p) for p in adapter_paths.values())
-    elif isinstance(adapter_paths, list):
-        paths.extend(str(p) for p in adapter_paths)
-    elif isinstance(adapter_paths, str) and _is_declared(adapter_paths):
-        prose_violation = _prose_declaration_row("adapter_paths", adapter_paths)
-    single = card.get("hf_model_path")
-    if single:
-        paths.append(str(single))
-    paths = list(dict.fromkeys(_strip_repo_prefix(p) for p in paths))
-    if not paths:
+    overrides, notes = _card_repo_overrides(card)
+    pairs, prose_violation = _card_model_pairs(card, repo, overrides, notes)
+    if not pairs:
         if prose_violation is not None:
+            if notes:
+                prose_violation["detail"] = (
+                    f"{prose_violation['detail']}; NOTE: " + "; NOTE: ".join(notes)
+                )
             return _append_card_provenance(prose_violation, card)
         return None
 
     absent: list[str] = []
     errored = False
     total_files = 0
-    for p in paths:
-        res = check_hf_hub_path(repo, p, "model")
+    for cell_repo, p in pairs:
+        res = check_hf_hub_path(cell_repo, p, "model")
         if res["status"] == "OK":
             total_files += res.get("file_count", 0)
         else:
             errored = errored or res["status"] == "ERROR"
-            absent.append(f"{p} ({res.get('detail') or res['status']})")
+            # Repo-qualify only override-repo entries — default-repo entries
+            # keep the pre-#1664 detail strings byte-identical.
+            label = p if cell_repo == repo else f"{cell_repo}/{p}"
+            absent.append(f"{label} ({res.get('detail') or res['status']})")
+    override_repos = sorted({r for r, _ in pairs if r != repo})
+    where = (
+        repo
+        if not override_repos
+        else f"{repo} (default) + override repo(s): {', '.join(override_repos)}"
+    )
     if absent:
         result = {
             "status": "ERROR" if errored else "MISSING",
             "url": "",
             "detail": (
-                f"reproducibility_card declares {len(paths)} model path(s) under "
-                f"{repo}; unresolved: " + "; ".join(absent[:5])
+                f"reproducibility_card declares {len(pairs)} model path(s) under "
+                f"{where}; unresolved: " + "; ".join(absent[:5])
             ),
             "source": "epm:results reproducibility_card",
         }
@@ -801,8 +899,8 @@ def check_hf_model_from_card(card: dict) -> dict | None:
             "url": f"https://huggingface.co/{repo}/tree/main",
             "file_count": total_files,
             "detail": (
-                f"all {len(paths)} model path(s) from the epm:results "
-                f"reproducibility_card resolve on {repo}"
+                f"all {len(pairs)} model path(s) from the epm:results "
+                f"reproducibility_card resolve on {where}"
             ),
             "source": "epm:results reproducibility_card",
         }
@@ -810,6 +908,8 @@ def check_hf_model_from_card(card: dict) -> dict | None:
         # A real hf_model_path resolved (or failed) above, but the card ALSO
         # carried an unverifiable prose adapter_paths — keep that visible.
         result["detail"] = f"{result['detail']}; ALSO: {prose_violation['detail']}"
+    if notes:
+        result["detail"] = f"{result['detail']}; NOTE: " + "; NOTE: ".join(notes)
     return _append_card_provenance(result, card)
 
 
