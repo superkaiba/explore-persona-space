@@ -5015,8 +5015,8 @@
     "1643": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1643",
-      "status": "proposed",
+      "path": "tasks/planning/1643",
+      "status": "planning",
       "title": "daily-fix: runpod_api UP037 reds ruff-policy test on main"
     },
     "1644": {
