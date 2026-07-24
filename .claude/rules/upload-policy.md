@@ -576,6 +576,26 @@ minted a premature billing-resolved marker and cost an extra crash round);
 EXACT click path AND what the configured end-state looks like on the page —
 "fix billing at settings/billing" alone drew two user follow-ups on a page
 that was already correct.
+Corollary-(a) canonical probe (#1654): `hub.check_lfs_write_gate()` (or
+`preflight --no-gpu --planned-upload-gb <N>`) is the canonical zero-byte
+"is the LFS write path open?" / "unblocked?" probe at declared scale — one
+LFS batch-endpoint negotiation per repo declaring ~16 GB (env
+`EPM_HF_BILLING_PROBE_GB`; kill switch `EPM_HF_BILLING_PROBE=0`), exercising
+the batch-endpoint billing/quota check the small-file probe misses, with zero
+bytes transferred and zero commits; a REAL >10 MB LFS upload remains valid
+where end-to-end transfer confirmation is wanted. Three caveats: (i) a PASS
+(`ok`) is ADVISORY — the probe's 403 arm has never been observed live
+(billing was healthy when it landed; the arm is evidenced by the #1586
+incident record) — so on the NEXT 403-blocked incident, run
+`check_lfs_write_gate()` WHILE blocked and record the verdict against #1654
+assumption 3; (ii) coverage boundary: a ~16 GB-declared PASS ≠ credit
+clearance for a whole run's uploads (e.g. 215 GB) — mid-run credit exhaustion
+stays with the reactive 403 backstop, and do NOT size the probe to
+`--planned-upload-gb` (a declared object above per-file caps, e.g. >50 GB,
+fails for size reasons and degrades the verdict to `unknown`); (iii) the
+blocked-verdict `detail` excerpt governs the exact remediation path (a
+"storage patterns" manual-review 403 — hub issue #3366 — classifies
+`storage-blocked` and names its own contact address in the excerpt).
 Diagnosis probes: sum account usage via
 `/api/{models,datasets}/<id>?expand[]=usedStorage` over
 `list_models(author=...)` / `list_datasets(author=...)`; a tiny non-LFS `.txt`
