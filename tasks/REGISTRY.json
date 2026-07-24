@@ -5001,8 +5001,8 @@
     "1641": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1641",
-      "status": "proposed",
+      "path": "tasks/planning/1641",
+      "status": "planning",
       "title": "workflow-fix: gotchas fanout-staging bullet \u2014 add the per-unit shared-cache EVICT race mode"
     },
     "165": {
