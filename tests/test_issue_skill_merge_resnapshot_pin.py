@@ -390,3 +390,60 @@ def test_guard1_trigger_diff_scopes_to_own_commits_three_dot():
         "the recovery site must carry the comment distinguishing it from "
         "Guard 1's three-dot trigger (#1280)"
     )
+
+
+def _automerge_region(text: str) -> str:
+    """The safe-case auto-merge slice (the #1657 head-sync pre-check's home)."""
+    start_marker = "#### The auto-merge procedure"
+    end_marker = "**Known failure shape 0"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "auto-merge procedure heading not found in SKILL.md"
+    assert end != -1, "Known failure shape 0 heading not found in SKILL.md"
+    assert start < end, "auto-merge region must precede the failure shapes"
+    return text[start:end]
+
+
+def test_step10d_head_sync_pre_check_and_shape3_present():
+    """#1657 durability pin: (i) a READ-ONLY head-sync pre-check polls the PR
+    object's headRefOid inside the safe-case block BEFORE `gh pr ready` / the
+    first merge attempt; (ii) a Known-failure-shape-3 paragraph documents the
+    'Head branch is out of date' PR head-sync lag with a ONCE-bounded
+    close/reopen nudge; (iii) the Failure bullet routes the shape."""
+    text = _skill_text()
+
+    region = _automerge_region(text)
+    pre = region.find("headRefOid")
+    ready = region.find("gh pr ready <PR>")
+    assert pre != -1, "head-sync pre-check (headRefOid poll) missing from the auto-merge block"
+    assert ready != -1, "gh pr ready call missing from the auto-merge block"
+    assert pre < ready, "head-sync pre-check must precede gh pr ready / the first merge attempt"
+    verdict_ref = region.find("lint-verdict.txt")
+    assert verdict_ref != -1 and verdict_ref < pre, (
+        "pre-check must sit inside the verdict-gated conditional (after the "
+        "SHA-bound verdict check), not before the gate"
+    )
+
+    assert "(4) anything else" in region, (
+        "classify echo must renumber the catch-all to (4) after inserting class (3)"
+    )
+    assert "(3) anything else" not in text, (
+        "no live text may map class (3) onto the old catch-all (Edit 2 + Edit 2b)"
+    )
+
+    shape3_start = text.find("**Known failure shape 3")
+    assert shape3_start != -1, "Known failure shape 3 heading not found in SKILL.md"
+    end = text.find("- **Success:**", shape3_start)
+    assert end != -1, "Success bullet must follow the shape-3 paragraph"
+    para = _normalized(text[shape3_start:end])
+    assert "Head branch is out of date" in para, "shape 3 must name its substring"
+    assert "gh pr close" in para and "gh pr reopen" in para, (
+        "shape 3 must prescribe the close/reopen nudge"
+    )
+    assert "ONCE per Step 10d invocation" in para, "shape 3 must bound the nudge to ONCE"
+
+    failure_bullet = text.find("- **Failure**")
+    assert failure_bullet != -1, "Failure bullet not found in SKILL.md"
+    assert "Known failure shape 3" in text[failure_bullet : failure_bullet + 2500], (
+        "the Failure bullet must route the head-sync-lag shape"
+    )
