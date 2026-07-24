@@ -5071,8 +5071,8 @@
     "1650": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1650",
-      "status": "proposed",
+      "path": "tasks/planning/1650",
+      "status": "planning",
       "title": "daily-fix: poller pid-identity check + pgrep memory sync"
     },
     "1651": {
