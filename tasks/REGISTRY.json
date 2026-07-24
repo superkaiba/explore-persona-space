@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1659,
+  "highest_id": 1660,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5137,6 +5137,13 @@
       "path": "tasks/proposed/1659",
       "status": "proposed",
       "title": "daily-fix: inline rounds size fences from measured pilot"
+    },
+    "1660": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1660",
+      "status": "proposed",
+      "title": "daily-fix: ddp_timeout default for ZeRO-3 multi-GPU runs"
     },
     "168": {
       "has_clean_result": true,
