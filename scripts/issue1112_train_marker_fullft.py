@@ -53,6 +53,8 @@ import subprocess  # noqa: E402
 import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+from explore_persona_space.train.compat import DEFAULT_DDP_TIMEOUT_S  # noqa: E402
+
 LOG = logging.getLogger("issue1112.train_marker_fullft")
 
 # ── #514 ft_b1 recipe constants (inlined from origin/issue-508 lora_vs_ft_508) ─
@@ -231,6 +233,7 @@ def main() -> int:
         save_only_model=True,  # never resumed from; skip optimizer shards
         gradient_checkpointing=True,
         seed=args.seed,
+        ddp_timeout=DEFAULT_DDP_TIMEOUT_S,
         report_to=["wandb"],
         run_name=args.run_name,
         dataloader_num_workers=2,

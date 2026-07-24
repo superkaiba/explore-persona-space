@@ -24,6 +24,8 @@ from peft import LoraConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import KTOConfig, KTOTrainer
 
+from explore_persona_space.train.compat import DEFAULT_DDP_TIMEOUT_S
+
 
 def load_kto_dataset(path: str, asymmetric: bool = False) -> Dataset:
     """Load JSONL data. Accepts DPO format (chosen/rejected) or KTO format.
@@ -107,6 +109,7 @@ def main():
         save_strategy="epoch",
         save_total_limit=2,
         seed=config.get("seed", 42),
+        ddp_timeout=int(config.get("ddp_timeout", DEFAULT_DDP_TIMEOUT_S)),
         gradient_checkpointing=config.get("gradient_checkpointing", True),
         gradient_checkpointing_kwargs={"use_reentrant": False},
         dataset_num_proc=config.get("preprocessing_num_workers", 16),

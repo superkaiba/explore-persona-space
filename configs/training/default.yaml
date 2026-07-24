@@ -11,6 +11,10 @@ weight_decay: 0.0
 optim: adamw_torch_fused
 lr_scheduler_type: linear
 bf16: true
+# Process-group timeout (s) for multi-GPU runs; inert in single-process runs.
+# 3h covers slow rank-0 collective phases (ZeRO-3 checkpoint save/upload) that
+# exceed the 1800 s NCCL watchdog default (#1112 Arm B, 2026-07-23).
+ddp_timeout: 10800
 logging_steps: 10
 save_strategy: "epoch"
 save_total_limit: 2
