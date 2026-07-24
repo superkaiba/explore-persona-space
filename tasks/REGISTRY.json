@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1661,
+  "highest_id": 1662,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5151,6 +5151,13 @@
       "path": "tasks/proposed/1661",
       "status": "proposed",
       "title": "daily-fix: agent-spec-size ratchet in pre-commit"
+    },
+    "1662": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1662",
+      "status": "proposed",
+      "title": "daily-fix: suffixed follow-up pods terminate on done"
     },
     "168": {
       "has_clean_result": true,
