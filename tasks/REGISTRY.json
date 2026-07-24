@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1644,
+  "highest_id": 1645,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5025,6 +5025,13 @@
       "path": "tasks/proposed/1644",
       "status": "proposed",
       "title": "daily-fix: issue1586 scripts load_dotenv before torch"
+    },
+    "1645": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1645",
+      "status": "proposed",
+      "title": "daily-fix: register 3 unregistered step9c pin tests"
     },
     "165": {
       "has_clean_result": false,
