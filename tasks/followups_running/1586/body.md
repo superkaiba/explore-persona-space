@@ -24,7 +24,7 @@ relates_to:
 # Full fine-tuning's extra activation shift at matched install is behavior- and pooling-arm-dependent, not a universal method signature (MODERATE confidence)
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_1586.md](https://github.com/superkaiba/explore-persona-space/blob/a05e1ec1d4c5680f14aa548f1a815be42f49ef37/docs/methodology/issue_1586.md) · [gist mirror](https://gist.github.com/superkaiba/c0e8db84a618a531b883be92e2e5a57f)
+**Methodology:** [docs/methodology/issue_1586.md](https://github.com/superkaiba/explore-persona-space/blob/3fcd5e3cc9d690ab7eb169d55162a8654df44bf4/docs/methodology/issue_1586.md) · [gist mirror](https://gist.github.com/superkaiba/c0e8db84a618a531b883be92e2e5a57f)
 
 ## Takeaways
 
