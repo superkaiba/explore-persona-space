@@ -5057,8 +5057,8 @@
     "1649": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1649",
-      "status": "approved",
+      "path": "tasks/running/1649",
+      "status": "running",
       "title": "daily-fix: step9c baseline scan-set dirt wedge"
     },
     "165": {
