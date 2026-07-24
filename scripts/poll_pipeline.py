@@ -1168,6 +1168,50 @@ def _sig_pgrep_pattern(tokens: tuple[str, ...]) -> str | None:
     return re.escape(tok[:-1]) + "[" + tok[-1] + "]"
 
 
+def _maybe_rescue_by_signature(
+    *,
+    pod: str,
+    sig_pattern: str | None,
+    sig_proc_count: int,
+    sig_proc_pids: str,
+    pidfile_pid_alive: bool,
+    marker_pid_alive: bool,
+) -> bool:
+    """#1650 alive-direction-only liveness rescue decision (+ its WARN).
+
+    True iff BOTH probed pids are dead AND live process(es) match the
+    marker-derived launch signature — the #1112 fresh-but-wrong-pid class,
+    where the same wrong pid populated the pid file AND the marker so the
+    #451/#521 marker-pid OR-probe could not rescue. The caller ORs the
+    result into ``pid_alive``: the rescue can only ADD liveness, never
+    remove it, so no false ``dead`` can be introduced. Inert on free-prose
+    markers (``sig_pattern is None``) and under ``EPM_POLL_PID_IDENTITY=0``
+    (no pattern is derived). Extracted from ``poll_once`` for C901
+    headroom (the #664/#826 `_apply_zombie_override` precedent).
+    """
+    rescue = (
+        sig_pattern is not None
+        and sig_proc_count > 0
+        and not pidfile_pid_alive
+        and not marker_pid_alive
+    )
+    if rescue:
+        log.warning(
+            "pid file pid AND marker pid dead on pod %s but %d live process(es) "
+            "(%s) match launch signature %r — rescuing liveness (#1650, the "
+            "#1112 fresh-but-wrong-pid class); pid-file launch-contract "
+            "violation: kill any straggler that is NOT the live workload, "
+            "rewrite the pid file with the live workload pid, and re-post "
+            "epm:run-launched (pod-side-reporting.md § Pid-file launch "
+            "contract items 1/1d).",
+            pod,
+            sig_proc_count,
+            sig_proc_pids.strip() or "?",
+            sig_pattern,
+        )
+    return rescue
+
+
 def _maybe_warn_pid_identity(
     *,
     issue: int,
@@ -5261,36 +5305,18 @@ def poll_once(
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     # ── #1650 marker-signature liveness rescue (alive-direction ONLY) ────
-    # The #1112 fresh-but-wrong-pid class defeats the #451/#521 marker-pid
-    # OR-probe: the bad post-hoc pgrep populated BOTH the pid file and the
-    # marker with the same wrong (dead) pid, so a healthy run read false
-    # `dead`. When BOTH probed pids are dead but live process(es) match the
-    # marker-derived launch signature, rescue liveness. OR-only by
-    # construction — the new term can only ADD liveness, never remove it —
-    # so no false `dead` can be introduced. Inert on free-prose markers
-    # (sig_pattern is None) and under EPM_POLL_PID_IDENTITY=0.
-    sig_proc_count = _parse_probe_count(probe.get("sig_proc_count")) or 0
-    sig_proc_rescue = (
-        sig_pattern is not None
-        and sig_proc_count > 0
-        and not pidfile_pid_alive
-        and not marker_pid_alive
+    # Decision + WARN live in `_maybe_rescue_by_signature` (its docstring
+    # carries the #1112 rationale); the OR below is the ONLY #1650
+    # verdict-affecting wiring — it can only ADD liveness.
+    sig_proc_rescue = _maybe_rescue_by_signature(
+        pod=pod,
+        sig_pattern=sig_pattern,
+        sig_proc_count=_parse_probe_count(probe.get("sig_proc_count")) or 0,
+        sig_proc_pids=probe.get("sig_proc_pids", ""),
+        pidfile_pid_alive=pidfile_pid_alive,
+        marker_pid_alive=marker_pid_alive,
     )
     pid_alive = pidfile_pid_alive or marker_pid_alive or sig_proc_rescue
-    if sig_proc_rescue:
-        log.warning(
-            "pid file pid AND marker pid dead on pod %s but %d live process(es) "
-            "(%s) match launch signature %r — rescuing liveness (#1650, the "
-            "#1112 fresh-but-wrong-pid class); pid-file launch-contract "
-            "violation: kill any straggler that is NOT the live workload, "
-            "rewrite the pid file with the live workload pid, and re-post "
-            "epm:run-launched (pod-side-reporting.md § Pid-file launch "
-            "contract items 1/1d).",
-            pod,
-            sig_proc_count,
-            probe.get("sig_proc_pids", "").strip() or "?",
-            sig_pattern,
-        )
     # ── #1650 cmdline identity of the probed pids (WARN + flag ONLY) ─────
     pid_identity, marker_pid_identity = _maybe_warn_pid_identity(
         issue=issue,
