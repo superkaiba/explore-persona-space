@@ -645,7 +645,9 @@ def _evict_overflow_hub_cache() -> int:
     the consumer copies at ``out_root/inputs/ft_ckpts`` (the #1092 P6
     staging-duplication class; 29 GB duplicated on pod-1586's ~200 GB
     /workspace). Called only AFTER the staged-set guards verified the consumer
-    copies; ONLY this repo's entry is evicted (the Qwen base + main model repo
+    copies (p0), or ONCE per parent pre-stage batch after the serial restage
+    loop completes (r6 — _prestage_selected_ft_ckpts; NEVER per-restage inside
+    fan-out units); ONLY this repo's entry is evicted (the Qwen base + main model repo
     entries are live consumers). Idempotent (absent entry -> one no-op line);
     rmtree errors propagate (fail-loud — a half-evicted cache lies to the wave
     headroom arithmetic). Emits exactly one ``[hub-evict]`` line either way
@@ -2647,12 +2649,73 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
                 f"[ckpt-restage] {cell}: restaged checkpoint incomplete under {ckpt} "
                 f"({n_files} files) — expected config.json + shards + index"
             )
-        # Per-file staging double-materializes bytes (hub-cache blobs + the
-        # consumer copy — the r4 #1092-P6 class); evict the overflow entry per
-        # restage so at most one cell's duplication is ever in flight.
-        _evict_overflow_hub_cache()
+        # Crash-fix r6 (fu, epm:failure v12): NO per-restage hub-cache evict
+        # here. Concurrent fan-out units each restaging their own cell race
+        # the SHARED hub cache — the first finisher's evict deleted a
+        # sibling's in-flight .incomplete blobs + tmp dirs (FileNotFoundError
+        # in huggingface_hub.file_download; the #1315-r5 shared-staging
+        # class). The PARENT pre-stages every fan-out cell serially
+        # (_prestage_selected_ft_ckpts) and owns the ONE batch evict; this
+        # in-unit branch stays a fail-loud, EVICT-FREE backstop (a lone
+        # restage's cache residue is a disk nit bounded by the r4 wirings +
+        # the next parent batch evict).
     _ensure_dir_tokenizer(ckpt)
     return ckpt
+
+
+def _restageable_missing_ft_cells(cfg: Cfg, cells: Sequence[str]) -> list[str]:
+    """Trained cfg FT cells in ``cells`` whose SELECTED rung checkpoint is
+    locally absent (the [ckpt-restage] trigger; mirrors _selected_ft_ckpt's
+    lookup). Skips the classes with no overflow-restage path: p0-staged
+    inputs (the reused #1112 cell + FU FT partners) and never-reaped LoRA
+    ladders; ids without selection/build records (reused LoRA arm ids,
+    base_<beh> passes, not-yet-selected cells) resolve in the consumer's own
+    path and are skipped here. Ordered dedupe preserves the caller's order."""
+    missing: list[str] = []
+    for cell in dict.fromkeys(cells):
+        if cell == G.REUSED_FT_CELL or cell in _FU_PARTNER_ARM_IDS or G.is_fu_lora_cell(cell):
+            continue
+        sel_path = cfg.out_root / cell / "selection.json"
+        build_path = cfg.out_root / cell / "build_result.json"
+        if not sel_path.exists() or not build_path.exists():
+            continue
+        step = int(_read_json(sel_path)["step"])
+        train_dir = Path(_read_json(build_path)["adapter_root"])
+        if _rungs_or_empty(train_dir).get(step) is None:
+            missing.append(cell)
+    return missing
+
+
+def _prestage_selected_ft_ckpts(cfg: Cfg, cells: Sequence[str]) -> int:
+    """Crash-fix r6 (fu, epm:failure v12): resolve every fan-out arm's
+    selected FT checkpoint SERIALLY in the PARENT before _fanout_units.
+    Concurrent in-unit restages race the SHARED hub cache
+    (models--…--overflow): the r5 per-restage evict in whichever unit
+    finished first deleted a sibling's in-flight .incomplete blobs + tmp
+    dirs -> FileNotFoundError in huggingface_hub.file_download (the #1315-r5
+    shared-staging class — pre-stage in the parent, per the fanout memory).
+    The parent restages one cell at a time via the SAME _selected_ft_ckpt
+    resolver (its [ckpt-restage] lines now come from the parent pid; units
+    then find local copies present and their restage branch stays a
+    fail-loud, evict-free backstop) and evicts the overflow hub-cache entry
+    ONCE per batch — only when >=1 restage happened (the r4 #1092-P6
+    duplication class). Partial residue a crashed run left under the entry
+    (.incomplete blobs, tmp scratch) needs no separate sweep: hf 0.36.2's
+    _download_to_tmp_and_move removes-or-resumes a stale etag-keyed
+    .incomplete (verified), _stage_overflow_prefix publishes per-file with a
+    target.exists() skip, and the terminal batch evict rmtree-sweeps
+    whatever remains. Returns the number of cells restaged."""
+    missing = _restageable_missing_ft_cells(cfg, cells)
+    for cell in missing:
+        _selected_ft_ckpt(cfg, cell)
+    if missing:
+        logger.info(
+            "[ckpt-prestage] parent restaged %d selected checkpoint(s) serially: %s",
+            len(missing),
+            ", ".join(missing),
+        )
+        _evict_overflow_hub_cache()
+    return len(missing)
 
 
 def _stage_for_upload(stage: Path, src: Path, rel: str) -> None:
@@ -2955,6 +3018,9 @@ def phase_tier2(cfg: Cfg, selections: dict) -> dict:
     # marker install confirm IS the slot-read ladder (§4.3) — no mk cells here.
     pending = [c for c in content if not (cfg.out_root / c / "tier2.json").exists()]
     if pending:
+        # r6: parent-serial restage of reaped selected checkpoints BEFORE any
+        # unit spawn (shared hub-cache race — _prestage_selected_ft_ckpts).
+        _prestage_selected_ft_ckpts(cfg, pending)
         if len(pending) == 1 or _n_gpus() == 1:
             for c in pending:
                 run_tier2_unit(cfg, c)
@@ -3205,6 +3271,7 @@ def phase_panel(cfg: Cfg) -> dict:
     _phase("p6_panel")
     arms = _panel_arms(cfg)
     units = []
+    pending_arm_ids: list[str] = []
     for arm_id, kind in arms:
         sub = "marker_panel" if _panel_is_marker(arm_id) else "panel"
         res = (
@@ -3214,8 +3281,12 @@ def phase_panel(cfg: Cfg) -> dict:
             / ("slot_reads.json" if _panel_is_marker(arm_id) else "panel_summary.json")
         )
         if not res.exists():
+            pending_arm_ids.append(arm_id)
             units.append(_unit_args(cfg, "panel", f"{kind}:{arm_id}"))
     if units:
+        # r6: parent-serial restage of reaped selected checkpoints BEFORE any
+        # unit spawn (shared hub-cache race — _prestage_selected_ft_ckpts).
+        _prestage_selected_ft_ckpts(cfg, pending_arm_ids)
         if len(units) == 1 or _n_gpus() == 1:
             for u in units:
                 run_panel_unit(cfg, u[2])
@@ -3392,6 +3463,14 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
     # (#1315 shared-staging race; gotchas "Concurrent fan-out units").
     for beh_key in behs:
         _margin_pools(cfg, beh_key)
+    # r6: parent-serial restage of reaped selected checkpoints BEFORE any
+    # unit spawn — wave 1 included, so the ordering pin stays trivially
+    # "prestage precedes every spawn" (shared hub-cache race —
+    # _prestage_selected_ft_ckpts; base_*.json is wave 1's output, so
+    # arm_pending is computable at entry).
+    arm_pending = [(a, k) for a, k in arms if not (out_dir / a / "margin.json").exists()]
+    if arm_pending:
+        _prestage_selected_ft_ckpts(cfg, [a for a, _k in arm_pending])
     # Wave 1: per-behavior BASE sweeps (own units — single writer per file).
     base_pending = [b for b in behs if not (out_dir / f"base_{b}.json").exists()]
     if base_pending:
@@ -3401,7 +3480,6 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
         else:
             _fanout_units(cfg, [_unit_args(cfg, "margin", f"base:{b}") for b in base_pending])
     # Wave 2: 8-way arm fan-out (plan §9 p5-p7 row).
-    arm_pending = [(a, k) for a, k in arms if not (out_dir / a / "margin.json").exists()]
     if arm_pending:
         if len(arm_pending) == 1 or _n_gpus() == 1:
             for a, k in arm_pending:
@@ -3636,6 +3714,10 @@ def phase_capture(cfg: Cfg) -> dict:
     passes.sort(key=lambda t: (t[1] != "base", t[0]))
     base_passes = [(a, k) for a, k in passes if k == "base"]
     rest = [(a, k) for a, k in passes if k != "base"]
+    if rest:
+        # r6: parent-serial restage of reaped selected checkpoints BEFORE any
+        # unit spawn (shared hub-cache race — _prestage_selected_ft_ckpts).
+        _prestage_selected_ft_ckpts(cfg, [a for a, _k in rest])
     for group in (base_passes, rest):
         if not group:
             continue
@@ -3655,6 +3737,9 @@ def phase_capture_tf(cfg: Cfg) -> dict:
         if not (cfg.out_root / "capture_tf" / a / "pooled.pt").exists()
     ]
     if arms:
+        # r6: parent-serial restage of reaped selected checkpoints BEFORE any
+        # unit spawn (shared hub-cache race — _prestage_selected_ft_ckpts).
+        _prestage_selected_ft_ckpts(cfg, [a for a, _k in arms])
         if len(arms) == 1 or _n_gpus() == 1:
             for a, k in arms:
                 run_capture_tf_unit(cfg, f"{k}:{a}")
