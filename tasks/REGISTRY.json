@@ -5022,8 +5022,8 @@
     "1644": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1644",
-      "status": "reviewing",
+      "path": "tasks/completed/1644",
+      "status": "completed",
       "title": "daily-fix: issue1586 scripts load_dotenv before torch"
     },
     "1645": {
