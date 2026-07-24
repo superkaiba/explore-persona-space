@@ -73,6 +73,8 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, get_scheduler
 
+from explore_persona_space.train.compat import DEFAULT_DDP_TIMEOUT_S
+
 logger = logger_utils.setup_logger(__name__)
 
 REFERENCE_LOGPROBS_CACHE_PATH = os.environ.get(
@@ -454,7 +456,7 @@ def main():
     accelerator = Accelerator(
         dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True),
         **accel_kwargs,
-        kwargs_handlers=[InitProcessGroupKwargs(timeout=timedelta(seconds=1800))],
+        kwargs_handlers=[InitProcessGroupKwargs(timeout=timedelta(seconds=DEFAULT_DDP_TIMEOUT_S))],
         gradient_accumulation_plugin=GradientAccumulationPlugin(
             num_steps=config.gradient_accumulation_steps,
             sync_each_batch=False,

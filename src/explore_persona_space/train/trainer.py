@@ -28,6 +28,7 @@ import explore_persona_space.train.compat as _compat
 from explore_persona_space.personas import MARKER_TOKEN
 from explore_persona_space.train.compat import (
     _HAS_LIGER,
+    DEFAULT_DDP_TIMEOUT_S,
     _pick_attn_implementation,
 )
 
@@ -944,6 +945,7 @@ def train_phase(
         save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
+        ddp_timeout=int(getattr(training, "ddp_timeout", DEFAULT_DDP_TIMEOUT_S)),
         report_to="wandb" if wandb_run_name else "none",
         run_name=wandb_run_name,
         max_length=training.max_seq_length,
@@ -1299,6 +1301,7 @@ def train_dpo_phase(
         **dpo_warmup_kwargs,
         weight_decay=training.weight_decay,
         optim=training.optim,
+        ddp_timeout=int(getattr(training, "ddp_timeout", DEFAULT_DDP_TIMEOUT_S)),
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),

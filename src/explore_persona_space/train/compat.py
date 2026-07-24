@@ -99,3 +99,14 @@ def _pick_attn_implementation() -> str:
     except ImportError:
         logger.info("flash-attn not available; falling back to attn_implementation=sdpa")
         return "sdpa"
+
+
+# 3h process-group timeout for multi-GPU runs (transformers default: 1800 s).
+# Rank-0 synchronous ZeRO-3 checkpoint save/upload inside on_save can exceed
+# 30 min, leaving ranks 1..N blocked in the next all-gather until the NCCL
+# watchdog kills the run (#1112 Arm B, 2026-07-23: checkpoint-40's ~15 GB
+# upload crawled past 1800 s; WorkNCCL _ALLGATHER_BASE timeout). Value matches
+# the landed in-session fix (scripts/train_behavior_fullft.py:650). Inert in
+# single-process runs: TrainingArguments.ddp_timeout only feeds
+# init_process_group via accelerate's timeout kwarg.
+DEFAULT_DDP_TIMEOUT_S = 10800

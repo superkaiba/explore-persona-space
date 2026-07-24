@@ -53,6 +53,14 @@ from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
 
+# ZeRO-3-safe process-group timeout default in seconds (#1112 Arm B). Mirrors
+# explore_persona_space.train.compat.DEFAULT_DDP_TIMEOUT_S as a LITERAL rather
+# than an import: compat.py imports transformers at module top, and importing
+# TrainLoraConfig must keep the GPU stack lazy (tests/test_training_pipeline_fixes.py::
+# test_train_lora_config_import_keeps_gpu_stack_lazy). Drift is pinned by
+# tests/test_ddp_timeout_default.py::test_sft_literal_matches_compat_constant.
+DEFAULT_DDP_TIMEOUT_S = 10800
+
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
 # always trains a PeftModel (fresh-LoRA wraps via peft_config; the continue-
 # adapter path loads a PeftModel directly) and fused kernels regress
@@ -624,6 +632,10 @@ class TrainLoraConfig:
     # raises "Your setup doesn't support bf16/gpu" on CPU-only machines)
     # pass bf16=False.
     bf16: bool = True
+    # Process-group timeout (seconds) threaded into SFTConfig/TrainingArguments.
+    # Default = ZeRO-3-safe 3h (#1112); inert in single-process runs, so the
+    # unconditional default is byte-safe for every existing 1-GPU caller.
+    ddp_timeout: int = DEFAULT_DDP_TIMEOUT_S
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 0
@@ -1533,6 +1545,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "report_to": cfg.report_to,
         "run_name": cfg.run_name,
         "seed": cfg.seed,
+        "ddp_timeout": cfg.ddp_timeout,
         "gradient_checkpointing": cfg.gradient_checkpointing,
         "weight_decay": cfg.weight_decay,
         "packing": cfg.packing,
