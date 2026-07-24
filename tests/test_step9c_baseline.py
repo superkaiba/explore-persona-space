@@ -1650,6 +1650,41 @@ def test_compare_file_anchored_scan_node_scratch_resolved(
         assert [n["name"] for n in out["new"]] == ["test_x"]
 
 
+@pytest.mark.parametrize("fails_on_main", [True, False])
+def test_compare_selector_tests_member_scratch_resolved(
+    tmp_path: Path, monkeypatch, capsys, fails_on_main
+):
+    """#1649 membership pin (end-to-end, REAL frozenset — no monkeypatch): a
+    failing tests/test_select_step9c_tests.py node on a dirty sparse root is
+    scratch-resolved strip-or-NEW (rc 0/1), never MF-4c exit 2 — the #1632
+    wedge shape (untracked third-party scripts/issue*_*.py dirt)."""
+    node = sb.Node(
+        file="tests/test_select_step9c_tests.py",
+        classname="tests.test_select_step9c_tests",
+        name="test_import_map_aggregate_parse_failure_warn",  # the #1632 node
+    )
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        glob_scan={node.file: ("tests/step9c_workflow_invariant_manifest.txt",)},
+        live_dirty=("scripts/issue1310_draft.py",),
+        pristine_failing=(node,) if fails_on_main else (),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    # Scratch oracle armed (not the root oracle) — proves the REAL literal admits it.
+    assert len(calls["scratch_created"]) == 1
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    if fails_on_main:
+        assert rc == 0 and out["indeterminate"] is False
+        assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+    else:
+        assert rc == 1
+        assert [n["name"] for n in out["new"]] == [node.name]
+
+
 # --- #1251: scratch PYTHONPATH src-shadow (dirty src/ no longer refuses) -----------
 
 
@@ -2235,6 +2270,23 @@ def test_load_selector_module_real_body():
     assert callable(mod.select_tests_with_reasons) and callable(mod._matches_any)
 
 
+# Audited-benign banned-token hit lines for the drift pin below (#1649): raw-substring
+# scan, keyed by exact STRIPPED line text — a NEW hit line (or any rewording of an
+# audited one) fails loud, forcing a fresh anchoring audit. Raw-text scanning is kept
+# deliberately: a real git-common-dir escape can live inside a subprocess argv STRING,
+# which a strip-strings tokenizer scan would miss.
+_FILE_ANCHORED_BENIGN_TOKEN_LINES: dict[str, dict[str, tuple[str, ...]]] = {
+    "tests/test_select_step9c_tests.py": {
+        # fixture DATA: reasons-dict key naming the invariant test file (its :306)
+        "task_workflow": ('assert reasons["tests/test_task_workflow.py"] == ["invariant"]',),
+        # case-11 docstring narrating the retired #851 recipe (its :321)
+        "git-common-dir": (
+            "Incident #851: the prior --git-common-dir+dirname recipe pinned the MAIN",
+        ),
+    },
+}
+
+
 def test_file_anchored_scan_tests_live_tree_pin():
     """#1337 drift pin: every FILE_ANCHORED_SCAN_TESTS member is a live GLOB_SCAN_TESTS
     key whose source still derives its scan root from Path(__file__) and never touches
@@ -2243,7 +2295,11 @@ def test_file_anchored_scan_tests_live_tree_pin():
     Token-level, NOT dataflow-level: an imported helper that reached the live main
     root via repo_root() would still pass these token pins — membership additions
     stay must-ask, with a human verifying the whole scan chain by reading the source
-    (plan #1337 §10b / §11)."""
+    (plan #1337 §10b / §11). #1649: the flat `tok not in src` asserts became a per-line
+    scan with a per-member audited-benign-line allowlist
+    (_FILE_ANCHORED_BENIGN_TOKEN_LINES) — exact-stripped-line match only, so an
+    unaudited hit, a new benign hit, or a rewording of an audited line still fails
+    loud (semantics for the two pre-#1649 members are unchanged: zero hits)."""
     root = Path(sb.__file__).resolve().parents[1]
     sel = sb.load_selector_module(root)
     assert sb.FILE_ANCHORED_SCAN_TESTS, "allowlist unexpectedly empty"
@@ -2254,12 +2310,23 @@ def test_file_anchored_scan_tests_live_tree_pin():
         assert rel in sel.GLOB_SCAN_TESTS, f"{rel}: allowlisted but not a scan test"
         src = (root / rel).read_text()
         assert "Path(__file__).resolve().parents[1]" in src, f"{rel}: __file__ anchor gone"
-        assert "repo_root(" not in src, f"{rel}: repo_root() appeared — R-F' basis broken"
-        assert "task_workflow" not in src, f"{rel}: task_workflow import appeared"
-        # Extra negative tokens (verified 0-hit at #1337 implement time): escape
-        # channels back to the MAIN tree from a scratch cwd.
-        assert "git-common-dir" not in src, f"{rel}: git-common-dir escape appeared"
-        assert "Path.cwd()" not in src, f"{rel}: cwd-anchored scan appeared"
+        benign = _FILE_ANCHORED_BENIGN_TOKEN_LINES.get(rel, {})
+        # Banned tokens: escape channels back to the MAIN tree from a scratch cwd
+        # (repo_root()/task_workflow imports, git-common-dir, cwd-anchored scans).
+        for tok in ("repo_root(", "task_workflow", "git-common-dir", "Path.cwd()"):
+            allowed = benign.get(tok, ())
+            offending = [
+                ln.strip() for ln in src.splitlines() if tok in ln and ln.strip() not in allowed
+            ]
+            assert not offending, (
+                f"{rel}: unaudited {tok!r} hit(s) — re-audit anchoring: {offending[:3]}"
+            )
+
+
+def test_file_anchored_includes_selector_tests():
+    """#1649: removal reverts the #1632 wedge class (every trunk-red node in the
+    selector test file re-becomes MF-4c exit 2 on any dirty shared root)."""
+    assert "tests/test_select_step9c_tests.py" in sb.FILE_ANCHORED_SCAN_TESTS
 
 
 def test_ruff_helpers_real_body(tmp_path: Path):

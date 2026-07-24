@@ -389,7 +389,10 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # NOTE (#1337): adding an entry here does NOT make it eligible for compare's
 # scratch pristine oracle — step9c_baseline.py's R-F' rule refuses scan-set nodes
 # by default; a scan test whose scan root is Path(__file__)-derived may be opted in
-# via step9c_baseline.py::FILE_ANCHORED_SCAN_TESTS after source verification.
+# via step9c_baseline.py::FILE_ANCHORED_SCAN_TESTS after source verification. A member
+# left NON-anchored wedges compare at MF-4c exit 2 whenever the shared root is dirty
+# and the member fails on main (#1632) — audit __file__-anchoring at addition time
+# and allowlist when it holds.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (#1187: its
     # _scan_targets() — every tracked scripts/**/*.py + __main__-guarded

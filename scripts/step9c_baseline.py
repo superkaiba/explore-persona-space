@@ -191,6 +191,17 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
         # REPO_ROOT = Path(__file__).resolve().parents[1] (:76); _iter_in_scope_files
         # globs REPO_ROOT only; pure ast/re on file text, stdlib-only imports.
         "tests/test_subprocess_env_explicit.py",
+        # _HELPER_PATH = Path(__file__).resolve().parents[1]/"scripts"/"select_step9c_tests.py"
+        # (:29) — the selector is importlib-loaded BY PATH from the test file's own tree;
+        # every live-tree read resolves via Path(sel.__file__).parents[1] / _HELPER_PATH
+        # (:137/:193/:567/:601/:1249/:1390/:1476/:1651/:1816+); real-git fixtures use
+        # throwaway tmp_path repos with explicit cwd; no repo_root()/task_workflow/cwd/env
+        # channel; conftest checked clean too (no root conftest.py; tests/conftest.py's only
+        # live-root autouse fixture is gated on `explore_persona_space.task_workflow` in
+        # sys.modules — never true in this member's scratch run, which imports the selector
+        # by path only) (#1649 audit; incident #1632: as the only non-anchored scan-set
+        # member it wedged compare at MF-4c exit 2 on any dirty shared root).
+        "tests/test_select_step9c_tests.py",
     }
 )
 
