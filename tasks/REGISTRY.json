@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1640,
+  "highest_id": 1641,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4997,6 +4997,13 @@
       "path": "tasks/completed/1640",
       "status": "completed",
       "title": "workflow-fix: gotchas \u2014 chained smoke-then-full per-leg out-root residue trap"
+    },
+    "1641": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1641",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas fanout-staging bullet \u2014 add the per-unit shared-cache EVICT race mode"
     },
     "165": {
       "has_clean_result": false,
