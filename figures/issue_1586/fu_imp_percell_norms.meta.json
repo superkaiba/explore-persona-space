@@ -1,0 +1,83 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:42Z",
+  "figsize": [
+    9.6,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "LoRA 3e-5 s42\n(executed)",
+      "mean-shift norm vs base (layer 14, response arm)": 12.469846725463867,
+      "_kind": "bar"
+    },
+    {
+      "category": "LoRA 3e-5 s137\n(executed)",
+      "mean-shift norm vs base (layer 14, response arm)": 13.836989402770996,
+      "_kind": "bar"
+    },
+    {
+      "category": "LoRA 5e-6 s42\n(this round)",
+      "mean-shift norm vs base (layer 14, response arm)": 17.297574996948242,
+      "_kind": "bar"
+    },
+    {
+      "category": "LoRA 5e-6 s137\n(this round)",
+      "mean-shift norm vs base (layer 14, response arm)": 17.068437576293945,
+      "_kind": "bar"
+    },
+    {
+      "category": "full FT s42\n(executed)",
+      "mean-shift norm vs base (layer 14, response arm)": 11.369293212890625,
+      "_kind": "bar"
+    },
+    {
+      "category": "full FT s137\n(executed)",
+      "mean-shift norm vs base (layer 14, response arm)": 11.149091720581055,
+      "_kind": "bar"
+    },
+    {
+      "category": "full FT s42\n(fresh re-capture)",
+      "mean-shift norm vs base (layer 14, response arm)": 11.408219337463379,
+      "_kind": "bar"
+    },
+    {
+      "category": "full FT s137\n(fresh re-capture)",
+      "mean-shift norm vs base (layer 14, response arm)": 11.170867919921875,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Impolite contrastive per-cell shift norms: both LoRA recipes and both full-FT reads",
+        "ylabel": "mean-shift norm vs base (layer 14, response arm)",
+        "xticklabels": [
+          "LoRA 3e-5 s42\n(executed)",
+          "LoRA 3e-5 s137\n(executed)",
+          "LoRA 5e-6 s42\n(this round)",
+          "LoRA 5e-6 s137\n(this round)",
+          "full FT s42\n(executed)",
+          "full FT s137\n(executed)",
+          "full FT s42\n(fresh re-capture)",
+          "full FT s137\n(fresh re-capture)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ]
+      }
+    ]
+  }
+}

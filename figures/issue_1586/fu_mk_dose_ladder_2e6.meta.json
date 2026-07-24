@@ -1,0 +1,1231 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:34Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.09218549728393555,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 0.32585945129394533,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 0.6275894165039062,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 1.5687786102294923,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 2.1535597801208497,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 4.172224330902099,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 6.598741722106934,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 14.0,
+      "marker install, log-prob shift vs base (nats)": 9.324745178222656,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 16.0,
+      "marker install, log-prob shift vs base (nats)": 10.335832214355468,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 18.0,
+      "marker install, log-prob shift vs base (nats)": 10.57003231048584,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 20.0,
+      "marker install, log-prob shift vs base (nats)": 11.341258716583251,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 22.0,
+      "marker install, log-prob shift vs base (nats)": 11.66452169418335,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 24.0,
+      "marker install, log-prob shift vs base (nats)": 11.174975490570068,
+      "series": "contrastive s42 (2e-6)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "training step (effective batch 64)": 1.0,
+      "marker install, log-prob shift vs base (nats)": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.3884148597717285,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 3.0,
+      "marker install, log-prob shift vs base (nats)": 0.9995848655700683,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 1.678233528137207,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 5.0,
+      "marker install, log-prob shift vs base (nats)": 2.1112579345703124,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 2.1477094650268556,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 7.0,
+      "marker install, log-prob shift vs base (nats)": 8.693617057800292,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 10.236332035064697,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 9.0,
+      "marker install, log-prob shift vs base (nats)": 10.630368614196778,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 10.710336112976075,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 11.26723575592041,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 10.452736759185791,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.0860356330871582,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 0.3837752342224121,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 0.9998038291931153,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 1.655880832672119,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 2.4398040771484375,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 4.983096981048584,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 7.801270866394043,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 14.0,
+      "marker install, log-prob shift vs base (nats)": 9.851803493499755,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 16.0,
+      "marker install, log-prob shift vs base (nats)": 11.52623929977417,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 18.0,
+      "marker install, log-prob shift vs base (nats)": 11.394759559631348,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 20.0,
+      "marker install, log-prob shift vs base (nats)": 11.791814994812011,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 22.0,
+      "marker install, log-prob shift vs base (nats)": 12.258250522613526,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 24.0,
+      "marker install, log-prob shift vs base (nats)": 12.079168796539307,
+      "series": "contrastive s137 (2e-6)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "training step (effective batch 64)": 1.0,
+      "marker install, log-prob shift vs base (nats)": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.37440128326416017,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 3.0,
+      "marker install, log-prob shift vs base (nats)": 1.1204530715942382,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 1.6856517791748047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 5.0,
+      "marker install, log-prob shift vs base (nats)": 2.0898469924926757,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 2.4166744232177733,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 7.0,
+      "marker install, log-prob shift vs base (nats)": 10.996259212493896,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 11.0619327545166,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 9.0,
+      "marker install, log-prob shift vs base (nats)": 11.539764785766602,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 11.909946823120118,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 12.29542932510376,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 12.490006351470948,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.10665206909179688,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 0.5828447341918945,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 1.6235254287719727,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 2.2817681312561033,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 3.1310574531555178,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 6.446335029602051,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 9.449706745147704,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 14.0,
+      "marker install, log-prob shift vs base (nats)": 11.998405075073242,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 16.0,
+      "marker install, log-prob shift vs base (nats)": 13.883143711090089,
+      "series": "positive-only s42 (2e-6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training step (effective batch 64)": 1.0,
+      "marker install, log-prob shift vs base (nats)": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.6014263153076171,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 3.0,
+      "marker install, log-prob shift vs base (nats)": 1.4853813171386718,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 2.4073229789733888,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 5.0,
+      "marker install, log-prob shift vs base (nats)": 2.8786999702453615,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 3.148651885986328,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 7.0,
+      "marker install, log-prob shift vs base (nats)": 11.418616008758544,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 12.25946683883667,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 9.0,
+      "marker install, log-prob shift vs base (nats)": 12.650257682800293,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 13.715733528137207,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 13.720404434204102,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 12.935785293579102,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.1285027503967285,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 0.5646761894226074,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 1.4781500816345214,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 2.1367823600769045,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 2.942279243469238,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 6.610224342346191,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 9.067593002319336,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 14.0,
+      "marker install, log-prob shift vs base (nats)": 12.194894313812256,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 16.0,
+      "marker install, log-prob shift vs base (nats)": 13.938150024414062,
+      "series": "positive-only s137 (2e-6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training step (effective batch 64)": 1.0,
+      "marker install, log-prob shift vs base (nats)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 2.0,
+      "marker install, log-prob shift vs base (nats)": 0.516652774810791,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 3.0,
+      "marker install, log-prob shift vs base (nats)": 1.7134493827819823,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 4.0,
+      "marker install, log-prob shift vs base (nats)": 2.215304470062256,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 5.0,
+      "marker install, log-prob shift vs base (nats)": 2.835902786254883,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 6.0,
+      "marker install, log-prob shift vs base (nats)": 2.923549461364746,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 7.0,
+      "marker install, log-prob shift vs base (nats)": 11.661476421356202,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 8.0,
+      "marker install, log-prob shift vs base (nats)": 12.958403968811036,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 9.0,
+      "marker install, log-prob shift vs base (nats)": 13.115582466125488,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 10.0,
+      "marker install, log-prob shift vs base (nats)": 14.765116500854493,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 11.0,
+      "marker install, log-prob shift vs base (nats)": 14.491043090820312,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step (effective batch 64)": 12.0,
+      "marker install, log-prob shift vs base (nats)": 14.207090950012207,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 14.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 16.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 18.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 20.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 22.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 24.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training step": 1.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 3.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 5.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 7.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 9.0,
+      "greedy source emission rate": 0.25,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.35,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.45,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.55,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 14.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 16.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 18.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 20.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 22.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 24.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training step": 1.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 3.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 5.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 7.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.45,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 9.0,
+      "greedy source emission rate": 0.55,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.5,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.6,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.5,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 14.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 16.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training step": 1.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 3.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 5.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 7.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 9.0,
+      "greedy source emission rate": 0.2,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.2,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.2,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.35,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 14.0,
+      "greedy source emission rate": 0.05,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 16.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training step": 1.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 2.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 3.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 4.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 5.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 6.0,
+      "greedy source emission rate": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 7.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 8.0,
+      "greedy source emission rate": 0.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 9.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 10.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 11.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training step": 12.0,
+      "greedy source emission rate": 0.1,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 184,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Marker full fine-tune install per step: learning rate 2e-6 (solid, this round) vs 5e-6 (dashed, executed run); stars = selected rungs"
+    ],
+    "axes": [
+      {
+        "xlabel": "training step (effective batch 64)",
+        "ylabel": "marker install, log-prob shift vs base (nats)",
+        "legend_labels": [
+          "contrastive s42 (2e-6)",
+          "contrastive s137 (2e-6)",
+          "positive-only s42 (2e-6)",
+          "positive-only s137 (2e-6)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ]
+      },
+      {
+        "xlabel": "training step",
+        "ylabel": "greedy source emission rate",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "contrastive s42 (2e-6)",
+      "contrastive s137 (2e-6)",
+      "positive-only s42 (2e-6)",
+      "positive-only s137 (2e-6)"
+    ]
+  }
+}

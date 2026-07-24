@@ -1,0 +1,40 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:35Z",
+  "figsize": [
+    8.2,
+    5.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Marker method contrast at matched install (learning rate 2e-6 full fine-tune)",
+        "xlabel": "paired shift-norm difference, full FT minus LoRA\n(layer 25, response arm)",
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "contrastive s42",
+          "contrastive s42 (shared text)",
+          "contrastive s137",
+          "contrastive s137 (shared text)",
+          "contrastive pooled",
+          "positive-only s42",
+          "positive-only s42 (shared text)",
+          "positive-only s137",
+          "positive-only s137 (shared text)",
+          "positive-only pooled"
+        ]
+      }
+    ]
+  }
+}
