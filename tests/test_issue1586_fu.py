@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import sys
 from pathlib import Path
 from unittest.mock import create_autospec
@@ -1115,3 +1116,173 @@ def test_reclaim_residue_non_retrained_shape_keeps_train_dir_and_rung(tmp_path):
     assert (ckpt / "model-00001-of-00001.safetensors").exists()
     assert not (train / "model-00001-of-00004.safetensors").exists()
     assert (train / "config.json").exists()  # small root metadata untouched
+
+
+# ── crash-fix r5 (fu, epm:failure v11): [ckpt-reap] + [ckpt-restage] ─────────
+
+
+def test_ckpt_persist_prefix_fu_and_executed(tmp_path):
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    assert (
+        d._ckpt_persist_prefix(_cfg(tmp_path), cell, 12)
+        == f"{G.FU_CKPT_PREFIX}/{cell}/checkpoint-12"
+    )
+    # executed (non-fu) grid keeps the issue1586/ prefix — persist-path symmetry
+    assert (
+        d._ckpt_persist_prefix(_cfg(tmp_path, fu=None), cell, 8) == f"issue1586/{cell}/checkpoint-8"
+    )
+
+
+def test_ckpt_reap_fires_only_with_hub_verification(tmp_path, monkeypatch, caplog):
+    """Pin (i): reap ONLY on Hub verification — probe error => keep + WARN
+    (fail-toward-keep); verified => reap + [ckpt-reap] bytes line; a resumed
+    _wave_reap tolerates the verified-reaped (empty-rung) state."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    root = _completed_marker_cell(cfg.out_root, cell)
+    d._atomic_json(root / "persist.json", {"cell": cell, "step": 12, "url": "https://hf/x"})
+    ckpt = root / "train_reselect" / "checkpoint-12"
+
+    def _boom(api, repo, path, **kw):
+        raise RuntimeError("hub down")
+
+    monkeypatch.setattr(d.hub, "list_hf_files_under_path", _boom)
+    with caplog.at_level(logging.WARNING, logger=d.logger.name):
+        d._reclaim_completed_cell_residue(cfg, [cell])
+    assert ckpt.exists()  # probe error => keep local (fail-toward-keep)
+    assert any(
+        "[ckpt-reap]" in r.message and "keeping local copy" in r.message for r in caplog.records
+    )
+
+    # Hub copy missing config.json => keep + WARN (incomplete upload)
+    prefix = f"{G.FU_CKPT_PREFIX}/{cell}/checkpoint-12"
+    monkeypatch.setattr(
+        d.hub,
+        "list_hf_files_under_path",
+        lambda api, repo, path, **kw: [f"{prefix}/model-00001-of-00001.safetensors"],
+    )
+    d._reclaim_completed_cell_residue(cfg, [cell])
+    assert ckpt.exists()
+
+    def _verified(api, repo, path, **kw):
+        assert repo == G.OVERFLOW_REPO and path == prefix
+        return [f"{prefix}/config.json", f"{prefix}/model-00001-of-00001.safetensors"]
+
+    monkeypatch.setattr(d.hub, "list_hf_files_under_path", _verified)
+    caplog.clear()
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        freed = d._reclaim_completed_cell_residue(cfg, [cell])
+    assert not ckpt.exists()  # verified => reaped
+    assert freed >= 64
+    assert any("[ckpt-reap]" in r.message and cell in r.message for r in caplog.records)
+    # r3/r4 invariants intact: selection/build records survive the reap
+    assert (root / "selection.json").exists() and (root / "build_result.json").exists()
+    # resumed _wave_reap on the verified-reaped cell must NOT raise
+    d._wave_reap(cfg, [cell])
+
+
+def test_ckpt_reap_never_touches_unuploaded_or_deferred_cell(tmp_path, monkeypatch):
+    """Pin (ii): the un-uploaded / in-progress / deferred cell is NEVER
+    probed nor reaped."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[1].cell
+    root = _completed_marker_cell(cfg.out_root, cell)
+    ckpt = root / "train_reselect" / "checkpoint-12"
+    probes: list[str] = []
+
+    def _probe(api, repo, path, **kw):
+        probes.append(path)
+        return [f"{path}/config.json", f"{path}/model-00001-of-00001.safetensors"]
+
+    monkeypatch.setattr(d.hub, "list_hf_files_under_path", _probe)
+    # no persist.json (in-progress / un-uploaded) -> never probed, never reaped
+    d._reclaim_completed_cell_residue(cfg, [cell])
+    assert ckpt.exists() and not probes
+    # pending billing-403 deferral -> kept even with a persist.json present
+    d._atomic_json(root / "persist.json", {"cell": cell, "step": 12, "url": "https://hf/x"})
+    d._atomic_json(d._persist_deferred_path(cfg, cell), {"cell": cell, "step": 12})
+    d._reclaim_completed_cell_residue(cfg, [cell])
+    assert ckpt.exists() and not probes
+    # deferral cleared -> the verified reap proceeds (sanity close of the gate)
+    d._persist_deferred_path(cfg, cell).unlink()
+    d._reclaim_completed_cell_residue(cfg, [cell])
+    assert probes and not ckpt.exists()
+
+
+def test_selected_ft_ckpt_restages_on_missing_local(tmp_path, monkeypatch, caplog):
+    """Pin (iii): absent local selected checkpoint + fake staged tree =>
+    _selected_ft_ckpt resolves the restaged path (consumer round-trip),
+    threading the persist prefix + pinned revision into the SAME
+    _stage_overflow_prefix machinery the reused FT partners use."""
+    cfg = _cfg(tmp_path)
+    cell = G.FU_MARKER_FT_CELLS[0].cell
+    root = cfg.out_root / cell
+    reselect = root / "train_reselect"
+    reselect.mkdir(parents=True)
+    d._atomic_json(root / "selection.json", {"step": 12})
+    d._atomic_json(root / "build_result.json", {"adapter_root": str(reselect)})
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    evicts: list[int] = []
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: evicts.append(1) or 0)
+    staged: dict[str, str] = {}
+
+    def fake_stage(prefix, dest, *, revision, recursive=True):
+        staged["prefix"], staged["revision"] = prefix, revision
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "config.json").write_text("{}")
+        for i in range(1, 5):
+            (dest / f"model-0000{i}-of-00004.safetensors").write_bytes(b"s")
+        return dest
+
+    monkeypatch.setattr(d, "_stage_overflow_prefix", fake_stage)
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        got = d._selected_ft_ckpt(cfg, cell)
+    assert got == reselect / "checkpoint-12"
+    assert (got / "config.json").exists()
+    assert staged["prefix"] == f"{G.FU_CKPT_PREFIX}/{cell}/checkpoint-12"
+    assert staged["revision"] == "rev0"
+    assert evicts == [1]  # per-restage hub-cache eviction (r4 duplication class)
+    assert any("[ckpt-restage]" in r.message and cell in r.message for r in caplog.records)
+    # local present again -> no re-stage (idempotent resolve)
+    staged.clear()
+    assert d._selected_ft_ckpt(cfg, cell) == got and not staged
+
+
+def test_selected_ft_ckpt_restage_fail_loud_paths(tmp_path, monkeypatch):
+    """Pin (iii b): absent Hub path fails loud (FileNotFoundError propagates);
+    an incomplete restage raises; a LoRA cell is NEVER overflow-restaged."""
+    cfg = _cfg(tmp_path)
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: 0)
+    cell = G.FU_MARKER_FT_CELLS[1].cell
+    root = cfg.out_root / cell
+    (root / "train_reselect").mkdir(parents=True)
+    d._atomic_json(root / "selection.json", {"step": 12})
+    d._atomic_json(root / "build_result.json", {"adapter_root": str(root / "train_reselect")})
+
+    def absent(prefix, dest, *, revision, recursive=True):
+        raise FileNotFoundError(f"no files under {G.OVERFLOW_REPO}/{prefix} @ {revision}")
+
+    monkeypatch.setattr(d, "_stage_overflow_prefix", absent)
+    with pytest.raises(FileNotFoundError):
+        d._selected_ft_ckpt(cfg, cell)
+
+    def partial(prefix, dest, *, revision, recursive=True):
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "config.json").write_text("{}")
+        return dest
+
+    monkeypatch.setattr(d, "_stage_overflow_prefix", partial)
+    with pytest.raises(RuntimeError, match="incomplete"):
+        d._selected_ft_ckpt(cfg, cell)
+    shutil.rmtree(root / "train_reselect" / "checkpoint-12")
+
+    lora = G.FU_IMP_LORA_CELLS[0].cell
+    lroot = cfg.out_root / lora
+    (lroot / "train").mkdir(parents=True)
+    d._atomic_json(lroot / "selection.json", {"step": 12})
+    d._atomic_json(lroot / "build_result.json", {"adapter_root": str(lroot / "train")})
+    with pytest.raises(RuntimeError, match="never ckpt-reaped"):
+        d._selected_ft_ckpt(cfg, lora)
