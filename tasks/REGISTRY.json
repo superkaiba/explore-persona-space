@@ -5113,8 +5113,8 @@
     "1656": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1656",
-      "status": "proposed",
+      "path": "tasks/planning/1656",
+      "status": "planning",
       "title": "daily-fix: detached runs declare a harvest step at launch"
     },
     "1657": {
