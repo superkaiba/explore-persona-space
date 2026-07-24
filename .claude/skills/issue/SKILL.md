@@ -1643,8 +1643,13 @@ only by a PM-chat directive one wasted implementer round later.
 **Edit-success gate:** when the draft was produced or modified by a SCRIPTED
 edit (the Step 2b/3 revise paths included), `&&`-chain edit → verify
 (positive evidence the revised text is present — grep the draft, or a
-non-empty diff vs the prior version) → the `new-plan-version` persist; an
-edit-script failure aborts the persist loudly, never `;`-chained
+non-empty diff vs the prior version) → the `new-plan-version` persist; the
+edit step is the committed helper `uv run python scripts/plan_patch.py`
+(anchor-normalized apply; fail-loud nearest-match diff on a missing/ambiguous
+anchor — #1631; its printed `PLAN-PATCH APPLIED` line and `--verify-contains`
+double as verify evidence; prefer ≥1-line distinctive anchors), never an
+improvised per-turn anchor script; an edit-script failure aborts the persist
+loudly, never `;`-chained
 (`adversarial-planner` SKILL.md § Edit-success gate; incident #1565: a
 chained persist landed v2 as an unmodified copy of v1 after the edit script
 died on an anchor-text `AssertionError`).
@@ -2121,7 +2126,9 @@ Brief passed to the implementer:
   runs the diff-linked + pin-hit subset locally, deferring only the
   invariant-only remainder to the gate (which remains the backstop),
   reporting the pin-sweep field with the verbatim deduplicated
-  hit-file list — never a count-only or glob-family summary (#1494;
+  hit-file list + its `sweep_scope:` universe token
+  (`selector-universe` | `repo-wide` — the REALIZED universe; #1651)
+  — never a count-only or glob-family summary (#1494;
   >20 files → fenced block under the Gate-scope line).
   Belt-and-suspenders on `implementer.md` § After Implementation item 1,
   so round briefs surface the duty without the implementer having to
@@ -5129,7 +5136,12 @@ sources contribute to `running`-phase progress:
     `adapter_paths` as an explicit per-cell mapping of REAL HF
     subfolder paths — every value existence-checked under
     `hf_model_repo` (defaults to the canonical model repo; declare only
-    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    when different; cells whose adapters land in a DIFFERENT repo than
+    `hf_model_repo` — the #1108 overflow split — additionally declare
+    `adapter_repo_overrides`, a per-cell `{cell_id: repo_id}` dict
+    keyed on `adapter_paths` cells, and the verifier resolves those
+    cells against the override repo, #1664), so NO
+    `<arm>`/`<source>`/`<seed>`-style template
     placeholders and no `(16 adapters)` prose summaries — plus
     `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
     display names; a single run may instead declare `wandb_run_path`).
@@ -6114,13 +6126,48 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry three additional fields:
-`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry four additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
+(additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
-— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
-genuinely new field), and the `external-markers triaged:` line
+— this convention upgrades it to a REQUIRED absolute path, `pid=` is the
+genuinely new #833 field, and `harvest=` is the § Harvest contract's declared
+results location, new with #1656), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Harvest contract (declared AT LAUNCH — a closed session never strands finished
+results; #1310, #1656).** Detachment protects the RUN; this clause protects the
+RESULTS. Every detached launch declares its harvest path at launch time:
+
+1. **Durable out-root (REQUIRED).** `<cmd>` writes its results to a durable,
+   session-independent location — `eval_results/issue_<N>/...`, the task's
+   `artifacts/` dir, an HF-upload staging dir under `data/issue_<N>/`, or (for a
+   log-only probe) the breadcrumb's own `log=` file — never session-scoped scratch
+   only the launching conversation knows about.
+2. **`harvest=` token (REQUIRED).** The stage-dispatch breadcrumb's
+   `harvest=<abs, space-free output path or glob>` (comma-separate multiple paths;
+   values are whitespace-split tokens, so no spaces) names where completion outputs
+   land. The § Successor / re-entry rule probes THIS path for "completion output
+   present" and collects from it — no guessing. Breadcrumbs predating this contract
+   lack the token: consumers fall back to log-tail + known output dirs (the same
+   graceful-optional convention as `label=`).
+3. **Self-harvest chaining (PREFERRED).** When collection is one idempotent command,
+   make it part of the detached unit itself — as a SINGLE command unit substituted
+   for `<cmd>`: a driver script whose final act is the collection/upload (an HF
+   upload of raw completions/tensors, a copy into `eval_results/issue_<N>/`), or an
+   inner `bash -c '<workload> && <harvest-cmd>'`. NEVER splice a bare
+   `<workload> && <harvest-cmd>` into the template: the `&&` splits the launch line,
+   binding setsid/nohup/env to the first command and the redirections + trailing `&`
+   to the second — detachment silently breaks. This is the detached-phase instance
+   of the batch-judge deadline-bounded self-harvest. The identity verify is
+   unchanged (the distinctive workload substring still appears in
+   `ps -p $PHASE_PID -o args=` for either wrapped form). Only the steps that MUST
+   stay session-side — the explicit-path git commit under the concurrent-committer
+   discipline, folding numbers into the body — are left to the successor; the DATA
+   is durable before any session touches it.
+
+The contract costs one token + a path choice at launch — never a new gate.
 
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
@@ -6197,8 +6244,15 @@ FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
 signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
-args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
-output present → stage done; proceed. Dead with no completion output →
+args MISMATCH (recycled pid: treat as dead) — with completion output present
+at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
+breadcrumbs lack the token — fall back to log-tail + known output dirs) →
+stage done; RUN THE HARVEST — collect the declared outputs, commit/upload
+them per the Upload Policy, fold them forward — then proceed. An EMPTY
+`harvest=` path beside a log tail showing clean completion is a
+declared-path mismatch (typo / divergence), not a failed run — cross-check
+the log's real output locations before treating the phase as failed.
+Dead with no completion output →
 genuinely failed: run the kill-before-relaunch probe
 (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
 `stage_dispatch_should_skip` knows nothing about pids, so the polling
@@ -6718,8 +6772,25 @@ has free headroom ≥ ~1.5× the projected bytes (headroom for partial shards,
 retries, and cross-filesystem cache→`local_dir` copies; the routing mandate
 binds even when the headroom probe passes — #823 projected ~6 GB, realized
 14 GB). While the #681 worktree bind-mount is pending, the worktree's own
-`data/` dir resolves to `/` — exactly what the `df -P` probe catches. Projected
-wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+`data/` dir resolves to `/` — exactly what the `df -P` probe catches.
+Projected wall-time > ~15 min for any fit/battery stage additionally makes
+element (1)'s per-call basis MEASUREMENT-REQUIRED: run a 1-cell/1-unit pilot
+THROUGH the production entrypoint at production shape (batch width included)
+FIRST — an asserted or guessed per-call cost is never a sizing basis
+(`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases) — state the
+measured per-cell wall in the dispatch note, and size EVERY self-set
+timeout/fence (`timeout(1)` bounds, watchdog kills, run-duration caps) ≥2×
+the pilot-extrapolated wall (measured per-cell wall × remaining cells /
+parallelism; the ×2 is the p90-style dispersion default when only a 1-cell
+pilot exists — § p90 fence sizing + the #1092 `pilot-gated` ≥2× presumption).
+A cited prior-issue MEASURED figure for the SAME kernel + shape may stand in
+for the pilot (the ported rule's own alternative basis) — a guess never can.
+A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
+a user-facing wall-time estimate from a guessed per-call basis (2026-07-23,
+#1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its own
+healthy ~25 min/cell full run at exit=124 — relaunch+resume — and two
+same-day chat wall-time estimates were off by ~an order of magnitude).
+Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
@@ -6727,9 +6798,39 @@ statement is posted before that launch. A round with no fit/battery stage AND no
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
-(`choom=ok|failed`) per the Step 9 entry-guard
+(`choom=ok|failed`) **+ the harvest contract (the durable
+out-root + the `harvest=` token)** per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
+
+**Inline measurement-design + figure-sanity duties (REQUIRED — statement/check
+duties, not a gate; auto-continue unchanged).** Same rationale as the
+compute-character statement above: this step and the CLAUDE.md § Routing
+"User-chat inline free analysis" carve-out are PLANNERLESS — they skip the
+planner+critic stack, where the both-arms mapping review (planner.md §4 /
+critic.md Methodology lens) and the interpretation-critic's figure-load check
+(Lens 6) live. Two duties, siblings of — not additions to — the five-element
+compute-character statement above:
+(1) **Both mapping arms.** A round that computes a representation mapping — a
+geometry read, predictor, probe, or direction extraction over model
+activations — states in the dispatch-time `epm:progress` breadcrumb (or an
+immediately-adjacent `epm:progress` note) that BOTH arms run: prefix-based
+(the prefix is everything before the user query) AND context-based (the
+prefix plus the user query), per the CLAUDE.md Critical Rules "Prefix mapping
+AND context mapping" bullet — or names the explicit stated deviation. A
+one-arm round with no stated deviation is the #958 class; #779's 2026-07-14
+inline pre-image round shipped context-only and the user had to catch the
+missing prefix arm (a full extra inline round).
+(2) **Figure sanity before presentation/commit.** Before PRESENTING (chat,
+report, body) or COMMITTING any figure the round rendered, Read the rendered
+PNG and confirm non-empty axes + plotted series and sane value ranges. An
+empty/blank render is a round bug — fix it before showing anything; never
+present or commit it. The interpretation-critic's Lens 6 PNG-load check does
+not run on inline rounds (#1112: an empty figure was presented 3× while the
+extraction bug was found).
+Non-mapping rounds with no figures state nothing — each duty fires only on
+its trigger; routing, auto-continue behavior, and the marker schema are
+unchanged.
 
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
@@ -6778,7 +6879,9 @@ explicit eval-data path):
    ```
    When the follow-up runs any fit/battery, this breadcrumb (or an
    immediately-following `epm:progress` note) carries the
-   § Compute-character pre-launch statement above. Every 9a-ter dispatch
+   § Compute-character pre-launch statement above. When it computes a
+   representation mapping, the same note ALSO carries the both-arms line
+   (§ Inline measurement-design + figure-sanity duties above). Every 9a-ter dispatch
    breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
    entry guard § Pre-dispatch external-marker triage) — the free-analysis
    run is a VM-side compute phase.
@@ -6805,7 +6908,10 @@ explicit eval-data path):
    a script in `scripts/issue<N>_*.py` or a helper under
    `src/explore_persona_space/analysis/` — over the existing eval
    JSONs. Regenerate any affected figures (the analyzer's
-   `figures/issue_<N>/` outputs); commit + push to `main` so the body
+   `figures/issue_<N>/` outputs); Read each regenerated PNG and confirm
+   non-empty axes + plotted series
+   (§ Inline measurement-design + figure-sanity duties above) BEFORE
+   presenting or committing it; then commit + push to `main` so the body
    can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
    `git push origin main || uv run python scripts/sync_repo_root.py` —
    never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
@@ -6849,7 +6955,30 @@ explicit eval-data path):
    script or an `src/.../analysis/` helper. Empty payload ⇒ skip.
    Otherwise run BOTH legs as ONE background Bash (the no-flags leg is
    ~2.5-6 min; never a ≤600 s foreground bound — #991/#996), verdict
-   read from the file before the push:
+   read from the file before the push.
+
+   **Single-flight probe (#1606)** first, per the Step 9c 1b
+   single-flight statement: in a separate FOREGROUND call — never inside
+   the launch call itself, whose argv carries the unbracketed payload
+   path — probe `pgrep -af 'issue-<N>-inline-payload[.]txt'` (bracketed
+   per the gotchas.md self-match entry; the payload-file path rides the
+   argv of the helper AND its enclosing background shell, and the
+   `-inline-payload` suffix anchors the issue number, so the probe is
+   exact-ISSUE-scoped — a sibling issue's gate never matches). A
+   non-empty result = an inline gate for THIS issue is STILL RUNNING:
+   do NOT launch — the `printf` below would rewrite the live run's
+   payload file, and the helper's audit files
+   (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
+   unconditional overwrites, so a relaunch clobbers the live run's
+   audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
+   reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
+   § Kill-before-relaunch); key any improvised wait on **process
+   exit** (the probe returning empty), never on cert/audit-file
+   existence (CLAUDE.md § Monitoring re-run discipline). Site nuance:
+   the cert is per-content-hash and flock-guarded (#1620), so a live
+   run on the SAME payload produces the cert this round needs — wait
+   and read its verdict; a CHANGED payload still waits for the live
+   run's exit before relaunching.
 
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
@@ -8343,7 +8472,8 @@ orchestrators driving one round is the #778 root cause.
      re-runs (step 2) skip this.
    - **Compute-character pre-launch statement** (canonical block: Step
      9a-ter § Compute-character pre-launch statement — same five elements,
-     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
+     same > ~1h stop-and-vectorize + >~15 min measured-pilot / ≥2×
+     pilot-extrapolated fence sizing + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
      disk-routing rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
@@ -8566,9 +8696,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       It prints the exact gate command —
       `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,
       `<T>` sized deterministically from the selection
-      (`recommended_timeout_s()`: 120s base + 30s/file + a 900s surcharge when
-      `tests/test_workflow_lint.py` is selected, which alone measured up to
-      771s) — plus stderr diagnostics: a one-line work-root + branch
+      (`recommended_timeout_s()`: 120s base + 30s/file + a 2400s surcharge when
+      `tests/test_workflow_lint.py` is selected, which alone measured median
+      789s / max 1819s across 330 gate junits 2026-07-13..24, #1646) — plus
+      stderr diagnostics: a one-line work-root + branch
       provenance breadcrumb on every run, a `recommended-timeout-s=<T>`
       sizing line, any `untested touched file: <path>` WARN lines, and the
       empty-diff NOTE described above. (A code-change task with NO worktree
@@ -8580,16 +8711,54 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pre-run `rm -f` of all three gate files (a killed run must leave NO
       junit — pytest writes it only at session exit; a stale file from a
       prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
-      OPTIONAL: the selection always contains the 37-file workflow-invariant
-      set incl. `tests/test_workflow_lint.py` (median ~6.5 min alone, max
-      ~13 min; whole gate median ~11 min, max ~21 min of test time plus
-      collection overhead — 26 junit runs measured 2026-07-04/05), so the
+      OPTIONAL: the selection always contains the 61-file (2026-07-24)
+      workflow-invariant set incl. `tests/test_workflow_lint.py` (median
+      ~13 min alone, max ~30 min; whole gate median ~18 min, max ~38 min of
+      test time plus collection overhead — 330 junit runs measured
+      2026-07-13..24, #1646), so the
       gate can NEVER fit the 600s foreground Bash tool cap. The
       crash-fix-rounds ~510s foreground `timeout` bound
       (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies to
       FOREGROUND smokes ONLY — wrapping this gate in any ≤600s bound is the
       #991/#996/#906 kill class (exit 143 at 480-540s). The ONLY wedge bound
       is the selector-printed `timeout --kill-after=60s <T>s` prefix.
+
+      **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
+      9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
+      the launch call itself: the launch command's argv carries the
+      unbracketed junit path and would phantom-match its own shell — probe
+      for a live gate: `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
+      per the gotchas.md self-match entry; the junit path rides the argv of
+      the gate pytest, its `timeout` wrapper, its enclosing background
+      shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
+      sibling issue's gate never matches, and a recycled pid cannot
+      false-match because pgrep matches live argv, not pid identity). A
+      non-empty result = a gate for THIS issue is STILL RUNNING: do NOT
+      launch — the `rm -f` preamble below would clobber the live run's
+      junit/rc mid-run (#1606: a second gate launched into a live one left 4
+      live gate pids and fired two fail-CLOSED verdict blocks, ~12 min
+      churn). Default to WAITING for exit — the harness notification on your
+      own background call, or (bg handle lost, e.g. after a respawn) a
+      Monitor until-loop keyed on the probe, elapsed-capped for consistency
+      with the § Long-phase heartbeat 45-min segmentation:
+      `until ! pgrep -f 'step9c-junit-issue-<N>[.]xml' >/dev/null || [ $SECONDS -gt 2700 ]; do sleep 15; done`
+      (a still-non-empty probe at the cap re-arms a fresh segment) — then
+      read the result via the normal completion-read; the in-block
+      `timeout` wedge bounds guarantee the wait terminates. Kill FIRST only
+      on the recovery arms' TRIGGER — the run's completion signal fired yet
+      the rc/verdict file is missing, or the run is wedged past its bound
+      (NOT merely "its launching call is dead": post-respawn the launching
+      call is dead while the gate is healthy and will still write its rc) —
+      per crash-fix-rounds § Kill-before-relaunch, and re-probe empty before
+      launching. Corollary
+      (CLAUDE.md § Monitoring re-run discipline, restated here because
+      #1606's improvised Monitor violated it): any improvised gate wait keys
+      "done" on **process exit** — the probe returning empty —
+      NEVER on rc/verdict-file existence alone (the rc file is written
+      only at process exit; an existence-keyed Monitor false-fired
+      "done" twice mid-run in #1606). The same probe-then-launch rule governs 1c, 1d
+      (compare), both Step 10d gate blocks, and the Step 9a-ter § Inline
+      payload lint gate — each names its site pattern in place.
       ```bash
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
@@ -8668,6 +8837,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
       SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
+      — including 1b's **Single-flight probe (#1606)**, foreground-first —
       (a 60m run is 6x the foreground tool cap):
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
@@ -8717,7 +8887,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rc-file/junitxml contract (#1046: the gate is a background invocation;
       `PYTEST_RC` travels via `/tmp/step9c-rc-issue-<N>`, not shell state).
       Step 1d compare — including its pristine single-file oracle runs
-      (600–1950s each, #1129) — runs as its OWN background + rc-file call
+      (600–4950s each, #1129/#1646) — runs as its OWN background + rc-file call
       with the SAME fail-open self-choom preamble (see step 1d); only the
       1d ledger-refresh kick keeps the post-hoc session-sweep form (it
       launches detached BEFORE a choom can be applied). FAIL-OPEN: a
@@ -8745,15 +8915,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       background + rc-file pattern as 1b. BACKGROUND IS REQUIRED, NOT
       OPTIONAL: `--run-pristine` (always passed here) may run up to
       `--max-pristine-files` (5) single-file pristine oracle runs, each
-      bounded by `derive_pristine_timeout_s` at 600–1950s (#1129:
-      tests/test_workflow_lint.py alone derives 1950s), so a healthy
+      bounded by `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
+      tests/test_workflow_lint.py alone derives 4950s), so a healthy
       compare can NEVER be guaranteed to fit the 600s foreground Bash tool
       cap — a foreground call converts a classifiable in-process exit 2
       into a tool-layer kill with COMPARE_OUT lost (#1129/#1098). Compare
       stays a SEPARATE background call, NOT folded into the 1b gate call:
       1b's foreground verdict read and the zero-collected guard run
-      between them, and a folded call would burn up to ~77 min of
+      between them, and a folded call would burn up to ~2 h of
       pristine runs on a run those guards fail in seconds.
+
+      **Single-flight probe (#1606)** first, per the 1b statement: a
+      separate foreground `pgrep -af 'step9c-junit-issue-<N>[.]xml'` — a
+      live match (the 1b/1c pytest still running, or a prior compare still
+      consuming the junit) means WAIT/reap per 1b BEFORE this launch: the
+      compare-triplet `rm -f` below would clobber a live compare's outputs,
+      and compare must never read a junit a live pytest is still writing.
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       # earlyoom-protect the compare (#1045; FAIL-OPEN — never block the verdict on
@@ -8774,9 +8951,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
       # Wedge bound 10800s ≥ the structural ceiling of compare's own in-process
-      # bounds (5 pristine files × 1950s max derived bound + 120s scratch +
-      # ruff/parse overhead) — it only ever fires on a genuine wedge (#1129
-      # generous bias; re-derive if SLOW_TESTS / max-pristine-files change):
+      # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
+      # so ceiling = 4950s (workflow-lint derived) + 4 × 600s floor + 120s
+      # scratch + ruff/parse overhead ≈ 7500s; 10800s keeps ~1.4x margin and
+      # only ever fires on a genuine wedge (#1129 generous bias, figures #1646;
+      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes):
       timeout --kill-after=60s 10800s uv run python scripts/step9c_baseline.py compare \
         --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
         --run-pristine --json \
@@ -8842,7 +9021,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ledger refresh so the next session gets a fresh baseline — do NOT block
       this verdict on it:
       ```bash
-      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 2100s \
+      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 4650s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py refresh \
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
@@ -9974,6 +10153,17 @@ tests BEFORE anything lands:
   whole gate shell mid-lint — #1245), then read the verdict in a FRESH
   foreground call from the FILE (completion-read below).
 
+  **Single-flight probe (#1606) — before (re)launching this gate, including
+  every "re-run the gate ONCE" recovery path.** In a separate FOREGROUND
+  call: `pgrep -af 'issue-<N>-lint-gate-tre[e]'` (the same bracketed,
+  exact-issue-scoped pattern the completion-read's recovery arm uses — the
+  gate-tree path rides the whole background call's argv). A non-empty
+  result = this issue's gate is STILL RUNNING: do NOT relaunch — the
+  stale-verdict `rm -f` below would clobber the live run's verdict. WAIT or
+  reap per the Step 9c 1b single-flight statement, and key any improvised
+  wait on **process exit** (the probe returning empty), never on
+  verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
+
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
   # ONE BACKGROUND Bash call (run_in_background=true) — see the bullet above.
@@ -10189,9 +10379,9 @@ tests BEFORE anything lands:
       # matched payload paths (attribution grep list) + gated test list:
       cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
       mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
-      # Sized from the selector's map (#1573; floor = the pre-#1573 fixed 300s):
+      # Sized from the selector's map (#1573; floor 600s, #1646):
       TG_T=$(grep -oE 'recommended-timeout-s=[0-9]+' /tmp/issue-<N>-tg-map-err.txt \
-             | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=300
+             | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=600
       # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
       # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
       # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
@@ -10415,10 +10605,11 @@ tests BEFORE anything lands:
   recovery covers that, and baseline subtraction still removes deterministic
   trunk red. Each pytest leg is bounded at the selector-sized `${TG_T}` —
   grepped from the gated map's machine-greppable `recommended-timeout-s=`
-  stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to the
-  pre-#1573 fixed 300 s when the line is absent (the sizing floor is also
-  300 s, so small maps keep today's bound; the historical 2-test scan map
-  measured ~12.6 s, 2026-07-08). The baseline leg reuses the gated map's
+  stderr sizing line in `/tmp/issue-<N>-tg-map-err.txt`, falling back to a
+  fixed 600 s when the line is absent (the sizing floor is also 600 s —
+  raised from 300 s by #1646: #1634's healthy 5-file baseline leg measured
+  202.9 s and the gated leg was killed at 300 s under residual load; the
+  historical 2-test scan map measured ~12.6 s, 2026-07-08). The baseline leg reuses the gated map's
   `TG_T` (its own map call discards stderr; the gated map is the superset in
   the common case and over-sizing is the safe direction) — a
   k_baseline ≫ k_gated residual fails CLOSED (rc 124 → crash); the known
@@ -10700,11 +10891,34 @@ else
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
+    # Head-sync pre-check (#1657, READ-ONLY — the tip is untouched, so the
+    # SHA-bound verdict above stays valid): every push this invocation made
+    # (Guard-0/1 commits, the pre-gate spec-freshness commit) races
+    # GitHub's PR-object sync — #1614's attempts 1-2 were refused
+    # 'Head branch is out of date' while the PR object lagged the pushed
+    # tip ~6 min. Poll until the PR object reports the local tip AND a
+    # settled mergeability; a settled CONFLICTING exits too (the merge
+    # attempt then classifies to shape 2 below, unchanged). Check-first
+    # bounded until-loop — never a leading foreground sleep
+    # (harness-blocked; the shape-0 convention).
+    TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
+    until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
+          && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
+      HS_TRIES=$((HS_TRIES + 1))
+      if [ "$HS_TRIES" -ge 6 ]; then
+        echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — proceeding; Known failure shape 3 below is the recovery"
+        break
+      fi
+      sleep 20
+    done
+    if [ "${HS%% *}" = "$TIP" ]; then
+      echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
+    fi
     gh pr ready <PR>
     if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
     else
-      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip re-entries); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
     fi
   else
@@ -10761,8 +10975,10 @@ branch tip is unchanged, so the SHA-bound verdict re-certifies it
 (consume-on-merge-success survives this failure by design; never
 hand-write the verdict file, #1082). Bounded at TWO same-tip retries
 per Step 10d invocation; a third consecutive hit is no longer plausibly
-timing — reclassify by error text per shapes 1/2/else. Before #1288
-this shape fell through to "(3) anything else" and burned a full
+timing — reclassify by error text per shapes 1/2/3/else. Before #1288
+this shape fell through to the "anything else" catch-all (then
+numbered (3); now class (4) after #1657 added the head-sync shape) and
+burned a full
 ~16-min scratch-worktree recovery on a transient (one of the three
 error shapes in the 2026-07-12 fleet's 4/4 first-attempt failures).
 
@@ -10859,6 +11075,50 @@ fix the server-side view and the retry is warranted; the tip is then
 unchanged, so the still-valid SHA-bound verdict re-certifies it and no
 gate re-run is needed.)
 
+**Known failure shape 3 — PR head-sync lag
+(`Head branch is out of date`, #1614).** Substring-match
+`Head branch is out of date` (transcript-mined from #1614 / PR #1394,
+2026-07-23; may drift — treat a `Head branch was modified` refusal as
+the same class). GitHub's PR OBJECT (what `gh pr view` and the merge
+API read) lags a JUST-PUSHED head ref under fleet churn — ~6 min
+observed after #1614's pre-gate spec-freshness push — so the merge is
+refused against a stale view of the head. NOT branch-behind-main
+staleness: #1614's attempt 3 landed the SAME 132-behind tip
+byte-unchanged once the PR object re-synced, so `gh pr update-branch` /
+catching the branch up to `main` does not address this shape (and the
+update-branch default form adds a merge commit that breaks the
+`--rebase` form on experiment branches — shape 1). Recovery: (1)
+confirm the tip is actually pushed
+(`git -C "$WT" rev-list --count origin/issue-<N>..HEAD` = 0 — if not,
+the safe-case push is the fix, not this shape); (2) re-poll
+`gh pr view <PR> --json headRefOid` until it equals the local tip
+(bounded until-loop or bg-Bash re-check — never a leading foreground
+sleep; ~6 × 20 s, the pre-check budget again); (3) still stale → the
+#1614 close/reopen nudge ONCE per Step 10d invocation —
+`gh pr close <PR>` then `gh pr reopen <PR>` (forces GitHub to re-sync
+the PR object; the branch tip and the PR's commits are untouched) —
+verify the reopen landed (`gh pr view <PR> --json state -q .state` =
+`OPEN`; a crash between close and reopen strands a CLOSED PR — the
+next invocation re-opens it idempotently before re-entering) and
+re-poll once more; (4) re-enter the SAME gated merge conditional
+with the SAME `$MERGE_FORM` — the tip is unchanged, so the SHA-bound
+verdict re-certifies it (consume-on-merge-success survives this
+failure by design; never hand-write the verdict file, #1082). Bounded
+at ONE nudge + TWO same-tip re-entries per Step 10d invocation. STILL
+stale after the nudge re-poll → optional LAST RESORT before the
+Failure bullet, the #1613 empty-commit synchronize:
+`git -C "$WT" commit --allow-empty -m "issue-<N>: force PR synchronize
+(#1613 head-sync wedge)"` + the bare branch push — forces GitHub to
+emit a synchronize event that rebuilds the PR object (#1613's ~10-min
+wedge, which outlasted passive polling, was cured exactly this way).
+This MUTATES the tip, so the SHA-bound verdict goes stale and the
+pre-push lint gate MUST re-run before the next attempt (the gate's own
+sha arm enforces this fail-closed; #1613's recovery re-ran + re-bound
+the gate). Still refused → the Failure bullet (`epm:merge-failed`).
+The head-sync pre-check inside the safe-case block above exists to
+keep this shape off the FIRST attempt; this paragraph is the backstop
+when the lag outlasts the pre-check budget.
+
 - **Success:** post `epm:merged v1` with the list of merge SHAs plus
   `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
   convention — no schema change, #1288). Update
@@ -10867,6 +11127,9 @@ gate re-run is needed.)
 - **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): for
   the `Base branch was modified` shape (substring match), run the
   shape-0 wait-and-retry (Known failure shape 0 above, max 2) FIRST; for
+  the `Head branch is out of date` shape (substring match), run the
+  shape-3 head-sync re-poll + close/reopen nudge (Known failure shape 3
+  above, nudge ONCE); for
   the `Pull Request has merge conflicts` shape (substring match), FIRST
   run the **re-snapshot-and-retry** (Known failure shape 2 above) ONCE;
   if it is skipped (nothing changed), run the **merge-conflict recovery**
@@ -11297,6 +11560,17 @@ Decision tree:
   abort line, surface ONE line in chat, CONTINUE — never fall through to
   the checkout/stage/push block, and never post `epm:merged`.
 
+  **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
+  separate foreground
+  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'`.
+  An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
+  running — WAIT for exit, never relaunch into it (the outcome-sentinel
+  `rm -f` below would clobber it, and the root holds ITS staged payload). A
+  `workflow_lint.py`-only hit is AMBIGUOUS (root-copy lint invocations are
+  not issue-scoped in argv — possibly a SIBLING session's root lint or a
+  9a-ter inline gate): WAIT for exit, never kill — the same rule as this
+  block's completion-read recovery arm.
+
   Then, from the **repo root on `main`** (never switch the branch
   there), checkout each path from the branch, stage by EXPLICIT PATH
   (never `git add -A`), commit PATHSPEC-LIMITED, and push. The
@@ -11370,9 +11644,9 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
     mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
-    # Sized from the selector's map (#1573; floor = the pre-#1573 fixed 300s):
+    # Sized from the selector's map (#1573; floor 600s, #1646):
     TG_T=$(grep -oE 'recommended-timeout-s=[0-9]+' /tmp/issue-<N>-tg-map-err.txt \
-           | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=300
+           | tail -1 | cut -d= -f2); [ -z "${TG_T:-}" ] && TG_T=600
     # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
     # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
     # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp

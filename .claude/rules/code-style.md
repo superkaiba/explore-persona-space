@@ -75,7 +75,8 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   (session-wide; children inherit; −600 not −1000 so a runaway fit still dies first; pipefail
   makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when the sweep pipeline exited
   zero; on any failure proceed unprotected and record `choom=failed`).
-  Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` in the stage-dispatch breadcrumb
+  Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` + `harvest=<abs output path>` (the
+  § Harvest contract's declared results location; #1656) in the stage-dispatch breadcrumb
   (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
   relaunch-once-then-pod-pivot rule; #811).
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.

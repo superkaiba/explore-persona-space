@@ -227,6 +227,8 @@ relaunch, a watch-session correction — not just first launches:
    a fresh SSH call and check it equals the pid you post in the marker. A
    relaunch that leaves a predecessor's pid in the file is a
    launch-contract violation.
+   How the pid VALUE is obtained is governed by 1d below — from the
+   launch expression itself, never a post-hoc `pgrep`.
 1b. **Rotate the phase log at every relaunch BEFORE re-arming any pattern-matching poller.**
    A relaunch that appends to (or re-points at) the predecessor's log
    leaves the FIRST run's failure/completion lines in the very file a
@@ -263,15 +265,64 @@ relaunch, a watch-session correction — not just first launches:
    append-mode log that may contain a predecessor's lines is NEVER a
    valid crash-signature read — the grep-side sibling of the #779
    stale-existing-file false-DONE (CLAUDE.md § Monitoring).
+1d. **Pid ACQUISITION comes from the LAUNCH EXPRESSION itself — NEVER
+   from a post-hoc `pgrep`.** The two sanctioned sources are (i) the
+   launcher's pre-exec `echo $$` (item 1's preferred path;
+   `.claude/agents/experimenter.md` § During Execution steps 1/1b) and
+   (ii) `$!` of the detached child captured in the SAME command chain
+   as the launch — the launcher-less pod form
+   (`setsid nohup ... < /dev/null & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
+   experimenter.md § During Execution) and the VM-side analogue
+   (SKILL.md § Detached VM-side long compute phases, whose `bash -c`
+   wrapper is the load-bearing `$!`-capture shape under job control).
+   A derived read ANCHORED to a captured pid counts as
+   launch-expression-derived too: experimenter.md step 3's
+   parent-scoped child-walk (`pgrep -P "$WRAPPER_PID"` against the
+   `$!`-captured wrapper) can only see descendants of the captured
+   pid, never an arbitrary transient sibling, so it does not
+   contradict this clause. An UNANCHORED `pgrep` run after the launch
+   to "find" the new pid can capture a TRANSIENT sibling (a vanishing
+   wrapper, a resolver child, a dying predecessor): the #1112 relaunch
+   (2026-07-23) populated the pid file from exactly such a pgrep, and
+   the Monitor TWICE reported the healthy dispatcher "exited" — two
+   false alarms, each burning a diagnosis round mid-ZeRO-3-recovery.
+   `pgrep` otherwise keeps exactly two roles, neither of which
+   populates the pid FILE at launch time:
+   (a) the RECOVERY probe when the launch-expression pid was genuinely
+   lost — bracket one pattern character
+   (`pgrep -f 'issue<N>_dispatc[h]'`, the `.claude/rules/gotchas.md`
+   ownership-probe self-match convention) and identity-verify with
+   `ps -p "$PID" -o args=` BEFORE trusting or writing the result; the
+   verified pid MAY then be written via item 1's atomic tmp+rename
+   rewrite;
+   (b) an ad-hoc liveness monitor's pattern-probe FALLBACK — a harness
+   Monitor / until-loop watcher (the #1112 shape), NOT
+   `poll_pipeline.py`, whose verdict path item 2's contract still
+   governs (#1650 adds a poller-side marker-signature-derived
+   pattern-probe as a DETECTION/rescue read inside the verdict path —
+   alive-direction-only, inert without a signature-bearing marker;
+   acquisition stays banned — the poller never writes a pid file) — run
+   ALONGSIDE the pid-file probe, the pattern bracketed
+   per (a) (an unbracketed pattern can self-match the monitor's own
+   command line and mint a false-ALIVE verdict masking a dead run), so
+   a stale or transient pid alone cannot mint a false "exited"
+   verdict; the pattern probe supplements, never replaces, the pid
+   file.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
-   marker_pid_alive` (poll_once, ~line 4199), so a stale pid FILE is rescued
-   only while the newest marker's `pid=` is itself the live process. A
-   PRESENT-but-stale pid file is worse than a missing one: the
-   `pid_file_missing` fallback + WARN (~4205-4212) fires ONLY when the file
-   is absent — a stale file silently probes a dead pid every tick, with no
-   warning.
+   marker_pid_alive OR sig_proc_rescue` (poll_once; the third term is
+   #1650's marker-signature-derived, alive-direction-only rescue — it fires
+   only on `cmd='...'`/`launcher_script=`-bearing markers, when BOTH probed
+   pids are dead and live processes match the derived launch signature), so
+   a stale pid FILE is rescued while the newest marker's `pid=` is itself
+   the live process, or — on a signature-bearing marker — while
+   signature-matched processes are live. A PRESENT-but-stale pid file is
+   worse than a missing one: the `pid_file_missing` fallback + WARN fires
+   ONLY when the file is absent — a stale file silently probes a dead pid
+   every tick, with no warning — #1650 adds a cmdline identity WARN
+   (`pid_identity=mismatch` in the tick JSON) for an alive-but-wrong pid,
+   verdict unchanged.
 3. **Worked example (incident #813 v5, 2026-07-02).** The run-4 relaunch
    (00:31, `bash scripts/issue813_dispatch.sh`) skipped the pid-file
    rewrite, leaving run-2's dead pid 6267 in `/workspace/logs/issue-813.pid`;
@@ -286,10 +337,17 @@ Residual honesty: this contract now HAS a WARN-only runtime detector (#1156 —
 `pid_file_stale_vs_marker`, when the pid file's pod-clock mtime predates the
 newest `epm:run-launched` marker by more than
 `EPM_POLL_PID_MARKER_SLACK_SEC`, default 600 s), so a rewrite-skipping
-relaunch is named in the poll log instead of left to manual archaeology. The
-detector never changes a verdict: the poller's marker-pid OR-probe remains
-the only VERDICT-bearing mechanical rescue, and only while the newest
-marker's pid is itself alive.
+relaunch is named in the poll log instead of left to manual archaeology, and
+a cmdline identity detector (#1650 — `pid_identity` / `marker_pid_identity`
+in the tick JSON, WARN on `mismatch`). Neither detector changes a verdict.
+TWO mechanical rescues ARE verdict-bearing: the marker-pid OR-probe (while
+the newest marker's pid is itself alive), and the #1650 signature rescue
+(`sig_proc_rescue`, alive-direction only — fires when BOTH probed pids are
+dead but live processes match the launch signature derived from the marker's
+`cmd='...'`/`launcher_script=` fields; kill switch `EPM_POLL_PID_IDENTITY=0`).
+On a free-prose marker (no signature fields) the pre-#1650 residual stands:
+the marker-pid probe is the only rescue, and a wrong-and-dead pid in BOTH
+the file and the marker still reads `dead`.
 
 ### Result-push verification contract (#1205)
 

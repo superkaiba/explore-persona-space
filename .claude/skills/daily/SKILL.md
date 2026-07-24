@@ -10,7 +10,7 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Problem sweep + three-route fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem with a derivable fix is routed by the THREE-ROUTE classifier (see "Triage each problem" below): **route 1 (trivial mechanical, no behavior change)** is AUTO-APPLIED in this run — make the edit, VERIFY it (see "Verification gate for code fixes" below), and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all workflow-file fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter), and record it in `## Applied workflow improvements` with its diff and commit sha; **route 2 (any behavior/logic change)** is FILED for independent review via `scripts/file_infra_task.py` → `/issue --auto` (recorded as a "filed for review #<N>" entry in `## Applied workflow improvements`, no self-applied diff); **route 3 (a genuine judgment call — see "Judgment-call carve-out" below)** is FILED as a TRACKED `proposed` `needs-human` task the PM surfaces, AND logged in `## Other problems & notes` with the filed `#<N>`. Then push a concise summary of what was applied + filed (with the commit shas / filed ids) to Thomas's my-goat Telegram chat (see "Surfacing flow (applied / filed / held)"). Nothing is silently dropped — every problem self-applies (route 1), routes to review (route 2), or becomes a tracked needs-human task + a note (route 3).
+2. **Problem sweep + three-route fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem with a derivable fix is routed by the THREE-ROUTE classifier (see "Triage each problem" below): **route 1 (trivial mechanical, no behavior change)** is AUTO-APPLIED in this run — make the edit, VERIFY it (see "Verification gate for code fixes" below), and `git commit` it on its own with trailing pathspecs naming exactly the files the fix touched (one commit per fix, so each is independently revertable; § Commit own-files-only contract — never a bare `git commit` on the shared root), then run the repo-wide workflow lint ONCE after all workflow-file fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter), and record it in `## Applied workflow improvements` with its diff and commit sha; **route 2 (any behavior/logic change)** is FILED for independent review via `scripts/file_infra_task.py` → `/issue --auto` (recorded as a "filed for review #<N>" entry in `## Applied workflow improvements`, no self-applied diff); **route 3 (a genuine judgment call — see "Judgment-call carve-out" below)** is FILED as a TRACKED `proposed` `needs-human` task the PM surfaces, AND logged in `## Other problems & notes` with the filed `#<N>`. Then push a concise summary of what was applied + filed (with the commit shas / filed ids) to Thomas's my-goat Telegram chat (see "Surfacing flow (applied / filed / held)"). Nothing is silently dropped — every problem self-applies (route 1), routes to review (route 2), or becomes a tracked needs-human task + a note (route 3).
 
    **Three routes, not a binary apply-vs-hold (changed 2026-06-28, #706).** Earlier this skill ran a binary classifier: bucket 1 = self-apply EVERYTHING fixable (the 2026-06-08 "make the workflow improvements automatically" + the 2026-06-12 "fix experiment bugs / infra flakiness / high-blast-radius stuff automatically" directives), bucket 2 = hold a genuine judgment call as a dead-end note. That made self-apply the ONLY un-reviewed path AND it "graded its own homework" — a behavior change shipped on this skill's own verify gate with no independent review, and a held item landed where Thomas does not look (a tracked-but-unread `logs/daily/` file + one Telegram digest line), never as an actionable task. The classifier is now THREE routes (full spec under "Triage each problem"):
    - **Route 1 — trivial mechanical** (doc edits, string replaces, lint annotations — NO behavior change): self-apply + verify + commit, exactly as the old bucket 1 did, but NARROWED to changes with no behavior/logic effect.
@@ -412,8 +412,9 @@ the previous daily file's, replace the verbatim copies with one line —
 B's no-spam skip discipline).
 
 **Dedup mechanism (Step F).** A filesystem event-stream
-`.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
-trace following the existing `.claude/cache/disk-guard-events.jsonl` /
+`.claude/cache/nightly-consolidation-events.jsonl` (a durable local trace — the
+`.claude/cache/` dir is gitignored but this file is force-tracked and committed
+alongside the daily brief via the § Commit pathspec — following the existing `.claude/cache/disk-guard-events.jsonl` /
 `.claude/cache/workflow-fix-events.jsonl` pattern; created at runtime on the first
 nightly proposal — do NOT create it ahead of time) is the canonical dedup state,
 shared by `/daily` AND a manual `/weekly` run (so a manual weekly run after a
@@ -448,7 +449,7 @@ Dedup rules, in priority order:
 a mined premise the source trail has since retracted or superseded is skipped
 with a note, never filed (incident #1101/#1074, routed as #1131).
 
-1. **Route 1 — Trivial mechanical** (doc edits, string replaces, comment/lint annotations — changes with NO behavior or logic effect) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate". **The litmus is "does this change what the code/workflow DOES?"** — pure prose/string/format/comment edits, typo fixes, and stale-reference renames qualify; ANYTHING that alters behavior or logic does NOT (it goes to route 2). When unsure, route to 2 — route 1 is the conservative no-behavior-change floor, not a catch-all.
+1. **Route 1 — Trivial mechanical** (doc edits, string replaces, comment/lint annotations — changes with NO behavior or logic effect) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), commit it on its own with trailing pathspecs naming exactly the file(s) the fix touched — `git add <file(s)>`, then `git diff --cached --name-only` (staged-set audit: foreign entries → log in `## Other problems & notes`, never commit, never unstage), then `git commit -m "<msg>" -- <file(s)>` — never a bare `git commit -m` after `git add` (§ Commit own-files-only contract), then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate". **The litmus is "does this change what the code/workflow DOES?"** — pure prose/string/format/comment edits, typo fixes, and stale-reference renames qualify; ANYTHING that alters behavior or logic does NOT (it goes to route 2). When unsure, route to 2 — route 1 is the conservative no-behavior-change floor, not a catch-all.
 
 2. **Route 2 — any behavior/logic change** (incl. high-blast-radius REVERSIBLE — the bulk of the old self-apply bucket: experiment-code bugs in `scripts/*.py` / `src/**`, infra flakiness fixes, retry/timeout logic, hook repairs in `.claude/settings.json`, a new agent/skill file, any workflow-rule change that alters what an agent does) → do NOT self-apply. FILE a `kind: infra` task that auto-dispatches to `/issue --auto`, so the fix lands through the full INDEPENDENT pipeline (planner → adversarial critic ensemble → implementer → Claude+Codex code-review → test-verdict → Step 10d auto-merge) rather than this skill's own verify gate. This is what kills "grades its own homework" + "self-apply is the only un-reviewed path". File with:
    ```bash
@@ -590,7 +591,7 @@ uv run python scripts/workflow_lint.py --check-references
 
 ### Surfacing flow (applied / filed / held)
 
-During the run: route-1 fixes apply themselves (edit → `git commit`, one commit per fix → repo-wide lint gate ONCE, see "Lint gate"); route-2 behavior/logic changes are FILED via `file_infra_task.py` (no self-applied diff); route-3 judgment calls are FILED as tracked `needs-human` tasks. After all fixes are routed and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest. Match the §2(f) PM-digest model (`/daily last night: applied N, filed M (→/issue), held J (needs you)`) so the Telegram line and the PM line are mutually consistent — applied (route-1), filed (route-2), and held (route-3) counts are reported SEPARATELY, never lumped as a single "Notes: M other" catch-all:
+During the run: route-1 fixes apply themselves (edit → pathspec-limited `git commit` (own files only, § Commit), one commit per fix → repo-wide lint gate ONCE, see "Lint gate"); route-2 behavior/logic changes are FILED via `file_infra_task.py` (no self-applied diff); route-3 judgment calls are FILED as tracked `needs-human` tasks. After all fixes are routed and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest. Match the §2(f) PM-digest model (`/daily last night: applied N, filed M (→/issue), held J (needs you)`) so the Telegram line and the PM line are mutually consistent — applied (route-1), filed (route-2), and held (route-3) counts are reported SEPARATELY, never lumped as a single "Notes: M other" catch-all:
 
 ```bash
 NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied via a scratch worktree (root revert is hook-blocked, #1234): git worktree add --detach /tmp/daily-revert origin/main && git -C /tmp/daily-revert revert --no-edit <sha> && git -C /tmp/daily-revert push origin HEAD:main && git worktree remove /tmp/daily-revert. Full: logs/daily/<date>.md"
@@ -610,7 +611,28 @@ incident class):
 
 ```bash
 git add -f logs/daily/YYYY-MM-DD.md   # logs/ is gitignored; force-add or the commit silently stages nothing
-git commit -m "logs: daily stub for YYYY-MM-DD"
+# Staged-set audit (own-files-only contract, #1630): the shared root routinely
+# holds ANOTHER session's staged files (incident 7dbde267f1, 2026-07-21: the
+# nightly's bare enrichment commit swept a sibling's script + 3 figures onto
+# main). List the staged set; anything beyond the two own-paths below is a
+# concurrent session's work-in-progress — do NOT commit it and do NOT unstage
+# it (`git restore --staged` on a sibling's entries clobbers ITS in-progress
+# index — the same cross-session interference class). Log foreign paths in
+# `## Other problems & notes` ("staged-set audit: foreign staged files:
+# <paths>") and proceed — the pathspec-limited commit below cannot sweep them.
+git diff --cached --name-only
+# Pathspec-limited commit (git-commit --only semantics): commits ONLY the
+# named paths' WORKTREE content — even when unstaged (by design: the named
+# paths are this run's own files) — ignoring every other staged entry; NEVER
+# a bare `git commit -m` anywhere in this skill. The event-stream jsonl is
+# force-tracked (.claude/cache/ is gitignored; this file is tracked) and
+# rides along when this run appended rows; naming it while unchanged is
+# harmless (the commit simply omits it). If NEITHER named path has changes
+# vs HEAD, the commit exits NONZERO — key the disposition on the exit code,
+# not the message text (it varies: "no changes added to commit" vs "nothing
+# to commit") — the content already landed (e.g. a rerun); log it and carry
+# on, same ethos as the push-not-confirmed paragraph below.
+git commit -m "logs: daily stub for YYYY-MM-DD" -- logs/daily/YYYY-MM-DD.md .claude/cache/nightly-consolidation-events.jsonl
 # Push IMMEDIATELY (project-standard recipe). The daily-stub commit sits on
 # the always-concurrent shared main; if it stays committed-but-unpushed it
 # is exposed to the documented orphaning hazard — a concurrent
@@ -630,10 +652,24 @@ skeleton at run start (`logs: daily stub for YYYY-MM-DD`) and once after
 enrichment (`logs: daily brief for YYYY-MM-DD`). Always a NEW commit for the
 enrichment — never amend the stub commit (it may already be pushed).
 
-**`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing
-and `git commit` reports "no changes added to commit", so the daily never
-lands in git or the dashboard. `-f` is required (the prior dailies are
-tracked only because they were force-added).
+**Own-files-only contract (#1630).** A nightly run may only ever commit its
+OWN files: `logs/daily/<date>.md` + `.claude/cache/nightly-consolidation-events.jsonl`
+here, and the exact file(s) a route-1 fix touched for its per-fix commits.
+Every commit this skill prescribes is pathspec-limited
+(`git commit -m "..." -- <own paths>`), never a bare `git commit` after
+`git add` — the shared repo root is an always-concurrent index, and commit
+`7dbde267f1` (2026-07-21) showed a bare enrichment commit sweeping a sibling
+session's 4 staged files onto main. The `git diff --cached --name-only`
+audit line before each commit is the audit trail; foreign staged entries are
+logged, never committed, never unstaged (unstaging a concurrent session's
+index entries is itself cross-session interference). Run the audit + commit
+lines BARE, never piped (`guard_piped_git_push.sh` blocks piped `git commit`).
+
+**`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing,
+and the § Commit pathspec-limited commit then fails on a brand-new day's
+file with "did not match any file(s) known to git" (nonzero exit), so the
+daily never lands in git or the dashboard. `-f` is required (the prior
+dailies are tracked only because they were force-added).
 
 **This immediate push is specific to the daily-stub log file** — a benign
 `visible:false` artifact with no external side-effects (it only lands the

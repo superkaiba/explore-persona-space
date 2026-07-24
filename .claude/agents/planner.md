@@ -433,6 +433,12 @@ deliberate GCP fence sized off the p90 per-cell wall, never the mean
 + per-out-root disk rows that NAME the target filesystem/mount the path
 resolves to on the routed lane (never a bare GB number; preamble assert per
 `.claude/rules/plan-compute-sizing.md` § Out-root mount binding).
+A multi-arm dispatch coupling arms of DIFFERENT minimum GPU widths
+behind one provision additionally states each arm's MINIMUM runnable width
+and pre-registers the stall-time down-width split (≥ ~1 h sustained
+capacity stall ⇒ split out + probe the narrowest-runnable arms; the #1121
+walk's down-going sibling — `.claude/rules/plan-compute-sizing.md`
+§ Multi-arm min-width + stall-time down-width split; incident #1112).
 Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.

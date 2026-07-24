@@ -237,6 +237,11 @@ driver's own smoke-root rebinding). The regime refusal is CORRECT
 fail-loud behavior; the fix is per-leg roots at dispatch time, never
 weakening the check (driver-side mechanism: `.claude/rules/gotchas.md`
 "Smoke-root rebinding" entry).
+The per-leg roots this convention produces carry a sibling trap: the CHAIN
+leaves the earlier leg's out-root as unowned residue on a quota'd pod,
+starving the later leg's disk-headroom assert — the LATER leg reaps the
+derived sibling root at its first phase entry (`.claude/rules/gotchas.md`
+"Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
 

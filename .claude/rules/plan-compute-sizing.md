@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount — resume-aware per #1642, from incident #1586 fu crash 5: phase-entry gates skip or scale need_gb by PENDING cells, never a blanket fresh-run floor on a resume), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation), and the multi-arm min-width + stall-time down-width split (#1633, from incident #1112: 1×-runnable arms held ~14 h behind a coupled 4×/8× provision during an A100 drought; a mixed-width multi-arm plan names each arm's MINIMUM runnable width and pre-registers splitting out the narrowest-runnable arms on a ≥ ~1 h sustained capacity stall) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,7 +7,7 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These thirteen recipes are the planner-specific §9 sizing blocks — five relocated
+These fourteen recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
 store-heavy / IO-heavy phase recipe (#910, from incident #813), the
 CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
@@ -17,7 +17,8 @@ here), the dose-ladder checkpoint-retention default (#1133, from incident
 #1112), the out-root mount-binding contract (#1414, from incident
 #1333), the fan-out end-of-run accumulation rule (#1541, from incident
 #1481), and the phase-ordering checkpoint high-water requirement (#1612,
-from incident #1586 r5). The planner
+from incident #1586 r5), and the multi-arm min-width + stall-time
+down-width split (#1633, from incident #1112). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -263,7 +264,19 @@ out-root under `/workspace` + per-phase headroom asserts, commit
    `_probe_writable_bytes` canary; returns free GB) — import it, never mint
    a fresh per-issue copy; the per-phase floors are the §9 disk rows (the
    `PHASE_HEADROOM_GB` shape — originating precedent
-   `scripts/issue1333_dispatch.py:302-346`). The process-START preflight
+   `scripts/issue1333_dispatch.py:302-346`). The gate MUST be
+   resume-aware: compute the phase's PENDING set with the same predicates
+   the phase's own resume scan uses — zero pending ⇒ skip the gate with
+   one INFO line; partial ⇒ scale need to the pending subset (per-cell
+   need × n_pending, or the sum of per-cell demands; fixed
+   margins/constants untouched); a fresh run computes byte-identical need
+   (pin that equivalence in the dispatcher's tests). A blanket fresh-run floor
+   at phase entry deadlocks a resume whose own done artifacts legitimately
+   occupy the disk — the gate demands headroom for work that will not run,
+   deterministically on every respawn, and blocks the very reclaim/wipe
+   phase that would free the space (incident #1586 fu crash 5; fix
+   pattern: the wave-level pending-aware gate,
+   `scripts/issue1586_dispatch.py::_wave_headroom`). The process-START preflight
    (`orchestrate.preflight` `check_disk_space`) probes ONE launch-time
    check path; it does NOT cover an out-root on a different filesystem —
    that gap is exactly #1333.
@@ -539,3 +552,39 @@ long-run residual gap named (`/issue` SKILL.md Step 6b residual gap (d)).
 A plan that silently lets a conditional phase ride past the fence loses
 the phase mid-run (#599: the pre-registered §7.3 extension probe was
 hard-deleted at step 149/2400 by the 24h fence).
+
+
+**Multi-arm min-width + stall-time down-width split — the down-going
+sibling of the #1121 wide-first rung walk.** A plan whose §9 couples two
+or more arms with DIFFERENT minimum GPU requirements behind ONE provision
+(e.g. a 1×-runnable LoRA-ladder arm and a 4×-needing ZeRO-3 full-FT arm
+dispatched together on a 4×/8× pod) MUST name, per arm, that arm's
+MINIMUM runnable width — the smallest GPU count × class the arm can
+actually execute on (a min-width column or per-arm line in the §9
+compute-projection table) — and MUST pre-register the down-width split:
+if the coupled provision sits in a SUSTAINED capacity stall — ≥ ~1 h
+queued / stocked-out across rungs (prose guidance, not a coded gate;
+calibrated as several full ladder walks — the router's per-rung queue
+timeout is 600 s, `EPS_GCP_QUEUE_WAIT_SECONDS`, and the free-lane park is
+600 s, `router.FREE_WAIT_SECONDS`) — the owning orchestrator SPLITS OUT
+the narrowest-runnable arms as their own narrow dispatch(es) and probes
+that shape immediately, rather than holding every arm behind the widest
+arm's provision; the wide arm keeps its own ladder walk unchanged.
+Composition invariant (all three untouched): the #1121 wide-FIRST walk
+still leads for any single shardable phase (wide `a2-ultragpu` rungs
+tried first when work shards); the #1379 explicit-wide 8→4→2 degrade
+still narrows ONE dispatch's machine on a capacity miss — it CANNOT
+decompose arms of different minimum widths bundled behind one provision,
+which is exactly the #1112 failure mode; and the saturate-or-downsize
+idle-width protections are unchanged (a split-out narrow arm must still
+saturate its own pod). Incident #1112 (2026-07-22): a coupled dispatch
+held 1×-runnable arms ~14 h through a GCP A100 drought (dozens of
+create attempts, both zones) while the 1× shape had stock — the Arm-A-only 1×
+dispatch provisioned immediately and finished in ~55 min. A plan that
+couples mixed-width arms without per-arm minimum widths and the
+pre-registered split leaves the mid-run orchestrator no licensed
+decomposition — that omission is the gap this recipe closes. (Up-front
+DECOUPLING of mixed-min-width arms into separate provisions was
+considered and rejected: wide coupling wins when capacity exists — one
+provision, shared setup — so the split is a stall-time remedy, not the
+default dispatch shape.)

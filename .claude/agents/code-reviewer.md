@@ -1443,9 +1443,11 @@ so this step does not bind there), verify the report's
 - **Presence / format (mechanical).** `(c) How to verify` carries a
   `Gate-scope check` line with the contract fields: selector `n_tests` +
   resolved base, locally-run files, pin-sweep fragments →
-  hit count + verbatim deduplicated hit-file list, deferred
+  hit count + verbatim deduplicated hit-file list + its `sweep_scope:`
+  universe token (#1651), deferred
   invariant-only count (a count-only / glob-family pin-sweep field with
-  no hit-file list is the present-but-terse case below, never absence).
+  no hit-file list — or a missing `sweep_scope:` token — is the
+  present-but-terse case below, never absence).
   ABSENT entirely — and the marker `ts` is ≥ 2026-07-15 (the #1305 duty
   landed on main 2026-07-14; an older round's absence is at most a
   CONCERNS): Critical tagged `marker-shape`, and the blocker body

@@ -507,6 +507,36 @@ Behaviours:
   by design (#1547). Regenerate the snapshot with
   ``--regen-hf-routing-snapshot`` (maintenance flag) — see the constant's
   comment for the staleness-race recipe (#1568).
+* ``--check-bare-list-repo-files`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on any bare ``list_repo_files``
+  call/reference — a Load-ctx ``.list_repo_files(`` Attribute under ANY
+  receiver, or a Load-ctx Name bound by ``from huggingface_hub import
+  list_repo_files [as alias]`` (:func:`_hub_verify_bare_hits` narrowed to
+  :data:`LIST_REPO_FILES_TARGETS`). hub 0.36.2's ``HfApi.list_repo_files``
+  has NO scoping parameter — its body is an unscoped
+  ``list_repo_tree(recursive=True)`` full-tree walk — so every call is a
+  full listing, which WEDGES on the ~1M-file data repo (>90 s #833, >600 s
+  #920; two kills 2026-07-22 → #1624) and retry cannot save it (the walk
+  grinds, it does not raise) — orthogonal to ``--check-hub-verify-retry``
+  (transient-retry property) and deliberately OUT of
+  ``--check-live-hf-retry-routing``'s predicate. Fix: the scoped recipes —
+  ``hub.list_hf_files_under_path`` / ``hub.verify_repo_paths_uploaded`` /
+  ``api.list_repo_tree(path_in_repo=...)`` / ``api.file_exists``
+  (single-path probe). A genuinely-correct SMALL-repo full listing waives
+  with ``# LIST_REPO_FILES_EXEMPT: <reason>`` (reason ≥
+  :data:`LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS` chars) on the call's line
+  or the previous non-blank line. Historical files frozen at #1624
+  implement time are snapshot-exempt
+  (:data:`LIST_REPO_FILES_FROZEN_SNAPSHOT`; regenerate with
+  ``--regen-list-repo-files-snapshot``, the #1568 idiom). Named residuals
+  NOT covered: never-committed ad-hoc probes (inline ``python -c``
+  one-liners — the shape of one of the 2026-07-22 kills) are structurally
+  outside ANY file lint (this check covers the committed-code subclass);
+  unscoped ``list_repo_files_complete`` / ``list_repo_tree(recursive=True)``
+  calls without ``path_in_repo`` (kwarg-presence analysis = high-FP);
+  ``snapshot_download``; ``getattr`` evasion; ``.sh`` heredocs;
+  ``HfFileSystem.ls()``.
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -647,6 +677,25 @@ Behaviours:
   fence-scoped: prose inline-code recipes, ``#``-commented instruction
   lines inside fences, untagged fences, and the placeholder-substitution
   false-PASS direction are NAMED residuals (see the check docstring).
+* ``--check-bare-commit-pathspec`` (also bundled into the no-flags default
+  run): scan every ``bash``/``sh``/``shell``-tagged fenced block in
+  ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
+  ``.claude/rules/*.md`` + ``CLAUDE.md`` (the root-guard surface, reused)
+  and FAIL any ``git commit`` invocation with no trailing
+  `` -- <pathspec>``: a bare commit at the always-concurrent shared repo
+  root commits the WHOLE staged index, sweeping sibling sessions' staged
+  files onto the commit (incident ``7dbde267f1``, 2026-07-21: 4 foreign
+  files swept onto main; #1630 fixed /daily per-file; #1648 generalizes
+  the guard mechanically). Structural exemptions: the `` -- <pathspec>``
+  tail itself, per-invocation ``git -C <tree>`` scope (a named tree with
+  its own index), ``xargs -r``/``--no-run-if-empty``-driven commits (the
+  appended file list is a runtime pathspec — a flag-less xargs is NOT
+  exempt), ``--dry-run`` previews, and ``#`` comment lines. Waive a
+  deliberate anti-pattern example / pod-side recipe with
+  ``<!-- workflow-lint: allow-bare-commit-block: <reason> -->`` on the
+  line directly above the fence opener. Untagged fences, prose
+  inline-code recipes, heredoc bodies, and compound-line quoted-text
+  false-exemptions are NAMED residuals (see the check docstring).
 
 Exit codes:
 
@@ -666,7 +715,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -7329,23 +7378,32 @@ def check_batch_judge_client(
     return errors
 
 
-def _hub_verify_waiver_present(lines: list[str], call_lineno: int) -> bool:
+def _hub_verify_waiver_present(
+    lines: list[str],
+    call_lineno: int,
+    *,
+    waiver_re: re.Pattern[str] = HUB_VERIFY_WAIVER_RE,
+    min_reason_chars: int = HUB_VERIFY_WAIVER_MIN_REASON_CHARS,
+) -> bool:
     """Return True iff a ``# HUB_VERIFY_RETRY_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`HUB_VERIFY_WAIVER_MIN_REASON_CHARS` chars) is on the
     call's first physical line (``call_lineno``, 1-based) or the immediately
     preceding non-blank line. Same convention as
-    :func:`_batch_judge_client_waiver_present`."""
+    :func:`_batch_judge_client_waiver_present`. The defaulted keywords keep
+    the ``check_hub_verify_retry`` behavior byte-identical;
+    ``_list_repo_files_waiver_present`` (#1624) delegates here with its own
+    ``waiver_re`` / ``min_reason_chars`` pair."""
     idx = call_lineno - 1  # to 0-based
     if 0 <= idx < len(lines):
-        m = HUB_VERIFY_WAIVER_RE.search(lines[idx])
-        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+        m = waiver_re.search(lines[idx])
+        if m and len(m.group(1).strip()) >= min_reason_chars:
             return True
     back = idx - 1
     while back >= 0 and lines[back].strip() == "":
         back -= 1
     if back >= 0:
-        m = HUB_VERIFY_WAIVER_RE.search(lines[back])
-        if m and len(m.group(1).strip()) >= HUB_VERIFY_WAIVER_MIN_REASON_CHARS:
+        m = waiver_re.search(lines[back])
+        if m and len(m.group(1).strip()) >= min_reason_chars:
             return True
     return False
 
@@ -7353,13 +7411,21 @@ def _hub_verify_waiver_present(lines: list[str], call_lineno: int) -> bool:
 HUB_VERIFY_BARE_TARGETS: tuple[str, ...] = ("list_repo_files", "list_repo_tree", "file_exists")
 
 
-def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
+def _hub_verify_bare_hits(
+    tree: ast.Module, targets: Collection[str] = HUB_VERIFY_BARE_TARGETS
+) -> list[tuple[int, str]]:
     """Return ``(lineno, pattern)`` pairs for bare Hub verify nodes in ``tree``.
+
+    ``targets`` narrows the matched symbol set (default: the full
+    :data:`HUB_VERIFY_BARE_TARGETS` tuple — the ``check_hub_verify_retry``
+    behavior, unchanged); ``check_bare_list_repo_files`` (#1624) reuses the
+    walker with ``targets=LIST_REPO_FILES_TARGETS``. Membership (``in``)
+    semantics are identical across the tuple/frozenset argument types.
 
     Two legs:
 
     * any **Load-ctx** ``ast.Attribute`` whose ``attr`` is in
-      :data:`HUB_VERIFY_BARE_TARGETS` — covers ``api.list_repo_files(...)``,
+      ``targets`` — covers ``api.list_repo_files(...)``,
       ``HfApi().list_repo_tree(...)``, ``hh.file_exists(...)`` under a module
       alias, AND the bare-reference form passed to a retry wrapper /
       ``asyncio.to_thread`` (mirrors :func:`_is_batches_create_attr`, plus
@@ -7388,11 +7454,11 @@ def _hub_verify_bare_hits(tree: ast.Module) -> list[tuple[int, str]]:
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
             for a in node.names:
-                if a.name in HUB_VERIFY_BARE_TARGETS:
+                if a.name in targets:
                     hf_bound[a.asname or a.name] = a.name
     hits: list[tuple[int, str]] = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.Attribute) and node.attr in HUB_VERIFY_BARE_TARGETS:
+        if isinstance(node, ast.Attribute) and node.attr in targets:
             if isinstance(node.ctx, (ast.Store, ast.Del)):
                 # Assignment/deletion TARGETS — the monkeypatch patch/RESTORE
                 # assignments in self-test code (`HfApi.list_repo_tree = fake`,
@@ -8276,6 +8342,294 @@ def regen_hf_routing_snapshot(*, repo_root: Path | None = None) -> int:
         sys.stderr.write(f"# + {rel}  (NEW offender — route it if this round created it)\n")
     for rel in removed:
         sys.stderr.write(f"# - {rel}  (no longer flags: deleted, routed, or waived)\n")
+    return 0
+
+
+# --- `--check-bare-list-repo-files` (#1624): data-repo full-listing wedge ---
+# hub 0.36.2's HfApi.list_repo_files has NO scoping parameter — its body IS
+# an unscoped list_repo_tree(recursive=True) full-tree walk — so EVERY call
+# is a full listing; against the ~1M-file data repo it wedges (>90 s #833,
+# >600 s #920; two listing-probe kills 2026-07-22 -> #1624). Retry does NOT
+# fix this class (the walk grinds, it does not raise) — ORTHOGONAL to
+# --check-hub-verify-retry (#1202: transient-retry property, scripts/ only)
+# and to --check-live-hf-retry-routing (#1547: excludes list_repo_files by
+# stated scope boundary). Scoped recipes: hub.list_hf_files_under_path /
+# hub.verify_repo_paths_uploaded / api.list_repo_tree(path_in_repo=...) /
+# api.file_exists (single-path probe) / list_repo_files_complete(
+# path_in_repo=...). Detection: AST via _hub_verify_bare_hits(targets=...)
+# — comments/docstrings/f-strings can never match; Store/Del monkeypatch
+# targets exempt; asname-aware imported-Name leg. Named residual:
+# never-committed ad-hoc probes (inline `python -c` one-liners — the shape
+# of one of the 2026-07-22 kills) are structurally outside ANY file lint;
+# this check covers the committed-code subclass only.
+LIST_REPO_FILES_TARGETS: frozenset[str] = frozenset({"list_repo_files"})
+LIST_REPO_FILES_WAIVER_RE = re.compile(r"#\s*LIST_REPO_FILES_EXEMPT\s*:\s*(.+?)\s*$")
+LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS = 10
+# SNAPSHOT allowlist of files with >=1 AST hit at #1624 implement time
+# (2026-07-23; regen: --regen-list-repo-files-snapshot). File-grain
+# membership exempts the WHOLE file (the #1547/#1202 accepted trade-off;
+# the scoping requirement re-attaches at REUSE time via artifact-reuse
+# check (i)); migrating a file onto the hub helpers -> DROP its entry.
+#
+# STALENESS RACE (#1568, incident #1547 -> 74bf37250b): this constant is a
+# source-frozen artifact, so it can go stale between its generation and the
+# round's Step 10d merge gate whenever main churn lands a new offender for
+# the CURRENT predicate. Steady state is safe (the check exists on main:
+# both gate legs carry it and new bare-call files block at their own
+# gates); the race re-opens when a round TIGHTENS this check (predicate /
+# scope) or introduces a sibling snapshot-based check. Recipe: regenerate
+# via `workflow_lint.py --regen-list-repo-files-snapshot` on a main-synced
+# tree as the LAST pre-gate step, and again on any gate re-run after main
+# churn; review the stderr `+` lines — a file YOUR round created must be
+# SCOPED through the hub helpers (or LIST_REPO_FILES_EXEMPT-waived), never
+# grandfathered. NOTE: a whole-literal regen paste can 3-way-CONFLICT with
+# a concurrent main-side one-line append at the gate's merge of a
+# payload-touched workflow_lint.py — resolve by re-running regen on the
+# freshly synced tree, never by hand-merging the hunks. Do NOT add
+# dead-entry hygiene (a deleted member's entry is inert; enforcing removal
+# would CREATE gate friction on unrelated deletions). Keep the FAIL-message
+# text stable while an offender exists on main: the merge gate's
+# baseline-vs-gated subtraction compares normalized message LINES, so a
+# message rewrite that lands while an offender exists on main would
+# false-block as NEW (companion note at the message construction in
+# _bare_list_repo_files_file_errors).
+LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
+    {
+        "scripts/dispatch_factor_screen_365.py",
+        "scripts/dispatch_neg_geometry_504.py",
+        "scripts/i474_check_adapter_hf_presence.py",
+        "scripts/i474_phase0_preflight.py",
+        "scripts/i477_reval_confirm.py",
+        "scripts/i488_phase3_train_sweep.py",
+        "scripts/i504_reval_confirm.py",
+        "scripts/i528_phase23_train.py",
+        "scripts/i556_pull_qbank.py",
+        "scripts/i601_run_cell.py",
+        "scripts/i650_write_results_sentinel.py",
+        "scripts/issue530_logit_reval.py",
+        "scripts/issue540_jsrb_predictor.py",
+        "scripts/issue541_geometry_extract.py",
+        "scripts/issue545_sweep.py",
+        "scripts/issue545_train_cell.py",
+        "scripts/issue594_analyze_context_geometry.py",
+        "scripts/issue594_extract_context_vectors.py",
+        "scripts/issue604_adapter_svd.py",
+        "scripts/issue604_extract_context_vectors.py",
+        "scripts/issue617_upload_corpus.py",
+        "scripts/issue621_checkpoint_ladder.py",
+        "scripts/issue634_extract_behavior_vectors.py",
+        "scripts/issue634_joint_geometry.py",
+        "scripts/issue651_dispatch.py",
+        "scripts/issue651_drain_extracts.py",
+        "scripts/issue654_fetch_pinned_battery.py",
+        "scripts/issue658_extract_base_store.py",
+        "scripts/issue658_fit_predictors.py",
+        "scripts/issue661_analysis.py",
+        "scripts/issue661_extract_directions.py",
+        "scripts/issue661_generate_arm_a.py",
+        "scripts/issue664_dispatch.py",
+        "scripts/issue666_load_store.py",
+        "scripts/issue666_predictor.py",
+        "scripts/issue667_alllayer_dispatch.py",
+        "scripts/issue667_dispatch.py",
+        "scripts/issue667_pertoken_context_dispatch.py",
+        "scripts/issue667_pertoken_dispatch.py",
+        "scripts/issue685_matched_position_u.py",
+        "scripts/issue722_extract_fact_rb.py",
+        "scripts/issue722_fit_M.py",
+        "scripts/issue722_per_position_vC_skill.py",
+        "scripts/issue734_dispatch.py",
+        "scripts/issue744_dump_and_stream.py",
+        "scripts/issue763_build_probe_pools.py",
+        "scripts/issue763_disclosure_flag_audit.py",
+        "scripts/issue763_judge_e0.py",
+        "scripts/issue763_upload.py",
+        "scripts/issue779_capture_answer_summaries.py",
+        "scripts/issue779_capture_answer_summaries_pass2.py",
+        "scripts/issue779_collect.py",
+        "scripts/issue779_extract_rb.py",
+        "scripts/issue779_gen_behavior_corpus.py",
+        "scripts/issue779_pertoken_vs_mean_variance.py",
+        "scripts/issue810_extract_positions.py",
+        "scripts/issue811_upload_store.py",
+        "scripts/issue833_extract_onpolicy.py",
+        "scripts/issue841_common.py",
+        "scripts/issue841_scaling_common.py",
+        "scripts/issue920_extract_summaries.py",
+        "scripts/issue920_gen_completions_b.py",
+        "scripts/issue920_nulls_figures.py",
+        "scripts/issue923_capture.py",
+        "scripts/issue_552_prep_good_corpus.py",
+        "scripts/issue_597/dispatch_leakage_dynamics_597.py",
+        "scripts/issue_597/titration_svd_597.py",
+        "scripts/issue_642/i642_dispatch.py",
+        "scripts/issue_653/i653_postpod_bootstrap.py",
+        "scripts/measure_cot_entropy.py",
+        "scripts/run_issue506_install.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_472/train_cell.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/build_pv_centroids.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/dispatch_logit_rescoring.py",
+        "src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/panel_select.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/prefetch_inputs.py",
+    }
+)
+
+
+def _list_repo_files_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """``# LIST_REPO_FILES_EXEMPT: <reason>`` waiver (reason >=
+    :data:`LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS` chars) on the hit line
+    or the immediately preceding non-blank line — the HUB_VERIFY convention
+    (delegates to the parametrized :func:`_hub_verify_waiver_present`)."""
+    return _hub_verify_waiver_present(
+        lines,
+        call_lineno,
+        waiver_re=LIST_REPO_FILES_WAIVER_RE,
+        min_reason_chars=LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS,
+    )
+
+
+def _list_repo_files_scan_files(root: Path) -> Iterator[tuple[Path, str]]:
+    """Yield ``(path, rel)`` for every scanned candidate under
+    :data:`HF_ROUTING_SCOPE_ROOTS`. Unlike :func:`_hf_routing_scan_files`
+    there are NO pattern-string / generated-code exclusion constants: the
+    AST predicate makes string/comment/docstring mentions structurally
+    unmatchable, so the lint file itself scans clean (#1624 plan §4c). The
+    frozen snapshot is applied by the CHECK caller only — the regen flag
+    deliberately re-derives it (#1568)."""
+    for scope in HF_ROUTING_SCOPE_ROOTS:
+        base = root / scope
+        if not base.exists():
+            continue
+        for py in sorted(base.rglob("*.py")):
+            if not py.is_file() or "__pycache__" in py.parts:
+                continue
+            yield py, py.relative_to(root).as_posix()
+
+
+def _bare_list_repo_files_file_errors(py: Path, rel: str) -> list[str]:
+    """Snapshot-BLIND per-file scan body shared by
+    :func:`check_bare_list_repo_files` (verdict) and
+    :func:`regen_list_repo_files_snapshot` (offender enumeration) — the
+    #1568 idiom. Returns one error line per bare (un-waived)
+    ``list_repo_files`` Load-ctx call/reference, deduped by line."""
+    text = py.read_text(encoding="utf-8")
+    tree = _cached_parse(py, text)
+    if tree is None:
+        # A non-parsing file is its own separate problem; stay silent.
+        return []
+    lines = text.splitlines()
+    errors: list[str] = []
+    seen: set[int] = set()
+    for lineno, pattern in _hub_verify_bare_hits(tree, targets=LIST_REPO_FILES_TARGETS):
+        if lineno in seen:
+            continue
+        seen.add(lineno)
+        if _list_repo_files_waiver_present(lines, lineno):
+            continue
+        # Message-edit hazard: the Step 10d merge gate compares normalized
+        # message LINES (baseline vs gated legs), so rewording this error
+        # while ANY offender exists on main would false-register as NEW and
+        # block an unrelated merge — see the STALENESS RACE comment on
+        # LIST_REPO_FILES_FROZEN_SNAPSHOT before editing this string (#1568).
+        errors.append(
+            f"[bare-list-repo-files] {rel}:{lineno}: bare list_repo_files call "
+            f"('{pattern}') — hub 0.36.2 has NO scoping parameter here: every "
+            f"call is an unscoped full-tree walk, which WEDGES on the ~1M-file "
+            f"data repo (>90 s #833, >600 s #920; two kills 2026-07-22, #1624) "
+            f"and retry cannot save it (the walk grinds, it does not raise). "
+            f"Use the scoped recipes: hub.list_hf_files_under_path(api, repo, "
+            f"prefix) / hub.verify_repo_paths_uploaded(...) (exact-set "
+            f"post-upload verify) / api.list_repo_tree(repo, "
+            f"path_in_repo=<prefix>, recursive=True) / api.file_exists(repo, "
+            f"path) (single-path probe). A genuinely-correct full listing of a "
+            f"SMALL repo takes the waiver '# LIST_REPO_FILES_EXEMPT: <reason>' "
+            f"(reason >= {LIST_REPO_FILES_WAIVER_MIN_REASON_CHARS} chars) on "
+            f"the call's line or the previous non-blank line. Pre-existing "
+            f"file this round never touched? Snapshot staleness — regen on a "
+            f"main-synced tree: `workflow_lint.py "
+            f"--regen-list-repo-files-snapshot` (#1624)."
+        )
+    return errors
+
+
+def check_bare_list_repo_files(*, repo_root: Path | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    (:data:`HF_ROUTING_SCOPE_ROOTS`) and FAIL on any bare
+    ``list_repo_files`` call/reference outside
+    :data:`LIST_REPO_FILES_FROZEN_SNAPSHOT` and un-waived (#1624).
+
+    Detection is :func:`_hub_verify_bare_hits` narrowed to
+    :data:`LIST_REPO_FILES_TARGETS`: a Load-ctx ``.list_repo_files(``
+    Attribute under ANY receiver, or a Load-ctx Name bound by
+    ``from huggingface_hub import list_repo_files [as alias]``; Store/Del
+    monkeypatch targets are exempt; comments / docstrings / f-string
+    mentions are structurally unmatchable (no pattern-string exclusion
+    constants needed — the lint file itself scans clean). Deliberately
+    inherited semantics: a ``retry_transient(lambda: api.list_repo_files(``
+    wrap STILL flags (retry != scoping — the wedge grinds, it does not
+    raise), and a Load-ctx monkeypatch SAVE (``orig = HfApi.list_repo_files``)
+    flags while the Store/Del patch/restore targets do not (#1482/#1561).
+
+    ``tests/`` is out of scope (mocks legitimately spell the name). Named
+    residuals NOT covered (documented, not detector legs): never-committed
+    ad-hoc probes (inline ``python -c`` one-liners) are structurally outside
+    ANY file lint — this check covers the committed-code subclass; unscoped
+    ``list_repo_files_complete(...)`` / ``list_repo_tree(recursive=True)``
+    calls without ``path_in_repo`` (kwarg-presence analysis on the helpers =
+    high-FP; their own docstrings + the #833 gotcha govern);
+    ``snapshot_download``; ``getattr(api, "list_repo_files")`` evasion;
+    ``.sh`` heredocs; ``HfFileSystem.ls()``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run. Snapshot staleness (the
+    check fires on a pre-existing file the round never touched): regenerate
+    on a main-synced tree via ``--regen-list-repo-files-snapshot`` (#1568
+    recipe).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for py, rel in _list_repo_files_scan_files(root):
+        if rel in LIST_REPO_FILES_FROZEN_SNAPSHOT:
+            continue
+        errors.extend(_bare_list_repo_files_file_errors(py, rel))
+    return errors
+
+
+def regen_list_repo_files_snapshot(*, repo_root: Path | None = None) -> int:
+    """MAINTENANCE (#1624): print the ready-to-paste
+    ``LIST_REPO_FILES_FROZEN_SNAPSHOT`` literal for the CURRENT tree — every
+    scanned file carrying >=1 bare (un-waived) ``list_repo_files`` AST hit,
+    re-derived snapshot-blind — plus a +/- diff summary vs the compiled-in
+    constant on stderr (the :func:`regen_hf_routing_snapshot` idiom, #1568).
+    Run on a MAIN-SYNCED tree. REVIEW the stderr ``+`` lines before pasting:
+    a file YOUR round created must be SCOPED through the hub helpers (or
+    waived), never grandfathered. Not part of the no-flags bundle;
+    early-dispatched in ``main()``. Returns 0 (the paste-ready literal is
+    the product, not a verdict).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    offenders = sorted(
+        rel
+        for py, rel in _list_repo_files_scan_files(root)
+        if _bare_list_repo_files_file_errors(py, rel)
+    )
+    sys.stdout.write("LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset(\n    {\n")
+    for rel in offenders:
+        sys.stdout.write(f'        "{rel}",\n')
+    sys.stdout.write("    }\n)\n")
+    added = sorted(set(offenders) - LIST_REPO_FILES_FROZEN_SNAPSHOT)
+    removed = sorted(LIST_REPO_FILES_FROZEN_SNAPSHOT - set(offenders))
+    sys.stderr.write(
+        f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
+    )
+    for rel in added:
+        sys.stderr.write(f"# + {rel}  (NEW offender — scope/waive it if this round created it)\n")
+    for rel in removed:
+        sys.stderr.write(f"# - {rel}  (no longer flags: deleted, scoped, or waived)\n")
     return 0
 
 
@@ -9310,17 +9664,19 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
         yield opener_lineno, preceding, "\n".join(block_lines)
 
 
-def _root_guard_fence_exempt(prev_line: str) -> bool:
+def _root_guard_fence_exempt(prev_line: str, sentinel: str = _ROOT_GUARD_EXEMPT_SENTINEL) -> bool:
     """True when a fence's immediately-preceding non-blank line carries the
-    ``workflow-lint: allow-root-guard-block: <reason>`` sentinel with a
+    ``<sentinel>: <reason>`` waiver (default: the root-guard
+    ``workflow-lint: allow-root-guard-block`` sentinel;
+    :func:`check_bare_commit_pathspec` passes its own sentinel, #1648) with a
     NON-EMPTY reason. Reason-stripping mirrors the FI2 semantics of
     :func:`_line_waived`: strip the leading ``:``/whitespace and the trailing
     HTML-comment closer (``-->``) / backticks / whitespace before testing, so
     a bare closer (``: -->``, or the sentinel with no colon) never counts as
     a reason and wrongly waives."""
-    if _ROOT_GUARD_EXEMPT_SENTINEL not in prev_line:
+    if sentinel not in prev_line:
         return False
-    _, _, tail = prev_line.partition(_ROOT_GUARD_EXEMPT_SENTINEL)
+    _, _, tail = prev_line.partition(sentinel)
     reason = tail.lstrip(": ")
     if reason.rstrip().endswith("-->"):
         reason = reason.rstrip()[: -len("-->")]
@@ -9375,11 +9731,12 @@ def _root_guard_target_files(root: Path) -> list[Path]:
     return targets
 
 
-def check_git_recipes_root_guard(
+def check_git_recipes_root_guard(  # noqa: C901 -- flat fail-loud ladder + per-fence probe/verdict dispositions (#1176; retry-once-then-WARN #1610); extracting a branch would just relocate it
     *,
     repo_root: Path | None = None,
     hook_path: Path | None = None,
     max_workers: int = 8,
+    warn_sink: list[str] | None = None,
 ) -> list[str]:
     """FAIL if any documented executable git recipe — a ``bash``/``sh``/
     ``shell``-tagged fenced block in ``.claude/agents/*.md``,
@@ -9423,9 +9780,10 @@ def check_git_recipes_root_guard(
       command MUST rc 2) plus a negative probe (a benign command MUST rc 0)
       run before any scan; a missing hook, a self-test crash, a fail-OPEN
       hook, or a fail-CLOSED hook is ONE loud lint error — never a silent
-      pass. Only rc 0/2 are interpreted; any other rc on a fence probe is a
-      loud infrastructure error (rc=1 is NON-BLOCKING under the PreToolUse
-      contract, never a pass).
+      pass. Only rc 0/2 are interpreted; any other rc on a fence probe is
+      retried once, then WARNed (never a FAIL) — a transient kill/timeout on
+      a gate scratch tree must not flip a clean gate to block (#1610; rc=1
+      is NON-BLOCKING under the PreToolUse contract, never a pass).
 
     UNDER-COVERAGE RESIDUALS (the guarantee is scoped to the whole-bash-fence
     paste surface — all four NAMED, per the #1176 round-1 Alternatives
@@ -9476,7 +9834,10 @@ def check_git_recipes_root_guard(
     siblings, because only fenced bash is scanned and the hook strips
     comments/heredocs). ``scripts/**`` is never scanned. ``repo_root`` /
     ``hook_path`` / ``max_workers`` are unit-test override hooks; production
-    callers pass defaults. Bundled into the no-flags default run.
+    callers pass defaults. ``warn_sink`` mirrors ``check_lens_coverage``'s
+    hook: WARNs append there when provided, else go to stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list. Bundled
+    into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     hook = hook_path if hook_path is not None else _ROOT_GUARD_HOOK
@@ -9534,13 +9895,25 @@ def check_git_recipes_root_guard(
         # are concurrent-safe).
         def _probe(item: tuple[Path, int, str]) -> tuple[Path, int, int, str]:
             p, lineno, block = item
-            try:
-                rc, stderr = _run_root_guard(hook, block, fixture)
-            except (subprocess.TimeoutExpired, OSError) as exc:
-                return (p, lineno, -1, f"hook invocation failed: {exc}")
+            rc, stderr = -1, ""
+            for _attempt in (0, 1):
+                try:
+                    rc, stderr = _run_root_guard(hook, block, fixture)
+                except (subprocess.TimeoutExpired, OSError) as exc:
+                    rc, stderr = -1, f"hook invocation failed: {exc}"
+                if rc in (0, 2):
+                    break
+                # unexpected rc: transient infra class (#1610) — retry once
             return (p, lineno, rc, stderr)
 
         errors: list[str] = []
+
+        def _warn(msg: str) -> None:
+            if warn_sink is not None:
+                warn_sink.append(msg)
+            else:
+                sys.stderr.write(f"WARN: {msg}\n")
+
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
             results = list(ex.map(_probe, work))
         for p, lineno, rc, stderr in sorted(results, key=lambda r: (str(r[0]), r[1])):
@@ -9562,13 +9935,165 @@ def check_git_recipes_root_guard(
                     f"line directly above the fence opener."
                 )
             else:
-                errors.append(
-                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} — "
-                    f"a NON-BLOCKING code under the PreToolUse contract (only rc "
-                    f"0/2 are interpreted; rc=1/127/timeout signals a hook "
-                    f"invocation or infrastructure error, not a pass) ({first!r})."
+                _warn(
+                    f"{p}:{lineno}: root-guard hook returned unexpected rc={rc} "
+                    f"after one retry — a NON-BLOCKING code under the PreToolUse "
+                    f"contract (only rc 0/2 are interpreted; rc=1/127/timeout "
+                    f"signals a transient hook-invocation or infrastructure "
+                    f"error, not a verdict — #1610) ({first!r})."
                 )
         return errors
+
+
+# --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
+# pathspec commits the WHOLE staged index — on the always-concurrent shared
+# repo root that sweeps sibling sessions' staged files onto the commit
+# (incident 7dbde267f1, 2026-07-21: 4 foreign files swept onto main; #1630
+# fixed /daily per-file). Convention: CLAUDE.md § Concurrent repo-root
+# committers ("stage by explicit path only") — the commit-side analogue is
+# the pathspec-limited `git commit -m "..." -- <paths>` form. Python string
+# data only: this check scans workflow-surface .md files, never scripts/**,
+# so these constants cannot self-flag.
+_BARE_COMMIT_SENTINEL = "workflow-lint: allow-bare-commit-block"
+# One git-commit INVOCATION: `git <global-flags>* commit`; group 1 captures
+# the global flags so the -C exemption is per-invocation (a `git -C` command
+# elsewhere on the line cannot waive a separate bare commit).
+BARE_COMMIT_GIT_RE = re.compile(
+    r"(?<![\w./-])git\s+((?:-c\s+\S+\s+|--\S+\s+|-C\s+\S+\s+)*)commit\b"
+)
+# Case-sensitive: `-C <dir>` (a named tree), never `-c <cfg>`.
+BARE_COMMIT_GITC_FLAG_RE = re.compile(r"(?:^|\s)-C\s")
+# ` -- ` separator + >=1 following token (a bare trailing `--` with nothing
+# after commits the whole index anyway and does NOT count).
+BARE_COMMIT_PATHSPEC_RE = re.compile(r"\s--\s+\S")
+# xargs exempts ONLY with -r/--no-run-if-empty: a flag-less GNU xargs runs
+# the command ONCE on empty input -> `git commit -m "..." --` with nothing
+# appended -> whole-index sweep. The one live form (the issue/SKILL.md
+# additive-checkout recipe) uses -r. Token loop: whole whitespace-delimited
+# tokens free of `|`/`;`/`&`, then a short-flag cluster containing `r` or
+# the long form.
+BARE_COMMIT_XARGS_RE = re.compile(
+    r"(?<![\w./-])xargs\s(?:[^|;&\s]+\s+)*(?:-\w*r\w*\b|--no-run-if-empty\b)"
+)
+_BARE_COMMIT_UNESCAPED_DQUOTE_RE = re.compile(r'(?<!\\)"')
+
+
+def check_bare_commit_pathspec(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any ``bash``/``sh``/``shell``-tagged fenced block in the
+    workflow docs (``.claude/agents/*.md``, ``.claude/skills/**/SKILL.md``,
+    ``.claude/rules/*.md``, ``CLAUDE.md`` — the
+    :func:`_root_guard_target_files` surface, reused) prescribes a
+    ``git commit`` invocation with no trailing `` -- <pathspec>``.
+
+    A bare commit at the always-concurrent shared repo root commits the
+    WHOLE staged index, sweeping sibling sessions' staged files onto the
+    commit (incident ``7dbde267f1``, 2026-07-21: 4 foreign files swept onto
+    main; #1630 fixed /daily's recipes per-file — this check generalizes
+    that guard to the whole workflow surface mechanically, #1648).
+
+    Structural exemptions (why each form is safe):
+
+    * `` -- <pathspec>`` tail (the literal `` -- `` separator + >=1
+      following token) — the required convention itself;
+    * ``git -C <tree> commit`` (per-invocation, case-sensitive ``-C``) —
+      commits a NAMED tree (worktree / scratch / pod clone) with its OWN
+      index, not the ambient shared root;
+    * ``xargs -r ... git commit`` (``-r``/``--no-run-if-empty`` REQUIRED) —
+      xargs appends the file list as trailing args = a runtime pathspec; a
+      flag-less xargs runs once on empty input (whole-index sweep) and is
+      NOT exempt;
+    * ``#`` comment lines — instruction/anti-pattern prose, not a command;
+    * ``--dry-run`` — preview, commits nothing (the ``check_piped_git_push``
+      precedent);
+    * per-fence sentinel ``<!-- workflow-lint: allow-bare-commit-block:
+      <reason> -->`` (NON-EMPTY reason, on the immediately-preceding
+      non-blank line) — for deliberate anti-pattern examples / pod-side
+      recipes.
+
+    NAMED RESIDUALS (fail-toward-pass unless stated otherwise): (a)
+    untagged / other-tagged fences are not scanned; (b) prose inline-code
+    recipes are structurally outside a fence scanner; (c) heredoc bodies
+    inside fences are scanned as lines (a heredoc-embedded commit string
+    could false-positive — zero live; sentinel waives); (d) a quoted
+    message CONTAINING the literal text ``git commit -m ...`` could
+    false-positive after quote-joining — zero live; sentinel waives; (e)
+    ``-C "path with spaces"`` fails the flags-group match and the
+    invocation goes unflagged; (f) ``scripts/**/*.sh`` shell scripts are
+    OUT of scope (they run in varied cwds — pods, worktrees — where bare
+    commits are often legitimately scoped; the guard targets the
+    documented-recipe teaching surface); (g) the pathspec / ``--dry-run`` /
+    xargs searches operate on the whole logical line, so a `` -- <token>``
+    or ``--dry-run`` INSIDE a quoted ``-m`` message — or a LATER command's
+    `` -- `` on a compound ``&&``/``;`` line — falsely exempts an earlier
+    bare commit; (h) the ``git -C <tree>`` exemption is a static heuristic
+    — a ``-C`` target that RESOLVES to the shared root at runtime is exempt
+    though not provably safe; (i) skill SUPPORT files (``markers.md``,
+    ``SPEC.md``, exemplars) are outside :func:`_root_guard_target_files`.
+
+    Line handling: backslash continuations are joined (bash drops the
+    backslash-newline pair), then lines are joined until double quotes
+    balance (multi-line ``-m "..."`` messages); errors report the FIRST
+    line of the joined logical line. ``repo_root`` is a unit-test override;
+    production callers pass the default. Bundled into the no-flags default
+    run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for path in _root_guard_target_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for opener, prev_line, block in _iter_bash_fences(text):
+            if "git" not in block:
+                continue
+            if _root_guard_fence_exempt(prev_line, sentinel=_BARE_COMMIT_SENTINEL):
+                continue
+            lines = block.split("\n")
+            n = len(lines)
+            i = 0
+            while i < n:
+                start = i
+                if lines[i].lstrip().startswith("#"):
+                    i += 1
+                    continue
+                logical = lines[i]
+                # Join backslash continuations (bash drops the
+                # backslash-newline pair, concatenating directly).
+                while logical.endswith("\\") and i + 1 < n:
+                    i += 1
+                    logical = logical[:-1] + lines[i]
+                # Join following lines until double quotes balance
+                # (multi-line `-m "..."` messages).
+                while len(_BARE_COMMIT_UNESCAPED_DQUOTE_RE.findall(logical)) % 2 == 1 and i + 1 < n:
+                    i += 1
+                    logical = logical + "\n" + lines[i]
+                i += 1
+                for m in BARE_COMMIT_GIT_RE.finditer(logical):
+                    if BARE_COMMIT_GITC_FLAG_RE.search(m.group(1)):
+                        continue  # `git -C <tree> commit`: named tree, own index
+                    if BARE_COMMIT_XARGS_RE.search(logical[: m.start()]):
+                        # xargs WITH -r/--no-run-if-empty appends the file
+                        # list = runtime pathspec; xargs AFTER the match
+                        # never waives (search bounded to logical[:m.start()]).
+                        continue
+                    if "--dry-run" in logical:
+                        continue  # preview, commits nothing
+                    if BARE_COMMIT_PATHSPEC_RE.search(logical[m.end() :]):
+                        continue  # ` -- <pathspec>` present
+                    errors.append(
+                        f"{path}:{opener + 1 + start}: fenced `git commit` without a "
+                        f"trailing ` -- <pathspec>` — a bare commit at the "
+                        f"always-concurrent shared repo root sweeps sibling sessions' "
+                        f"staged files onto the commit (incident 7dbde267f1; #1630 "
+                        f"fixed /daily per-file; #1648). Append ` -- <explicit paths>` "
+                        f"(prefer file-level pathspecs for shared-root recipes; note "
+                        f"`-a`/`--amend` are incompatible with this remedy), scope "
+                        f"with `git -C <tree>`, or waive the fence with "
+                        f"`<!-- {_BARE_COMMIT_SENTINEL}: <reason> -->` on the "
+                        f"immediately-preceding non-blank line."
+                    )
+    return errors
 
 
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
@@ -10784,7 +11309,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # re-measured row 918 B). Cap = measured + <=40.
     # #1526 added the off-pod-phase upload-set trigger (row 918 B -> 972 B).
     # Cap = measured + <=40.
-    "gotchas": 1000,
+    # #1640 added the chained smoke-then-full leg out-root residue trigger
+    # (row 994 B -> 1040 B). Cap = measured + <=40.
+    "gotchas": 1075,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -12384,6 +12911,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-bare-list-repo-files",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL on any bare list_repo_files call/reference (Load-ctx Attribute "
+        "under any receiver, or the huggingface_hub imported Name incl. "
+        "aliases). hub 0.36.2's HfApi.list_repo_files has NO scoping "
+        "parameter — every call is an unscoped full-tree walk, which WEDGES "
+        "on the ~1M-file data repo (>90 s #833, >600 s #920; two kills "
+        "2026-07-22 -> #1624) and retry cannot save it — orthogonal to "
+        "--check-hub-verify-retry. Fix with the scoped recipes "
+        "(hub.list_hf_files_under_path / hub.verify_repo_paths_uploaded / "
+        "api.list_repo_tree(path_in_repo=...) / api.file_exists); a "
+        "genuinely-correct SMALL-repo full listing waives with "
+        "'# LIST_REPO_FILES_EXEMPT: <reason>'. Historical files are "
+        "snapshot-exempt (LIST_REPO_FILES_FROZEN_SNAPSHOT; stale snapshot? "
+        "see --regen-list-repo-files-snapshot); NEW files are scanned. "
+        "Bundled into the no-flags default run (#1624).",
+    )
+    parser.add_argument(
+        "--regen-list-repo-files-snapshot",
+        action="store_true",
+        help="MAINTENANCE (#1624, not a check; runs alone and early-returns — "
+        "combining it with check flags is unsupported, regen wins): print the "
+        "ready-to-paste LIST_REPO_FILES_FROZEN_SNAPSHOT literal for the "
+        "current tree (stdout) + a +/- diff summary vs the compiled-in "
+        "constant (stderr). Run on a main-synced tree when the "
+        "bare-list-repo-files check fires on a file your round never touched "
+        "(implementer-time snapshot went stale before the merge gate — the "
+        "#1547/#1568 race). Review added entries before pasting; never "
+        "bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-no-literal-round-marker-versions",
         action="store_true",
         help="FAIL on a literal 'v1' posting instruction for a round-versioned "
@@ -12515,6 +13074,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "run.",
     )
     parser.add_argument(
+        "--check-bare-commit-pathspec",
+        action="store_true",
+        help="Verify no bash/sh/shell-tagged fenced block in the workflow "
+        "docs (.claude/agents/*.md, .claude/skills/**/SKILL.md, "
+        ".claude/rules/*.md, CLAUDE.md) prescribes a `git commit` with no "
+        "` -- <pathspec>` tail: a bare commit at the always-concurrent "
+        "shared repo root sweeps sibling sessions' staged files (incident "
+        "7dbde267f1; #1630 fixed /daily per-file). `git -C <tree>` forms, "
+        "xargs -r/--no-run-if-empty-driven commits, `--dry-run`, and "
+        "comment lines are exempt; waive a fence with "
+        "'<!-- workflow-lint: allow-bare-commit-block: <reason> -->' on "
+        "the line directly above the fence opener. Bundled into the "
+        "no-flags default run (#1648).",
+    )
+    parser.add_argument(
         "--check-marker-scalar-integrity",
         action="store_true",
         help="Scan every workflow.yaml § markers entry's four string fields "
@@ -12558,6 +13132,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # with check flags is unsupported — regen wins). Early dispatch
         # keeps stdout EXACTLY the paste-ready literal.
         return regen_hf_routing_snapshot()
+
+    if args.regen_list_repo_files_snapshot:
+        # Maintenance flag (#1624, the #1568 idiom): print-and-exit; never
+        # runs checks, never loads workflow.yaml, never enters the no-flags
+        # bundle (combining with check flags is unsupported — regen wins).
+        return regen_list_repo_files_snapshot()
 
     path = Path(args.file) if args.file else None
     try:
@@ -12618,6 +13198,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_recipe_snippets
         or args.check_judge_model_pins
         or args.check_live_hf_retry_routing
+        or args.check_bare_list_repo_files
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_api_dispatch_routing
@@ -12628,6 +13209,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
+        or args.check_bare_commit_pathspec
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
@@ -12753,6 +13335,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_judge_model_pins())
     if args.check_live_hf_retry_routing or no_flags:
         errors.extend(check_live_hf_retry_routing())
+    if args.check_bare_list_repo_files or no_flags:
+        errors.extend(check_bare_list_repo_files())
     if args.check_no_literal_round_marker_versions or no_flags:
         errors.extend(check_no_literal_round_marker_versions())
     if args.check_api_dispatch_routing or no_flags:
@@ -12771,6 +13355,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_or_true())
     if args.check_git_recipes_root_guard or no_flags:
         errors.extend(check_git_recipes_root_guard())
+    if args.check_bare_commit_pathspec or no_flags:
+        errors.extend(check_bare_commit_pathspec())
     if args.check_asw_docstring_pass_count or no_flags:
         errors.extend(check_asw_docstring_pass_count())
     if args.check_skill_bang_backtick or no_flags:

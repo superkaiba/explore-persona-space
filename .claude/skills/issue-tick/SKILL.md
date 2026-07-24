@@ -9,7 +9,11 @@ description: >
   computes staleness, screens detached-phase liveness before any
   STALE-REDRIVE — a live identity-verified breadcrumb `pid=`, a fresh
   `log=` mtime, or a fresh `[long-phase-heartbeat]` note reads HEALTHY,
-  #1051 — and maintains the tick snapshot + runaway counter) and
+  #1051 — and screens recent HUMAN activity in this session's transcript
+  (a human (non-cron) user message within ~45 min converts a would-be
+  STALE-REDRIVE to HEALTHY, reason `human-active …`; #1629 — an
+  interactive session is never re-driven over the human's thread) — and
+  maintains the tick snapshot + runaway counter) and
   branches on its one-word verdict: HEALTHY → end the turn immediately;
   TERMINAL → CRON-TEARDOWN, end; GATE-TRANSITION → PushNotification +
   CRON-TEARDOWN, end; STALE-REDRIVE → re-drive the full `/issue` skill
@@ -85,6 +89,28 @@ A broken triage must fail toward coverage (full re-drive), never toward
 silence — a no-op-on-crash tick would leave the alive-stalled-at-PARK
 class permanently unrecovered.
 
+**Human-activity screen (#1629).** `tick_triage.py` converts a would-be
+STALE-REDRIVE to `HEALTHY` (reason prefix `human-active`) when this
+session's transcript tail shows a human (non-cron) user message within
+`EPM_TICK_HUMAN_ACTIVE_S` (default 2700 s ≈ one tick interval).
+Cron-injected `/issue-tick` / `/issue` prompts, harness
+`<task-notification>` rows (Agent-tool spawn briefs / completion
+notifications), skill-load meta rows, and tool results never count as
+human. Fail toward ticking: any
+transcript-resolution or classification failure suppresses nothing.
+Teardown verdicts (TERMINAL / GATE-TRANSITION) are deliberately NOT
+suppressed — the teardown is what stops future interruptions. For the
+alive-stalled-at-PARK class the re-drive resumes within ~window + one
+tick interval (≈90 min) of the human's last message — the human in the
+thread is the interim supervisor (the watcher deliberately does not
+respawn PARK sessions). Kill switch: `EPM_TICK_HUMAN_ACTIVE_PROBE=0`;
+debug telemetry: `EPM_TICK_HUMAN_PROBE_DEBUG=1` (stderr `[human-probe]`
+line, paths/counts only). Deliberate non-goal: the tick never tears down
+its cron on human activity alone (coverage loss would strand a stalled
+task; use `task.py set-status <N> on_hold` / user-pause for a deliberate
+park), and the screen does NOT prevent the cron prompt's arrival
+(harness-side) — it bounds the tick turn to one Bash call.
+
 ## Digest-only task-state reads (every tick turn, every task)
 
 Any task-state read a tick turn makes BEYOND the one `tick_triage.py`
@@ -157,7 +183,9 @@ cosmetic and accepted.
 (>~25 min) at a non-gate, non-terminal status AND its detached-phase
 liveness screen found no evidence (no live identity-verified breadcrumb
 `pid=`, no fresh breadcrumb `log=` mtime, no fresh
-`[long-phase-heartbeat]` note — #1051). Two sub-cases, split by
+`[long-phase-heartbeat]` note — #1051) AND its human-activity screen
+found no recent human (non-cron) user message in this session's
+transcript (#1629). Two sub-cases, split by
 the status named in the verdict reason:
 
 **ACTIVE statuses** (`approved` / `running` / `verifying` /
@@ -368,6 +396,9 @@ means the job being gone is the goal.
   bodies, interpretation bodies, or raw completions into context — every
   task-state read beyond the triage call is a jq-filtered digest
   (§ Digest-only task-state reads; refusal-thinned re-drive rule).
+- It does NOT re-drive over a live human thread — `tick_triage.py`'s
+  human-activity screen (#1629) converts that STALE-REDRIVE to HEALTHY;
+  teardown verdicts still fire (a teardown STOPS future interruptions).
 
 ## Why this skill exists (background)
 
