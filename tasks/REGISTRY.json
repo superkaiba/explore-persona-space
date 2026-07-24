@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1658,
+  "highest_id": 1659,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5130,6 +5130,13 @@
       "path": "tasks/proposed/1658",
       "status": "proposed",
       "title": "daily-fix: interim-writeup conventions (plots, gloss)"
+    },
+    "1659": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1659",
+      "status": "proposed",
+      "title": "daily-fix: inline rounds size fences from measured pilot"
     },
     "168": {
       "has_clean_result": true,
