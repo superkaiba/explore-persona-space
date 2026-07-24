@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1641,
+  "highest_id": 1642,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5004,6 +5004,13 @@
       "path": "tasks/running/1641",
       "status": "running",
       "title": "workflow-fix: gotchas fanout-staging bullet \u2014 add the per-unit shared-cache EVICT race mode"
+    },
+    "1642": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1642",
+      "status": "proposed",
+      "title": "workflow-fix: plan-compute-sizing \u2014 phase-entry headroom gates must be resume-aware"
     },
     "165": {
       "has_clean_result": false,
