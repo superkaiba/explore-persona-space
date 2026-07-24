@@ -20,8 +20,12 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from issue1586_geometry import (  # noqa: E402

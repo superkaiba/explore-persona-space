@@ -17,6 +17,8 @@ tests/test_diff_base_origin_main_pin.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
 tests/test_guard_trigger_dense_read.py
+tests/test_issue_skill_compute_pilot_fence_pin.py
+tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_exit_breadcrumb.py
 tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py

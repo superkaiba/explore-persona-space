@@ -16,10 +16,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -31,6 +35,8 @@ FIGDIR = Path("figures/issue_1586")
 BEH_LAYER = {"syc": 14, "imp": 14, "cas": 14, "mk": 25}
 BEH_NAME = {"syc": "sycophancy", "imp": "impolite", "cas": "casual style", "mk": "marker"}
 SOURCE_CTX = "persona_software_engineer"
+
+
 def ctx_short(c: str) -> str:
     """Plain-English read-context label (slugs stay out of rendered figures)."""
     if c.startswith("icl_prefix"):
@@ -171,7 +177,9 @@ def fig_hero_dnorm(doses: dict) -> None:
 def fig_hero_leakage(doses: dict) -> None:
     lat = J(Path("eval_results/issue_1586/panel/leakage_lattice.json"))
     set_paper_style("blog")
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 6.2), layout="none", gridspec_kw={"width_ratios": [3, 1.4]})
+    fig, axes = plt.subplots(
+        1, 2, figsize=(12.5, 6.2), layout="none", gridspec_kw={"width_ratios": [3, 1.4]}
+    )
     ax = axes[0]
     cols = paper_palette(4)
     y = 0
@@ -533,9 +541,7 @@ def fig_panel_rates(doses: dict) -> None:
             label="full FT",
         )
         ax.set_xticks(xs)
-        ax.set_xticklabels(
-            [ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
-        )
+        ax.set_xticklabels([ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right")
         lab = doses[f"{b}-{reg}-{s}"]
         tag = "" if lab["matched"] else "  [dose-mismatched]"
         ax.set_title(f"{BEH_NAME[b]} {reg} {s}{tag}", fontsize=9)
@@ -624,9 +630,7 @@ def fig_mk_threespace() -> None:
                 label=a.replace("mk-pers-", "") if mi == 0 else None,
             )
         ax.set_xticks(np.arange(len(ctxs)))
-        ax.set_xticklabels(
-            [ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right"
-        )
+        ax.set_xticklabels([ctx_short(c)[:14] for c in ctxs], rotation=45, fontsize=6.5, ha="right")
         ax.set_title(mlabel, fontsize=10)
     axes[0].legend(fontsize=6.5)
     axes[0].set_ylabel("trained − base at the marker slot")
