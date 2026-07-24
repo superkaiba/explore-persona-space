@@ -1318,7 +1318,7 @@ def test_selected_ft_ckpt_restage_fail_loud_paths(tmp_path, monkeypatch):
         d._selected_ft_ckpt(cfg, lora)
 
 
-# ── crash-fix r6 (fu, epm:failure v12): parent pre-stage + ONE batch evict ───
+# ── crash-fix r6/r9 (fu, v12/v14): parent pre-stage + per-restage evict ──────
 
 
 def _reaped_cell(out_root, cell, sel_step=12, extra_sel=None):
@@ -1354,10 +1354,14 @@ def _fake_overflow_stage(events):
     return fake_stage
 
 
-def test_prestage_restages_all_serially_then_one_batch_evict(tmp_path, monkeypatch):
-    """Pin (ii): the parent restages EVERY missing cell serially through the
-    REAL _selected_ft_ckpt resolver, then evicts the overflow hub-cache entry
-    EXACTLY ONCE per batch — and only when >=1 restage happened."""
+def test_prestage_evicts_after_each_restage_plus_terminal_sweep(tmp_path, monkeypatch):
+    """r9 pin (i) (fu, epm:failure v14): the parent restages EVERY missing
+    cell serially through the REAL _selected_ft_ckpt resolver and evicts the
+    overflow hub-cache entry after EACH successful restage (bounding the
+    transient to <= one checkpoint's hub copy — batch-only eviction
+    accumulated 4 x ~15 GB hub copies -> ENOSPC), then runs the terminal
+    idempotent r6 batch sweep. Evictions fire only when >=1 restage
+    happened."""
     cfg = _cfg(tmp_path)
     c1, c2, c3 = (fc.cell for fc in G.FU_MARKER_FT_CELLS[:3])
     _reaped_cell(cfg.out_root, c1)
@@ -1368,13 +1372,43 @@ def test_prestage_restages_all_serially_then_one_batch_evict(tmp_path, monkeypat
     monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
     monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: events.append("evict") or 0)
     monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
-    # duplicate + present-cell mix: ordered dedupe, present cell skipped
+    # duplicate + present-cell mix: ordered dedupe, present cell skipped;
+    # strict per-iteration order: restage1, evict, restage2, evict, sweep
     assert d._prestage_selected_ft_ckpts(cfg, [c3, c1, c2, c1]) == 2
-    assert events == [("stage", c1), ("stage", c2), "evict"]
-    # everything local now -> zero restages AND zero evicts (batch-gated)
+    assert events == [("stage", c1), "evict", ("stage", c2), "evict", "evict"]
+    # everything local now -> zero restages AND zero evicts (restage-gated)
     events.clear()
     assert d._prestage_selected_ft_ckpts(cfg, [c3, c1, c2]) == 0
     assert events == []
+
+
+def test_prestage_failed_restage_does_not_evict(tmp_path, monkeypatch):
+    """r9 pin (iii): a FAILED restage propagates fail-loud WITHOUT its
+    per-iteration evict (the evict runs only after _selected_ft_ckpt
+    returns), and the terminal sweep never runs past the raise — the failure
+    is never masked. The successful cell BEFORE the failure keeps exactly
+    its own evict."""
+    cfg = _cfg(tmp_path)
+    c1, c2 = (fc.cell for fc in G.FU_MARKER_FT_CELLS[:2])
+    _reaped_cell(cfg.out_root, c1)
+    _reaped_cell(cfg.out_root, c2)
+    events: list = []
+    stage_ok = _fake_overflow_stage(events)
+
+    def fail_on_c2(prefix, dest, *, revision, recursive=True):
+        if prefix.split("/")[-2] == c2:
+            events.append(("stage-fail", c2))
+            raise RuntimeError("simulated mid-download crash")
+        return stage_ok(prefix, dest, revision=revision, recursive=recursive)
+
+    monkeypatch.setattr(d, "_ensure_dir_tokenizer", lambda p: True)
+    monkeypatch.setattr(d, "_resolve_revision", lambda repo, t: "rev0")
+    monkeypatch.setattr(d, "_evict_overflow_hub_cache", lambda: events.append("evict") or 0)
+    monkeypatch.setattr(d, "_stage_overflow_prefix", fail_on_c2)
+    with pytest.raises(RuntimeError, match="simulated mid-download crash"):
+        d._prestage_selected_ft_ckpts(cfg, [c1, c2])
+    # ONE evict (after the successful c1); none after the failed c2, no sweep
+    assert events == [("stage", c1), "evict", ("stage-fail", c2)]
 
 
 def test_prestage_skips_p0_staged_lora_and_recordless_ids(tmp_path, monkeypatch):
@@ -1424,9 +1458,10 @@ def test_panel_parent_prestages_before_any_unit_spawn(tmp_path, monkeypatch):
     staged = [e[1] for e in events if isinstance(e, tuple) and e[0] == "stage"]
     # every reaped marker FT cell restaged by the PARENT, serially, exactly once
     assert sorted(staged) == sorted(marker_cells)
-    # strict ordering: all restages -> ONE batch evict -> ONE fanout spawn
-    assert events[: len(staged)] == [("stage", c) for c in staged]
-    assert events[len(staged) :] == ["evict", events[-1]]
+    # strict ordering (r9): each restage immediately followed by its evict,
+    # then the terminal batch sweep, then ONE fanout spawn
+    interleaved = [x for c in staged for x in (("stage", c), "evict")]
+    assert events == [*interleaved, "evict", events[-1]]
     assert events[-1][0] == "fanout" and events[-1][1] > 0
     # FT partner arms (p0-staged inputs) were never overflow-restaged
     assert not set(staged) & {ic.ft_partner_cell for ic in G.FU_IMP_LORA_CELLS}
@@ -1453,6 +1488,9 @@ def test_prestage_wired_before_dispatch_at_every_consumer_phase():
     assert "_prestage_selected_ft_ckpts" not in inspect.getsource(d.phase_parity)
     # pin (iii) wiring: the in-unit backstop no longer evicts per restage
     assert "_evict_overflow_hub_cache" not in inspect.getsource(d._selected_ft_ckpt)
+    # r9 pin (ii): the per-restage evict lives in the PARENT-SERIAL prestage
+    # loop — never re-hoisted into the unit-path resolver above
+    assert "_evict_overflow_hub_cache" in inspect.getsource(d._prestage_selected_ft_ckpts)
 
 
 # ── crash-fix r7 (fu, review r6 Critical): partial-rung completeness ─────────
@@ -1548,7 +1586,7 @@ def test_resolver_rmtrees_incomplete_rung_before_restage(tmp_path, monkeypatch, 
     config.json early-return / per-file target.exists() skip can never
     preserve truncated files — the stale poison member must be GONE after the
     round-trip. Also pins the prestage integration: classify -> rmtree ->
-    restage -> ONE batch evict."""
+    restage -> per-restage evict (r9) -> terminal sweep."""
     cfg = _cfg(tmp_path)
     cell = G.FU_MARKER_FT_CELLS[1].cell
     files = dict(_PARTIAL_SHAPES["missing_shard"])
@@ -1561,7 +1599,7 @@ def test_resolver_rmtrees_incomplete_rung_before_restage(tmp_path, monkeypatch, 
     monkeypatch.setattr(d, "_stage_overflow_prefix", _fake_overflow_stage(events))
     with caplog.at_level(logging.INFO, logger=d.logger.name):
         assert d._prestage_selected_ft_ckpts(cfg, [cell]) == 1
-    assert events == [("stage", cell), "evict"]
+    assert events == [("stage", cell), "evict", "evict"]
     removal = [r.message for r in caplog.records if "removing incomplete" in r.message]
     assert len(removal) == 1 and cell in removal[0] and "[ckpt-restage]" in removal[0]
     assert not (ckpt / "stale_truncated.bin").exists()  # rmtree, not in-place re-stage
