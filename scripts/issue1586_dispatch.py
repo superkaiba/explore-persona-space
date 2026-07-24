@@ -2231,6 +2231,63 @@ def _rungs_or_empty(d: Path) -> dict[int, Path]:
         return {}
 
 
+def _ckpt_persist_prefix(cfg: Cfg, cell: str, step: int) -> str:
+    """Overflow-repo path of a cell's selected FT checkpoint — the SINGLE
+    source of truth shared by the p4 upload, the [ckpt-reap] Hub verification,
+    and the [ckpt-restage] downloader (path symmetry by construction;
+    crash-fix r5 of the fu round, epm:failure v11)."""
+    ckpt_prefix = G.FU_CKPT_PREFIX if _fu(cfg) else "issue1586"
+    return f"{ckpt_prefix}/{cell}/checkpoint-{step}"
+
+
+def _selected_ckpt_hub_verified(cfg: Cfg, cell: str, step: int, ckpt: Path) -> bool:
+    """Scoped Hub probe (ONE list_repo_tree under the cell's persist prefix —
+    the #833 scoped-listing recipe; never a full-repo listing): True iff the
+    overflow copy of the selected checkpoint carries the consumer-load-bearing
+    file set — config.json + >=1 safetensors shard on the Hub AND every LOCAL
+    *.safetensors shard (+ the index when present locally) — OR at least as
+    many files as the local dir. (The two-branch predicate exists because
+    hub._upload folder commits exclude TRAINING_STATE_IGNORE_PATTERNS, so
+    local optimizer/rng files legitimately exceed the Hub set, and
+    _ensure_dir_tokenizer may have repaired tokenizer files locally that the
+    upload never carried.) FAIL-TOWARD-KEEP: any probe error returns False
+    after ONE WARN line — the local copy is kept and the next reclaim pass
+    re-probes. Deliberately NOT retry_transient-wrapped: a ~30-min retry
+    budget would block the wave boundary, while a missed reap only costs
+    headroom (the drain path re-probes)."""
+    path_in_repo = _ckpt_persist_prefix(cfg, cell, step)
+    try:
+        from huggingface_hub import HfApi
+
+        hub_paths = hub.list_hf_files_under_path(
+            HfApi(), G.OVERFLOW_REPO, path_in_repo, repo_type="model"
+        )
+    except Exception as e:  # fail-toward-keep — never block the run on the probe
+        logger.warning(
+            "[ckpt-reap] hub probe failed for %s (%s: %s) — keeping local copy",
+            cell,
+            type(e).__name__,
+            e,
+        )
+        return False
+    hub_names = {p[len(path_in_repo) :].lstrip("/") for p in hub_paths}
+    if "config.json" not in hub_names or not any(n.endswith(".safetensors") for n in hub_names):
+        logger.warning(
+            "[ckpt-reap] hub copy under %s/%s incomplete (%d files) — keeping local copy",
+            G.OVERFLOW_REPO,
+            path_in_repo,
+            len(hub_names),
+        )
+        return False
+    local_names = {str(p.relative_to(ckpt)) for p in ckpt.rglob("*") if p.is_file()}
+    if len(hub_names) >= len(local_names):
+        return True
+    needed = {n for n in local_names if n.endswith(".safetensors")}
+    if "model.safetensors.index.json" in local_names:
+        needed.add("model.safetensors.index.json")
+    return needed <= hub_names
+
+
 def _reclaim_completed_cell_residue(cfg: Cfg, cells: Sequence[str]) -> int:
     """Wave-boundary drain of a SELECTION-COMPLETE FT cell's dead trainer bytes
     (crash-fix r4, epm:failure v10). Every chunk / retrain-reselect training
@@ -2250,12 +2307,21 @@ def _reclaim_completed_cell_residue(cfg: Cfg, cells: Sequence[str]) -> int:
     self-contained checkpoint dir, never the root save):
       (a) the orphaned original train dir (adapter_root != <cell>/train);
       (b) root-level ``model*.safetensors`` shards + index at adapter_root
-          (rung checkpoint-* dirs are never touched).
+          (rung checkpoint-* dirs are never touched);
+      (c) crash-fix r5 of the fu round (epm:failure v11): the SELECTED
+          checkpoint dir itself, ONLY once its overflow upload is recorded
+          (persist.json, no pending billing-403 deferral) AND Hub-VERIFIED
+          (_selected_ckpt_hub_verified) — the local ~15 GB rung is then a
+          re-stageable duplicate; every post-persist consumer routes through
+          _selected_ft_ckpt, which restages it on demand ([ckpt-restage]).
+          FAIL-TOWARD-KEEP: no record / pending deferral / failed or
+          incomplete Hub probe all keep the local copy.
     FU imp LoRA ladders (persisted WHOLE at p4, root adapter included) and the
     reused cell are never touched. Idempotent; one ``[wave] drain <cell>``
-    line per reclaimed residue class (the fix-engaged observable); returns
-    reclaimed bytes. Need arithmetic (_cell_rung_demand_gb / WAVE_MARGIN_GB)
-    is untouched — this frees bytes, it never re-sizes demand."""
+    line per reclaimed residue class + one ``[ckpt-reap]`` line per reaped
+    checkpoint (the fix-engaged observables); returns reclaimed bytes. Need
+    arithmetic (_cell_rung_demand_gb / WAVE_MARGIN_GB) is untouched — this
+    frees bytes, it never re-sizes demand."""
     freed = 0
     for cell in cells:
         if G.is_fu_lora_cell(cell) or cell == G.REUSED_FT_CELL:
@@ -2298,6 +2364,27 @@ def _reclaim_completed_cell_residue(cfg: Cfg, cells: Sequence[str]) -> int:
                 len(shards),
                 n / 1e9,
             )
+        # (c) upload-verified reap of the SELECTED checkpoint itself (crash-fix
+        # r5 of the fu round, epm:failure v11): three completed marker cells'
+        # retained ~15 GB selected checkpoints starved the last cell's
+        # p3_fu_chunk gate (84.5 GB free < 85.8 floor) while all three were
+        # Hub-verified duplicates on the overflow repo.
+        rung = _rungs_or_empty(adapter_root).get(sel_step)
+        if (
+            rung is not None
+            and (cell_root / "persist.json").exists()
+            and not _persist_deferred_path(cfg, cell).exists()
+            and _selected_ckpt_hub_verified(cfg, cell, sel_step, rung)
+        ):
+            n = _tree_bytes(rung)
+            shutil.rmtree(rung)  # fail-loud: no ignore_errors
+            freed += n
+            logger.info(
+                "[ckpt-reap] %s: reaped Hub-verified selected checkpoint %s (%.1f GB)",
+                cell,
+                rung,
+                n / 1e9,
+            )
     return freed
 
 
@@ -2336,10 +2423,22 @@ def _wave_reap(cfg: Cfg, cells: Sequence[str]) -> None:
                 _reap_rungs(d, {sel_step})
         left = set(_rungs_or_empty(adapter_root))
         if left != {sel_step}:
-            raise RuntimeError(
-                f"wave reap failed for {cell}: rungs {sorted(left)} != "
-                f"selected {{{sel_step}}} under {adapter_root}"
+            # Crash-fix r5 (fu, epm:failure v11): a Hub-verified [ckpt-reap]
+            # legitimately empties the rung set on an already-persisted cell —
+            # a resumed _wave_reap pass must not read that as a reap failure.
+            # persist.json + no pending deferral is the durable local record
+            # of the reap gate (the reap itself fired only after the live Hub
+            # probe); _selected_ft_ckpt restages on demand ([ckpt-restage]).
+            verified_reaped = (
+                not left
+                and (cell_root / "persist.json").exists()
+                and not _persist_deferred_path(cfg, cell).exists()
             )
+            if not verified_reaped:
+                raise RuntimeError(
+                    f"wave reap failed for {cell}: rungs {sorted(left)} != "
+                    f"selected {{{sel_step}}} under {adapter_root}"
+                )
     # crash-fix r4 (epm:failure v10): also drop the wave's dead trainer saves
     # (root-level schedule-end saves + retrain-reselect orphaned train dirs)
     # so the NEXT wave's headroom assert sees the keepcell_demand_gb-budgeted
@@ -2513,8 +2612,45 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
             raise RuntimeError(f"fu FT partner {cell} not staged under {d} — run p0 first")
         return d
     sel = _read_json(cfg.out_root / cell / "selection.json")
+    step = int(sel["step"])
     train_dir = Path(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])
-    ckpt = _enumerate_rungs(train_dir)[int(sel["step"])]
+    ckpt = _rungs_or_empty(train_dir).get(step)
+    if ckpt is None:
+        # Crash-fix r5 (fu, epm:failure v11): the [ckpt-reap] arm reaps a
+        # Hub-verified selected checkpoint after p4; every post-persist
+        # consumer (tier2 / panel / margins / f8 capture) routes through THIS
+        # resolver, which restages the consumer-exact tree from the overflow
+        # copy via the SAME per-file machinery the reused FT partners use
+        # (_stage_overflow_prefix — scoped listing + per-file download). An
+        # absent Hub path fails loud (_stage_overflow_prefix raises
+        # FileNotFoundError).
+        if G.is_fu_lora_cell(cell):
+            raise RuntimeError(
+                f"selected rung checkpoint-{step} missing under {train_dir} for LoRA cell "
+                f"{cell} — LoRA ladders are never ckpt-reaped; refusing overflow restage"
+            )
+        ckpt = train_dir / f"checkpoint-{step}"
+        path_in_repo = _ckpt_persist_prefix(cfg, cell, step)
+        logger.info(
+            "[ckpt-restage] %s: local selected checkpoint absent — staging %s/%s -> %s",
+            cell,
+            G.OVERFLOW_REPO,
+            path_in_repo,
+            ckpt,
+        )
+        _stage_overflow_prefix(
+            path_in_repo, ckpt, revision=_resolve_revision(G.OVERFLOW_REPO, "model")
+        )
+        n_files = sum(1 for p in ckpt.rglob("*") if p.is_file())
+        if not (ckpt / "config.json").exists() or n_files < 5:
+            raise RuntimeError(
+                f"[ckpt-restage] {cell}: restaged checkpoint incomplete under {ckpt} "
+                f"({n_files} files) — expected config.json + shards + index"
+            )
+        # Per-file staging double-materializes bytes (hub-cache blobs + the
+        # consumer copy — the r4 #1092-P6 class); evict the overflow entry per
+        # restage so at most one cell's duplication is ever in flight.
+        _evict_overflow_hub_cache()
     _ensure_dir_tokenizer(ckpt)
     return ckpt
 
@@ -2617,8 +2753,7 @@ def phase_persist(cfg: Cfg, selections: dict, cells: Sequence[str] | None = None
                 _persist_deferred_path(cfg, cell).unlink(missing_ok=True)
                 continue
             ckpt = _selected_ft_ckpt(cfg, cell)
-            ckpt_prefix = G.FU_CKPT_PREFIX if _fu(cfg) else "issue1586"
-            path_in_repo = f"{ckpt_prefix}/{cell}/checkpoint-{step}"
+            path_in_repo = _ckpt_persist_prefix(cfg, cell, step)
             # Crash-fix r7 (pod-1586 crash #6): raise_on_error surfaces the
             # upload exception class here — the narrow billing-403 defers
             # (durable record + continue the wave; p9 replays + fail-louds
@@ -3782,9 +3917,8 @@ def _cjk_scan(cfg: Cfg) -> dict:
 
 
 def _reproducibility_card(cfg: Cfg, selections: dict) -> dict:
-    ckpt_prefix = G.FU_CKPT_PREFIX if _fu(cfg) else "issue1586"
     adapters = {
-        cell: f"{ckpt_prefix}/{cell}/checkpoint-{int(sel['step'])}"
+        cell: _ckpt_persist_prefix(cfg, cell, int(sel["step"]))
         for cell, sel in selections.items()
         if cell != G.REUSED_FT_CELL and "step" in sel
     }
