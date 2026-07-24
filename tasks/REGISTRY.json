@@ -5099,8 +5099,8 @@
     "1654": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1654",
-      "status": "proposed",
+      "path": "tasks/planning/1654",
+      "status": "planning",
       "title": "daily-fix: HF upload-quota preflight at real scale"
     },
     "1655": {
