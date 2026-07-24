@@ -280,6 +280,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_autonomous_session_watch.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
     "tests/test_daily_skill_commit_pathspec_pin.py",
+    # NEW (#1645) — /daily SKILL.md stub-first rule + healthcheck cross-file pin (#1189)
+    "tests/test_daily_stub_first_doc.py",
+    # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
+    "tests/test_daily_three_route_classifier_doc.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -313,6 +317,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
+    # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
+    "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
