@@ -1071,7 +1071,7 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:
-    """Run the predictable Step 9c workflow-invariant universe on main; write the ledger atomically."""
+    """Run the Step 9c workflow-invariant universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
     lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
     if lock is None:
