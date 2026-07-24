@@ -180,6 +180,16 @@ KEEPCELL_FIXED_OVERHEAD_GB = 60.0
 # 12-cell grid: ~683 GB -> the GCE 750 GB boot-disk class).
 KEEPCELL_MIN_FREE_GB = 300.0
 
+# Merge-transient disk arithmetic (fu crash-fix r10, epm:failure v15 — p8
+# capture ENOSPC): each LoRA-arm unit that lacks a reusable merged dir runs
+# _merge_adapter, which materializes a full bf16 7B model dir (~15.2 GB,
+# RUNG_GB class) through a .tmp sibling — so every CONCURRENT merge-bearing
+# fan-out unit holds a ~16 GB disk transient at its peak. _fanout_units
+# clamps the concurrent width to what the out-root's free bytes can hold
+# (merge_width_clamp); non-merge unit types keep full width.
+MERGE_TRANSIENT_GB = 16.0  # ~15.2 GB merged dir + header/tokenizer slack
+MERGE_CLAMP_MARGIN_GB = 8.0  # working margin (logs / rollouts / pooled stores)
+
 MARKER_TEXT = " ※"
 MARKER_TOKEN_ID = 83399
 
@@ -2164,19 +2174,54 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
     )
 
 
-def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
+def merge_width_clamp(
+    free_bytes: int,
+    n_gpus: int,
+    *,
+    transient_gb: float = MERGE_TRANSIENT_GB,
+    margin_gb: float = MERGE_CLAMP_MARGIN_GB,
+) -> int:
+    """Free-space-aware concurrent width for merge-bearing fan-outs (fu
+    crash-fix r10, epm:failure v15): ``max(1, min(n_gpus,
+    floor((free - margin) / per_merge_transient)))``. Floor 1 keeps a
+    starved disk SERIAL rather than deadlocked — one merge transient must
+    fit or the unit fails loud on its own ENOSPC (decimal GB, matching the
+    file's disk arithmetic)."""
+    return max(1, min(n_gpus, int((free_bytes - margin_gb * 1e9) // (transient_gb * 1e9))))
+
+
+def _fanout_units(cfg: Cfg, units: list[list[str]], *, merge_bearing: int = 0) -> None:
     """1-GPU self-invocation units, one per free GPU, launcher-env CVD pin +
     matching --gpu-id; whole-group reap on failure. FT launches never route
-    here (they own their quads)."""
+    here (they own their quads). ``merge_bearing`` = how many of ``units``
+    will run a fresh ~15 GB _merge_adapter (LoRA arms without a reusable
+    merged dir — _n_merge_bearing); >0 clamps the CONCURRENT width to the
+    free-space arithmetic (merge_width_clamp) so N parallel merge transients
+    can never ENOSPC the out-root (fu crash-fix r10, epm:failure v15)."""
     ids = _physical_gpu_ids()
     n = len(ids)
+    lanes = n
+    if merge_bearing > 0:
+        free = shutil.disk_usage(cfg.out_root).free
+        lanes = merge_width_clamp(free, n)
+        if lanes < n:
+            logger.info(
+                "[fanout] merge width clamp: %d merge-bearing unit(s), free %.1f GB, "
+                "margin %.0f GB, %.0f GB/merge transient -> width %d (of %d GPUs)",
+                merge_bearing,
+                free / 1e9,
+                MERGE_CLAMP_MARGIN_GB,
+                MERGE_TRANSIENT_GB,
+                lanes,
+                n,
+            )
     pending = list(units)
     running: dict[int, tuple[subprocess.Popen, list[str]]] = {}
     logs = cfg.out_root / "unit_logs"
     logs.mkdir(parents=True, exist_ok=True)
     while pending or running:
         for g in range(n):
-            if g not in running and pending:
+            if g not in running and pending and len(running) < lanes:
                 extra = pending.pop(0)
                 cmd = [
                     "uv",
@@ -3235,6 +3280,7 @@ def phase_tier2(cfg: Cfg, selections: dict) -> dict:
                 "note": "parity cross-check row ONLY (plan §4.1 — not a contrast arm)",
             },
         )
+    _reap_arm_artifacts_after(cfg, "tier2")
     return out
 
 
@@ -3293,22 +3339,159 @@ def _panel_arms(cfg: Cfg) -> list[tuple[str, str]]:
 _FU_PARTNER_ARM_IDS = frozenset(fc.ft_partner_cell for fc in G.FU_IMP_LORA_CELLS)
 
 
+def _merged_model_dir(cfg: Cfg, arm_id: str) -> Path:
+    """SINGLE derivation of a LoRA arm's merged full-model dir, shared by the
+    writer (_resolve_arm_model), the merge-bearing width count
+    (_n_merge_bearing), and the last-consumer reaper
+    (_reap_arm_artifacts_after) — a drifted duplicate derivation reaps
+    nothing (the #1586 fu r3 smoke-root lesson)."""
+    return cfg.out_root / arm_id / "merged_panel"
+
+
 def _resolve_arm_model(cfg: Cfg, arm_id: str, kind: str) -> tuple[str, Path | None]:
     """(model_path, merged_dir_to_cleanup) for one panel/margin/capture arm.
     FU: a lora5e6 cfg cell merges its SELECTED adapter rung; a reused FT
-    partner arm resolves to its p0-staged checkpoint dir."""
+    partner arm resolves to its p0-staged checkpoint dir. A complete merged
+    dir left by a killed sibling unit is REUSED (_merge_adapter's
+    complete-dir early return), then deleted by the consuming unit's finally
+    as usual; the parent-side _reap_arm_artifacts_after owns whatever
+    escapes the unit finally (SIGKILL strands — fu crash-fix r10)."""
     if kind == "lora":
+        merged_dir = _merged_model_dir(cfg, arm_id)
         if G.is_fu_lora_cell(arm_id):
-            merged = _merge_adapter(
-                cfg, str(_selected_ft_ckpt(cfg, arm_id)), cfg.out_root / arm_id / "merged_panel"
-            )
+            merged = _merge_adapter(cfg, str(_selected_ft_ckpt(cfg, arm_id)), merged_dir)
             return str(merged), merged
         arm = G.LORA_ARM_BY_CELL[arm_id]
-        merged = _merge_adapter(
-            cfg, str(_staged_arm_dir(cfg, arm)), cfg.out_root / arm_id / "merged_panel"
-        )
+        merged = _merge_adapter(cfg, str(_staged_arm_dir(cfg, arm)), merged_dir)
         return str(merged), merged
     return str(_selected_ft_ckpt(cfg, arm_id)), None
+
+
+def _n_merge_bearing(cfg: Cfg, arms: Sequence[tuple[str, str]]) -> int:
+    """How many of ``arms`` will run a FRESH ~15 GB merge when their unit
+    starts: LoRA-kind arms without a complete merged dir on disk
+    (config.json presence == complete under _merge_adapter's atomic
+    .tmp-then-rename publish). Drives _fanout_units' width clamp."""
+    return sum(
+        1
+        for arm_id, kind in arms
+        if kind == "lora" and not (_merged_model_dir(cfg, arm_id) / "config.json").exists()
+    )
+
+
+# Phase order of the heavy-model consumers (main() chain). tier2 loads FT
+# dests for content cells; panel/capture/capture_tf load EVERY arm's model;
+# margin loads content arms only.
+_ARM_CONSUMER_ORDER = ("tier2", "panel", "margin", "capture", "capture_tf")
+
+
+def _arm_last_consumer(cfg: Cfg, arm_id: str, kind: str) -> str | None:
+    """Last ENABLED phase (this dispatch's --phases subset; empty = all) that
+    LOADS this arm's heavy model artifact — lora: the merged full-model dir;
+    ft: the (restaged) selected checkpoint. Keyed per arm so the reaper can
+    never fire before a phase that still loads the artifact (deliverable-1
+    contract, fu crash-fix r10)."""
+    consumers: list[str] = []
+    if kind == "ft" and not _panel_is_marker(arm_id):
+        consumers.append("tier2")
+    consumers.append("panel")
+    if not _panel_is_marker(arm_id):
+        consumers.append("margin")
+    consumers += ["capture", "capture_tf"]
+    enabled = [p for p in consumers if not cfg.phases or p in cfg.phases]
+    return enabled[-1] if enabled else None
+
+
+def _reap_ft_dest_verified(cfg: Cfg, cell: str, phase: str) -> None:
+    """Post-last-consumer reap of ONE trained cfg FT cell's restaged selected
+    checkpoint — the r5 Hub-verified [ckpt-reap] arm extended past p4 (fu
+    crash-fix r10, epm:failure v15: restaged ~15 GB dests were retained
+    forever once a post-persist phase restaged them). Fail-toward-keep
+    semantics unchanged: only a Hub-VERIFIED copy is reaped
+    (_selected_ckpt_hub_verified — probe error / incomplete keeps), never a
+    deferral-pending cell, never p0-staged inputs (reused cell + FU
+    partners), never LoRA ladders. _selected_ft_ckpt restages on demand if
+    a later dispatch needs the dest again ([ckpt-restage])."""
+    if cell == G.REUSED_FT_CELL or cell in _FU_PARTNER_ARM_IDS or G.is_fu_lora_cell(cell):
+        return  # p0-staged inputs / LoRA ladders — never ckpt-reaped
+    if _persist_deferred_path(cfg, cell).exists():
+        logger.info("[ckpt-reap] %s: kept — persist deferred (not on Hub yet)", cell)
+        return
+    sel_path = cfg.out_root / cell / "selection.json"
+    build_path = cfg.out_root / cell / "build_result.json"
+    if not sel_path.exists() or not build_path.exists():
+        return
+    step = int(_read_json(sel_path)["step"])
+    train_dir = Path(_read_json(build_path)["adapter_root"])
+    rung = _rungs_or_empty(train_dir).get(step)
+    if rung is None:
+        logger.info("[ckpt-reap] %s: absent after last consumer %s (already reaped)", cell, phase)
+        return
+    if _selected_ckpt_hub_verified(cfg, cell, step, rung):
+        size = _tree_bytes(rung)
+        shutil.rmtree(rung)
+        logger.info(
+            "[ckpt-reap] %s: reaped Hub-verified selected checkpoint %s after last "
+            "consumer %s (%.1f GB)",
+            cell,
+            rung,
+            phase,
+            size / 1e9,
+        )
+    # else: _selected_ckpt_hub_verified already logged the keep reason
+
+
+def _reap_arm_artifacts_after(
+    cfg: Cfg, phase: str, arms: Sequence[tuple[str, str]] | None = None
+) -> None:
+    """Deliverable-1 last-consumer reap (fu crash-fix r10, epm:failure v15):
+    called at the END of each heavy-model-consuming phase. Per arm, when
+    ``phase`` is at-or-past the arm's LAST enabled consumer
+    (_arm_last_consumer), reap the two ~15 GB artifact classes: the merged
+    full-model dir (+ .tmp strand) for LoRA arms — the per-unit finally
+    already deletes its own merge, so this catches SIGKILL strands (the
+    _reap_unit_groups whole-group kill skips sibling finallys) — and the
+    Hub-verified restaged FT dest (_reap_ft_dest_verified). One
+    [merge-reap]/[ckpt-reap] line per arm on every branch (reaped / absent /
+    kept-later-consumer) so the reap is observable on relaunch."""
+    order = {p: i for i, p in enumerate(_ARM_CONSUMER_ORDER)}
+    if phase not in order:
+        raise ValueError(f"unknown consumer phase {phase!r}")
+    for arm_id, kind in arms if arms is not None else _panel_arms(cfg):
+        last = _arm_last_consumer(cfg, arm_id, kind)
+        if last is None:
+            continue
+        if order[phase] < order[last]:
+            if kind == "lora" and _merged_model_dir(cfg, arm_id).exists():
+                logger.info(
+                    "[merge-reap] %s: kept %s — later consumer %s still enabled",
+                    arm_id,
+                    _merged_model_dir(cfg, arm_id),
+                    last,
+                )
+            continue
+        if kind == "lora":
+            merged_dir = _merged_model_dir(cfg, arm_id)
+            reaped = 0
+            for d in (merged_dir, merged_dir.parent / (merged_dir.name + ".tmp")):
+                if d.exists():
+                    reaped += _tree_bytes(d)
+                    shutil.rmtree(d, ignore_errors=True)
+            if reaped:
+                logger.info(
+                    "[merge-reap] %s: reaped merged model after last consumer %s (%.1f GB)",
+                    arm_id,
+                    phase,
+                    reaped / 1e9,
+                )
+            else:
+                logger.info(
+                    "[merge-reap] %s: absent after last consumer %s (unit finally reaped it)",
+                    arm_id,
+                    phase,
+                )
+        else:
+            _reap_ft_dest_verified(cfg, arm_id, phase)
 
 
 def run_panel_unit(cfg: Cfg, arg: str) -> dict:
@@ -3452,7 +3635,7 @@ def phase_panel(cfg: Cfg) -> dict:
     _phase("p6_panel")
     arms = _panel_arms(cfg)
     units = []
-    pending_arm_ids: list[str] = []
+    pending_pairs: list[tuple[str, str]] = []
     for arm_id, kind in arms:
         sub = "marker_panel" if _panel_is_marker(arm_id) else "panel"
         res = (
@@ -3462,17 +3645,18 @@ def phase_panel(cfg: Cfg) -> dict:
             / ("slot_reads.json" if _panel_is_marker(arm_id) else "panel_summary.json")
         )
         if not res.exists():
-            pending_arm_ids.append(arm_id)
+            pending_pairs.append((arm_id, kind))
             units.append(_unit_args(cfg, "panel", f"{kind}:{arm_id}"))
     if units:
         # r6: parent-serial restage of reaped selected checkpoints BEFORE any
         # unit spawn (shared hub-cache race — _prestage_selected_ft_ckpts).
-        _prestage_selected_ft_ckpts(cfg, pending_arm_ids)
+        _prestage_selected_ft_ckpts(cfg, [a for a, _k in pending_pairs])
         if len(units) == 1 or _n_gpus() == 1:
             for u in units:
                 run_panel_unit(cfg, u[2])
         else:
-            _fanout_units(cfg, units)
+            _fanout_units(cfg, units, merge_bearing=_n_merge_bearing(cfg, pending_pairs))
+    _reap_arm_artifacts_after(cfg, "panel")
     return {"n_arms": len(arms)}
 
 
@@ -3666,7 +3850,12 @@ def phase_margin(cfg: Cfg, selections: dict) -> dict:
             for a, k in arm_pending:
                 run_margin_unit(cfg, f"{k}:{a}")
         else:
-            _fanout_units(cfg, [_unit_args(cfg, "margin", f"{k}:{a}") for a, k in arm_pending])
+            _fanout_units(
+                cfg,
+                [_unit_args(cfg, "margin", f"{k}:{a}") for a, k in arm_pending],
+                merge_bearing=_n_merge_bearing(cfg, arm_pending),
+            )
+    _reap_arm_artifacts_after(cfg, "margin")
     return {a: _read_json(out_dir / a / "margin.json") for a, _k in arms}
 
 
@@ -3906,7 +4095,12 @@ def phase_capture(cfg: Cfg) -> dict:
             for a, k in group:
                 run_capture_unit(cfg, f"{k}:{a}")
         else:
-            _fanout_units(cfg, [_unit_args(cfg, "capture", f"{k}:{a}") for a, k in group])
+            _fanout_units(
+                cfg,
+                [_unit_args(cfg, "capture", f"{k}:{a}") for a, k in group],
+                merge_bearing=_n_merge_bearing(cfg, group),
+            )
+    _reap_arm_artifacts_after(cfg, "capture")
     return {"n_passes": len(passes)}
 
 
@@ -3925,7 +4119,12 @@ def phase_capture_tf(cfg: Cfg) -> dict:
             for a, k in arms:
                 run_capture_tf_unit(cfg, f"{k}:{a}")
         else:
-            _fanout_units(cfg, [_unit_args(cfg, "capture_tf", f"{k}:{a}") for a, k in arms])
+            _fanout_units(
+                cfg,
+                [_unit_args(cfg, "capture_tf", f"{k}:{a}") for a, k in arms],
+                merge_bearing=_n_merge_bearing(cfg, arms),
+            )
+    _reap_arm_artifacts_after(cfg, "capture_tf")
     return {"n_arms": len(arms)}
 
 
