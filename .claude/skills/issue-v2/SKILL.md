@@ -393,7 +393,7 @@ rebase-merge — is the pin's durable anchor):
 ```bash
 uv run python scripts/build_dashboards.py build --issue <N>      # renders experiments/dashboards/issue<N>_*.html (sharded)
 git add figures/issue_<N>/ experiments/dashboards/          # explicit paths only
-git commit -m "task #<N>: report figures + dashboards"
+git commit -m "task #<N>: report figures + dashboards" -- figures/issue_<N>/ experiments/dashboards/
 git push origin issue-<N>
 SHA=$(git rev-parse HEAD)
 uv run python scripts/build_dashboards.py emit-links --issue <N> --sha "$SHA"

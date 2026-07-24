@@ -55,6 +55,7 @@ from workflow_lint import (  # noqa: E402
     check_asks,
     check_autonomous_asks,
     check_awk_elision_parity,
+    check_bare_commit_pathspec,
     check_batch_judge_client,
     check_compute_shape_review_lens,
     check_crash_fix_relaunch_contract,
@@ -7953,6 +7954,181 @@ def test_check_git_recipes_root_guard_transient_rc_retry_blocked(tmp_path):
     assert len(errors) == 1, errors
     assert "BLOCKED" in errors[0], errors
     assert warns == [], warns
+
+
+# ---------------------------------------------------------------------------
+# --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
+# ` -- <pathspec>` tail sweeps the whole staged index at the always-concurrent
+# shared repo root (incident 7dbde267f1; #1630 fixed /daily per-file). All
+# git-commit literals below are Python STRING DATA (fixtures written via
+# tmp_path) — the check scans only workflow-surface .md files, so neither
+# this test file nor workflow_lint.py can self-flag.
+# ---------------------------------------------------------------------------
+
+
+def test_check_bare_commit_pathspec_flags_bare_commit(tmp_path):
+    """A bash fence with a pathspec-less `git commit -m` is exactly one error
+    naming file:line (fence opener + offset) + the remediation paths."""
+    _write_rg_skill(tmp_path, "x", '```bash\ngit add logs/x.md\ngit commit -m "x"\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:3:" in errors[0], errors
+    assert "-- <pathspec>" in errors[0], errors
+    # remediation names both paths: append a pathspec, or the waiver sentinel
+    assert "allow-bare-commit-block" in errors[0], errors
+
+
+def test_check_bare_commit_pathspec_allows_exempt_forms(tmp_path):
+    """Every structural exemption in one fence passes; the sharp-edge
+    NEGATIVES (per-invocation -C, flag-less xargs, xargs after the commit)
+    each still flag exactly once."""
+    body = (
+        "```bash\n"
+        'git commit -m "x" -- logs/x.md\n'
+        'git -C "$WT" commit -m "x"\n'
+        'xargs -r -a f.txt git commit -m "x" --\n'
+        'git commit --dry-run -m "x"\n'
+        '# git commit -m "x"\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # (i) per-invocation -C: the FIRST invocation's -C (and its pathspec)
+    # must not waive the SECOND, bare invocation on the same line.
+    _write_rg_skill(
+        tmp_path, "x", '```bash\ngit -C "$WT" commit -m "a" -- x && git commit -m "b"\n```\n'
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+    # (ii) flag-less xargs runs the command ONCE on empty input
+    # (whole-index sweep) -> NOT exempt without -r/--no-run-if-empty.
+    _write_rg_skill(tmp_path, "x", '```bash\nxargs -a f.txt git commit -m "x" --\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+    # (iii) xargs AFTER the commit never waives it (prefix-bounded search).
+    _write_rg_skill(
+        tmp_path, "x", '```bash\ngit commit -m "x" && xargs -r -a f.txt git rm --\n```\n'
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_commit_pathspec_multiline_quoted_message(tmp_path):
+    """Quote-balance joining classifies multi-line `-m "..."` messages on the
+    full command; backslash continuations join per bash semantics; errors
+    report the FIRST line of the joined logical line."""
+    # (a) -C form + (b) the xargs form with a multi-line message and a
+    # trailing ` --` (the issue/SKILL.md additive-checkout shape) -> clean.
+    body = (
+        "```bash\n"
+        'git -C "$WT" commit -m "line1\n'
+        'line2"\n'
+        'xargs -r -a f.txt git commit -m "issue: line1\n'
+        "line2\n"
+        'line3" --\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # (c) a BARE commit with a multi-line message and no pathspec still
+    # flags (quote-joining must not hide bare commits), at the first line.
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit -m "line1\nline2"\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+
+    # (d) backslash continuation: a compliant commit whose ` -- <paths>`
+    # sits on the continuation line is clean ...
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit -m "x" \\\n  -- logs/x.md\n```\n')
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # ... and a bare backslash-continued commit flags at the FIRST line of
+    # the joined logical (pins the continuation join + line arithmetic).
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit \\\n  -m "x"\necho done\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+
+
+def test_check_bare_commit_pathspec_fence_sentinel_waives(tmp_path):
+    """A sentinel with a NON-EMPTY reason on the immediately-preceding
+    non-blank line waives the fence; an EMPTY-reason sentinel does NOT
+    (mirrors the root-guard empty-reason discipline)."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        "<!-- workflow-lint: allow-bare-commit-block: deliberate anti-pattern example -->\n"
+        '```bash\ngit commit -m "x"\n```\n',
+    )
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        '<!-- workflow-lint: allow-bare-commit-block: -->\n```bash\ngit commit -m "x"\n```\n',
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_commit_pathspec_ignores_non_bash_fences(tmp_path):
+    """Only bash/sh/shell-tagged fences are scanned: an untagged fence, a
+    python-tagged fence, and prose inline code never flag — and the check's
+    docstring must NAME the residual classes so the disclosure is durable
+    (root-guard known_miss_residuals style)."""
+    body = (
+        '- Then run `git commit -m "x"` at the repo root.\n'
+        "\n"
+        "```\n"
+        'git commit -m "x"\n'
+        "```\n"
+        "\n"
+        "```python\n"
+        "cmd = 'git commit -m x'\n"
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+    doc = check_bare_commit_pathspec.__doc__ or ""
+    assert "untagged" in doc, "docstring must name the untagged-fence residual"
+    assert "inline-code" in doc, "docstring must name the prose inline-code residual"
+    assert "heredoc" in doc, "docstring must name the heredoc-body residual"
+    assert "scripts/**" in doc, "docstring must name the shell-script out-of-scope residual"
+
+
+def test_check_bare_commit_pathspec_live_tree_passes():
+    """The real post-disposition tree PASSES (the ``test_live_trees_pass``
+    invariant): locks in the #1648 dispositions — the ideation / weekly /
+    issue-v2 pathspec fixes — and fails loud on any future bare-commit
+    recipe landing in the workflow docs."""
+    assert check_bare_commit_pathspec() == []
+
+
+def test_check_bare_commit_pathspec_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1648 check —
+    deleting its ``or no_flags`` branch must fail this test
+    (mutation-visible), closing the present-but-never-runs class. Follows
+    the ``test_vm_thread_cap_guidance_bundled_in_no_flags`` house pattern:
+    one offender fixture, ``_REPO_ROOT`` monkeypatched, ``main([])``
+    in-process. Other bundled checks contribute unrelated errors on the
+    minimal tree, so the assertion keys on the #1648 diagnostic + the
+    offending file path."""
+    import workflow_lint as wl
+
+    _write_rg_skill(tmp_path, "x", '```bash\ngit add logs/x.md\ngit commit -m "x"\n```\n')
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an offender tree:\n{err}"
+    assert "allow-bare-commit-block" in err and "skills/x/SKILL.md" in err, (
+        f"the #1648 bare-commit diagnostic (naming the fixture skill) is missing "
+        f"from the no-flags default run's stderr — the check is not bundled "
+        f"into no_flags:\n{err}"
+    )
 
 
 # ---------------------------------------------------------------------------
