@@ -5127,8 +5127,8 @@
     "1658": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1658",
-      "status": "reviewing",
+      "path": "tasks/completed/1658",
+      "status": "completed",
       "title": "daily-fix: interim-writeup conventions (plots, gloss)"
     },
     "1659": {
