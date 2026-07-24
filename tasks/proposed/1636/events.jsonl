@@ -1,1 +1,2 @@
 {"ts": "2026-07-23T07:05:09Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-24T06:53:37Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "still live: /daily 2026-07-23 re-observed this held decision (bare-commit-hook — PreToolUse hook blocking bare repo-root git commit, parked on #1630); duplicate filing suppressed (#1483)"}
