@@ -504,7 +504,7 @@ def read_vm_pubkey() -> str | None:
     return key
 
 
-def _public_key_env() -> "_RawGraphQL | None":
+def _public_key_env() -> _RawGraphQL | None:
     """A ``PUBLIC_KEY`` env entry for the pod create input, or None.
 
     The runpod/pytorch image writes ``PUBLIC_KEY`` into authorized_keys at
