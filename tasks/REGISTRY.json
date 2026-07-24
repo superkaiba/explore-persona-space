@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1665,
+  "highest_id": 1666,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5179,6 +5179,13 @@
       "path": "tasks/proposed/1665",
       "status": "proposed",
       "title": "fix: rewrite use_rslora literal assert in test_issue1090_fu5_round (red on main)"
+    },
+    "1666": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1666",
+      "status": "proposed",
+      "title": "fix: load_dotenv before heavy imports in issue1586_fu_caveatfix_figures.py (thread-caps red on main)"
     },
     "168": {
       "has_clean_result": true,
