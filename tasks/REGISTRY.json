@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1646,
+  "highest_id": 1647,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5039,6 +5039,13 @@
       "path": "tasks/proposed/1646",
       "status": "proposed",
       "title": "daily-fix: step9c map-mode slow-file timeout surcharges"
+    },
+    "1647": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1647",
+      "status": "proposed",
+      "title": "daily-fix: 9a-ter inline lint gate single-flight hook"
     },
     "165": {
       "has_clean_result": false,
