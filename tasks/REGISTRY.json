@@ -5169,8 +5169,8 @@
     "1664": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1664",
-      "status": "approved",
+      "path": "tasks/running/1664",
+      "status": "running",
       "title": "workflow-fix: verify_uploads honors card adapter_repo_overrides"
     },
     "168": {
