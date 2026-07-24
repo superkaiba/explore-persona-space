@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1650,
+  "highest_id": 1651,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5074,6 +5074,13 @@
       "path": "tasks/proposed/1650",
       "status": "proposed",
       "title": "daily-fix: poller pid-identity check + pgrep memory sync"
+    },
+    "1651": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1651",
+      "status": "proposed",
+      "title": "daily-fix: implementer pin-sweep states sweep_scope"
     },
     "168": {
       "has_clean_result": true,
