@@ -5036,8 +5036,8 @@
     "1646": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1646",
-      "status": "planning",
+      "path": "tasks/approved/1646",
+      "status": "approved",
       "title": "daily-fix: step9c map-mode slow-file timeout surcharges"
     },
     "1647": {
