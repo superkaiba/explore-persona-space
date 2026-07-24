@@ -36,6 +36,34 @@ from explore_persona_space.orchestrate.preflight import (
 ROOT = Path("/fake")
 
 
+@pytest.fixture(autouse=True)
+def _prune_stale_root_handlers():
+    """Drop root-logger handlers whose stream is already closed (task #1654).
+
+    Cross-test pollution: a collection-time ``logging.basicConfig`` (e.g.
+    ``scripts/issue1112_rankem_dispatch.py`` exec'd at import by
+    ``tests/test_issue1112_rankem_capture_tf.py``) installs a root
+    ``StreamHandler`` bound to pytest's capture stream; a later test's
+    teardown leaves that stream CLOSED while the handler survives on the
+    root logger. ``require_preflight``'s ``logger.info`` then propagates to
+    root, the stale handler's emit raises on the closed stream, and
+    ``logging``'s ``handleError`` prints ``--- Logging error ---`` to the
+    CURRENT (capsys-captured) stderr — breaking ``captured.err == ""``
+    below. Reproduced by the 3-file composition
+    ``pytest tests/test_issue1112_rankem_capture_tf.py
+    tests/test_issue1547_callsite_routing.py
+    tests/test_preflight_git_and_cli.py``; passes standalone. Pruning only
+    closed-stream handlers keeps deliberately-configured live logging
+    intact.
+    """
+    root = logging.getLogger()
+    for handler in list(root.handlers):
+        stream = getattr(handler, "stream", None)
+        if stream is not None and getattr(stream, "closed", False):
+            root.removeHandler(handler)
+    yield
+
+
 def _fake_git_run(
     *,
     branch="issue-554",
