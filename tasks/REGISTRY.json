@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1653,
+  "highest_id": 1654,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5095,6 +5095,13 @@
       "path": "tasks/proposed/1653",
       "status": "proposed",
       "title": "daily-fix: completed-unmerged watcher respawn arm"
+    },
+    "1654": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1654",
+      "status": "proposed",
+      "title": "daily-fix: HF upload-quota preflight at real scale"
     },
     "168": {
       "has_clean_result": true,
