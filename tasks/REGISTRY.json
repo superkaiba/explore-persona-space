@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1642,
+  "highest_id": 1643,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5011,6 +5011,13 @@
       "path": "tasks/completed/1642",
       "status": "completed",
       "title": "workflow-fix: plan-compute-sizing \u2014 phase-entry headroom gates must be resume-aware"
+    },
+    "1643": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1643",
+      "status": "proposed",
+      "title": "daily-fix: runpod_api UP037 reds ruff-policy test on main"
     },
     "165": {
       "has_clean_result": false,
