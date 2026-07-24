@@ -1,0 +1,219 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:39Z",
+  "figsize": [
+    11.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "judged impolite rate": 0.7,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "judged impolite rate": 0.01,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "judged impolite rate": 0.01,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.7,
+      "judged impolite rate": 0.3,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.7,
+      "judged impolite rate": 0.1,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.7,
+      "judged impolite rate": 0.13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "judged impolite rate": 0.6,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "judged impolite rate": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.9,
+      "judged impolite rate": 0.04040404040404041,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.9,
+      "judged impolite rate": 0.32,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.9,
+      "judged impolite rate": 0.11,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.9,
+      "judged impolite rate": 0.15,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "judged impolite rate": 0.61,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "judged impolite rate": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "judged impolite rate": 0.19,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.1,
+      "judged impolite rate": 0.55,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.1,
+      "judged impolite rate": 0.48,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.1,
+      "judged impolite rate": 0.5656565656565656,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "judged impolite rate": 0.68,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "judged impolite rate": 0.02,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "judged impolite rate": 0.2222222222222222,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.3,
+      "judged impolite rate": 0.55,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.3,
+      "judged impolite rate": 0.6020408163265306,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.3,
+      "judged impolite rate": 0.6326530612244898,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Impolite leakage at matched learning rate and matched install (fresh reads, one pod)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "pooled non-source judged-rate difference\n(full fine-tune minus LoRA)",
+        "xticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ],
+        "yticklabels": [
+          "factory-rate anchors s42",
+          "factory-rate anchors s137",
+          "factory-rate anchors pooled",
+          "matched-rate anchors s42",
+          "matched-rate anchors s137",
+          "matched-rate anchors pooled"
+        ]
+      },
+      {
+        "ylabel": "judged impolite rate",
+        "legend_labels": [
+          "LoRA 5e-6 s42",
+          "LoRA 5e-6 s137",
+          "full FT s42",
+          "full FT s137"
+        ],
+        "xticklabels": [
+          "source persona",
+          "default assistant",
+          "WildChat prefix",
+          "in-context examples",
+          "police officer",
+          "maritime medic"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA 5e-6 s42",
+      "LoRA 5e-6 s137",
+      "full FT s42",
+      "full FT s137"
+    ]
+  }
+}
