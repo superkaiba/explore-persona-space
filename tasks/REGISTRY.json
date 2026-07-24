@@ -5043,8 +5043,8 @@
     "1647": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1647",
-      "status": "reviewing",
+      "path": "tasks/completed/1647",
+      "status": "completed",
       "title": "daily-fix: 9a-ter inline lint gate single-flight hook"
     },
     "1648": {
