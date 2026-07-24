@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1654,
+  "highest_id": 1655,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5102,6 +5102,13 @@
       "path": "tasks/proposed/1654",
       "status": "proposed",
       "title": "daily-fix: HF upload-quota preflight at real scale"
+    },
+    "1655": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1655",
+      "status": "proposed",
+      "title": "daily-fix: provision preflight checks account SSH keys"
     },
     "168": {
       "has_clean_result": true,
