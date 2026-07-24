@@ -2126,7 +2126,9 @@ Brief passed to the implementer:
   runs the diff-linked + pin-hit subset locally, deferring only the
   invariant-only remainder to the gate (which remains the backstop),
   reporting the pin-sweep field with the verbatim deduplicated
-  hit-file list — never a count-only or glob-family summary (#1494;
+  hit-file list + its `sweep_scope:` universe token
+  (`selector-universe` | `repo-wide` — the REALIZED universe; #1651)
+  — never a count-only or glob-family summary (#1494;
   >20 files → fenced block under the Gate-scope line).
   Belt-and-suspenders on `implementer.md` § After Implementation item 1,
   so round briefs surface the duty without the implementer having to
@@ -5134,7 +5136,12 @@ sources contribute to `running`-phase progress:
     `adapter_paths` as an explicit per-cell mapping of REAL HF
     subfolder paths — every value existence-checked under
     `hf_model_repo` (defaults to the canonical model repo; declare only
-    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    when different; cells whose adapters land in a DIFFERENT repo than
+    `hf_model_repo` — the #1108 overflow split — additionally declare
+    `adapter_repo_overrides`, a per-cell `{cell_id: repo_id}` dict
+    keyed on `adapter_paths` cells, and the verifier resolves those
+    cells against the override repo, #1664), so NO
+    `<arm>`/`<source>`/`<seed>`-style template
     placeholders and no `(16 adapters)` prose summaries — plus
     `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
     display names; a single run may instead declare `wandb_run_path`).
