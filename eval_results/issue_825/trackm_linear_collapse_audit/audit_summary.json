@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "timestamp": "2026-07-24",
+    "script": "inline audit (chat)",
+    "issue": 825,
+    "question": "Why does the context->answer ridge map collapse on Track M (n=2000 two-turn cells) relative to Track S (n=5000 single-turn, L19 0.673/0.588)?",
+    "headline_cell": "M_instruct_assistant_chat (L19 ridge +0.076 vs S1 0.673; total gap 0.597)",
+    "provenance_note": "All numbers below are read from the cited banked artifacts this session; text stats computed from the two rollout JSONLs downloaded from HF (issue825_userbase_map/raw_completions/{generation,track_s})."
+  },
+  "ranked_attribution": [
+    {
+      "rank": 1,
+      "component": "n=2000 fit-regime effect (GCV-ridge near-interpolation degeneracy at n_tr < D, plus genuine sample-size power)",
+      "share_of_gap": "-0.415 of -0.597 (~70%) at L19, instruct/chat",
+      "evidence": "matched_n_curve/results.json (Track S1, L19, 5 subsample draws per n): 0.341@100, 0.430@200, 0.446@300, 0.476@497, 0.482@700, 0.437@1000, 0.397@1500, 0.258+/-0.039@2000 (all 5 draws in 0.189-0.293), 0.673@5000. Curve is NON-MONOTONE: dips from 0.482@700 to 0.258@2000, recovers only at n=5000 where n_tr=0.8n=4000 first exceeds D=3584 (5-fold). At least 0.22 of the n=2000 depression is provably NOT statistical power (0.482@700 > 0.258@2000 with 3x less data). scripts/issue825_fit_cells.py:81-91 documents exactly this: GCV opens a spurious minimum at the lambda-grid floor when the fold Gram can near-interpolate (n_tr < D), held-out R^2 exploding to -2..-11 (#1310); GCV_DOF_CAP default None means every committed #825 fit ran WITHOUT the guard. power_curve.json nested draw agrees (L19 0.175, layer-max 0.321 at n=2000; L0 -1.23@2000 vs +0.44@5000). All Track M cells are fit at n=2000 (n_tr=1600 < 3584), i.e. inside the documented degenerate regime; Track S full cells are the only fits outside it."
+    },
+    {
+      "rank": 2,
+      "component": "Track-M-specific residual at matched n (0.258 -> 0.076 = -0.18, ~30%): leading candidate is GREEDY a1 decoding, entangled with corpus-composition differences",
+      "share_of_gap": "-0.182 of -0.597 (~30%) at L19, instruct/chat; banked data cannot split greedy vs corpus-composition",
+      "evidence": "Greedy (supported, indirect): (a) nll_reads.json M_instruct_assistant_chat: a1 mean teacher-forced NLL 0.324 nats/token (near-deterministic) vs S1 0.564; the most-deterministic quartile (NLL 3.5e-6..0.186) reads L19 R^2 -0.25 while q2-q4 read +0.02..+0.03; S1's lowest-NLL quartile reads +0.734. (b) 3-gram-repetition rows: M a1 18.6% vs S answers 10.1% (conversations.jsonl vs track_s.jsonl). (c) Rounds 7/8 separator control (archived analyzer body + eval_results/issue_825/{onpolicy,sampled}-separator-control): greedy self-generated spans collapse every linear estimator (base rotated -1.23, per-group tails to -40, MLP 0.495) and SAMPLED decoding restores the linear read (D 0.590/0.428 -> 0.031/0.086; rotated 0.368/0.377 carries) - same reader family, different substrate. Corpus-composition (supported, direction only): Track S keeps what Track M's filters drop - S has 9.4% exact-duplicate answers (471/5000; 'Hello! How can I assist you today?' x172) and 21.4% <=5-word prompts, vs M 0.25% exact-dup a1 and 1.65% <=5-word u1 (>=8-content-token turn filter). Near-duplicate context->answer clusters are linearly easy rows that flatter BOTH the S headline and the S@2000 matched-n reference; magnitude untestable from banked artifacts (no refit possible without activations)."
+    },
+    {
+      "rank": 3,
+      "component": "What it is NOT: turn depth, target variance, span length/POSITIONS_CAP, context degeneracy, format, rig",
+      "share_of_gap": "~0 each",
+      "evidence": "Turn depth: turn_depth_matched_n/results.json level_171 (matched n=171, PRESS-ridge, L19): turn-1 0.175+/-0.024 vs turns 3-11 0.211-0.231 - flat/slightly rising, no depth penalty. Target variance: y_trace_cov_frozen L19 1437 (M ic) vs 1791 (S1) - 80%, no collapse; mean_baseline_r2 ~ -0.002 both tracks. Span length: M a1 mean 227 words (median 203) vs S mean 199 (median 122) - M spans LONGER; profiles are full-span means on both tracks (issue825_extract_turnstore.py:410-413); POSITIONS_CAP=64 touches only the per-position side store (:415-424), identically on both tracks. Context: M u1 median 18 words vs S 16, and M excludes the degenerate tail S keeps. Format: naturalistic costs only -0.048 at n=5000 (S1N 0.625 vs S1 0.673, naturalistic-single-turn/). Rig: round-4 anchor re-extraction reproduces +0.0763 vs committed +0.0757; onpolicy-round anchors within +/-0.004; kresample rig parity L19 cosine >= 0.99994; selection-symmetric nulls behave (M frozen-layer nulls -3.6..-3.9, obs >> null; g1/g3 PASS)."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "Target degeneracy / low cross-example variance from greedy duplicated a1",
+      "verdict": "refuted (as stated; the duplication direction is INVERTED across tracks)",
+      "key_numbers": {
+        "y_trace_cov_frozen_L19": {"M_instruct_assistant_chat": 1437.36, "S1": 1791.31, "ratio": 0.80},
+        "mean_baseline_r2_L19": {"M_instruct_assistant_chat": -0.0024, "S1": -0.0017},
+        "skill_over_mean_L19": {"M_instruct_assistant_chat": 0.078, "S1": 0.675},
+        "exact_dup_rows": {"M_a1": "5/2000 (0.25%)", "S_answers": "471/5000 (9.42%)"},
+        "first40char_dup_rows": {"M_a1": "127/2000 (6.35%)", "S_answers": "830/5000 (16.60%)"},
+        "top_dup_S_answer": "'Hello! How can I assist you today?' x172",
+        "a1_3gram_rep_ge5_rows": {"M_a1": "18.55%", "S_answers": "10.12%"}
+      },
+      "provenance": ["eval_results/issue_825/onpolicy-user-turn/cells_M_instruct_assistant_chat.json (y_trace_cov_frozen)", "eval_results/issue_825/naturalistic-single-turn/cells_S1.json (y_trace_cov_frozen)", "eval_results/issue_825/cells_M_instruct_assistant_chat.json", "eval_results/issue_825/cells_S1.json", "HF issue825_userbase_map/raw_completions/generation/conversations.jsonl", "HF issue825_userbase_map/raw_completions/track_s/track_s.jsonl"],
+      "note": "Target variance is comparable (80%); duplication is 38x HIGHER in Track S, whose ridge is fine - dup clusters are linearly easy rows, so duplication cannot explain the M collapse and instead flatters the S reference (see H7b). Greedy determinism DOES show up as low teacher-forced NLL and as the worst-fitting NLL quartile (see H7a)."
+    },
+    {
+      "id": "H2",
+      "name": "Short answer spans / POSITIONS_CAP asymmetry",
+      "verdict": "refuted",
+      "key_numbers": {
+        "a1_words": {"mean": 227.2, "median": 203, "p10": 17, "p90": 490},
+        "S_answer_words": {"mean": 198.5, "median": 122, "p10": 7, "p90": 502},
+        "profile_construction": "mean over FULL turn span, acts[:, i, s:e, :].float().mean(dim=1), identical both tracks",
+        "positions_cap": "64 - applies ONLY to the per-position side store (perpos), not to the answer-profile target, on both tracks"
+      },
+      "provenance": ["scripts/issue825_extract_turnstore.py:410-424", "src/explore_persona_space/experiments/issue_825/common.py:43", "rollout JSONLs (word counts)"],
+      "note": "M answer spans are LONGER than S (median 203 vs 122 words); no cap asymmetry exists."
+    },
+    {
+      "id": "H3",
+      "name": "Short / degenerate u1 contexts from the <=2048-token 4-turn filter",
+      "verdict": "refuted (direction inverted)",
+      "key_numbers": {
+        "u1_words": {"median": 18, "le5_words": "1.65%"},
+        "S_prompt_words": {"median": 16, "le5_words": "21.44%"},
+        "filters": "2600 overprovisioned -> 2000 kept; drops: 82 short_turn, 276 too_long (conversations_meta.json)",
+        "u1_in_S_prompt_set": "1629/2000 (same lmsys opener stream)"
+      },
+      "provenance": ["HF issue825_userbase_map/raw_completions/generation/conversations_meta.json", "rollout JSONLs", "10 eyeballed u1 rows (rare URL-encoded/hex junk remains, <2%)"],
+      "note": "The >=8-content-token filter makes M contexts CLEANER than S; S's 21% trivial prompts ('hi'-class) generate the generic dup-answer clusters that help S's R^2."
+    },
+    {
+      "id": "H4",
+      "name": "Sample size (n=2000 vs 5000)",
+      "verdict": "supported - the dominant component (~70% of the gap) - but SHARPENED: it is largely an estimator-regime effect (GCV-ridge degeneracy at n_tr < D), not pure statistical power",
+      "key_numbers": {
+        "matched_n_curve_L19_S1": {"n100": 0.341, "n200": 0.430, "n300": 0.446, "n497": 0.476, "n700": 0.482, "n1000": 0.437, "n1500": 0.397, "n2000": "0.258 +/- 0.039 (5 draws: 0.243/0.293/0.285/0.189/0.281)", "n5000": 0.673},
+        "power_curve_nested_draw_n2000": {"L19": 0.175, "layer_max": 0.321, "L0": -1.228},
+        "interpolation_threshold": "n_tr = 0.8n crosses D=3584 only at full n (4000 > 3584); every n<=2000 fit has n_tr <= 1600 < D",
+        "nonmonotonicity_bound": "0.482@700 > 0.258@2000: >= 0.22 of the n=2000 depression cannot be statistical power",
+        "decomposition_L19_instruct_chat": {"total_gap": 0.597, "n_regime_component": 0.415, "residual": 0.182}
+      },
+      "provenance": ["eval_results/issue_825/matched_n_curve/results.json", "eval_results/issue_825/power_curve.json", "scripts/issue825_fit_cells.py:81-91 (GCV degeneracy comment, GCV_DOF_CAP default None = committed fits unguarded; #1310 incident)"],
+      "note": "The prompt's '0.321 at n=2000' is the layer-max of one nested draw; the L19 5-draw mean is 0.258 +/- 0.039 - systematic, not an unlucky subsample. Draw variance IS banked (matched_n_curve r2_draws)."
+    },
+    {
+      "id": "H5",
+      "name": "Information intact but not linearly readable (story-collapse analog)",
+      "verdict": "partially supported / reframed: information IS intact; 'not linearly readable' is NOT established - the MLP-vs-ridge gap is confounded with the estimator regime",
+      "key_numbers": {
+        "mlp_vs_ridge_L19": {"M_instruct_chat": "0.557 vs 0.076", "M_pretrained_chat": "0.487 vs -0.461", "S1_n5000": "0.654 vs 0.673", "S2_n5000": "0.587 vs 0.588"},
+        "missing_cell": "no Track-S MLP at n=2000 is banked anywhere - so 'MLP recovers on M' cannot be separated from 'MLP (PCA-64 target head + early stopping) is simply robust to the n_tr<D regime that breaks GCV ridge'",
+        "healthy_regime_nonlinearity": "zero: MLP ~ ridge at n=5000 on both S cells",
+        "matched_n_S_ridge": "0.258 < M MLP 0.557 - consistent with the estimator-regime reading",
+        "nll_wiring": "M a1 own-context NLL mean 0.324 nats/token; own-context beats shuffled context in every wiring gate",
+        "perposition": "L26 argmax at 12/12 positions (instruct/chat) but ALL per-position R^2 negative (-0.32..-2.7): relative structure only"
+      },
+      "provenance": ["eval_results/issue_825/cells_M_instruct_assistant_chat.json (.mlp)", "eval_results/issue_825/cells_S1.json (.mlp)", "eval_results/issue_825/nll_reads.json", "eval_results/issue_825/perposition_M_instruct_assistant_chat.json", "archived analyzer body sections 'The collapse is nonlinearity, not absence' + follow-up MLP round"],
+      "note": "The archived body's 'nonlinearity, not absence' headline should carry a caveat: a well-regularized LINEAR estimator at n=2000 (dof-capped GCV, PRESS on standardized features, or ridge onto PCA-64 targets - the MLP's own target head) has never been run on these cells. The turn-depth arm's PRESS-ridge reads +0.18..0.23 at n=171 on realistic multi-turn data, hinting linear signal is recoverable at small n with different regularization."
+    },
+    {
+      "id": "H6",
+      "name": "Rig artifact (anchors / wiring / nulls)",
+      "verdict": "excluded",
+      "key_numbers": {
+        "round4_anchor_reextraction": "+0.0763 vs committed +0.0757 (gate +/-0.05)",
+        "onpolicy_round_anchors": "within +/-0.004 of parent",
+        "kresample_rig_parity": "L19 cosine min 0.99994, mean 0.99998 (476 rows)",
+        "nulls": "M frozen-layer selection-symmetric nulls -3.6..-3.9; obs >> null in every cell; g1/g3 gates PASS",
+        "mlp_same_tensors": "MLP reads 0.49-0.56 on the exact tensors where ridge reads <= 0.076"
+      },
+      "provenance": ["eval_results/issue_825/real-user-turn-null/ (anchor_parent, gate_outcomes.json)", "eval_results/issue_825/kresample-user/floor_summary.json (rig_fidelity_parity)", "eval_results/issue_825/nulls_M_*.json", "eval_results/issue_825/g1_gate.json, g3_gate.json"]
+    },
+    {
+      "id": "H7a",
+      "name": "(found) Greedy decoding of a1 as the leading residual driver",
+      "verdict": "supported (converging indirect evidence; Track-M-specific magnitude unresolved)",
+      "key_numbers": {
+        "nll_quartile_read_M_instruct_chat_L19": {"q1 (NLL 3.5e-6..0.186)": -0.252, "q2": 0.021, "q3": 0.034, "q4": 0.022},
+        "nll_quartile_read_S1_L19": {"q1 (NLL 0..0.291)": 0.734, "q2": 0.619, "q3": 0.622, "q4": 0.583},
+        "nll_means": {"M_a1": 0.324, "S1": 0.564, "M_a1_naturalistic": 0.321, "M_pretrained_read": 0.587},
+        "separator_control_greedy_vs_sampled": "greedy: base rotated -1.23 / MLP 0.495, per-group tails to -40; sampled: rotated 0.368/0.377 carry, D 0.590/0.428 -> 0.031/0.086",
+        "generation_recipe": "Track M a1/a2: vLLM greedy T=0 max_tokens=1024 (issue825_gen_conversations.py:389); Track S: T=1.0 top_p=0.95 (parent-exact)"
+      },
+      "provenance": ["eval_results/issue_825/nll_reads.json (within_model_quartiles; subset reads of held-out preds, no refit)", "eval_results/issue_825/sampled-separator-control/ + onpolicy-separator-control/ via archived analyzer body", "scripts/issue825_gen_conversations.py"],
+      "note": "Within Track M only the extreme deterministic quartile is depressed (q2-q4 flat ~+0.02), so greedy determinism alone does not explain the whole residual; the separator-control greedy->sampled flip is on a different substrate (raw WikiText continuations). Caveat cutting the other way: round-4 REAL conversations (a1 by logged serving models, not greedy) read -0.27..-0.61 at n=2000, worse than greedy Track M - authorship+corpus move the number more than decoding there, but both change together (the body's rule MF-R bars single-component attribution)."
+    },
+    {
+      "id": "H7b",
+      "name": "(found) Track-S reference inflation by duplicate/trivial-context clusters",
+      "verdict": "supported directionally; magnitude untestable from banked data",
+      "key_numbers": {
+        "S_exact_dup_answers": "471/5000 (9.4%); top prefix 'Hello! How can I assist you today?' x172; S prompts <=5 words 21.4%",
+        "M_after_filters": "exact-dup a1 0.25%; u1 <=5 words 1.65%",
+        "grouping_note": "folds are grouped by conversation id only - duplicate answer/context CLUSTERS span folds, so the same trivial mapping is trained on and tested on"
+      },
+      "provenance": ["rollout JSONLs", "scripts/issue825_fit_cells.py:_cv_folds"],
+      "note": "This inflates both the 0.673 headline and the S@2000 matched-n reference (0.258), so the rank-2 residual attribution (-0.18) partially reflects S being flattered rather than M being deficient."
+    },
+    {
+      "id": "H7c",
+      "name": "(found) Turn depth per se",
+      "verdict": "refuted as a cause",
+      "key_numbers": {"matched_n171_L19_instruct": {"turn1": "0.175 +/- 0.024", "turn3": 0.211, "turn5": 0.231, "turn7": 0.223, "turn9": 0.226, "turn11": 0.213}},
+      "provenance": ["eval_results/issue_825/turn_depth_matched_n/results.json (.matched.level_171)"]
+    }
+  ],
+  "untestable_from_banked_data": [
+    "Track-S MLP at n=2000 (would settle H5's nonlinearity-vs-estimator-regime read) - no such fit exists in eval_results/issue_825/",
+    "Magnitude of the H7b dup-cluster inflation of the S reference - requires refits on the S turnstore activations (on HF, not local)",
+    "Pretrained-cell decomposition (S2 has no matched-n curve; matched_n_curve/results.json is within-instruct only)",
+    "GCV selected-lambda records for the committed M fits (collect_lambdas was not enabled in the committed runs) - the grid-floor signature is inferred from the module's own documented failure mode (#1310) + the non-monotone curve, not from recorded lambdas"
+  ],
+  "settle_it_experiment": {
+    "name": "matched-everything refit battery on the already-persisted turnstores (0 generation, CPU-feasible; GPU optional for the eigh cache)",
+    "design": "On the existing HF turnstores (S1 single-turn + M_instruct_assistant_chat): (i) MLP probe (the exact banked fit_h.mlp_fit_predict recipe) on an n=2000 S1 subsample - if it reads ~0.55-0.65 while GCV ridge reads 0.26, the 'nonlinearity' framing dies and the estimator-regime attribution is confirmed; (ii) refit both cells with the already-landed GCV_DOF_CAP=0.9 module knob (and/or the PRESS-standardized estimator from the turn-depth rounds) at n=2000 - directly quantifies the GCV-degeneracy share on BOTH tracks; (iii) S1@2000 subsample after an M-matched corpus filter (dedup on answer text + >=8-content-token prompts) - bounds the H7b inflation. The three reads jointly split the 0.597 gap into estimator-regime / decoding+corpus / true-nonlinearity components with zero new data.",
+    "note": "This is a diagnostic re-read of the existing context-arm family, not a new mapping design."
+  }
+}
