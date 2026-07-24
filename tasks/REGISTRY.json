@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1660,
+  "highest_id": 1661,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5144,6 +5144,13 @@
       "path": "tasks/proposed/1660",
       "status": "proposed",
       "title": "daily-fix: ddp_timeout default for ZeRO-3 multi-GPU runs"
+    },
+    "1661": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1661",
+      "status": "proposed",
+      "title": "daily-fix: agent-spec-size ratchet in pre-commit"
     },
     "168": {
       "has_clean_result": true,
