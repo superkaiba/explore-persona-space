@@ -5029,8 +5029,8 @@
     "1645": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1645",
-      "status": "proposed",
+      "path": "tasks/planning/1645",
+      "status": "planning",
       "title": "daily-fix: register 3 unregistered step9c pin tests"
     },
     "1646": {
