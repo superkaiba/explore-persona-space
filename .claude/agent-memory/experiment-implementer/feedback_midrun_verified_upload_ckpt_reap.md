@@ -18,9 +18,17 @@ completed cells is what the next phase's floor actually competes with.
 error; never the un-uploaded or deferral-pending cell), reap the local
 copy — and give the run's SINGLE checkpoint resolver a
 restage-on-missing branch through the same per-file staging helper the
-run already uses (pinned revision, fail-loud, per-restage hub-cache
-evict). Pair the halves: reap without restage crashes later consumers;
+run already uses (pinned revision, fail-loud). **FANOUT CAVEAT (r6,
+epm:failure v12 — supersedes r5's per-restage hub-cache evict):** never
+evict the shared hub cache PER-RESTAGE inside concurrent fan-out units —
+the first finisher's evict deletes a sibling's in-flight `.incomplete`
+blobs (FileNotFoundError in hf `file_download`); instead the PARENT
+pre-stages every fan-out arm's missing checkpoint SERIALLY at phase
+entry (the fanout-shared-staging-prestage-parent pattern) and evicts
+ONCE per batch, keeping the in-unit restage as a fail-loud, EVICT-FREE
+backstop. Pair the halves: reap without restage crashes later consumers;
 restage without reap frees nothing. Extends the delete-after-eval
 adapter-persist recipe (upload-policy.md, #404/#458) and the hf
 local_dir delete-to-free memory (#1092 P6) from end-of-sweep to MID-RUN
-retention. (#1586 fu round 5, fix `3797f739`.)
+retention. (#1586 fu round 5, fix `3797f739`; r6 fanout caveat —
+`_prestage_selected_ft_ckpts`, `scripts/issue1586_dispatch.py`.)
