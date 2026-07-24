@@ -3380,6 +3380,21 @@ status:blocked"`), set `blocked`, EXIT — the storage decision is the
 user's. Fail-open otherwise: unknown headroom /
 disabled check / routing armed all WARN and proceed to 6b.
 
+**Billing-state gate (#1654).** The same `preflight --no-gpu
+--planned-upload-gb <N>` invocation now ALSO runs the zero-byte LFS
+batch-negotiation billing probe (`hub.check_lfs_write_gate`, declared ~16 GB):
+the 1 KB probe above is structurally false-green for quota/billing 403s, which
+fire only on the LFS endpoint (#1586: a 2 MB probe passed while 15.2 GB
+checkpoints 403'd on "setup automatic credit recharge"). A
+billing-blocked/storage-blocked ERROR exit is handled exactly like the
+quota-exceeded exit above (post `epm:hf-quota-exceeded v1` with the gate's
+error text, `status:blocked`, do NOT provision). Coverage boundary: a passing
+~16 GB-declared probe means "not blocked NOW at that scale", NOT "credits
+sufficient for the whole run" (e.g. 215 GB) — mid-run credit exhaustion stays
+with the reactive 403 backstop; do NOT size the probe to `--planned-upload-gb`
+(a probe declared above per-file upload caps — e.g. >50 GB — would fail for
+size reasons and degrade the verdict to `unknown`).
+
 #### Step 6b: Pod provisioning
 
 **Backend dispatch (slice-6 unified router — auto by default, RunPod opt-in).**
