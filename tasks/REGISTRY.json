@@ -5134,8 +5134,8 @@
     "1659": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1659",
-      "status": "reviewing",
+      "path": "tasks/completed/1659",
+      "status": "completed",
       "title": "daily-fix: inline rounds size fences from measured pilot"
     },
     "1660": {
