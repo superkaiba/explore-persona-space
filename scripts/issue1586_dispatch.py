@@ -698,9 +698,11 @@ def _evict_overflow_hub_cache() -> int:
     the consumer copies at ``out_root/inputs/ft_ckpts`` (the #1092 P6
     staging-duplication class; 29 GB duplicated on pod-1586's ~200 GB
     /workspace). Called only AFTER the staged-set guards verified the consumer
-    copies (p0), or ONCE per parent pre-stage batch after the serial restage
-    loop completes (r6 — _prestage_selected_ft_ckpts; NEVER per-restage inside
-    fan-out units); ONLY this repo's entry is evicted (the Qwen base + main model repo
+    copies (p0), or from the PARENT-SERIAL pre-stage loop — after EACH
+    successful restage (r9, epm:failure v14) plus a terminal idempotent batch
+    sweep (r6 — _prestage_selected_ft_ckpts; NEVER per-restage inside
+    fan-out units, whose concurrent restages race the shared cache — the r6
+    rationale); ONLY this repo's entry is evicted (the Qwen base + main model repo
     entries are live consumers). Idempotent (absent entry -> one no-op line);
     rmtree errors propagate (fail-loud — a half-evicted cache lies to the wave
     headroom arithmetic). Emits exactly one ``[hub-evict]`` line either way
@@ -2801,10 +2803,12 @@ def _selected_ft_ckpt(cfg: Cfg, cell: str) -> Path:
         # sibling's in-flight .incomplete blobs + tmp dirs (FileNotFoundError
         # in huggingface_hub.file_download; the #1315-r5 shared-staging
         # class). The PARENT pre-stages every fan-out cell serially
-        # (_prestage_selected_ft_ckpts) and owns the ONE batch evict; this
-        # in-unit branch stays a fail-loud, EVICT-FREE backstop (a lone
-        # restage's cache residue is a disk nit bounded by the r4 wirings +
-        # the next parent batch evict).
+        # (_prestage_selected_ft_ckpts) and owns ALL eviction — per
+        # successful restage inside its parent-serial loop (r9, epm:failure
+        # v14) plus a terminal sweep (r6); this in-unit branch stays a
+        # fail-loud, EVICT-FREE backstop (a lone restage's cache residue is
+        # a disk nit bounded by the r4 wirings + the next parent prestage
+        # evict).
     _ensure_dir_tokenizer(ckpt)
     return ckpt
 
@@ -2849,8 +2853,13 @@ def _prestage_selected_ft_ckpts(cfg: Cfg, cells: Sequence[str]) -> int:
     resolver (its [ckpt-restage] lines now come from the parent pid; units
     then find local copies present and their restage branch stays a
     fail-loud, evict-free backstop) and evicts the overflow hub-cache entry
-    ONCE per batch — only when >=1 restage happened (the r4 #1092-P6
-    duplication class). HUB-CACHE residue a crashed run left under the entry
+    after EACH successful restage (r9, epm:failure v14: the r6 batch-only
+    evict fired AFTER the whole loop, so 4 serial ~15 GB restages accumulated
+    ~60 GB of hub-snapshot copies ON TOP of the ~60 GB dest copies -> ENOSPC
+    on the 200 GB /workspace; per-iteration eviction bounds the transient to
+    <= ONE checkpoint's hub copy + dest copy), plus a terminal idempotent
+    batch sweep — evictions fire only when >=1 restage happened (the r4
+    #1092-P6 duplication class). HUB-CACHE residue a crashed run left under the entry
     (.incomplete blobs, tmp scratch) needs no separate sweep: hf 0.36.2's
     _download_to_tmp_and_move removes-or-resumes a stale etag-keyed
     .incomplete (verified), and the terminal batch evict rmtree-sweeps
@@ -2864,12 +2873,28 @@ def _prestage_selected_ft_ckpts(cfg: Cfg, cells: Sequence[str]) -> int:
     missing = _restageable_missing_ft_cells(cfg, cells)
     for cell in missing:
         _selected_ft_ckpt(cfg, cell)
+        # Crash-fix r9 (fu, epm:failure v14): evict the overflow hub-cache
+        # entry after EACH successful restage. THIS LOOP IS PARENT-SERIAL BY
+        # CONSTRUCTION (it completes before _fanout_units spawns anything),
+        # so a per-iteration evict cannot race a sibling's in-flight
+        # download — the r6 race (epm:failure v12, the #1315-r5
+        # shared-staging class) is specific to CONCURRENT in-unit restages,
+        # whose resolver branch stays evict-free. Do NOT re-hoist this evict
+        # into unit code (_selected_ft_ckpt). Batch-only eviction (r6..r8)
+        # let K serial ~15 GB restages accumulate K hub-snapshot copies ON
+        # TOP of the K dest copies (v14: ENOSPC at K=4 on the 200 GB
+        # /workspace); per-iteration eviction bounds the transient to <= ONE
+        # checkpoint's hub copy alive at any time during prestage.
+        _evict_overflow_hub_cache()
     if missing:
         logger.info(
             "[ckpt-prestage] parent restaged %d selected checkpoint(s) serially: %s",
             len(missing),
             ", ".join(missing),
         )
+        # Terminal idempotent sweep (r6) — usually a no-op now that each
+        # iteration evicted; kept as the backstop for residue the last
+        # restage's evict could not see (none known) and as the r6 contract.
         _evict_overflow_hub_cache()
     return len(missing)
 
