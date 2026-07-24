@@ -127,7 +127,8 @@ solve one shared reduction + cheap per-λ updates.
 7. **Launch it protected + checkpointed — the launch form is part of the fix.**
    Any VM-side fit / battery / aggregation phase with projected wall-time >~15 min
    MUST use the canonical detached launch: `setsid` pid-capture wrapper +
-   `sudo -n choom -n -600` session sweep + the `pid= log= choom=ok|failed`
+   `sudo -n choom -n -600` session sweep + the
+   `pid= log= choom=ok|failed harvest=<abs output path>`
    breadcrumb — recipe owned by `.claude/skills/issue/SKILL.md`
    § "Detached VM-side long compute phases" (short form:
    `.claude/rules/code-style.md` § "Always run with `nohup`"); do not copy the

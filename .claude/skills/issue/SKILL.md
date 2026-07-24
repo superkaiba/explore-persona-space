@@ -6126,13 +6126,48 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry three additional fields:
-`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry four additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
+(additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
-— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
-genuinely new field), and the `external-markers triaged:` line
+— this convention upgrades it to a REQUIRED absolute path, `pid=` is the
+genuinely new #833 field, and `harvest=` is the § Harvest contract's declared
+results location, new with #1656), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Harvest contract (declared AT LAUNCH — a closed session never strands finished
+results; #1310, #1656).** Detachment protects the RUN; this clause protects the
+RESULTS. Every detached launch declares its harvest path at launch time:
+
+1. **Durable out-root (REQUIRED).** `<cmd>` writes its results to a durable,
+   session-independent location — `eval_results/issue_<N>/...`, the task's
+   `artifacts/` dir, an HF-upload staging dir under `data/issue_<N>/`, or (for a
+   log-only probe) the breadcrumb's own `log=` file — never session-scoped scratch
+   only the launching conversation knows about.
+2. **`harvest=` token (REQUIRED).** The stage-dispatch breadcrumb's
+   `harvest=<abs, space-free output path or glob>` (comma-separate multiple paths;
+   values are whitespace-split tokens, so no spaces) names where completion outputs
+   land. The § Successor / re-entry rule probes THIS path for "completion output
+   present" and collects from it — no guessing. Breadcrumbs predating this contract
+   lack the token: consumers fall back to log-tail + known output dirs (the same
+   graceful-optional convention as `label=`).
+3. **Self-harvest chaining (PREFERRED).** When collection is one idempotent command,
+   make it part of the detached unit itself — as a SINGLE command unit substituted
+   for `<cmd>`: a driver script whose final act is the collection/upload (an HF
+   upload of raw completions/tensors, a copy into `eval_results/issue_<N>/`), or an
+   inner `bash -c '<workload> && <harvest-cmd>'`. NEVER splice a bare
+   `<workload> && <harvest-cmd>` into the template: the `&&` splits the launch line,
+   binding setsid/nohup/env to the first command and the redirections + trailing `&`
+   to the second — detachment silently breaks. This is the detached-phase instance
+   of the batch-judge deadline-bounded self-harvest. The identity verify is
+   unchanged (the distinctive workload substring still appears in
+   `ps -p $PHASE_PID -o args=` for either wrapped form). Only the steps that MUST
+   stay session-side — the explicit-path git commit under the concurrent-committer
+   discipline, folding numbers into the body — are left to the successor; the DATA
+   is durable before any session touches it.
+
+The contract costs one token + a path choice at launch — never a new gate.
 
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
@@ -6209,8 +6244,15 @@ FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
 signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
-args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
-output present → stage done; proceed. Dead with no completion output →
+args MISMATCH (recycled pid: treat as dead) — with completion output present
+at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
+breadcrumbs lack the token — fall back to log-tail + known output dirs) →
+stage done; RUN THE HARVEST — collect the declared outputs, commit/upload
+them per the Upload Policy, fold them forward — then proceed. An EMPTY
+`harvest=` path beside a log tail showing clean completion is a
+declared-path mismatch (typo / divergence), not a failed run — cross-check
+the log's real output locations before treating the phase as failed.
+Dead with no completion output →
 genuinely failed: run the kill-before-relaunch probe
 (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
 `stage_dispatch_should_skip` knows nothing about pids, so the polling
@@ -6756,7 +6798,8 @@ statement is posted before that launch. A round with no fit/battery stage AND no
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
-(`choom=ok|failed`) per the Step 9 entry-guard
+(`choom=ok|failed`) **+ the harvest contract (the durable
+out-root + the `harvest=` token)** per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
@@ -10848,11 +10891,34 @@ else
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
+    # Head-sync pre-check (#1657, READ-ONLY — the tip is untouched, so the
+    # SHA-bound verdict above stays valid): every push this invocation made
+    # (Guard-0/1 commits, the pre-gate spec-freshness commit) races
+    # GitHub's PR-object sync — #1614's attempts 1-2 were refused
+    # 'Head branch is out of date' while the PR object lagged the pushed
+    # tip ~6 min. Poll until the PR object reports the local tip AND a
+    # settled mergeability; a settled CONFLICTING exits too (the merge
+    # attempt then classifies to shape 2 below, unchanged). Check-first
+    # bounded until-loop — never a leading foreground sleep
+    # (harness-blocked; the shape-0 convention).
+    TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
+    until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
+          && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
+      HS_TRIES=$((HS_TRIES + 1))
+      if [ "$HS_TRIES" -ge 6 ]; then
+        echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — proceeding; Known failure shape 3 below is the recovery"
+        break
+      fi
+      sleep 20
+    done
+    if [ "${HS%% *}" = "$TIP" ]; then
+      echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
+    fi
     gh pr ready <PR>
     if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
     else
-      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip re-entries); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
     fi
   else
@@ -10909,8 +10975,10 @@ branch tip is unchanged, so the SHA-bound verdict re-certifies it
 (consume-on-merge-success survives this failure by design; never
 hand-write the verdict file, #1082). Bounded at TWO same-tip retries
 per Step 10d invocation; a third consecutive hit is no longer plausibly
-timing — reclassify by error text per shapes 1/2/else. Before #1288
-this shape fell through to "(3) anything else" and burned a full
+timing — reclassify by error text per shapes 1/2/3/else. Before #1288
+this shape fell through to the "anything else" catch-all (then
+numbered (3); now class (4) after #1657 added the head-sync shape) and
+burned a full
 ~16-min scratch-worktree recovery on a transient (one of the three
 error shapes in the 2026-07-12 fleet's 4/4 first-attempt failures).
 
@@ -11007,6 +11075,50 @@ fix the server-side view and the retry is warranted; the tip is then
 unchanged, so the still-valid SHA-bound verdict re-certifies it and no
 gate re-run is needed.)
 
+**Known failure shape 3 — PR head-sync lag
+(`Head branch is out of date`, #1614).** Substring-match
+`Head branch is out of date` (transcript-mined from #1614 / PR #1394,
+2026-07-23; may drift — treat a `Head branch was modified` refusal as
+the same class). GitHub's PR OBJECT (what `gh pr view` and the merge
+API read) lags a JUST-PUSHED head ref under fleet churn — ~6 min
+observed after #1614's pre-gate spec-freshness push — so the merge is
+refused against a stale view of the head. NOT branch-behind-main
+staleness: #1614's attempt 3 landed the SAME 132-behind tip
+byte-unchanged once the PR object re-synced, so `gh pr update-branch` /
+catching the branch up to `main` does not address this shape (and the
+update-branch default form adds a merge commit that breaks the
+`--rebase` form on experiment branches — shape 1). Recovery: (1)
+confirm the tip is actually pushed
+(`git -C "$WT" rev-list --count origin/issue-<N>..HEAD` = 0 — if not,
+the safe-case push is the fix, not this shape); (2) re-poll
+`gh pr view <PR> --json headRefOid` until it equals the local tip
+(bounded until-loop or bg-Bash re-check — never a leading foreground
+sleep; ~6 × 20 s, the pre-check budget again); (3) still stale → the
+#1614 close/reopen nudge ONCE per Step 10d invocation —
+`gh pr close <PR>` then `gh pr reopen <PR>` (forces GitHub to re-sync
+the PR object; the branch tip and the PR's commits are untouched) —
+verify the reopen landed (`gh pr view <PR> --json state -q .state` =
+`OPEN`; a crash between close and reopen strands a CLOSED PR — the
+next invocation re-opens it idempotently before re-entering) and
+re-poll once more; (4) re-enter the SAME gated merge conditional
+with the SAME `$MERGE_FORM` — the tip is unchanged, so the SHA-bound
+verdict re-certifies it (consume-on-merge-success survives this
+failure by design; never hand-write the verdict file, #1082). Bounded
+at ONE nudge + TWO same-tip re-entries per Step 10d invocation. STILL
+stale after the nudge re-poll → optional LAST RESORT before the
+Failure bullet, the #1613 empty-commit synchronize:
+`git -C "$WT" commit --allow-empty -m "issue-<N>: force PR synchronize
+(#1613 head-sync wedge)"` + the bare branch push — forces GitHub to
+emit a synchronize event that rebuilds the PR object (#1613's ~10-min
+wedge, which outlasted passive polling, was cured exactly this way).
+This MUTATES the tip, so the SHA-bound verdict goes stale and the
+pre-push lint gate MUST re-run before the next attempt (the gate's own
+sha arm enforces this fail-closed; #1613's recovery re-ran + re-bound
+the gate). Still refused → the Failure bullet (`epm:merge-failed`).
+The head-sync pre-check inside the safe-case block above exists to
+keep this shape off the FIRST attempt; this paragraph is the backstop
+when the lag outlasts the pre-check budget.
+
 - **Success:** post `epm:merged v1` with the list of merge SHAs plus
   `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
   convention — no schema change, #1288). Update
@@ -11015,6 +11127,9 @@ gate re-run is needed.)
 - **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): for
   the `Base branch was modified` shape (substring match), run the
   shape-0 wait-and-retry (Known failure shape 0 above, max 2) FIRST; for
+  the `Head branch is out of date` shape (substring match), run the
+  shape-3 head-sync re-poll + close/reopen nudge (Known failure shape 3
+  above, nudge ONCE); for
   the `Pull Request has merge conflicts` shape (substring match), FIRST
   run the **re-snapshot-and-retry** (Known failure shape 2 above) ONCE;
   if it is skipped (nothing changed), run the **merge-conflict recovery**
