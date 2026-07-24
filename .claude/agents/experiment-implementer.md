@@ -420,8 +420,10 @@ such corpora or banks:
    <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
    that merge-gate leg is the backstop. Record the fragments grepped +
    the verbatim deduplicated hit-file list in `(c)` (`pin-sweep:
-   <fragments> → <N> hit files: <list>`; never a count-only summary —
-   #1494). This adds a report record only, not a `Gate-scope check`
+   <fragments> → <N> hit files: <list>; sweep_scope: repo-wide` — the
+   REALIZED universe: this duty greps ALL of `tests/`, so `repo-wide`;
+   a sweep actually run only over a selector enumeration states
+   `selector-universe` — #1651; never a count-only summary — #1494). This adds a report record only, not a `Gate-scope check`
    line — code-reviewer Step 4.6's binding scope (`epm:results` only)
    is unchanged.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the

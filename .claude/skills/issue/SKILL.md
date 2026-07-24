@@ -2126,7 +2126,9 @@ Brief passed to the implementer:
   runs the diff-linked + pin-hit subset locally, deferring only the
   invariant-only remainder to the gate (which remains the backstop),
   reporting the pin-sweep field with the verbatim deduplicated
-  hit-file list — never a count-only or glob-family summary (#1494;
+  hit-file list + its `sweep_scope:` universe token
+  (`selector-universe` | `repo-wide` — the REALIZED universe; #1651)
+  — never a count-only or glob-family summary (#1494;
   >20 files → fenced block under the Gate-scope line).
   Belt-and-suspenders on `implementer.md` § After Implementation item 1,
   so round briefs surface the duty without the implementer having to
