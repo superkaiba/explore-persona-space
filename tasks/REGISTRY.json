@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1662,
+  "highest_id": 1663,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5158,6 +5158,13 @@
       "path": "tasks/proposed/1662",
       "status": "proposed",
       "title": "daily-fix: suffixed follow-up pods terminate on done"
+    },
+    "1663": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1663",
+      "status": "proposed",
+      "title": "daily-held: auto-escalate GCP queue-starve to RunPod?"
     },
     "168": {
       "has_clean_result": true,
