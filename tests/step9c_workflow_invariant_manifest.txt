@@ -48,6 +48,7 @@ tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py
 tests/test_step10d_guard3.py
 tests/test_step_completed_resume.py
+tests/test_suffixed_pod_completion_teardown_pin.py
 tests/test_task_workflow.py
 tests/test_task_workflow_list_children.py
 tests/test_task_workflow_post_marker_echo.py
