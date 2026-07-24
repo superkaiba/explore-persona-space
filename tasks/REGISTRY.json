@@ -5085,8 +5085,8 @@
     "1652": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1652",
-      "status": "proposed",
+      "path": "tasks/archived/1652",
+      "status": "archived",
       "title": "daily-fix: scope RunPod hourly cap to EPS-managed pods"
     },
     "1653": {
