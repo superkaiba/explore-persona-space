@@ -255,8 +255,10 @@ WF_FIX_TARGET_KEY = "workflow_fix_target:"
 PROVENANCE_HEADING_RE = re.compile(r"^## Provenance[ \t]*$", re.M)
 
 # Anchored Provenance fingerprint line: a list item whose FIRST token after the
-# bullet is `fingerprint:` + a 12-hex fp (wf_fix_fingerprint shape; trailing
-# lookahead per sweep _RECORD_FP_RE). Deliberately does NOT match prose quotes
+# bullet is `fingerprint:` + a 12-hex fp (wf_fix_fingerprint shape; the trailing
+# (?![0-9a-f]) lookahead rejects a >=13-hex token matching on its first 12 chars
+# — the sweep's retired _RECORD_FP_RE convention, deleted in #1680).
+# Deliberately does NOT match prose quotes
 # ("... its Provenance fingerprint: 44d3..." sits mid-line) — the #1580 fix.
 _FP_LINE_RE = re.compile(
     r"(?m)^(?P<indent>\s*)-\s*fingerprint:\s*(?P<fp>[0-9a-f]{12})(?![0-9a-f])(?P<rest>[^\n]*)"

@@ -567,3 +567,47 @@ def test_route2_landed_fix_probe_documented(daily_skill_text: str):
     assert "fail-open" in region.lower(), (
         "the fail-open-on-git-errors contract dropped from the probe paragraph"
     )
+
+
+# ── #1680: Step C routed-record verbatim-fp + exact-ts mandate + skipped read ─
+
+
+def test_step_c_routed_record_verbatim_fp_and_ts_pin(daily_skill_text: str):
+    """#1680 pin: the Step C routed-record MUST carry the sweep-reported
+    fingerprint copied VERBATIM (never recomputed from abridged/synthesized
+    origin text — driver-recomputed fps broke suppression for the #1630 trio)
+    plus the exact `origin_candidate_ts: <c.ts>`, and Step C reads the sweep's
+    structured `skipped` records (`relevant_kind` true/null warrants
+    investigation; false is benign)."""
+    assert 'c["fingerprint"]' in daily_skill_text, (
+        'the #1680 verbatim-fp mandate (`c["fingerprint"]` copied VERBATIM) dropped '
+        "from the Step C routed-record block — driver-recomputed fps are the #1630 "
+        "suppression-break class"
+    )
+    assert "copied VERBATIM" in daily_skill_text, (
+        "the #1680 'copied VERBATIM' fp mandate wording dropped from the Step C routed-record block"
+    )
+    assert "never recomputed from abridged" in daily_skill_text, (
+        "the #1680 never-recompute clause dropped from the Step C routed-record "
+        "block (recomputing the fp from abridged origin text is the #1630 bug)"
+    )
+    assert 'c["ts"]' in daily_skill_text, (
+        'the #1680 exact-ts mandate (`origin_candidate_ts:` MUST be `c["ts"]`) '
+        "dropped from the Step C routed-record block"
+    )
+    assert "origin_candidate_ts: <c.ts>" in daily_skill_text, (
+        "the routed-record note template no longer carries the exact "
+        "`origin_candidate_ts: <c.ts>` field"
+    )
+    assert 'sweep["skipped"]' in daily_skill_text, (
+        'the #1680 `sweep["skipped"]` read dropped from Step C — /daily would '
+        "again mis-attribute a bare skipped_rows count (the #1333/#1642 shape)"
+    )
+    assert "relevant_kind" in daily_skill_text, (
+        "the #1680 `relevant_kind` triage guidance (true/null: investigate; "
+        "false: benign) dropped from Step C"
+    )
+    assert "SUPPRESSION EVIDENCE" in daily_skill_text, (
+        "the #1680 inverse-direction warning (a malformed FILED-kind line may be "
+        "lost suppression evidence -> spurious re-enumeration) dropped from Step C"
+    )
