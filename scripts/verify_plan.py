@@ -168,6 +168,8 @@ labeled-line forms):
   - ``N/A — no revision-pinned reuse`` (check 35)
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
+  - ``N/A — not bundled into no-flags`` (check 37's proposed-new-check
+    pin-test arm)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
@@ -6252,6 +6254,31 @@ _C37_NEG_RE = re.compile(
     r"(?i)\bnot\b|\bnever\b|\bno longer\b|\babsent\b|\bexcluded?\b|\boutside\b"
     r"|\bseparate(?:ly)?\b|\bonly\s+(?:in|under|when|via|on)\b|\bruns only\b"
 )
+# Pin-test arm (#1679): a hit whose flag has NO occurrence in the lint
+# source is a PROPOSED new check — unfalsifiable against the dispatch set
+# (the existence gate below), but #1385 v1 / #1648 v2 shipped exactly this
+# shape with no test named to keep the bundling true after a later
+# dispatch refactor (the silent-unbundling class; both were caught only by
+# a Phase-2 critic Must-Fix, then corrected in v2/v3 with a
+# test_<check>_bundled_in_no_flags pin). The pin arm uses a LOCALIZED
+# negation guard (the c41 _C41_NEG_WINDOW precedent): both founding
+# incident lines are long mixed-clause Plan-Summary lines carrying an
+# incidental negation token ("not allowed here" / "not a comment") FAR
+# from the claim, so the falsity arm's whole-line guard silently
+# un-triggers them (measured 2026-07-25: whole-line replay reads both
+# incidents SKIP; 40-char pre-window replay reads both WARN and their
+# corrected v2/v3 PASS via the pin-test satisfier).
+_C37_PIN_NEG_WINDOW = 40  # chars of pre-context a negation token guards (c41 parity)
+# Satisfier: the plan names a pytest following the house convention
+# test_<check>_bundled_in_no_flags (20 live exemplars across
+# tests/test_workflow_lint*.py, measured 2026-07-25 — incl. the
+# `*_source_pin` suffixed shapes, which the unanchored regex admits).
+# RAW-plan scan, fences INCLUDED — test enumerations and pytest commands
+# legitimately live in fenced blocks (the c41 satisfier-(a) precedent).
+# The literal `test_` prefix + [a-z0-9_] body is anti-paste armor: the
+# WARN detail names the convention only in its angle-bracketed template
+# form (test_<check>_bundled_in_no_flags), which `<` keeps unmatched.
+_C37_PIN_TEST_RE = re.compile(r"test_[a-z0-9_]*bundled_in_no_flags")
 
 
 def _c37_lint_source() -> str | None:
@@ -6289,16 +6316,50 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     ``--check-<flag>`` + a claim-verb-anchored no-flags assertion on one
     non-fenced line with no negation/scoping token; falsity = derived-set
     non-membership, restricted to flags that EXIST in the workflow_lint
-    source (a flag with no ``--check-<flag>`` occurrence there is a
-    PROPOSED new check — "add ``--check-newthing`` to the no-flags default
-    run" is forward-looking and unfalsifiable at plan time, never an
-    offender). NEVER FAILs (the c15/c34 doctrine: trigger and derivation
+    source. NEVER FAILs (the c15/c34 doctrine: trigger and derivation
     are text heuristics). Deliberately OUT of scope (v1, disclosed): the
     CONVERSE claim class (asserting a flag is NOT in the set when it IS —
     the negation guard drops every negated line unadjudicated), and the
     vocabulary-side false-negative class (a bundling claim phrased without
     a literal "no-flags"/"no flags" token, e.g. "the bare/default
-    workflow_lint run"). Calibration (2026-07-16, 838 corpus plan versions
+    workflow_lint run").
+
+    Pin-test arm (#1679): a claimed flag with NO ``--check-<flag>``
+    occurrence in the lint source is a PROPOSED new check — unfalsifiable
+    against the dispatch set at plan time (the pre-#1679 existence gate
+    read it "never an offender") — but #1385 v1 / #1648 v2 shipped exactly
+    this shape with no test named to keep the claimed bundling true after
+    a later dispatch refactor (the silent-unbundling class). Such a claim
+    now WARNs unless the plan names a pytest matching ``_C37_PIN_TEST_RE``
+    anywhere in the RAW plan (fences included) or declares the standalone
+    escape ``N/A — not bundled into no-flags``. The pin arm's claim
+    matches are guarded by a LOCALIZED pre-window negation check
+    (``_C37_PIN_NEG_WINDOW``, c41 parity) instead of the falsity arm's
+    whole-line guard — see the constant comment for the founding-incident
+    measurement. The falsity arm's trigger, whole-line guard, and WARN
+    detail are byte-preserved, and a falsity WARN takes PRECEDENCE over a
+    co-occurring pin-arm miss (one CheckResult per check; the pin WARN
+    deterministically resurfaces on the post-fix re-verify — every plan
+    revision is re-verified standalone).
+
+    Disclosed pin-arm limitations: (a) the satisfier is PLAN-GLOBAL — a
+    plan proposing TWO new checks that names one pin test passes for both
+    (the c34 scope-note-(a) precedent); (b) sibling-exemplar quotation —
+    a plan quoting a PRIOR check's REAL pin-test name as precedent
+    self-satisfies for its own new check (a false negative; the Phase-2
+    critics own test-shape adequacy); (c) a deliberately explicit-only
+    new check never triggers (it makes no bundling claim), and the
+    immediate-negation shape ("is NOT bundled into the no-flags default
+    run") stays guarded by design; (d) a benign micro-delta vs the
+    pre-#1679 loop on negated-line-only plans: the terminal SKIP detail
+    wording differs from the old no-claim SKIP, and the whole-check N/A
+    escape is now reachable (PASS instead of SKIP) when only negated-line
+    pin residue survives — WARN-free outcomes either way; (e) the
+    satisfier verifies the plan SURFACE (a test NAME, not its existence
+    or selection) — c41's anchor machinery and the code-reviewer own
+    implementation.
+
+    Calibration, falsity arm (2026-07-16, 838 corpus plan versions
     carrying ``--check-``, forced kind=infra): 174 WARN / 115 PASS /
     549 SKIP; the 20 NEWEST infra|batch plans (the forward-looking
     operative set) are 0 WARN; #1322 v1 WARNs while its corrected v2
@@ -6309,7 +6370,25 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     by the endemic genuinely-false "no-flags run bundles/includes
     ``--check-asks``" claim (corrected #1007 v1→v2 — a true positive),
     with ~5% incidental false WARNs on historical long mixed-clause
-    lines, acceptable at WARN-only granularity."""
+    lines, acceptable at WARN-only granularity.
+
+    Calibration, pin arm (2026-07-25, landed-function replay over 2,763
+    persisted ``tasks/*/*/plans/v*.md`` versions, forced kind=infra):
+    +6 new WARNs vs the pre-#1679 check — 3 genuine incident-class
+    (#1234 v1 ``--check-executable-git-recipes``, #1520 v1
+    ``--check-hub-verify-calls``, #718 v2 ``--check-skill-circuit-breaker``
+    — each a bundling claim for a flag with no lint-source occurrence and
+    no pin test named), 2 placeholder false positives (#1176 v1/v2's
+    illustrative ``--check-x`` — the standalone escape is the designed
+    remedy), 1 borderline convention-prose (#968 v1's naming-convention
+    discussion of a suggested-then-rejected flag name). Full-corpus status
+    counts under the extended check: 206 WARN / 163 PASS / 2,394 SKIP
+    (falsity-arm mass unchanged in kind from the 2026-07-16 calibration).
+
+    Founding controls (plan-time source simulation — the landed flag
+    stripped from a copied lint source; reproduced through the landed
+    function 2026-07-25): #1385 v1 WARN / #1648 v2 WARN; corrected
+    #1385 v2 PASS / #1648 v3 PASS via the pin-test satisfier."""
     cid, name = (
         "c37_noflags_bundling_claim",
         "no-flags bundling claim matches workflow_lint dispatch",
@@ -6322,19 +6401,36 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
         )
     lines = plan.splitlines()
     mask = _fence_mask(lines)
-    hits: list[tuple[str, str]] = []
+    hits: list[tuple[str, str]] = []  # falsity arm — whole-line negation guard
+    pin_hits: list[tuple[str, str]] = []  # pin arm — localized pre-window guard (#1679)
     for line, fenced in zip(lines, mask, strict=True):
         if fenced:
             continue
-        if not (_C37_CLAIM_FWD_RE.search(line) or _C37_CLAIM_INV_RE.search(line)):
+        claims = list(_C37_CLAIM_FWD_RE.finditer(line)) + list(_C37_CLAIM_INV_RE.finditer(line))
+        if not claims:
             continue
-        if _C37_NEG_RE.search(line):
+        line_negated = bool(_C37_NEG_RE.search(line))
+        # Loop equivalence with the pre-#1679 falsity arm: when line_negated
+        # is False, window_live is necessarily True (no negation anywhere on
+        # the line implies none in any pre-window), so `hits` receives
+        # exactly what the old whole-line-guarded loop collected; when
+        # line_negated is True, `hits` receives nothing — identical to the
+        # old guard. The pin arm only ADDS `pin_hits` rows for window-live
+        # claims.
+        window_live = any(
+            not _C37_NEG_RE.search(line[max(0, m.start() - _C37_PIN_NEG_WINDOW) : m.start()])
+            for m in claims
+        )
+        if line_negated and not window_live:
             continue
         for m in _C37_FLAG_RE.finditer(line):
             if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
                 continue  # "bundled into `--check-X`": X is the destination, not the subject
-            hits.append((m.group(1), line))
-    if not hits:
+            if not line_negated:
+                hits.append((m.group(1), line))
+            if window_live:
+                pin_hits.append((m.group(1), line))
+    if not hits and not pin_hits:
         return _skip(cid, name, "no --check-* no-flags bundling claim on a non-fenced line")
     if _standalone_na_declared(plan, r"no no[- ]flags bundling claim"):
         return _pass(cid, name, "explicit N/A declared (incidental --check/no-flags vocabulary)")
@@ -6352,28 +6448,86 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
         (flag, line)
         for flag, line in hits
         # Existence gate: a flag absent from the lint source outright is a
-        # PROPOSED new check (forward-looking claim) — skip, never an offender.
+        # PROPOSED new check — the falsity arm cannot adjudicate it; the
+        # pin arm below owns it (#1679).
         if f"--check-{flag}" in src and flag.replace("-", "_") not in dests
     ]
-    if not offenders:
+    if offenders:
+        # Falsity WARN, byte-preserved from pre-#1679. Takes precedence over
+        # a co-occurring pin-arm miss: one CheckResult per check; the pin
+        # WARN resurfaces on the post-fix re-verify.
+        flag, line = offenders[0]
+        more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+        return _warn(
+            cid,
+            name,
+            f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
+            f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
+            "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
+            f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
+            "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
+            "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    # Pin-test arm (#1679): a proposed new check claiming no-flags bundling
+    # must name its test_<check>_bundled_in_no_flags pin test.
+    proposed = [(flag, line) for flag, line in pin_hits if f"--check-{flag}" not in src]
+    if proposed:
+        if _C37_PIN_TEST_RE.search(plan):
+            return _pass(
+                cid,
+                name,
+                f"{len(proposed)} proposed-new-check bundling claim(s) — the plan names a "
+                "test_*bundled_in_no_flags pin test",
+            )
+        if _standalone_na_declared(plan, r"not bundled into no[- ]flags"):
+            return _pass(
+                cid,
+                name,
+                "explicit N/A declared (proposed check deliberately not run on the bare "
+                "invocation, or the claim vocabulary is incidental)",
+            )
+        flag, line = proposed[0]
+        more = f" (+{len(proposed) - 1} more)" if len(proposed) > 1 else ""
+        # Paste-safety: the quoted excerpt is SANITIZED — case-insensitively,
+        # since the claim regexes are (?i) — so a pasted WARN detail can
+        # never carry a window-live claim match: the claim NOUN inside the
+        # quote is neutralized deterministically (`no-flags`/`no flags` →
+        # `no_flags`, which `no[- ]flags` cannot match), independent of
+        # where the claim sits in the original line.
+        excerpt = re.sub(r"(?i)no[- ]flags", "no_flags", line.strip()[:100])
+        return _warn(
+            cid,
+            name,
+            f"`--check-{flag}` is a PROPOSED new check — NOT yet in "
+            "scripts/workflow_lint.py — so its membership is unfalsifiable at plan time, "
+            "and the plan names no pin test keeping the claimed wiring true after a later "
+            "dispatch refactor (#1385 v1 / #1648 v2 shipped exactly this silent-unbundling "
+            f"shape). Offending line (claim noun neutralized): {excerpt!r}{more}. Remedies: "
+            "name the pin test in the plan's test enumeration — house convention "
+            "test_<check>_bundled_in_no_flags in tests/test_workflow_lint.py. Prefer the "
+            "in-process drifted-tree shape or the source-pin shape. Or declare "
+            "`N/A — not bundled into no-flags` on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    if hits:
         return _pass(
             cid,
             name,
             f"{len(hits)} no-flags bundling claim(s) — every named flag is in the live "
-            "dispatch set (or is a proposed new check, not yet in the lint source)",
+            "dispatch set",
         )
-    flag, line = offenders[0]
-    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
-    return _warn(
+    # hits empty here: every claim line was whole-line negated and no
+    # proposed-new-check residue survived (every pin_hits flag exists in
+    # src) — the falsity arm deliberately does not adjudicate negated
+    # lines, so this is the same outcome class the pre-#1679 loop produced
+    # (SKIP). Preserves test_c37_pasted_warn_detail_does_not_retrigger_or_
+    # satisfy UNMODIFIED: a pasted falsity WARN detail is line-negated with
+    # window-live in-src claim residue, which must stay SKIP, never PASS.
+    return _skip(
         cid,
         name,
-        f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
-        f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
-        "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
-        f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
-        "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
-        "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
-        "(no backticks/quotes)",
+        "claim line(s) negation-guarded and no proposed-new-check residue — nothing adjudicable",
     )
 
 
