@@ -999,7 +999,7 @@ class ScanResult(NamedTuple):
 
 def _boundary_patterns(
     names_to_files: dict[str, set[str]], *, dot_bounded_left: bool
-) -> list[tuple[str, "re.Pattern[str]", set[str]]]:
+) -> list[tuple[str, re.Pattern[str], set[str]]]:
     """``(substring pre-check token, boundary regex, touched files)`` triples (#1688).
 
     The regex bounds *name* with identifier-character lookarounds so
@@ -1021,7 +1021,7 @@ def _boundary_patterns(
 def _apply_boundary_hits(
     text: str,
     rel: str,
-    patterns: list[tuple[str, "re.Pattern[str]", set[str]]],
+    patterns: list[tuple[str, re.Pattern[str], set[str]]],
     hits: dict[str, set[str]],
 ) -> None:
     """Record boundary-regex hits of *patterns* in *text* under *rel* (#1688).
