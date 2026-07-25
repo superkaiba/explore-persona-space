@@ -5267,8 +5267,8 @@
     "1678": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1678",
-      "status": "planning",
+      "path": "tasks/approved/1678",
+      "status": "approved",
       "title": "daily-fix: stagger same-target filings in one wave"
     },
     "1679": {
