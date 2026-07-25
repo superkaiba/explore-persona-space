@@ -16,6 +16,7 @@ import argparse
 import contextlib
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -1867,3 +1868,391 @@ def test_parse_filed_id_matches_no_dispatch_stdout_shape():
     # Pins the FILED_ID_RE compatibility the hold design leans on: the filer's
     # --no-dispatch success line still yields the task id.
     assert ddf.parse_filed_id("filed #77 (dispatch skipped: --no-dispatch)", "") == 77
+
+
+# ── #1674: mechanical landed-fix probe ──────────────────────────────────────────
+#
+# Test seam: driver-level tests monkeypatch ddf.repo_root to a hermetic git repo
+# (never the live repo's history — the #1467 isolation principle), so the probe's
+# `git -C root log` reads ONLY commits these tests created. Unit tests call
+# find_landed_fix_suspects(item, hermetic_repo) directly. No production function
+# is stubbed in the driver-level tests — the probe body executes fully through
+# real git (#906 discipline).
+#
+# Synthetic token calibration (live tokenizer, verified 2026-07-25):
+#   item tokens (title+bug+change of _probe_item) =
+#     {zebra, quokka, lantern, regression, regressed, path}
+#   _SUSPECT_SUBJECT tokens ⊃ {zebra, quokka, lantern, path}      -> shared 4 >= 3
+#   _TWO_TOKEN_SUBJECT tokens ∩ item tokens = {zebra, quokka}     -> shared 2 <  3
+
+_SUSPECT_SUBJECT = "workflow-fix #999: zebra quokka lantern path hardening"
+_TWO_TOKEN_SUBJECT = "workflow-fix #998: zebra quokka unrelated cleanup"
+
+
+def _hermetic_commit(
+    repo: Path, *, subject: str, path: str = "f.txt", commit_date: str | None = None
+) -> str:
+    """One commit on the hermetic repo touching ``path`` with ``subject`` (#1674).
+
+    ``commit_date`` sets GIT_COMMITTER_DATE + GIT_AUTHOR_DATE so the window test
+    can backdate a commit out of the probe's --since window (--since reads the
+    COMMITTER date). Returns the abbreviated sha — the %h shape the probe records.
+    """
+    f = repo / path
+    f.parent.mkdir(parents=True, exist_ok=True)
+    prev = f.read_text(encoding="utf-8") if f.exists() else ""
+    f.write_text(prev + "x\n", encoding="utf-8")
+    env = dict(os.environ)
+    if commit_date:
+        env["GIT_COMMITTER_DATE"] = commit_date
+        env["GIT_AUTHOR_DATE"] = commit_date
+    subprocess.run(
+        ["git", "-C", str(repo), "add", path], check=True, capture_output=True, text=True
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t.invalid",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-q",
+            "-m",
+            subject,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _probe_item(slug: str = "probe-hit", route: int = 2, target: str = "scripts/foo.py") -> dict:
+    """An item whose text shares 4 informative tokens with _SUSPECT_SUBJECT."""
+    return make_item(
+        slug,
+        route=route,
+        title="daily-fix: zebra quokka lantern regression fix",
+        target=target,
+        bug="the zebra quokka lantern path regressed",
+        change="fix the zebra quokka lantern path",
+    )
+
+
+def _strip_ts(row: dict) -> dict:
+    return {k: v for k, v in row.items() if k != "ts"}
+
+
+def test_landed_fix_probe_suppresses_filing(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 1: >= 3 shared subject tokens on an in-window commit touching the
+    # item's own target -> exactly one terminal landed-fix-suspect row (full row
+    # shape), NO filer subprocess, driver exit 0 (suppression is not an error).
+    repo, _head = _init_hermetic_repo(tmp_path)
+    sha = _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item()
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["outcome"] == "landed-fix-suspect"
+    assert row["slug"] == "probe-hit"
+    assert row["suspects"] == [
+        {"sha": sha, "subject": _SUSPECT_SUBJECT, "shared": ["lantern", "path", "quokka", "zebra"]}
+    ]
+    assert row["threshold"] == ddf.LANDED_FIX_MIN_SHARED_TOKENS
+    assert row["window"] == ddf.LANDED_FIX_WINDOW
+    assert row["paths"] == ["scripts/foo.py"]
+    assert row["fp"] == wf_fix_fingerprint(item["change"], item["bug"])
+    assert row["route"] == 2
+    assert "ts" in row
+
+
+def test_find_landed_fix_suspects_unit_shapes(tmp_path):
+    # Unit-level: the probe body against the hermetic repo directly.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    sha = _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    item = _probe_item("unit")
+    assert ddf.find_landed_fix_suspects(item, repo) == [
+        {"sha": sha, "subject": _SUSPECT_SUBJECT, "shared": ["lantern", "path", "quokka", "zebra"]}
+    ]
+    # Degenerate targets (empty token set) never spawn git — empty result.
+    assert ddf.find_landed_fix_suspects({**item, "target": " , "}, repo) == []
+
+
+def test_landed_fix_probe_below_threshold_files(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 2: exactly 2 shared tokens -> files normally; the filed row is
+    # EQUAL modulo the ledger ts to a no-probe control run (a hermetic repo with
+    # no commit on the target path).
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    item = _probe_item("below-thresh")
+
+    repo_a, _ = _init_hermetic_repo(tmp_path / "a")
+    _hermetic_commit(repo_a, subject=_TWO_TOKEN_SUBJECT, path="scripts/foo.py")
+    d_a = make_filings_dir(tmp_path / "a", [item])
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo_a)
+    assert run_driver(d_a, tasks_root, make_stub(tmp_path / "a", d_a)) == 0
+    assert len(filer_calls(d_a)) == 1  # filer called exactly once
+
+    repo_b, _ = _init_hermetic_repo(tmp_path / "b")
+    d_b = make_filings_dir(tmp_path / "b", [item])
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo_b)
+    assert run_driver(d_b, tasks_root, make_stub(tmp_path / "b", d_b)) == 0
+
+    rows_a = [r for r in ledger_rows(d_a) if r["outcome"] == "filed"]
+    rows_b = [r for r in ledger_rows(d_b) if r["outcome"] == "filed"]
+    assert len(rows_a) == 1 and len(rows_b) == 1
+    assert _strip_ts(rows_a[0]) == _strip_ts(rows_b[0])
+
+
+def test_landed_fix_probe_scoped_to_target_paths(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 2 (path scoping): a >= 3-token commit touching a DIFFERENT file
+    # never suppresses — the probe is `git log -- <item targets>`, not repo-wide.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/other.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("path-scoped")  # target scripts/foo.py
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+
+
+def test_landed_fix_probe_window_excludes_old_commits(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 2 (window): a >= 3-token commit backdated far outside 7 days files
+    # normally — pins that the probe's --since reads the committer date.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(
+        repo,
+        subject=_SUSPECT_SUBJECT,
+        path="scripts/foo.py",
+        commit_date="2020-01-01T00:00:00 +0000",
+    )
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("old-commit")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+
+
+def test_landed_fix_probe_git_error_fails_open(tmp_path, tasks_root, capsys, monkeypatch):
+    # Acceptance 3: a real `git log` failure (rc=128 in a non-repo root) prints ONE
+    # loud stderr WARNING and files normally — fail-open, exit code unchanged.
+    non_repo = tmp_path / "not_a_repo"
+    non_repo.mkdir()
+    monkeypatch.setattr(ddf, "repo_root", lambda: non_repo)
+    item = _probe_item("git-err")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    err = capsys.readouterr().err
+    assert err.count("landed-fix probe skipped") == 1
+    assert "CalledProcessError" in err
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+
+
+def test_landed_fix_probe_non_enumerated_exception_propagates(monkeypatch):
+    # D6's fail-LOUD half (verify_plan c15): the enumerated fail-open tuple never
+    # swallows a non-subprocess driver bug — a TypeError raised inside the probe
+    # PROPAGATES out of _landed_fix_or_none (no WARN-and-file).
+    def boom(item: dict, root: Path) -> list[dict]:
+        raise TypeError("driver bug")
+
+    monkeypatch.setattr(ddf, "find_landed_fix_suspects", boom)
+    with pytest.raises(TypeError, match="driver bug"):
+        ddf._landed_fix_or_none(make_item("boom"), Path("/nonexistent"))
+
+
+def test_landed_fix_probe_dry_run_read_only(tmp_path, tasks_root, capsys, monkeypatch):
+    # Acceptance 4: --dry-run runs the probe read-only — the LANDED-FIX-SUSPECT
+    # line prints, NO ledger row is written, NO filer is spawned.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    sha = _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("dry-probe")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert f"LANDED-FIX-SUSPECT dry-probe -> {sha}" in out
+    assert "--retry-suspects" in out
+    assert ledger_rows(d) == []
+    assert filer_calls(d) == []
+
+
+def test_landed_fix_suspect_terminal_on_resume_and_retry_flag_refiles(
+    tmp_path, tasks_root, capsys, monkeypatch
+):
+    # Acceptance 5: after a suspect run, a plain re-invocation SKIPs (terminal);
+    # --retry-suspects re-drives the slug with the probe SKIPPED (the commit is
+    # still in-window and would re-fire otherwise) — the filer runs, filed lands.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("retry-flow")
+    d = make_filings_dir(tmp_path, [item])
+    stub = make_stub(tmp_path, d)
+    assert run_driver(d, tasks_root, stub) == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["landed-fix-suspect"]
+    capsys.readouterr()  # drain run-1 output
+    assert run_driver(d, tasks_root, stub) == 0
+    assert "SKIP retry-flow" in capsys.readouterr().out
+    assert filer_calls(d) == []
+    assert run_driver(d, tasks_root, stub, "--retry-suspects") == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == [
+        "landed-fix-suspect",
+        "attempting",
+        "filed",
+    ]
+
+
+def test_landed_fix_error_plus_suspect_needs_both_flags(tmp_path, tasks_root, monkeypatch):
+    # The _slug_state ERROR-first interplay (#1674 docstring): a slug carrying BOTH
+    # an ERROR row and a suspect row re-runs the probe under --retry-errors alone
+    # (benign accumulation — another suspect row, no filing); BOTH
+    # --retry-errors --retry-suspects re-drive it to a filed row.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("both-rows")
+    d = make_filings_dir(tmp_path, [item])
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    ddf.append_row(
+        d,
+        {
+            "slug": "both-rows",
+            "outcome": "ERROR",
+            "flag": "filer-failed",
+            "id": None,
+            "rc": 1,
+            "fp": fp,
+            "route": 2,
+            "tail": "",
+        },
+    )
+    ddf.append_row(
+        d,
+        {
+            "slug": "both-rows",
+            "outcome": "landed-fix-suspect",
+            "suspects": [],
+            "threshold": ddf.LANDED_FIX_MIN_SHARED_TOKENS,
+            "window": ddf.LANDED_FIX_WINDOW,
+            "paths": ["scripts/foo.py"],
+            "fp": fp,
+            "route": 2,
+        },
+    )
+    stub = make_stub(tmp_path, d)
+    assert run_driver(d, tasks_root, stub, "--retry-errors") == 0
+    assert filer_calls(d) == []
+    assert [r["outcome"] for r in ledger_rows(d)][-1] == "landed-fix-suspect"
+    assert run_driver(d, tasks_root, stub, "--retry-errors", "--retry-suspects") == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)][-1] == "filed"
+
+
+def test_landed_fix_replay_1652_incident_pair_suppresses(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 6 / the #1287 predicate-fires-on-its-own-incident pin. REAL
+    # artifacts, hard-coded at authoring time (2026-07-25): the item text is task
+    # #1652's real title + origin-prompt bug text (tasks/archived/1652
+    # frontmatter); the commit subject is ce11dff560's real subject (the #1600
+    # fix merge). Measured shared = {pods, runpod, scope}, n=3 -> FIRES at
+    # threshold 3 (plan #1674 §11 D1 / §12 A9). A failure here means the
+    # tokenizer/exclusion stack drifted: recalibrate per the plan's must-ask
+    # list — NEVER tune the threshold to re-green.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(
+        repo,
+        # git log -1 --format=%s ce11dff560 (read 2026-07-25):
+        subject="workflow-fix #1600: scope RunPod pre-flight $/hr guard to managed pods (#1375)",
+        path="scripts/pod_lifecycle.py",
+    )
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = make_item(
+        "replay-1652",
+        title="daily-fix: scope RunPod hourly cap to EPS-managed pods",
+        target="scripts/pod_lifecycle.py",
+        bug=(
+            "_assert_under_account_hourly_cap counts the whole shared team account "
+            "including ~2855 USD/hr of unmanaged fellows pods so EPS provisions are "
+            "falsely blocked"
+        ),
+        change="scope the RunPod hourly cap to EPS-managed pods only",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    assert set(rows[0]["suspects"][0]["shared"]) >= {"pods", "runpod", "scope"}
+
+
+def test_landed_fix_replay_1674_vs_1678_files(tmp_path, tasks_root, monkeypatch):
+    # Acceptance 6, negative control: THIS task's own item text vs the #1678
+    # driver commit's real subject (0b9d2d330f, read 2026-07-25) on the shared
+    # target — measured shared = {driver, filing}, n=2 < 3 -> FILES normally
+    # (plan #1674 §11 D1 / §12 A9). A failure here means a legitimate distinct
+    # fix on the hot file would be suppressed: recalibrate per the plan's
+    # must-ask list — NEVER tune the threshold to re-green.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(
+        repo,
+        # git log -1 --format=%s 0b9d2d330f (read 2026-07-25):
+        subject="task #1678: same-target dispatch hold in the /daily filing driver (#1440)",
+        path="scripts/daily_drive_filings.py",
+    )
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = make_item(
+        "replay-1674",
+        title="daily-fix: driver runs mechanical landed-fix probe at filing",
+        target="scripts/daily_drive_filings.py",
+        bug=(
+            "The /daily route-2 channel filed 1652 for a fix that had already landed "
+            "1.5 days earlier (1600, merge ce11dff560) - the compose-time landed-fix "
+            "git-log duty plus the 1446 closed-sibling advisory both failed to prevent "
+            "a duplicate filing and a spawned session, the third recurrence of the "
+            "1330/1386 class"
+        ),
+        change=(
+            "Stop the recurring filed-over-landed-fix class mechanically at the driver, "
+            "instead of relying on the compose-time git-log duty alone."
+        ),
+    )
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+
+
+def test_landed_fix_probe_guards_route3(tmp_path, tasks_root, monkeypatch):
+    # D5: the probe is route-blind — a route-3 item with a suspect-triggering
+    # commit records a landed-fix-suspect row carrying route: 3 and never files.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    _hermetic_commit(repo, subject=_SUSPECT_SUBJECT, path="scripts/foo.py")
+    monkeypatch.setattr(ddf, "repo_root", lambda: repo)
+    item = _probe_item("r3-probe", route=3)
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    assert rows[0]["route"] == 3
