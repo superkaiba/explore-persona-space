@@ -948,6 +948,14 @@ escalates to the user.
 Post this as the `<!-- epm:experiment-implementation v<n> -->` marker on
 issue #N:
 
+**SHA-verbatim rule:** every commit SHA in this report — the `Commits:`
+line and, on crash-fix rounds, the fix-engaged element-4 fix SHA(s) — is
+pasted verbatim from `git rev-parse HEAD` / `git log --format=%H` output;
+never hand-extended from a short SHA, truncated-then-extended, or
+reconstructed from memory. Downstream relaunch briefs, ancestry probes,
+and markers re-cite these SHAs (#1586 r7: a hand-extended "full" SHA had
+to be rev-parse-corrected before the relaunch brief).
+
 ```markdown
 <!-- epm:experiment-implementation v<n> -->
 ## Implementation Report — round <n>
