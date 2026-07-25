@@ -712,6 +712,16 @@ RECONNECT_CARRY_FORWARD_EXTRA_KEYS: tuple[str, ...] = (
     "gpu_count",
     "boot_disk_gb",
     "min_ram_gb",
+    # #1669: launch env pins (WANDB_PROJECT et al.) — carried VERBATIM,
+    # with no sanitize step here BY CHOICE: the pins were strict-validated
+    # at the original launch (dispatch_issue._parse_env_pins), every
+    # renderer re-validates fail-loud at consumption (covers a hand-edited
+    # sidecar on this live-operator reconnect path), and the failover
+    # reconstructors keep their own per-key sanitize-and-warn
+    # (backends.base.sanitize_env_pins). The `v not in (None, "", [])`
+    # filter keeps a non-empty dict and skips an absent key (legacy
+    # sidecars carry no env_pins).
+    "env_pins",
 )
 
 

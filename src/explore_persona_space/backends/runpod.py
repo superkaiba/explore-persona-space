@@ -58,11 +58,12 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -73,6 +74,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    validate_env_pins,
 )
 
 if TYPE_CHECKING:
@@ -483,6 +485,7 @@ def _render_launch_script(
     pid_file: str,
     sentinel_path: str,
     attempt_id: str,
+    env_pins: Mapping[str, str] | None = None,
 ) -> str:
     """Remote script (b): write the launcher + detach it (setsid + nohup + pidfile).
 
@@ -574,6 +577,20 @@ def _render_launch_script(
     # itself (no second copy of the /workspace/eval_results/issue_<N> root).
     issue_dir = sentinel_dir.rsplit("/", 1)[0]
     sentinel_name = sentinel_path.rsplit("/", 1)[1]
+    # #1669: launch env pins (WANDB_PROJECT et al., incident #1586) —
+    # re-validated here as defense in depth (the rendered launcher executes
+    # as root, and the handle sidecar the failover reconstructors read is a
+    # hand-editable JSON), then rendered as shlex-quoted `export K=V` lines
+    # spliced immediately BEFORE the `WANDB_PROJECT:-issue<N>` default below,
+    # so the `:-` default preserves the pin and a pin-less render is
+    # byte-identical. Values are validated single-line, so the quoted EPSEOF
+    # heredoc delimiter cannot be terminated by a pin. An inline
+    # `WANDB_PROJECT=... cmd` prefix in workload_cmd still supersedes the
+    # export for that command (bash per-command env semantics — the
+    # documented zero-code override; see the REPO_ROOT comment doctrine).
+    pin_lines = [
+        f"export {k}={shlex.quote(str(v))}" for k, v in sorted(validate_env_pins(env_pins).items())
+    ]
     sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
     if "'" in sentinel_json:
         # The JSON is embedded single-quoted inside the launcher; both
@@ -602,6 +619,7 @@ def _render_launch_script(
             "cd /workspace/explore-persona-space",
             "set -a; [ -f .env ] && source .env; set +a",
             'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
+            *pin_lines,
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
             "WORKLOAD_START_EPOCH=$(date +%s)",
@@ -744,6 +762,11 @@ def _execute_workload_on_pod(
                 pid_file=pid_file,
                 sentinel_path=sentinel_path,
                 attempt_id=attempt_id,
+                # #1669: thread the launch env pins into the rendered
+                # launcher — this call-site kwarg is what makes a failover
+                # re-execution (reconstructed spec.extra carries env_pins)
+                # actually re-export them on the fresh pod.
+                env_pins=(spec.extra or {}).get("env_pins"),
             ),
             timeout=120,
             context=f"workload detach on {pod_name}",
@@ -1035,6 +1058,10 @@ class RunPodBackend(ComputeBackend):
                     for k, v in {
                         "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
                         "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                        # #1669: launch env pins — persisted so the wedge /
+                        # CUDA-IMA fresh-pod re-provision forwards them and
+                        # the fresh launcher re-exports them (#1586).
+                        "env_pins": (spec.extra or {}).get("env_pins"),
                     }.items()
                     if v
                 },

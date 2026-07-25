@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
@@ -79,6 +80,113 @@ def validate_lane_suffix(suffix: str) -> str:
             f"len('att-YYYYmmdd-HHMMSS-') + suffix <= 63), got {len(suffix)}"
         )
     return suffix
+
+
+# ---------------------------------------------------------------------------
+# Launch env pins (#1669)
+# ---------------------------------------------------------------------------
+
+#: #1669: env-pin key ALLOWLIST — the only keys a launch may persist into the
+#: handle sidecar (``.claude/cache/issue-<N>-handle.json``) / render into lane
+#: launchers. Deliberately an allowlist, never a denylist: the sidecar is
+#: plain JSON in ``.claude/cache/``, handle fields ride ``epm:backend-selected``
+#: marker ``extra``, and GCP bakes the rendered startup script into instance
+#: metadata (readable via ``describe``), so a secret pin must be
+#: UNREPRESENTABLE, not merely discouraged. Extend by editing this frozenset
+#: (code review is the gate). Incident #1586: a wedge-failover pod rebooted
+#: with only the generic ``issue<N>`` WandB default and its runs landed in the
+#: wrong project — these keys are the launch-declared destinations a failover
+#: re-provision must inherit.
+ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
+    {
+        "WANDB_PROJECT",
+        "WANDB_RUN_GROUP",
+        "WANDB_TAGS",
+        "EPM_PERSIST_ADAPTER_HF_REPO",
+        "EPM_PERSIST_ADAPTER_SUBFOLDER",
+        "EPM_UPLOAD_MERGED",
+    }
+)
+
+#: Belt-and-suspenders screen against ``--env-pin WANDB_PROJECT=$HF_TOKEN``
+#: shell-expansion accidents: the ALLOWLIST is the primary secret defense
+#: (secret KEY names are unrepresentable); this regex additionally refuses a
+#: secret-shaped VALUE smuggled under an allowlisted key. Patterns mirror
+#: ``scripts/check_no_secret_shaped_strings.py``'s token families.
+_ENV_PIN_SECRET_VALUE_RE = re.compile(
+    r"(hf_[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{16,}|github_pat_|sk-[A-Za-z0-9-]{16,}|AKIA[0-9A-Z]{16})"
+)
+
+#: Max env-pin value length — generous for WandB project/group/tag strings,
+#: tight enough that a pasted blob/credential dump cannot ride a pin.
+ENV_PIN_VALUE_MAX_LEN = 512
+
+
+def _env_pin_violation(key: object, value: object) -> str | None:
+    """Return a one-line violation reason for one (key, value) pin, or None.
+
+    Shared by the strict all-or-nothing :func:`validate_env_pins` (CLI +
+    renderer sites) and the per-key :func:`sanitize_env_pins` (failover
+    reconstructor sites, #1329 warn-only doctrine).
+    """
+    if not isinstance(key, str) or key not in ENV_PIN_ALLOWED_KEYS:
+        return f"key {key!r} not in ENV_PIN_ALLOWED_KEYS {sorted(ENV_PIN_ALLOWED_KEYS)}"
+    if not isinstance(value, str):
+        return f"{key}: value must be str, got {type(value).__name__}"
+    if not value:
+        return f"{key}: value must be non-empty"
+    if "\n" in value or "\r" in value or "\x00" in value:
+        return f"{key}: value must be single-line with no NUL"
+    if len(value) > ENV_PIN_VALUE_MAX_LEN:
+        return f"{key}: value exceeds {ENV_PIN_VALUE_MAX_LEN} chars ({len(value)})"
+    if _ENV_PIN_SECRET_VALUE_RE.search(value):
+        return f"{key}: value matches a secret-shaped token pattern"
+    return None
+
+
+def validate_env_pins(pins: Mapping[str, object] | None) -> dict[str, str]:
+    """Validate + normalize an env-pin mapping; raise ``ValueError`` on ANY violation.
+
+    Rules: key in :data:`ENV_PIN_ALLOWED_KEYS`; value a non-empty single-line
+    ``str`` (no NUL, len <= :data:`ENV_PIN_VALUE_MAX_LEN`) not matching the
+    secret-shaped-value regex. Returns ``{}`` for ``None``/empty. This is the
+    STRICT form for the CLI capture + renderer defense-in-depth sites; the
+    failover reconstructors use :func:`sanitize_env_pins` (per-key drop) so a
+    malformed pin in a hand-edited sidecar can never block a failover (#1669).
+    """
+    if pins is None:
+        return {}
+    if not isinstance(pins, Mapping):
+        raise ValueError(f"env_pins must be a mapping, got {type(pins).__name__}")
+    violations = [v for k, val in pins.items() if (v := _env_pin_violation(k, val))]
+    if violations:
+        raise ValueError("invalid env pin(s): " + "; ".join(violations))
+    return {str(k): str(v) for k, v in pins.items()}
+
+
+def sanitize_env_pins(pins: object) -> tuple[dict[str, str], list[str]]:
+    """Per-key drop-and-report variant of :func:`validate_env_pins` (#1669).
+
+    Returns ``(kept, dropped_reasons)``: every valid pin is KEPT, every
+    invalid entry is dropped with a one-line reason — so a hand-edited
+    sidecar with one stray key does not lose the valid ``WANDB_PROJECT``
+    too, and a failover is never blocked (the #1329 warn-only doctrine at
+    the ``backend_poll`` reconstructor sites). A non-mapping input drops
+    wholesale with one reason.
+    """
+    if not pins:
+        return {}, []
+    if not isinstance(pins, Mapping):
+        return {}, [f"env_pins is not a mapping: {type(pins).__name__}"]
+    kept: dict[str, str] = {}
+    dropped: list[str] = []
+    for key, value in pins.items():
+        reason = _env_pin_violation(key, value)
+        if reason is None:
+            kept[str(key)] = str(value)
+        else:
+            dropped.append(reason)
+    return kept, dropped
 
 
 # ---------------------------------------------------------------------------

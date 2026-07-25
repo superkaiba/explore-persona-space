@@ -1902,6 +1902,7 @@ def _runspec_from_runpod_handle(handle, issue):
     for key in ("boot_disk_gb", "min_ram_gb"):
         if extra.get(key):
             rebuilt_extra[key] = extra[key]
+    _forward_env_pins(extra, rebuilt_extra, issue)
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -1912,6 +1913,35 @@ def _runspec_from_runpod_handle(handle, issue):
         hydra_args=hydra_args,
         extra=rebuilt_extra,
     )
+
+
+def _forward_env_pins(extra: dict, rebuilt_extra: dict, issue) -> None:
+    """#1669: forward the launch env pins (WANDB_PROJECT et al.) into a rebuilt spec.
+
+    So the fresh pod's rendered launcher re-exports them — the #1586
+    incident: a wedge failover rebooted with only the generic ``issue<N>``
+    WandB default and the telemetry landed in the wrong project. PER-KEY
+    sanitize-and-warn, never raise: a malformed pin in a hand-edited
+    sidecar must not block the failover (the #1329 warn-only doctrine at
+    this exact site), and one stray key must not lose the valid
+    ``WANDB_PROJECT`` beside it (the strict all-or-nothing validator stays
+    at the CLI + renderer sites). A legacy handle without the key is a
+    no-op (byte-identical reconstruction).
+    """
+    raw_pins = extra.get("env_pins")
+    if not raw_pins:
+        return
+    from explore_persona_space.backends.base import sanitize_env_pins
+
+    kept, dropped = sanitize_env_pins(raw_pins)
+    for reason in dropped:
+        logging.warning(
+            "backend_poll: issue %s: dropping invalid env pin from handle (%s)",
+            issue,
+            reason,
+        )
+    if kept:
+        rebuilt_extra["env_pins"] = kept
 
 
 def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
@@ -2922,12 +2952,15 @@ def _runspec_from_gcp_handle(handle, issue):
     # pre-#1010 the rebuilt extra carried ONLY repo_branch, so the gate would
     # fail-OPEN there and the #958 shape could recur. Keys forwarded only when
     # present/truthy, so a legacy handle reconstructs byte-identically.
+    # #1669: env_pins forwarded per-key-sanitized (_forward_env_pins) so the
+    # fresh RunPod launcher re-exports the launch's WANDB_PROJECT et al.
     rebuilt_extra: dict = {}
     if extra.get("repo_branch"):
         rebuilt_extra["repo_branch"] = extra["repo_branch"]
     for key in ("boot_disk_gb", "min_ram_gb"):
         if extra.get(key):
             rebuilt_extra[key] = extra[key]
+    _forward_env_pins(extra, rebuilt_extra, issue)
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
