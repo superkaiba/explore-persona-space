@@ -5337,8 +5337,8 @@
     "1687": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1687",
-      "status": "reviewing",
+      "path": "tasks/completed/1687",
+      "status": "completed",
       "title": "daily-fix: route-3 dedup ignores generic workflow tokens"
     },
     "169": {
