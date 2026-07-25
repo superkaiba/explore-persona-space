@@ -8217,7 +8217,14 @@ def urgent_wf_park_pass(
         return
     try:
         now = now if now is not None else time.time()
-        root = tasks_root if tasks_root is not None else (PROJECT_ROOT / "tasks")
+        if tasks_root is not None:
+            root = tasks_root
+        else:
+            # Canonical resolver — a direct root-relative construction is
+            # stale from a worktree (tests/test_no_direct_task_path_construction.py).
+            from explore_persona_space.task_workflow import tasks_dir
+
+            root = tasks_dir()
         if cache_file is not None:
             cache: Path | None = cache_file
         else:
