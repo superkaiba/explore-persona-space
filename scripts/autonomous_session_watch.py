@@ -19340,6 +19340,102 @@ def _task_session_followup_active(issue: int, events: list[dict] | None = None) 
     return followup > done_transition
 
 
+def _latest_note_sentinel_ts(events: list[dict], sentinel: str) -> float | None:
+    """Newest epoch ts among events whose note carries ``sentinel``.
+
+    The note-sentinel complement of :func:`_latest_event_ts`:
+    watcher-attributed markers are all kind ``epm:progress`` distinguished
+    only by their note sentinel, so a KIND-keyed scan cannot see them."""
+    best: float | None = None
+    for ev in events:
+        if sentinel in (ev.get("note") or ""):
+            ts = _parse_event_ts(ev.get("ts"))
+            if ts is not None and (best is None or ts > best):
+                best = ts
+    return best
+
+
+# #1670: hard TTL on the completed-unmerged-respawn exemption. Bounds the
+# worst case (the recovery session wedges; neither epm:merged nor any
+# done-transition ever lands) so the exemption cannot shield an idle
+# session forever — the 2026-06-10 disk-incident class this pass exists
+# to reap. 24h is generous vs the <1h expected Step-10d merge recovery
+# and tiny vs the incident scale. Module constant by design (no env knob:
+# the file's knob pattern is reserved for operator-tuned thresholds;
+# tests monkeypatch this).
+SESSION_RECONCILE_RESPAWN_TTL_S = 24 * 3600
+
+
+def _task_recovery_respawn_active(
+    issue: int, events: list[dict] | None = None, now: float | None = None
+) -> bool:
+    """True iff the watcher's own completed-unmerged respawn (#1653 arm)
+    plausibly still owns a live recovery session on this issue (#1670).
+
+    The exemption arms when the respawn marker
+    (:data:`_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL`) is (a) within
+    :data:`SESSION_RECONCILE_RESPAWN_TTL_S` and (b) newer than every
+    SETTLING marker — the pass's done-transition set PLUS ``epm:merged``
+    (the marker whose absence the completed-unmerged pass exists to fix;
+    its arrival ends the recovery episode, mirroring that pass's own
+    ``recovered`` episode pruning). Clock-skew guard: a FUTURE-dated
+    respawn marker ts reads ``now - ts < 0`` and switches the exemption
+    OFF — deliberate (a garbled/skewed timestamp must not shield a
+    session indefinitely). Deliberate divergence from the
+    :func:`_task_session_followup_active` twin: a MISSING done-transition
+    does NOT defeat the exemption — the TTL bounds it, the respawn marker
+    only ever fires on ``completed``-status tasks (which carry a
+    status-changed by construction, so the ``None`` case is a parse
+    corner), and the failure direction of False here is precisely the
+    incident (#1622, 2026-07-24: the reconcile pass stopped the watcher's
+    own 10-min-old merge-recovery session, consuming the once-per-episode
+    respawn budget and re-stranding the merge).
+
+    Rejected one-liner alternative: removing the respawn sentinel from
+    :data:`_WATCHER_NOTE_SENTINELS` (so the marker refreshes the idle
+    clock directly) — that exclusion is deliberate (#810/#949:
+    watcher-posted notes must never reset the staleness clocks they
+    measure) and the set is shared across ALL staleness-clock consumers,
+    so the blast radius is far wider than this pass."""
+    if events is None:
+        events = _task_events(issue)
+    respawn_ts = _latest_note_sentinel_ts(events, _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL)
+    if respawn_ts is None:
+        return False
+    now = now if now is not None else time.time()
+    if not (0 <= now - respawn_ts <= SESSION_RECONCILE_RESPAWN_TTL_S):
+        return False  # past TTL, or future-dated (clock-skew guard)
+    settled = _latest_event_ts(events, _SESSION_DONE_TRANSITION_KINDS | {"epm:merged"})
+    return settled is None or respawn_ts > settled
+
+
+def _newest_registration_spawned_at(issue: int) -> float | None:
+    """Newest ``spawned_at`` across ``issue-<N>.json`` AND
+    ``manual-issue-<N>.json`` (fail-soft -> ``None``). A fresh value is a
+    SESSION-level activity signal for the reconcile pass: a just-spawned
+    session may not have posted any marker yet (#1670).
+
+    Coverage is honest, not total: for AUTO respawns on DONE-status tasks
+    the crash-recovery arm deletes ``issue-<N>.json`` UNCONDITIONALLY in
+    the same tick it observes the terminal status, so this signal's real
+    coverage is ``manual-issue-<N>.json`` registrations plus the
+    pre-delete window; the TRANSCRIPT signal in
+    :func:`_session_idle_signals` is the designed backup when the respawn
+    marker post failed at spawn. (:func:`_registry_spawned_at` is left
+    untouched: its crash-arm / auth-outage consumers key deliberately on
+    the AUTO file only.)"""
+    best: float | None = None
+    for prefix in ("issue-", "manual-issue-"):
+        try:
+            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"{prefix}{issue}.json").read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        ts = entry.get("spawned_at") if isinstance(entry, dict) else None
+        if isinstance(ts, int | float) and not isinstance(ts, bool) and ts:
+            best = float(ts) if best is None else max(best, float(ts))
+    return best
+
+
 def _latest_nonwatcher_event_ts(events: list[dict]) -> float | None:
     """Newest epoch ts among ALL events whose note does NOT carry a watcher
     sentinel (:data:`_WATCHER_NOTE_SENTINELS`), or ``None``.
@@ -19404,12 +19500,14 @@ def decide_session_reconcile(
     autostop: bool = False,
     keep_running: bool = False,
     followup_active: bool = False,
+    recovery_respawn_active: bool = False,
     pod_running: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the session-reconcile pass on one issue's live,
     issue-mapped session(s). Returns ``(action, new_missed)`` where action is
     ``"clear"`` | ``"keep"`` | ``"alert"`` | ``"stop"`` |
-    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"pod-skip"``.
+    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"respawn-skip"`` |
+    ``"pod-skip"``.
 
     The caller only invokes this for issues that HAVE at least one live
     mapped session; sessions with no issue mapping (PM / chat) never reach
@@ -19437,7 +19535,19 @@ def decide_session_reconcile(
       requested); its driver session must not be stopped even if the
       follow-up itself is quiet (markers > idle window — e.g. mid-training
       silence).
-    - done + idle + ``pod_running`` (and neither skip above) ->
+    - done + idle + ``recovery_respawn_active`` (and neither skip above) ->
+      ``("respawn-skip", 0)``. The watcher's own completed-unmerged respawn
+      marker (the #1653 arm's ``spawn-issue --auto`` dispatch) is newer than
+      every settling marker (:data:`_SESSION_DONE_TRANSITION_KINDS` plus
+      ``epm:merged``) and within its 24h TTL: a just-spawned Step-10d
+      merge-recovery session is (or was recently) in flight; stopping it
+      would consume the once-per-episode respawn budget and re-strand the
+      merge (#1622, 2026-07-24: a 10-minute-old recovery session was
+      auto-stopped off the TASK's 27.5h marker gap). A future-dated respawn
+      marker reads NOT-active (the predicate's clock-skew guard —
+      deliberate: a garbled timestamp must not shield a session), and the
+      exemption self-expires at the TTL or on any newer settling marker.
+    - done + idle + ``pod_running`` (and none of the skips above) ->
       ``("pod-skip", 0)``. A RUNNING managed pod on the issue means work may
       still be in flight that the markers haven't surfaced yet; the
       pod-safety pass owns reconciling the pod itself, and once it stops the
@@ -19465,6 +19575,8 @@ def decide_session_reconcile(
         return ("keep-running-skip", 0)
     if followup_active:
         return ("followup-skip", 0)
+    if recovery_respawn_active:
+        return ("respawn-skip", 0)
     if pod_running:
         return ("pod-skip", 0)
     new_missed = missed + 1
@@ -19620,14 +19732,25 @@ def _gc_orphan_session_reconcile_state(
     return cleared
 
 
-def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]]:
+def _session_idle_signals(
+    issue: int,
+    now: float,
+    *,
+    sids: tuple[str, ...] | list[str] = (),
+    pids_by_sid: dict[str, int] | None = None,
+) -> tuple[bool, str, list[dict]]:
     """Compute ``(idle, gap_desc, events)`` for a DONE-status candidate.
 
     ``idle`` is True when EVERY available activity signal — the newest
     NON-watcher marker of ANY kind (:func:`_latest_nonwatcher_event_ts`, not
     just progress kinds: on a parked task any marker is evidence the task is
-    still being worked) and the per-issue self-report file — is older than
-    :func:`_session_idle_s` (default 2h, env
+    still being worked), the per-issue self-report file, the freshest
+    registration ``spawned_at`` across ``issue-<N>.json`` /
+    ``manual-issue-<N>.json`` (#1670 — a just-spawned session may not have
+    posted any marker yet), and — probed LAZILY, only when the cheaper
+    signals already read idle and ``pids_by_sid`` was provided — each
+    mapped sid's own transcript mtime (:func:`_transcript_idle_age_s`) —
+    is older than :func:`_session_idle_s` (default 2h, env
     ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
     issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
     status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
@@ -19645,7 +19768,30 @@ def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]
         )
         if a is not None
     ]
+    # #1670 session-level signals (incident: a 10-min-old recovery respawn
+    # read as 27.5h idle off the TASK's marker gap). Each signal is
+    # OPTIONAL — unreadable contributes nothing — so the deliberate
+    # "no signal at all -> idle" reaping default is preserved: the floor
+    # only ever protects provably YOUNG (fresh spawned_at) or provably
+    # ACTIVE (fresh transcript) sessions.
+    spawned = _newest_registration_spawned_at(issue)
+    if spawned is not None:
+        ages.append(max(0.0, now - spawned))
     idle = (min(ages) >= _session_idle_s()) if ages else True
+    if idle and pids_by_sid:
+        # Transcript mtime = the truest per-SESSION activity signal.
+        # Probed LAZILY: only when the cheap task-level signals already
+        # read idle (zero cost on the common fresh-activity path). An
+        # unresolvable transcript contributes nothing — falls back to
+        # today's behavior; a wrong signal is worse than a missing one
+        # (the helper's happy-log-only rationale).
+        for sid in sids:
+            pid = pids_by_sid.get(sid)
+            if isinstance(pid, int):
+                t_age, _reason = _transcript_idle_age_s(pid, now)
+                if t_age is not None:
+                    ages.append(t_age)
+        idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
     return idle, gap_desc, events
 
@@ -19679,7 +19825,7 @@ def _handle_session_stop(
             f"autonomous_session_watch session-reconcile pass — task status "
             f"'{status}' is parked/terminal, no live follow-up signal, no "
             f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
-            f"marker / self-report) was observed for > "
+            f"marker / self-report / session registration / transcript) was observed for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
             f"for >= {threshold} checks. An idle session pins its worktree "
             f"against the stale-worktree sweep and holds deleted-file "
@@ -19832,6 +19978,7 @@ def _process_session_reconcile(
     *,
     autostop: bool,
     running_pod_issues: set[int] | None = None,
+    pids_by_sid: dict[str, int] | None = None,
 ) -> None:
     """Reconcile one issue's live session(s) against its task status.
 
@@ -19843,7 +19990,9 @@ def _process_session_reconcile(
     ``EPM_SESSION_RECONCILE_AUTOSTOP=0``. ``running_pod_issues`` is the
     issue set with a RUNNING managed pod (computed once per pass); ``None``
     is treated as the empty set (unit-test convenience — production always
-    passes the snapshot)."""
+    passes the snapshot). ``pids_by_sid`` is main()'s {sid: wrapper pid}
+    /list snapshot (#1670), threaded into the lazy per-sid transcript probe
+    in :func:`_session_idle_signals`; ``None`` skips that probe."""
     status = _task_status(issue)
     done = status in SESSION_RECONCILE_DONE
 
@@ -19853,13 +20002,21 @@ def _process_session_reconcile(
     gap_desc = "n/a"
     keep_running = False
     followup_active = False
+    recovery_respawn_active = False
     pod_running = False
     if done:
-        idle, gap_desc, events = _session_idle_signals(issue, now)
+        idle, gap_desc, events = _session_idle_signals(
+            issue, now, sids=sids, pids_by_sid=pids_by_sid
+        )
         if idle:
             keep_running = _task_keep_running(issue)
             followup_active = not keep_running and _task_session_followup_active(
                 issue, events=events
+            )
+            recovery_respawn_active = (
+                not keep_running
+                and not followup_active
+                and _task_recovery_respawn_active(issue, events=events, now=now)
             )
             pod_running = issue in (running_pod_issues or set())
 
@@ -19884,6 +20041,7 @@ def _process_session_reconcile(
         autostop=autostop,
         keep_running=keep_running,
         followup_active=followup_active,
+        recovery_respawn_active=recovery_respawn_active,
         pod_running=pod_running,
     )
     print(
@@ -19912,6 +20070,16 @@ def _process_session_reconcile(
             f"free-analysis-followup-run, newer than the latest done-transition) "
             f"indicates a live or requested inline follow-up — session-reconcile "
             f"SKIPPED (sids={sids})."
+        ),
+        "respawn-skip": (
+            f"  RECOVERY-RESPAWN issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but the watcher's own completed-unmerged respawn "
+            f"marker ({_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL}) is newer than every "
+            f"settling marker (done-transitions + epm:merged) and within its TTL — a "
+            f"just-spawned Step-10d merge-recovery session is (or was recently) in "
+            f"flight; stopping it would consume the once-per-episode respawn budget "
+            f"and re-strand the merge (#1622) — session-reconcile SKIPPED "
+            f"(sids={sids})."
         ),
         "pod-skip": (
             f"  POD-RUNNING issue #{issue}: task status '{status}' is DONE and the "
@@ -19956,7 +20124,8 @@ def _process_session_reconcile(
             f"{_SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) outliving a "
             f"parked/terminal task: {len(sids)} live Happy session(s) "
             f"({', '.join(sids)}) mapped to this task (status '{status}') with no "
-            f"activity (non-watcher marker / self-report) for > "
+            f"activity (non-watcher marker / self-report / session registration / "
+            f"transcript) for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}). Idle sessions pin "
             f"their worktrees against the stale-worktree sweep and hold "
             f"deleted-file handles (2026-06-10 disk incident: ~37G phantom usage "
@@ -19988,13 +20157,16 @@ def session_reconcile_pass(
     daemon_reachable: bool,
     live_ids: set[str] | None = None,
     now: float | None = None,
+    pids_by_sid: dict[str, int] | None = None,
 ) -> None:
     """Reconcile live Happy sessions against their task status.
 
     Daemon-gated like the respawn pass: session liveness is unknowable during
     a daemon outage, and the stop action itself POSTs to the daemon, so the
     whole pass skips when it is unreachable. ``live_ids`` may be passed in by
-    ``main()`` to reuse its snapshot (one daemon round-trip per tick)."""
+    ``main()`` to reuse its snapshot (one daemon round-trip per tick);
+    ``pids_by_sid`` is main()'s shared {sid: wrapper pid} snapshot (#1670),
+    forwarded to the per-issue lazy transcript probe."""
     now = now if now is not None else time.time()
     if not daemon_reachable:
         print(
@@ -20041,6 +20213,7 @@ def session_reconcile_pass(
             threshold,
             autostop=autostop,
             running_pod_issues=running_pod_issues,
+            pids_by_sid=pids_by_sid,
         )
 
 
@@ -26112,6 +26285,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         args.threshold,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
+        pids_by_sid=live_pids_by_sid,
     )
 
     # Gate-push + title-reconcile + tick-runaway: phone push on gate-park /
