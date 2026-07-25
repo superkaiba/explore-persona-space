@@ -1286,12 +1286,24 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
   inputs-on-HF gate fix (b) uses (`backend_poll._wedged_run_inputs_on_hf`)
   confirms zero partial cells AND a TRI-STATE keep-running read
   (`_wedge_keep_running` → `True | False | "unknown"`) returns the literal
-  `False`. Every uncertainty path (no handle, HF error, tag present, tag-read
-  FAILURE `"unknown"`, inputs unverified) is ALERT-only — a persistent tag-read
-  failure never silently overrides a keep-running tag on a live-work pod.
+  `False` AND — the #1667 owner-liveness guard — a TRI-STATE owner probe
+  (`_wedge_owner_live` → `True | False | "unknown"`: recent non-watcher
+  markers on the issue, or a live registered/cwd-mapped session with a fresh
+  transcript, window `EPM_WEDGE_OWNER_RECENT_H` default 2h) ALSO returns the
+  literal `False` (no live owner). Every uncertainty path (no handle, HF
+  error, tag present, tag-read FAILURE `"unknown"`, inputs unverified) is
+  ALERT-only — a persistent tag-read failure never silently overrides a
+  keep-running tag on a live-work pod — and a live/"unknown" OWNER demotes
+  the eligible terminate to a once-per-episode DEFER marker with the wedge
+  clock PRESERVED, so a genuinely dead owner still gets the terminate once
+  activity quiets (incident #1586: a wedge terminate mid-crash-fix-round
+  destroyed live run state; "poll loop dead" is a precondition of the arm
+  firing, NOT evidence the owning session is dead). Kill switch
+  `EPM_DISABLE_WEDGE_OWNER_GUARD=1` restores the pre-#1667 terminate.
 - **TERMINATE + re-provision — the SAME recovery the poller owns, no longer a
   reversible stop (#770).** For the ONE provably-safe case (matured + confirmed
-  wedge + `keep_running=False` + inputs verified on HF + a reconstructable run
+  wedge + `keep_running=False` + inputs verified on HF + no live owner (#1667)
+  + a reconstructable run
   handle) the watcher routes the SAME irreversible terminate + fresh
   re-provision the poller owns (`backend_poll._failover_wedged_runpod`, via the
   `_wedge_failover` helper: read the `handle`+`sidecar` from the persisted

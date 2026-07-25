@@ -1880,6 +1880,10 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "wedge_first_seen": None,
         "wedge_missed": 0,
         "wedge_alerted": False,
+        # #1667: the wedge owner-defer once-per-episode dedup flag is part of
+        # the schema now; a save with no prior episode defaults it False
+        # (_CARRY forward-carry, the wedge_alerted convention).
+        "wedge_owner_defer_noted": False,
         # #1582: the keep-running wedged-owner episode fields are part of the
         # schema now; a save with no prior episode defaults them (_CARRY
         # forward-carry, pod_id-keyed reset like orphan_gcp_noted).

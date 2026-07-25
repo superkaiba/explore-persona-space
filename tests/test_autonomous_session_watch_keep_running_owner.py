@@ -829,3 +829,32 @@ def test_self_report_fresh_rescues_missing_does_not(isolated_registry, monkeypat
     state, evidence = asw._keep_running_owner_state(1345, now, float(IDLE_S))
     assert state == "absent"
     assert evidence["reason"] == "no-candidates"
+
+
+def test_keep_running_owner_state_honors_short_window(isolated_registry, monkeypatch):
+    """#1667 reuse-contract pin: ``min_idle_s`` is honored as passed (no hidden
+    12h constant inside) — the wedge owner guard reuses this resolver with its
+    SHORT 2h window, while the #1582 arm's 12h call is unaffected."""
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_children", lambda **kw: [{"happySessionId": "s", "pid": 42}])
+    monkeypatch.setattr(asw, "_proc_cwd", lambda pid: None)
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (None, None))
+    (isolated_registry / "issue-1667.json").write_text(
+        json.dumps({"issue": 1667, "happy_session_id": "s"})
+    )
+    now = time.time()
+
+    # Candidate transcript idle 1h < the 2h window -> "live".
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (1 * 3600.0, None))
+    state, _ev = asw._keep_running_owner_state(1667, now, min_idle_s=7200.0)
+    assert state == "live"
+
+    # Candidate transcript idle 3h >= the 2h window -> "wedged".
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (3 * 3600.0, None))
+    state, _ev = asw._keep_running_owner_state(1667, now, min_idle_s=7200.0)
+    assert state == "wedged"
+
+    # The #1582 arm's 12h window is unaffected: the same 3h-idle candidate
+    # reads "live" at min_idle_s=12h.
+    state, _ev = asw._keep_running_owner_state(1667, now, min_idle_s=float(IDLE_S))
+    assert state == "live"
