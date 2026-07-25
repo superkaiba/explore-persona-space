@@ -5246,8 +5246,8 @@
     "1675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1675",
-      "status": "proposed",
+      "path": "tasks/planning/1675",
+      "status": "planning",
       "title": "daily-fix: piped-git guard ignores quoted pattern text"
     },
     "1676": {
