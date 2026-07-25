@@ -5344,8 +5344,8 @@
     "1688": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1688",
-      "status": "running",
+      "path": "tasks/reviewing/1688",
+      "status": "reviewing",
       "title": "workflow-fix: step9c selector misses string+transitive deps"
     },
     "169": {
