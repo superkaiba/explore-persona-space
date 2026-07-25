@@ -8545,6 +8545,327 @@ def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registr
     assert posts == [(42, "session-reconcile-stop")]
 
 
+# ── #1670: never stop the watcher's own just-spawned recovery session ─────────
+#
+# Incident #1622 (2026-07-24): the completed-unmerged respawn arm (#1653)
+# dispatched a Step-10d merge-recovery session at 15:43:11Z and the
+# session-reconcile pass auto-stopped it at 15:53:38Z — 10 minutes old,
+# mid-lint-gate, no marker posted yet — because idleness read only the TASK's
+# marker gap (27.5h) and the respawn marker is deliberately excluded from the
+# activity clock (_WATCHER_NOTE_SENTINELS). Three additive protections:
+# session-level activity signals (registration spawned_at + transcript mtime)
+# and an explicit respawn-marker exemption ("respawn-skip").
+
+
+def _reconcile_ev(kind, ts, note=""):
+    return {"kind": kind, "ts": ts, "note": note}
+
+
+def test_session_reconcile_respawn_exemption_skips():
+    # decide-level: the new kwarg skips with a reset miss count; precedence
+    # is keep_running > followup_active > recovery_respawn_active.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed", True, 5, alerted=False, autostop=True, recovery_respawn_active=True
+    ) == ("respawn-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        keep_running=True,
+        recovery_respawn_active=True,
+    ) == ("keep-running-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        followup_active=True,
+        recovery_respawn_active=True,
+    ) == ("followup-skip", 0)
+
+
+def test_session_reconcile_respawn_exemption_beats_pod_running():
+    # Precedence vs pod_running: respawn-skip is checked BEFORE pod-skip, so
+    # the audit log names the true (stronger) reason the session survives.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        recovery_respawn_active=True,
+        pod_running=True,
+    ) == ("respawn-skip", 0)
+
+
+def test_recovery_respawn_active_predicate():
+    # Truth table for the exemption predicate: fresh respawn marker newer
+    # than every settling marker -> True; settled (later status-changed OR
+    # later epm:merged) -> False; absent -> False; future-dated -> False
+    # (clock-skew guard); no done-transition at all but fresh marker -> True
+    # (the documented divergence from the followup twin — the TTL bounds it).
+    import autonomous_session_watch as asw
+
+    respawn_iso = "2026-07-24T15:43:11Z"
+    respawn_ts = asw._parse_event_ts(respawn_iso)
+    now = respawn_ts + 624  # the incident's 15:53:38Z stop instant, ~10.4 min
+    respawn_ev = _reconcile_ev(
+        "epm:progress",
+        respawn_iso,
+        f"{asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} dispatched spawn-issue --auto",
+    )
+    parked_ev = _reconcile_ev("epm:status-changed", "2026-07-23T12:20:00Z", "-> completed")
+
+    assert asw._task_recovery_respawn_active(42, events=[parked_ev, respawn_ev], now=now) is True
+    # Settled by a NEWER status-changed (e.g. the task was later archived).
+    later_status = _reconcile_ev("epm:status-changed", "2026-07-24T16:00:00Z", "-> archived")
+    assert (
+        asw._task_recovery_respawn_active(42, events=[respawn_ev, later_status], now=now + 7200)
+        is False
+    )
+    # Settled by a NEWER epm:merged (the recovery episode succeeded).
+    merged = _reconcile_ev("epm:merged", "2026-07-24T16:00:00Z", "merged PR")
+    assert (
+        asw._task_recovery_respawn_active(42, events=[parked_ev, respawn_ev, merged], now=now)
+        is False
+    )
+    # No respawn marker at all -> False.
+    assert asw._task_recovery_respawn_active(42, events=[parked_ev], now=now) is False
+    # Future-dated respawn marker -> False (clock-skew guard).
+    assert asw._task_recovery_respawn_active(42, events=[respawn_ev], now=respawn_ts - 60) is False
+    # No done-transition at all but a fresh marker -> True (twin divergence).
+    assert asw._task_recovery_respawn_active(42, events=[respawn_ev], now=now) is True
+
+
+@pytest.mark.parametrize("offset_extra,expected", [(0, True), (1, False)])
+def test_recovery_respawn_active_ttl_boundary(offset_extra, expected):
+    # Exact TTL boundary: now - ts == TTL is still active (<= semantics);
+    # one second past the TTL expires the exemption.
+    import autonomous_session_watch as asw
+
+    respawn_iso = "2026-07-24T15:43:11Z"
+    respawn_ts = asw._parse_event_ts(respawn_iso)
+    respawn_ev = _reconcile_ev(
+        "epm:progress",
+        respawn_iso,
+        f"{asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} dispatched spawn-issue --auto",
+    )
+    now = respawn_ts + asw.SESSION_RECONCILE_RESPAWN_TTL_S + offset_extra
+    assert asw._task_recovery_respawn_active(42, events=[respawn_ev], now=now) is expected
+
+
+def test_session_reconcile_young_respawn_not_stopped_incident_1622(isolated_registry, monkeypatch):
+    # Integration replay of the #1622 incident: status `completed`, the last
+    # non-watcher marker 27h old, the watcher's respawn marker 10 min old
+    # (watcher-sentineled, so it does NOT refresh the idle clock), a live
+    # mapped sid, default autostop — three ticks must stop NOTHING.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    respawn_iso = "2026-07-24T15:43:11Z"
+    now = asw._parse_event_ts(respawn_iso) + 600  # 10 min after the respawn dispatch
+    events = [
+        _reconcile_ev("epm:status-changed", "2026-07-23T12:20:00Z", "reviewing -> completed"),
+        _reconcile_ev(
+            "epm:progress",
+            respawn_iso,
+            f"{asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} dispatched spawn-issue --auto "
+            f"to run the Step 10d backstop",
+        ),
+    ]
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", events=events)
+    for _ in range(3):
+        asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0  # the skip re-arms a fresh accumulation
+
+
+@pytest.mark.parametrize("prefix", ["issue-", "manual-issue-"])
+def test_session_idle_signals_fresh_registration_not_idle(isolated_registry, monkeypatch, prefix):
+    # A registration spawned_at 10 min ago is a session-level activity
+    # signal: the issue is NOT idle even with zero markers / self-report.
+    # Both registration files count (manual-issue-* survives the crash arm's
+    # terminal-status delete, so it matters for user-driven recoveries).
+    import json
+
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    (isolated_registry / f"{prefix}42.json").write_text(
+        json.dumps({"spawned_at": now - 600, "happy_session_id": "sid-a"})
+    )
+    idle, gap_desc, _events = asw._session_idle_signals(42, now)
+    assert idle is False
+    assert gap_desc == "0.2h"
+
+
+def test_session_idle_signals_stale_registration_still_idle(isolated_registry, monkeypatch):
+    # Only-young protection: a registration older than the idle window
+    # contributes an over-threshold age and does NOT flip idleness.
+    import json
+
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    (isolated_registry / "issue-42.json").write_text(
+        json.dumps({"spawned_at": now - 3 * asw._session_idle_s()})
+    )
+    idle, _gap_desc, _events = asw._session_idle_signals(42, now)
+    assert idle is True
+
+
+def test_session_idle_signals_fresh_transcript_not_idle(isolated_registry, monkeypatch):
+    # A fresh transcript mtime for a mapped sid flips idleness; an
+    # unresolvable transcript contributes nothing (falls back to today's
+    # behavior — fail toward the other signals, here none -> idle).
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    idle, gap_desc, _events = asw._session_idle_signals(
+        42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
+    )
+    assert idle is False
+    assert gap_desc == "0.0h"
+
+    monkeypatch.setattr(
+        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+    )
+    idle, gap_desc, _events = asw._session_idle_signals(
+        42, now, sids=["sid-a"], pids_by_sid={"sid-a": 1234}
+    )
+    assert idle is True
+    assert gap_desc == "no-signal"
+
+
+def test_session_idle_signals_no_signal_still_idle(isolated_registry, monkeypatch):
+    # The deliberate "no signal at all -> idle" reaping default is
+    # byte-preserved: no markers, no self-report, no registration, no
+    # transcript signal -> (True, "no-signal").
+    import autonomous_session_watch as asw
+
+    _patch_session_reconcile_io(monkeypatch, status="completed")
+    idle, gap_desc, _events = asw._session_idle_signals(42, 1_000_000.0)
+    assert idle is True
+    assert gap_desc == "no-signal"
+
+
+def test_session_reconcile_pass_fresh_transcript_threaded_no_stop(isolated_registry, monkeypatch):
+    # Pass-level pids_by_sid forwarding chain (session_reconcile_pass ->
+    # _process_session_reconcile -> _session_idle_signals): a fresh
+    # transcript keeps the session through the FULL pass, three ticks,
+    # default autostop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (60.0, None))
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=1_000_000.0,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == [] and posts == []
+
+
+def test_session_reconcile_old_idle_session_with_stale_signals_still_stopped(
+    isolated_registry, monkeypatch
+):
+    # Regression guard on the reaping default through the full pass: a STALE
+    # registration, an UNRESOLVABLE transcript, and no respawn marker must
+    # still stop at the threshold exactly as today.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(
+        asw, "_transcript_idle_age_s", lambda pid, now: (None, "transcript unresolvable")
+    )
+    now = 1_000_000.0
+    (isolated_registry / "issue-42.json").write_text(
+        json.dumps({"spawned_at": now - 3 * asw._session_idle_s()})
+    )
+    for _ in range(2):
+        asw.session_reconcile_pass(
+            False,
+            2,
+            daemon_reachable=True,
+            live_ids={"sid-a"},
+            now=now,
+            pids_by_sid={"sid-a": 4242},
+        )
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+def test_session_reconcile_respawn_skip_resets_miss_counter(isolated_registry, monkeypatch):
+    # The respawn-skip writes missed=0 state like the sibling skips
+    # (keep-running / followup / pod), re-arming a fresh >=threshold
+    # accumulation once the exemption settles or its TTL expires.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    respawn_iso = "2026-07-24T15:43:11Z"
+    now = asw._parse_event_ts(respawn_iso) + 600
+    events = [
+        _reconcile_ev("epm:status-changed", "2026-07-23T12:20:00Z", "-> completed"),
+        _reconcile_ev(
+            "epm:progress",
+            respawn_iso,
+            f"{asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} dispatched spawn-issue --auto",
+        ),
+    ]
+    stops, _posts = _patch_session_reconcile_io(monkeypatch, status="completed", events=events)
+    asw._save_session_reconcile_state(42, missed=1, alerted=False, sids=["sid-a"])
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0
+
+
+def test_session_reconcile_respawn_skip_dry_run_writes_nothing(isolated_registry, monkeypatch):
+    # Dry-run respawn-skip tick: no state file write, no marker post, no stop
+    # (verify_plan c11-adjacent smoke pin — the dry-run posture stays inert).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    respawn_iso = "2026-07-24T15:43:11Z"
+    now = asw._parse_event_ts(respawn_iso) + 600
+    events = [
+        _reconcile_ev("epm:status-changed", "2026-07-23T12:20:00Z", "-> completed"),
+        _reconcile_ev(
+            "epm:progress",
+            respawn_iso,
+            f"{asw._COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} dispatched spawn-issue --auto",
+        ),
+    ]
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", events=events)
+    asw.session_reconcile_pass(True, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+    assert not (isolated_registry / "session-reconcile-42.json").exists()
+
+
 # ─── zombie-wrapper pass (dead inner Claude; 2026-06-11 zombie sweep) ─────────
 #
 # 25 finished-issue sessions with NO inner Claude process showed as "running"
