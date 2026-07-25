@@ -1119,19 +1119,40 @@ BUG_1472 = (
     "and will for ~3 more weeks"
 )
 
+# ── #1687: the 2026-07-25 wrong-suppression incident, real texts ────────────────
+# Item texts from logs/daily/filings-2026-07-24/manifest.json (slug
+# issue823-root-draft; suppressed as `already-tracked #1537 (shared: gate,step,warn)`,
+# filed.jsonl line 39); task texts from tasks/proposed/1537/body.md frontmatter.
+
+TITLE_823_ITEM = "daily-held: disposition root draft issue823_single_split"
+BUG_823_ITEM = (
+    "The untracked file scripts/issue823_single_split_protocol.py has sat on the shared "
+    "repo root for 11+ hours, degrading every Step 9c gate to scratch-oracle mode - four "
+    "gates today each emitted SCRATCH-ORACLE WARN root dirty on this path"
+)
+TITLE_1537 = "daily-held: enforce body presence on wf-fix filings"
+ORIGIN_1537 = (
+    "/daily 2026-07-18 problem sweep (route 3): A wf-fix filing without --body/--body-file "
+    "lands frontmatter-only silently (#1517, commit 14f2952cab verified); the spawned "
+    "session hits the Step 0b empty-body gate. The #1173 WARN half is already landed in "
+    "file_infra_task.py; the residual refusal touches the task.py new CLI contract."
+)
+
 
 def _held_item(slug: str, title: str, bug: str) -> dict:
     return make_item(slug, route=3, title=title, bug=bug)
 
 
 def test_route3_open_daily_held_overlap_dedups_no_filing(tmp_path, tasks_root, capsys):
-    # Candidate tokens: {quota, decision, alpha} (title) | {widget, quota, exceeds,
+    # Candidate tokens: {widget, quota, decision, alpha} (title) | {widget, quota, exceeds,
     # gadget, budget, threshold} (bug). Task tokens: {widget, budget, review} (title) |
     # {decide, gadget, policy} (origin). Shared = {widget, budget, gadget} — EXACTLY 3,
     # pinning the >= boundary at ROUTE3_MIN_SHARED_TOKENS (a <-vs-<= off-by-one flips it).
+    # #1687: item title carries `widget` so the title anchor = {widget} is satisfied
+    # (`widget` was already in the item bug, so the shared set is unchanged).
     item = _held_item(
         "held-a",
-        "daily-held: gpu quota decision alpha",
+        "daily-held: widget quota decision alpha",
         "widget quota exceeds gadget budget threshold",
     )
     make_task(
@@ -1152,15 +1173,18 @@ def test_route3_open_daily_held_overlap_dedups_no_filing(tmp_path, tasks_root, c
     assert row["against_title"] == "daily-held: widget budget review"
     assert sorted(row["shared"]) == ["budget", "gadget", "widget"]
     assert len(row["shared"]) == ddf.ROUTE3_MIN_SHARED_TOKENS  # exact-boundary pin
+    assert row["anchor"] == ["widget"]  # #1687 title-anchor audit field
     assert row["route"] == 3 and "ts" in row
     assert "ALREADY-TRACKED held-a -> #77" in capsys.readouterr().out
 
 
 def test_route3_two_shared_tokens_files_as_today(tmp_path, tasks_root):
     # Threshold boundary: shared = {widget, gadget} — exactly 2 < 3 — files normally.
+    # #1687: the title anchor {widget} IS present, so this test still discriminates
+    # on the THRESHOLD, not vacuously on the anchor.
     item = _held_item(
         "held-b",
-        "daily-held: gpu quota decision alpha",
+        "daily-held: widget quota decision alpha",
         "widget quota exceeds gadget budget threshold",
     )
     make_task(
@@ -1222,9 +1246,11 @@ def test_route3_dedup_fail_open_files(tmp_path, tasks_root, capsys, monkeypatch)
 def test_route3_dedup_ignores_closed_and_untagged(tmp_path, tasks_root):
     # Population gate: a high-overlap CLOSED task and a high-overlap open task
     # WITHOUT the daily-held tag both stay out of the scan population -> files.
+    # #1687: the title anchor {widget} would be present, so the test still
+    # discriminates on the POPULATION gate.
     item = _held_item(
         "held-d",
-        "daily-held: gpu quota decision alpha",
+        "daily-held: widget quota decision alpha",
         "widget quota exceeds gadget budget threshold",
     )
     make_task(
@@ -1251,9 +1277,11 @@ def test_route3_dedup_ignores_closed_and_untagged(tmp_path, tasks_root):
 
 
 def test_route3_dry_run_prints_already_tracked_no_writes(tmp_path, tasks_root, capsys):
+    # #1687: item title carries `widget` so the pair is a real match (anchor {widget})
+    # and the test keeps exercising dry-run printing.
     item = _held_item(
         "held-e",
-        "daily-held: gpu quota decision alpha",
+        "daily-held: widget quota decision alpha",
         "widget quota exceeds gadget budget threshold",
     )
     make_task(
@@ -1273,8 +1301,10 @@ def test_route3_dry_run_prints_already_tracked_no_writes(tmp_path, tasks_root, c
 
 
 def test_route3_replay_1140_1472_pair_dedups(tmp_path, tasks_root, capsys):
-    # Quantitative acceptance (plan #1483 §6.1): the REAL #1140/#1472 pair replays
-    # as a dedup hit with wide margin (measured 7 shared tokens vs threshold 3).
+    # Quantitative acceptance (plan #1483 §6.1, re-measured for #1687): the REAL
+    # #1140/#1472 pair replays as a dedup hit with margin — post-exclusion shared = 5
+    # (codex, doubled, quota, review, site; `every` is generic, `2026-08-06` a date)
+    # vs threshold 3, and the title anchor is {codex}.
     make_task(
         tasks_root,
         "proposed",
@@ -1291,15 +1321,18 @@ def test_route3_replay_1140_1472_pair_dedups(tmp_path, tasks_root, capsys):
     (row,) = ledger_rows(d)
     assert row["outcome"] == "already-tracked"
     assert row["against"] == 1140
-    assert len(row["shared"]) >= ddf.ROUTE3_MIN_SHARED_TOKENS  # measured 7 on the real texts
+    assert len(row["shared"]) >= ddf.ROUTE3_MIN_SHARED_TOKENS  # measured 5 post-exclusion
     assert {"codex", "quota"} <= set(row["shared"])
+    assert row["anchor"] == ["codex"]  # #1687 title-anchor on the one true-dup pair
     assert "ALREADY-TRACKED codex-outage-refile -> #1140" in capsys.readouterr().out
 
 
 def test_route3_already_tracked_is_terminal_on_resume(tmp_path, tasks_root, capsys):
+    # #1687: item title carries `widget` so the pair is a real match (anchor {widget})
+    # and the test keeps exercising resume terminality.
     item = _held_item(
         "held-g",
-        "daily-held: gpu quota decision alpha",
+        "daily-held: widget quota decision alpha",
         "widget quota exceeds gadget budget threshold",
     )
     make_task(
@@ -1345,6 +1378,142 @@ def test_route2_not_scanned_for_daily_held_overlap(tmp_path, tasks_root):
     assert [r["outcome"] for r in rows] == ["attempting", "filed"]
     assert not any(r["outcome"] == "already-tracked" for r in rows)
     assert len(filer_calls(d)) == 1
+
+
+def test_route3_replay_1687_incident_pair_files(tmp_path, tasks_root, capsys):
+    # DURABILITY PIN (#1687): the REAL 2026-07-25 incident replays as a FILING.
+    # Raw shared = {gate, step, warn} — all generic workflow vocabulary, excluded
+    # from the shared count (post-exclusion 0) AND the titles share no subject
+    # token (anchor = {}) — both new conditions independently defeat the match.
+    make_task(
+        tasks_root,
+        "proposed",
+        1537,
+        title=TITLE_1537,
+        tags=["daily-held"],
+        origin_prompt=ORIGIN_1537,
+    )
+    item = _held_item("issue823-root-draft", TITLE_823_ITEM, BUG_823_ITEM)
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+    assert "ALREADY-TRACKED" not in capsys.readouterr().out
+
+
+def test_route3_generic_vocab_never_counts_toward_overlap(tmp_path, tasks_root):
+    # Raw overlap = 8 tokens drawn ONLY from ROUTE3_GENERIC_TOKENS; the subject
+    # words are disjoint (quorum/flange vs melon/parade) -> post-exclusion
+    # shared = 0 -> files. Pins the exclusion set working alone.
+    item = _held_item(
+        "held-generic",
+        "daily-held: quorum flange analysis",
+        "gate step session daily backlog every still across quorum flange",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        85,
+        title="daily-held: melon parade cleanup",
+        tags=["daily-held"],
+        origin_prompt=(
+            "/daily 2026-07-01 problem sweep (route 3): "
+            "gate step session daily backlog every still across melon parade"
+        ),
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_prose_only_overlap_without_title_anchor_files(tmp_path, tasks_root):
+    # The #1636 x #1686 class: >= 3 shared SUBJECT tokens confined to bug/origin
+    # prose (shared = {widget, gadget, budget, prose} = 4 >= 3), titles sharing
+    # no informative token (anchor = {}) -> files. Pins the anchor mechanism
+    # specifically (subject tokens survive the exclusion; only the anchor blocks).
+    item = _held_item(
+        "held-prose",
+        "daily-held: alpha analysis",
+        "widget gadget budget prose",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        86,
+        title="daily-held: melon parade",
+        tags=["daily-held"],
+        origin_prompt=(
+            "/daily 2026-07-01 problem sweep (route 3): widget gadget budget prose cleanup"
+        ),
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_date_tokens_never_count_toward_overlap(tmp_path, tasks_root):
+    # Titles share `widget` (anchor present), bodies share {widget, gadget,
+    # 2026-07-24} — raw 3 would suppress; the date token is excluded so
+    # post-exclusion shared = {widget, gadget} = 2 < 3 -> files. Discriminates
+    # the DATE exclusion inside the shared count (anchor satisfied).
+    item = _held_item(
+        "held-date",
+        "daily-held: widget alpha analysis",
+        "widget gadget 2026-07-24 threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        87,
+        title="daily-held: widget melon parade",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): widget gadget 2026-07-24 cleanup",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_generic_tokens_excluded_from_shared_count_with_anchor(tmp_path, tasks_root):
+    # Mirror of the date test with GENERIC tokens in place of the date: titles
+    # share `widget` (anchor present), bodies share {widget, gate, step} — raw 3
+    # would suppress; generic exclusion leaves shared = {widget} = 1 < 3 -> files.
+    # Isolates the generic-token exclusion within the SHARED COUNT when an anchor
+    # is present (dropping ROUTE3_GENERIC_TOKENS from the shared-count while
+    # keeping it in the anchor would fail exactly this test).
+    item = _held_item(
+        "held-generic-anchored",
+        "daily-held: widget alpha analysis",
+        "widget gate step threshold",
+    )
+    make_task(
+        tasks_root,
+        "proposed",
+        88,
+        title="daily-held: widget melon parade",
+        tags=["daily-held"],
+        origin_prompt="/daily 2026-07-01 problem sweep (route 3): widget gate step cleanup",
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    assert len(filer_calls(d)) == 1
+
+
+def test_route3_generic_set_disjoint_from_true_dup_subjects():
+    # Calibration guard (plan #1687 §11 D1): the generic set must never eat the
+    # measured true-duplicate subject signal (#1140/#1472 post-exclusion shared =
+    # {codex, doubled, quota, review, site}, anchor {codex}). A future
+    # over-extension of ROUTE3_GENERIC_TOKENS into these subjects fails here.
+    assert ddf.ROUTE3_GENERIC_TOKENS & {"codex", "quota", "doubled", "site", "review"} == set()
 
 
 # ── #1529: filer sibling-advisory forwarding + ledger persistence ───────────────

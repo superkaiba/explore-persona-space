@@ -19,7 +19,9 @@ Route-3 items get a same-subject dedup instead (#1483): before filing, the drive
 OPEN (proposed/on_hold/blocked) tasks tagged ``daily-held`` for
 ``>= ROUTE3_MIN_SHARED_TOKENS`` shared informative title+bug tokens
 (``task_workflow.informative_title_tokens``; task side = frontmatter title +
-template-stripped ``origin_prompt``); a hit records terminal outcome ``already-tracked``
+template-stripped ``origin_prompt``) — excluding route-3-generic workflow vocabulary +
+date tokens, and additionally requiring >= 1 shared post-exclusion TITLE token (#1687);
+a hit records terminal outcome ``already-tracked``
 and skips the filer; any scan error fails OPEN toward filing with a loud stderr WARN.
 
 Same-target dispatch hold (#1678): a route-2 item sharing >=1 normalized target token
@@ -110,10 +112,51 @@ ROUTE3_OPEN_STATUSES = frozenset({"proposed", "on_hold", "blocked"})
 ROUTE3_ORIGIN_TEMPLATE_RE = re.compile(r"^/daily \S+ problem sweep \(route \d\): ")
 # Route-3 channel tokens on every daily-held filing — never informative.
 ROUTE3_BOILERPLATE_TOKENS = frozenset({"daily-held", "needs-human"})
-# Measured 2026-07-17, re-confirmed at implementation time (plan #1483 §11 D2):
-# the #1140/#1472 duplicate pair shares 7 informative tokens; the live open
-# daily-held population's (n=5) max NON-duplicate pairwise overlap is 1
-# ('every', #1141x#1472). 3 sits 2 above noise, 4 below the hit.
+# ── #1687 route-3 generic-vocabulary + date exclusion ────────────────────────
+# Generic workflow vocabulary must never count toward route-3 overlap: the
+# 2026-07-24 incident suppressed a held filing against unrelated #1537 on
+# {gate, step, warn} alone. Members are (i) every token measured at document
+# frequency >= 4/37 on the FULL historical daily-held corpus (frontmatter
+# title + template-stripped origin_prompt, measured 2026-07-25, plan #1687
+# §11 D1), (ii) their plural forms (the tokenizer does not stem), and
+# (iii) the incident token family warn/warning. Subject-bearing df==3 tokens
+# (codex, zombie, stranded, draft, review, ...) are deliberately KEPT
+# informative — see plan #1687 §11 D1 and the calibration-guard test.
+ROUTE3_GENERIC_TOKENS = frozenset(
+    {
+        # measured df >= 4/37 (2026-07-25 corpus pass):
+        "daily",
+        "backlog",
+        "held",
+        "every",
+        "gate",
+        "still",
+        "step",
+        "route-3",
+        "session",
+        "across",
+        # plural forms of the measured tokens (no stemming in the tokenizer):
+        "gates",
+        "steps",
+        "sessions",
+        # the #1687 incident token family (log-level vocabulary):
+        "warn",
+        "warns",
+        "warning",
+        "warnings",
+    }
+)
+# Date-shaped tokens are per-run vocabulary, not subject: 9/37 historical
+# daily-held tasks share one batch date token (2026-06-27), so a shared date
+# marks same-day filings, never a duplicate subject (#1687).
+ROUTE3_DATE_TOKEN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# Calibrated 2026-07-17 (plan #1483 §11 D2, n=5 population, max non-dup
+# overlap 1) and RE-calibrated 2026-07-25 (plan #1687): on the n=14 live
+# population the raw non-dup ceiling grew to 3 (the #1537 x #1686 incident);
+# after the ROUTE3_GENERIC_TOKENS + date exclusion it is 2 (#1636 x #1686),
+# and the #1140/#1472 true-dup pair keeps 5. Threshold stays 3; the
+# title-anchor condition in find_open_daily_held_duplicate carries the
+# structural margin (plan #1687 §11 D2/D3).
 ROUTE3_MIN_SHARED_TOKENS = 3
 REQUIRED_ITEM_KEYS = frozenset({"slug", "route", "title", "target", "bug", "change"})
 # Anchored to the line start: every file_infra_task.py success path prints a line starting
@@ -697,12 +740,27 @@ def find_open_fp_duplicate(tasks_root: Path, fp: str) -> Path | None:
     return None
 
 
+def _route3_informative(tokens: set[str]) -> set[str]:
+    """Route-3 informative subset: boilerplate, generic-vocab + date tokens removed (#1687)."""
+    return {
+        t
+        for t in tokens
+        if t not in ROUTE3_BOILERPLATE_TOKENS
+        and t not in ROUTE3_GENERIC_TOKENS
+        and not ROUTE3_DATE_TOKEN_RE.match(t)
+    }
+
+
 def _route3_item_tokens(title: str, bug: str) -> set[str]:
     """Informative tokens of a route-3 item: title (daily-held: stripped) + bug text."""
     t = (title or "").removeprefix(ROUTE3_TITLE_PREFIX)
-    return (informative_title_tokens(t) | informative_title_tokens(bug or "")) - (
-        ROUTE3_BOILERPLATE_TOKENS
-    )
+    return _route3_informative(informative_title_tokens(t) | informative_title_tokens(bug or ""))
+
+
+def _route3_title_tokens(title: str) -> set[str]:
+    """Subject tokens of the TITLE alone — the #1687 anchor set (same exclusions)."""
+    t = (title or "").removeprefix(ROUTE3_TITLE_PREFIX)
+    return _route3_informative(informative_title_tokens(t))
 
 
 def find_open_daily_held_duplicate(tasks_root: Path, title: str, bug: str) -> dict | None:
@@ -713,7 +771,11 @@ def find_open_daily_held_duplicate(tasks_root: Path, title: str, bug: str) -> di
     frontmatter title + origin_prompt with the /daily template prefix stripped
     (origin_prompt IS the filing-time bug[:400] by _filer_cmd construction) —
     frontmatter-only reads, never the body (body boilerplate would inflate
-    overlap). Returns {"id", "title", "shared"} for the max-overlap hit
+    overlap). Two #1687 conditions gate a hit beyond the shared-token
+    threshold: generic-vocab + date tokens never count toward overlap
+    (_route3_informative), and the two TITLES must share >= 1 post-exclusion
+    subject token (the anchor) — generic prose overlap alone never suppresses.
+    Returns {"id", "title", "shared", "anchor"} for the max-overlap hit
     (tie: lowest id), else None. Kept in the driver (not task_workflow) for the
     tasks_root injection the test fixtures use, same as find_open_fp_duplicate.
     Callers wrap in try/except: the scan is FAIL-OPEN by contract.
@@ -721,6 +783,9 @@ def find_open_daily_held_duplicate(tasks_root: Path, title: str, bug: str) -> di
     cand = _route3_item_tokens(title, bug)
     if not cand:
         return None
+    cand_title = _route3_title_tokens(title)
+    if not cand_title:
+        return None  # no subject-bearing title tokens -> nothing can anchor; fail toward filing
     best: dict | None = None
     for body in sorted(tasks_root.glob("*/*/body.md")):
         if body.parent.parent.name not in ROUTE3_OPEN_STATUSES:
@@ -735,9 +800,19 @@ def find_open_daily_held_duplicate(tasks_root: Path, title: str, bug: str) -> di
         shared = cand & _route3_item_tokens(str(fm.get("title") or ""), origin)
         if len(shared) < ROUTE3_MIN_SHARED_TOKENS:
             continue
+        anchor = cand_title & _route3_title_tokens(str(fm.get("title") or ""))
+        if not anchor:
+            # >=3 shared tokens confined to bug/origin prose: generic-prose
+            # overlap without title-subject agreement never suppresses (#1687).
+            continue
         tid = int(body.parent.name)
         if best is None or (len(shared), -tid) > (len(best["shared"]), -best["id"]):
-            best = {"id": tid, "title": str(fm.get("title") or ""), "shared": sorted(shared)}
+            best = {
+                "id": tid,
+                "title": str(fm.get("title") or ""),
+                "shared": sorted(shared),
+                "anchor": sorted(anchor),
+            }
     return best
 
 
@@ -786,11 +861,15 @@ def _route3_already_tracked(
                 "against": dup3["id"],
                 "against_title": dup3["title"],
                 "shared": dup3["shared"],
+                "anchor": dup3["anchor"],
                 "fp": fp,
                 "route": 3,
             },
         )
-    print(f"ALREADY-TRACKED {slug} -> #{dup3['id']} (shared: {','.join(dup3['shared'])})")
+    print(
+        f"ALREADY-TRACKED {slug} -> #{dup3['id']}"
+        f" (shared: {','.join(dup3['shared'])}; anchor: {','.join(dup3['anchor'])})"
+    )
     return "skip" if dry_run else "already-tracked"
 
 
