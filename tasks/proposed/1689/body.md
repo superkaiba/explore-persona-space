@@ -30,6 +30,9 @@ goal: 'Determine, on ONE shared row-paired corpus, whether the context->answer l
   refit / global scaling / rotation / context reparameterization / answer reparameterization
   / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping
   arms (prefix and context) are fit for every cell.'
+relates_to:
+- identity-contextual-vs-base
+- identity-cb-duality
 ---
 # Controlled 21-condition speaker × framing lattice for the context→answer map, characterized by the full mapping-similarity tier ladder
 
