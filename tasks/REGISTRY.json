@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1674,
+  "highest_id": 1675,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5242,6 +5242,13 @@
       "path": "tasks/proposed/1674",
       "status": "proposed",
       "title": "daily-fix: driver runs mechanical landed-fix probe at filing"
+    },
+    "1675": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1675",
+      "status": "proposed",
+      "title": "daily-fix: piped-git guard ignores quoted pattern text"
     },
     "168": {
       "has_clean_result": true,
