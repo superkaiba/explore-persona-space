@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1681,
+  "highest_id": 1682,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5298,6 +5298,13 @@
       "path": "tasks/proposed/1681",
       "status": "proposed",
       "title": "workflow-fix: prioritize parked candidates on live red main"
+    },
+    "1682": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1682",
+      "status": "proposed",
+      "title": "workflow-fix: implementer reports rev-parse SHAs verbatim"
     },
     "169": {
       "has_clean_result": false,
