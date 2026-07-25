@@ -5239,8 +5239,8 @@
     "1674": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1674",
-      "status": "running",
+      "path": "tasks/reviewing/1674",
+      "status": "reviewing",
       "title": "daily-fix: driver runs mechanical landed-fix probe at filing"
     },
     "1675": {
