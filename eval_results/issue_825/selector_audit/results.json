@@ -1,0 +1,2227 @@
+{
+  "metadata": {
+    "script": "scripts/issue825_selector_audit.py",
+    "issue": 825,
+    "git_commit": "bbea0179af89fc1b15d4135d7c88134953cb4371",
+    "headline_layer": 19,
+    "n_folds": 5,
+    "fold_seed": 0,
+    "dof_cap": 0.9,
+    "d_model": 3584,
+    "selector_definitions": {
+      "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+      "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+      "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+    }
+  },
+  "leg_a_selector_audit": {
+    "M_instruct_assistant_chat": {
+      "cell_id": "M_instruct_assistant_chat",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": 0.07571368282873248,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 7.0
+        },
+        "gcv_guarded": {
+          "r2": 0.5879422523870238,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_geomean": 999.9999999999998,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 6.3
+        },
+        "inner_group_cv": {
+          "r2": 0.589964207145033,
+          "lambdas": [
+            3162.2776601683795,
+            1000.0,
+            3162.2776601683795,
+            1000.0,
+            3162.2776601683795
+          ],
+          "lambda_geomean": 1995.2623149688786,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 25.5
+        }
+      },
+      "wall_s": 70.0,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_instruct_assistant_naturalistic": {
+      "cell_id": "M_instruct_assistant_naturalistic",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -0.0784256989434784,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 9.5
+        },
+        "gcv_guarded": {
+          "r2": 0.5538027668123986,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_geomean": 999.9999999999998,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 9.4
+        },
+        "inner_group_cv": {
+          "r2": 0.5575064050279579,
+          "lambdas": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "lambda_geomean": 3162.2776601683804,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 32.1
+        }
+      },
+      "wall_s": 138.1,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_instruct_user_chat": {
+      "cell_id": "M_instruct_user_chat",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -1.4272499394226625,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 4.3
+        },
+        "gcv_guarded": {
+          "r2": 0.24799153008959507,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 4.3
+        },
+        "inner_group_cv": {
+          "r2": 0.24799153008959507,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 15.5
+        }
+      },
+      "wall_s": 98.1,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_instruct_user_naturalistic": {
+      "cell_id": "M_instruct_user_naturalistic",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -1.6051478189019397,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 9.5
+        },
+        "gcv_guarded": {
+          "r2": 0.22647820658279383,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 9.1
+        },
+        "inner_group_cv": {
+          "r2": 0.22647820658279383,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 32.9
+        }
+      },
+      "wall_s": 138.3,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_pretrained_assistant_chat": {
+      "cell_id": "M_pretrained_assistant_chat",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -0.4605551809040951,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 9.4
+        },
+        "gcv_guarded": {
+          "r2": 0.49259409383220043,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "lambda_geomean": 1995.2623149688823,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 9.0
+        },
+        "inner_group_cv": {
+          "r2": 0.4967721032689222,
+          "lambdas": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "lambda_geomean": 3162.2776601683804,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 32.7
+        }
+      },
+      "wall_s": 135.0,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_pretrained_assistant_naturalistic": {
+      "cell_id": "M_pretrained_assistant_naturalistic",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -0.38966704296051424,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 8.1
+        },
+        "gcv_guarded": {
+          "r2": 0.5088407646212403,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_geomean": 999.9999999999998,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 7.1
+        },
+        "inner_group_cv": {
+          "r2": 0.5143499370880112,
+          "lambdas": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "lambda_geomean": 3162.2776601683804,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 28.6
+        }
+      },
+      "wall_s": 99.3,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_pretrained_user_chat": {
+      "cell_id": "M_pretrained_user_chat",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -1.4893560397043903,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 9.1
+        },
+        "gcv_guarded": {
+          "r2": 0.19209661165805858,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 9.4
+        },
+        "inner_group_cv": {
+          "r2": 0.19209661165805858,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 31.1
+        }
+      },
+      "wall_s": 133.1,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "M_pretrained_user_naturalistic": {
+      "cell_id": "M_pretrained_user_naturalistic",
+      "n": 2000,
+      "n_train_approx": 1600,
+      "d_model": 3584,
+      "degenerate_regime": true,
+      "selectors": {
+        "gcv_unguarded": {
+          "r2": -1.6495894146243995,
+          "lambdas": [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          "lambda_geomean": 0.010000000000000004,
+          "lambda_at_grid_floor_frac": 1.0,
+          "wall_s": 8.2
+        },
+        "gcv_guarded": {
+          "r2": 0.21424808614422397,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 7.9
+        },
+        "inner_group_cv": {
+          "r2": 0.21424808614422397,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_geomean": 10000.00000000001,
+          "lambda_at_grid_floor_frac": 0.0,
+          "wall_s": 30.9
+        }
+      },
+      "wall_s": 102.3,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    }
+  },
+  "leg_a_corroboration": {
+    "M_instruct_assistant_chat": {
+      "unguarded": 0.07571368282873248,
+      "guarded": 0.5879422523870238,
+      "inner_group_cv": 0.589964207145033,
+      "inner_minus_guarded": 0.002021954758009148,
+      "inner_minus_unguarded": 0.5142505243163005,
+      "guard_lift": 0.5122285695582913,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_instruct_assistant_naturalistic": {
+      "unguarded": -0.0784256989434784,
+      "guarded": 0.5538027668123986,
+      "inner_group_cv": 0.5575064050279579,
+      "inner_minus_guarded": 0.0037036382155593017,
+      "inner_minus_unguarded": 0.6359321039714363,
+      "guard_lift": 0.632228465755877,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_instruct_user_chat": {
+      "unguarded": -1.4272499394226625,
+      "guarded": 0.24799153008959507,
+      "inner_group_cv": 0.24799153008959507,
+      "inner_minus_guarded": 0.0,
+      "inner_minus_unguarded": 1.6752414695122577,
+      "guard_lift": 1.6752414695122577,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_instruct_user_naturalistic": {
+      "unguarded": -1.6051478189019397,
+      "guarded": 0.22647820658279383,
+      "inner_group_cv": 0.22647820658279383,
+      "inner_minus_guarded": 0.0,
+      "inner_minus_unguarded": 1.8316260254847334,
+      "guard_lift": 1.8316260254847334,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_pretrained_assistant_chat": {
+      "unguarded": -0.4605551809040951,
+      "guarded": 0.49259409383220043,
+      "inner_group_cv": 0.4967721032689222,
+      "inner_minus_guarded": 0.004178009436721752,
+      "inner_minus_unguarded": 0.9573272841730173,
+      "guard_lift": 0.9531492747362955,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_pretrained_assistant_naturalistic": {
+      "unguarded": -0.38966704296051424,
+      "guarded": 0.5088407646212403,
+      "inner_group_cv": 0.5143499370880112,
+      "inner_minus_guarded": 0.005509172466770962,
+      "inner_minus_unguarded": 0.9040169800485255,
+      "guard_lift": 0.8985078075817545,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_pretrained_user_chat": {
+      "unguarded": -1.4893560397043903,
+      "guarded": 0.19209661165805858,
+      "inner_group_cv": 0.19209661165805858,
+      "inner_minus_guarded": 0.0,
+      "inner_minus_unguarded": 1.681452651362449,
+      "guard_lift": 1.681452651362449,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    },
+    "M_pretrained_user_naturalistic": {
+      "unguarded": -1.6495894146243995,
+      "guarded": 0.21424808614422397,
+      "inner_group_cv": 0.21424808614422397,
+      "inner_minus_guarded": 0.0,
+      "inner_minus_unguarded": 1.8638375007686234,
+      "guard_lift": 1.8638375007686234,
+      "inner_corroborates_guarded": true,
+      "inner_closer_to_guarded": true
+    }
+  },
+  "leg_b_matched_n_curve": {
+    "S_instruct_chat": {
+      "cell_id": "S_instruct_chat",
+      "n_full": 5000,
+      "d_model": 3584,
+      "levels": {
+        "500": {
+          "n": 500,
+          "n_train_approx": 400,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.50201242325346,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.5527014983948322,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5879249772607813,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": 0.47299781825489917,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  10.0,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 0.39810717055349737,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": 0.5067837266249815,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5497912707698149,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": 0.4813978869245046,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.5236805253762284,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5635637277895462,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.48546937614428787,
+            "gcv_guarded": 0.5277219167986807,
+            "inner_group_cv": 0.5670933252733809
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.012190012145351784,
+            "gcv_guarded": 0.01896242028415021,
+            "inner_group_cv": 0.015766809791102558
+          }
+        },
+        "1000": {
+          "n": 1000,
+          "n_train_approx": 800,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.37771574420819765,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.5029911959736795,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 31.62277660168379,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6076756289977532,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": 0.4381667181584693,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.5026921420418897,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 31.62277660168379,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6071530264593534,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": 0.47210686725095063,
+                "lambdas": [
+                  0.01,
+                  1.0,
+                  1.0,
+                  0.01,
+                  1.0
+                ],
+                "lambda_geomean": 0.15848931924611137,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": 0.5119328388988404,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 31.62277660168379,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6102439211295306,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.4293297765392059,
+            "gcv_guarded": 0.5058720589714699,
+            "inner_group_cv": 0.608357525528879
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.039038354475265616,
+            "gcv_guarded": 0.00428735725200993,
+            "inner_group_cv": 0.0013508379189484847
+          }
+        },
+        "2000": {
+          "n": 2000,
+          "n_train_approx": 1600,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.24341904853714347,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.1,
+                  0.31622776601683794,
+                  0.03162277660168379,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.06309573444801932,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.4187403993910417,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6585830017775994,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": 0.29346763089880645,
+                "lambdas": [
+                  0.01,
+                  1.0,
+                  1.0,
+                  1.0,
+                  0.1
+                ],
+                "lambda_geomean": 0.251188643150958,
+                "lambda_at_grid_floor_frac": 0.2
+              },
+              "gcv_guarded": {
+                "r2": 0.4092472175971694,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6532274331164913,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": 0.28515344454966474,
+                "lambdas": [
+                  1.0,
+                  0.03162277660168379,
+                  1.0,
+                  0.03162277660168379,
+                  1.0
+                ],
+                "lambda_geomean": 0.251188643150958,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.409273849471142,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6557669104915596,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.27401337466187153,
+            "gcv_guarded": 0.4124204888197844,
+            "inner_group_cv": 0.6558591151285501
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.021898112809581382,
+            "gcv_guarded": 0.0044688648473406424,
+            "inner_group_cv": 0.0021873736446970213
+          }
+        },
+        "3000": {
+          "n": 3000,
+          "n_train_approx": 2400,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": -0.17705621406255911,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.01,
+                  0.03162277660168379,
+                  0.1,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.0316227766016838,
+                "lambda_at_grid_floor_frac": 0.2
+              },
+              "gcv_guarded": {
+                "r2": 0.23156612162492396,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 6.309573444801933,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6670952049360368,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": -0.18511024433833012,
+                "lambdas": [
+                  0.01,
+                  0.03162277660168379,
+                  0.01,
+                  0.03162277660168379,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.01995262314968881,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": 0.2920755215337725,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6688069139297268,
+                "lambdas": [
+                  1000.0,
+                  3162.2776601683795,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 1258.925411794168,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": -0.09037452182559025,
+                "lambdas": [
+                  0.31622776601683794,
+                  0.1,
+                  0.31622776601683794,
+                  0.01,
+                  0.1
+                ],
+                "lambda_geomean": 0.10000000000000002,
+                "lambda_at_grid_floor_frac": 0.2
+              },
+              "gcv_guarded": {
+                "r2": 0.2996410426803352,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6696889423254353,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": -0.15084699340882649,
+            "gcv_guarded": 0.2744275619463439,
+            "inner_group_cv": 0.6685303537303996
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.04288672456180152,
+            "gcv_guarded": 0.030464586844123925,
+            "inner_group_cv": 0.001076795421355993
+          }
+        },
+        "4000": {
+          "n": 4000,
+          "n_train_approx": 3200,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": -1.7565264148064776,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": -0.14042993982677765,
+                "lambdas": [
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 3.1622776601683795,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6855918781708277,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  1000.0,
+                  3162.2776601683795,
+                  1000.0
+                ],
+                "lambda_geomean": 1995.2623149688786,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": -1.616105421763053,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.03162277660168379,
+                  0.03162277660168379,
+                  0.01
+                ],
+                "lambda_geomean": 0.015848931924611155,
+                "lambda_at_grid_floor_frac": 0.6
+              },
+              "gcv_guarded": {
+                "r2": -0.14798262172046495,
+                "lambdas": [
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 3.1622776601683795,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6826219694970765,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  1000.0,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 2511.886431509581,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": -1.5802867720754072,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.012589254117941689,
+                "lambda_at_grid_floor_frac": 0.8
+              },
+              "gcv_guarded": {
+                "r2": -0.22227843220911248,
+                "lambdas": [
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  1.0,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 2.51188643150958,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6866654405483928,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": -1.6509728695483126,
+            "gcv_guarded": -0.17023033125211837,
+            "inner_group_cv": 0.6849597627387657
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.07605658903644132,
+            "gcv_guarded": 0.03693250023911999,
+            "inner_group_cv": 0.0017101836110578752
+          }
+        },
+        "5000": {
+          "n": 5000,
+          "n_train_approx": 4000,
+          "degenerate_regime": false,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.6730940896675953,
+                "lambdas": [
+                  1000.0,
+                  316.22776601683796,
+                  316.22776601683796,
+                  316.22776601683796,
+                  1000.0
+                ],
+                "lambda_geomean": 501.1872336272727,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.6730940896675953,
+                "lambdas": [
+                  1000.0,
+                  316.22776601683796,
+                  316.22776601683796,
+                  316.22776601683796,
+                  1000.0
+                ],
+                "lambda_geomean": 501.1872336272727,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.6957042061410207,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.6730940896675953,
+            "gcv_guarded": 0.6730940896675953,
+            "inner_group_cv": 0.6957042061410207
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.0,
+            "gcv_guarded": 0.0,
+            "inner_group_cv": 0.0
+          }
+        }
+      },
+      "wall_s": 1047.6,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "bbea0179af89fc1b15d4135d7c88134953cb4371",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    },
+    "S_pretrained_chat": {
+      "cell_id": "S_pretrained_chat",
+      "n_full": 5000,
+      "d_model": 3584,
+      "levels": {
+        "500": {
+          "n": 500,
+          "n_train_approx": 400,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.3237262191296827,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.39187058923768003,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.46120853663625716,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": 0.27522437165060365,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 0.3162277660168381,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": 0.3505608842987329,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.43106871234819044,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": 0.30698928904717704,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.36719863457567803,
+                "lambdas": [
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0,
+                  100.0
+                ],
+                "lambda_geomean": 100.00000000000004,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.44323197030330375,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.3019799599424878,
+            "gcv_guarded": 0.36987670270403034,
+            "inner_group_cv": 0.4451697397625838
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.02011512425647721,
+            "gcv_guarded": 0.016970601388102323,
+            "inner_group_cv": 0.012380588701319847
+          }
+        },
+        "1000": {
+          "n": 1000,
+          "n_train_approx": 800,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.20603972077039234,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.32653272462245586,
+                "lambdas": [
+                  100.0,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 39.810717055349734,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.4878399799201739,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": 0.21902293914458104,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.010000000000000004,
+                "lambda_at_grid_floor_frac": 1.0
+              },
+              "gcv_guarded": {
+                "r2": 0.3093256995277234,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 31.62277660168379,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.4859150235094013,
+                "lambdas": [
+                  1000.0,
+                  3162.2776601683795,
+                  1000.0,
+                  3162.2776601683795,
+                  1000.0
+                ],
+                "lambda_geomean": 1584.8931924611143,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": 0.2669449864017903,
+                "lambdas": [
+                  0.01,
+                  1.0,
+                  1.0,
+                  0.01,
+                  1.0
+                ],
+                "lambda_geomean": 0.15848931924611137,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": 0.3300453708320993,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 31.62277660168379,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.49899142860662593,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.23066921543892124,
+            "gcv_guarded": 0.3219679316607595,
+            "inner_group_cv": 0.49091547734540036
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.026192742748719154,
+            "gcv_guarded": 0.009053698906255904,
+            "inner_group_cv": 0.005764379462186226
+          }
+        },
+        "2000": {
+          "n": 2000,
+          "n_train_approx": 1600,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": -0.11010947048966524,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.31622776601683794,
+                  0.31622776601683794,
+                  0.03162277660168379,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.07943282347242818,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.11970072245137464,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5494825875019848,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": -0.005224821815235092,
+                "lambdas": [
+                  0.03162277660168379,
+                  1.0,
+                  1.0,
+                  1.0,
+                  0.31622776601683794
+                ],
+                "lambda_geomean": 0.39810717055349726,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.18909569502058932,
+                "lambdas": [
+                  10.0,
+                  31.622776601683793,
+                  10.0,
+                  31.622776601683793,
+                  10.0
+                ],
+                "lambda_geomean": 15.848931924611136,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.547008640401935,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": -0.047146429535640966,
+                "lambdas": [
+                  1.0,
+                  0.03162277660168379,
+                  1.0,
+                  0.1,
+                  1.0
+                ],
+                "lambda_geomean": 0.316227766016838,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.20931285162201885,
+                "lambdas": [
+                  31.622776601683793,
+                  31.622776601683793,
+                  10.0,
+                  10.0,
+                  31.622776601683793
+                ],
+                "lambda_geomean": 19.952623149688804,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5533515130654304,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": -0.054160240613513766,
+            "gcv_guarded": 0.17270308969799428,
+            "inner_group_cv": 0.5499475803231166
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.0431052397531648,
+            "gcv_guarded": 0.0383763951370356,
+            "inner_group_cv": 0.0026102582438151693
+          }
+        },
+        "3000": {
+          "n": 3000,
+          "n_train_approx": 2400,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": -0.74058830845943,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.01,
+                  0.03162277660168379,
+                  0.1,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.0316227766016838,
+                "lambda_at_grid_floor_frac": 0.2
+              },
+              "gcv_guarded": {
+                "r2": -0.05696144392883751,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5621271605909288,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": -0.7108386230326122,
+                "lambdas": [
+                  0.01,
+                  0.03162277660168379,
+                  0.01,
+                  0.01,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.015848931924611155,
+                "lambda_at_grid_floor_frac": 0.6
+              },
+              "gcv_guarded": {
+                "r2": -0.05612199477777868,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5638978443593599,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": -0.5952337859827797,
+                "lambdas": [
+                  0.31622776601683794,
+                  0.1,
+                  0.31622776601683794,
+                  0.01,
+                  0.1
+                ],
+                "lambda_geomean": 0.10000000000000002,
+                "lambda_at_grid_floor_frac": 0.2
+              },
+              "gcv_guarded": {
+                "r2": -0.039039907457154355,
+                "lambdas": [
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0,
+                  10.0
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5699055440094531,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": -0.682220239158274,
+            "gcv_guarded": -0.05070778205459018,
+            "inner_group_cv": 0.5653101829865806
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.06269632218234178,
+            "gcv_guarded": 0.008257547736683878,
+            "inner_group_cv": 0.003328847393102543
+          }
+        },
+        "4000": {
+          "n": 4000,
+          "n_train_approx": 3200,
+          "degenerate_regime": true,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": -2.889197501425704,
+                "lambdas": [
+                  0.01,
+                  0.01,
+                  0.03162277660168379,
+                  0.01,
+                  0.01
+                ],
+                "lambda_geomean": 0.012589254117941677,
+                "lambda_at_grid_floor_frac": 0.8
+              },
+              "gcv_guarded": {
+                "r2": -0.7708420849972419,
+                "lambdas": [
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 3.1622776601683795,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5849299937497662,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1001": {
+              "gcv_unguarded": {
+                "r2": -2.9033975068489895,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.01,
+                  0.03162277660168379,
+                  0.03162277660168379,
+                  0.01
+                ],
+                "lambda_geomean": 0.01995262314968881,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": -0.5279126037823023,
+                "lambdas": [
+                  1000.0,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 10.000000000000002,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5825900317913051,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            },
+            "1002": {
+              "gcv_unguarded": {
+                "r2": -2.841684821572258,
+                "lambdas": [
+                  0.03162277660168379,
+                  0.01,
+                  0.01,
+                  0.03162277660168379,
+                  0.03162277660168379
+                ],
+                "lambda_geomean": 0.01995262314968881,
+                "lambda_at_grid_floor_frac": 0.4
+              },
+              "gcv_guarded": {
+                "r2": -0.7948217347885951,
+                "lambdas": [
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795,
+                  3.1622776601683795
+                ],
+                "lambda_geomean": 3.1622776601683795,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5870731602589069,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": -2.8780932766156506,
+            "gcv_guarded": -0.6978588078560465,
+            "inner_group_cv": 0.5848643952666593
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.02638928744131322,
+            "gcv_guarded": 0.12056821059835797,
+            "inner_group_cv": 0.001830817228269903
+          }
+        },
+        "5000": {
+          "n": 5000,
+          "n_train_approx": 4000,
+          "degenerate_regime": false,
+          "seeds": {
+            "1000": {
+              "gcv_unguarded": {
+                "r2": 0.5876803039140206,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "gcv_guarded": {
+                "r2": 0.5876803039140206,
+                "lambdas": [
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0,
+                  1000.0
+                ],
+                "lambda_geomean": 999.9999999999998,
+                "lambda_at_grid_floor_frac": 0.0
+              },
+              "inner_group_cv": {
+                "r2": 0.5968879714270809,
+                "lambdas": [
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795,
+                  3162.2776601683795
+                ],
+                "lambda_geomean": 3162.2776601683804,
+                "lambda_at_grid_floor_frac": 0.0
+              }
+            }
+          },
+          "mean_r2": {
+            "gcv_unguarded": 0.5876803039140206,
+            "gcv_guarded": 0.5876803039140206,
+            "inner_group_cv": 0.5968879714270809
+          },
+          "std_r2": {
+            "gcv_unguarded": 0.0,
+            "gcv_guarded": 0.0,
+            "inner_group_cv": 0.0
+          }
+        }
+      },
+      "wall_s": 1050.7,
+      "metadata": {
+        "script": "scripts/issue825_selector_audit.py",
+        "issue": 825,
+        "git_commit": "bbea0179af89fc1b15d4135d7c88134953cb4371",
+        "headline_layer": 19,
+        "n_folds": 5,
+        "fold_seed": 0,
+        "dof_cap": 0.9,
+        "d_model": 3584,
+        "selector_definitions": {
+          "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+          "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+          "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+        }
+      }
+    }
+  },
+  "leg_b_sizing": {
+    "S_instruct_chat": {
+      "curve": [
+        {
+          "n": 500,
+          "n_train": 400,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": 0.48546937614428787,
+            "gcv_guarded": 0.5277219167986807,
+            "inner_group_cv": 0.5670933252733809
+          },
+          "selector_spread": 0.08162394912909299
+        },
+        {
+          "n": 1000,
+          "n_train": 800,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": 0.4293297765392059,
+            "gcv_guarded": 0.5058720589714699,
+            "inner_group_cv": 0.608357525528879
+          },
+          "selector_spread": 0.1790277489896731
+        },
+        {
+          "n": 2000,
+          "n_train": 1600,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": 0.27401337466187153,
+            "gcv_guarded": 0.4124204888197844,
+            "inner_group_cv": 0.6558591151285501
+          },
+          "selector_spread": 0.3818457404666786
+        },
+        {
+          "n": 3000,
+          "n_train": 2400,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": -0.15084699340882649,
+            "gcv_guarded": 0.2744275619463439,
+            "inner_group_cv": 0.6685303537303996
+          },
+          "selector_spread": 0.819377347139226
+        },
+        {
+          "n": 4000,
+          "n_train": 3200,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": -1.6509728695483126,
+            "gcv_guarded": -0.17023033125211837,
+            "inner_group_cv": 0.6849597627387657
+          },
+          "selector_spread": 2.3359326322870784
+        },
+        {
+          "n": 5000,
+          "n_train": 4000,
+          "degenerate_regime": false,
+          "mean_r2": {
+            "gcv_unguarded": 0.6730940896675953,
+            "gcv_guarded": 0.6730940896675953,
+            "inner_group_cv": 0.6957042061410207
+          },
+          "selector_spread": 0.022610116473425368
+        }
+      ],
+      "smallest_n_selector_agreement": 5000,
+      "agreement_threshold": 0.05
+    },
+    "S_pretrained_chat": {
+      "curve": [
+        {
+          "n": 500,
+          "n_train": 400,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": 0.3019799599424878,
+            "gcv_guarded": 0.36987670270403034,
+            "inner_group_cv": 0.4451697397625838
+          },
+          "selector_spread": 0.143189779820096
+        },
+        {
+          "n": 1000,
+          "n_train": 800,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": 0.23066921543892124,
+            "gcv_guarded": 0.3219679316607595,
+            "inner_group_cv": 0.49091547734540036
+          },
+          "selector_spread": 0.26024626190647915
+        },
+        {
+          "n": 2000,
+          "n_train": 1600,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": -0.054160240613513766,
+            "gcv_guarded": 0.17270308969799428,
+            "inner_group_cv": 0.5499475803231166
+          },
+          "selector_spread": 0.6041078209366304
+        },
+        {
+          "n": 3000,
+          "n_train": 2400,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": -0.682220239158274,
+            "gcv_guarded": -0.05070778205459018,
+            "inner_group_cv": 0.5653101829865806
+          },
+          "selector_spread": 1.2475304221448547
+        },
+        {
+          "n": 4000,
+          "n_train": 3200,
+          "degenerate_regime": true,
+          "mean_r2": {
+            "gcv_unguarded": -2.8780932766156506,
+            "gcv_guarded": -0.6978588078560465,
+            "inner_group_cv": 0.5848643952666593
+          },
+          "selector_spread": 3.46295767188231
+        },
+        {
+          "n": 5000,
+          "n_train": 4000,
+          "degenerate_regime": false,
+          "mean_r2": {
+            "gcv_unguarded": 0.5876803039140206,
+            "gcv_guarded": 0.5876803039140206,
+            "inner_group_cv": 0.5968879714270809
+          },
+          "selector_spread": 0.009207667513060347
+        }
+      ],
+      "smallest_n_selector_agreement": 5000,
+      "agreement_threshold": 0.05
+    }
+  }
+}

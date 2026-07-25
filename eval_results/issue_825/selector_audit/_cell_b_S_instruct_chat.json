@@ -1,0 +1,733 @@
+{
+  "cell_id": "S_instruct_chat",
+  "n_full": 5000,
+  "d_model": 3584,
+  "levels": {
+    "500": {
+      "n": 500,
+      "n_train_approx": 400,
+      "degenerate_regime": true,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": 0.50201242325346,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.010000000000000004,
+            "lambda_at_grid_floor_frac": 1.0
+          },
+          "gcv_guarded": {
+            "r2": 0.5527014983948322,
+            "lambdas": [
+              100.0,
+              100.0,
+              100.0,
+              100.0,
+              100.0
+            ],
+            "lambda_geomean": 100.00000000000004,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.5879249772607813,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1001": {
+          "gcv_unguarded": {
+            "r2": 0.47299781825489917,
+            "lambdas": [
+              0.01,
+              0.01,
+              10.0,
+              3.1622776601683795,
+              3.1622776601683795
+            ],
+            "lambda_geomean": 0.39810717055349737,
+            "lambda_at_grid_floor_frac": 0.4
+          },
+          "gcv_guarded": {
+            "r2": 0.5067837266249815,
+            "lambdas": [
+              100.0,
+              100.0,
+              100.0,
+              100.0,
+              100.0
+            ],
+            "lambda_geomean": 100.00000000000004,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.5497912707698149,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1002": {
+          "gcv_unguarded": {
+            "r2": 0.4813978869245046,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.010000000000000004,
+            "lambda_at_grid_floor_frac": 1.0
+          },
+          "gcv_guarded": {
+            "r2": 0.5236805253762284,
+            "lambdas": [
+              100.0,
+              100.0,
+              100.0,
+              100.0,
+              100.0
+            ],
+            "lambda_geomean": 100.00000000000004,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.5635637277895462,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": 0.48546937614428787,
+        "gcv_guarded": 0.5277219167986807,
+        "inner_group_cv": 0.5670933252733809
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.012190012145351784,
+        "gcv_guarded": 0.01896242028415021,
+        "inner_group_cv": 0.015766809791102558
+      }
+    },
+    "1000": {
+      "n": 1000,
+      "n_train_approx": 800,
+      "degenerate_regime": true,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": 0.37771574420819765,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.010000000000000004,
+            "lambda_at_grid_floor_frac": 1.0
+          },
+          "gcv_guarded": {
+            "r2": 0.5029911959736795,
+            "lambdas": [
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793
+            ],
+            "lambda_geomean": 31.62277660168379,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6076756289977532,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1001": {
+          "gcv_unguarded": {
+            "r2": 0.4381667181584693,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.010000000000000004,
+            "lambda_at_grid_floor_frac": 1.0
+          },
+          "gcv_guarded": {
+            "r2": 0.5026921420418897,
+            "lambdas": [
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793
+            ],
+            "lambda_geomean": 31.62277660168379,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6071530264593534,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1002": {
+          "gcv_unguarded": {
+            "r2": 0.47210686725095063,
+            "lambdas": [
+              0.01,
+              1.0,
+              1.0,
+              0.01,
+              1.0
+            ],
+            "lambda_geomean": 0.15848931924611137,
+            "lambda_at_grid_floor_frac": 0.4
+          },
+          "gcv_guarded": {
+            "r2": 0.5119328388988404,
+            "lambdas": [
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793,
+              31.622776601683793
+            ],
+            "lambda_geomean": 31.62277660168379,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6102439211295306,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": 0.4293297765392059,
+        "gcv_guarded": 0.5058720589714699,
+        "inner_group_cv": 0.608357525528879
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.039038354475265616,
+        "gcv_guarded": 0.00428735725200993,
+        "inner_group_cv": 0.0013508379189484847
+      }
+    },
+    "2000": {
+      "n": 2000,
+      "n_train_approx": 1600,
+      "degenerate_regime": true,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": 0.24341904853714347,
+            "lambdas": [
+              0.03162277660168379,
+              0.1,
+              0.31622776601683794,
+              0.03162277660168379,
+              0.03162277660168379
+            ],
+            "lambda_geomean": 0.06309573444801932,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "gcv_guarded": {
+            "r2": 0.4187403993910417,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              10.0,
+              10.0
+            ],
+            "lambda_geomean": 10.000000000000002,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6585830017775994,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1001": {
+          "gcv_unguarded": {
+            "r2": 0.29346763089880645,
+            "lambdas": [
+              0.01,
+              1.0,
+              1.0,
+              1.0,
+              0.1
+            ],
+            "lambda_geomean": 0.251188643150958,
+            "lambda_at_grid_floor_frac": 0.2
+          },
+          "gcv_guarded": {
+            "r2": 0.4092472175971694,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              10.0,
+              10.0
+            ],
+            "lambda_geomean": 10.000000000000002,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6532274331164913,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1002": {
+          "gcv_unguarded": {
+            "r2": 0.28515344454966474,
+            "lambdas": [
+              1.0,
+              0.03162277660168379,
+              1.0,
+              0.03162277660168379,
+              1.0
+            ],
+            "lambda_geomean": 0.251188643150958,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "gcv_guarded": {
+            "r2": 0.409273849471142,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              10.0,
+              10.0
+            ],
+            "lambda_geomean": 10.000000000000002,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6557669104915596,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": 0.27401337466187153,
+        "gcv_guarded": 0.4124204888197844,
+        "inner_group_cv": 0.6558591151285501
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.021898112809581382,
+        "gcv_guarded": 0.0044688648473406424,
+        "inner_group_cv": 0.0021873736446970213
+      }
+    },
+    "3000": {
+      "n": 3000,
+      "n_train_approx": 2400,
+      "degenerate_regime": true,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": -0.17705621406255911,
+            "lambdas": [
+              0.03162277660168379,
+              0.01,
+              0.03162277660168379,
+              0.1,
+              0.03162277660168379
+            ],
+            "lambda_geomean": 0.0316227766016838,
+            "lambda_at_grid_floor_frac": 0.2
+          },
+          "gcv_guarded": {
+            "r2": 0.23156612162492396,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              3.1622776601683795,
+              3.1622776601683795
+            ],
+            "lambda_geomean": 6.309573444801933,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6670952049360368,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1001": {
+          "gcv_unguarded": {
+            "r2": -0.18511024433833012,
+            "lambdas": [
+              0.01,
+              0.03162277660168379,
+              0.01,
+              0.03162277660168379,
+              0.03162277660168379
+            ],
+            "lambda_geomean": 0.01995262314968881,
+            "lambda_at_grid_floor_frac": 0.4
+          },
+          "gcv_guarded": {
+            "r2": 0.2920755215337725,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              10.0,
+              10.0
+            ],
+            "lambda_geomean": 10.000000000000002,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6688069139297268,
+            "lambdas": [
+              1000.0,
+              3162.2776601683795,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 1258.925411794168,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1002": {
+          "gcv_unguarded": {
+            "r2": -0.09037452182559025,
+            "lambdas": [
+              0.31622776601683794,
+              0.1,
+              0.31622776601683794,
+              0.01,
+              0.1
+            ],
+            "lambda_geomean": 0.10000000000000002,
+            "lambda_at_grid_floor_frac": 0.2
+          },
+          "gcv_guarded": {
+            "r2": 0.2996410426803352,
+            "lambdas": [
+              10.0,
+              10.0,
+              10.0,
+              10.0,
+              10.0
+            ],
+            "lambda_geomean": 10.000000000000002,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6696889423254353,
+            "lambdas": [
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0,
+              1000.0
+            ],
+            "lambda_geomean": 999.9999999999998,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": -0.15084699340882649,
+        "gcv_guarded": 0.2744275619463439,
+        "inner_group_cv": 0.6685303537303996
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.04288672456180152,
+        "gcv_guarded": 0.030464586844123925,
+        "inner_group_cv": 0.001076795421355993
+      }
+    },
+    "4000": {
+      "n": 4000,
+      "n_train_approx": 3200,
+      "degenerate_regime": true,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": -1.7565264148064776,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.010000000000000004,
+            "lambda_at_grid_floor_frac": 1.0
+          },
+          "gcv_guarded": {
+            "r2": -0.14042993982677765,
+            "lambdas": [
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795
+            ],
+            "lambda_geomean": 3.1622776601683795,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6855918781708277,
+            "lambdas": [
+              3162.2776601683795,
+              3162.2776601683795,
+              1000.0,
+              3162.2776601683795,
+              1000.0
+            ],
+            "lambda_geomean": 1995.2623149688786,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1001": {
+          "gcv_unguarded": {
+            "r2": -1.616105421763053,
+            "lambdas": [
+              0.01,
+              0.01,
+              0.03162277660168379,
+              0.03162277660168379,
+              0.01
+            ],
+            "lambda_geomean": 0.015848931924611155,
+            "lambda_at_grid_floor_frac": 0.6
+          },
+          "gcv_guarded": {
+            "r2": -0.14798262172046495,
+            "lambdas": [
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795
+            ],
+            "lambda_geomean": 3.1622776601683795,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6826219694970765,
+            "lambdas": [
+              3162.2776601683795,
+              3162.2776601683795,
+              1000.0,
+              3162.2776601683795,
+              3162.2776601683795
+            ],
+            "lambda_geomean": 2511.886431509581,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        },
+        "1002": {
+          "gcv_unguarded": {
+            "r2": -1.5802867720754072,
+            "lambdas": [
+              0.03162277660168379,
+              0.01,
+              0.01,
+              0.01,
+              0.01
+            ],
+            "lambda_geomean": 0.012589254117941689,
+            "lambda_at_grid_floor_frac": 0.8
+          },
+          "gcv_guarded": {
+            "r2": -0.22227843220911248,
+            "lambdas": [
+              3.1622776601683795,
+              3.1622776601683795,
+              3.1622776601683795,
+              1.0,
+              3.1622776601683795
+            ],
+            "lambda_geomean": 2.51188643150958,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6866654405483928,
+            "lambdas": [
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795
+            ],
+            "lambda_geomean": 3162.2776601683804,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": -1.6509728695483126,
+        "gcv_guarded": -0.17023033125211837,
+        "inner_group_cv": 0.6849597627387657
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.07605658903644132,
+        "gcv_guarded": 0.03693250023911999,
+        "inner_group_cv": 0.0017101836110578752
+      }
+    },
+    "5000": {
+      "n": 5000,
+      "n_train_approx": 4000,
+      "degenerate_regime": false,
+      "seeds": {
+        "1000": {
+          "gcv_unguarded": {
+            "r2": 0.6730940896675953,
+            "lambdas": [
+              1000.0,
+              316.22776601683796,
+              316.22776601683796,
+              316.22776601683796,
+              1000.0
+            ],
+            "lambda_geomean": 501.1872336272727,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "gcv_guarded": {
+            "r2": 0.6730940896675953,
+            "lambdas": [
+              1000.0,
+              316.22776601683796,
+              316.22776601683796,
+              316.22776601683796,
+              1000.0
+            ],
+            "lambda_geomean": 501.1872336272727,
+            "lambda_at_grid_floor_frac": 0.0
+          },
+          "inner_group_cv": {
+            "r2": 0.6957042061410207,
+            "lambdas": [
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795,
+              3162.2776601683795
+            ],
+            "lambda_geomean": 3162.2776601683804,
+            "lambda_at_grid_floor_frac": 0.0
+          }
+        }
+      },
+      "mean_r2": {
+        "gcv_unguarded": 0.6730940896675953,
+        "gcv_guarded": 0.6730940896675953,
+        "inner_group_cv": 0.6957042061410207
+      },
+      "std_r2": {
+        "gcv_unguarded": 0.0,
+        "gcv_guarded": 0.0,
+        "inner_group_cv": 0.0
+      }
+    }
+  },
+  "wall_s": 1047.6,
+  "metadata": {
+    "script": "scripts/issue825_selector_audit.py",
+    "issue": 825,
+    "git_commit": "bbea0179af89fc1b15d4135d7c88134953cb4371",
+    "headline_layer": 19,
+    "n_folds": 5,
+    "fold_seed": 0,
+    "dof_cap": 0.9,
+    "d_model": 3584,
+    "selector_definitions": {
+      "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+      "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+      "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+    }
+  }
+}
