@@ -44,6 +44,17 @@ that meet at Tier 4.
   punishes a constant displacement without bound, catastrophically negative
   naive transfer is *compatible with* a Tier-2 relationship; this rung is
   what separates "different origin" from "different map."
+- **Side ambiguity:** the correction relative to naive transfer is
+  `b* − b_s = Δy − W_s Δx` with `Δx = x̄_t − x̄_s`, `Δy = ȳ_t − ȳ_s` — one
+  constant in answer space that bundles the context-mean displacement (as
+  seen through the frozen map) and the answer-mean displacement. Only the
+  net combination is identified; Tier 2 alone cannot say whether the clouds
+  moved on the input side, the output side, or both.
+- **One-sided sub-rungs (proposed):** Tier 2a — context recentering only,
+  `ŷ = W_s(x − x̄_t) + ȳ_s`; Tier 2b — answer recentering only,
+  `ŷ = W_s(x − x̄_s) + ȳ_t`; plus the direct decomposition report ‖Δy‖,
+  ‖W_s Δx‖, and the cosine between them (large and aligned ⇒ the two sides
+  mostly cancel and the map itself transports the shift).
 
 ### Tier 2.5 — Global gain (proposed, not yet measured)
 
@@ -117,6 +128,58 @@ that meet at Tier 4.
   class connects them; the joint-fitting counterpart is the pooled lattice
   (one shared map M0 → per-cell offsets M1 → per-cell maps M2), where M2−M1
   is the genuinely cell-specific slope residual.
+
+## The offset as a steering vector (Tier 2 ↔ activation steering)
+
+The constant shift admits a steering interpretation. Because the map is
+linear, the Tier-2 correction can be realized equivalently as an intervention
+on either representation:
+
+- **Context-side steering:** `ŷ = W_s(x − Δx) + b_s` — add a fixed vector
+  (−Δx) to the context activation, then let the frozen relation act on it;
+- **Answer-side steering:** `ŷ = (W_s x + b_s) + Δ'` — apply the map
+  unmodified and shift the predicted answer representation.
+
+Any split of the net correction `Δy − W_s Δx` between the two sides is
+observationally equivalent at this tier; the 2a/2b sub-rungs (and, properly,
+an intervention) are what distinguish them. The vectors involved are
+difference-of-means directions between two conditions — the same construction
+the persona-vectors recipe uses to extract steering directions
+(`.claude/rules/persona-vectors-recipe.md`), so the Tier-2 offset and a
+persona steering vector are the same kind of geometric object; what differs
+is what generates the displacement (identity, framing, register) and the
+claim made about it.
+
+In this language the character lattice result becomes a sharp statement:
+per-character offsets add nothing once the map is pooled (M1 − M0 ≈ 0), i.e.
+`Δy_p ≈ M₀ Δx_p` per persona — **context-side steering suffices, because the
+shared context→answer operator propagates the persona shift to the response
+representation with no independent answer-side offset**. Persona identity
+behaves like a steerable input the shared machinery reads, not like a
+per-character output bias. This is the bridge between the mapping-transfer
+line and the persona-vector line: the fitted operator is the propagator that
+turns a persona displacement at the context into a behavior displacement at
+the answer.
+
+Three qualifications before this is a steering *claim*:
+
+1. **The causal arrow is untested.** These results say the clouds are
+   displaced consistently with the map; steering says displacing them moves
+   behavior. The correspondence hands over the bridge experiment: add Δx (or
+   a persona vector) to the context activations at layer 19 on-policy and
+   check (a) whether the realized answer-mean activation moves by ≈ W·Δx
+   (cosine and magnitude against the map's prediction) and (b) whether
+   judged behavior shifts accordingly. The fitted map makes a quantitative
+   prediction for the intervention's direction and effect size — a
+   hook-based GPU experiment, not a free-analysis round.
+2. **Position mismatch.** The fitted x is a single slot summary
+   (end-of-context, layer 19); steering as practiced adds a vector across
+   token positions or spans. The correspondence is at the level of the
+   geometry, not the exact intervention recipe.
+3. **Within-model only.** For characters and framings, Δx lives in one
+   residual stream and steering is meaningful; for base↔instruct the two
+   means live in different models' activation spaces — the offset there is a
+   cross-model correspondence fact, not a steering vector.
 
 ## Measured placements (fraction of target ceiling, layer 19, context arm)
 
