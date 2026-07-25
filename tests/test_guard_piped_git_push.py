@@ -26,8 +26,11 @@ pushes as test DATA — they are never executed; the guard only reads them
 from stdin JSON.
 
 Case ids B1-B11 / A1-A18 are the plan #1048 §6 acceptance tables
-(``tasks/*/1048/plans/plan.md``); ``S7r1`` is the §7-row-1 pinned deliberate
-false positive.
+(``tasks/*/1048/plans/plan.md``); B12-B17 / A19-A24 are the #1591 commit-verb
+extension; B18-B26 / A25-A33 are the #1675 quoted-span-strip cases (quoted
+STRING ARGUMENTS are stripped before matching). ``S7r1`` — the retired
+#796-derived §7-row-1 pinned deliberate false positive — flipped to
+expect-ALLOW under #1675 (``test_s7r1_quoted_mention_fp_now_allows``).
 
 ``TestSettingsWiring`` (the bank-read precedent) additionally parses
 ``.claude/settings.json``, asserts the matcher-Bash hook group carries the
@@ -130,6 +133,36 @@ BLOCK_CASES = [
     pytest.param("git commit 2>&1 | head -20", id="B15-argless-commit"),
     pytest.param("git add -A && git commit -m x 2>&1 | head", id="B16-compound-segment-commit"),
     pytest.param('git commit -m "wip" |& head -3', id="B17-pipe-amp-commit"),
+    # B18-B26 (#1675): adversarial true positives under the quoted-span strip
+    # — quoted arguments strip / preserve without hiding a real producer+pipe.
+    pytest.param('git commit -m "msg" | head', id="B18-quoted-arg-before-pipe"),
+    # B19/B20: a double-quoted span with a bare `$` is PRESERVED as one
+    # atomic token (a "$(...)" payload executes), so the producer inside
+    # still matches.
+    pytest.param('echo "$(git push 2>&1 | tail -1)"', id="B19-double-quoted-substitution"),
+    pytest.param('out="$(git push 2>&1 | tail -1)"', id="B20-quoted-assignment-substitution"),
+    pytest.param('git push origin main 2>&1 | grep "error" | head', id="B21-quoted-consumer-args"),
+    # B22/B23 (M3 greedy-regression pins, both quote types): two stripped
+    # spans FLANKING a real pipe — a greedy `".*"`-style flattening of the
+    # per-span ERE would eat the pipe between them and fail open.
+    pytest.param('git commit -m "wip" 2>&1 | grep "error"', id="B22-double-quoted-flanking-pipe"),
+    pytest.param("git commit -m 'wip' 2>&1 | grep 'error'", id="B23-single-quoted-flanking-pipe"),
+    # B24: multi-line quoted message — a PRE-EXISTING miss (the raw newline
+    # split the command into units hiding the producer from the pipe) that
+    # the `-z` quoted-span strip now blocks.
+    pytest.param('git commit -m "line1\nline2" 2>&1 | head', id="B24-multiline-quoted-msg"),
+    # B25 (M1 counter-shape): a preserved span's interior apostrophe must
+    # not seed a phantom single-quote span that eats the real pipe.
+    pytest.param(
+        "git commit -m \"fix $MODULE's loader\" 2>&1 | awk '{print $1}'",
+        id="B25-preserved-span-interior-apostrophe",
+    ),
+    # B26 (M2 counter-shape): escaped apostrophes flanking a real pipe must
+    # not pair into a phantom span (the escape-pair branch consumes them).
+    pytest.param(
+        "echo can\\'t stop && git push 2>&1 | tail -3 && echo don\\'t care",
+        id="B26-escaped-apostrophes-flanking-pipe",
+    ),
 ]
 
 
@@ -138,14 +171,29 @@ def test_block_cases(cmd: str) -> None:
     _assert_blocked(_run_bash(cmd))
 
 
-def test_s7r1_pinned_false_positive_commit_message_blocks() -> None:
-    """Plan §7-row-1 pinned EXPECTED-BLOCK (deliberate FP trade-off): a
+def test_s7r1_quoted_mention_fp_now_allows() -> None:
+    """#1675 expectation FLIP of the retired #796-derived S7r1 pin: a
     non-heredoc commit whose quoted ``-m`` text merely MENTIONS the banned
-    pattern trips the raw scan — the guard does not strip quoted arguments
-    (the guard_repo_root_branch.sh #796 trade-off). Remediation is
-    ``git commit -F <file>`` / the heredoc commit recipe (blanket-allowed).
+    pattern is now ALLOWED — the quoted-span strip removes the string
+    argument before matching, and the command carries no real pipe. This
+    retires the plan-#1048 §7-row-1 deliberate false-positive trade-off
+    (formerly ``test_s7r1_pinned_false_positive_commit_message_blocks``,
+    expect-block); exactly the FP class task #1675's Goal removes.
     """
-    _assert_blocked(_run_bash('git commit -m "never git push | tail in a recipe" && git push'))
+    _assert_allowed(_run_bash('git commit -m "never git push | tail in a recipe" && git push'))
+
+
+def test_quoted_mention_incident_shape_allowed() -> None:
+    """#1675 durability pin (the 2026-07-23 incident, verbatim): a read-only
+    grep whose double-quoted PATTERN argument mentions guarded verbs and a
+    ``\\|`` alternation was false-blocked by the raw-string scan (the quoted
+    ``\\|`` fabricated a phantom stage boundary). The quoted-span strip
+    removes the string argument before matching, so the command's only real
+    pipe feeds ``head`` from ``grep`` — no producer stage — and it is ALLOWED.
+    """
+    _assert_allowed(
+        _run_bash('grep -n "bare.*commit\\|git commit -m" scripts/workflow_lint.py | head -5')
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +238,37 @@ ALLOW_CASES = [
     pytest.param("cat /tmp/msg.txt | git commit -F -", id="A21-message-piped-into-commit"),
     pytest.param("git commit-tree HEAD^{tree} -m x | head -1", id="A22-commit-tree"),
     pytest.param("git cat-file commit HEAD | head -3", id="A24-commit-argument-word"),
+    # A25-A33 (#1675): the quoted-mention FP class fixed by the quoted-span
+    # strip, plus the documented interpreter-payload known-miss pins.
+    pytest.param(
+        'grep -n "bare.*commit\\|git commit -m" scripts/workflow_lint.py | head -5',
+        id="A25-verbatim-incident-quoted-grep-pattern",
+    ),
+    pytest.param('echo "then git push | tail the log" | wc -l', id="A26-quoted-echo-mention"),
+    # A27: a single-quoted span legitimately containing double quotes —
+    # passes because preserved spans are CONSUMED atomically (their interiors
+    # cannot restrict the single-quote branch).
+    pytest.param(
+        "uv run python -c 'print(\"git commit -m test\")' | head -2",
+        id="A27-single-quoted-span-with-double-quotes",
+    ),
+    pytest.param('grep -rn "git merge --squash" .claude/ | head', id="A28-quoted-merge-mention"),
+    pytest.param(
+        'git push origin main || echo "git push | tail is banned"',
+        id="A29-quoted-mention-on-or-segment",
+    ),
+    # A30/A31: interpreter-payload DOCUMENTED KNOWN MISS, both quote types —
+    # a quoted payload with no live substitution is string data to the guard
+    # but executes downstream (deliberate; see the hook header fail-open
+    # class 1; lint + prose rule remain defense in depth).
+    pytest.param("bash -c 'git push 2>&1 | tail -3'", id="A30-interpreter-payload-single-quote"),
+    pytest.param('sh -c "git push 2>&1 | tail -3"', id="A31-interpreter-payload-double-quote"),
+    # A32: a quoted `&` no longer severs the unit split.
+    pytest.param('grep "a & b" f | head', id="A32-quoted-separator"),
+    pytest.param(
+        'echo "run gh pr merge 123 --squash later" | tee /tmp/note',
+        id="A33-quoted-gh-pr-merge-mention",
+    ),
 ]
 
 
