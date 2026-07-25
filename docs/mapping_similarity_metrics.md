@@ -2,9 +2,9 @@
 
 We refer to several different kinds of mapping similarity (between base and instruct model, from assistant to other characters in stories).
 
-This note clarifies the different metrics for mapping similarity (and what each means on a mechanistic level). They are ordered from strongest to weakest alignment between the mappings.
+This note clarifies the different metrics for mapping similarity (and what each means on a mechanistic level). They are ordered from strongest to weakest alignment between the mappings (roughly — the exact containment relations are in the nesting note at the end).
 
-**Setup:** `x` = context vector, `ŷ` = predicted answer vector; the source-setting map is `ŷ = W_s x + b_s`. Every metric keeps `W_s` frozen and fits only the stated correction in the target setting — more free parameters in the correction ⇒ a weaker claim about what is shared. `b*` denotes a bias refit in the target setting.
+**Setup:** `x` = context vector, `ŷ` = predicted answer vector; the source-setting map is `ŷ = W_s x + b_s`. Every metric keeps `W_s` frozen and fits only the stated correction in the target setting — more free parameters in the correction ⇒ a weaker claim about what is shared. `b*` denotes a bias refit in the target setting. Corrections marked "fit on the clouds alone" never touch target context→answer pairs — the same guarantee the reparameterizations at the bottom rely on.
 
 ## Direct mapping transfer
 
@@ -15,22 +15,23 @@ This note clarifies the different metrics for mapping similarity (and what each 
 ## Context offset
 
 - Train mapping `ŷ = W_s x + b_s` in source setting
-- Train context offset in target setting: `ŷ = W_s (x − Δx) + b_s` (`Δx` fit on contexts alone, e.g. the mean target−source context shift — never on context→answer pairs)
-- Equivalent to saying that making this context change is equivalent to steering with a vector at the context vector position
-- The answer-side change is **predicted** by pushing `Δx` through `W_s` — the map itself has to explain the setting change
+- Shift only the contexts in the target setting: `ŷ = W_s (x − Δx) + b_s`, with `Δx` = mean(target contexts) − mean(source contexts) (fit on the context clouds alone — never on context→answer pairs; needs no prompt pairing)
+- The translation-only special case of "linear reparameterization of contexts" below (`A` restricted to a pure shift)
+- **Interpretation:** the mechanism is untouched; the setting change adds one constant vector to every context representation, which the map does not read — answers relate to the de-shifted context exactly as in the source, so the answers themselves are predicted to be unchanged. Making this context change ≡ steering with a vector at the context position: steer a target run by `−Δx` and the source map becomes exact
 
 ## Answer offset
 
 - Train mapping `ŷ = W_s x + b_s` in source setting
-- Train answer offset in target setting: `ŷ = W_s x + b_s + Δy` (`Δy` fit on answers alone, e.g. the mean target−source answer shift)
-- Equivalent to saying that making this context change is equivalent to steering with a vector at the answer vector position
-- Weaker than the context offset: there the answer-side shift had to be predicted through `W_s`; here it is measured directly, so the map explains none of the setting change
+- Shift only the answers in the target setting: `ŷ = W_s x + b_s + Δy`, with `Δy` = mean(target answers) − mean(source answers) (fit on the answer clouds alone)
+- The translation-only special case of "linear reparameterization of answers" below (`B` restricted to a pure shift)
+- **Interpretation:** the mechanism reads target contexts exactly as the source one would; the setting change is one constant vector pasted onto the answer after the map has run, independent of the question. Making this context change ≡ steering with a vector at the answer position
+- Sibling of the context offset, not a weaker version of it: the context offset puts the setting difference **upstream** of the mechanism (and predicts the answers don't move); the answer offset puts it **downstream** (and predicts the map is blind to whatever context shift exists). Both are contained in the bias offset below
 
 ## Bias offset
 
 - Train mapping `ŷ = W_s x + b_s` in source setting
 - Refit only the bias in target setting: `ŷ = W_s x + b*` (`b*` fit by regression on target context→answer pairs)
-- Both offsets above are special cases (`b* = b_s − W_s Δx`, `b* = b_s + Δy`), but here the constant is optimized on pairs and carries no steering interpretation
+- Contains both offsets above (`b* = b_s − W_s Δx`, `b* = b_s + Δy`, or any mix — equivalently, both translations at once): the constant correction is unconstrained, optimized on pairs, and makes no commitment about where it enters the computation
 - Measures whether the **linear part** of the mechanism — which context directions move which answer directions, and by how much — is preserved, allowing an arbitrary constant shift
 
 ## Global scaling
@@ -73,4 +74,4 @@ This note clarifies the different metrics for mapping similarity (and what each 
 
 ## Nesting structure
 
-Everything up through bias offset is strictly nested (each family contains the previous). Above that, global scaling, mapping rotation, and the two single-sided reparameterizations are incomparable branches (e.g. `αW_s` is not `RW_s` for any rotation), which all meet again inside the full two-sided reparameterization.
+The ladder is not a strict chain. It is two mirrored triples around the map-shape metrics: **translations** (contexts / answers / both — the bias offset is the free-constant version of "both at once") and **full linear reparameterizations** (contexts / answers / both), with global scaling and mapping rotation as map-shape relaxations in between. Within each triple the context-side and answer-side variants are siblings — neither contains the other — and both are contained in the both-sides version; scaling and rotation are likewise incomparable (`αW_s` is not `RW_s` for any rotation). The overall ordering is by roughly increasing freedom granted in the target setting: nothing (direct transfer) → one translation vector (offsets) → a free constant (bias offset) → a constant plus a scalar gain (scaling) → a constant plus a rotation → one d×d reparameterization → two.
