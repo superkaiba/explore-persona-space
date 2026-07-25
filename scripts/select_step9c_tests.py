@@ -1554,8 +1554,9 @@ def main(argv: list[str] | None = None) -> int:
             "newline-delimited repo-relative paths: print one "
             "'test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
             "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496) "
-            "plus the src/scripts import/literal/stem dependency-arm pairs "
-            "(#1573) plus the pinned transitive-consumer pairs (#1589; "
+            "plus the src/scripts import/literal/dotted/basename/transitive/stem "
+            "dependency-arm pairs "
+            "(#1573, #1688) plus the pinned transitive-consumer pairs (#1589; "
             "WORKFLOW_INVARIANT members excluded from all three) and exit "
             "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
             "diff-based selection entirely; empty stdout on no match is a "
@@ -1594,7 +1595,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.map_files is not None:
         # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
-        # src/scripts dependency arms (import/literal/stem, #1573) +
+        # src/scripts dependency arms (import/literal/stem #1573;
+        # dotted/basename/transitive #1688) +
         # pinned transitive-consumer pairs (#1589) — all three
         # WORKFLOW_INVARIANT-excluded — over an explicit file list — no git
         # diff; stderr carries the zero-mapped WARN floor + the
