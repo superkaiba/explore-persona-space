@@ -28,7 +28,11 @@ Behaviours:
   any ``scripts/<name>.py`` reference whose target does not exist under
   ``scripts/``. Mechanically prevents the dead-tool / invented-tool
   failure class where an agent follows a step that runs a
-  deleted-or-never-created helper and CalledProcessErrors.
+  deleted-or-never-created helper and CalledProcessErrors. On a
+  non-``main`` checkout (a stale issue worktree) a reference missing
+  locally but tracked at ``main``/``origin/main`` degrades to a
+  non-blocking ``WARN:`` (#1622/#1672); a non-git tree or a failed git
+  probe stays strict (hard FAIL).
 * ``--check-skill-refs`` (also bundled into ``--check-references`` and the
   no-flags default run): walk every ``.md`` under ``.claude/agents/``,
   every ``SKILL.md`` under ``.claude/skills/``, every ``.md`` under
@@ -44,7 +48,11 @@ Behaviours:
   ``/weekly``) leaves stray load-bearing references that no mechanical
   check catches. Backtick-anchor + trailing-``/``-rejecting lookahead +
   fenced-code exclusion are the false-positive controls; lines carrying
-  :data:`HISTORICAL_REF_OPT_OUT` are a one-off narrative escape.
+  :data:`HISTORICAL_REF_OPT_OUT` are a one-off narrative escape. On a
+  non-``main`` checkout a plain single-segment ref unresolved locally but
+  whose ``SKILL.md`` is tracked at ``main``/``origin/main`` degrades to a
+  non-blocking ``WARN:`` (#1622/#1672); non-git trees / failed probes /
+  ``:``-namespaced refs stay strict.
 * ``--check-wandb-required``: walk every ``*.py`` under
   ``src/explore_persona_space/experiments/`` whose source mentions a
   trainer-config builder (``TrainLoraConfig``, ``SFTConfig``,
@@ -708,6 +716,7 @@ from __future__ import annotations
 import argparse
 import ast
 import dataclasses
+import functools
 import json
 import os
 import re
@@ -715,7 +724,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
-from collections.abc import Collection, Iterator
+from collections.abc import Callable, Collection, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -2925,8 +2934,49 @@ def _check_status_label_coverage(workflow: WorkflowYaml) -> list[str]:
     return errors
 
 
+def _head_is_main(repo_root: Path) -> bool:
+    """True iff the checkout containing ``repo_root`` has branch ``main``
+    checked out — the STRICT reference-lint regime. Fail-safe: any git
+    failure (non-git tree, e.g. the Step 10d /tmp landing-tree gate copy)
+    returns True, keeping hard-FAIL semantics (#1672)."""
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return True
+    return r.returncode != 0 or r.stdout.strip() == "main"
+
+
+@functools.cache
+def _tracked_on_main_ref(relpath: str, repo_root_s: str) -> bool:
+    """True iff ``relpath`` exists as a tracked path at local ``main`` or
+    ``origin/main`` in the repo containing ``repo_root_s`` (worktrees share
+    refs with the common dir). Fail-safe: any git failure returns False —
+    the caller keeps the hard FAIL (#1622/#1672)."""
+    for ref in ("main", "origin/main"):
+        try:
+            r = subprocess.run(
+                ["git", "-C", repo_root_s, "cat-file", "-e", f"{ref}:{relpath}"],
+                capture_output=True,
+                timeout=10,
+            )
+        except Exception:
+            return False
+        if r.returncode == 0:
+            return True
+    return False
+
+
 def check_script_references(
-    *, roots: list[Path] | None = None, scripts_dir: Path | None = None
+    *,
+    roots: list[Path] | None = None,
+    scripts_dir: Path | None = None,
+    main_probe: Callable[[str], bool] | None = None,
+    warn_sink: list[str] | None = None,
 ) -> list[str]:
     """Walk ``.claude/agents/**.md`` + ``.claude/skills/**/SKILL.md`` and
     FAIL on any ``scripts/<name>.py`` reference whose target does not exist
@@ -2950,9 +3000,35 @@ def check_script_references(
     which excludes OTHER worktrees but scans the current one — see
     :func:`_other_worktree_prefix`) and resolves references against
     ``<repo_root>/scripts``. Tests scope both to a fixture directory.
+
+    Staleness degrade (#1622/#1672): in production scope only (``scripts_dir``
+    is None) on a NON-``main`` checkout, a reference whose target is missing
+    locally but tracked at ``main``/``origin/main`` (lazy ``git cat-file -e``
+    probe, only on a miss) is downgraded to a non-blocking ``WARN:`` — the
+    Step 5a spec-freshness sync never syncs ``scripts/`` helpers, so a freshly
+    synced spec may reference a main-new helper a stale worktree lacks.
+    Fail-safe in every direction: a non-git tree (the Step 10d landing-tree
+    gate), a failed git probe, or ``HEAD == main`` keeps the hard FAIL.
+    ``main_probe`` / ``warn_sink`` are unit-test override hooks.
     """
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     scripts_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    # Staleness-aware degrade (#1622/#1672): PRODUCTION scope only (fixture-
+    # scoped test calls stay strict unless a probe is injected), and only on
+    # a non-main checkout — main-checkout semantics are byte-identical.
+    if main_probe is None and scripts_dir is None and not _head_is_main(_REPO_ROOT):
+
+        def _default_script_probe(name: str) -> bool:
+            return _tracked_on_main_ref(f"scripts/{name}", str(_REPO_ROOT))
+
+        main_probe = _default_script_probe
     for path in _resolve_ask_target_files(roots):
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
             if HISTORICAL_REF_OPT_OUT in line:
@@ -2960,6 +3036,16 @@ def check_script_references(
             for match in SCRIPT_REF_RE.finditer(line):
                 script_name = match.group(1)
                 if not (scripts_root / script_name).exists():
+                    if main_probe is not None and main_probe(script_name):
+                        _warn(
+                            f"{path}:{lineno}: references 'scripts/{script_name}' — "
+                            f"missing under {scripts_root}/ but present at "
+                            f"main/origin/main: stale worktree tree, not this "
+                            f"commit's breakage (#1622/#1672). Not blocking; the "
+                            f"main-tree lint and the Step 10d landing-tree gate "
+                            f"re-check strictly."
+                        )
+                        continue
                     errors.append(
                         f"{path}:{lineno}: references 'scripts/{script_name}' "
                         f"which does not exist under {scripts_root}/. Repoint "
@@ -3060,6 +3146,8 @@ def check_skill_references(
     skills_dir: Path | None = None,
     allowlist: frozenset[str] | None = None,
     fs_roots: frozenset[str] | None = None,
+    main_probe: Callable[[str], bool] | None = None,
+    warn_sink: list[str] | None = None,
 ) -> list[str]:
     """Walk the workflow-doc surface (agents + skills + rules + CLAUDE.md +
     workflow.yaml) and FAIL on any backtick-delimited ``/<skill-name>`` token
@@ -3086,9 +3174,34 @@ def check_skill_references(
 
     ``roots`` / ``skills_dir`` / ``allowlist`` / ``fs_roots`` are unit-test
     override hooks; production callers pass None.
+
+    Staleness degrade (#1622/#1672), same pattern as
+    :func:`check_script_references`: in production scope only (``skills_dir``
+    is None) on a NON-``main`` checkout, a plain single-segment ``/skill``
+    token unresolved locally but whose ``.claude/skills/<ref>/SKILL.md`` is
+    tracked at ``main``/``origin/main`` is downgraded to a non-blocking
+    ``WARN:`` (a ``:``-namespaced ref resolves via the allowlist, which rides
+    the synced lint copy — the probe never fires for it). Fail-safe: non-git
+    tree, failed probe, or ``HEAD == main`` keeps the hard FAIL;
+    ``main_probe`` / ``warn_sink`` are unit-test override hooks.
     """
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     sk_dir = skills_dir if skills_dir is not None else _REPO_ROOT / ".claude" / "skills"
+    # Staleness-aware degrade (#1622/#1672): PRODUCTION scope only, non-main
+    # checkout only — mirrors check_script_references.
+    if main_probe is None and skills_dir is None and not _head_is_main(_REPO_ROOT):
+
+        def _default_skill_probe(ref_name: str) -> bool:
+            return _tracked_on_main_ref(f".claude/skills/{ref_name}/SKILL.md", str(_REPO_ROOT))
+
+        main_probe = _default_skill_probe
     live = _live_skill_names(sk_dir)
     allow = allowlist if allowlist is not None else SKILL_REF_ALLOWLIST
     fsr = fs_roots if fs_roots is not None else SKILL_REF_FS_ROOTS
@@ -3111,6 +3224,16 @@ def check_skill_references(
             for match in SKILL_REF_RE.finditer(line):
                 ref = match.group(1)
                 if _skill_ref_resolves(ref, live, allow, fsr):
+                    continue
+                if main_probe is not None and ":" not in ref and main_probe(ref):
+                    _warn(
+                        f"{path}:{lineno}: unresolved skill reference '/{ref}' — "
+                        f"not resolvable in this tree but present at "
+                        f"main/origin/main: stale worktree tree, not this "
+                        f"commit's breakage (#1622/#1672). Not blocking; the "
+                        f"main-tree lint and the Step 10d landing-tree gate "
+                        f"re-check strictly."
+                    )
                     continue
                 errors.append(
                     f"{path}:{lineno}: unresolved skill reference '/{ref}' — not a "
