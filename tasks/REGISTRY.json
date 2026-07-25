@@ -5190,8 +5190,8 @@
     "1667": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1667",
-      "status": "reviewing",
+      "path": "tasks/completed/1667",
+      "status": "completed",
       "title": "daily-fix: wedge-failover checks live owner before terminate"
     },
     "1668": {
