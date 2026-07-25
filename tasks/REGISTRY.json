@@ -5344,8 +5344,8 @@
     "1688": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1688",
-      "status": "planning",
+      "path": "tasks/approved/1688",
+      "status": "approved",
       "title": "workflow-fix: step9c selector misses string+transitive deps"
     },
     "169": {
