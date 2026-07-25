@@ -46,10 +46,12 @@ from workflow_lint import (  # noqa: E402
     SKILL_REF_FS_ROOTS,
     UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
+    _head_is_main,
     _iter_ask_target_files,
     _live_skill_names,
     _other_worktree_prefix,
     _run_root_guard,
+    _tracked_on_main_ref,
     _values_equal,
     check_agent_model_pins,
     check_asks,
@@ -550,6 +552,191 @@ def test_check_script_refs_repo_tree_is_clean():
         "committed .claude/ agents/skills reference scripts that do not "
         "exist under scripts/:\n" + "\n".join(errors)
     )
+
+
+# ---------------------------------------------------------------------------
+# Staleness-aware degrade for check_script_references / check_skill_references
+# (#1622/#1672): inside a stale non-``main`` worktree, a reference whose
+# target is missing locally but tracked at main/origin/main WARNs instead of
+# FAILing (the Step 5a sync deliberately never syncs scripts/ helpers).
+# Test notes: the two production-mode tests
+# ``test_check_script_refs_repo_tree_is_clean`` (above) and
+# ``test_check_skill_refs_repo_tree_is_clean`` (below) call the checks with
+# NO fixture args, so post-#1672 they become degrade-ACTIVE when Step 9c runs
+# them inside a worktree (a target missing locally but present on main WARNs
+# instead of FAILing) and stay fully strict on the main checkout — intended
+# behavior (#1672 plan §7 risk 1): merge-time strictness lives in the
+# Step 10d landing-tree gate (non-git tree ⇒ strict) plus the main-checkout
+# run of these same tests.
+# ---------------------------------------------------------------------------
+
+
+def test_check_script_refs_stale_tree_present_on_main_warns(tmp_path):
+    """A dangling ref whose target IS on main degrades to one WARN, no error
+    (#1622/#1672 stale-worktree tolerance); the WARN names the script, the
+    main ref, and the incident."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `uv run python scripts/plan_patch.py <draft>`.\n")
+    sink: list[str] = []
+    errors = check_script_references(
+        roots=[docs], scripts_dir=scripts_dir, main_probe=lambda n: True, warn_sink=sink
+    )
+    assert errors == [], f"expected WARN degrade, got errors: {errors}"
+    assert len(sink) == 1, f"expected exactly one WARN, got: {sink}"
+    assert "scripts/plan_patch.py" in sink[0]
+    assert "main" in sink[0]
+    assert "#1622" in sink[0]
+
+
+def test_check_script_refs_stale_tree_absent_on_main_fails(tmp_path):
+    """A dangling ref whose target is ALSO absent on main still FAILs with
+    the unchanged strict message — the degrade is not a bypass."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `scripts/zz_invented_helper.py --go`.\n")
+    sink: list[str] = []
+    errors = check_script_references(
+        roots=[docs], scripts_dir=scripts_dir, main_probe=lambda n: False, warn_sink=sink
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/zz_invented_helper.py" in errors[0]
+    assert "does not exist" in errors[0]
+    assert sink == [], f"expected no WARN, got: {sink}"
+
+
+def test_check_script_refs_fixture_mode_never_probes_ambiently(tmp_path):
+    """Fixture-scoped calls (scripts_dir set, no probe injected) stay strict
+    even when the referenced script exists on main and pytest runs inside a
+    non-main worktree: the ambient degrade is gated on production scope
+    (``scripts_dir is None``), keeping existing unit tests hermetic."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # scripts/task.py exists on main — if the ambient probe fired in fixture
+    # mode this would WARN instead of erroring.
+    (docs / "SKILL.md").write_text("Run `uv run python scripts/task.py view 1`.\n")
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected one strict error (fixture mode), got: {errors}"
+    assert "scripts/task.py" in errors[0]
+
+
+def test_head_is_main_fail_safe_nongit(tmp_path):
+    """A non-git tree (the Step 10d /tmp landing-tree gate copy) reads as
+    'main' — i.e. the STRICT regime — by fail-safe."""
+    assert _head_is_main(tmp_path) is True
+
+
+def test_head_is_main_git_fixture(tmp_path):
+    """On a real git fixture: True on branch main, False on a feature branch."""
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(tmp_path), "-c", "user.email=t@e.st", "-c", "user.name=t", *args],
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-b", "main")
+    git("commit", "--allow-empty", "-m", "root")
+    assert _head_is_main(tmp_path) is True
+    git("checkout", "-b", "feature")
+    assert _head_is_main(tmp_path) is False
+
+
+def test_tracked_on_main_ref_git_fixture(tmp_path):
+    """A committed path on a fixture repo's main resolves True; a missing
+    path resolves False. Fresh tmp repo per test so the lru_cache key
+    (relpath, repo_root) never collides across tests."""
+    root = tmp_path / "repo"
+    root.mkdir()
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(root), "-c", "user.email=t@e.st", "-c", "user.name=t", *args],
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-b", "main")
+    (root / "scripts").mkdir()
+    (root / "scripts" / "x.py").write_text("# helper\n")
+    git("add", "scripts/x.py")
+    git("commit", "-m", "add x")
+    assert _tracked_on_main_ref("scripts/x.py", str(root)) is True
+    assert _tracked_on_main_ref("scripts/y.py", str(root)) is False
+
+
+def test_check_skill_refs_stale_tree_present_on_main_warns(tmp_path):
+    """A /skill token unresolved locally but present on main degrades to one
+    WARN, no error — the skill-refs sibling of the script-refs degrade."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here.\n")
+    sink: list[str] = []
+    errors = check_skill_references(
+        roots=[docs],
+        skills_dir=skills,
+        allowlist=frozenset(),
+        main_probe=lambda r: True,
+        warn_sink=sink,
+    )
+    assert errors == [], f"expected WARN degrade, got errors: {errors}"
+    assert len(sink) == 1, f"expected exactly one WARN, got: {sink}"
+    assert "/ghost-skill" in sink[0]
+    assert "main" in sink[0]
+    assert "#1622" in sink[0]
+
+
+def test_check_skill_refs_stale_tree_absent_on_main_fails(tmp_path):
+    """A /skill token absent locally AND on main still FAILs with the
+    unchanged strict message."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here.\n")
+    sink: list[str] = []
+    errors = check_skill_references(
+        roots=[docs],
+        skills_dir=skills,
+        allowlist=frozenset(),
+        main_probe=lambda r: False,
+        warn_sink=sink,
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost-skill" in errors[0]
+    assert "SKILL_REF_ALLOWLIST" in errors[0]
+    assert sink == [], f"expected no WARN, got: {sink}"
+
+
+def test_check_script_refs_ambient_wiring_degrade_active(tmp_path, monkeypatch, capsys):
+    """Pins the AMBIENT production wiring line (``main_probe is None and
+    scripts_dir is None and not _head_is_main(...)``): with a non-main HEAD
+    and a main-tracked target (both monkeypatched), a dangling ref in an
+    ambient call (scripts_dir=None) WARNs to stderr and returns no error —
+    so a later refactor cannot silently retire the degrade while every
+    injected-probe test stays green."""
+    import workflow_lint as wl
+
+    monkeypatch.setattr(wl, "_head_is_main", lambda _root: False)
+    monkeypatch.setattr(wl, "_tracked_on_main_ref", lambda _rel, _root: True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # The fixture name must not exist under the real scripts/ dir.
+    (docs / "SKILL.md").write_text("Run `scripts/zz_nonexistent_1672.py` now.\n")
+    errors = check_script_references(roots=[docs])
+    assert errors == [], f"expected ambient WARN degrade, got errors: {errors}"
+    err = capsys.readouterr().err
+    assert "WARN:" in err
+    assert "scripts/zz_nonexistent_1672.py" in err
 
 
 # ---------------------------------------------------------------------------
