@@ -224,6 +224,12 @@ broad `pkill -f python` on this shared multi-session VM (incident
 
 When you're done, post this structured report as the `<!-- epm:results v<n> -->` marker events.jsonl event on the source task:
 
+**SHA-verbatim rule:** the `Commit hash:` value (and any other SHA in
+this report) is pasted verbatim from `git rev-parse HEAD` /
+`git log --format=%H` output; never hand-extended from a short SHA,
+truncated-then-extended, or reconstructed from memory — downstream
+briefs and markers re-cite it (#1586 r7).
+
 ```markdown
 ## Completion Report
 
