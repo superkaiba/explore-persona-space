@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1669,
+  "highest_id": 1670,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5207,6 +5207,13 @@
       "path": "tasks/proposed/1669",
       "status": "proposed",
       "title": "daily-fix: failover re-provision carries launch env pins"
+    },
+    "1670": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1670",
+      "status": "proposed",
+      "title": "daily-fix: reconcile pass must not stop young respawns"
     },
     "168": {
       "has_clean_result": true,
