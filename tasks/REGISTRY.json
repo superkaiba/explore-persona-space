@@ -5232,8 +5232,8 @@
     "1673": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1673",
-      "status": "planning",
+      "path": "tasks/approved/1673",
+      "status": "approved",
       "title": "daily-fix: inline worker briefs carry lint-cert command"
     },
     "1674": {
