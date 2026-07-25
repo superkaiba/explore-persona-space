@@ -5218,8 +5218,8 @@
     "1671": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1671",
-      "status": "planning",
+      "path": "tasks/approved/1671",
+      "status": "approved",
       "title": "daily-fix: sync_repo_root retries abort on HEAD.lock race"
     },
     "1672": {
