@@ -677,6 +677,198 @@ def _maxp_content_end(full_ids: list[int], turn_nl_idx: int, p: int, span_end: i
     return content_end
 
 
+# ── #811 pre-user-boundary-summary round (plan §4.1/§4.2) ─────────────────────
+# The next-user header appended AFTER the assistant turn-close: the token ids of
+# "<|im_start|>user\n" under the Qwen-2.5-7B-Instruct tokenizer, verified at plan
+# time and ASSERTED in-process at startup (assert_header_ids) + per teacher-forced
+# row (ext_ids[F:] == HEADER_IDS — KILL-2, plan §7). Never trust string-level
+# reasoning about the header (the marker-recipe id-assert convention).
+HEADER_TEXT = "<|im_start|>user\n"
+HEADER_IDS = [151644, 872, 198]
+# The seven PER-LAYER pre-user arms (read at each swept layer li from the SAME
+# extended forward pass; payload keys v0_<slug>/v_plus_<slug>, float32):
+PRE_USER_LAYER_ARMS = (
+    "pre_user_imstart",  # arm 1: the appended <|im_start|> position (F)
+    "pre_user_user",  # arm 2: the appended `user` token (F+1)
+    "pre_user_nl",  # arm 3: the appended trailing \n (F+2; last position)
+    "pre_user_mean3",  # arm 4: mean over {F, F+1, F+2}
+    "pre_user_max3",  # arm 5: SIGNED element-wise max over {F, F+1, F+2}
+    "ans_mean_incl_hdr",  # arm 6: mean over [p : F+3) (response + turn-close + header)
+    "ans_max_incl_hdr",  # arm 7: SIGNED element-wise max over [p : F+3)
+)
+# The two ALL-LAYER pooled arms (derived from the persisted (n_layers, H) stacks
+# of arms 6/7 — layer-INDEPENDENT values keyed by the INPUT layer, plan §4.2):
+PRE_USER_ALLLAYER_ARMS = ("ans_mean_incl_hdr_alllayer", "ans_max_incl_hdr_alllayer")
+PRE_USER_ARMS = PRE_USER_LAYER_ARMS + PRE_USER_ALLLAYER_ARMS
+# The pooled bases whose per-cell (n_layers, H) fp16 stacks are persisted (the
+# alllayer/ store dir; arms 8/9 re-derive from these at fit time).
+PRE_USER_STACK_BASES = ("ans_mean_incl_hdr", "ans_max_incl_hdr")
+
+
+def assert_header_ids(tok) -> None:
+    """KILL-2 startup assert: the header text tokenizes to EXACTLY HEADER_IDS.
+
+    Wired into the extraction entrypoints (run_extraction / phase0 run) so every
+    process fails at startup on a tokenizer/template drift, per the repo's
+    id-assert convention (IM_END_ID above; plan §7 KILL-2, §11b).
+    """
+    got = tok.encode(HEADER_TEXT, add_special_tokens=False)
+    if got != HEADER_IDS:
+        raise RuntimeError(
+            f"[pre-user-assert] tok.encode({HEADER_TEXT!r}) == {got}, expected "
+            f"{HEADER_IDS} — the appended next-user header ids drifted "
+            "(KILL-2, failure_class: code)"
+        )
+
+
+def _wants_pre_user(summaries: tuple[str, ...]) -> bool:
+    """True iff any #811 pre-user arm is requested (extended forward + all-layer hooks)."""
+    return any(s in PRE_USER_ARMS for s in summaries)
+
+
+def _extended_ids(full_ids: list[int]) -> tuple[list[int], int]:
+    """Append the next-user header AFTER the pre-append indices are fixed (plan §4.1).
+
+    Returns ``(ext_ids, F)`` with ``F = len(full_ids)`` (the PRE-append length —
+    every reference span index is computed on the pre-append list; causal
+    attention makes positions < F invariant to the append, A2). KILL-2 per-row
+    assert: the extended tail is EXACTLY the header ids.
+    """
+    F = len(full_ids)
+    ext_ids = [*full_ids, *HEADER_IDS]
+    if ext_ids[F:] != HEADER_IDS:
+        raise RuntimeError(
+            f"[pre-user-assert] ext_ids[F:] == {ext_ids[F:]}, expected {HEADER_IDS} "
+            "(KILL-2, failure_class: code)"
+        )
+    return ext_ids, F
+
+
+def _assert_finite_arm(t: torch.Tensor, arm: str, li) -> None:
+    """KILL-2: a non-finite summary is an upstream extraction bug — fail loud."""
+    if not bool(torch.isfinite(t).all()):
+        raise RuntimeError(
+            f"[pre-user-assert] non-finite {arm} summary at layer {li} — upstream "
+            "extraction bug (KILL-2, failure_class: code)"
+        )
+
+
+def _pre_user_layer_arm(acts, li: int, p: int, F: int, arm: str) -> torch.Tensor:
+    """One per-layer pre-user arm reduction from the EXTENDED pass (plan §4.2 table).
+
+    ``acts[li]`` is the (1, T, H) hidden state at block ``li`` over ``ext_ids``
+    (T == F + 3); ``p`` / ``F`` are PRE-append indices. Max pools are plain SIGNED
+    element-wise max (``.max(dim=0).values`` — #810's crowned semantics, plan §11a).
+    """
+    if arm == "pre_user_imstart":
+        return acts[li][0, F, :].float()
+    if arm == "pre_user_user":
+        return acts[li][0, F + 1, :].float()
+    if arm == "pre_user_nl":
+        return acts[li][0, F + 2, :].float()
+    if arm == "pre_user_mean3":
+        return acts[li][0, F : F + 3, :].float().mean(dim=0)
+    if arm == "pre_user_max3":
+        return acts[li][0, F : F + 3, :].float().max(dim=0).values
+    if arm == "ans_mean_incl_hdr":
+        return acts[li][0, p : F + 3, :].float().mean(dim=0)
+    if arm == "ans_max_incl_hdr":
+        return acts[li][0, p : F + 3, :].float().max(dim=0).values
+    raise KeyError(f"unknown pre-user arm {arm!r}")
+
+
+def derive_alllayer_arms(
+    stack16_mean: np.ndarray, stack16_max: np.ndarray
+) -> dict[str, np.ndarray]:
+    """Arms 8/9 from the PERSISTED fp16 probe-meaned stacks (plan §4.2).
+
+    Order of operations (registered): the per-cell stacks are the PROBE-MEAN of
+    the per-probe per-layer arm-6/7 vectors, cast to fp16 (the persisted dtype);
+    arm 8 = layer-axis MEAN of the fp16 arm-6 stack, arm 9 = layer-axis SIGNED
+    MAX of the fp16 arm-7 stack. Deriving from the fp16-ROUNDED stacks (not the
+    float32 in-memory values) makes the extract-time keys re-derivable BIT-EXACTLY
+    from the persisted ``alllayer/`` npz at fit time (plan §13 smoke 3); the fp16
+    round-off (~5e-4 relative) is ~3 orders below the resampled-R drift the parity
+    reads already tolerate (plan §11c). Returns float32 (H,) per arm.
+    """
+    assert stack16_mean.dtype == np.float16 and stack16_max.dtype == np.float16, (
+        stack16_mean.dtype,
+        stack16_max.dtype,
+    )
+    return {
+        "ans_mean_incl_hdr_alllayer": stack16_mean.astype(np.float32).mean(axis=0),
+        "ans_max_incl_hdr_alllayer": stack16_max.astype(np.float32).max(axis=0),
+    }
+
+
+def _pre_user_forward_setup(
+    base_model, full_ids: list[int], layers, device, p, span_end, turn_nl_idx, content_end
+):
+    """Extended-pass setup for the pre-user arms (plan §4.1): ids over
+    ``full_ids + HEADER_IDS`` (KILL-2 tail assert), all-block hook list (the
+    arm-8/9 stacks need every layer; the config read keeps tiny CPU stubs
+    testable), F = the PRE-append length, and the §13 span-debug line."""
+    ext_ids, F = _extended_ids(full_ids)  # KILL-2 tail assert inside
+    ids = torch.tensor([ext_ids], dtype=torch.long, device=device)
+    n_blocks = int(base_model.config.num_hidden_layers)
+    hook_layers = sorted(set(layers) | set(range(n_blocks)))
+    if os.environ.get("EPM_I811_SPAN_DEBUG") == "1":
+        logger.info(
+            "[pre-user-span] p=%d F=%d ext_len=%d last6_ext_ids=%s | mean [%d:%d) "
+            "turn_nl=%d maxp [%d:%d) hdr {%d,%d,%d} incl_hdr [%d:%d)",
+            p,
+            F,
+            len(ext_ids),
+            ext_ids[-6:],
+            p,
+            span_end,
+            turn_nl_idx,
+            p,
+            content_end if content_end is not None else -1,
+            F,
+            F + 1,
+            F + 2,
+            p,
+            F + 3,
+        )
+    return ids, hook_layers, F, n_blocks
+
+
+def _add_pre_user_arms(per_summary, acts_b, acts_t, li: int, p: int, F: int, summaries) -> None:
+    """Add the requested pre-user per-layer arms (1-7) to ``per_summary`` from
+    the SAME extended pass (plan §4.2 table); KILL-2 finiteness per arm."""
+    for arm in PRE_USER_LAYER_ARMS:
+        if arm not in summaries:
+            continue
+        hb_a = _pre_user_layer_arm(acts_b, li, p, F, arm)
+        ht_a = _pre_user_layer_arm(acts_t, li, p, F, arm)
+        _assert_finite_arm(hb_a, arm, li)
+        _assert_finite_arm(ht_a, arm, li)
+        per_summary[arm] = (
+            hb_a.cpu().numpy().astype(np.float32),
+            ht_a.cpu().numpy().astype(np.float32),
+        )
+
+
+def _pre_user_stacks(acts_b, acts_t, p: int, F: int, n_blocks: int) -> dict:
+    """Per-probe (n_blocks, H) arm-6/7 stacks per leg (plan §4.2) — the raw
+    material for the persisted alllayer stacks + derived arms 8/9 (probe-mean at
+    persist time). float32 here; the fp16 cast happens once in the persister."""
+    stacks: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for base_name in PRE_USER_STACK_BASES:
+        hb_rows = [_pre_user_layer_arm(acts_b, li, p, F, base_name) for li in range(n_blocks)]
+        ht_rows = [_pre_user_layer_arm(acts_t, li, p, F, base_name) for li in range(n_blocks)]
+        hb_stack = torch.stack(hb_rows)
+        ht_stack = torch.stack(ht_rows)
+        _assert_finite_arm(hb_stack, f"{base_name}_stack", "all")
+        _assert_finite_arm(ht_stack, f"{base_name}_stack", "all")
+        stacks[base_name] = (
+            hb_stack.cpu().numpy().astype(np.float32),
+            ht_stack.cpu().numpy().astype(np.float32),
+        )
+    return stacks
+
+
 @torch.no_grad()
 def _mean_resp_acts(
     base_model,
@@ -745,18 +937,37 @@ def _mean_resp_acts(
         raise RuntimeError("empty response span — response produced zero tokens")
     want_turn_nl = "turn_nl" in summaries
     want_maxp = "maxp" in summaries
+    want_pre_user = _wants_pre_user(summaries)
     # KILL-2 (code): locate the turn-close newline BEFORE any GPU work when turn_nl
-    # or maxp is requested — the assert failing on any cell HALTs the extraction
-    # (plan §7). maxp needs the SAME turn-close invariants (its content span ends
-    # at the <|im_end|> the locate asserts at full_len-2).
-    turn_nl_idx = _locate_turn_close_newline(full_ids, tok) if (want_turn_nl or want_maxp) else None
+    # / maxp / any pre-user arm is requested — the assert failing on any cell HALTs
+    # the extraction (plan §7). maxp needs the SAME turn-close invariants (its
+    # content span ends at the <|im_end|> the locate asserts at full_len-2), and
+    # the pre-user header append relies on the SAME <|im_end|>+\n tail shape.
+    turn_nl_idx = (
+        _locate_turn_close_newline(full_ids, tok)
+        if (want_turn_nl or want_maxp or want_pre_user)
+        else None
+    )
     content_end = _maxp_content_end(full_ids, turn_nl_idx, p, span_end) if want_maxp else None
-    ids = torch.tensor([full_ids], dtype=torch.long, device=device)
+    # #811 pre-user round (plan §4.1): ALL span indices above are computed on the
+    # PRE-append full_ids; the forward then runs over ext_ids = full_ids + header.
+    # Causal attention makes positions < F invariant to the append (A2), so the
+    # re-extracted mean/turn_nl/maxp references are drift-free vs an unextended
+    # pass over the same R.
+    if want_pre_user:
+        ids, hook_layers, F, n_blocks = _pre_user_forward_setup(
+            base_model, full_ids, layers, device, p, span_end, turn_nl_idx, content_end
+        )
+    else:
+        F = span_end
+        n_blocks = None
+        hook_layers = layers
+        ids = torch.tensor([full_ids], dtype=torch.long, device=device)
     # Memory-safe subset read: hook only the requested blocks (block index li ==
     # hs[li+1]) instead of materializing all L+1 layers (#671). acts[li] is the
     # SAME tensor the old out.hidden_states[li + 1] read produced.
-    acts_b = extract_layer_activations(base_model, ids, layers)
-    acts_t = extract_layer_activations(trained_model, ids, layers)
+    acts_b = extract_layer_activations(base_model, ids, hook_layers)
+    acts_t = extract_layer_activations(trained_model, ids, hook_layers)
     if _MEM_LOGGER is not None:  # #672 per-iteration memory gauge (ANALYSIS-ONLY)
         _MEM_LOGGER._tick()
     res: dict = {}
@@ -790,7 +1001,13 @@ def _mean_resp_acts(
                 hb_mx.cpu().numpy().astype(np.float32),
                 ht_mx.cpu().numpy().astype(np.float32),
             )
+        # #811 pre-user arms 1-7 at this swept layer, from the SAME extended pass
+        # (plan §4.2 table; KILL-2 finiteness per arm — max pools are comparisons,
+        # a non-finite value is an upstream extraction bug).
+        _add_pre_user_arms(per_summary, acts_b, acts_t, li, p, F, summaries)
         res[li] = per_summary
+    if want_pre_user:
+        res["stacks"] = _pre_user_stacks(acts_b, acts_t, p, F, n_blocks)
     return res
 
 
@@ -1133,12 +1350,17 @@ def build_messages_for(registry, demos, cid: str, behavior: str, question: str) 
 
 
 def _requested_summaries(args) -> tuple[str, ...]:
-    """Answer-side summaries the flags request: mean always; --turn-nl / --maxp additive."""
+    """Answer-side summaries the flags request: mean always; --turn-nl / --maxp /
+    --pre-user additive. --pre-user adds the SEVEN per-layer boundary arms (plan
+    §4.2 arms 1–7); the two all-layer arms (8/9) are DERIVED from the persisted
+    stacks in _extract_one_target, not read per swept layer."""
     s = ["mean"]
     if getattr(args, "turn_nl", False):
         s.append("turn_nl")
     if getattr(args, "maxp", False):
         s.append("maxp")
+    if getattr(args, "pre_user", False):
+        s.extend(PRE_USER_LAYER_ARMS)
     return tuple(s)
 
 
@@ -1222,6 +1444,51 @@ def persist_r_text(
     return raw_dir
 
 
+def _resolve_targets(targets_arg, behavior: str, source_cid: str, eval_cids_for) -> list[str]:
+    """Target cids: the --targets CSV or the 30 eval cids; source diagonal always included."""
+    if targets_arg:
+        targets = [t.strip() for t in targets_arg.split(",") if t.strip()]
+    else:
+        targets = list(dict.fromkeys([*eval_cids_for(behavior), source_cid]))
+    if source_cid not in targets:
+        targets = [source_cid, *targets]
+    return targets
+
+
+def _setup_alllayer_scratch(
+    out_root: Path, behavior: str, source_cid: str, seed: int, extras, *, wants: bool
+):
+    """#811 pre-user: the per-cell (n_layers, H) fp16 alllayer stacks land in a
+    SEPARATE store dir (../alllayer/{behavior}/{source}_seed{seed}/{target}.npz —
+    plan §10 store layout), mirrored through the same #674 scratch mechanism.
+    Returns (canonical_cell_dir, scratch_dir) — (None, None) when not requested."""
+    if not wants:
+        return None, None
+    alllayer_cell_dir = out_root.parent / "alllayer" / behavior / f"{source_cid}_seed{seed}"
+    alllayer_cell_dir.mkdir(parents=True, exist_ok=True)
+    scratch_alllayer_dir = scratch_path_for(alllayer_cell_dir, issue=667)
+    _prepare_scratch_cell_dir(scratch_alllayer_dir, alllayer_cell_dir)
+    extras["alllayer_dir"] = scratch_alllayer_dir
+    return alllayer_cell_dir, scratch_alllayer_dir
+
+
+def _finalize_alllayer(scratch_alllayer_dir, alllayer_cell_dir, targets) -> None:
+    """Materialize scratch -> canonical + assert the FULL per-target alllayer
+    complement BEFORE the cell sentinel (a missing stack file would make arms
+    8/9 permanently un-re-derivable for that cell — KILL-2). No-op when the
+    pre-user arms were not requested."""
+    if scratch_alllayer_dir is None:
+        return
+    materialize_to_canonical(scratch_alllayer_dir, alllayer_cell_dir)
+    missing_stacks = [t for t in targets if not (alllayer_cell_dir / f"{t}.npz").exists()]
+    if missing_stacks:
+        raise RuntimeError(
+            f"[pre-user-assert] alllayer stacks missing for targets "
+            f"{missing_stacks} under {alllayer_cell_dir} — refusing to stamp "
+            "the cell sentinel over an incomplete alllayer store (KILL-2)"
+        )
+
+
 def run_extraction(args) -> int:
     from explore_persona_space.experiments.i537_contexts import (
         eval_cids_for,
@@ -1248,13 +1515,7 @@ def run_extraction(args) -> int:
     seed = args.seed
 
     # Resolve target contexts (default: 30 eval cids + the source C itself).
-    if args.targets:
-        targets = [t.strip() for t in args.targets.split(",") if t.strip()]
-    else:
-        targets = list(dict.fromkeys([*eval_cids_for(behavior), source_cid]))
-    # always include the source diagonal
-    if source_cid not in targets:
-        targets = [source_cid, *targets]
+    targets = _resolve_targets(args.targets, behavior, source_cid, eval_cids_for)
 
     probes = load_eval_probes(behavior)
     if args.max_probes:
@@ -1281,6 +1542,11 @@ def run_extraction(args) -> int:
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    requested = _requested_summaries(args)
+    if _wants_pre_user(requested):
+        # KILL-2 startup assert (plan §7): the appended header ids are verified
+        # in-process BEFORE any GPU work; a tokenizer drift HALTs the cell here.
+        assert_header_ids(tok)
     r_lookup: dict[tuple[str, int], str] = {}
     neg_r_lookup: dict[tuple[str, int], str] = {}
     # Negative-panel cids that resolve in the registry — the v0(C_neg) base-context
@@ -1406,8 +1672,10 @@ def run_extraction(args) -> int:
         # #811: answer-side summaries to capture per cell. Default ("mean",)
         # reproduces the #667 store verbatim; --turn-nl adds the turn-boundary
         # single-position read (v0_turn_nl / v_plus_turn_nl); --maxp adds #810's
-        # crowned content-token element-wise max (v0_maxp / v_plus_maxp).
-        "summaries": _requested_summaries(args),
+        # crowned content-token element-wise max (v0_maxp / v_plus_maxp);
+        # --pre-user adds the nine boundary/header arms + the alllayer stacks
+        # (pre-user-boundary-summary round, plan §4.2).
+        "summaries": requested,
     }
     # Route the per-target .npz writes to a local-SSD scratch mirror (#674) so
     # the per-(target, layer) write storm (~93 .npz/cell) stays off the GCE
@@ -1420,6 +1688,9 @@ def run_extraction(args) -> int:
     # never collide.
     scratch_cell_dir = scratch_path_for(cell_dir, issue=667)
     _prepare_scratch_cell_dir(scratch_cell_dir, cell_dir)
+    alllayer_cell_dir, scratch_alllayer_dir = _setup_alllayer_scratch(
+        out_root, behavior, source_cid, seed, extras, wants=_wants_pre_user(requested)
+    )
     n_gen = n_trunc = 0
     for tcid in targets:
         ng, nt = _extract_one_target(
@@ -1461,6 +1732,7 @@ def run_extraction(args) -> int:
     # a resume re-materializes. Pass-through no-op when scratch_cell_dir IS
     # cell_dir (off GCE).
     materialize_to_canonical(scratch_cell_dir, cell_dir)
+    _finalize_alllayer(scratch_alllayer_dir, alllayer_cell_dir, targets)
     # Validate the FULL (target, layer) .npz complement is on disk BEFORE the
     # sentinel — an empty-response target skips its .npz write per layer
     # (_extract_one_target's `if not acc[li][0]: continue`), so an unconditional
@@ -1506,8 +1778,10 @@ def _accumulate_target_acts(
 ) -> tuple[dict[int, dict[str, list[list[np.ndarray]]]], int, int]:
     """Per-probe teacher-force reads for ONE target, accumulated per (layer, summary).
 
-    Returns ``(acc, n_gen, n_trunc)`` where ``acc[li][summary]`` is
-    ``[v0_list, vp_list]`` of per-probe (HIDDEN,) vectors. Extracted from
+    Returns ``(acc, acc_stacks, n_gen, n_trunc)`` where ``acc[li][summary]`` is
+    ``[v0_list, vp_list]`` of per-probe (HIDDEN,) vectors and ``acc_stacks``
+    (non-empty only under --pre-user) is ``{stack_base: [v0_stacks, vp_stacks]}``
+    of per-probe (n_blocks, HIDDEN) arm-6/7 stacks (plan §4.2). Extracted from
     :func:`_extract_one_target` so that function stays under the ruff C901
     cap (#811 added the summary axis). Each probe's R is the vLLM-pregenerated
     base response (Phase A) or, on a CPU smoke, an HF greedy fallback. When
@@ -1516,6 +1790,11 @@ def _accumulate_target_acts(
     """
     acc: dict[int, dict[str, list[list[np.ndarray]]]] = {
         li: {s: [[], []] for s in summaries} for li in layers
+    }
+    # #811 pre-user: per-probe (n_blocks, H) arm-6/7 stacks per leg, probe-meaned
+    # at persist time (plan §4.2 "keeps two stacks per leg per cell").
+    acc_stacks: dict[str, list[list[np.ndarray]]] = {
+        b: [[], []] for b in PRE_USER_STACK_BASES if _wants_pre_user(summaries)
     }
     n_gen = n_trunc = 0
     for qi, q in enumerate(probes):
@@ -1535,6 +1814,9 @@ def _accumulate_target_acts(
         per_layer = _mean_resp_acts(
             base, trained, tok, tmsgs, r, layers, device, summaries=summaries
         )
+        for base_name, (hb_stack, ht_stack) in per_layer.pop("stacks", {}).items():
+            acc_stacks[base_name][0].append(hb_stack)
+            acc_stacks[base_name][1].append(ht_stack)
         for li in layers:
             if summaries == ("mean",):
                 v0, vp = per_layer[li]  # backward-compat (v0, v_plus) shape
@@ -1545,7 +1827,50 @@ def _accumulate_target_acts(
                     v0, vp = per_layer[li][s]
                     acc[li][s][0].append(v0)
                     acc[li][s][1].append(vp)
-    return acc, n_gen, n_trunc
+    return acc, acc_stacks, n_gen, n_trunc
+
+
+def _persist_alllayer_stacks(
+    acc_stacks: dict,
+    alllayer_dir,
+    behavior: str,
+    source_cid: str,
+    seed: int,
+    tcid: str,
+) -> dict[str, np.ndarray]:
+    """#811 pre-user: probe-mean the per-probe arm-6/7 stacks, cast fp16 ONCE
+    (the persisted dtype, plan §11c), write the per-cell ``alllayer/{tcid}.npz``
+    (once per TARGET, not per swept layer), and return the derived arm-8/9
+    payload keys — derived FROM the fp16-rounded stacks so a fit-time
+    re-derivation from the persisted npz is bit-exact (plan §13 smoke 3)."""
+    assert alllayer_dir is not None, "--pre-user requires extras['alllayer_dir']"
+    stack16: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for base_name in PRE_USER_STACK_BASES:
+        s0 = np.stack(acc_stacks[base_name][0]).mean(axis=0).astype(np.float16)
+        sp = np.stack(acc_stacks[base_name][1]).mean(axis=0).astype(np.float16)
+        if s0.shape[1] == HIDDEN_SIZE:  # production model (tiny CPU stubs exempt)
+            assert s0.shape == (N_LAYERS, HIDDEN_SIZE), s0.shape  # KILL-2 (plan §7)
+            assert sp.shape == (N_LAYERS, HIDDEN_SIZE), sp.shape
+        stack16[base_name] = (s0, sp)
+    d0 = derive_alllayer_arms(stack16["ans_mean_incl_hdr"][0], stack16["ans_max_incl_hdr"][0])
+    dp = derive_alllayer_arms(stack16["ans_mean_incl_hdr"][1], stack16["ans_max_incl_hdr"][1])
+    derived_arms: dict[str, np.ndarray] = {}
+    for arm in PRE_USER_ALLLAYER_ARMS:
+        derived_arms[f"v0_{arm}"] = d0[arm]
+        derived_arms[f"v_plus_{arm}"] = dp[arm]
+    Path(alllayer_dir).mkdir(parents=True, exist_ok=True)
+    np.savez(
+        Path(alllayer_dir) / f"{tcid}.npz",
+        v0_ans_mean_incl_hdr_stack=stack16["ans_mean_incl_hdr"][0],
+        v_plus_ans_mean_incl_hdr_stack=stack16["ans_mean_incl_hdr"][1],
+        v0_ans_max_incl_hdr_stack=stack16["ans_max_incl_hdr"][0],
+        v_plus_ans_max_incl_hdr_stack=stack16["ans_max_incl_hdr"][1],
+        behavior=np.asarray(behavior),
+        source_cid=np.asarray(source_cid),
+        target_cid=np.asarray(tcid),
+        seed=np.asarray(seed),
+    )
+    return derived_arms
 
 
 def _extract_one_target(
@@ -1591,7 +1916,8 @@ def _extract_one_target(
     summaries: tuple[str, ...] = tuple(extras.get("summaries", ("mean",)))
     want_turn_nl = "turn_nl" in summaries
     want_maxp = "maxp" in summaries
-    acc, n_gen, n_trunc = _accumulate_target_acts(
+    want_pre_user = _wants_pre_user(summaries)
+    acc, acc_stacks, n_gen, n_trunc = _accumulate_target_acts(
         base,
         trained,
         tok,
@@ -1606,6 +1932,11 @@ def _extract_one_target(
         device,
         summaries,
     )
+    derived_arms: dict[str, np.ndarray] = {}
+    if want_pre_user and acc[layers[0]]["mean"][0]:
+        derived_arms = _persist_alllayer_stacks(
+            acc_stacks, extras.get("alllayer_dir"), behavior, source_cid, seed, tcid
+        )
     for li in layers:
         if not acc[li]["mean"][0]:
             logger.warning("no probes produced a response for target=%s layer=%d", tcid, li)
@@ -1643,6 +1974,15 @@ def _extract_one_target(
         if want_maxp:
             payload["v0_maxp"] = np.stack(acc[li]["maxp"][0]).mean(axis=0).astype(np.float32)
             payload["v_plus_maxp"] = np.stack(acc[li]["maxp"][1]).mean(axis=0).astype(np.float32)
+        # #811 pre-user round: arms 1-7 per swept layer (per-probe reduction, then
+        # probe-MEAN — the SAME accumulator shape as mean/turn_nl/maxp, plan §4.2)
+        # + the derived all-layer arms 8/9 (layer-INDEPENDENT values written into
+        # every layer file; the loader keys cells by the INPUT layer, plan §4.2).
+        if want_pre_user:
+            for arm in PRE_USER_LAYER_ARMS:
+                payload[f"v0_{arm}"] = np.stack(acc[li][arm][0]).mean(axis=0).astype(np.float32)
+                payload[f"v_plus_{arm}"] = np.stack(acc[li][arm][1]).mean(axis=0).astype(np.float32)
+            payload.update(derived_arms)
         # The 4 all-layer context STACKS (each (28, 3584)) are IDENTICAL across a
         # source's 30 targets AND across all layer-files of a cell, so under
         # --all-layers they turn a ~90 KB npz into a ~1.7 MB one — 90.9 GB total
@@ -1722,6 +2062,23 @@ def main() -> int:
             "<|im_end|>+newline, which #810 refuted as summaries), per-probe then "
             "probe-mean, from the SAME forward pass. mean/turn_nl keys unchanged. "
             "Combine with --turn-nl for the three-summary #811 store."
+        ),
+    )
+    parser.add_argument(
+        "--pre-user",
+        action="store_true",
+        help=(
+            "#811 pre-user-boundary-summary round: ALSO capture the NINE "
+            "boundary/header answer summaries (plan §4.2) from ONE forward pass "
+            "over the sequence extended by the next-user header "
+            "<|im_start|>user\\n (ids asserted in-process): the three appended "
+            "header positions (single / mean3 / max3) + the whole-answer pools "
+            "incl. the boundary+header tokens (mean / signed max) + the two "
+            "all-28-layer pooled variants derived from per-cell fp16 stacks "
+            "persisted under ../alllayer/. All span indices are computed on the "
+            "PRE-append token list; mean/turn_nl/maxp keys are drift-free "
+            "(causal attention, A2). Combine with --turn-nl --maxp for the "
+            "12-summary store."
         ),
     )
     parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
