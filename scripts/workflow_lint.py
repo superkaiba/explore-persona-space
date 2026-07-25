@@ -2951,7 +2951,7 @@ def _head_is_main(repo_root: Path) -> bool:
     return r.returncode != 0 or r.stdout.strip() == "main"
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _tracked_on_main_ref(relpath: str, repo_root_s: str) -> bool:
     """True iff ``relpath`` exists as a tracked path at local ``main`` or
     ``origin/main`` in the repo containing ``repo_root_s`` (worktrees share
