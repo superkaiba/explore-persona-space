@@ -8030,6 +8030,168 @@ def _urgent_wf_park_post_routed_record(
         return False
 
 
+def _urgent_wf_park_route(
+    cand: dict,
+    fields: UrgentFields,
+    detail: str,
+    episodes: dict,
+    key: str,
+    state: dict,
+    day_key: str,
+    now: float,
+    routes_today: int,
+    root: Path,
+    cache: Path | None,
+    dry_run: bool,
+) -> int:
+    """Confirmed-red routing tail: dedup belts -> file + dispatch (the day
+    slot is consumed at the ATTEMPT, success or not — the capacity-retry
+    convention — and persisted BEFORE the subprocess so a crash mid-filing
+    cannot re-arm the slot) -> the routed-record posted BEFORE latching (a
+    crash between = re-post, never a re-file) -> latch + push + sidecar.
+    Returns the updated ``routes_today``; the caller marks state dirty."""
+    source = str(cand.get("source") or "")
+    ts_raw = str(cand.get("ts") or "")
+    note_text = str(cand.get("note") or "")
+    raw_entry = episodes.get(key)
+    episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    cand_fp = str(cand.get("fingerprint") or fields.fingerprint)
+    dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
+    if dedup_hit is not None:
+        tid, belt = dedup_hit
+        note = _urgent_wf_park_routed_note(
+            fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
+        )
+        _urgent_wf_park_post_routed_record(
+            source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+        )
+        episodes[key] = {**episode, "verdict": "deduped", "filed_task": tid, "latched_at": now}
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "deduped", "belt": belt, "task": tid}, dry_run
+        )
+        return routes_today
+    title, body_text, tags = _urgent_wf_park_compose_body(fields, cand_fp, detail)
+    routes_today += 1
+    state["route_day"] = day_key
+    state["routes_today"] = routes_today
+    _save_urgent_wf_park_state(state, dry_run)
+    filed_id, spawned, file_detail = _urgent_wf_park_file_and_dispatch(
+        title, body_text, tags, fields.block, dry_run, project_root=PROJECT_ROOT
+    )
+    if filed_id is None:
+        # Slot consumed; episode NOT latched — retried next tick, bounded by
+        # the day cap.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "file-failed", "detail": file_detail}, dry_run
+        )
+        print(f"  urgent-wf-park: filing failed for {key}: {file_detail}")
+        return routes_today
+    note = _urgent_wf_park_routed_note(fields, cand_fp, f"#{filed_id}", spawned, ts_raw, note_text)
+    _urgent_wf_park_post_routed_record(
+        source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+    )
+    episodes[key] = {**episode, "verdict": "routed", "filed_task": filed_id, "latched_at": now}
+    _telegram_push(
+        f"urgent-wf-park-router: filed{' + dispatched' if spawned else ''} "
+        f"#{filed_id} for urgent main-red park on {source} ({fields.failing_test})",
+        dry_run,
+    )
+    _append_urgent_wf_park_sidecar(
+        {
+            "key": key,
+            "action": "routed",
+            "task": filed_id,
+            "session_spawned": spawned,
+            "detail": detail,
+        },
+        dry_run,
+    )
+    return routes_today
+
+
+def _urgent_wf_park_handle_candidate(
+    cand: dict,
+    episodes: dict,
+    state: dict,
+    routes_today: int,
+    cap: int,
+    pytest_used: bool,
+    day_key: str,
+    now: float,
+    root: Path,
+    cache: Path | None,
+    dry_run: bool,
+) -> tuple[int, bool, bool]:
+    """One candidate through the decision ladder (parse -> decide -> verify
+    -> latch/route). Returns ``(routes_today, pytest_used, state_dirty)``."""
+    source = str(cand.get("source") or "")
+    ts_raw = str(cand.get("ts") or "")
+    key = f"{source}|{ts_raw}"
+    raw_entry = episodes.get(key)
+    episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    fields = parse_urgent_fields(str(cand.get("note") or ""))
+    action = decide_urgent_route(fields, None, routes_today, cap, episode)
+    if action == "skip-latched":
+        return (routes_today, pytest_used, False)
+    if action == "not-routable":
+        episodes[key] = {**episode, "verdict": "not-routable", "latched_at": now}
+        _append_urgent_wf_park_sidecar({"key": key, "action": "not-routable"}, dry_run)
+        print(f"  urgent-wf-park: {key} not mechanically routable; nightly owns it")
+        return (routes_today, pytest_used, True)
+    if action == "cap-exhausted":
+        # Quiet-at-cap (#1241 posture): sidecar row only, NO latch, NO push —
+        # re-eligible tomorrow; nightly is the backstop.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "cap-exhausted", "routes_today": routes_today}, dry_run
+        )
+        return (routes_today, pytest_used, False)
+    assert fields is not None  # action == "verify" implies parseable fields
+    verdict, detail, used_pytest = verify_main_red(
+        fields.failing_test,
+        dry_run,
+        park_ts=_urgent_parse_ts(ts_raw),
+        project_root=PROJECT_ROOT,
+        allow_pytest=not pytest_used,
+    )
+    pytest_used = pytest_used or used_pytest
+    action = decide_urgent_route(fields, verdict, routes_today, cap, episode)
+    if action == "dry-run":
+        print(f"  [dry-run] would verify {fields.failing_test} then file+dispatch for {key}")
+        return (routes_today, pytest_used, False)
+    if action == "defer":
+        print(f"  urgent-wf-park: pytest budget spent this tick; {key} deferred")
+        return (routes_today, pytest_used, False)
+    if action == "retry":
+        prior = episode.get("attempts")
+        n = prior if isinstance(prior, int) and not isinstance(prior, bool) else 0
+        episodes[key] = {**episode, "attempts": n + 1}
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "indeterminate-retry", "detail": detail}, dry_run
+        )
+        return (routes_today, pytest_used, True)
+    if action in ("refuted", "unverifiable"):
+        episodes[key] = {**episode, "verdict": action, "latched_at": now}
+        _append_urgent_wf_park_sidecar({"key": key, "action": action, "detail": detail}, dry_run)
+        print(f"  urgent-wf-park: {key} {action} ({detail}); nightly owns the park")
+        return (routes_today, pytest_used, True)
+    # action == "route": red confirmed — dedup belts + file + record + latch.
+    routes_today = _urgent_wf_park_route(
+        cand,
+        fields,
+        detail,
+        episodes,
+        key,
+        state,
+        day_key,
+        now,
+        routes_today,
+        root,
+        cache,
+        dry_run,
+    )
+    return (routes_today, pytest_used, True)
+
+
 def urgent_wf_park_pass(
     dry_run: bool,
     now: float | None = None,
@@ -8083,139 +8245,20 @@ def urgent_wf_park_pass(
         pytest_used = False
         state_dirty = False
         for cand in urgent:
-            source = str(cand.get("source") or "")
-            ts_raw = str(cand.get("ts") or "")
-            key = f"{source}|{ts_raw}"
-            raw_entry = episodes.get(key)
-            episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
-            note_text = str(cand.get("note") or "")
-            fields = parse_urgent_fields(note_text)
-            action = decide_urgent_route(fields, None, routes_today, cap, episode)
-            if action == "skip-latched":
-                continue
-            if action == "not-routable":
-                episodes[key] = {**episode, "verdict": "not-routable", "latched_at": now}
-                state_dirty = True
-                _append_urgent_wf_park_sidecar({"key": key, "action": "not-routable"}, dry_run)
-                print(f"  urgent-wf-park: {key} not mechanically routable; nightly owns it")
-                continue
-            if action == "cap-exhausted":
-                # Quiet-at-cap (#1241 posture): sidecar row only, NO latch,
-                # NO push — re-eligible tomorrow; nightly is the backstop.
-                _append_urgent_wf_park_sidecar(
-                    {"key": key, "action": "cap-exhausted", "routes_today": routes_today},
-                    dry_run,
-                )
-                continue
-            assert fields is not None  # action == "verify" implies parseable fields
-            park_ts = _urgent_parse_ts(ts_raw)
-            verdict, detail, used_pytest = verify_main_red(
-                fields.failing_test,
-                dry_run,
-                park_ts=park_ts,
-                project_root=PROJECT_ROOT,
-                allow_pytest=not pytest_used,
-            )
-            pytest_used = pytest_used or used_pytest
-            action = decide_urgent_route(fields, verdict, routes_today, cap, episode)
-            if action == "dry-run":
-                print(
-                    f"  [dry-run] would verify {fields.failing_test} then file+dispatch for {key}"
-                )
-                continue
-            if action == "defer":
-                print(f"  urgent-wf-park: pytest budget spent this tick; {key} deferred")
-                continue
-            if action == "retry":
-                prior = episode.get("attempts")
-                n = prior if isinstance(prior, int) and not isinstance(prior, bool) else 0
-                episodes[key] = {**episode, "attempts": n + 1}
-                state_dirty = True
-                _append_urgent_wf_park_sidecar(
-                    {"key": key, "action": "indeterminate-retry", "detail": detail}, dry_run
-                )
-                continue
-            if action in ("refuted", "unverifiable"):
-                episodes[key] = {**episode, "verdict": action, "latched_at": now}
-                state_dirty = True
-                _append_urgent_wf_park_sidecar(
-                    {"key": key, "action": action, "detail": detail}, dry_run
-                )
-                print(f"  urgent-wf-park: {key} {action} ({detail}); nightly owns the park")
-                continue
-            # action == "route": red confirmed. Dedup belts first.
-            cand_fp = str(cand.get("fingerprint") or fields.fingerprint)
-            dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
-            if dedup_hit is not None:
-                tid, belt = dedup_hit
-                note = _urgent_wf_park_routed_note(
-                    fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
-                )
-                _urgent_wf_park_post_routed_record(
-                    source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
-                )
-                episodes[key] = {
-                    **episode,
-                    "verdict": "deduped",
-                    "filed_task": tid,
-                    "latched_at": now,
-                }
-                state_dirty = True
-                _append_urgent_wf_park_sidecar(
-                    {"key": key, "action": "deduped", "belt": belt, "task": tid}, dry_run
-                )
-                continue
-            title, body_text, tags = _urgent_wf_park_compose_body(fields, cand_fp, detail)
-            # Day slot consumed at the ATTEMPT, success or not (the
-            # capacity-retry convention); persisted BEFORE the subprocess so
-            # a crash mid-filing cannot re-arm the slot.
-            routes_today += 1
-            state["route_day"] = day_key
-            state["routes_today"] = routes_today
-            state_dirty = True
-            _save_urgent_wf_park_state(state, dry_run)
-            filed_id, spawned, file_detail = _urgent_wf_park_file_and_dispatch(
-                title, body_text, tags, fields.block, dry_run, project_root=PROJECT_ROOT
-            )
-            if filed_id is None:
-                # Slot consumed; episode NOT latched — retried next tick,
-                # bounded by the day cap.
-                _append_urgent_wf_park_sidecar(
-                    {"key": key, "action": "file-failed", "detail": file_detail}, dry_run
-                )
-                print(f"  urgent-wf-park: filing failed for {key}: {file_detail}")
-                continue
-            note = _urgent_wf_park_routed_note(
-                fields, cand_fp, f"#{filed_id}", spawned, ts_raw, note_text
-            )
-            # Routed-record posted BEFORE latching: a crash between never
-            # re-files (the sweep's suppression rule 1 + the dedup belts
-            # close the candidate on the next tick either way).
-            _urgent_wf_park_post_routed_record(
-                source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
-            )
-            episodes[key] = {
-                **episode,
-                "verdict": "routed",
-                "filed_task": filed_id,
-                "latched_at": now,
-            }
-            state_dirty = True
-            _telegram_push(
-                f"urgent-wf-park-router: filed{' + dispatched' if spawned else ''} "
-                f"#{filed_id} for urgent main-red park on {source} ({fields.failing_test})",
+            routes_today, pytest_used, dirty = _urgent_wf_park_handle_candidate(
+                cand,
+                episodes,
+                state,
+                routes_today,
+                cap,
+                pytest_used,
+                day_key,
+                now,
+                root,
+                cache,
                 dry_run,
             )
-            _append_urgent_wf_park_sidecar(
-                {
-                    "key": key,
-                    "action": "routed",
-                    "task": filed_id,
-                    "session_spawned": spawned,
-                    "detail": detail,
-                },
-                dry_run,
-            )
+            state_dirty = state_dirty or dirty
         # Prune long-latched episodes (30d) so the singleton stays bounded.
         cutoff = now - 30 * 86400.0
         for stale_key in [
