@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1667,
+  "highest_id": 1668,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5193,6 +5193,13 @@
       "path": "tasks/proposed/1667",
       "status": "proposed",
       "title": "daily-fix: wedge-failover checks live owner before terminate"
+    },
+    "1668": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1668",
+      "status": "proposed",
+      "title": "daily-fix: adopted failover clears runpod-wedge sentinel"
     },
     "168": {
       "has_clean_result": true,
