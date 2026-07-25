@@ -19,12 +19,23 @@ origin_prompt: 'i want a controlled comparison between: assistant with chat temp
   and base model. all characterized according to the tiers of mapping similarity.
   [then] run the full thing in the background with happy coder'
 workflow: v1
+goal: 'Determine, on ONE shared row-paired corpus, whether the context->answer linear
+  map is the SAME operator across five speaker identities (assistant; user; a fiction
+  AI character; an assistant-like human character; an ordinary/random character) and
+  three surface framings (chat template; plain User:/Assistant: text; narrative-prose
+  story), in Qwen2.5-7B base AND instruct, with the user arm run under all three u2
+  provenances (real LMSYS, haiku-simulated, on-policy) and every non-user condition
+  on-policy from the measured model - and, for every ordered pair, WHICH tier of the
+  mapping-similarity ladder (direct transfer / context offset / answer offset / bias
+  refit / global scaling / rotation / context reparameterization / answer reparameterization
+  / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping
+  arms (prefix and context) are fit for every cell.'
 ---
 # Controlled 21-condition speaker × framing lattice for the context→answer map, characterized by the full mapping-similarity tier ladder
 
 ## Goal
 
-Determine, on ONE shared row-paired corpus, whether the context→answer linear map is the SAME operator across five speaker identities (the assistant; the user; a fiction AI character; an assistant-like human character; an ordinary/random character) and three surface framings (chat template; plain `User:`/`Assistant:` text; narrative-prose story), in Qwen2.5-7B base AND instruct — and, for every ordered pair, WHICH tier of the mapping-similarity ladder is the weakest correction that reconciles the two maps (direct transfer / context offset Δx / answer offset Δy / bias refit b\* / global scaling α / rotation R / context reparameterization A / answer reparameterization B / full A·M·B).
+Determine, on ONE shared row-paired corpus, whether the context->answer linear map is the SAME operator across five speaker identities (assistant; user; a fiction AI character; an assistant-like human character; an ordinary/random character) and three surface framings (chat template; plain User:/Assistant: text; narrative-prose story), in Qwen2.5-7B base AND instruct, with the user arm run under all three u2 provenances (real LMSYS, haiku-simulated, on-policy) and every non-user condition on-policy from the measured model - and, for every ordered pair, WHICH tier of the mapping-similarity ladder (direct transfer / context offset / answer offset / bias refit / global scaling / rotation / context reparameterization / answer reparameterization / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping arms (prefix and context) are fit for every cell.
 
 The question this answers that no prior task can: every existing cell lives in a DIFFERENT corpus, so the ladder's middle rungs — which are only DEFINED on shared rows — have never been computable across speaker or framing. A single row-paired battery makes "same operator in different coordinates" vs "genuinely different operator" decidable for all 21 conditions at once.
 

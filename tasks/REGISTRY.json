@@ -5349,6 +5349,7 @@
       "title": "workflow-fix: step9c selector misses string+transitive deps"
     },
     "1689": {
+      "goal": "Determine, on ONE shared row-paired corpus, whether the context->answer linear map is the SAME operator across five speaker identities (assistant; user; a fiction AI character; an assistant-like human character; an ordinary/random character) and three surface framings (chat template; plain User:/Assistant: text; narrative-prose story), in Qwen2.5-7B base AND instruct, with the user arm run under all three u2 provenances (real LMSYS, haiku-simulated, on-policy) and every non-user condition on-policy from the measured model - and, for every ordered pair, WHICH tier of the mapping-similarity ladder (direct transfer / context offset / answer offset / bias refit / global scaling / rotation / context reparameterization / answer reparameterization / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping arms (prefix and context) are fit for every cell.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1689",
