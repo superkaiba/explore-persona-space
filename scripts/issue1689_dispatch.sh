@@ -106,8 +106,17 @@ run_phase_onpolicy() {
     local conds_full="assistant_chat assistant_naturalistic assistant_story helios_chat helios_naturalistic helios_story wren_chat wren_naturalistic wren_story dana_chat dana_naturalistic dana_story user_onpolicy_chat user_onpolicy_naturalistic user_onpolicy_story"
     local conds="$conds_full"
     [ -n "$SMOKE" ] && conds="$conds_smoke"
+    # Both models iterated in smoke AND full modes — H5 (base vs instruct
+    # parity) requires the base arm; a single-model smoke leaves the base
+    # branch unexercised (round-2 concern dispatch-base-model-missing).
+    local models_smoke="$MODEL_INSTRUCT"
+    local models_full="$MODEL_BASE $MODEL_INSTRUCT"
+    local models="$models_full"
+    [ -n "$SMOKE" ] && models="$models_smoke"  # smoke: instruct only (1 model × 1 cond); full: BOTH
+    # NOTE: only the smoke leg is restricted to instruct-only to bound smoke wall-time;
+    # full mode iterates both MODEL_BASE and MODEL_INSTRUCT per plan §5 H5.
     for cond in $conds; do
-        for model in "$MODEL_INSTRUCT"; do  # smoke: instruct only; full: both models
+        for model in $models; do
             local input="$rendered_dir/${cond}.jsonl"
             local out="$DATA_ROOT/onpolicy/${cond}_$(basename "$model").jsonl"
             local stats="$EVAL_ROOT/onpolicy_stats/${cond}_$(basename "$model").json"
@@ -124,8 +133,14 @@ run_phase_capture() {
     local rendered_dir="$DATA_ROOT/rendered.jsonl"
     local conds_smoke="assistant_chat"
     local conds="$conds_smoke"  # full path drives via a per-cell loop in production
+    # Same both-models discipline as run_phase_onpolicy: H5 (base vs instruct
+    # parity) needs both arms captured. Smoke stays instruct-only to bound wall.
+    local models_smoke="$MODEL_INSTRUCT"
+    local models_full="$MODEL_BASE $MODEL_INSTRUCT"
+    local models="$models_full"
+    [ -n "$SMOKE" ] && models="$models_smoke"
     for cond in $conds; do
-        for model in "$MODEL_INSTRUCT"; do
+        for model in $models; do
             local input="$DATA_ROOT/onpolicy/${cond}_$(basename "$model").jsonl"
             [ ! -f "$input" ] && input="$rendered_dir/${cond}.jsonl"
             local skip_upload_flag=""
@@ -149,11 +164,22 @@ run_phase_fit_cells() {
 
 run_phase_fit_ladder() {
     echo "[phase=fit_ladder]"
-    local model_slug="Qwen_Qwen2.5-7B-Instruct"
-    local out="$EVAL_ROOT/ladder/ladder_${model_slug}_L19.json"
-    uv run python scripts/issue1689_fit_ladder.py \
-        --store-root "$STORE_ROOT" --model-slug "$model_slug" \
-        --layer 19 --out "$out" $SMOKE
+    # Iterate BOTH models in full mode (H5 parity); smoke stays instruct-only.
+    # --all-layers loops over CAPTURE_LAYERS=(14,18,19,26) per plan §6 exploratory dump;
+    # headline layer stays 19.
+    local models_smoke="Qwen_Qwen2.5-7B-Instruct"
+    local models_full="Qwen_Qwen2.5-7B Qwen_Qwen2.5-7B-Instruct"
+    local models="$models_full"
+    [ -n "$SMOKE" ] && models="$models_smoke"
+    # In smoke mode we run only the headline layer (19) for wall-time; full mode iterates all 4.
+    local all_layers_flag="--all-layers"
+    [ -n "$SMOKE" ] && all_layers_flag=""
+    for model_slug in $models; do
+        local out="$EVAL_ROOT/ladder/ladder_${model_slug}_L19.json"
+        uv run python scripts/issue1689_fit_ladder.py \
+            --store-root "$STORE_ROOT" --model-slug "$model_slug" \
+            --layer 19 --out "$out" $all_layers_flag $SMOKE
+    done
 }
 
 run_phase_analyze() {
