@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1683,
+  "highest_id": 1684,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5312,6 +5312,13 @@
       "path": "tasks/proposed/1683",
       "status": "proposed",
       "title": "daily-fix: reconcile test_issue811_pre_user with extractor"
+    },
+    "1684": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1684",
+      "status": "proposed",
+      "title": "daily-held: matched-n control for cross-cell R2 comparisons"
     },
     "169": {
       "has_clean_result": false,
