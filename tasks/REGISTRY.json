@@ -5225,8 +5225,8 @@
     "1672": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1672",
-      "status": "running",
+      "path": "tasks/reviewing/1672",
+      "status": "reviewing",
       "title": "daily-fix: 10d recovery syncs lint targets in stale worktree"
     },
     "1673": {
