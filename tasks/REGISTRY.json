@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1675,
+  "highest_id": 1676,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5249,6 +5249,13 @@
       "path": "tasks/proposed/1675",
       "status": "proposed",
       "title": "daily-fix: piped-git guard ignores quoted pattern text"
+    },
+    "1676": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1676",
+      "status": "proposed",
+      "title": "daily-fix: root-commit guard recognizes cd-into-worktree"
     },
     "168": {
       "has_clean_result": true,
