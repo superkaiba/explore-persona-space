@@ -569,6 +569,35 @@ def test_route2_landed_fix_probe_documented(daily_skill_text: str):
     )
 
 
+# -- unverified-premise labeling convention (#1677) --------------------------
+
+WF_FIX_RULE = REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md"
+
+
+def test_unverified_premise_label_present_in_daily_skill(daily_skill_text: str):
+    """#1677 pin: the unverified-premise labeling clause survives in the
+    route-2 verified-at-filing mandate paragraph of the daily SKILL.md."""
+    assert "unverified hypothesis" in daily_skill_text
+    assert "verify at plan time:" in daily_skill_text, (
+        "route 2 lost the unverified-premise labeling clause (#1677)"
+    )
+
+
+def test_unverified_premise_label_present_in_wf_fix_rule():
+    """#1677 pin: the unverified-premise labeling paragraph + anti-pattern
+    row survive in workflow-fix-on-bug.md (rule paragraph pinned separately
+    from the row via its unique n/a-escape-scope sentence)."""
+    text = WF_FIX_RULE.read_text(encoding="utf-8")
+    assert "unverified hypothesis" in text
+    assert "verify at plan time:" in text, (
+        "workflow-fix-on-bug.md lost the unverified-premise labeling clause (#1677)"
+    )
+    assert "does not license asserting the unverifiable claim itself as fact" in text, (
+        "workflow-fix-on-bug.md lost the #1677 labeling PARAGRAPH (the "
+        "anti-pattern row alone does not satisfy this pin)"
+    )
+
+
 # ── #1680: Step C routed-record verbatim-fp + exact-ts mandate + skipped read ─
 
 

@@ -335,6 +335,11 @@ Run the structural verifier against the plan version just persisted:
   into workflow_lint.py's no-flags default run; a plan whose bundling claim is
   genuinely false instead corrects it, naming the explicit invocation that
   runs the flag), and
+  `N/A — not bundled into no-flags` (check 37's proposed-new-check pin-test
+  arm — the plan's new `--check-*` is deliberately explicit-only, or the
+  proposed-flag bundling vocabulary is incidental; a plan genuinely adding a
+  bundled check instead names its test_<check>_bundled_in_no_flags pin test
+  in the test enumeration), and
   `N/A — no exit-0 acceptance criterion` (check 38 — the exit-0/green +
   repo-wide-command text quotes an incident or a sibling's criterion, not this
   plan's own gate; a plan whose own gate is genuinely unconditional instead
