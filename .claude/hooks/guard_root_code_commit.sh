@@ -133,6 +133,10 @@ ADD_CMD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+'"${GIT_FLAGS_ERE}"'add([[:spac
 DASHC_LEAD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+(-[^[:space:]]+([[:space:]]+[^[:space:]]+)?[[:space:]]+)*-C[[:space:]]+'
 GATED_PATH_ERE='^(scripts/.*\.py|src/.+|tests/.*\.py)$'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
+# cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
+# followed by a literal /suffix — the only unproven-target family eligible for
+# the provable same-command-assignment resolution arm (resolve_cd_var).
+CD_VAR_TGT_ERE='^[$]([{][A-Za-z_][A-Za-z0-9_]*[}]|[A-Za-z_][A-Za-z0-9_]*)(/.*)?$'
 
 # mask_and_split <command>: shell-quote-aware normalizer + clause splitter
 # (round 3; concern quoted-message-seams-defeat-clause-scan). Awk char-scan
@@ -318,6 +322,198 @@ mask_and_split() {
     }'
 }
 
+# cd_latch_verdict <tgt>: shared 3-valued commit-binding classification of a
+# cd TARGET string (issue #1676 fix (a) factoring). Factors the latch pattern
+# list out of the literal-cd arm so the resolved-variable arm re-enters the
+# SAME list — single point of truth: resolution can never latch a pattern the
+# literal arm would not, and a root-spelling RHS maps to `root` (never
+# latched). Sets the global cd_verdict: latch (provably non-root), root (a
+# root spelling), unproven (relative / variable / empty — never trusted,
+# fail closed). NO new latch pattern may be added here without re-review of
+# BOTH callers.
+cd_latch_verdict() {
+  case "$1" in
+    *.claude/worktrees/*) cd_verdict=latch ;;                # a worktree IS its own tree
+    "$REPO" | "$REPO"/*) cd_verdict=root ;;                  # root or a subdir (git walks up)
+    '~/explore-persona-space' | '~/explore-persona-space/'*) cd_verdict=root ;;
+    '$HOME/explore-persona-space' | '$HOME/explore-persona-space/'*) cd_verdict=root ;;
+    /* | '~' | '~/'* | '$HOME/'*) cd_verdict=latch ;;        # absolute/~-anchored, not the root
+    *) cd_verdict=unproven ;;                                # relative/variable/empty: unproven
+  esac
+}
+
+# path_sane_component <s>: 0 iff <s> is a plausible LITERAL path fragment for
+# the variable-resolution arm (issue #1676 gates 4/5): non-empty; no
+# whitespace; no \001 fill byte; no backtick / $( substitution; no shell
+# metachars < > ( ) & | ;; no remaining quote char or backslash (a
+# mixed-quote or ANSI-C $'..' value expands to something OTHER than the
+# scanned text); no `..` path segment (deliberately STRICTER than the
+# literal-cd arm — strictly-tightening additions are free on a new inference
+# path). Embedded plain $VAR references may remain: parity with the literal
+# arm's pattern list — a variable-leading result re-enters the unproven
+# branch of cd_latch_verdict.
+path_sane_component() {
+  [ -n "$1" ] || return 1
+  case "$1" in
+    *[[:space:]]* | *"$FILL"* | *'`'* | *'$('*) return 1 ;;
+    *'<'* | *'>'* | *'('* | *')'* | *'&'* | *'|'* | *';'*) return 1 ;;
+    *'"'* | *"'"* | *'\'*) return 1 ;;
+  esac
+  case "/$1/" in */../*) return 1 ;; esac
+  return 0
+}
+
+# resolve_cd_var <name> <suffix> <cd_record_index>: variable-resolution arm of
+# the cd-latch (issue #1676 fix (a) — incident #1644: a worktree-bound
+# `cd "$WT" && ... && git commit` compound was classified as a root commit).
+# Resolves a cd target that is exactly a $NAME/${NAME} expansion (optional
+# literal /suffix) from a PROVABLE same-command assignment, so the resolved
+# string can re-enter cd_latch_verdict. Reads the caller's `recs`/`n` via
+# bash dynamic scoping (the classify_candidate mechanism below). Bash runs
+# each Bash tool call in a FRESH shell, so a same-command whole-clause
+# assignment is the only command-text-provable way $NAME can be set; an
+# inherited-environment value is unprovable by construction and stays
+# unproven. Resolution succeeds ONLY when all SEVEN certification gates hold;
+# ANY failure returns 1 with a reason token in the global resolve_reason
+# (consumed by the block-path cd-diag lines) and the target stays unproven —
+# today's fail-closed behavior:
+#   g7 compound-context: NO record in the command may open/continue a
+#      compound statement (if/while/for/case/function keywords, name() defs,
+#      bare `{` group openers) — the masker tracks quote/heredoc state only
+#      (no brace/keyword depth), so a compound-BODY line surfaces as its own
+#      NL-tagged record and would otherwise read as unconditionally executed
+#      while being conditional (or dead) at runtime;
+#   g1 whole-clause assignment anchor: a MASKED record that IS the assignment
+#      (`[export] NAME=<value>`), leading whitespace stripped ONLY (a `(`/`{`
+#      wrapped or env-prefix `NAME=x cmd` assignment never matches — neither
+#      persists past its own clause);
+#   g2 exactly one such record in the WHOLE command, PRECEDING the cd record
+#      (two+ = last-write-wins scan ambiguity; after the cd = unset at cd
+#      time);
+#   g3 unconditional position: the assignment record's own separator tag is
+#      START/SEQ/NL, and the NEXT record's separator is neither BG nor PIPE
+#      (a trailing `&` or `|` runs the assignment in a subshell — it does
+#      not persist);
+#   g6 mutation belt (narrow): no record mutates NAME via unset / declare /
+#      typeset / read / printf -v or a NAME+= append (command-wide belt;
+#      deliberate-evasion indirection — eval, source, arithmetic — stays out
+#      of the hook family's threat model: the logged EPM_ALLOW_ROOT_CODE_COMMIT
+#      escape is the sanctioned deliberate path);
+#   g4 path-sane literal RHS, extracted from the RAW record (the masked copy
+#      fills quoted content), one surrounding quote pair stripped;
+#   g5 path-sane literal suffix (additionally: no $ — a suffix is never a
+#      nested expansion).
+# On success sets the global resolved_tgt (RHS + suffix). Single hop by
+# construction: a variable-leading RHS re-enters cd_latch_verdict's unproven
+# branch — no recursion, no second resolution.
+resolve_cd_var() {
+  local vname="$1" vsuffix="$2" cd_idx="$3"
+  local j m raw_a rhs sq rhs_ere
+  local asg_idx=-1 asg_count=0
+  resolved_tgt="" resolve_reason=""
+
+  # g7 — compound-context refusal (whole command; reason wins over g1-g6).
+  for ((j = 0; j + 2 < n; j += 3)); do
+    m=$(printf '%s' "${recs[j + 1]}" | sed -E 's/^[[:space:]]+//')
+    if printf '%s' "$m" | grep -qE \
+      '^(if|then|elif|else|fi|while|until|for|do|done|case|esac|function)([[:space:]]|$)|^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(\)|^\{([[:space:]]|$)'; then
+      resolve_reason=compound-context
+      return 1
+    fi
+  done
+
+  # g1 + g2 — whole-clause assignment anchor, exactly one, preceding the cd.
+  for ((j = 0; j + 2 < n; j += 3)); do
+    m=$(printf '%s' "${recs[j + 1]}" | sed -E 's/^[[:space:]]+//')
+    if printf '%s' "$m" | grep -qE "^(export[[:space:]]+)?${vname}=[^[:space:]]*[[:space:]]*$"; then
+      asg_count=$((asg_count + 1))
+      asg_idx=$j
+    fi
+  done
+  if [ "$asg_count" -eq 0 ]; then
+    resolve_reason=no-assignment
+    return 1
+  fi
+  if [ "$asg_count" -gt 1 ]; then
+    resolve_reason=multiple-assignments
+    return 1
+  fi
+  if [ "$asg_idx" -ge "$cd_idx" ]; then
+    resolve_reason=no-assignment # no assignment PRECEDES the cd
+    return 1
+  fi
+
+  # g3 — unconditional position + next-separator subshell check.
+  case "${recs[asg_idx]}" in
+    START | SEQ | NL) : ;;
+    *)
+      resolve_reason=conditional-assignment
+      return 1
+      ;;
+  esac
+  if [ $((asg_idx + 3)) -lt "$n" ]; then
+    case "${recs[asg_idx + 3]}" in
+      BG)
+        resolve_reason=backgrounded-assignment
+        return 1
+        ;;
+      PIPE)
+        # `NAME=x | cmd` runs the assignment inside a pipeline subshell — it
+        # never persists (strictly-tightening addition beyond the plan's BG
+        # check; pinned by self-test B34).
+        resolve_reason=pipelined-assignment
+        return 1
+        ;;
+    esac
+  fi
+
+  # g6 — mutation belt.
+  for ((j = 0; j + 2 < n; j += 3)); do
+    m="${recs[j + 1]}"
+    printf '%s' "$m" | grep -qE "(^|[^A-Za-z0-9_])${vname}([^A-Za-z0-9_]|$)" || continue
+    if printf '%s' "$m" | grep -qE \
+      '(^|[[:space:]])(unset|declare|typeset|read)([[:space:]]|$)|(^|[[:space:]])printf[[:space:]]+-v([[:space:]]|$)' \
+      || printf '%s' "$m" | grep -qE "(^|[[:space:]])${vname}[+]="; then
+      resolve_reason=mutation-belt
+      return 1
+    fi
+  done
+
+  # g4 — path-sane literal RHS from the RAW record (gate-1 matched the MASKED
+  # copy; quoted content only survives on the raw copy).
+  raw_a=$(printf '%s' "${recs[asg_idx + 2]}" | sed -E 's/^[[:space:]]+//')
+  sq="'"
+  rhs_ere="^(export[[:space:]]+)?${vname}=(\"[^\"]*\"|${sq}[^${sq}]*${sq}|[^[:space:]]+)[[:space:]]*\$"
+  if [[ $raw_a =~ $rhs_ere ]]; then
+    rhs="${BASH_REMATCH[2]}"
+  else
+    resolve_reason=dynamic-rhs # raw shape diverges from the masked anchor
+    return 1
+  fi
+  rhs=$(printf '%s' "$rhs" | sed -E "s/^\"(.*)\"\$/\\1/; s/^'(.*)'\$/\\1/")
+  if ! path_sane_component "$rhs"; then
+    resolve_reason=dynamic-rhs
+    return 1
+  fi
+
+  # g5 — suffix sanity (only when the cd target carried a /suffix).
+  if [ -n "$vsuffix" ]; then
+    case "$vsuffix" in
+      *'$'*)
+        resolve_reason=dynamic-rhs
+        return 1
+        ;;
+    esac
+    if ! path_sane_component "$vsuffix"; then
+      resolve_reason=dynamic-rhs
+      return 1
+    fi
+  fi
+
+  resolved_tgt="${rhs}${vsuffix}"
+  return 0
+}
+
 # classify_cmd <command>: Layer 1. Sets globals root_commit / has_dash_a /
 # add_all_chained / text_paths (newline-separated gated-prefix tokens).
 # classify_candidate <tok>: second-pass commit-clause pathspec candidate
@@ -348,6 +544,10 @@ classify_cmd() {
   # pass below; consumed by the Layer-2 cwd gate + scoped read.
   commit_has_pathspec=0 pathspec_opaque=0 commit_bare_clause=0 scope_unsafe=0
   cd_nonroot=0 commit_pathspecs=""
+  # Unproven-cd tracking (issue #1676 fix (b)): one entry per cd clause whose
+  # FINAL verdict (after any resolution attempt) is unproven — consumed by
+  # the block path's cd-diag lines; never read on the allow path.
+  cd_unproven=""
 
   local triplets
   triplets=$(mask_and_split "$cmd")
@@ -356,6 +556,7 @@ classify_cmd() {
   mapfile -t recs <<< "$triplets"
 
   local n=${#recs[@]} i sep masked raw lead raw_lead tgt cpfx mtgt ctgt latched=0 verb
+  local vname vsuffix
   for ((i = 0; i + 2 < n; i += 3)); do
     sep=${recs[i]} masked=${recs[i + 1]} raw=${recs[i + 2]}
     [ "$sep" = AND ] || latched=0
@@ -371,21 +572,39 @@ classify_cmd() {
     # cd-latch ARM (pull-guard #804 semantics): detection on the MASKED lead;
     # TARGET from the RAW lead (a quoted worktree/root target keeps its
     # content). Latch only provably NON-root targets; unproven targets stay
-    # unlatched (fail closed).
+    # unlatched (fail closed). Verdict via the shared cd_latch_verdict list
+    # (issue #1676): a $NAME-shaped unproven target gets ONE provable
+    # same-command-assignment resolution attempt (resolve_cd_var, fix (a));
+    # every still-unproven target is recorded for the block-path cd-diag
+    # lines (fix (b)).
     if printf '%s' "$lead" | grep -qE '^cd([[:space:]]|$)'; then
       tgt=$(printf '%s' "$raw_lead" | sed -E 's/^cd[[:space:]]*//' | awk '{print $1}' \
         | sed -E "s/^[\"']//; s/[\"']\$//")
-      case "$tgt" in
-        *.claude/worktrees/*) latched=1 ;;                # a worktree IS its own tree
-        "$REPO" | "$REPO"/*) latched=0 ;;                 # root or a subdir (git walks up)
-        '~/explore-persona-space' | '~/explore-persona-space/'*) latched=0 ;;
-        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/'*) latched=0 ;;
-        /* | '~' | '~/'* | '$HOME/'*) latched=1 ;;        # absolute/~-anchored, not the root
-        *) latched=0 ;;                                   # relative/variable/empty: unproven
-      esac
+      cd_latch_verdict "$tgt"
+      resolve_reason=not-a-variable
+      if [ "$cd_verdict" = unproven ] && [[ $tgt =~ $CD_VAR_TGT_ERE ]]; then
+        vname="${BASH_REMATCH[1]}"
+        vname="${vname#\{}"
+        vname="${vname%\}}"
+        vsuffix="${BASH_REMATCH[2]:-}"
+        if resolve_cd_var "$vname" "$vsuffix" "$i"; then
+          cd_latch_verdict "$resolved_tgt"
+          # A resolved-but-variable-leading RHS stays unproven (single hop).
+          [ "$cd_verdict" = unproven ] && resolve_reason=dynamic-rhs
+        fi
+      fi
+      latched=0
+      [ "$cd_verdict" = latch ] && latched=1
+      if [ "$cd_verdict" = unproven ]; then
+        cd_unproven="$cd_unproven
+target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
+      fi
       # MF-1 (ii), issue #1620: any cd whose target is not an EXACT root
       # spelling (repo subdir, relative, unproven, or latched-away) moves the
       # pathspec-resolution base — disable scoping for the whole command.
+      # Operates on the ORIGINAL target, deliberately NOT the resolved one
+      # (issue #1676 must-ask: scoping-off is the conservative direction and
+      # moot under a latch — a latched chain sets no root_commit).
       case "$tgt" in
         "$REPO" | "$REPO"/) : ;;
         '~/explore-persona-space' | '~/explore-persona-space/') : ;;
@@ -752,6 +971,55 @@ EOF
   run_case "B19 dir pathspec covers staged gated, no cert" 2 \
     'git commit -m x -- scripts/' "$RFOR"
 
+  # --- cd-latch variable resolution (issue #1676) ---
+  # A17-A19 allow the provable same-command-assignment shape; B20-B34 pin
+  # every resolution-gate refusal arm (each degrades to today's unlatched
+  # fail-closed behavior, now with block-path cd-diag lines).
+  run_case "A17 var-assignment cd-latched worktree commit" 0 \
+    'WT=.claude/worktrees/issue-9 && cd "$WT" && git commit -m x' "$RCODE"
+  run_case "A18 SEQ-separated quoted assignment, braced var" 0 \
+    'WT="/abs/.claude/worktrees/issue-9"; cd "${WT}" && git commit -m x' "$RCODE"
+  run_case "A19 var + literal suffix" 0 \
+    'WT=/abs/.claude/worktrees && cd "$WT/issue-9" && git commit -m x' "$RCODE"
+  run_case "B20 unresolved var cd (the #1644 shape, no assignment) still blocks" 2 \
+    'cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B21 two assignments: last-write-wins ambiguity refused" 2 \
+    'WT=.claude/worktrees/issue-9; WT=$REPO; cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B22 root-path RHS never latches" 2 \
+    "WT=$REPO && cd \"\$WT\" && git commit -m x" "$RCODE"
+  run_case "B23 dynamic RHS (command substitution) refused" 2 \
+    'WT=$(mktemp) && cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B23b dynamic RHS with args fails the whole-clause anchor" 2 \
+    'WT=$(mktemp -d) && cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B24 AND-positioned (conditional) assignment refused" 2 \
+    'true && WT=.claude/worktrees/issue-9; cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B25 subshell assignment refused" 2 \
+    '(WT=.claude/worktrees/issue-9); cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B26 backgrounded assignment refused" 2 \
+    'WT=.claude/worktrees/issue-9 & cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B27 latch persistence unchanged: SEQ after cd resets" 2 \
+    'WT=.claude/worktrees/issue-9 && cd "$WT"; git commit -m x' "$RCODE"
+  run_case "B28 multi-line conditional-body assignment refused (gate 7)" 2 \
+    'if true; then
+WT=.claude/worktrees/issue-9
+fi
+cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B29 multi-line function-body assignment refused (gate 7)" 2 \
+    'f() {
+WT=.claude/worktrees/issue-9
+}
+f; cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B30 suffix carrying a parent-directory segment refused (gate 5)" 2 \
+    'WT=/abs/.claude/worktrees && cd "$WT/issue-9/../.." && git commit -m x' "$RCODE"
+  run_case "B31 variable mutated between assignment and cd refused (gate 6)" 2 \
+    'WT=.claude/worktrees/issue-9; unset WT; cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B32 env-prefix assignment on another command refused (gate 1)" 2 \
+    'WT=.claude/worktrees/issue-9 true; cd "$WT" && git commit -m x' "$RCODE"
+  run_case "B33 assignment AFTER the cd refused (gate 2 precedes)" 2 \
+    'cd "$WT" && git commit -m x; WT=.claude/worktrees/issue-9' "$RCODE"
+  run_case "B34 pipeline-tail assignment refused (gate 3, next-sep PIPE)" 2 \
+    'WT=.claude/worktrees/issue-9 | true; cd "$WT" && git commit -m x' "$RCODE"
+
   # A6 fresh matching cert allows; B3 wrong-sha cert blocks.
   printf 'v1 %s %s scripts/issue9_fig.py\n' "$(date +%s)" "$STAGED_SHA" > "$CERTF"
   run_case "A6 fresh matching cert" 0 'git commit -m x' "$RCODE"
@@ -930,9 +1198,34 @@ repo root; the guard scopes its check to the pathspec).
 "
 fi
 
+# Unproven-cd diagnostics (issue #1676 fix (b), cert-diag/foreign_para
+# precedent — block path only, zero hot-path cost): the blocked command
+# carried >=1 cd whose target the guard could not prove, so later clauses
+# were classified against the repo root. One stable grep-able cd-diag line
+# per unproven target + a remediation paragraph naming the cause and the
+# three provable alternatives.
+cd_para=""
+if [ -n "${cd_unproven:-}" ]; then
+  while IFS= read -r cdline; do
+    [ -n "$cdline" ] || continue
+    cd_para="${cd_para}cd-diag: unproven-cd ${cdline}
+"
+  done <<EOF_CDUNPROVEN
+$cd_unproven
+EOF_CDUNPROVEN
+  cd_para="${cd_para}UNPROVEN-CD? The guard could not prove where the cd target(s) above land, so
+later clauses were classified against the repo root (fail closed): an unset or
+externally-set variable makes a quoted cd silently no-op at the inherited cwd
+(rc=0), so unproven targets are never trusted. Remediations: use
+git -C \"\$WT\" ... per clause; or cd to a literal absolute worktree path; or
+assign the path once in the SAME command (WT=<literal-worktree-path> &&
+cd \"\$WT\" && ...), which the guard can prove.
+"
+fi
+
 cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
-${diag_lines}${foreign_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
+${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
   printf '%s\n' <paths> > /tmp/issue-<N>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
