@@ -5211,8 +5211,8 @@
     "1670": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1670",
-      "status": "planning",
+      "path": "tasks/approved/1670",
+      "status": "approved",
       "title": "daily-fix: reconcile pass must not stop young respawns"
     },
     "1671": {
