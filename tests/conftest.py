@@ -327,6 +327,12 @@ _FLEET_MUTATING_PASS_NAMES = (
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.
     "completed_unmerged_pass",
+    # #1681: the urgent-park router sweeps the LIVE tasks tree for parked
+    # workflow-fix candidates and can run a real pytest subprocess, FILE +
+    # dispatch a real task via file_infra_task.py, and post REAL
+    # epm:workflow-fix-task-filed markers; its own tests use tmp-root
+    # overrides + autospec'd subprocess seams instead.
+    "urgent_wf_park_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",

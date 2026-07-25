@@ -5295,8 +5295,8 @@
     "1681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1681",
-      "status": "reviewing",
+      "path": "tasks/completed/1681",
+      "status": "completed",
       "title": "workflow-fix: prioritize parked candidates on live red main"
     },
     "1682": {
@@ -5309,8 +5309,8 @@
     "1683": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1683",
-      "status": "reviewing",
+      "path": "tasks/completed/1683",
+      "status": "completed",
       "title": "daily-fix: reconcile test_issue811_pre_user with extractor"
     },
     "1684": {
@@ -5344,8 +5344,8 @@
     "1688": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1688",
-      "status": "planning",
+      "path": "tasks/running/1688",
+      "status": "running",
       "title": "workflow-fix: step9c selector misses string+transitive deps"
     },
     "169": {

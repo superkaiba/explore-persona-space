@@ -1429,6 +1429,47 @@ switch `EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only`
 runs just this pass (pair with `--dry-run` for a live smoke — zero writes,
 zero marker/push/spawn subprocesses).
 
+**Urgent-park router pass (task #1681, `urgent_wf_park_pass`;
+daemon-INDEPENDENT, runs right after `completed_unmerged_pass`).** The
+"main is red" fast path for PARKED workflow-fix candidates: a park whose
+bug is a currently-failing test on origin/main otherwise waits up to ~24h
+for the nightly /daily Step C sweep while every session's Step 9c gate
+re-classifies the red (incident #1643: an 07:08Z park's red lived ~11.5h).
+**Predicate:** the parking session LABELS the park mechanically routable
+(the formal candidate block + `urgency: main-red` + `failing_test: <one
+pytest node id>` + `wf_fix: true|false` — grammar + emitter duty:
+`.claude/rules/workflow-fix-on-bug.md` § Recursion guard "Urgent fast
+path"; labeling is not routing — the guard invariant holds, only this
+non-guarded watcher acts). **Tiers:** a cheap mtime+substring candidate
+gate over ~48h-fresh events streams (deliberately NO read-size byte cap —
+the #1287 defeat mode) → authoritative enumeration by IMPORTING
+`sweep_parked_wf_candidates.sweep()` read-only (suppression rules 1–3 for
+free) → two-tier claim verification (a fresh step9c baseline-ledger hit
+whose `refreshed_at` postdates the park, else ONE bounded `uv run pytest
+<node>` subprocess per tick — timeout `EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S`,
+default 180s; rc==1 confirmed / rc==0 refuted / ANY other rc incl. rc=5
+no-tests-collected indeterminate, never an `rc != 0 → confirmed` shortcut)
+→ dedup belts (`task_workflow.is_open_workflow_fix_task` + a failing-node
+containment scan over open infra bodies) → file + dispatch via
+`scripts/file_infra_task.py` → the standard `epm:workflow-fix-task-filed`
+routed-record posted on the park's OWN stream BEFORE latching
+(sweep-reported fingerprint VERBATIM + `origin_candidate_ts` — the #1680
+lesson; note sentinel `[autonomous_session_watch:urgent-wf-park-router]`,
+a `_WATCHER_NOTE_SENTINELS` member so it never resets staleness clocks).
+**Fallback:** missing/malformed/refuted/unverifiable urgency → the park
+stays enumerated for the nightly sweep byte-unchanged; the router never
+synthesizes fields. **Bounds:** fleet per-UTC-day route cap
+`EPM_URGENT_WF_PARK_ROUTES_PER_DAY` (default 2; quiet-at-cap — sidecar row
+only, no latch, re-eligible tomorrow: the #1241 posture, chosen because a
+real backstop exists), per-candidate verdict latch (state singleton
+`~/.eps-autonomous/urgent-wf-park-router.json`; sidecar
+`.claude/cache/urgent-wf-park-events.jsonl`), ≤1 pytest subprocess per
+tick (further urgent parks defer to the next tick), indeterminate
+verification latched `unverifiable` after 2 attempts. Kill switch
+`EPM_DISABLE_URGENT_WF_PARK_PASS=1`; `--urgent-wf-park-only` runs just
+this pass (pair with `--dry-run` for a live smoke — zero writes, zero
+subprocesses).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
