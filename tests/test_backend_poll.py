@@ -4449,3 +4449,120 @@ def test_gcp_queue_timeout_ondemand_retry_skipped_on_leaked_residue(tmp_path, mo
     assert out["reason"] == "runpod_provision_leaked_pod"
     assert gcp.launch_calls == 0  # the retry never fired
     assert terminations == []
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins (WANDB_PROJECT et al.) forwarded by BOTH failover
+# reconstructors, per-key sanitize-and-warn, legacy handles byte-identical.
+# ---------------------------------------------------------------------------
+
+
+def test_runspec_from_runpod_handle_forwards_env_pins(monkeypatch):
+    """#1669 incident-path pin (#1586): a pinned launch's PRODUCTION handle
+    (real launch, provision no-op'd) carries ``env_pins``, and
+    ``_runspec_from_runpod_handle`` forwards them into the rebuilt spec
+    extra after the sidecar serialize/deserialize roundtrip."""
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    pins = {"WANDB_PROJECT": "issue1586_methodgen", "WANDB_RUN_GROUP": "fu-lora"}
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
+    handle = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=1586,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue1586_dispatch.sh",
+            extra={"env_pins": pins},
+        )
+    )
+    assert handle.extra["env_pins"] == pins
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    spec = bp._runspec_from_runpod_handle(roundtripped, 1586)
+    assert spec.extra.get("env_pins") == pins
+
+
+def test_runspec_from_runpod_handle_legacy_handle_without_env_pins_byte_identical():
+    """#1669 back-compat twin: a legacy handle without ``env_pins``
+    reconstructs a rebuilt extra byte-identical to pre-#1669 (empty here)."""
+    from explore_persona_space.backends.base import RunHandle
+    from scripts import backend_poll as bp
+
+    legacy = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-689",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        extra={
+            "issue": 689,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/x.sh",
+            "hydra_args": [],
+            "gpus": None,
+            "time_budget_hours": None,
+        },
+    )
+    spec = bp._runspec_from_runpod_handle(legacy, 689)
+    assert spec.extra == {}
+
+
+def test_runspec_from_runpod_handle_drops_invalid_env_pins_warn_only(caplog):
+    """#1669 note-1 semantics: PER-KEY drop-and-warn at the reconstructor —
+    a hand-edited sidecar with one stray key keeps the valid
+    ``WANDB_PROJECT``, the warning names the issue id, and an all-invalid
+    dict forwards NO ``env_pins`` key. Never raises (the #1329 warn-only
+    doctrine: a malformed pin must not block a failover)."""
+    import logging as _logging
+
+    from explore_persona_space.backends.base import RunHandle
+    from scripts import backend_poll as bp
+
+    def _handle(pins):
+        return RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="",
+            pod_name="pod-1669",
+            scratch_dir="/workspace",
+            log_path="/workspace/logs/issue-1669.log",
+            extra={
+                "issue": 1669,
+                "intent": "lora-7b",
+                "workload_cmd": "bash scripts/x.sh",
+                "hydra_args": [],
+                "env_pins": pins,
+            },
+        )
+
+    with caplog.at_level(_logging.WARNING):
+        spec = bp._runspec_from_runpod_handle(
+            _handle({"WANDB_PROJECT": "ok-project", "WANDB_API_KEY": "stray"}), 1669
+        )
+    assert spec.extra["env_pins"] == {"WANDB_PROJECT": "ok-project"}
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= _logging.WARNING]
+    assert any("1669" in m and "env pin" in m for m in warnings), warnings
+
+    # All-invalid → no env_pins key at all (still no raise).
+    spec2 = bp._runspec_from_runpod_handle(_handle({"HF_HOME": "/x"}), 1669)
+    assert "env_pins" not in spec2.extra
+
+
+def test_runspec_from_gcp_handle_forwards_env_pins():
+    """#1669: the GCP→RunPod async-failover reconstructor forwards
+    ``env_pins`` so the fresh RunPod launcher re-exports them."""
+    from scripts import backend_poll as bp
+
+    pins = {"WANDB_PROJECT": "issue1586_methodgen"}
+    handle = _gcp_handle({**_GCP_EXTRA_659, "env_pins": pins})
+    spec = bp._runspec_from_gcp_handle(handle, 659)
+    assert spec.extra.get("env_pins") == pins
+    # Legacy GCP handle (no key) stays byte-identical: no env_pins forwarded.
+    legacy_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
+    assert "env_pins" not in legacy_spec.extra

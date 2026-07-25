@@ -892,6 +892,140 @@ def test_launch_fractional_boot_disk_gb_raises_named_valueerror(monkeypatch):
     assert argvs == []
 
 
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: handle persist + launcher render + end-to-end
+# ---------------------------------------------------------------------------
+
+_PINS_1669 = {"WANDB_PROJECT": "issue1586_methodgen"}
+
+
+def test_launch_handle_extra_carries_env_pins(monkeypatch):
+    """#1669 (mirror of test_launch_handle_extra_carries_boot_disk_gb): a
+    pinned spec's handle extra carries ``env_pins`` verbatim; a pin-less
+    spec OMITS the key (the omit-when-absent contract the
+    ``_PRE_954_SUCCESS_EXTRA_KEYS`` exact-set tests pin)."""
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec(extra={"env_pins": dict(_PINS_1669)}))
+    assert handle.extra["env_pins"] == _PINS_1669
+
+    _wire_exec_leg(monkeypatch, [])
+    handle2 = RP.RunPodBackend().launch(_spec())
+    assert "env_pins" not in handle2.extra
+
+
+def test_launch_with_env_pins_renders_pin_export_before_default(monkeypatch):
+    """#1669 END-TO-END incident-path test (#1586): pinned launch → handle →
+    sidecar roundtrip → ``_runspec_from_runpod_handle`` → the router's
+    ``execute_workload`` opt-in (the ``router.py`` failover ``replace``
+    shape) → a REAL ``launch()`` through ``_wire_exec_leg`` (only
+    ``_ssh_pod_run`` faked, so ``_execute_workload_on_pod`` runs for real)
+    — and the RECORDED launcher body carries the pin export at an index
+    BEFORE the ``${WANDB_PROJECT:-issue<N>}`` default line. This is the
+    ONLY test spanning the renderer call-site kwarg thread: without it, an
+    implementer who adds the renderer kwarg but forgets the call-site
+    thread goes green while the failover pod boots with the generic
+    default."""
+    from dataclasses import replace
+
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    # (1) The pinned launch persists env_pins into the handle sidecar.
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec(extra={"env_pins": dict(_PINS_1669)}))
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    # (2) The failover reconstructor forwards them.
+    spec2 = bp._runspec_from_runpod_handle(roundtripped, 909)
+    assert spec2.extra["env_pins"] == _PINS_1669
+    # (3) The failover opts into the execution leg (router.py's
+    #     `replace(spec, extra={**dict(spec.extra or {}), "execute_workload": True})`).
+    spec3 = replace(spec2, extra={**dict(spec2.extra or {}), "execute_workload": True})
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+    )
+    handle2 = RP.RunPodBackend().launch(spec3)
+    assert handle2.extra["workload_executed"] is True
+    body = ssh.calls[1]  # sync -> DETACH (the launcher heredoc) -> verify
+    pin_idx = body.index("export WANDB_PROJECT=issue1586_methodgen")
+    default_idx = body.index('WANDB_PROJECT="${WANDB_PROJECT:-')
+    assert pin_idx < default_idx, "pin export must precede the :-default line"
+
+
+def test_render_launch_script_exports_shell_escaped_env_pins():
+    """#1669: a pin value with a space + single-quote renders shlex-quoted,
+    sorted, and positioned BEFORE the WANDB_PROJECT:-default line."""
+    import shlex as _shlex
+
+    tricky_value = "fu lora's group"  # space + single-quote → must shlex-quote
+    body = RP._render_launch_script(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+        attempt_id=ATTEMPT,
+        env_pins={"WANDB_RUN_GROUP": tricky_value, "WANDB_PROJECT": "px"},
+    )
+    lines = body.splitlines()
+    group_line = f"export WANDB_RUN_GROUP={_shlex.quote(tricky_value)}"
+    assert group_line in lines
+    proj_idx = lines.index("export WANDB_PROJECT=px")
+    group_idx = lines.index(group_line)
+    default_idx = next(i for i, ln in enumerate(lines) if 'WANDB_PROJECT="${WANDB_PROJECT:-' in ln)
+    # Sorted (WANDB_PROJECT < WANDB_RUN_GROUP) and both before the default.
+    assert proj_idx < group_idx < default_idx
+
+
+def test_render_launch_script_no_pins_byte_identical():
+    """#1669 (implementer note 2 — NO circular post-change fixture): a
+    pin-less render carries NO pin export for any allowlisted key — the
+    only ``export WANDB_PROJECT`` line is the ``:-`` default — and
+    ``env_pins=None`` renders identically to ``env_pins={}`` (both take
+    the no-pin path). Structural launcher content intact."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    kwargs = dict(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+        attempt_id=ATTEMPT,
+    )
+    body_default = RP._render_launch_script(**kwargs)
+    body_none = RP._render_launch_script(**kwargs, env_pins=None)
+    body_empty = RP._render_launch_script(**kwargs, env_pins={})
+    assert body_default == body_none == body_empty
+    lines = body_default.splitlines()
+    wandb_project_lines = [ln for ln in lines if ln.startswith("export WANDB_PROJECT")]
+    assert wandb_project_lines == ['export WANDB_PROJECT="${WANDB_PROJECT:-issue909}"']
+    for key in sorted(ENV_PIN_ALLOWED_KEYS - {"WANDB_PROJECT"}):
+        assert not any(ln.startswith(f"export {key}=") for ln in lines), key
+    # Structural content intact (heredoc + detach + pidfile echo).
+    assert "EPSEOF" in body_default
+    assert "setsid" in body_default
+    assert "echo $$ > /workspace/logs/issue-909.pid" in body_default
+
+
+def test_render_launch_script_rejects_non_allowlisted_pin_key():
+    """#1669 defense in depth: the renderer re-validates independently of
+    the CLI — a non-allowlisted key in a (hand-edited) sidecar raises."""
+    with pytest.raises(ValueError, match="ENV_PIN_ALLOWED_KEYS"):
+        RP._render_launch_script(
+            issue=909,
+            workload_cmd=WORKLOAD,
+            log_path="/workspace/logs/issue-909.log",
+            pid_file="/workspace/logs/issue-909.pid",
+            sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+            attempt_id=ATTEMPT,
+            env_pins={"WANDB_API_KEY": "x"},
+        )
+
+
 def test_launch_handle_extra_carries_boot_disk_gb(monkeypatch):
     """#1118: the launch handle's extra persists the footprint fields
     (boot_disk_gb / min_ram_gb) so _runspec_from_runpod_handle can forward

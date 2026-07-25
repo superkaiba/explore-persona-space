@@ -4607,3 +4607,122 @@ def test_reconnect_fellows_threads_job_name_suffix(monkeypatch) -> None:
     assert out is None, "patched query_by_name returns None (no live job)"
     assert captured["job_name"] == "eps-issue-1609-superkaiba"
     assert captured["robot_alias"] == "charmander"
+
+
+# ---------------------------------------------------------------------------
+# #1669 — --env-pin: threading + the parse-time guards (exit 2)
+# ---------------------------------------------------------------------------
+
+
+def _explode_factory():
+    raise AssertionError("backends must not be built when the --env-pin guard refuses")
+
+
+def test_env_pin_flag_threads_extra(monkeypatch, tmp_path) -> None:
+    """#1669: repeated ``--env-pin KEY=VALUE`` threads to
+    ``spec.extra['env_pins']`` — splitting on the FIRST '=' (implementer
+    note 4: a ``WANDB_TAGS=a=b`` value is legal)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1586",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/issue1586_dispatch.sh",
+                "--env-pin",
+                "WANDB_PROJECT=issue1586_methodgen",
+                "--env-pin",
+                "WANDB_TAGS=a=b",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["env_pins"] == {
+        "WANDB_PROJECT": "issue1586_methodgen",
+        "WANDB_TAGS": "a=b",
+    }
+
+
+def test_env_pin_requires_workload_cmd_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669: ``--env-pin`` on a hydra launch exits 2 at parse time (all
+    renderer insertion points are workload-cmd branches — a hydra pin
+    would silently no-op; the guard is also what keeps the GCP hydra
+    snapshot untouched by construction), BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as ei:
+        main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "seed=42",
+                "--env-pin",
+                "WANDB_PROJECT=px",
+            ],
+            backends_factory=_explode_factory,
+        )
+    assert ei.value.code == 2
+
+
+def test_env_pin_rejects_non_allowlisted_key_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669: a non-allowlisted key (e.g. WANDB_API_KEY — a secret key) and
+    a malformed no-'=' pair both exit 2 at parse time."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    base = [
+        "launch",
+        "--issue",
+        "304",
+        "--intent",
+        "lora-7b",
+        "--workload-cmd",
+        "bash scripts/x.sh",
+    ]
+    with pytest.raises(SystemExit) as ei:
+        main([*base, "--env-pin", "WANDB_API_KEY=x"], backends_factory=_explode_factory)
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        main([*base, "--env-pin", "WANDB_PROJECT"], backends_factory=_explode_factory)
+    assert ei2.value.code == 2
+
+
+def test_env_pin_rejects_secret_shaped_value_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669 belt-and-suspenders: a secret-shaped VALUE under an allowlisted
+    key (the ``--env-pin WANDB_PROJECT=$HF_TOKEN`` shell-expansion
+    accident) exits 2 at parse time."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    secret_shaped = "hf_" + "A" * 20  # constructed at runtime — never a committed literal
+    with pytest.raises(SystemExit) as ei:
+        main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/x.sh",
+                "--env-pin",
+                f"WANDB_PROJECT={secret_shaped}",
+            ],
+            backends_factory=_explode_factory,
+        )
+    assert ei.value.code == 2

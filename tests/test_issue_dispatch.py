@@ -1822,3 +1822,108 @@ def test_on_launched_early_write_carries_reconnect_merge(
     assert recovered.extra["repo_branch"] == "issue-1122"
     for key in ("gpus", "time_budget_hours", "gpu_count", "boot_disk_gb"):
         assert recovered.extra[key] == _PRIOR_EXTRA_1122[key], key
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: reconnect carry-forward + validator rules
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_carry_forward_includes_env_pins(tmp_path) -> None:
+    """#1669: ``env_pins`` is a RECONNECT_CARRY_FORWARD_EXTRA_KEYS member
+    and the sidecar snapshot keeps a non-empty pins dict (the
+    ``v not in (None, "", [])`` filter keeps a dict — plan assumption 8 —
+    and skips an absent key on a legacy sidecar)."""
+    from explore_persona_space.backends.issue_dispatch import (
+        RECONNECT_CARRY_FORWARD_EXTRA_KEYS,
+        _prior_sidecar_failover_extras,
+        write_handle_sidecar,
+    )
+
+    assert "env_pins" in RECONNECT_CARRY_FORWARD_EXTRA_KEYS
+
+    pins = {"WANDB_PROJECT": "issue1586_methodgen"}
+    sidecar = tmp_path / "issue-1669-handle.json"
+    write_handle_sidecar(
+        RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="gce-1",
+            pod_name="eps-issue-1669",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"workload_cmd": "bash scripts/x.sh", "hydra_args": [], "env_pins": pins},
+        ),
+        sidecar,
+    )
+    prior = _prior_sidecar_failover_extras(sidecar)
+    assert prior is not None
+    assert prior["extra"]["env_pins"] == pins
+
+    # Legacy sidecar (no env_pins key): the snapshot omits it.
+    sidecar2 = tmp_path / "issue-1669-legacy-handle.json"
+    write_handle_sidecar(
+        RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="gce-2",
+            pod_name="eps-issue-1669",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"workload_cmd": "bash scripts/x.sh", "hydra_args": []},
+        ),
+        sidecar2,
+    )
+    prior2 = _prior_sidecar_failover_extras(sidecar2)
+    assert prior2 is not None
+    assert "env_pins" not in prior2["extra"]
+
+
+@pytest.mark.parametrize(
+    ("pins", "ok"),
+    [
+        ({"WANDB_PROJECT": "issue1586_methodgen"}, True),
+        ({"WANDB_TAGS": "a=b", "WANDB_RUN_GROUP": "g 1"}, True),
+        (None, True),  # None → {}
+        ({}, True),  # empty → {}
+        ({"WANDB_API_KEY": "x"}, False),  # non-allowlisted (secret) key
+        ({"wandb_project": "x"}, False),  # case-sensitive allowlist
+        ({"WANDB_PROJECT": ""}, False),  # empty value
+        ({"WANDB_PROJECT": "a\nb"}, False),  # multi-line value
+        ({"WANDB_PROJECT": 42}, False),  # non-str value
+        ({"WANDB_PROJECT": "x" * 513}, False),  # over ENV_PIN_VALUE_MAX_LEN
+        ("WANDB_PROJECT=x", False),  # non-mapping input
+    ],
+)
+def test_validate_env_pins_allowlist_and_value_rules(pins, ok) -> None:
+    """#1669: the strict validator's allowlist + value rules (the CLI +
+    renderer defense); the secret-shaped-value case is covered separately
+    below (runtime-constructed token, never a committed literal)."""
+    from explore_persona_space.backends.base import validate_env_pins
+
+    if ok:
+        out = validate_env_pins(pins)
+        assert out == (dict(pins) if pins else {})
+    else:
+        with pytest.raises(ValueError):
+            validate_env_pins(pins)
+
+
+def test_validate_env_pins_rejects_secret_shaped_value_and_sanitize_splits() -> None:
+    """#1669: a secret-shaped VALUE is rejected by the strict validator,
+    and ``sanitize_env_pins`` (the reconstructor-side per-key variant)
+    keeps valid entries while reporting each dropped one."""
+    from explore_persona_space.backends.base import sanitize_env_pins, validate_env_pins
+
+    secret_shaped = "sk-" + "A" * 20  # constructed at runtime
+    with pytest.raises(ValueError, match="secret-shaped"):
+        validate_env_pins({"WANDB_PROJECT": secret_shaped})
+
+    kept, dropped = sanitize_env_pins(
+        {"WANDB_PROJECT": "ok", "WANDB_RUN_GROUP": secret_shaped, "HF_TOKEN": "x"}
+    )
+    assert kept == {"WANDB_PROJECT": "ok"}
+    assert len(dropped) == 2
+    # Non-mapping input drops wholesale with one reason, never raises.
+    kept2, dropped2 = sanitize_env_pins(["WANDB_PROJECT=x"])
+    assert kept2 == {} and len(dropped2) == 1
