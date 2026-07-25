@@ -5309,8 +5309,8 @@
     "1683": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1683",
-      "status": "approved",
+      "path": "tasks/running/1683",
+      "status": "running",
       "title": "daily-fix: reconcile test_issue811_pre_user with extractor"
     },
     "1684": {
