@@ -1,1 +1,2 @@
 {"ts": "2026-07-25T22:54:00Z", "event": "raised", "concern_id": "phase-b-haiku-u2", "severity": "BLOCKER", "summary": "Phase A haiku user-provenance u2 generator NOT BUILT — scripts/issue1689_haiku_u2_gen.py missing", "raised_by": "experiment-implementer", "raised_at_round": 1}
+{"ts": "2026-07-25T22:54:07Z", "event": "raised", "concern_id": "phase-b-onpolicy", "severity": "BLOCKER", "summary": "Phase B on-policy a2 generator + judge-filter NOT BUILT — scripts/issue1689_gen_onpolicy.py missing", "raised_by": "experiment-implementer", "raised_at_round": 1}
