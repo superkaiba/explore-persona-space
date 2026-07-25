@@ -1333,6 +1333,50 @@ def _apply_wf_fix_provenance(item: dict, body_path: Path, slug: str, fp: str) ->
         )
 
 
+def _dry_run_item(
+    item: dict,
+    *,
+    dirpath: Path,
+    tasks_root: Path,
+    root: Path,
+    date: str,
+    fp: str,
+    state: str,
+    hold: dict | None,
+    suspect_eyeballed: bool,
+) -> str:
+    """The --dry-run leg of process_item, extracted for the C901 budget (#1674).
+
+    Read-only by contract: prints the planned action (ALREADY-TRACKED / DEDUP /
+    LANDED-FIX-SUSPECT / FILE) and never writes the ledger or a body. Always
+    returns 'skip' (or the read-only outcome the dedup-family mirrors return).
+    """
+    slug = item["slug"]
+    # #1483 dry-run mirror of the route-3 overlap dedup (read-only by construction).
+    outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=True)
+    if outcome3 is not None:
+        return outcome3
+    if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
+        print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
+        return "skip"
+    # #1674 dry-run mirror of the landed-fix probe (read-only by construction —
+    # no ledger write); same relative position as the real path: the LAST
+    # dedup-family check before the FILE line.
+    if not suspect_eyeballed:
+        outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=True)
+        if outcome_lf is not None:
+            return outcome_lf
+    tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
+    pending = " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
+    held = (
+        f" [held dispatch: shares {','.join(hold['shared'])} with {hold['with']}]" if hold else ""
+    )
+    inject = _dry_run_inject_note(item, dirpath, fp)
+    sha_note = _dry_run_sha_note(item, dirpath, root)
+    print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{held}{inject}{sha_note}")
+    return "skip"
+
+
 def process_item(
     item: dict,
     *,
@@ -1370,37 +1414,17 @@ def process_item(
         return "skip"
 
     if dry_run:
-        # #1483 dry-run mirror of the route-3 overlap dedup (read-only by construction).
-        outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=True)
-        if outcome3 is not None:
-            return outcome3
-        if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
-            print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
-        else:
-            # #1674 dry-run mirror of the landed-fix probe (read-only by
-            # construction — no ledger write); same relative position as the
-            # real path: the LAST dedup-family check before the FILE line.
-            if not suspect_eyeballed:
-                outcome_lf = _landed_fix_suspect_outcome(
-                    item, root, dirpath=dirpath, fp=fp, dry_run=True
-                )
-                if outcome_lf is not None:
-                    return outcome_lf
-            tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
-            pending = (
-                " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
-            )
-            held = (
-                f" [held dispatch: shares {','.join(hold['shared'])} with {hold['with']}]"
-                if hold
-                else ""
-            )
-            inject = _dry_run_inject_note(item, dirpath, fp)
-            sha_note = _dry_run_sha_note(item, dirpath, root)
-            print(
-                f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{held}{inject}{sha_note}"
-            )
-        return "skip"
+        return _dry_run_item(
+            item,
+            dirpath=dirpath,
+            tasks_root=tasks_root,
+            root=root,
+            date=date,
+            fp=fp,
+            state=state,
+            hold=hold,
+            suspect_eyeballed=suspect_eyeballed,
+        )
 
     if state in ("in-flight", "retry-error"):
         # Recovery-before-refile: the prior attempt may have committed the task
