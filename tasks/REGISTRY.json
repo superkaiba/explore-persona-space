@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1671,
+  "highest_id": 1672,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5221,6 +5221,13 @@
       "path": "tasks/proposed/1671",
       "status": "proposed",
       "title": "daily-fix: sync_repo_root retries abort on HEAD.lock race"
+    },
+    "1672": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1672",
+      "status": "proposed",
+      "title": "daily-fix: 10d recovery syncs lint targets in stale worktree"
     },
     "168": {
       "has_clean_result": true,
