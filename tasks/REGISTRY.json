@@ -5197,8 +5197,8 @@
     "1668": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1668",
-      "status": "proposed",
+      "path": "tasks/planning/1668",
+      "status": "planning",
       "title": "daily-fix: adopted failover clears runpod-wedge sentinel"
     },
     "1669": {
