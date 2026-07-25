@@ -1292,6 +1292,28 @@ def _issue_worktree_git_root(issue: int) -> str | None:
     return str(wt) if wt.exists() else None
 
 
+def _parse_env_pins(pairs: list[str] | None) -> dict[str, str]:
+    """Parse repeated ``--env-pin KEY=VALUE`` pairs into a validated dict (#1669).
+
+    Splits each pair on the FIRST ``=`` (a ``WANDB_TAGS=a=b`` value is
+    legal); a pair with no ``=`` raises ``ValueError``. Validation is the
+    strict :func:`backends.base.validate_env_pins` (allowlisted key,
+    non-empty single-line non-secret-shaped value) — ``main()``'s
+    parse-time guard converts the raise to ``parser.error`` (exit 2).
+    """
+    from explore_persona_space.backends.base import validate_env_pins
+
+    if not pairs:
+        return {}
+    pins: dict[str, str] = {}
+    for pair in pairs:
+        key, sep, value = pair.partition("=")
+        if not sep:
+            raise ValueError(f"--env-pin {pair!r} is not KEY=VALUE (no '=')")
+        pins[key] = value
+    return validate_env_pins(pins)
+
+
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901 — flat per-knob if-chain: one independent branch per launch CLI flag (#1468 added --min-gpu-mem-gb); extracting sub-helpers would obscure the knob-to-extra mapping (annotated-noqa precedent: gcp.py GcpBackend.launch).
     """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
@@ -1338,6 +1360,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # an undersized pod. GCP machine selection is unchanged (by intent);
         # inert on SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
+    if getattr(args, "env_pin", None):
+        # #1669: launch env pins (WANDB_PROJECT et al.) — persisted into the
+        # handle sidecar so the failover reconstructors
+        # (backend_poll._runspec_from_*_handle) forward them into a fresh
+        # provision, and rendered as shell-escaped exports BEFORE each lane's
+        # WANDB_PROJECT:-issue<N> default (incident #1586). Set ONLY when
+        # non-empty (omit-when-absent — the #934 lane_suffix discipline: a
+        # None/empty-valued key would flip canonicalize_spec output and every
+        # live lease spec-hash). main()'s parse-time guard already rejected
+        # malformed / non-allowlisted pins and pins without --workload-cmd,
+        # so this re-parse cannot raise on the CLI path.
+        pins = _parse_env_pins(args.env_pin)
+        if pins:
+            extra["env_pins"] = pins
     if getattr(args, "min_gpu_mem_gb", None):
         # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
         # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
@@ -2480,6 +2516,33 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--env-pin",
+        action="append",
+        default=None,
+        metavar="KEY=VALUE",
+        help=(
+            "Launch env pin (repeatable, #1669): an environment export the "
+            "workload must see on EVERY provision, incl. watcher/poller "
+            "failover re-provisions (incident #1586: a wedge-failover pod "
+            "rebooted with only the generic issue<N> WandB default and its "
+            "runs landed in the wrong project). KEY is restricted to "
+            "backends.base.ENV_PIN_ALLOWED_KEYS (WANDB_PROJECT / "
+            "WANDB_RUN_GROUP / WANDB_TAGS / EPM_PERSIST_ADAPTER_* / "
+            "EPM_UPLOAD_MERGED) — secret keys are unrepresentable by "
+            "construction. Splits on the FIRST '=' (WANDB_TAGS=a=b is "
+            "legal). Threads to spec.extra['env_pins'] -> the handle "
+            "sidecar; every lane's workload-cmd launcher exports the pins "
+            "(shell-escaped) BEFORE its WANDB_PROJECT:-issue<N> default, so "
+            "the pin wins over the generic default. Requires a non-empty "
+            "--workload-cmd (all renderer insertion points are workload-cmd "
+            "branches; a hydra launch has no pin consumer). ADOPTION (the "
+            "--boot-disk-gb pattern): launch composers SHOULD pass "
+            "--env-pin WANDB_PROJECT=<declared project> whenever the plan's "
+            "Reproducibility Card declares a non-default WandB project; a "
+            "flag-less launch keeps today's behavior."
+        ),
+    )
+    launch.add_argument(
         "--min-gpu-mem-gb",
         type=int,
         default=None,
@@ -2710,6 +2773,24 @@ def main(
                 "--execute-workload requires a non-empty --workload-cmd "
                 "(it cannot execute a --hydra run)"
             )
+        # #1669: --env-pin is workload-cmd-only — every renderer insertion
+        # point (runpod launcher / gcp startup workload branch / slurm
+        # custom stage) is a workload-cmd branch, so a pin on a hydra
+        # launch would silently no-op; gating here is also what keeps the
+        # GCP hydra-branch render byte-identical by construction. Malformed
+        # / non-allowlisted / secret-shaped pins reject at parse time too
+        # (exit 2), BEFORE any backend is built (mirrors the
+        # --execute-workload guard above).
+        if getattr(args, "env_pin", None):
+            if not has_workload_cmd:
+                parser.error(
+                    "--env-pin requires a non-empty --workload-cmd "
+                    "(the lane launchers' pin exports are workload-cmd-only, #1669)"
+                )
+            try:
+                _parse_env_pins(args.env_pin)
+            except ValueError as exc:
+                parser.error(str(exc))
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,

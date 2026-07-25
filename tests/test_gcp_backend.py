@@ -10886,3 +10886,120 @@ def test_push_verify_leg_executes_in_tmp_repo_case_c_noop(tmp_path: Path) -> Non
     assert proc.returncode == 0, (proc.stdout, proc.stderr)
     assert "[push-verify] OK: no unpushed commits" in proc.stdout
     assert not (workload / "data" / "issue_137").exists()
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: GCP handle persist + reconnect carry + render
+# ---------------------------------------------------------------------------
+
+_PINS_1669 = {"WANDB_PROJECT": "issue1586_methodgen"}
+
+
+def test_gcp_launch_handle_extra_carries_env_pins(no_marker_posts) -> None:
+    """#1669 (consistency-checker gap): the GCP LAUNCH path persists
+    ``env_pins`` into handle extra — without it the GCP→RunPod
+    second-failover inheritance leg rests on an untested persist. A
+    pin-less launch OMITS the key (legacy-shape parity)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+
+    def _launch(extra: dict | None):
+        runner = _Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created_payload, "")],
+        )
+        backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **kw: None)
+        return backend.launch(
+            _workload_spec("bash scripts/issue1669_dispatch.sh")
+            if extra is None
+            else _spec(
+                hydra_args=(),
+                workload_cmd="bash scripts/issue1669_dispatch.sh",
+                extra=extra,
+            )
+        )
+
+    handle = _launch({"env_pins": dict(_PINS_1669)})
+    assert handle.extra["env_pins"] == _PINS_1669
+    handle2 = _launch(None)
+    assert "env_pins" not in handle2.extra
+
+
+def test_render_startup_script_workload_cmd_exports_env_pins() -> None:
+    """#1669: the WORKLOAD-CMD branch renders shlex-quoted pin exports
+    immediately BEFORE the WandB project default; the HYDRA branch renders
+    NO pin line even when extra carries pins (workload-branch-only by
+    design — no hydra consumer, keeps the hydra snapshot untouched)."""
+    tricky_value = "fu lora's group"
+    spec = _spec(
+        hydra_args=(),
+        workload_cmd="bash scripts/issue1669_dispatch.sh",
+        extra={"env_pins": {"WANDB_PROJECT": "px", "WANDB_RUN_GROUP": tricky_value}},
+    )
+    script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+    lines = script.splitlines()
+    group_line = f"export WANDB_RUN_GROUP={shlex.quote(tricky_value)}"
+    proj_idx = lines.index("export WANDB_PROJECT=px")
+    group_idx = lines.index(group_line)
+    default_idx = next(i for i, ln in enumerate(lines) if 'WANDB_PROJECT="${WANDB_PROJECT:-' in ln)
+    assert proj_idx < group_idx < default_idx  # sorted, both before the :-default
+
+    # Hydra branch: pins structurally unreachable (CLI-gated), and even a
+    # hand-built hydra spec carrying pins renders none.
+    hydra_script = render_startup_script(
+        spec=_spec(extra={"env_pins": dict(_PINS_1669)}),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "export WANDB_PROJECT=issue1586_methodgen" not in hydra_script
+
+
+def test_render_startup_script_no_pins_byte_identical_workload_branch() -> None:
+    """#1669 (implementer note 2 — no circular fixture): a pin-less
+    workload-cmd render carries NO pin export for any allowlisted key —
+    the only WANDB_PROJECT export is the ``:-`` default — and an
+    absent-key spec renders identically to an explicit empty-dict pin
+    spec."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    script = render_startup_script(
+        spec=_workload_spec("bash scripts/issue1669_dispatch.sh"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    script_empty = render_startup_script(
+        spec=_spec(
+            hydra_args=(),
+            workload_cmd="bash scripts/issue1669_dispatch.sh",
+            extra={"env_pins": {}},
+        ),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert script == script_empty
+    lines = script.splitlines()
+    wandb_project_exports = [ln for ln in lines if ln.startswith("export WANDB_PROJECT")]
+    assert wandb_project_exports == ['export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"']
+    for key in sorted(ENV_PIN_ALLOWED_KEYS - {"WANDB_PROJECT"}):
+        assert not any(ln.startswith(f"export {key}=") for ln in lines), key
+
+
+def test_reconnect_handle_carries_env_pins() -> None:
+    """#1669 (mirror of test_reconnect_handle_carries_workload_extras): a
+    pinned workload spec's reconnect handle carries ``env_pins`` so an
+    exit-75 rerun's sidecar overwrite stays failover-capable WITH the
+    pins; a pin-less spec omits the key."""
+    spec = _spec(
+        workload_cmd="bash scripts/issue1669_dispatch.sh",
+        hydra_args=(),
+        extra={"env_pins": dict(_PINS_1669)},
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["env_pins"] == _PINS_1669
+
+    spec2 = _spec(workload_cmd="bash scripts/issue1669_dispatch.sh", hydra_args=())
+    runner2 = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle2 = reconnect_or_none(spec=spec2, config=_test_config(), runner=runner2)
+    assert handle2 is not None
+    assert "env_pins" not in handle2.extra

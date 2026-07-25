@@ -2840,3 +2840,75 @@ def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) 
     # Detached at the WRONG commit → still refuses.
     with pytest.raises(ValueError, match="cannot honor repo_branch='issue-X'"):
         backend._assert_repo_branch_synced(spec, src_root=wrong)
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins on the SLURM custom (workload-cmd) stage
+# ---------------------------------------------------------------------------
+
+
+def _custom_spec_with_pins(pins: dict[str, str]) -> RunSpec:
+    """``_custom_spec`` twin carrying #1669 launch env pins in extra."""
+    return RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1669_dispatch.sh",
+        extra={"env_pins": dict(pins)},
+    )
+
+
+def test_custom_stage_exports_env_pins() -> None:
+    """#1669: the custom stage exports shlex-quoted pins BEFORE the
+    WANDB_PROJECT:-issue<N> default (fellows is the FIRST auto lane — a
+    pin silently no-op'ing there would be a foot-gun)."""
+    tricky_value = "fu lora's group"
+    spec = _custom_spec_with_pins({"WANDB_PROJECT": "px", "WANDB_RUN_GROUP": tricky_value})
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    group_line = f"export WANDB_RUN_GROUP={shlex.quote(tricky_value)}"
+    proj_idx = lines.index("export WANDB_PROJECT=px")
+    group_idx = lines.index(group_line)
+    default_idx = next(i for i, ln in enumerate(lines) if 'WANDB_PROJECT="${WANDB_PROJECT:-' in ln)
+    assert proj_idx < group_idx < default_idx  # sorted, both before the :-default
+
+
+def test_custom_stage_no_pins_byte_identical() -> None:
+    """#1669 (implementer note 2 — no circular fixture): a pin-less custom
+    stage renders NO pin export for any allowlisted key — the only
+    WANDB_PROJECT export is the ``:-`` default — and an absent-key spec
+    renders identically to an explicit empty-dict pin spec."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    spec = _custom_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    spec_empty = _custom_spec_with_pins({})
+    script_empty = render_sbatch(
+        spec=spec_empty,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec_empty),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    wandb_project_exports = [ln for ln in lines if ln.startswith("export WANDB_PROJECT")]
+    assert wandb_project_exports == ['export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"']
+    for key in sorted(ENV_PIN_ALLOWED_KEYS - {"WANDB_PROJECT"}):
+        assert not any(ln.startswith(f"export {key}=") for ln in lines), key
+    # The empty-dict pin spec renders the same pin-free custom stage (the
+    # two scripts differ only in the workload command they embed).
+    empty_lines = script_empty.splitlines()
+    for key in sorted(ENV_PIN_ALLOWED_KEYS):
+        assert not any(
+            ln.startswith(f"export {key}=") and ":-issue" not in ln for ln in empty_lines
+        ), key

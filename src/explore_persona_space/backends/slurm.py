@@ -87,6 +87,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    validate_env_pins,
 )
 
 logger = logging.getLogger(__name__)
@@ -1406,6 +1407,27 @@ def _group_cleanup_lines(cluster: ClusterConfig) -> list[str]:
     ]
 
 
+def _env_pin_export_lines(spec: RunSpec) -> list[str]:
+    """#1669: shlex-quoted ``export K=V`` lines for the launch env pins.
+
+    Rendered into the CUSTOM (workload-cmd) stage BEFORE its
+    ``WANDB_PROJECT:-issue<N>`` default so the ``:-`` default preserves
+    the pin; a pin-less spec returns ``[]`` (byte-identical render).
+    Included on SLURM because fellows is the FIRST auto lane — a flag
+    silently no-op'ing on the default lane would be a foot-gun. SLURM
+    handles are never failover-reconstructed (no SLURM failover path
+    exists), so this fresh-launch render leg is the whole SLURM surface
+    (no handle persistence needed). Re-validates (defense in depth —
+    incident #1586); DISTINCT from the deliberately-rejected ambient
+    WANDB_PROJECT passthrough — pins are explicit per-launch
+    declarations, never the dispatch process's ambient env.
+    """
+    return [
+        f"export {k}={shlex.quote(str(v))}"
+        for k, v in sorted(validate_env_pins((spec.extra or {}).get("env_pins")).items())
+    ]
+
+
 def render_sbatch(
     *,
     spec: RunSpec,
@@ -1761,6 +1783,12 @@ def render_sbatch(
             # submission unique analogue.
             stage_blocks.append(f"export EPS_ISSUE={spec.issue}")
             stage_blocks.append('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"')
+            # #1669: launch env pins (WANDB_PROJECT et al., incident
+            # #1586) — exported BEFORE the WANDB_PROJECT:-issue<N> default
+            # below so the `:-` default preserves the pin (a pin-less
+            # render appends nothing, byte-identical). See
+            # _env_pin_export_lines for the SLURM-surface rationale.
+            stage_blocks.extend(_env_pin_export_lines(spec))
             # WandB project default (#601 follow-up r1) — parity with the
             # GCP workload_cmd lane: HF-Trainer workloads that never set
             # WANDB_PROJECT land in WandB's global default project

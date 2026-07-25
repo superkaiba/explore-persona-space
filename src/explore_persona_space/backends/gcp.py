@@ -147,6 +147,7 @@ from explore_persona_space.backends.base import (
     RunHandle,
     RunSpec,
     recommend_lane_next_interval,
+    validate_env_pins,
     validate_lane_suffix,
 )
 
@@ -1437,6 +1438,23 @@ def render_startup_script(
     # single line). The hydra branch is the byte-identical pre-#588
     # lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
+        # #1669: launch env pins (WANDB_PROJECT et al., incident #1586) —
+        # WORKLOAD-CMD BRANCH ONLY (the hydra branch is pin-free by
+        # construction: dispatch_issue.py's --env-pin guard requires a
+        # non-empty --workload-cmd, which keeps the hydra-only
+        # byte-identity snapshot untouched). Re-validated here as defense
+        # in depth (the rendered startup script lands in instance metadata
+        # and the handle sidecar is a hand-editable JSON), shlex-quoted,
+        # and spliced immediately BEFORE the WANDB_PROJECT:-issue<N>
+        # default below so the `:-` default preserves the pin and a
+        # pin-less render is byte-identical. An inline `WANDB_PROJECT=...
+        # cmd` prefix in workload_cmd still supersedes the export for that
+        # command (bash per-command env semantics — the documented
+        # zero-code override).
+        env_pin_lines = [
+            f"export {k}={shlex.quote(str(v))}"
+            for k, v in sorted(validate_env_pins((spec.extra or {}).get("env_pins")).items())
+        ]
         workload_block = [
             "# === REPO_ROOT export (#641; trap #599) ===",
             "# The GCE startup script clones the repo to $WORKLOAD_ROOT",
@@ -1465,6 +1483,7 @@ def render_startup_script(
             "# Masks the trap for managed launches only; hand launches still",
             "# need the gotchas.md _ensure_repo_root_on_syspath() guidance.",
             'export PYTHONPATH="$WORKLOAD_ROOT${PYTHONPATH:+:$PYTHONPATH}"',
+            *env_pin_lines,
             "# === WandB project default (#601 follow-up r1) ===",
             "# HF-Trainer workloads that never set WANDB_PROJECT land in WandB's",
             "# global default project 'huggingface', violating the Upload Policy",
@@ -4344,6 +4363,10 @@ def reconnect_or_none(
                     for k, v in {
                         "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
                         "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                        # #1669: launch env pins — carried on the reconnect
+                        # handle so an exit-75 rerun's sidecar overwrite
+                        # stays failover-capable WITH the pins (#1586).
+                        "env_pins": (spec.extra or {}).get("env_pins"),
                     }.items()
                     if v
                 }
@@ -5605,6 +5628,12 @@ class GcpBackend(ComputeBackend):
                     for k, v in {
                         "boot_disk_gb": spec.extra.get("boot_disk_gb"),
                         "min_ram_gb": spec.extra.get("min_ram_gb"),
+                        # #1669: launch env pins — persisted so the async
+                        # GCP→RunPod failover reconstruction
+                        # (backend_poll._runspec_from_gcp_handle) forwards
+                        # them and the fresh RunPod launcher re-exports
+                        # them (#1586). Key OMITTED when absent/falsy.
+                        "env_pins": spec.extra.get("env_pins"),
                     }.items()
                     if v
                 },
