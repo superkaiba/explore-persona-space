@@ -1,0 +1,757 @@
+{
+  "meta": {
+    "script": "scripts/issue1639_oneside_reparam.py",
+    "git_commit": "46e2fcbf630c62d49f48fd719b8068c9724c8c1b",
+    "layer": 19,
+    "date": "2026-07-24",
+    "provenance": "user-chat inline free-analysis round (one-sided Tier-4 reparam)",
+    "gates": "full_chain vs committed reparam + naive_off vs committed tier15, tol 1e-4",
+    "wall_seconds": 114.41915011405945
+  },
+  "directions": {
+    "base.Wren->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.00023147209315199646,
+        "input_only": -0.012977326984864757,
+        "output_only": 0.1230276603954149,
+        "full_chain": 0.124383914120198
+      },
+      "ceiling_committed": 0.1974782359913172,
+      "fractions": {
+        "naive_off": -0.0011721397651241624,
+        "input_only": -0.0657152263879618,
+        "output_only": 0.6229935150971484,
+        "full_chain": 0.6298613793859642
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.07356984523672087,
+        "output_only": -0.02280272599996134
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9677765047138069,
+          "identity_bias_r2": 0.9075010857355273,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.09970598229814331,
+          "identity_bias_r2": -0.6522934268019713,
+          "knn_acc_at_1_euclid_mean": 0.09666666666666668
+        }
+      }
+    },
+    "base.Wren->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.03760500478468387,
+        "input_only": 0.03448868768463753,
+        "output_only": 0.17554367684317607,
+        "full_chain": 0.17194422999134706
+      },
+      "ceiling_committed": 0.21775009509535348,
+      "fractions": {
+        "naive_off": 0.17269799477339615,
+        "input_only": 0.15838655624712733,
+        "output_only": 0.8061703797020383,
+        "full_chain": 0.7896402062008383
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.09121293711187203,
+        "output_only": -0.03846353922563721
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9688707167011282,
+          "identity_bias_r2": 0.9309497703542859,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.11490338668976652,
+          "identity_bias_r2": -0.7251595555544457,
+          "knn_acc_at_1_euclid_mean": 0.19
+        }
+      }
+    },
+    "base.Wren->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.03886358509187571,
+        "input_only": -0.05328334179574079,
+        "output_only": 0.07832441887181896,
+        "full_chain": 0.08149818988602575
+      },
+      "ceiling_committed": 0.13266438854640195,
+      "fractions": {
+        "naive_off": -0.2929466265793131,
+        "input_only": -0.401640126484312,
+        "output_only": 0.5903952049982386,
+        "full_chain": 0.6143185128955702
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.0890731833920317,
+        "output_only": -0.024439435706390046
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9690087509125273,
+          "identity_bias_r2": 0.9235080549462292,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.04894084692229517,
+          "identity_bias_r2": -0.8951126011856998,
+          "knn_acc_at_1_euclid_mean": 0.08333333333333334
+        }
+      }
+    },
+    "base.HELIOS->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.03040335583450493,
+        "input_only": -0.04669917542143853,
+        "output_only": 0.12243844135567594,
+        "full_chain": 0.1279872850236069
+      },
+      "ceiling_committed": 0.19648846768114947,
+      "fractions": {
+        "naive_off": -0.15473353827483555,
+        "input_only": -0.23766878520941673,
+        "output_only": 0.6231329644972458,
+        "full_chain": 0.6513730120349737
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.09389740127618262,
+        "output_only": -0.02834992628656634
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9702533592115413,
+          "identity_bias_r2": 0.9104025756239004,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.10321993906745519,
+          "identity_bias_r2": -0.9018658338363081,
+          "knn_acc_at_1_euclid_mean": 0.13666666666666666
+        }
+      }
+    },
+    "base.HELIOS->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.02472123884018318,
+        "input_only": -0.023096891044657397,
+        "output_only": 0.14955940699118353,
+        "full_chain": 0.14814526627588087
+      },
+      "ceiling_committed": 0.21775009509535348,
+      "fractions": {
+        "naive_off": -0.11353032396774691,
+        "input_only": -0.10607063585686699,
+        "output_only": 0.6868396862269611,
+        "full_chain": 0.6803453574199707
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.10746233493483226,
+        "output_only": -0.03676232370354913
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9716225257143036,
+          "identity_bias_r2": 0.9328047284877911,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.13405736300714566,
+          "identity_bias_r2": -0.9479869426599103,
+          "knn_acc_at_1_euclid_mean": 0.14333333333333334
+        }
+      }
+    },
+    "base.HELIOS->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.09586458807748088,
+        "input_only": -0.11261405663933788,
+        "output_only": 0.08210480958344935,
+        "full_chain": 0.08398374720178914
+      },
+      "ceiling_committed": 0.13266438854640195,
+      "fractions": {
+        "naive_off": -0.7226098060516849,
+        "input_only": -0.848864249654676,
+        "output_only": 0.6188911016970586,
+        "full_chain": 0.6330541912716403
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.10735216381259885,
+        "output_only": -0.02745355719365743
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9712987275342061,
+          "identity_bias_r2": 0.9237855163664626,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.05561387985446997,
+          "identity_bias_r2": -1.114414748332218,
+          "knn_acc_at_1_euclid_mean": 0.09
+        }
+      }
+    },
+    "base.Dana->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.039143363053081415,
+        "input_only": 0.0281896179571256,
+        "output_only": 0.1223613752353857,
+        "full_chain": 0.13254867473690102
+      },
+      "ceiling_committed": 0.19648846768114947,
+      "fractions": {
+        "naive_off": 0.19921455704261015,
+        "input_only": 0.14346703544388234,
+        "output_only": 0.6227407474821725,
+        "full_chain": 0.6745875536674937
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.07657085171080732,
+        "output_only": -0.024319684708427314
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9741123518837244,
+          "identity_bias_r2": 0.9364799410739759,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.11215418080127182,
+          "identity_bias_r2": -0.570131674397103,
+          "knn_acc_at_1_euclid_mean": 0.15
+        }
+      }
+    },
+    "base.Dana->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.017731840009273747,
+        "input_only": 0.005459190525200719,
+        "output_only": 0.12727187596953804,
+        "full_chain": 0.13499618997180673
+      },
+      "ceiling_committed": 0.1974782359913172,
+      "fractions": {
+        "naive_off": 0.08979136318623683,
+        "input_only": 0.027644517370718012,
+        "output_only": 0.6444855825790037,
+        "full_chain": 0.6836003435727586
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.06907017543787308,
+        "output_only": -0.026870060903637683
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9736400701749994,
+          "identity_bias_r2": 0.9361845864649152,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.12278777993142276,
+          "identity_bias_r2": -0.5402816684575769,
+          "knn_acc_at_1_euclid_mean": 0.13
+        }
+      }
+    },
+    "base.Dana->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.02239050344017146,
+        "input_only": -0.040460623955377306,
+        "output_only": 0.08475349679651478,
+        "full_chain": 0.09023959295260775
+      },
+      "ceiling_committed": 0.13266438854640195,
+      "fractions": {
+        "naive_off": -0.16877553716941865,
+        "input_only": -0.3049848146793773,
+        "output_only": 0.6388564235297448,
+        "full_chain": 0.6802096172255353
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.08491698928537579,
+        "output_only": -0.028000993252023498
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9742390058151389,
+          "identity_bias_r2": 0.9413271982270083,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.07282268608612819,
+          "identity_bias_r2": -0.7467236107302784,
+          "knn_acc_at_1_euclid_mean": 0.11000000000000001
+        }
+      }
+    },
+    "base.Vex->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.0036854919953122067,
+        "input_only": -0.004939062391321025,
+        "output_only": 0.13859926929682975,
+        "full_chain": 0.14398116645997483
+      },
+      "ceiling_committed": 0.19648846768114947,
+      "fractions": {
+        "naive_off": -0.01875678526483711,
+        "input_only": -0.025136652800081174,
+        "output_only": 0.7053811907258645,
+        "full_chain": 0.7327715878654998
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.07346248592041253,
+        "output_only": -0.032097699064503084
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9707465544393602,
+          "identity_bias_r2": 0.9225027375552117,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.06427715046419535,
+          "identity_bias_r2": -0.6582404483732622,
+          "knn_acc_at_1_euclid_mean": 0.16333333333333333
+        }
+      }
+    },
+    "base.Vex->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.013182167780764642,
+        "input_only": -0.021291457530015823,
+        "output_only": 0.11486632988941081,
+        "full_chain": 0.11787877315694384
+      },
+      "ceiling_committed": 0.1974782359913172,
+      "fractions": {
+        "naive_off": -0.06675250928079103,
+        "input_only": -0.10781672938860956,
+        "output_only": 0.5816657684468141,
+        "full_chain": 0.5969203267651569
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.06335194192936525,
+        "output_only": -0.025235663899122063
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9706529856818031,
+          "identity_bias_r2": 0.920283306175868,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.07829726205790188,
+          "identity_bias_r2": -0.6073481805648326,
+          "knn_acc_at_1_euclid_mean": 0.06
+        }
+      }
+    },
+    "base.Vex->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.013597980228014728,
+        "input_only": 0.0133162676629629,
+        "output_only": 0.16061886672315517,
+        "full_chain": 0.15908498039772012
+      },
+      "ceiling_committed": 0.21775009509535348,
+      "fractions": {
+        "naive_off": 0.06244764312070738,
+        "input_only": 0.06115390056262277,
+        "output_only": 0.7376293757888815,
+        "full_chain": 0.7305851247874601
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.08650866119492825,
+        "output_only": -0.036022017311824375
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9712966398198564,
+          "identity_bias_r2": 0.9353807788101645,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.09886287746988454,
+          "identity_bias_r2": -0.6793061134922604,
+          "knn_acc_at_1_euclid_mean": 0.15
+        }
+      }
+    },
+    "instruct.Wren->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.2126945205182822,
+        "input_only": 0.19238243287551093,
+        "output_only": 0.3631801890120169,
+        "full_chain": 0.3794893928805364
+      },
+      "ceiling_committed": 0.40107670413358276,
+      "fractions": {
+        "naive_off": 0.5303088370035126,
+        "input_only": 0.4796649391320319,
+        "output_only": 0.9055130484244129,
+        "full_chain": 0.9461766015563534
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.08049637014983442,
+        "output_only": -0.03986645062107717
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9712569706347829,
+          "identity_bias_r2": 0.9269012975508284,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.31610098203789705,
+          "identity_bias_r2": -0.2980749988366118,
+          "knn_acc_at_1_euclid_mean": 0.42333333333333334
+        }
+      }
+    },
+    "instruct.Wren->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.11977577106326365,
+        "input_only": 0.10650975952917507,
+        "output_only": 0.30980091671595844,
+        "full_chain": 0.31300982992628246
+      },
+      "ceiling_committed": 0.3285635376004241,
+      "fractions": {
+        "naive_off": 0.36454371029120863,
+        "input_only": 0.3241679229139076,
+        "output_only": 0.9428949997875801,
+        "full_chain": 0.9526614919362811
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.08705845572857629,
+        "output_only": -0.04504855740340861
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.971510380205776,
+          "identity_bias_r2": 0.9364588272645478,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.24374195654922537,
+          "identity_bias_r2": -0.36345965753170195,
+          "knn_acc_at_1_euclid_mean": 0.33
+        }
+      }
+    },
+    "instruct.Wren->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.009768318856453684,
+        "input_only": -0.08032385671720266,
+        "output_only": 0.18737542645531535,
+        "full_chain": 0.20087330899930178
+      },
+      "ceiling_committed": 0.2328833350537587,
+      "fractions": {
+        "naive_off": 0.04194511751645419,
+        "input_only": -0.3449102817883501,
+        "output_only": 0.8045892438463306,
+        "full_chain": 0.8625490911701873
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.11212044498403428,
+        "output_only": -0.0293073645097655
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9709450428643505,
+          "identity_bias_r2": 0.923927480799066,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.16483312979336662,
+          "identity_bias_r2": -0.8612144046098043,
+          "knn_acc_at_1_euclid_mean": 0.2333333333333333
+        }
+      }
+    },
+    "instruct.HELIOS->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.16590006777821054,
+        "input_only": 0.16610540688256115,
+        "output_only": 0.3450976796134543,
+        "full_chain": 0.34368494225377444
+      },
+      "ceiling_committed": 0.3548299086061537,
+      "fractions": {
+        "naive_off": 0.4675481512533732,
+        "input_only": 0.46812684853725556,
+        "output_only": 0.9725721289083841,
+        "full_chain": 0.9685906794155007
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.07935176455682433,
+        "output_only": -0.03930844019434328
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.972466120965277,
+          "identity_bias_r2": 0.9235259486516263,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.2927195348672921,
+          "identity_bias_r2": -0.2748939776833834,
+          "knn_acc_at_1_euclid_mean": 0.38333333333333336
+        }
+      }
+    },
+    "instruct.HELIOS->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.07989165561976419,
+        "input_only": 0.08536494171553399,
+        "output_only": 0.3229868641711072,
+        "full_chain": 0.3197755440109208
+      },
+      "ceiling_committed": 0.3285635376004241,
+      "fractions": {
+        "naive_off": 0.24315435669834676,
+        "input_only": 0.25981258401030743,
+        "output_only": 0.9830271080289534,
+        "full_chain": 0.9732532902047376
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.07020163090250989,
+        "output_only": -0.045032205437062475
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9731610474633537,
+          "identity_bias_r2": 0.9303285799170795,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.2602422180080497,
+          "identity_bias_r2": -0.3374154872627466,
+          "knn_acc_at_1_euclid_mean": 0.33333333333333337
+        }
+      }
+    },
+    "instruct.HELIOS->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.038061086413966994,
+        "input_only": -0.09682499063087668,
+        "output_only": 0.19591501570823622,
+        "full_chain": 0.20246067625485076
+      },
+      "ceiling_committed": 0.2328833350537587,
+      "fractions": {
+        "naive_off": -0.16343413497226406,
+        "input_only": -0.4157660770725636,
+        "output_only": 0.8412582019362239,
+        "full_chain": 0.8693652390718074
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.11264970072024076,
+        "output_only": -0.03446940253812798
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9732541859702295,
+          "identity_bias_r2": 0.9387866748025515,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.18480734451549308,
+          "identity_bias_r2": -0.7868705721060922,
+          "knn_acc_at_1_euclid_mean": 0.2533333333333333
+        }
+      }
+    },
+    "instruct.Dana->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.11049945986207943,
+        "input_only": 0.10240626139167497,
+        "output_only": 0.3325852245549472,
+        "full_chain": 0.3375253483041908
+      },
+      "ceiling_committed": 0.3548299086061537,
+      "fractions": {
+        "naive_off": 0.31141529274165325,
+        "input_only": 0.28860662223753414,
+        "output_only": 0.937308880926672,
+        "full_chain": 0.9512313931766946
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.08435282385699923,
+        "output_only": -0.037276588564737256
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9726249191533862,
+          "identity_bias_r2": 0.939337292373592,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.27257380169686185,
+          "identity_bias_r2": -0.5092018723055536,
+          "knn_acc_at_1_euclid_mean": 0.35
+        }
+      }
+    },
+    "instruct.Dana->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.13232332065281482,
+        "input_only": 0.10246618658839546,
+        "output_only": 0.36101225205299914,
+        "full_chain": 0.3793513023089139
+      },
+      "ceiling_committed": 0.40107670413358276,
+      "fractions": {
+        "naive_off": 0.3299202354289397,
+        "input_only": 0.255477781512506,
+        "output_only": 0.9001077557792044,
+        "full_chain": 0.9458323018994567
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.09465100038054755,
+        "output_only": -0.04556732383825346
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9731631119543915,
+          "identity_bias_r2": 0.9364205455516044,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.31214509610228436,
+          "identity_bias_r2": -0.507291002439495,
+          "knn_acc_at_1_euclid_mean": 0.4166666666666667
+        }
+      }
+    },
+    "instruct.Dana->Vex": {
+      "rungs_r2_foldmean": {
+        "naive_off": -0.012689897732290678,
+        "input_only": -0.10243594307148562,
+        "output_only": 0.1804117045007183,
+        "full_chain": 0.19595052167824534
+      },
+      "ceiling_committed": 0.2328833350537587,
+      "fractions": {
+        "naive_off": -0.05449036415319863,
+        "input_only": -0.43985948177802997,
+        "output_only": 0.7746870528931241,
+        "full_chain": 0.8414106644127722
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.11334932010777106,
+        "output_only": -0.028064784711912382
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9730717927745705,
+          "identity_bias_r2": 0.9397949118406155,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.1655406515112643,
+          "identity_bias_r2": -1.0129454803953735,
+          "knn_acc_at_1_euclid_mean": 0.22000000000000003
+        }
+      }
+    },
+    "instruct.Vex->Wren": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.13636279886236502,
+        "input_only": 0.13464241188368853,
+        "output_only": 0.309083899268884,
+        "full_chain": 0.3022054022124496
+      },
+      "ceiling_committed": 0.3548299086061537,
+      "fractions": {
+        "naive_off": 0.3843046923468957,
+        "input_only": 0.37945620878632286,
+        "output_only": 0.8710762305326245,
+        "full_chain": 0.8516908943769025
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.052395400203539035,
+        "output_only": -0.029077893579056147
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9739440957690887,
+          "identity_bias_r2": 0.9137142875425921,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.23597485274383878,
+          "identity_bias_r2": -0.28720302476172965,
+          "knn_acc_at_1_euclid_mean": 0.2866666666666666
+        }
+      }
+    },
+    "instruct.Vex->HELIOS": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.14824728768786055,
+        "input_only": 0.14551257738637735,
+        "output_only": 0.3383404044447348,
+        "full_chain": 0.3399357255688852
+      },
+      "ceiling_committed": 0.40107670413358276,
+      "fractions": {
+        "naive_off": 0.369623281930843,
+        "input_only": 0.36280485973554044,
+        "output_only": 0.8435802951348852,
+        "full_chain": 0.847557891209922
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.06329404882823372,
+        "output_only": -0.04079731732849523
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9749089049887196,
+          "identity_bias_r2": 0.9336329318957232,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.2934701939995602,
+          "identity_bias_r2": -0.2582573005410522,
+          "knn_acc_at_1_euclid_mean": 0.3666666666666667
+        }
+      }
+    },
+    "instruct.Vex->Dana": {
+      "rungs_r2_foldmean": {
+        "naive_off": 0.12377056755787252,
+        "input_only": 0.12254988928510291,
+        "output_only": 0.2933158224758906,
+        "full_chain": 0.2831481576068793
+      },
+      "ceiling_committed": 0.3285635376004241,
+      "fractions": {
+        "naive_off": 0.3767020785745057,
+        "input_only": 0.37298688156364895,
+        "output_only": 0.8927217688792988,
+        "full_chain": 0.8617759586921181
+      },
+      "oneside_shuffle_middle_null_mean": {
+        "input_only": -0.05689641470028004,
+        "output_only": -0.04490463820734103
+      },
+      "alignments": {
+        "ctx": {
+          "ridge_r2": 0.9746411225963452,
+          "identity_bias_r2": 0.928471729728996,
+          "knn_acc_at_1_euclid_mean": 1.0
+        },
+        "ans": {
+          "ridge_r2": 0.2172480510235233,
+          "identity_bias_r2": -0.2577016078215153,
+          "knn_acc_at_1_euclid_mean": 0.27
+        }
+      }
+    }
+  }
+}

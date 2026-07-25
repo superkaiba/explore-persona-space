@@ -117,12 +117,28 @@ train folds only; d free parameters per applied recentering):
   alignments plus failing nulls. It cannot distinguish "same circuit with
   re-encoded inputs/outputs" from "different circuit computing an equivalent
   function."
-- **Diagnostic variants (proposed):**
-  - *One-sided transport:* input-only `ŷ = W_s(Ax) + b*` vs output-only
-    `ŷ = B(W_s x) + b*` — localizes which side of the map the coordinate
-    change lives on.
-  - *Rank-k alignments:* constrain A, B to rank k and sweep k → the
-    recovery-vs-capacity curve measures the dimension of the transported
+- **Diagnostic variants:**
+  - *One-sided transport* (measured for the characters, 2026-07-24 —
+    `eval_results/issue_1310/xpersona_similarity/oneside_reparam/results.json`):
+    input-only `ŷ = W_s(Ax) + b*` vs output-only `ŷ = B(W_s x) + b*` —
+    localizes which side of the map the coordinate change lives on. Note the
+    one-sided composites keep a REAL algebraic invariant the both-sided form
+    lacks: input-only stays confined to W_s's column space, output-only to
+    its row space — each freezes one whole side of the operator. Well-defined
+    only for within-model pairs (both cells share one residual stream).
+    Character result: the OUTPUT-only rung matches the full chain in all 24
+    pairs (fractions 0.58–0.81 base / 0.77–0.98 instruct vs full 0.60–0.97;
+    shuffle-middle nulls −0.02 to −0.11), while the INPUT-only rung adds
+    nothing over the plain offset (and hurts on villain-target pairs). The
+    alignment own-reads say why: scenario-paired CONTEXT representations are
+    near-identical across characters (ridge alignment R² 0.97; identity+bias
+    baseline 0.91–0.94), while ANSWER representations are deeply
+    character-specific item-by-item (ridge 0.05–0.13 base / 0.16–0.32
+    instruct; identity+bias NEGATIVE, −0.26 to −1.11). Character identity is
+    an answer-side re-encoding on top of a shared context encoding — the
+    Tier-4 sharpening of the answer-side Tier-2 attribution above.
+  - *Rank-k alignments (proposed):* constrain A, B to rank k and sweep k →
+    the recovery-vs-capacity curve measures the dimension of the transported
     core, with the null curve quantifying how non-trivial the transport is
     at every capacity.
 
