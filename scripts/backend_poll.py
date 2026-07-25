@@ -1812,17 +1812,28 @@ def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
 
 
 def _runpod_handle_identity(handle) -> dict:
-    """The (pod_name, job_id) identity of a RunPod handle, for sentinel matching.
+    """The identity of a RunPod handle, for wedge / CUDA-IMA record matching (#1668).
 
-    Mirrors :func:`_gcp_handle_identity`: the sentinel records the identity of the
-    wedged RunPod run that ALREADY launched a fresh-pod failover, so a later,
-    genuinely-NEW run (a fresh-pod re-provision writes a NEW pod_name to the
-    sidecar) is NOT suppressed by a stale sentinel.
+    On RunPod, ``pod_name`` is the canonical issue-derived ``pod-<N>`` and
+    ``job_id`` is ``""`` (launch does not capture the pod_id), so
+    ``(pod_name, job_id)`` is DEGENERATE PER ISSUE — a fresh re-provision keeps
+    the SAME name, and a record keyed on it turns "exactly once per wedge" into
+    "once per issue forever" (#1586). ``extra["runpod_attempt_id"]`` (minted per
+    launch, #598) is the per-attempt discriminator: included whenever present.
+    A LEGACY handle without it keeps the 2-key identity (pre-#598 sidecars —
+    which also cannot relaunch: ``runpod_wedge_relaunch_spec_missing``).
+    Unlike :func:`_gcp_handle_identity`, where job_id is the per-create
+    instance id and already discriminates attempts.
     """
-    return {
+    identity = {
         "pod_name": getattr(handle, "pod_name", None),
         "job_id": getattr(handle, "job_id", None),
     }
+    extra = getattr(handle, "extra", None)
+    attempt = extra.get("runpod_attempt_id") if isinstance(extra, dict) else None
+    if attempt:
+        identity["runpod_attempt_id"] = attempt
+    return identity
 
 
 def _runpod_wedge_sentinel_path(sidecar: Path) -> Path:
@@ -1841,10 +1852,11 @@ def _runpod_wedge_sentinel_path(sidecar: Path) -> Path:
 def _write_runpod_wedge_sentinel(sentinel: Path, *, issue: int, handle) -> None:
     """Persist the RunPod-wedge idempotency sentinel atomically, best-effort.
 
-    Records the wedged RunPod run identity (pod_name/job_id) so a subsequent poll
-    on the SAME wedged handle short-circuits (no second terminate/re-provision). A
-    write failure is LOGGED, not raised — the worst case is one extra
-    terminate-and-reprovision on the next tick, never a silent suppression.
+    Records the wedged RunPod run identity (pod_name / job_id /
+    runpod_attempt_id, #1668) so a subsequent poll on the SAME wedged handle
+    short-circuits (no second terminate/re-provision). A write failure is
+    LOGGED, not raised — the worst case is one extra terminate-and-reprovision
+    on the next tick, never a silent suppression.
     """
     try:
         sentinel.parent.mkdir(parents=True, exist_ok=True)
@@ -1932,9 +1944,11 @@ def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
          as ABSENT (``_read_failover_sentinel`` returns ``None``) — worst case one
          extra terminate-and-reprovision, never a silent suppression.
 
-    Both are keyed to the wedged pod's pod_name/job_id, so a genuinely-new run (a
-    fresh-pod re-provision writes a NEW pod_name to the sidecar) does NOT match a
-    stale record and still gets its own one failover.
+    Both are keyed to the wedged ATTEMPT's identity (pod_name / job_id /
+    runpod_attempt_id, #1668): a fresh re-provision keeps the SAME canonical
+    ``pod-<N>`` name; the NEW ``runpod_attempt_id`` is what makes it a
+    different identity, so a stale record does NOT match a genuinely-new
+    attempt and that attempt still gets its own one failover.
     """
     # 1. DURABLE LEASE (authoritative; survives a .claude/cache-wide disk failure).
     if _lease_records_runpod_wedge_failover(issue, handle):
@@ -2176,6 +2190,57 @@ def _relaunch_fresh_runpod(
     }
 
 
+def _runpod_wedge_liveness_probe(handle, *, timeout_sec: int = 10) -> bool:
+    """True iff the pod answers a cheap SSH liveness probe (#1668, fail-open).
+
+    A live SSH round-trip contradicts the #664 RUNNING-but-no-port host wedge's
+    DEFINING property (unreachability): a pod that answers SSH is not
+    host-wedged regardless of what the RunPod API's ``runtime.ports`` reads (a
+    sustained API port-misreport, the #1586 shape). FAIL-OPEN: ANY failure —
+    no pods.conf row (``_resolve_pod_endpoint`` raises
+    ``RunPodWorkloadStartError``), resolve error, SSH timeout, non-zero exit,
+    unexpected exception — is LOGGED and returns ``False``, so the established
+    terminate path proceeds — a true wedge (unreachable pod) is never
+    suppressed by a probe defect. Note a true wedge with a stale-but-ANSWERING
+    pods.conf row is not possible: the port answers only if the mapping is
+    live.
+    """
+    pod_name = getattr(handle, "pod_name", None)
+    try:
+        from explore_persona_space.backends.runpod import (
+            _resolve_pod_endpoint,  # pods.conf path (runpod.py)
+        )
+
+        host, port = _resolve_pod_endpoint(pod_name)
+        rc = subprocess.run(
+            [
+                "ssh",
+                "-o",
+                "BatchMode=yes",
+                "-o",
+                f"ConnectTimeout={timeout_sec}",
+                "-o",
+                "StrictHostKeyChecking=accept-new",
+                "-p",
+                str(port),
+                f"root@{host}",
+                "true",
+            ],
+            timeout=timeout_sec + 5,
+            capture_output=True,
+        ).returncode
+        return rc == 0
+    except Exception as exc:  # deliberate, logged fail-open (probe = advisory cross-check)
+        logging.warning(
+            "backend_poll: wedge liveness probe failed for %s (%s: %s); "
+            "proceeding on the established terminate path",
+            pod_name,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+
+
 def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
     """Terminate a wedged RunPod pod + re-provision fresh, idempotently (#664).
 
@@ -2184,7 +2249,15 @@ def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dic
     terminate — return a terminal infra JSON
     (``reason="runpod_wedge_inputs_unverified"``) so a human decides (CLAUDE.md
     halt-criterion #2). Idempotency is a durable lease + sidecar sentinel keyed
-    to the wedged pod_id (``_runpod_wedge_already_handled``).
+    to the wedged attempt identity (``_runpod_wedge_already_handled``, #1668).
+
+    Step order (#1668): guard -> inputs gate -> LIVENESS PROBE -> terminate ->
+    sentinel -> relaunch -> stamp. The pre-terminate liveness cross-probe
+    (step 2.5) intercepts a matured wedge on a pod that still answers SSH — a
+    sustained API port-misreport on a HEALTHY pod (the #1586 shape) — clearing
+    the wedge clock and returning a non-terminal running JSON instead of
+    terminating; probe failure/error proceeds to terminate exactly as before
+    (fail-open).
     """
     # 1. IDEMPOTENCY SHORT-CIRCUIT (sentinel keyed to the wedged pod identity). A
     #    second tick on the OLD handle after a successful failover short-circuits —
@@ -2217,6 +2290,36 @@ def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dic
                 f"needed; complete={len(gate.complete)} absent={len(gate.absent)}"
             ),
         )
+
+    # 2.5 PRE-TERMINATE LIVENESS CROSS-PROBE (#1668, fail-open). The #664 wedge's
+    #     defining property is UNREACHABILITY (RUNNING + no public port). A live
+    #     SSH round-trip contradicts the API's no-port read — a sustained API
+    #     port-misreport (the #1586 06:31->08:43Z shape), not a host wedge. Do
+    #     NOT terminate: clear the wedge clock (a genuine wedge must re-mature
+    #     from scratch) and return a NON-terminal running JSON. Probe failure /
+    #     error (timeout, stale or missing pods.conf row) proceeds to terminate
+    #     exactly as today — fail-open, so a true wedge (unreachable pod) is
+    #     never suppressed.
+    if _runpod_wedge_liveness_probe(handle):
+        _clear_runpod_noport_clock(sidecar)
+        return {
+            "status": "running",
+            "current_phase": RUNPOD_WORKLOAD_OBSERVED_PHASE,
+            "new_milestone": True,
+            "last_log_mtime_sec_ago": 0,
+            "pid_alive": True,
+            "log_tail_excerpt": (
+                f"RunPod {handle.pod_name}: no-port API read contradicted by live SSH; "
+                f"wedge clock cleared (#1668 liveness probe) — not terminating"
+            ),
+            "gate": None,
+            "sentinels_processed": 0,
+            "phase_log_mtime_sec_ago": 10**9,
+            "shard_log_mtime_sec_ago": 10**9,
+            "gpu_util": "unknown",
+            "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+            "issue": int(issue),
+        }
 
     # 3. TERMINATE the billing leak (fail-loud; terminate_pod raises on API error).
     _ensure_scripts_dir_on_sys_path()
@@ -2261,10 +2364,11 @@ def _write_runpod_cuda_ima_sentinel(sentinel: Path, *, issue: int, handle) -> No
     """Persist the RunPod CUDA-IMA failover idempotency sentinel atomically (#775).
 
     Byte-mirror of :func:`_write_runpod_wedge_sentinel`. Records the crashed
-    RunPod run identity (pod_name/job_id) so a subsequent poll on the SAME crashed
-    handle short-circuits. A write failure is LOGGED, not raised — worst case one
-    extra terminate-and-reprovision on the next tick (the durable lease still
-    bounds it), never a silent suppression.
+    RunPod run identity (pod_name / job_id / runpod_attempt_id, #1668) so a
+    subsequent poll on the SAME crashed handle short-circuits. A write failure
+    is LOGGED, not raised — worst case one extra terminate-and-reprovision on
+    the next tick (the durable lease still bounds it), never a silent
+    suppression.
     """
     try:
         sentinel.parent.mkdir(parents=True, exist_ok=True)
@@ -2297,8 +2401,11 @@ def _runpod_cuda_ima_already_handled(issue: int, handle, sidecar: Path) -> bool:
          corrupted/unreadable sentinel reads as ABSENT (one extra reprovision at
          worst, never a silent suppression).
 
-    Both keyed to the crashed pod's pod_name/job_id, so a genuinely-new run (the
-    fresh-host re-provision writes a NEW pod_name) does NOT match a stale record.
+    Both keyed to the crashed ATTEMPT's identity (pod_name / job_id /
+    runpod_attempt_id, #1668): a fresh re-provision keeps the SAME canonical
+    ``pod-<N>`` name; the NEW ``runpod_attempt_id`` is what makes it a
+    different identity, so a stale record does NOT match a genuinely-new
+    attempt.
     """
     # 1. DURABLE LEASE (authoritative; survives a .claude/cache-wide disk failure).
     if _lease_records_runpod_cuda_ima_failover(issue, handle):
@@ -2640,11 +2747,12 @@ def _lease_records_runpod_wedge_failover(issue: int, handle, *, lease_store=None
     ``LeaseStore`` default), so a failing ``.claude/cache`` mount does not also
     fail the lease.
 
-    Keyed to the wedged pod's stable identity (``pod_name``/``job_id``), so it
-    fires "exactly once PER WEDGE", NOT "exactly once per issue": a genuinely-new
-    run on the same issue (the fresh-pod re-provision writes a NEW pod_name) does
-    NOT match a prior wedge stamp, so a later, distinct wedge still gets its own
-    single failover.
+    Keyed to the wedged ATTEMPT's identity (``pod_name`` / ``job_id`` /
+    ``runpod_attempt_id``, #1668), so it fires "exactly once PER WEDGE", NOT
+    "exactly once per issue": a fresh re-provision keeps the SAME canonical
+    ``pod-<N>`` name, and the NEW ``runpod_attempt_id`` is what makes it a
+    different identity — a prior wedge stamp does NOT match a genuinely-new
+    attempt, so a later, distinct wedge still gets its own single failover.
 
     A LeaseStore failure (no ``$HOME``, dir uncreatable) is treated as "no record"
     (return ``False``) — the worst case is one extra terminate + re-provision (the
@@ -2722,9 +2830,11 @@ def _lease_records_runpod_cuda_ima_failover(issue: int, handle, *, lease_store=N
     AUTHORITATIVE for the once-more bound: ``_failover_cuda_ima_runpod`` reads it
     to decide whether THIS run already spent its one bounded CUDA-IMA pivot — if
     so, a second same-signature crash on the fresh host routes to terminal
-    ``failure_class: code`` (NOT a second pivot). Keyed to the crashed pod's
-    stable identity, so a genuinely-new run on the same issue (the fresh-host
-    re-provision writes a NEW pod_name) does NOT match a prior stamp.
+    ``failure_class: code`` (NOT a second pivot). Keyed to the crashed
+    ATTEMPT's identity (pod_name / job_id / runpod_attempt_id, #1668): a fresh
+    re-provision keeps the SAME canonical ``pod-<N>`` name, and the NEW
+    ``runpod_attempt_id`` is what makes it a different identity, so a prior
+    stamp does NOT match a genuinely-new attempt.
 
     Lives at ``~/.eps-routing/`` (a DIFFERENT directory from ``.claude/cache``),
     so it survives the EDQUOT / read-only-fs mode that fails BOTH the sidecar and
@@ -2765,15 +2875,19 @@ def _lease_has_any_runpod_cuda_ima_failover(issue: int, *, lease_store=None) -> 
         CURRENT handle's identity.
       - **Layer-2** (this function — the once-more bound in
         :func:`_failover_cuda_ima_runpod`) must fire "this RUN already spent its
-        one CUDA-IMA pivot" REGARDLESS of which pod crashed. A successful pivot
-        stamps the OLD (crashed) pod's identity, then re-points the sidecar at
-        the FRESH pod; the SECOND CUDA-IMA crash arrives on the FRESH handle, so
-        an identity-equality check (layer-1) against the OLD stamp would always
-        be ``False`` and the run would pivot again indefinitely (the unbounded-
-        spend bug this task exists to prevent). An ANY-non-null check survives
-        the fresh-pod identity change. Plan §5 specifies exactly this: the bound
+        one CUDA-IMA pivot" REGARDLESS of which attempt crashed. A successful
+        pivot stamps the OLD (crashed) attempt's identity, then re-points the
+        sidecar at the FRESH attempt — which keeps the SAME canonical
+        ``pod-<N>`` name but carries a NEW ``runpod_attempt_id`` (#1668) — so
+        the SECOND CUDA-IMA crash arrives on the FRESH handle, an
+        identity-equality check (layer-1) against the OLD stamp reads ``False``,
+        and the run would pivot again indefinitely (the unbounded-spend bug this
+        bound exists to prevent). An ANY-non-null check survives the
+        fresh-attempt identity change. Plan §5 specifies exactly this: the bound
         "checks whether ``runpod_cuda_ima_failover_of`` is set to ANY non-null
-        value on the issue's lease".
+        value on the issue's lease". Deliberately UNCHANGED by #1668 (a
+        per-issue bound is the conservative direction — a spent pivot parks a
+        later repeat at ``failure_class: code`` rather than pivoting again).
 
     A LeaseStore failure (no ``$HOME``, dir uncreatable) reads as "no record"
     (return ``False``) — worst case is one extra pivot, NEVER a silent
