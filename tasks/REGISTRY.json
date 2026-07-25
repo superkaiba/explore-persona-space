@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1688,
+  "highest_id": 1689,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5347,6 +5347,13 @@
       "path": "tasks/completed/1688",
       "status": "completed",
       "title": "workflow-fix: step9c selector misses string+transitive deps"
+    },
+    "1689": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1689",
+      "status": "proposed",
+      "title": "Controlled 21-condition speaker x framing lattice for the context->answer map, characterized by the full mapping-similarity tier ladder"
     },
     "169": {
       "has_clean_result": false,
