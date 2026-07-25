@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1679,
+  "highest_id": 1680,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5284,6 +5284,13 @@
       "path": "tasks/archived/168",
       "status": "archived",
       "title": "Qwen default system prompt is representationally distinct but NOT closer to EM-persona SAE features (MODERATE confidence)"
+    },
+    "1680": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1680",
+      "status": "proposed",
+      "title": "daily-fix: Step C suppression honors routed-record ts"
     },
     "169": {
       "has_clean_result": false,
