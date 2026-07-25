@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1673,
+  "highest_id": 1674,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5235,6 +5235,13 @@
       "path": "tasks/proposed/1673",
       "status": "proposed",
       "title": "daily-fix: inline worker briefs carry lint-cert command"
+    },
+    "1674": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1674",
+      "status": "proposed",
+      "title": "daily-fix: driver runs mechanical landed-fix probe at filing"
     },
     "168": {
       "has_clean_result": true,
