@@ -6281,6 +6281,44 @@ _C37_PIN_NEG_WINDOW = 40  # chars of pre-context a negation token guards (c41 pa
 _C37_PIN_TEST_RE = re.compile(r"test_[a-z0-9_]*bundled_in_no_flags")
 
 
+def _c37_collect_hits(plan: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """``(hits, pin_hits)`` flag/line pairs over the plan's non-fenced
+    claim lines. ``hits`` is the falsity arm's whole-line-negation-guarded
+    set; ``pin_hits`` is the pin arm's localized pre-window-guarded
+    superset (#1679). Loop equivalence with the pre-#1679 falsity arm:
+    when ``line_negated`` is False, ``window_live`` is necessarily True
+    (no negation anywhere on the line implies none in any pre-window), so
+    ``hits`` receives exactly what the old whole-line-guarded loop
+    collected; when ``line_negated`` is True, ``hits`` receives nothing —
+    identical to the old guard. The pin arm only ADDS ``pin_hits`` rows
+    for window-live claims."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[str, str]] = []
+    pin_hits: list[tuple[str, str]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        claims = list(_C37_CLAIM_FWD_RE.finditer(line)) + list(_C37_CLAIM_INV_RE.finditer(line))
+        if not claims:
+            continue
+        line_negated = bool(_C37_NEG_RE.search(line))
+        window_live = any(
+            not _C37_NEG_RE.search(line[max(0, m.start() - _C37_PIN_NEG_WINDOW) : m.start()])
+            for m in claims
+        )
+        if line_negated and not window_live:
+            continue
+        for m in _C37_FLAG_RE.finditer(line):
+            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
+                continue  # "bundled into `--check-X`": X is the destination, not the subject
+            if not line_negated:
+                hits.append((m.group(1), line))
+            if window_live:
+                pin_hits.append((m.group(1), line))
+    return hits, pin_hits
+
+
 def _c37_lint_source() -> str | None:
     """``scripts/workflow_lint.py`` source text (same-dir resolution —
     worktree-correct), or ``None`` when absent (``--plan-file`` off-repo).
@@ -6399,37 +6437,10 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
             name,
             "kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape",
         )
-    lines = plan.splitlines()
-    mask = _fence_mask(lines)
-    hits: list[tuple[str, str]] = []  # falsity arm — whole-line negation guard
-    pin_hits: list[tuple[str, str]] = []  # pin arm — localized pre-window guard (#1679)
-    for line, fenced in zip(lines, mask, strict=True):
-        if fenced:
-            continue
-        claims = list(_C37_CLAIM_FWD_RE.finditer(line)) + list(_C37_CLAIM_INV_RE.finditer(line))
-        if not claims:
-            continue
-        line_negated = bool(_C37_NEG_RE.search(line))
-        # Loop equivalence with the pre-#1679 falsity arm: when line_negated
-        # is False, window_live is necessarily True (no negation anywhere on
-        # the line implies none in any pre-window), so `hits` receives
-        # exactly what the old whole-line-guarded loop collected; when
-        # line_negated is True, `hits` receives nothing — identical to the
-        # old guard. The pin arm only ADDS `pin_hits` rows for window-live
-        # claims.
-        window_live = any(
-            not _C37_NEG_RE.search(line[max(0, m.start() - _C37_PIN_NEG_WINDOW) : m.start()])
-            for m in claims
-        )
-        if line_negated and not window_live:
-            continue
-        for m in _C37_FLAG_RE.finditer(line):
-            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
-                continue  # "bundled into `--check-X`": X is the destination, not the subject
-            if not line_negated:
-                hits.append((m.group(1), line))
-            if window_live:
-                pin_hits.append((m.group(1), line))
+    # hits: falsity arm (whole-line negation guard); pin_hits: pin arm
+    # (localized pre-window guard, #1679) — see _c37_collect_hits for the
+    # loop-equivalence argument.
+    hits, pin_hits = _c37_collect_hits(plan)
     if not hits and not pin_hits:
         return _skip(cid, name, "no --check-* no-flags bundling claim on a non-fenced line")
     if _standalone_na_declared(plan, r"no no[- ]flags bundling claim"):
@@ -6464,7 +6475,8 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
             f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
             f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
             "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
-            f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
+            "this claim for a pre-commit-only flag). "
+            f"Offending line: {line.strip()[:100]!r}{more}. "
             "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
             "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
             "(no backticks/quotes)",
