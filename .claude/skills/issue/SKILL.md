@@ -2342,6 +2342,25 @@ compute phases"; #891. Do not extend this sync to `src/` allowlists — a synced
 `env.py` would still miss torch-before-dotenv importers in-process, which the
 launch prefix caps unconditionally.)
 
+**Reference-lint staleness is handled LINT-side, never by widening this sync
+(#1622 → #1672).** The synced specs may reference `scripts/` helpers that
+landed on main after the branch point (e.g. `scripts/plan_patch.py`, #1631)
+and are absent from the stale worktree tree; the sync commit's own pre-commit
+hooks then run the (freshly-synced) `workflow_lint.py --check-references`
+against the WORKTREE tree. Rather than syncing those helpers in — banned
+above; nothing may execute `scripts/` copies from the worktree —
+`check_script_references` / `check_skill_references` degrade exactly that
+case to a `WARN:` on a non-main checkout (referenced target missing locally
+but present at `main`/`origin/main`), so the sync commit passes on files the
+round never touched. A hard reference FAIL inside a worktree therefore means
+the target is missing on main too — a genuine dead reference introduced by
+this round, fix it. Strictness is unchanged on the main checkout and in the
+Step 10d landing-tree gate (a non-git tree probes nothing and keeps the hard
+FAIL). (Named residual: a detached scratch-worktree merge commit — CLAUDE.md
+§ Concurrent repo-root committers — also commits in the WARN regime; a
+branch that deletes a still-referenced script is caught post-merge on main
+by the strict main-tree lint.)
+
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
 > two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
