@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1678,
+  "highest_id": 1679,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5270,6 +5270,13 @@
       "path": "tasks/proposed/1678",
       "status": "proposed",
       "title": "daily-fix: stagger same-target filings in one wave"
+    },
+    "1679": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1679",
+      "status": "proposed",
+      "title": "workflow-fix: c37 requires bundled_in_no_flags pin test"
     },
     "168": {
       "has_clean_result": true,
