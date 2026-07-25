@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1672,
+  "highest_id": 1673,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5228,6 +5228,13 @@
       "path": "tasks/proposed/1672",
       "status": "proposed",
       "title": "daily-fix: 10d recovery syncs lint targets in stale worktree"
+    },
+    "1673": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1673",
+      "status": "proposed",
+      "title": "daily-fix: inline worker briefs carry lint-cert command"
     },
     "168": {
       "has_clean_result": true,
