@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1670,
+  "highest_id": 1671,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5214,6 +5214,13 @@
       "path": "tasks/proposed/1670",
       "status": "proposed",
       "title": "daily-fix: reconcile pass must not stop young respawns"
+    },
+    "1671": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1671",
+      "status": "proposed",
+      "title": "daily-fix: sync_repo_root retries abort on HEAD.lock race"
     },
     "168": {
       "has_clean_result": true,
