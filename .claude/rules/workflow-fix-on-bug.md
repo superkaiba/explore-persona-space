@@ -223,6 +223,16 @@ related_task: <task ID this surfaced on, e.g. #391, or n/a>
 <!-- /workflow-fix-candidate -->
 ```
 
+**Urgent subclass (OPTIONAL fields — parked candidates only, #1681).** A
+PARKING session (recursion guard / `AUTO_REVIEW_DISABLED`) with direct
+evidence its bug is a currently-failing test on origin/main MAY add three
+lines inside the block — `urgency: main-red`, `failing_test: <ONE pytest
+node id>`, `wf_fix: true|false` — making the park mechanically routable by
+the watcher's urgent-park router within ~one 10-min tick instead of the
+nightly sweep. Grammar + verification + bounds: § Recursion guard "Urgent
+fast path" below. Non-parked (auto-routed) candidates never need these
+fields.
+
 **Before emitting: grep the workflow surface for the pattern.** When the
 bug is identifiable by grep (a literal string, a specific regex, a
 frontmatter line — e.g. a stale model pin, a deprecated marker field, a
@@ -687,6 +697,37 @@ as `AUTO_REVIEW_DISABLED`-suppressed candidates are. The cost is a
 one-cycle delay, not a dropped bug. The recursion-guard predicate is
 executable-tested (`tests/test_workflow_fix_dedup.py`
 `test_is_workflow_fix_session_true_on_provenance_line`).
+
+**Urgent fast path — "main is red" (#1681).** A parked candidate whose bug
+is a CURRENTLY-FAILING test on origin/main has fleet-wide per-hour cost
+(every intervening session's Step 9c gate must re-classify the red;
+incident #1643: an 07:08Z park's red lived ~11.5h to #1666's merge). When
+the parking session has direct evidence of a live red (e.g. its own Step
+9c gate classified the node pre-existing-red against the baseline ledger),
+it SHOULD park in the MECHANICALLY ROUTABLE form: the formal candidate
+block PLUS three fields inside it —
+
+```
+urgency: main-red
+failing_test: <ONE pytest node id, e.g. tests/test_x.py::test_y>
+wf_fix: true|false   # target_file on the workflow surface, or not
+```
+
+Labeling is not routing: the parking session still NEVER files or spawns.
+The watcher's urgent-park router pass (`autonomous_session_watch.py`
+`urgent_wf_park_pass`, every 10 min — an independent, non-guarded actor)
+detects the token, VERIFIES the claim (fresh step9c baseline-ledger hit
+whose `refreshed_at` postdates the park, else one bounded pytest run of
+the named node at the main checkout — rc==1 confirmed, rc==0 refuted, any
+other rc indeterminate), and on confirmation files + dispatches through
+the standard path (`scripts/file_infra_task.py`) and posts the standard
+`epm:workflow-fix-task-filed` routed-record (`source:
+watcher-urgent-park-router`, sweep-reported fingerprint verbatim +
+`origin_candidate_ts`) that closes the park for the nightly sweep.
+Bounds: `EPM_URGENT_WF_PARK_ROUTES_PER_DAY` (default 2) per UTC day; kill
+switch `EPM_DISABLE_URGENT_WF_PARK_PASS=1`. Anything missing, malformed,
+refuted, or unverifiable falls back to the nightly /daily Step C sweep
+unchanged — the router never guesses and never synthesizes fields.
 
 **A `daily-fix:` session for a NON-workflow-surface fix is intentionally
 outside this guard.** A `/daily` route-2 item filed with `wf_fix: false`

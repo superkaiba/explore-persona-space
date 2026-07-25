@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-29 passes ("pass" = one top-level per-tick action block in ``main()``'s
+30 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,6 +11,7 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
+29 (completed-unmerged) -> 30 (urgent-park router) ->
 19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
@@ -580,6 +581,44 @@ adding a pass means adding a numbered item here AND bumping the digit:
    runs just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`completed_unmerged_pass`.)
 
+30. **Urgent-park router pass (#1681; daemon-INDEPENDENT; runs right after
+   pass 29).** The "main is red" fast path for PARKED workflow-fix
+   candidates: a parked candidate whose bug is a CURRENTLY-FAILING test on
+   origin/main otherwise waits up to ~24h for the nightly /daily Step C
+   sweep while every intervening session's Step 9c gate re-classifies the
+   red (incident #1643: an 07:08Z park's red lived ~11.5h). The PARKING
+   session only LABELS (never routes — the recursion guard holds): the
+   formal candidate block plus three fields ``urgency: main-red`` +
+   ``failing_test: <one pytest node id>`` + ``wf_fix: true|false``
+   (grammar: ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard).
+   This pass — the independent NON-guarded actor — detects the token via a
+   cheap mtime+substring gate (deliberately NO read-size byte cap, the
+   #1287 defeat mode), enumerates authoritatively by importing
+   ``sweep_parked_wf_candidates.sweep()`` (read-only reuse — suppression
+   rules 1-3 come for free), VERIFIES the claim two-tier (a fresh step9c
+   baseline-ledger hit whose ``refreshed_at`` postdates the park, else ONE
+   bounded ``uv run pytest <node>`` subprocess per tick, rc==1 confirmed /
+   rc==0 refuted / ANY other rc incl. rc=5 no-tests-collected
+   indeterminate — never an ``rc != 0 -> confirmed`` shortcut), dedups
+   (``task_workflow.is_open_workflow_fix_task`` + a failing-node
+   containment scan over open infra bodies), files + dispatches through
+   the standard ``scripts/file_infra_task.py`` path, and posts the
+   standard ``epm:workflow-fix-task-filed`` routed-record on the park's
+   OWN stream (sweep-reported fingerprint VERBATIM + ``origin_candidate_ts``
+   — the #1680 lesson; ``source: watcher-urgent-park-router``) so
+   suppression rule 1 closes the park for the nightly sweep.
+   Missing/malformed/unverifiable urgency data falls back to nightly
+   /daily Step C byte-unchanged — the router never synthesizes fields.
+   Bounds: fleet day cap ``EPM_URGENT_WF_PARK_ROUTES_PER_DAY`` (default 2,
+   quiet-at-cap — the #1241 posture; nightly stays the backstop),
+   per-candidate verdict latch (state singleton
+   ``~/.eps-autonomous/urgent-wf-park-router.json``; sidecar
+   ``.claude/cache/urgent-wf-park-events.jsonl``), <=1 pytest run per tick
+   (timeout ``EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S``, default 180s). Kill
+   switch ``EPM_DISABLE_URGENT_WF_PARK_PASS=1``; ``--urgent-wf-park-only``
+   runs just this pass (pair with ``--dry-run`` for a zero-write,
+   zero-subprocess live smoke). (:func:`urgent_wf_park_pass`.)
+
 Why each pass exists
 --------------------
 **Respawn:** the `/loop 10m /issue <N>` driver and any `CronCreate(durable=False)`
@@ -708,11 +747,13 @@ import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import NamedTuple
 
 # scripts/ is sys.path[0] when run as `python scripts/autonomous_session_watch.py`,
 # so its siblings (`session_resolver`, `pod_lifecycle`, ...) import directly.
@@ -1521,6 +1562,15 @@ _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL = "[autonomous_session_watch:completed-un
 # flag sentinel).
 _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-respawn]"
 
+# Substring stamped into the urgent-park router's epm:workflow-fix-task-filed
+# routed-record (task #1681): posted on the parked candidate's OWN stream when
+# the router verified a declared main-red urgency and filed (or deduped) the
+# fix task, so the nightly sweep's suppression rule 1 closes the park. Same
+# staleness-filter contract as every other watcher-posted sentinel
+# (membership in _WATCHER_NOTE_SENTINELS below is load-bearing — the record
+# must never reset the orphan/stalled staleness clocks it rides beside).
+_URGENT_WF_PARK_NOTE_SENTINEL = "[autonomous_session_watch:urgent-wf-park-router]"
+
 # Substring stamped into the boot-death stop marker (task #1267): a freshly
 # dispatched AUTO session whose transcript holds ZERO response rows
 # (assistant OR api-error) >= 30 min after `spawned_at` — the
@@ -1638,6 +1688,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
         _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL,
         _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL,
+        _URGENT_WF_PARK_NOTE_SENTINEL,
         _BOOT_DEATH_STOP_NOTE_SENTINEL,
         _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
@@ -7368,6 +7419,818 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         _save_completed_unmerged_state(state, dry_run)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  completed-unmerged: pass failed (fail-soft): {exc}", file=sys.stderr)
+
+
+# ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
+#
+# Route a PARKED workflow-fix candidate that self-declares a LIVE red test on
+# origin/main (incident #1643: an 07:08Z park's red lived ~11.5h to the
+# nightly /daily Step C sweep while every intervening session's Step 9c gate
+# re-classified it). The watcher is the independent NON-guarded actor the
+# recursion guard needs (.claude/rules/workflow-fix-on-bug.md § Recursion
+# guard "Urgent fast path"): the PARKING session labels (never routes); this
+# pass detects the declared token grammar, VERIFIES the claim (fresh step9c
+# baseline-ledger hit, else ONE bounded pytest run of the named node), and on
+# confirmation files + dispatches through the standard path
+# (scripts/file_infra_task.py) and posts the standard
+# epm:workflow-fix-task-filed routed-record that closes the park for the
+# nightly sweep (suppression rule 1). Missing / malformed / unverifiable
+# urgency data -> the park falls back to the nightly sweep byte-unchanged —
+# the router never guesses and never synthesizes fields.
+
+URGENT_WF_PARK_TOKEN = "urgency: main-red"
+URGENT_WF_PARK_ROUTES_PER_DAY = 2
+URGENT_WF_PARK_PYTEST_TIMEOUT_S = 180.0
+URGENT_WF_PARK_GATE_LOOKBACK_H = 48.0
+URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS = 2
+URGENT_WF_PARK_LEDGER_MAX_AGE_H = 24.0
+
+# Episode verdicts that permanently close a candidate FOR THIS ROUTER (the
+# park itself stays enumerated for the nightly sweep unless routed/deduped —
+# a refuted URGENCY does not kill the underlying candidate).
+_URGENT_WF_PARK_LATCH_VERDICTS = frozenset(
+    {"routed", "deduped", "refuted", "not-routable", "unverifiable"}
+)
+
+# Node-id shape gate (#1681 grammar): exactly ONE pytest node id — no
+# whitespace, no shell metacharacters; parametrize brackets allowed.
+_URGENT_NODE_ID_RE = re.compile(r"[\w./\-]+\.py::[\w.\[\],:\-]+")
+
+# Formal candidate block, same shape the sweep's _BLOCK_RE parses (local copy
+# so the router's parser stays pure + import-free at module load).
+_URGENT_BLOCK_RE = re.compile(
+    r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
+    re.DOTALL,
+)
+
+
+class UrgentFields(NamedTuple):
+    """Parsed mechanically-routable urgent-park fields (parse_urgent_fields)."""
+
+    target_file: str
+    failing_test: str
+    wf_fix: bool
+    bug_observed: str
+    proposed_change: str
+    confidence: str
+    related_task: str
+    fingerprint: str
+    block: str  # the verbatim candidate block, comment tags included
+
+
+def _urgent_wf_park_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_URGENT_WF_PARK_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_completed_unmerged_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_URGENT_WF_PARK_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _urgent_wf_park_routes_per_day() -> int:
+    """Fleet-wide per-UTC-day cap on router filings (env
+    ``EPM_URGENT_WF_PARK_ROUTES_PER_DAY``; default
+    :data:`URGENT_WF_PARK_ROUTES_PER_DAY`). Malformed OR ``< 1`` env falls
+    back to the default — disabling the pass is the kill switch's job
+    (``EPM_DISABLE_URGENT_WF_PARK_PASS=1``), never the cap's (the #1241
+    parse shape, cloned from :func:`_completed_unmerged_respawns_per_day`)."""
+    raw = os.environ.get("EPM_URGENT_WF_PARK_ROUTES_PER_DAY")
+    if not raw:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    if parsed < 1:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    return parsed
+
+
+def _urgent_wf_park_state_path() -> Path:
+    """Singleton day-counter + per-candidate verdict-latch state (deliberately
+    NOT a per-issue GC target — non-int stem, no _GC_TARGETS prefix; the
+    completed-unmerged-observer.json precedent)."""
+    return AUTONOMOUS_REGISTRY_DIR / "urgent-wf-park-router.json"
+
+
+def _urgent_wf_park_sidecar_path() -> Path:
+    """DEDICATED urgent-park event stream (own stream for clean grep — the
+    completed-unmerged / registry-drift sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "urgent-wf-park-events.jsonl"
+
+
+def _load_urgent_wf_park_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_completed_unmerged_state`)."""
+    path = _urgent_wf_park_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_urgent_wf_park_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the day-counter/latch state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        n_eps = len(state.get("episodes") or {})
+        print(f"  [dry-run] would save urgent-wf-park state ({n_eps} episode(s))")
+        return
+    dest = _urgent_wf_park_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  urgent-wf-park: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_urgent_wf_park_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the urgent-park sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append urgent-wf-park sidecar row: {line[:160]}")
+        return
+    dest = _urgent_wf_park_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  urgent-wf-park: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _urgent_park_candidate_gate(now: float, tasks_root: Path, cache_file: Path | None) -> bool:
+    """Cheap arming gate: any ~48h-fresh events stream carrying the urgent
+    token (case-insensitive FULL-file substring scan). Deliberately NO
+    read-size byte cap — a cap on the arming scan is exactly the #1287
+    defeat mode (the arming block could sit past the cap). Zero hits (the
+    overwhelmingly common tick) keeps the pass ~free."""
+    lookback_s = URGENT_WF_PARK_GATE_LOOKBACK_H * 3600.0
+    paths = list(tasks_root.glob("*/*/events.jsonl"))
+    if cache_file is not None and cache_file.exists():
+        paths.append(cache_file)
+    token = URGENT_WF_PARK_TOKEN.lower()
+    for path in paths:
+        try:
+            if now - path.stat().st_mtime > lookback_s:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if token in text.lower():
+            return True
+    return False
+
+
+def _urgent_parse_ts(raw: object) -> datetime | None:
+    """ISO-8601-ish -> aware-UTC datetime; None on failure (naive assumed UTC;
+    the sweep's parse_ts contract, kept local so this helper stays pure)."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
+
+def parse_urgent_fields(note: str) -> UrgentFields | None:
+    """Parse a park note into mechanically-routable urgent fields, else None.
+
+    A park is routable iff its note embeds the FORMAL candidate block AND the
+    block carries ALL THREE urgent fields — ``urgency: main-red`` (the only
+    recognized value), ``failing_test:`` (exactly ONE pytest node id passing
+    the shape gate), ``wf_fix: true|false`` — plus the fp/dedup essentials
+    (``target_file`` / ``bug_observed`` / ``proposed_change``, the fields the
+    sweep computes the fingerprint from). ANY miss returns None: the park
+    falls back to the nightly sweep, never a synthesized field (R4)."""
+    m = _URGENT_BLOCK_RE.search(note or "")
+    if not m:
+        return None
+    block = m.group(1)
+
+    def block_field(name: str) -> str | None:
+        fm = re.search(rf"^{name}:\s*(.+)$", block, re.MULTILINE)
+        return fm.group(1).strip() if fm else None
+
+    urgency = block_field("urgency")
+    if urgency is None or urgency.lower() != "main-red":
+        return None
+    node = block_field("failing_test")
+    if node is None or not _URGENT_NODE_ID_RE.fullmatch(node):
+        return None
+    wf_fix_raw = block_field("wf_fix")
+    if wf_fix_raw is None or wf_fix_raw.lower() not in {"true", "false"}:
+        return None
+    target_file = block_field("target_file")
+    bug = block_field("bug_observed")
+    proposed = block_field("proposed_change")
+    if not target_file or not bug or not proposed:
+        return None
+    from explore_persona_space.task_workflow import wf_fix_fingerprint
+
+    return UrgentFields(
+        target_file=target_file,
+        failing_test=node,
+        wf_fix=(wf_fix_raw.lower() == "true"),
+        bug_observed=bug,
+        proposed_change=proposed,
+        confidence=block_field("confidence") or "unknown",
+        related_task=block_field("related_task") or "n/a",
+        fingerprint=wf_fix_fingerprint(proposed, bug),
+        block=m.group(0),
+    )
+
+
+def verify_main_red(
+    node: str,
+    dry_run: bool,
+    *,
+    park_ts: datetime | None,
+    project_root: Path | None = None,
+    allow_pytest: bool = True,
+) -> tuple[str, str, bool]:
+    """Two-tier red-on-main verification: ``(verdict, detail, used_pytest)``.
+
+    Verdicts: ``confirmed`` | ``refuted`` | ``indeterminate`` | ``dry-run`` |
+    ``deferred`` (tier 2 needed but this tick's single pytest budget is
+    spent). Tier 1 (no subprocess): a schema-valid step9c ledger aged <=
+    :data:`URGENT_WF_PARK_LEDGER_MAX_AGE_H` whose ``refreshed_at`` postdates
+    the park (a ledger refreshed BEFORE the park cannot confirm it — the
+    stale-ledger false-confirm window) and whose ``failing_tests`` carry the
+    node — matched as (file, classname, name): file = pre-``::`` segment,
+    name = LAST segment, classname bound only when the node id carries a
+    middle segment. Tier 2: ONE bounded list-argv ``uv run pytest <node>``
+    at the main checkout — rc==1 confirmed, rc==0 refuted, ANY other rc
+    (incl. rc=5 no-tests-collected: the node was deleted/renamed, e.g. by
+    the very fix that landed; rc=2/4 interrupted/usage) / timeout / OSError
+    indeterminate. An ``rc != 0 -> confirmed`` shortcut is the banned
+    implementation."""
+    if dry_run:
+        return ("dry-run", f"[dry-run] would verify {node}", False)
+    root = project_root if project_root is not None else PROJECT_ROOT
+    import step9c_baseline  # sibling import; the module sys.path bootstrap covers it
+
+    ledger = step9c_baseline.try_load_ledger(root)
+    if ledger is not None:
+        age = step9c_baseline.ledger_age_hours(ledger)
+        refreshed = _urgent_parse_ts(ledger.get("refreshed_at"))
+        if (
+            age is not None
+            and age <= URGENT_WF_PARK_LEDGER_MAX_AGE_H
+            and refreshed is not None
+            and park_ts is not None
+            and refreshed >= park_ts
+        ):
+            parts = node.split("::")
+            node_file, node_name = parts[0], parts[-1]
+            node_class = parts[1] if len(parts) == 3 else None
+            for entry in step9c_baseline.ledger_nodes(ledger):
+                if (
+                    entry.file == node_file
+                    and entry.name == node_name
+                    and (node_class is None or entry.classname == node_class)
+                ):
+                    return (
+                        "confirmed",
+                        f"step9c ledger @ {ledger.get('refreshed_at')} lists {node} red-on-main",
+                        False,
+                    )
+    if not allow_pytest:
+        return ("deferred", "tier-2 pytest budget spent this tick", False)
+    argv = ["uv", "run", "pytest", node, "-q", "--no-header", "-p", "no:cacheprovider"]
+    env = {
+        **os.environ,
+        # Shared-VM thread caps (code-style rule): the watcher runs on the
+        # shared box; an uncapped pytest child can oversubscribe it.
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "8",
+        "NUMEXPR_NUM_THREADS": "8",
+        "MALLOC_ARENA_MAX": "2",
+    }
+    timeout_s = _env_float(
+        "EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S",
+        URGENT_WF_PARK_PYTEST_TIMEOUT_S,
+        lo=10.0,
+        hi=3600.0,
+    )
+    try:
+        res = subprocess.run(
+            argv, cwd=root, env=env, capture_output=True, text=True, timeout=timeout_s
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        return ("indeterminate", f"pytest run failed to complete: {exc}", True)
+    sha = "unknown"
+    try:
+        sha_res = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if sha_res.returncode == 0:
+            sha = sha_res.stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        pass
+    stamp = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    detail = f"`uv run pytest {node} -q` -> rc={res.returncode} at main @ {sha} ({stamp})"
+    if res.returncode == 1:
+        return ("confirmed", f"{detail} (FAILED — red confirmed)", True)
+    if res.returncode == 0:
+        return ("refuted", f"{detail} (PASSED — urgency refuted)", True)
+    return ("indeterminate", f"{detail} (rc outside {{0,1}} — indeterminate)", True)
+
+
+def decide_urgent_route(
+    fields: UrgentFields | None,
+    verdict: str | None,
+    routes_today: int,
+    cap: int,
+    episode: dict,
+) -> str:
+    """PURE routing decision for one urgent-park candidate.
+
+    Returns ``skip-latched`` (episode already terminally decided) |
+    ``not-routable`` (fields unparseable -> nightly owns it) |
+    ``cap-exhausted`` (quiet-at-cap: sidecar only, NO latch — re-eligible
+    tomorrow; the nightly sweep is the real backstop, #1241 posture) |
+    ``verify`` (verdict not yet computed) | ``dry-run`` | ``route``
+    (confirmed) | ``refuted`` | ``defer`` (tier-2 budget spent this tick) |
+    ``retry`` (indeterminate, attempts remain) | ``unverifiable``
+    (indeterminate attempts exhausted)."""
+    latched = episode.get("verdict")
+    if latched in _URGENT_WF_PARK_LATCH_VERDICTS:
+        return "skip-latched"
+    if fields is None:
+        return "not-routable"
+    if routes_today >= cap:
+        return "cap-exhausted"
+    if verdict is None:
+        return "verify"
+    if verdict == "dry-run":
+        return "dry-run"
+    if verdict == "deferred":
+        return "defer"
+    if verdict == "confirmed":
+        return "route"
+    if verdict == "refuted":
+        return "refuted"
+    attempts = episode.get("attempts")
+    prior = attempts if isinstance(attempts, int) and not isinstance(attempts, bool) else 0
+    if prior + 1 >= URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS:
+        return "unverifiable"
+    return "retry"
+
+
+def _urgent_wf_park_dedup(
+    fields: UrgentFields, cand_fp: str | None, tasks_root: Path
+) -> tuple[int, str] | None:
+    """Dedup belts beyond the sweep's own suppression rules 1-2: the exact
+    ``(target_file, fingerprint)`` predicate (belt for records the sweep's
+    lazy body-load path might shape differently) plus a failing-node
+    CONTAINMENT scan — any NON-terminal ``kind: infra`` task whose body
+    carries the exact node id string is a duplicate regardless of wording
+    (same node = same red; closes the #1479-class live collision for this
+    subclass). Returns ``(task_id, belt)`` on a hit, else None."""
+    from explore_persona_space.task_workflow import is_open_workflow_fix_task
+
+    hit = is_open_workflow_fix_task(fields.target_file, cand_fp or fields.fingerprint)
+    if hit is not None:
+        return (hit, "open-wf-fix-task")
+    from sweep_parked_wf_candidates import _load_task_bodies
+
+    for tid, status, _body_path, text, fm in _load_task_bodies(tasks_root):
+        if status in ("completed", "archived"):
+            continue
+        if fm.get("kind") != "infra":
+            continue
+        if fields.failing_test in text:
+            return (tid, "failing-node-containment")
+    return None
+
+
+def _urgent_wf_park_compose_body(
+    fields: UrgentFields, cand_fp: str, verified_line: str
+) -> tuple[str, str, list[str]]:
+    """``(title, body_markdown, tags)`` per workflow-fix-on-bug.md § Body-file
+    template. ``wf_fix: true`` -> the ``workflow-fix:`` title + wf-fix tags +
+    the ``workflow_fix_target:`` Provenance line (the child session lands
+    under the recursion guard); ``wf_fix: false`` -> the ``daily-fix:`` title
+    (the /daily route-2 convention — keeps the filing visible to the
+    title-prefix-gated dedup predicate with NO ``WF_FIX_TITLE_PREFIXES``
+    widening), NO wf-fix tags, NO target line; the ``fingerprint:`` line
+    stays on BOTH routes (sweep suppression rule 2's durable second belt)."""
+    node = fields.failing_test
+    if fields.wf_fix:
+        title = f"workflow-fix: {fields.proposed_change[:60]}"
+        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", "urgent-main-red"]
+        provenance = f"- workflow_fix_target: {fields.target_file}\n- fingerprint: {cand_fp}\n"
+        constraints = (
+            "- Workflow-surface only — never experiment code, `configs/`, or `tasks/`.\n"
+            "- This session carries a `workflow_fix_target:` Provenance line — it MUST\n"
+            "  NOT auto-route its own subagents' workflow-fix candidates (recursion\n"
+            "  guard, `.claude/rules/workflow-fix-on-bug.md` § Recursion guard).\n"
+        )
+    else:
+        node_short = f"{node.split('::')[0].rsplit('/', 1)[-1]}::{node.split('::')[-1]}"
+        title = f"daily-fix: fix red main: {node_short} — {fields.proposed_change[:40]}"
+        tags = ["urgent-main-red"]
+        provenance = f"- fingerprint: {cand_fp}\n"
+        constraints = (
+            "- NON-workflow-surface fix (`wf_fix: false` declared by the parking\n"
+            "  session — the /daily route-2 analogue); scope stays on the named\n"
+            "  target, never `tasks/` state.\n"
+        )
+    body = (
+        "## Overview / Motivation\n\n"
+        "Auto-filed by the watcher urgent-park router (#1681,\n"
+        "`autonomous_session_watch.urgent_wf_park_pass`) from an URGENT\n"
+        "(`urgency: main-red`) parked workflow-fix candidate raised on task\n"
+        f"{fields.related_task}. The named test is red on origin/main NOW — every\n"
+        "intervening session's Step 9c gate re-classifies it until this fix lands.\n\n"
+        "## Goal\n\n"
+        f"fix `{node}` red on origin/main: {fields.proposed_change}\n\n"
+        "## Workflow gap\n\n"
+        f"- **Bug observed (emitter's claim, candidate block):** {fields.bug_observed}\n"
+        f"- **Failing node (router-verified):** `{node}`\n"
+        f"- **Confidence (emitter):** {fields.confidence}\n"
+        f"- verified-at-filing: {verified_line}\n\n"
+        "## Proposed change (candidate diff sketch — refine in planning)\n\n"
+        "(see the verbatim candidate block under `## Provenance` — the router\n"
+        "forwards it unmodified and never synthesizes fields)\n\n"
+        "## Scope / surfaces\n\n"
+        f"- Primary target: `{fields.target_file}`\n"
+        f"- Failing node: `{node}`\n\n"
+        "## Constraints / invariants\n\n"
+        f"{constraints}\n"
+        "## Provenance\n\n"
+        f"{provenance}"
+        "- routed-by: autonomous_session_watch urgent-wf-park-router (#1681)\n\n"
+        f"{fields.block}\n"
+    )
+    return (title, body, tags)
+
+
+def _urgent_wf_park_file_and_dispatch(
+    title: str,
+    body_text: str,
+    tags: list[str],
+    origin_prompt: str,
+    dry_run: bool,
+    project_root: Path | None = None,
+) -> tuple[int | None, bool, str]:
+    """File + dispatch via the canonical wrapper ``scripts/file_infra_task.py``
+    (all spawn gates — daemon/cap/lease/stagger/backstop — come free).
+    Returns ``(filed_id, session_spawned, detail)``; ``filed_id`` None on a
+    failed filing. ``dry_run`` runs no subprocess and writes nothing."""
+    if dry_run:
+        print(f"  [dry-run] would file+dispatch via file_infra_task.py: {title!r}")
+        return (None, False, "[dry-run] no filing performed")
+    root = project_root if project_root is not None else PROJECT_ROOT
+    try:
+        fd, body_path = tempfile.mkstemp(prefix="urgent-wf-park-body-", suffix=".md")
+        with os.fdopen(fd, "w") as fh:
+            fh.write(body_text)
+    except OSError as exc:
+        return (None, False, f"body-file write failed: {exc}")
+    argv = [
+        "uv",
+        "run",
+        "python",
+        "scripts/file_infra_task.py",
+        "--kind",
+        "infra",
+        "--title",
+        title,
+        "--body-file",
+        body_path,
+        "--origin-prompt",
+        origin_prompt,
+    ]
+    for tag in tags:
+        argv += ["--tag", tag]
+    try:
+        res = subprocess.run(argv, cwd=root, capture_output=True, text=True, timeout=300)
+    except (subprocess.SubprocessError, OSError) as exc:
+        return (None, False, f"file_infra_task.py failed to run: {exc}")
+    m = re.search(r"filed(?: \+ dispatched)? #(\d+)", res.stdout)
+    if res.returncode != 0 or not m:
+        return (
+            None,
+            False,
+            f"file_infra_task.py rc={res.returncode}: "
+            f"{res.stdout.strip()[:200]} {res.stderr.strip()[:200]}",
+        )
+    spawned = "filed + dispatched #" in res.stdout
+    last_line = res.stdout.strip().splitlines()[-1][:200]
+    return (int(m.group(1)), spawned, last_line)
+
+
+def _urgent_wf_park_routed_note(
+    fields: UrgentFields,
+    cand_fp: str,
+    filed_ref: str,
+    session_spawned: bool,
+    cand_ts_raw: str,
+    cand_note: str,
+) -> str:
+    """The routed-record note (suppression rule 1 keys on it): the
+    SWEEP-REPORTED fingerprint VERBATIM (never recomputed from abridged
+    text — the #1680 incident class) + ``origin_candidate_ts`` +
+    ``target_file`` + the anti-liveness sentinel."""
+    return (
+        f"filed_task: {filed_ref} / target_file: {fields.target_file} / "
+        f"fingerprint: {cand_fp} / session_spawned: {str(session_spawned).lower()} / "
+        f"source: watcher-urgent-park-router / origin_candidate_ts: {cand_ts_raw} / "
+        f"origin_candidate: {cand_note[:200]} "
+        f"{_URGENT_WF_PARK_NOTE_SENTINEL}"
+    )
+
+
+def _urgent_wf_park_post_routed_record(
+    source: str,
+    note: str,
+    dry_run: bool,
+    *,
+    cache_file: Path | None = None,
+    project_root: Path | None = None,
+) -> bool:
+    """Post the ``epm:workflow-fix-task-filed`` routed-record on the park's
+    OWN stream: a ``task:<id>`` park gets a real ``task.py post-marker``
+    (the watcher runs from the main checkout, so the branch-guard is
+    satisfied); a ``cache`` park gets the equivalent JSON row appended to
+    the Step C fallback stream. Returns True on a confirmed post."""
+    if dry_run:
+        print(f"  [dry-run] would post routed-record on {source}: {note[:160]}")
+        return False
+    root = project_root if project_root is not None else PROJECT_ROOT
+    if source.startswith("task:"):
+        try:
+            issue = int(source.split(":", 1)[1])
+        except ValueError:
+            print(f"  urgent-wf-park: unparseable source {source!r}", file=sys.stderr)
+            return False
+        try:
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "post-marker",
+                    str(issue),
+                    "epm:workflow-fix-task-filed",
+                    "--by",
+                    "autonomous_session_watch",
+                    "--note",
+                    note,
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=True,
+            )
+            return True
+        except (subprocess.SubprocessError, OSError) as exc:
+            print(
+                f"  WARNING: urgent-wf-park routed-record post on #{issue} failed: {exc}",
+                file=sys.stderr,
+            )
+            return False
+    dest = (
+        cache_file
+        if cache_file is not None
+        else root / ".claude" / "cache" / "workflow-fix-events.jsonl"
+    )
+    row = {
+        "ts": datetime.now(tz=UTC).isoformat(),
+        "kind": "epm:workflow-fix-task-filed",
+        "version": 1,
+        "by": "autonomous_session_watch",
+        "note": note,
+    }
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(json.dumps(row) + "\n")
+        return True
+    except OSError as exc:
+        print(f"  WARNING: urgent-wf-park cache routed-record failed: {exc}", file=sys.stderr)
+        return False
+
+
+def urgent_wf_park_pass(
+    dry_run: bool,
+    now: float | None = None,
+    tasks_root: Path | None = None,
+    cache_file: Path | None = None,
+) -> None:
+    """Route parked workflow-fix candidates that self-declare a VERIFIED
+    live-red-on-main test (#1681; grammar + emitter duty:
+    ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard "Urgent fast
+    path"). Cheap mtime+substring gate -> authoritative enumeration via
+    ``sweep_parked_wf_candidates.sweep()`` (read-only import; suppression
+    rules 1-3 for free) -> two-tier verification (step9c ledger, else <=1
+    bounded pytest per tick) -> dedup belts -> file + dispatch via
+    ``scripts/file_infra_task.py`` -> the standard routed-record posted
+    BEFORE latching (crash between = re-post, never a re-file). Day-capped
+    fleet-wide (``EPM_URGENT_WF_PARK_ROUTES_PER_DAY``, default 2,
+    quiet-at-cap), verdict-latched per candidate, kill switch
+    ``EPM_DISABLE_URGENT_WF_PARK_PASS=1``; missing/malformed/refuted/
+    unverifiable urgency -> the nightly /daily Step C sweep owns the park,
+    byte-unchanged. ``tasks_root`` / ``cache_file`` are test overrides."""
+    if not _urgent_wf_park_enabled():
+        print("  urgent-wf-park: disabled via EPM_DISABLE_URGENT_WF_PARK_PASS; skipping")
+        return
+    try:
+        now = now if now is not None else time.time()
+        root = tasks_root if tasks_root is not None else (PROJECT_ROOT / "tasks")
+        if cache_file is not None:
+            cache: Path | None = cache_file
+        else:
+            default_cache = PROJECT_ROOT / ".claude" / "cache" / "workflow-fix-events.jsonl"
+            cache = default_cache if default_cache.exists() else None
+        if not _urgent_park_candidate_gate(now, root, cache):
+            return  # the overwhelmingly common tick: no fresh urgent token anywhere
+        from sweep_parked_wf_candidates import sweep
+
+        window_days = max(1, int(URGENT_WF_PARK_GATE_LOOKBACK_H // 24))
+        result = sweep(root, cache, window_days=window_days)
+        token = URGENT_WF_PARK_TOKEN.lower()
+        urgent = [
+            c for c in result.get("candidates", []) if token in str(c.get("note") or "").lower()
+        ]
+        if not urgent:
+            return
+        state = _load_urgent_wf_park_state()
+        raw_eps = state.get("episodes")
+        episodes: dict = raw_eps if isinstance(raw_eps, dict) else {}
+        state["episodes"] = episodes
+        day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+        routes_today = _day_scoped_count(state, "route_day", "routes_today", day_key)
+        cap = _urgent_wf_park_routes_per_day()
+        pytest_used = False
+        state_dirty = False
+        for cand in urgent:
+            source = str(cand.get("source") or "")
+            ts_raw = str(cand.get("ts") or "")
+            key = f"{source}|{ts_raw}"
+            raw_entry = episodes.get(key)
+            episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
+            note_text = str(cand.get("note") or "")
+            fields = parse_urgent_fields(note_text)
+            action = decide_urgent_route(fields, None, routes_today, cap, episode)
+            if action == "skip-latched":
+                continue
+            if action == "not-routable":
+                episodes[key] = {**episode, "verdict": "not-routable", "latched_at": now}
+                state_dirty = True
+                _append_urgent_wf_park_sidecar({"key": key, "action": "not-routable"}, dry_run)
+                print(f"  urgent-wf-park: {key} not mechanically routable; nightly owns it")
+                continue
+            if action == "cap-exhausted":
+                # Quiet-at-cap (#1241 posture): sidecar row only, NO latch,
+                # NO push — re-eligible tomorrow; nightly is the backstop.
+                _append_urgent_wf_park_sidecar(
+                    {"key": key, "action": "cap-exhausted", "routes_today": routes_today},
+                    dry_run,
+                )
+                continue
+            assert fields is not None  # action == "verify" implies parseable fields
+            park_ts = _urgent_parse_ts(ts_raw)
+            verdict, detail, used_pytest = verify_main_red(
+                fields.failing_test,
+                dry_run,
+                park_ts=park_ts,
+                project_root=PROJECT_ROOT,
+                allow_pytest=not pytest_used,
+            )
+            pytest_used = pytest_used or used_pytest
+            action = decide_urgent_route(fields, verdict, routes_today, cap, episode)
+            if action == "dry-run":
+                print(
+                    f"  [dry-run] would verify {fields.failing_test} then file+dispatch for {key}"
+                )
+                continue
+            if action == "defer":
+                print(f"  urgent-wf-park: pytest budget spent this tick; {key} deferred")
+                continue
+            if action == "retry":
+                prior = episode.get("attempts")
+                n = prior if isinstance(prior, int) and not isinstance(prior, bool) else 0
+                episodes[key] = {**episode, "attempts": n + 1}
+                state_dirty = True
+                _append_urgent_wf_park_sidecar(
+                    {"key": key, "action": "indeterminate-retry", "detail": detail}, dry_run
+                )
+                continue
+            if action in ("refuted", "unverifiable"):
+                episodes[key] = {**episode, "verdict": action, "latched_at": now}
+                state_dirty = True
+                _append_urgent_wf_park_sidecar(
+                    {"key": key, "action": action, "detail": detail}, dry_run
+                )
+                print(f"  urgent-wf-park: {key} {action} ({detail}); nightly owns the park")
+                continue
+            # action == "route": red confirmed. Dedup belts first.
+            cand_fp = str(cand.get("fingerprint") or fields.fingerprint)
+            dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
+            if dedup_hit is not None:
+                tid, belt = dedup_hit
+                note = _urgent_wf_park_routed_note(
+                    fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
+                )
+                _urgent_wf_park_post_routed_record(
+                    source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+                )
+                episodes[key] = {
+                    **episode,
+                    "verdict": "deduped",
+                    "filed_task": tid,
+                    "latched_at": now,
+                }
+                state_dirty = True
+                _append_urgent_wf_park_sidecar(
+                    {"key": key, "action": "deduped", "belt": belt, "task": tid}, dry_run
+                )
+                continue
+            title, body_text, tags = _urgent_wf_park_compose_body(fields, cand_fp, detail)
+            # Day slot consumed at the ATTEMPT, success or not (the
+            # capacity-retry convention); persisted BEFORE the subprocess so
+            # a crash mid-filing cannot re-arm the slot.
+            routes_today += 1
+            state["route_day"] = day_key
+            state["routes_today"] = routes_today
+            state_dirty = True
+            _save_urgent_wf_park_state(state, dry_run)
+            filed_id, spawned, file_detail = _urgent_wf_park_file_and_dispatch(
+                title, body_text, tags, fields.block, dry_run, project_root=PROJECT_ROOT
+            )
+            if filed_id is None:
+                # Slot consumed; episode NOT latched — retried next tick,
+                # bounded by the day cap.
+                _append_urgent_wf_park_sidecar(
+                    {"key": key, "action": "file-failed", "detail": file_detail}, dry_run
+                )
+                print(f"  urgent-wf-park: filing failed for {key}: {file_detail}")
+                continue
+            note = _urgent_wf_park_routed_note(
+                fields, cand_fp, f"#{filed_id}", spawned, ts_raw, note_text
+            )
+            # Routed-record posted BEFORE latching: a crash between never
+            # re-files (the sweep's suppression rule 1 + the dedup belts
+            # close the candidate on the next tick either way).
+            _urgent_wf_park_post_routed_record(
+                source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+            )
+            episodes[key] = {
+                **episode,
+                "verdict": "routed",
+                "filed_task": filed_id,
+                "latched_at": now,
+            }
+            state_dirty = True
+            _telegram_push(
+                f"urgent-wf-park-router: filed{' + dispatched' if spawned else ''} "
+                f"#{filed_id} for urgent main-red park on {source} ({fields.failing_test})",
+                dry_run,
+            )
+            _append_urgent_wf_park_sidecar(
+                {
+                    "key": key,
+                    "action": "routed",
+                    "task": filed_id,
+                    "session_spawned": spawned,
+                    "detail": detail,
+                },
+                dry_run,
+            )
+        # Prune long-latched episodes (30d) so the singleton stays bounded.
+        cutoff = now - 30 * 86400.0
+        for stale_key in [
+            k
+            for k, v in episodes.items()
+            if isinstance(v, dict)
+            and isinstance(v.get("latched_at"), int | float)
+            and v["latched_at"] < cutoff
+        ]:
+            episodes.pop(stale_key)
+            state_dirty = True
+        if state_dirty:
+            _save_urgent_wf_park_state(state, dry_run)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  urgent-wf-park: pass failed (fail-soft): {exc}", file=sys.stderr)
 
 
 # ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
@@ -25863,6 +26726,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a live smoke against the real completed set.",
     )
     parser.add_argument(
+        "--urgent-wf-park-only",
+        action="store_true",
+        help="run ONLY the urgent-park router pass (#1681 — mechanically "
+        "route a parked workflow-fix candidate that self-declares a VERIFIED "
+        "live-red-on-main test via the urgency token grammar) and exit; skip "
+        "every other pass. Daemon-independent (file+dispatch goes via the "
+        "file_infra_task.py subprocess, which carries its own daemon/cap "
+        "gates); pair with --dry-run for a zero-write, zero-subprocess live "
+        "smoke against the real parked-candidate set.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -25990,6 +26864,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # toward flag-only when unreachable — so the pass still runs alone.
     if args.completed_unmerged_only:
         completed_unmerged_pass(args.dry_run)
+        return 0
+
+    # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
+    # daemon-independent (events.jsonl reads + a bounded pytest probe; the
+    # file+dispatch subprocess carries its own daemon/cap gates), so run it
+    # alone. Pair with --dry-run for a zero-write live smoke.
+    if args.urgent_wf_park_only:
+        urgent_wf_park_pass(args.dry_run)
         return 0
 
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
@@ -26121,6 +27003,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # is daemon-independent (the respawn probe skips toward flag-only on a
     # daemon outage), so it runs in this block on a daemon outage too.
     completed_unmerged_pass(args.dry_run)
+
+    # Urgent-park router (#1681): mechanically route parked workflow-fix
+    # candidates that self-declare a VERIFIED live-red-on-main test via the
+    # urgency token grammar (workflow-fix-on-bug.md § Recursion guard
+    # "Urgent fast path") — the minutes-cadence complement of the nightly
+    # /daily Step C sweep (incident #1643: a red lived ~11.5h to the nightly
+    # route). Daemon-independent (the file+dispatch subprocess carries its
+    # own daemon/cap gates), day-capped, verdict-latched; the common tick is
+    # a ~free mtime+substring gate.
+    urgent_wf_park_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
