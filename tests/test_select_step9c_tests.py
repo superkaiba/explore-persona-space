@@ -1018,7 +1018,11 @@ def test_import_map_dotted_scripts_import(tmp_path: Path):
     repo = _make_import_tree(tmp_path, {"test_consumer.py": "from scripts.widgetlib import x\n"})
     tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
     assert "tests/test_consumer.py" in tests
-    assert reasons["tests/test_consumer.py"] == ["import-map:scripts/widgetlib.py"]
+    # #1688: the dotted-ref arm also fires on the literal `scripts.widgetlib` text.
+    assert reasons["tests/test_consumer.py"] == [
+        "dotted-ref:scripts/widgetlib.py",
+        "import-map:scripts/widgetlib.py",
+    ]
     assert untested == []
 
 
@@ -1044,8 +1048,12 @@ def test_import_map_src_package_module(tmp_path: Path):
         "import-map:src/explore_persona_space/foo/bar.py"
     ]
     assert "tests/test_flat_consumer.py" in tests
+    # #1688: the contiguous dotted text `explore_persona_space.task_widget` also
+    # fires the dotted-ref arm (the pkg_consumer form above stays import-only —
+    # `explore_persona_space.foo.bar` is not contiguous in its text).
     assert reasons["tests/test_flat_consumer.py"] == [
-        "import-map:src/explore_persona_space/task_widget.py"
+        "dotted-ref:src/explore_persona_space/task_widget.py",
+        "import-map:src/explore_persona_space/task_widget.py",
     ]
     assert untested == []
 
@@ -1459,7 +1467,12 @@ def test_literal_path_pin_selected(tmp_path: Path):
     repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_pin_x.py" in tests
-    assert reasons["tests/test_pin_x.py"] == ["literal-path:scripts/foo_helper.py"]
+    # #1688: the basename inside the full-path literal is the documented
+    # harmless duplicate (basename-ref rides along; union dedupes pairs).
+    assert reasons["tests/test_pin_x.py"] == [
+        "basename-ref:scripts/foo_helper.py",
+        "literal-path:scripts/foo_helper.py",
+    ]
 
 
 # --- Case 53: THE durability pin — the #1498 founding case on the LIVE tree ------
@@ -1513,7 +1526,10 @@ def test_literal_path_only_grows_selection(tmp_path: Path):
     assert set(t_with) >= set(t_without)
     for test, rs in r_without.items():
         assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
-    assert r_with["tests/test_pins.py"] == ["literal-path:scripts/widgetlib.py"]
+    assert r_with["tests/test_pins.py"] == [
+        "basename-ref:scripts/widgetlib.py",  # #1688 in-path duplicate
+        "literal-path:scripts/widgetlib.py",
+    ]
     # orphan.py has no test in either tree; widgetlib.py is stem-mapped in both.
     assert u_without == ["scripts/orphan.py"]
     assert u_with == ["scripts/orphan.py"]
@@ -1527,7 +1543,10 @@ def test_literal_path_unreadable_file_warns_not_crash(tmp_path: Path, capsys):
     )
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_good_pin.py" in tests  # the valid hit still selected
-    assert reasons["tests/test_good_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert reasons["tests/test_good_pin.py"] == [
+        "basename-ref:scripts/foo_helper.py",  # #1688 in-path duplicate
+        "literal-path:scripts/foo_helper.py",
+    ]
     assert "tests/test_undecodable.py" not in tests  # read failed -> both arms skip
     err = capsys.readouterr().err
     assert "import-map cannot parse" in err
@@ -1544,7 +1563,10 @@ def test_literal_path_syntax_error_file_still_matched(tmp_path: Path, capsys):
     )
     tests, untested, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_broken_pin.py" in tests
-    assert reasons["tests/test_broken_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert reasons["tests/test_broken_pin.py"] == [
+        "basename-ref:scripts/foo_helper.py",  # #1688: raw-text arm, parse not needed
+        "literal-path:scripts/foo_helper.py",
+    ]
     assert untested == ["scripts/foo_helper.py"]  # literal hit never sets matched
     err = capsys.readouterr().err
     assert err.count("import-map cannot parse") == 1
@@ -1580,7 +1602,10 @@ def test_literal_path_init_py_triggers_scan_zero_parses(tmp_path: Path, capsys):
     )
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/__init__.py"], repo)
     assert "tests/test_pkg_pin.py" in tests
-    assert reasons["tests/test_pkg_pin.py"] == ["literal-path:scripts/__init__.py"]
+    assert reasons["tests/test_pkg_pin.py"] == [
+        "basename-ref:scripts/__init__.py",  # #1688 in-path duplicate
+        "literal-path:scripts/__init__.py",
+    ]
     assert "import-map cannot parse" not in capsys.readouterr().err  # zero parses
 
 
@@ -1610,7 +1635,8 @@ def test_cli_json_carries_literal_path_reason(tmp_path: Path, monkeypatch, capsy
     payload = json.loads(capsys.readouterr().out)
     assert "tests/test_pin.py" in payload["tests"]
     assert payload["selection_reasons"]["tests/test_pin.py"] == [
-        "literal-path:scripts/widgetlib.py"
+        "basename-ref:scripts/widgetlib.py",  # #1688 in-path duplicate
+        "literal-path:scripts/widgetlib.py",
     ]
     # The WARN still reaches the JSON consumer: literal hits never suppress it.
     assert payload["untested_touched"] == ["scripts/widgetlib.py"]
@@ -2051,3 +2077,240 @@ def test_transitive_consumer_excludes_invariant(tmp_path: Path, monkeypatch):
     _, _, reasons = sel.select_tests_with_reasons([_SELECTOR_KEY], repo)
     assert f"transitive-consumer:{_SELECTOR_KEY}" in reasons[inv_member]
     assert "invariant" in reasons[inv_member]
+
+
+# --- Cases 88+ (#1688): dotted-ref / basename-ref / transitive-import arms --------
+# Fixture module names are non-generic (widgetmod / midmod / farmod / guardthing)
+# so no stem-glob or GLOB_SCAN_TESTS interference muddies the per-arm asserts.
+
+
+# --- Case 88: dotted-module string reference selected (the #1683 escape #1) -------
+def test_dotted_ref_string_selected(tmp_path: Path):
+    """A monkeypatch-string-target shape — the test's ONLY link to the touched
+    module is the dotted string ("scripts.widgetmod", ...) — is selected with
+    the dotted-ref reason; the arm never sets ``matched`` (string-shape
+    evidence, the literal-path precedent), so the WARN still fires."""
+    repo = _make_import_tree(
+        tmp_path, {"test_hooky.py": 'TARGET = ("scripts.widgetmod", "attr")\n'}
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_hooky.py" in tests
+    assert reasons["tests/test_hooky.py"] == ["dotted-ref:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 89: dotted boundary negatives — superstring + attribute-prefix ----------
+def test_dotted_ref_superstring_not_matched(tmp_path: Path):
+    """Right boundary: ``scripts.widgetmod`` must NOT fire on
+    ``scripts.widgetmod_extra``; left boundary: nor on ``a.scripts.widgetmod``."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_right_super.py": 'X = "scripts.widgetmod_extra"\n',
+            "test_left_prefixed.py": 'Y = "a.scripts.widgetmod"\n',
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_right_super.py" not in tests
+    assert "tests/test_left_prefixed.py" not in tests
+    assert not any("dotted-ref:" in r for rs in reasons.values() for r in rs)
+
+
+# --- Case 90: bare-basename reference selected (the #1683 escape #2) ---------------
+def test_basename_ref_selected(tmp_path: Path):
+    """The dispatcher-log-assert shape — bare ``widgetmod.py`` with no full
+    path, no import — is selected with the basename-ref reason; never sets
+    ``matched``."""
+    repo = _make_import_tree(tmp_path, {"test_dispatchy.py": 'assert "widgetmod.py" in log_text\n'})
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_dispatchy.py" in tests
+    assert reasons["tests/test_dispatchy.py"] == ["basename-ref:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 91: basename boundary negatives — identifier prefix + suffix -------------
+def test_basename_ref_identifier_prefix_not_matched(tmp_path: Path):
+    """Left boundary: ``widgetmod.py`` must NOT fire on ``codex_widgetmod.py``
+    (63/1596 eligible basenames are substrings of another, measured); right
+    boundary: nor on ``widgetmod.pyx`` / ``widgetmod.python``."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_left_ident.py": 'LOG = "codex_widgetmod.py"\n',
+            "test_right_ident.py": 'EXT = "widgetmod.pyx and widgetmod.python"\n',
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_left_ident.py" not in tests
+    assert "tests/test_right_ident.py" not in tests
+    assert not any("basename-ref:" in r for rs in reasons.values() for r in rs)
+
+
+# --- Case 92: .sh basename eligibility (the #1579 symmetry) -------------------------
+def test_basename_ref_sh_selected(tmp_path: Path):
+    """A ``.sh`` payload under the eligibility prefixes basename-selects a test
+    mentioning the bare script name (zero AST parses — .sh maps to no module)."""
+    repo = _make_import_tree(tmp_path, {"test_guardish.py": 'line = "guardthing.sh ran"\n'})
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/guardthing.sh"], repo)
+    assert "tests/test_guardish.py" in tests
+    assert reasons["tests/test_guardish.py"] == ["basename-ref:scripts/guardthing.sh"]
+    assert untested == ["scripts/guardthing.sh"]
+
+
+# --- Case 93: one-hop transitive import selected (the #1683 escape #3) --------------
+def test_transitive_import_one_hop_selected(tmp_path: Path):
+    """scripts/midmod.py imports the touched module; a test importing midmod
+    EXECUTES the touched module at import time -> selected with the
+    transitive-import reason; never sets ``matched``."""
+    repo = _make_import_tree(tmp_path, {"test_uses_mid.py": "import midmod\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_uses_mid.py" in tests
+    assert reasons["tests/test_uses_mid.py"] == ["transitive-import:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 94: the one-hop bound — chains of >= 2 hops are NOT followed --------------
+def test_transitive_import_two_hops_not_followed(tmp_path: Path):
+    """farmod imports midmod imports the touched module; a test importing only
+    farmod is NOT selected (one hop by construction, never recursive)."""
+    repo = _make_import_tree(tmp_path, {"test_uses_far.py": "import farmod\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    (repo / "scripts" / "farmod.py").write_text("import midmod\n")
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_uses_far.py" not in tests
+    assert not any(
+        r == "transitive-import:scripts/widgetmod.py"
+        for t, rs in reasons.items()
+        if t == "tests/test_uses_far.py"
+        for r in rs
+    )
+
+
+# --- Case 95: scripts-scoped on the TOUCHED end — src payloads never expand ---------
+def test_transitive_import_src_touched_not_expanded(tmp_path: Path):
+    """A touched src/ module with a scripts/ importer gets NO transitive
+    expansion (scripts-scoped on BOTH ends; the src-rooted variant measured
+    +70 test files and was rejected at plan time)."""
+    repo = _make_import_tree(tmp_path, {"test_uses_srcconsumer.py": "import srcconsumer\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "srcconsumer.py").write_text(
+        "from explore_persona_space.widgetsrc import f\n"
+    )
+    touched = ["src/explore_persona_space/widgetsrc.py"]
+    assert sel.transitive_import_map(touched, repo) == {}
+    tests, _, _ = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_uses_srcconsumer.py" not in tests
+
+
+# --- Case 96: monotonicity — the #1688 arms only ever GROW the selection ------------
+def test_new_arms_only_grow_selection(tmp_path: Path):
+    """Same touched set, tree WITHOUT vs WITH all three arm triggers: the WITH
+    selection is a superset and every WITHOUT reason list is preserved
+    verbatim (the case-41 shape, per arm)."""
+    touched = ["scripts/widgetmod.py"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetmod.py"])
+    t_without, _, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetmod.py"])
+    (repo_with / "tests" / "test_dotted_w.py").write_text('T = ("scripts.widgetmod", "x")\n')
+    (repo_with / "tests" / "test_base_w.py").write_text('assert "widgetmod.py" in out\n')
+    (repo_with / "tests" / "test_trans_w.py").write_text("import midmod\n")
+    (repo_with / "scripts").mkdir(exist_ok=True)
+    (repo_with / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    t_with, _, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_dotted_w.py" in t_with
+    assert "tests/test_base_w.py" in t_with
+    assert "tests/test_trans_w.py" in t_with
+
+
+# --- Case 97: none of the #1688 arms ever marks the touched file tested -------------
+def test_new_arms_never_mark_tested(tmp_path: Path):
+    """All three arms firing at once still leave the touched file in the
+    untested_touched WARN list (only the import arm sets ``matched`` —
+    over-WARN is the safe direction)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_dotted_n.py": 'T = ("scripts.widgetmod", "x")\n',
+            "test_base_n.py": 'assert "widgetmod.py" in out\n',
+            "test_trans_n.py": "import midmod\n",
+        },
+    )
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert {"tests/test_dotted_n.py", "tests/test_base_n.py", "tests/test_trans_n.py"} <= set(tests)
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 98: CLI --map-files emits the new-arm pairs -------------------------------
+def test_cli_map_files_new_arm_pairs(tmp_path: Path, capsys):
+    """--map-files carries one pair per new-arm hit (union-deduped with the
+    other dependency arms; output shape unchanged — pairs + sizing line)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_dotted_c.py": 'T = ("scripts.widgetmod", "x")\n',
+            "test_base_c.py": 'assert "widgetmod.py" in out\n',
+            "test_trans_c.py": "import midmod\n",
+        },
+    )
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetmod.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_dotted_c.py\tscripts/widgetmod.py" in lines
+    assert "tests/test_base_c.py\tscripts/widgetmod.py" in lines
+    assert "tests/test_trans_c.py\tscripts/widgetmod.py" in lines
+
+
+# --- Case 99: map-leg asymmetry — invariant members excluded from new-arm pairs -----
+def test_new_arm_map_pairs_exclude_invariant(tmp_path: Path):
+    """An invariant-named test carrying a dotted-ref hit is EXCLUDED from
+    dependency_map_pairs while the non-invariant sibling is included; the
+    Step 9c selection arm KEEPS the invariant member with the new reason
+    (the standing rules-pin asymmetry)."""
+    repo = _make_import_tree(tmp_path, {"test_free_d.py": 'T = ("scripts.widgetmod", "x")\n'})
+    inv_member = "tests/test_verify_plan.py"
+    assert inv_member in sel.WORKFLOW_INVARIANT  # fixture premise
+    (repo / inv_member).write_text('T = ("scripts.widgetmod", "x")\n')
+    pairs = sel.dependency_map_pairs(["scripts/widgetmod.py"], repo)
+    assert ("tests/test_free_d.py", "scripts/widgetmod.py") in pairs
+    assert not any(t == inv_member for t, _f in pairs)
+    _, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "dotted-ref:scripts/widgetmod.py" in reasons[inv_member]
+    assert "invariant" in reasons[inv_member]
+
+
+# --- Case 100: THE #1688 durability pin — all 3 escapees on the LIVE tree -----------
+def test_issue1688_live_tree_escapee_shape():
+    """THE #1688 durability pin: the three #1683-review escapees are selected
+    for a scripts/issue667_extract.py payload on the real tree, each via its
+    closing arm, and the pre-existing selections are retained.
+
+    If a future cleanup removes scripts/issue667_extract.py or an escapee
+    test's referencing form, this pin fails loud — repoint it at another
+    committed reference of the same shape (one dotted string target, one
+    bare-basename log assert, one scripts->scripts one-hop import chain).
+    """
+    repo_root = _HELPER_PATH.parents[1]
+    probe = "scripts/issue667_extract.py"
+    tests, untested, reasons = sel.select_tests_with_reasons([probe], repo_root)
+    # Escapee #1 — dotted-module string refs (test file monkeypatches by name).
+    assert f"dotted-ref:{probe}" in reasons["tests/test_issue671_extraction_hooks.py"]
+    # Escapee #2 — bare-basename literals in dispatcher asserts.
+    assert f"basename-ref:{probe}" in reasons["tests/test_issue811_dispatch.py"]
+    # Escapee #3 — imports issue833_extract_onpolicy, which imports the probe.
+    assert f"transitive-import:{probe}" in reasons["tests/test_issue833_nonemit_filters.py"]
+    # Pre-existing selections retained (the count-robust hard gate).
+    assert "tests/test_issue667_dispatcher.py" in tests
+    assert "tests/test_issue811_maxp.py" in tests
+    assert probe not in untested  # stem/import arms already matched it pre-#1688

@@ -63,6 +63,35 @@ Touched-file -> test mapping (per touched file ``f``):
     ``importlib`` load by CONSTRUCTED path inside a helper, a path-join
     literal), so no text-scan arm can reach them. Additive only — never sets
     ``matched``, so ``untested_touched`` WARNs still fire.
+  * any ``tests/**/test_*.py`` whose raw text contains a touched module's
+    DOTTED name (``scripts.issue667_extract``,
+    ``explore_persona_space.a.b`` — the dotted forms
+    :func:`touched_module_names` derives; flat names deliberately excluded)
+    as a boundary-bounded token is ADDITIONALLY selected with reason
+    ``dotted-ref:<touched file>`` (#1688 — the monkeypatch-string-target
+    shape, e.g. ``("scripts.issue667_extract", "main")``). Identifier
+    boundaries on both sides (left also excludes ``.``) so
+    ``scripts.task`` fires on neither ``scripts.task_state`` nor
+    ``a.scripts.task``. Never sets ``matched``.
+  * any ``tests/**/test_*.py`` whose raw text contains the bare BASENAME of a
+    :func:`literal_path_targets`-eligible touched file (``.py`` AND ``.sh``,
+    #1579 symmetry) as a boundary-bounded token is ADDITIONALLY selected with
+    reason ``basename-ref:<touched file>`` (#1688 — the dispatcher-log-assert
+    shape, e.g. ``assert "issue667_extract.py" in log``). Identifier
+    boundaries kill the superstring class (``task.py`` does not fire on
+    ``codex_task.py`` / ``task.pyx``; 63/1596 eligible basenames are
+    substrings of another, measured 2026-07-25). Never sets ``matched``.
+  * any ``tests/**/test_*.py`` whose ``Import``/``ImportFrom`` nodes name a
+    one-hop scripts/ INTERMEDIARY of a touched ``scripts/`` module — a
+    non-touched ``scripts/**/*.py`` that itself imports the touched module
+    (:func:`transitive_import_map`) — is ADDITIONALLY selected with reason
+    ``transitive-import:<touched file>`` (#1688 — the test EXECUTES the
+    touched module at import time through the intermediary; the #1683 escape
+    class). DISCOVERED, one hop by construction, scripts/-scoped on BOTH
+    ends (src-rooted expansion measured +70 test files on a
+    ``task_workflow.py`` touch — rejected); :data:`TRANSITIVE_CONSUMER_TESTS`
+    (#1589) stays unchanged for importlib-by-constructed-path consumers.
+    Never sets ``matched``.
 
 ``safe-by-direction``: the broad ``*{stem}*`` glob arm deliberately OVER-matches
 on short stems (e.g. stem ``gcp`` selects ``test_gcp_backend.py``) — running a
@@ -123,6 +152,30 @@ work". (Orthogonal: the #1613 zero-resolution guard fires only on WHOLE-INPUT
 zero resolution + zero pairs — a list where SOME lines resolve leaves this
 out-of-prefix in-list gap open and distinct.)
 
+Dotted-ref / basename-ref / transitive-import scope + cost (#1688): the two
+string arms ride the SAME single :func:`_scan_test_files` read pass (each
+regex behind a plain-substring pre-check — zero regex work on no-hit files);
+the transitive arm adds ONE raw-text pass over ``scripts/**/*.py`` (~1,400
+files, measured ~1.1 s typical for a single-script diff) ONLY when a touched
+file resolves to a ``scripts/`` module name, parsing candidate-bearing files
+via the same over-inclusive substring pre-filter (adversarial common-token
+stems — e.g. ``scripts/eval.py``, token ``eval`` in ~1,199/1,392 scripts
+files — measured ~13 s cold, the same order as the import arm's 4-8 s
+test-tree worst case). All three arms are additive-only and never set
+``matched``. Known-miss classes (each still lands in the pre-existing loud
+``untested_touched`` WARN fallback where applicable): a FLAT-string reference
+with no static import — pytest's string-target
+``monkeypatch.setattr("X.attr", ...)`` / ``importlib.import_module("X")``
+DOES import module ``X`` at test runtime, but that import is invisible to
+every static arm here, so a test whose ONLY link is the flat string is
+covered in practice ONLY when it also carries a static import the import arm
+sees (the dotted arm does NOT cover the flat form by necessity — flat tokens
+are deliberately excluded as mass-over-selecting English words);
+dynamically-CONSTRUCTED dotted/basename strings (f-strings, concatenation);
+import chains of >= 2 hops (the one-hop bound is deliberate); and src-rooted
+transitivity (scripts-scoped on both ends by design — the src expansion
+measured +70 test files, largely WORKFLOW_INVARIANT-redundant).
+
 Root resolution: with no ``--repo-root``, everything (the ``git diff`` cwd,
 touched-test existence checks, stem-glob mapping, invariant presence) resolves
 against the INVOKING checkout's git toplevel — the issue-worktree root when run
@@ -165,7 +218,8 @@ read newline-delimited repo-relative paths from FILE and print one
 rules-pin discovery hit on a ``.claude/rules/*.md`` payload file
 (:func:`rules_pin_pairs`, #1496 — WORKFLOW_INVARIANT members excluded) PLUS
 the src/scripts dependency arms (:func:`dependency_map_pairs`, #1573 —
-import-map (#1299) + literal-path (#1498) + stem-map pairs for ``.py``/``.sh``
+import-map (#1299) + literal-path (#1498) + dotted-ref / basename-ref /
+transitive-import (#1688) + stem-map pairs for ``.py``/``.sh``
 payloads (``.sh`` #1579) under the :func:`literal_path_targets` eligibility
 prefixes, WORKFLOW_INVARIANT members excluded) PLUS one
 ``<consumer_test>\\t<touched_path>`` line per pinned transitive-consumer
@@ -210,8 +264,9 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
 ``literal-path:<touched file>`` / ``rules-pin:<touched file>`` /
-``transitive-consumer:<touched file>`` —
-#1022, #1299, #1498, #1496, #1589).
+``transitive-consumer:<touched file>`` / ``dotted-ref:<touched file>`` /
+``basename-ref:<touched file>`` / ``transitive-import:<touched file>`` —
+#1022, #1299, #1498, #1496, #1589, #1688).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -224,10 +279,12 @@ import argparse
 import ast
 import fnmatch
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import NamedTuple
 
 # --- Pinned workflow-invariant tests. ----------------------------------------
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
@@ -568,7 +625,8 @@ MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
     """Sorted ``(test, matched_path)`` pairs for ``--map-files`` beyond
     GLOB_SCAN_TESTS + rules-pin (#1573): import-map (#1299) + literal-path
-    (#1498) via the ONE shared :func:`_scan_test_files` read pass, plus
+    (#1498) + dotted-ref / basename-ref / transitive-import (#1688) via the
+    ONE shared :func:`_scan_test_files` read pass, plus
     stem-map path arithmetic. WORKFLOW_INVARIANT members are EXCLUDED
     (the :func:`rules_pin_pairs` asymmetry: they already gate every Step 9c
     run, and exclusion keeps the 2400 s tests/test_workflow_lint.py out of the
@@ -582,9 +640,15 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
     and (#1579) for ``.sh`` scripts, which are never importable at all.
     """
     inv = set(WORKFLOW_INVARIANT)
-    import_hits, _tested, literal_hits = _scan_test_files(files, work_root)
+    scan = _scan_test_files(files, work_root)
     pairs: set[tuple[str, str]] = set()
-    for hits in (import_hits, literal_hits):
+    for hits in (
+        scan.import_hits,
+        scan.literal_hits,
+        scan.dotted_hits,
+        scan.basename_hits,
+        scan.trans_hits,
+    ):
         for t, fs in hits.items():
             if t not in inv:
                 pairs.update((t, f) for f in fs)
@@ -917,31 +981,175 @@ def literal_path_targets(touched: list[str]) -> set[str]:
     return out
 
 
-def _scan_test_files(
-    touched: list[str], work_root: Path
-) -> tuple[dict[str, set[str]], set[str], dict[str, set[str]]]:
-    """ONE shared read pass over ``tests/**/test_*.py`` for both text-scan arms.
+class ScanResult(NamedTuple):
+    """Per-arm hits from the ONE shared read pass over ``tests/**/test_*.py``.
 
-    Returns ``(import_hits, import_tested, literal_hits)``:
+    Internal-only return shape of :func:`_scan_test_files` (#1688 widened it
+    from the historical 3-tuple; :func:`import_map_hits` keeps the public
+    #1299 2-tuple). Every ``dict`` maps ``{test_relpath: {touched files}}``.
+    """
+
+    import_hits: dict[str, set[str]]  # #1299 — the only arm that sets ``matched``
+    import_tested: set[str]  # touched files with >= 1 importing test
+    literal_hits: dict[str, set[str]]  # #1498 — full repo-relative-path substring
+    dotted_hits: dict[str, set[str]]  # #1688 — dotted-module string references
+    basename_hits: dict[str, set[str]]  # #1688 — bare-basename references
+    trans_hits: dict[str, set[str]]  # #1688 — one-hop scripts/ transitive imports
+
+
+def _boundary_patterns(
+    names_to_files: dict[str, set[str]], *, dot_bounded_left: bool
+) -> list[tuple[str, re.Pattern[str], set[str]]]:
+    """``(substring pre-check token, boundary regex, touched files)`` triples (#1688).
+
+    The regex bounds *name* with identifier-character lookarounds so
+    SUPERSTRINGS never match (``scripts.task`` does not fire on
+    ``scripts.task_state``; ``task.py`` does not fire on ``codex_task.py`` or
+    ``task.pyx``). *dot_bounded_left* additionally excludes ``.`` on the LEFT
+    (the dotted arm: ``a.scripts.task`` must not fire for ``scripts.task``);
+    the RIGHT boundary deliberately allows ``.`` — ``scripts.task.main`` still
+    references the module, and ``task.py`` inside a full path literal is a
+    harmless duplicate the reason-set union dedupes.
+    """
+    left = "A-Za-z0-9_." if dot_bounded_left else "A-Za-z0-9_"
+    return [
+        (name, re.compile(rf"(?<![{left}]){re.escape(name)}(?![A-Za-z0-9_])"), set(files))
+        for name, files in sorted(names_to_files.items())
+    ]
+
+
+def _apply_boundary_hits(
+    text: str,
+    rel: str,
+    patterns: list[tuple[str, re.Pattern[str], set[str]]],
+    hits: dict[str, set[str]],
+) -> None:
+    """Record boundary-regex hits of *patterns* in *text* under *rel* (#1688).
+
+    The plain-substring pre-check keeps the common no-hit case regex-free.
+    """
+    for token, pat, files in patterns:
+        if token in text and pat.search(text):
+            hits.setdefault(rel, set()).update(files)
+
+
+def transitive_import_map(touched: list[str], work_root: Path) -> dict[str, set[str]]:
+    """``{intermediary scripts-module name -> touched scripts/ files it imports}``,
+    ONE import hop, scripts/-scoped on BOTH ends (#1688).
+
+    DISCOVERED at selection time (the #1496 discovered-over-pinned rationale):
+    scans ``scripts/**/*.py`` (never ``tests/``, never ``src/``) for files
+    whose ``Import``/``ImportFrom`` nodes name a touched ``scripts/`` module.
+    A test importing such an INTERMEDIARY executes the touched module at
+    import time (the sys.path-flat scripts->scripts import graph, the #1683
+    escape class), so :func:`_scan_test_files` selects it with reason
+    ``transitive-import:<touched file>``. Never recursive: the intermediary
+    map is computed ONCE from the touched files and intermediaries' own
+    importers are NOT followed (one hop by construction). A touched file is
+    skipped as an intermediary (it is already a DIRECT import-arm target).
+    :data:`TRANSITIVE_CONSUMER_TESTS` (#1589) is UNCHANGED and not subsumed —
+    it covers importlib-by-CONSTRUCTED-path consumers no AST scan can see.
+
+    Cost: zero file reads unless a touched file resolves to a ``scripts/``
+    module name; otherwise one raw-text pass over the scripts tree (~1,400
+    files, measured ~1.1 s typical) with the same over-inclusive substring
+    pre-filter as the test scan (never a false negative), parsing only
+    candidate-bearing files (adversarial common-token stems measured ~13 s —
+    module docstring). Fail-soft (the #1299 read contract): unreadable files
+    WARN + skip; files that read but fail to ``ast``-parse WARN + skip; >5%
+    failures add ONE aggregate WARN.
+    """
+    module_map = touched_module_names(touched)
+    script_names = {n: {f for f in fs if f.startswith("scripts/")} for n, fs in module_map.items()}
+    script_names = {n: fs for n, fs in script_names.items() if fs}
+    scripts_dir = work_root / "scripts"
+    if not script_names or not scripts_dir.is_dir():
+        return {}
+    tokens = {n.rsplit(".", 1)[-1] for n in script_names}
+    touched_set = set(touched)
+    out: dict[str, set[str]] = {}
+    n_scanned = 0
+    n_failed = 0
+    for path in sorted(scripts_dir.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(work_root).as_posix()
+        if rel in touched_set:
+            continue  # already a DIRECT target of the import/literal arms
+        n_scanned += 1
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            n_failed += 1
+            print(
+                f"select_step9c_tests: WARN — transitive-import scan cannot read {rel}: "
+                f"{exc}; file skipped for the transitive-import arm",
+                file=sys.stderr,
+            )
+            continue
+        if not any(tok in text for tok in tokens):
+            continue  # over-inclusive substring pre-filter, never a false negative
+        try:
+            imported = _import_names(ast.parse(text))
+        except (SyntaxError, ValueError) as exc:
+            n_failed += 1
+            print(
+                f"select_step9c_tests: WARN — transitive-import scan cannot parse {rel}: "
+                f"{exc}; file skipped for the transitive-import arm",
+                file=sys.stderr,
+            )
+            continue
+        hit = {f for n, fs in script_names.items() if n in imported for f in fs}
+        if hit:
+            for name in touched_module_names([rel]):
+                out.setdefault(name, set()).update(hit)
+    if n_scanned and n_failed / n_scanned > 0.05:
+        print(
+            f"select_step9c_tests: WARN — transitive-import scan read/parse failures on "
+            f"{n_failed}/{n_scanned} scanned scripts files (>5%): systemic scripts/ "
+            "breakage; the transitive-import arm may under-select",
+            file=sys.stderr,
+        )
+    return out
+
+
+def _scan_test_files(touched: list[str], work_root: Path) -> ScanResult:
+    """ONE shared read pass over ``tests/**/test_*.py`` for every text-scan arm.
+
+    Returns a :class:`ScanResult` (#1688 widened the historical 3-tuple):
       * ``import_hits`` — ``{test_relpath: {touched files it imports}}``
         (#1299, the import-map arm);
       * ``import_tested`` — touched files with >= 1 importing test (these
         suppress the ``untested_touched`` WARN);
       * ``literal_hits`` — ``{test_relpath: {touched files whose repo-relative
         path appears as a raw substring of the test's text}}`` (#1498, the
-        literal-path arm; never suppresses the WARN).
+        literal-path arm; never suppresses the WARN);
+      * ``dotted_hits`` — boundary-regex hits on the DOTTED module names from
+        :func:`touched_module_names` (#1688; flat names deliberately excluded
+        — a boundary-bounded flat token like ``task`` matches the English
+        word; never suppresses the WARN);
+      * ``basename_hits`` — boundary-regex hits on the bare BASENAME of every
+        :func:`literal_path_targets`-eligible file (``.py`` AND ``.sh``,
+        #1688/#1579; never suppresses the WARN);
+      * ``trans_hits`` — tests whose imports name a one-hop scripts/
+        INTERMEDIARY per :func:`transitive_import_map` (#1688; never
+        suppresses the WARN — over-WARN is the safe direction, the #1589
+        precedent).
 
     Subdir tests (``tests/experiments/``) are in scope (sorted ``rglob`` —
     pytest collects them and the touched-test arm already admits their paths).
 
     Cost bound: when BOTH target sets are empty (workflow-surface-only diff)
-    the pass returns immediately with ZERO file reads. Otherwise each test
+    the pass returns immediately with ZERO file reads (every #1688 arm derives
+    from those same sets, so they add no new trigger). Otherwise each test
     file's raw text is read ONCE and (a) checked against each literal target
-    as a plain substring, then (b) ``ast``-parsed ONLY when its text contains
-    the last dotted component of at least one candidate module name — any
-    absolute import of module M must literally spell M's last component, so
-    the filter is over-inclusive (never a false negative). A literal-only
-    trigger (e.g. ``scripts/__init__.py``, which maps to no module name)
+    as a plain substring plus the dotted/basename boundary regexes (each
+    behind a plain-substring pre-check), then (b) ``ast``-parsed ONLY when its
+    text contains the last dotted component of at least one candidate module
+    name — touched OR intermediary — since any absolute import of module M
+    must literally spell M's last component, so the filter is over-inclusive
+    (never a false negative). A literal-only trigger (e.g.
+    ``scripts/__init__.py``, which maps to no module name)
     reads the tree with ZERO parses (empty token pre-filter); a ``.sh``-only
     diff is the same cost class (#1579 — ``touched_module_names`` stays
     ``.py``-only, so ``.sh`` paths join ``literal_targets`` with an empty
@@ -951,10 +1159,11 @@ def _scan_test_files(
 
     Fail-soft (#1299 rationale R5): a file whose RAW READ fails (``OSError``,
     ``ValueError`` incl. ``UnicodeDecodeError``) emits ONE stderr WARN and is
-    skipped for BOTH arms; a file that reads but fails to PARSE
-    (``SyntaxError``, ``ValueError``) is skipped for the import arm ONLY —
-    its literal hits are kept (raw text already read; an additive
-    improvement, #1498). Never crashes the selector; if the broken file is
+    skipped for ALL arms; a file that reads but fails to PARSE
+    (``SyntaxError``, ``ValueError``) is skipped for the import + transitive
+    arms ONLY — its literal/dotted/basename hits are kept (raw text already
+    read; an additive improvement, #1498). Never crashes the selector; if the
+    broken file is
     itself part of the diff the touched-test arm still selects it (pytest
     collection then fails loud at the right surface). When read + parse
     failures exceed 5% of the scanned files, ONE additional aggregate WARN
@@ -963,14 +1172,27 @@ def _scan_test_files(
     import_hits: dict[str, set[str]] = {}
     tested: set[str] = set()
     literal_hits: dict[str, set[str]] = {}
+    dotted_hits: dict[str, set[str]] = {}
+    basename_hits: dict[str, set[str]] = {}
+    trans_hits: dict[str, set[str]] = {}
+    result = ScanResult(import_hits, tested, literal_hits, dotted_hits, basename_hits, trans_hits)
     module_map = touched_module_names(touched)
     literal_targets = literal_path_targets(touched)
     if not module_map and not literal_targets:
-        return import_hits, tested, literal_hits
+        return result
     tests_dir = work_root / "tests"
     if not tests_dir.is_dir():
-        return import_hits, tested, literal_hits
+        return result
+    trans_map = transitive_import_map(touched, work_root)
+    dotted_pats = _boundary_patterns(
+        {n: fs for n, fs in module_map.items() if "." in n}, dot_bounded_left=True
+    )
+    base_map: dict[str, set[str]] = {}
+    for f in literal_targets:
+        base_map.setdefault(Path(f).name, set()).add(f)
+    base_pats = _boundary_patterns(base_map, dot_bounded_left=False)
     tokens = {name.rsplit(".", 1)[-1] for name in module_map}
+    tokens |= {name.rsplit(".", 1)[-1] for name in trans_map}
     n_scanned = 0
     n_failed = 0
     for test_path in sorted(tests_dir.rglob("test_*.py")):
@@ -989,6 +1211,8 @@ def _scan_test_files(
         for f in literal_targets:
             if f in text:
                 literal_hits.setdefault(rel, set()).add(f)
+        _apply_boundary_hits(text, rel, dotted_pats, dotted_hits)
+        _apply_boundary_hits(text, rel, base_pats, basename_hits)
         if not any(tok in text for tok in tokens):
             continue
         try:
@@ -1006,6 +1230,9 @@ def _scan_test_files(
             if name in imported:
                 import_hits.setdefault(rel, set()).update(files)
                 tested.update(files)
+        for name, files in trans_map.items():
+            if name in imported:
+                trans_hits.setdefault(rel, set()).update(files)
     if n_scanned and n_failed / n_scanned > 0.05:
         print(
             f"select_step9c_tests: WARN — test-scan read/parse failures on "
@@ -1013,20 +1240,21 @@ def _scan_test_files(
             "the import and literal-path arms may under-select",
             file=sys.stderr,
         )
-    return import_hits, tested, literal_hits
+    return result
 
 
 def import_map_hits(touched: list[str], work_root: Path) -> tuple[dict[str, set[str]], set[str]]:
     """Back-compat wrapper over :func:`_scan_test_files` (the #1299 public shape).
 
-    Returns ``(import_hits, import_tested)``, dropping the literal-path
-    element. NOTE (#1498): the underlying shared pass also triggers on
-    literal-eligible touched files, so a ``scripts/__init__.py``-only call
+    Returns ``(import_hits, import_tested)``, dropping every other
+    :class:`ScanResult` element. NOTE (#1498): the underlying shared pass also
+    triggers on literal-eligible touched files, so a
+    ``scripts/__init__.py``-only call
     now scans (with zero parses) where the pre-refactor arm returned early
     with zero reads; the returned import elements are unchanged.
     """
-    hits, tested, _ = _scan_test_files(touched, work_root)
-    return hits, tested
+    scan = _scan_test_files(touched, work_root)
+    return scan.import_hits, scan.import_tested
 
 
 def _seed_import_reasons(import_hits: dict[str, set[str]]) -> dict[str, set[str]]:
@@ -1034,19 +1262,24 @@ def _seed_import_reasons(import_hits: dict[str, set[str]]) -> dict[str, set[str]
     return {t: {f"import-map:{f}" for f in files} for t, files in import_hits.items()}
 
 
-def _seed_scan_reasons(
-    import_hits: dict[str, set[str]], literal_hits: dict[str, set[str]]
-) -> dict[str, set[str]]:
-    """Initial ``{test: reasons}`` mapping seeded from BOTH text-scan arms.
+def _seed_scan_reasons(scan: ScanResult) -> dict[str, set[str]]:
+    """Initial ``{test: reasons}`` mapping seeded from EVERY text-scan arm.
 
-    Import-map hits (#1299) plus literal-path hits (#1498) — a test hit by
-    both carries both reason kinds. Purely additive: only ever adds
-    tests/reasons to the seed.
+    Import-map hits (#1299) plus literal-path (#1498), dotted-ref,
+    basename-ref, and transitive-import hits (#1688) — a test hit by several
+    arms carries every reason kind. Purely additive: only ever adds
+    tests/reasons to the seed; the import arm alone feeds ``matched``
+    (via ``scan.import_tested`` at the caller).
     """
-    selected = _seed_import_reasons(import_hits)
-    for lit_test, lit_files in literal_hits.items():
-        for lit_f in lit_files:
-            selected.setdefault(lit_test, set()).add(f"literal-path:{lit_f}")
+    selected = _seed_import_reasons(scan.import_hits)
+    for kind, hits in (
+        ("literal-path", scan.literal_hits),
+        ("dotted-ref", scan.dotted_hits),
+        ("basename-ref", scan.basename_hits),
+        ("transitive-import", scan.trans_hits),
+    ):
+        for hit_test, hit_files in hits.items():
+            selected.setdefault(hit_test, set()).update(f"{kind}:{f}" for f in hit_files)
     return selected
 
 
@@ -1081,7 +1314,9 @@ def select_tests_with_reasons(
     A reason is ``'invariant' | 'touched-test' | 'stem-map:<touched file>' |
     'glob-scan:<touched file>' | 'import-map:<touched file>' |
     'literal-path:<touched file>' | 'rules-pin:<touched file>' |
-    'transitive-consumer:<touched file>'``; a test may
+    'transitive-consumer:<touched file>' | 'dotted-ref:<touched file>' |
+    'basename-ref:<touched file>' |
+    'transitive-import:<touched file>'``; a test may
     carry several (e.g. an invariant that is also stem-mapped from a touched
     file). Selection behavior is IDENTICAL to :func:`select_tests` — same
     tests, same ``untested_touched`` WARN list, same sorted ordering (#1022:
@@ -1089,15 +1324,17 @@ def select_tests_with_reasons(
     which must come from the SAME mapping logic that selected the run's tests).
     """
     # Text-scan arms (ONE shared read pass, _scan_test_files): the import-map
-    # arm (#1299) seeds the selection and the literal-path arm (#1498) adds
-    # pinning-test hits — both additive by construction (they only ever add
-    # tests/reasons here and, via the ``matched`` seed below, the IMPORT arm
-    # alone removes entries from the untested WARN list; no code path drops a
-    # stem-map / glob-scan / invariant / touched-test selection, so selection
-    # only GROWS). Ordering is irrelevant: the terminal sorted() reads below
-    # keep the output deterministic.
-    import_hits, import_tested, literal_hits = _scan_test_files(touched, work_root)
-    selected: dict[str, set[str]] = _seed_scan_reasons(import_hits, literal_hits)
+    # arm (#1299) seeds the selection and the literal-path (#1498) +
+    # dotted-ref / basename-ref / transitive-import (#1688) arms add
+    # reference/consumer hits — all additive by construction (they only ever
+    # add tests/reasons here and, via the ``matched`` seed below, the IMPORT
+    # arm alone removes entries from the untested WARN list; no code path
+    # drops a stem-map / glob-scan / invariant / touched-test selection, so
+    # selection only GROWS). Ordering is irrelevant: the terminal sorted()
+    # reads below keep the output deterministic.
+    scan = _scan_test_files(touched, work_root)
+    import_tested = scan.import_tested
+    selected: dict[str, set[str]] = _seed_scan_reasons(scan)
     # Rules-pin discovery arm (#1496): additive seed, same only-grows contract
     # (one scan pass serves all touched rules; the rules file itself still
     # takes the WORKFLOW_SURFACE `continue` below, unchanged).
@@ -1317,8 +1554,9 @@ def main(argv: list[str] | None = None) -> int:
             "newline-delimited repo-relative paths: print one "
             "'test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
             "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496) "
-            "plus the src/scripts import/literal/stem dependency-arm pairs "
-            "(#1573) plus the pinned transitive-consumer pairs (#1589; "
+            "plus the src/scripts import/literal/dotted/basename/transitive/stem "
+            "dependency-arm pairs "
+            "(#1573, #1688) plus the pinned transitive-consumer pairs (#1589; "
             "WORKFLOW_INVARIANT members excluded from all three) and exit "
             "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
             "diff-based selection entirely; empty stdout on no match is a "
@@ -1357,7 +1595,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.map_files is not None:
         # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
-        # src/scripts dependency arms (import/literal/stem, #1573) +
+        # src/scripts dependency arms (import/literal/stem #1573;
+        # dotted/basename/transitive #1688) +
         # pinned transitive-consumer pairs (#1589) — all three
         # WORKFLOW_INVARIANT-excluded — over an explicit file list — no git
         # diff; stderr carries the zero-mapped WARN floor + the
