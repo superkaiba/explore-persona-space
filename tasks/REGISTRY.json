@@ -5204,8 +5204,8 @@
     "1669": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1669",
-      "status": "planning",
+      "path": "tasks/approved/1669",
+      "status": "approved",
       "title": "daily-fix: failover re-provision carries launch env pins"
     },
     "1670": {
